@@ -1,7 +1,7 @@
 # Welcome to iCloud3 v2.0!
 
 [![Version](https://img.shields.io/badge/Version-2.0-blue.svg)](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-October,_2019-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Released](https://img.shields.io/badge/Released-November 17, 2019-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
 [![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg)](https://github.com/gcobb321/icloud3)
@@ -10,7 +10,6 @@ iCloud3 is a device_tracker custom_component for iPhones, iPads and iWatches. It
 
 iCloud3 is a Home Assistant device tracker custom component that greatly expands the capabilities of the iCloud (and iCloud2) HA component. It exposes many new attributes, provides many new features, is based on enhanced route tracking methods, is much more accurate, and includes additional service calls.
 <div  align="center"><a href="https://gcobb321.github.io/icloud3_dev/#/"><img src="docs/images/button_documentation.jpg"></a><a href="https://github.com/gcobb321/icloud3_dev/releases"><img src="docs/images/button_download_long.jpg"></a></div>
-
 ### Features
 - Supports three tracking methods, Find-my-Friends using the *Find My* app, Family Sharing for your family members that you have set up in your Apple iCloud account and the Home Assistant IOS App (versions 1 & 2). Use the Find-my-Friends method if you have set up 2fa security on your main Apple iCloud account to eliminate the constant notifications that a device has accessed your iCloud account.
 - A variable polling interval that is based on the Waze Route Mapping Service (drive time and distance) rather than just a calculated straight line distance.
