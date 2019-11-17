@@ -1,0 +1,17 @@
+#########################################################
+#
+#   GARAGE DOOR MQTT SENSOR
+#
+#########################################################
+- platform: mqtt
+  name: "garage_door"
+  state_topic: "smartthings/Garage Door/contact/state"
+  value_template: "{{ value|capitalize }}"
+  payload_available: "Open"
+  payload_not_available: "Closed"
+
+- platform: mqtt
+  name: "garage_door_battery"
+  state_topic: "smartthings/Garage Door/battery/state"
+  device_class: battery
+  

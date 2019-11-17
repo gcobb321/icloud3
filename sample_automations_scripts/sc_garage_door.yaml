@@ -1,0 +1,55 @@
+#########################################################
+#
+#   SCRIPTS
+#   -------
+#
+#   GARAGE DOOR/SET LOCATION SCRIPTS
+#
+#########################################################
+
+#--------------------------------------------------------------- 
+#   If garage door is closed and Gary's driving flag is true
+#   open the Garage Door, turn off Gary's driving flag and notify Gary
+#   Called from automation_old/garage_door.yaml
+#--------------------------------------------------------------- 
+open_garage_door:
+  alias: 'Open Garage Door'
+  sequence:
+    
+    #- condition: state
+    #  entity_id: input_boolean.ha_started_flag
+    #  state: 'on'
+      
+    - condition: state
+      entity_id: sensor.garage_door
+      state: 'Closed'
+      
+    - condition: template 
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state  | float <= 0.30}}'
+   
+    - condition: state
+      entity_id: input_boolean.gary_driving_flag
+      state: 'on'
+ 
+    - condition: state
+      entity_id: input_boolean.gary_far_away_flag
+      state: 'off'
+      
+    - service: script.show_garage_door_status
+  
+    - service: switch.turn_on
+      entity_id: switch.garage_door
+
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Garage Door Action'
+        message: 'Garage Door Opened'
+
+
+show_garage_door_status:
+  alias: 'Show Garage Door Status'
+  sequence:
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Garage Door Control Status'
+        message: 'Door={{states.sensor.garage_door.state}},  DriveFlag={{states.input_boolean.gary_driving_flag.state}}, Distance={{states.sensor.gary_iphone_zone_distance.state}}, FarAway={{states.input_boolean.gary_far_away_flag.state}}, Zone=<{{states.sensor.gary_iphone_zone.state }}'

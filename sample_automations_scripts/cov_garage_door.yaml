@@ -1,0 +1,43 @@
+#########################################################
+#
+#   GARAGE DOOR ZWAVE SWITCH VIA SMARTTHINGS
+#
+#########################################################
+
+#---- Garage Door Z-Wave switch ----------------------------
+
+- platform: template
+  covers:
+    garage_door:
+      value_template: >-
+        {% if states('sensor.garage_door') %}
+          {% if states('sensor.garage_door') == 'Open' %}
+            Closed
+          {% else %}
+            Open
+          {% endif %}
+        {% else %}
+          Open
+        {% endif %}
+      open_cover:
+        service: switch.turn_on
+        data:
+          entity_id: switch.garage_door
+      close_cover:
+        service: switch.turn_on
+        data:
+          entity_id: switch.garage_door
+#      icon_template: >-
+#        {% if states('sensor.garage_door') %}
+#          {% if states('switch.garage_door') == 'on' %}
+#            mdi:cached
+#          {% elif states('sensor.garage_door') == 'Open' %}
+#            mdi:arrow-expand-down
+#          {% else %}
+#            mdi:arrow-expand-up
+#          {% endif %}
+#        {% else %}
+#          mdi:arrow-expand-up
+#        {% endif %}
+          
+          

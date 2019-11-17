@@ -1,0 +1,167 @@
+################################################################
+#
+#   AUTOMATIONS_OLD - Gary Zone Automations
+#
+################################################################
+#--------------------------------------------------------------
+#   Gary arrives home
+#--------------------------------------------------------------
+- alias: Gary Arrives Home
+  id: gary_arrives_home
+  trigger:
+    - platform: state
+      entity_id: sensor.gary_iphone_zone_name1
+      to: 'Home'
+
+    - platform: template
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state | float <= 0.2}}'
+      
+  condition: 
+    - condition: state
+      entity_id: input_boolean.gary_driving_flag
+      state: 'on'
+      
+  action:
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Gary Arrives Home'
+        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_zone_distance.state }}' 
+            
+    - service: script.gary_arrives_home
+    
+#--------------------------------------------------------------
+#   Gary leaves home zone
+#--------------------------------------------------------------
+- alias: Gary Leaves Home
+  id: gary_leaves_home
+  trigger:
+    - platform: state
+      entity_id: sensor.gary_iphone_zone_name1
+      to: 'Away'
+      
+  condition: 
+    - condition: template
+      value_template: '{{trigger.from_state.state == "Home"}}'
+      
+    - condition: template
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 0}}'
+    
+    - condition: state
+      entity_id: input_boolean.ha_started_flag
+      state: 'on'    
+  action:
+    - service: script.gary_leaves_home
+ 
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Gary Leaves Home'
+        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_zone_distance.state }}' 
+        
+    - service: script.gary_leaves_zone
+
+#--------------------------------------------------------------
+#   Gary leaves a zone
+#--------------------------------------------------------------
+- alias: Gary Leaves Zone
+  id: gary_leaves_zone
+  trigger:
+    - platform: state
+      entity_id: sensor.gary_iphone_zone_name1
+      to: 'Away'
+      
+  condition: 
+    - condition: template
+      value_template: '{{trigger.from_state.state != "Home"}}'
+      
+    - condition: template
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 0}}'
+    
+    - condition: state
+      entity_id: input_boolean.ha_started_flag
+      state: 'on'    
+  action:
+    - service: script.gary_leaves_zone
+        
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Gary Leaves Zone'
+        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_zone_distance.state }}' 
+
+#--------------------------------------------------------------
+#   Turn on Gary's Driving Flag
+#--------------------------------------------------------------
+- alias: Gary Driving Flag Turn On
+  id: gary_driving_flag_turn_on
+        
+  trigger:
+    - platform: template
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 2}}'
+
+  condition:
+    - condition: state
+      entity_id: input_boolean.gary_driving_flag
+      state: 'off'
+       
+  action:
+    - service: input_boolean.turn_on
+      entity_id: input_boolean.gary_driving_flag
+         
+#--------------------------------------------------------------
+#   Turn off Gary's Driving Flag if Home for 15 minutes if still on
+#--------------------------------------------------------------
+- alias: Gary Driving Flag Turn Off
+  id: gary_driving_flag_turn_off
+  trigger:
+    - platform: state
+      entity_id: device_tracker.gary_iphone
+      to: 'home'
+      for:
+        minutes: 15
+    
+  condition:
+    - condition: state
+      entity_id: input_boolean.gary_driving_flag
+      state: 'on'
+      
+  action:
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.gary_driving_flag
+
+#--------------------------------------------------------------
+#   Turn on Gary's Far Away Flag
+#--------------------------------------------------------------
+- alias: Gary Far Away Flag Turn On
+  id: gary_far_away_flag_turn_on
+  trigger:
+    - platform: template
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 5}}'
+      
+  condition:
+    - condition: state
+      entity_id: input_boolean.gary_far_away_flag
+      state: 'off'
+      
+  action:
+    - service: input_boolean.turn_on
+      entity_id: input_boolean.gary_driving_flag
+
+    - service: input_boolean.turn_on
+      entity_id: input_boolean.gary_far_away_flag
+#--------------------------------------------------------------
+#   Turn off Gary's Far Away Flag
+#--------------------------------------------------------------
+- alias: Gary Far Away Flag Turn Off
+  id: gary_far_away_flag_turn_off
+  trigger:
+    - platform: template
+      value_template: '{{states.sensor.gary_iphone_zone_distance.state | float <= 5}}'
+
+  condition:
+    - condition: state
+      entity_id: input_boolean.gary_far_away_flag
+      state: 'on'
+      
+  action:
+    service: input_boolean.turn_off
+    entity_id: input_boolean.gary_far_away_flag
+

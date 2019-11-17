@@ -1,0 +1,18 @@
+{
+    "icloud3": {
+        "version": "2.0",
+        "local_location":  "/custom_components/icloud3/device_tracker.py",
+        "remote_location": "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/device_tracker.py",
+        "visit_repo":      "https://github.com/gcobb321/icloud3",
+        "changelog":       "https://github.com/gcobb321/icloud3/blob/master/ChangeLog.md",
+        "resources": [
+            "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/__init__.py",
+            "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/manifest.json",
+            "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/services.yaml",
+            "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/device_tracker.py",
+            "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/pyicloud_ic3.py",
+            "https://raw.githubusercontent.com/gcobb321/icloud3/master/custom_components/icloud3/icloud3-event-log-card.js"
+            ]
+    }
+}
+

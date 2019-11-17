@@ -1,0 +1,21 @@
+### iCloud3 v2.0 Released for General Availability
+
+This is a major update to iCloud3 with many new features.
+* (New) Find-my-Friends (FmF) tracking method to locate devices with the iCloud Location Services if you have 2fa on your iCloud account.
+* (New) Family Sharing (FamShr) tracking method to locate devices with the iCloud Location Services if you do not have 2fa on your iCloud account.
+* (New) Integration with the Home Assistant Companion App version 2
+* (New) Use either HA iOS App version 1, version 2 or both on the same device_tracker platform.
+* (New) iCloud3 Event log Lovelace custom card.
+* (Updated) Additional attributes & sensors
+* (New) Customize the list of sensors that are created by iCloud3.
+* (New) Track devices from multiple zones.
+* (New) The iCloud3 documentation has been updated and reorganized to make it easier to reference.
+* (New) Display debug information related to processing the device's location data reported by the iCloud Location Services and the HA iOS App. This data can also be displayed in the iCloud3 Event Log Card.
+* Many new and updated automations, scripts and Lovelace cards
+* And much more…
+
+**There are many  *breaking changes*  in this release. Be sure to review the Change Log in the iCloud3 Documentation**. The method of specifying how tracked devices are selected has been completely rewritten to support the new Find-my-Friends `tracking_method` using the `track_devices` parameter.
+
+* Complete documentation with all enhancements and breaking changes can be found [here ](https://gcobb321.github.io/icloud3/#/)
+* Download iCloud3 v2.0 [here ](https://github.com/gcobb321/icloud3/releases)
+* The iCloud3 Repository is [here ](https://github.com/gcobb321/icloud3)
