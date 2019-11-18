@@ -3,9 +3,9 @@
 [![Version](https://img.shields.io/badge/Version-2.0-blue.svg)](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-November_17,_2019-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
-[![HACS](https://img.shields.io/badge/Default-orange.svg)](https://github.com/gcobb321/icloud3)
+[![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
-[![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg)](https://github.com/gcobb321/icloud3)
+[![Licensed](https://img.shields.io/badge/Licensed-MIT-green.svg)](https://github.com/gcobb321/icloud3)
 
 ### Introduction
 
