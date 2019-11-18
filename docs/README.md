@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/badge/Version-2.0-blue.svg)](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-November_17,_2019-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
+[![HACS](https://img.shields.io/badge/Default-orange.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
 [![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg)](https://github.com/gcobb321/icloud3)
 
@@ -23,8 +24,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 *Gary Cobb, aka GeeksterGary*
 
 
-
-![location_info_home_whse_5x2](../docs/images/readme.jpg)
+![Sample Card](https://github.com/gcobb321/icloud3/blob/master/docs/images/readme.jpg)
 
 
 ### What's different

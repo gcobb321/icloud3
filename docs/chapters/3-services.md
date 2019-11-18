@@ -7,7 +7,7 @@ Four services are available for the iCloud3 device tracker component that are us
 | icloud3_update | Send commands to iCloud3 that change the way it is running (pause, resume, Waze commands, etc.) |
 | icloud3_set_interval | Override the dynamic interval calculated by iCloud3. |
 | icloud3_lost_phone | Play the Lost Phone sound. |
-| icloud3_reset | Reset the iCloud3 custom component. |
+| icloud3_restart | Restart the iCloud3 custom component. Restart iCloud3.This will recheck the availability of the iCloud Location Service and relocate all devices. |
 
 
 ### icloud3_update Service
@@ -27,13 +27,14 @@ The following describe the commands that are available.
 | pause |  Stop updating/locating a device (or all devices). Note: You may want to pause location updates for a device if you are a long way from home or out of the country and it doesn't make sense to continue locating your device. |
 | resume |  Start updating/locating a device (or all devices) after it has been paused. |
 | resume |  Reset the update interval if it was overridden the 'icloud3_set_interval' service. |
+| location | Send a 'location update' request to the iOS App. This is done using the iOS App's notify service call. |
 | zone zonename | service call) and immediately update the device interval and location data. Note: Using the device_tracker.see service call instead will update the device state but the new interval and location data will be delayed until the next 15-second polling iteration (rather than immediately). |
 | waze on | Turn on Waze. Use the `waze` method to determine the update interval. |
 | waze off | Turn off Waze. Use the `calc` method to determine the update interval. |
 | waze toggle |  Toggle waze on or off |
 | waze reset_range | Reset the Waze range to the default distances (min=1, max=99999). |
 | log_level | Display iCloud3 debug information in the HA Log file and, optionally, on the iCloud3 Event Log Card. <br>The following parameters are available:<br>- `debug` =  Entries related to device_tracker location operations <br>- `intervalcalc` =The methods and calculations related to the interval, next update time, zone, etc.<br>- `eventlo`g = Display the logged information on the iCloud3 Event Log Card.<br>- `info` = Display the current log_level options on the iCloud3 Event Log Card and the Info status line for the devices being tracked. |
-| restart |  Restart iCloud3. Detect any new devices, recheck the availability of the iCloud Location Service, relocate all devices, etc. |
+| restart | Restart the iCloud3 custom component. Restart iCloud3.This will recheck the availability of the iCloud Location Service and relocate all devices. |
 
 #### Example Automations or Scripts
 

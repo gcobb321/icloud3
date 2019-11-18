@@ -1,10 +1,11 @@
-# Welcome to iCloud3 v2.0! info.md
+# Welcome to iCloud3 v2.0!
 
 [![Version](https://img.shields.io/badge/Version-2.0-blue.svg)](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-November_17,_2019-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
+[![HACS](https://img.shields.io/badge/Default-orange.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
-[![Licensed](https://img.shields.io/badge/Licesned-MIT-green.svg)](https://github.com/gcobb321/icloud3)
+[![Licensed](https://img.shields.io/badge/Licensed-MIT-green.svg)](https://github.com/gcobb321/icloud3)
 
 iCloud3 is a device_tracker custom_component for iPhones, iPads and iWatches. It is tightly integrated with the Home Assistant IOS App (versions 1 & 2), uses the Waze Route Tracker for distance and time information, creates Dynamic Stationary Zones when you are stationary, lets you monitor distance and time information for the home zone and other zones (work, school, etc.), minimizes battery usage, and much more.
 
@@ -34,6 +35,6 @@ And much more ...
 
 ### iCloud3 Information Card & Event Log Custom Card
 
-![readme](https://github.com/gcobb321/icloud3/blob/master/docs/images/readme.jpg)
+![Sample Card](https://github.com/gcobb321/icloud3/blob/master/docs/images/readme.jpg)
 
 *Gary Cobb, aka GeeksterGary*
