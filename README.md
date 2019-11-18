@@ -13,9 +13,9 @@ iCloud3 is a Home Assistant device tracker custom component that greatly expands
 
 ### Features
 - Supports three tracking methods, 
-  - Find-my-Friends using the *Find My* app, 
-  - Family Sharing for your family members that you have set up in your Apple iCloud account and the 
-  - Home Assistant IOS App (versions 1 & 2). Use the Find-my-Friends method if you have set up 2fa security on your main Apple iCloud account to eliminate the constant notifications that a device has accessed your iCloud account.
+  - Find-my-Friends using the *Find My* app. This tracking method is used if you have set up 2fa security on your main iCloud account. This method will eliminate the constant notifications when a device has accessed your iCloud account.
+  - Family Sharing for your family members. You can use this tracking method if you have not set up 2fa security on your Apple iCloud account.
+  - Home Assistant IOS App (versions 1 & 2). Use this tracking method if the others are not available.
 - A variable polling interval that is based on the Waze Route Mapping Service (drive time and distance) rather than just a calculated straight line distance.
 - Monitors the IOS App device_tracker and sensors to immediately capture zone enter and exit notifications.
 - Sensor templates are created that can be used in automations, in scripts and on Lovelace cards. The sensors that are created can be customized to suit your needs.
