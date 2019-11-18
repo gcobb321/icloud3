@@ -1,4 +1,4 @@
-# Welcome to iCloud3 v2.0!
+# Welcome to iCloud3 v2.0! info.md
 
 [![Version](https://img.shields.io/badge/Version-2.0-blue.svg)](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-November_17,_2019-blue.svg)](https://github.com/gcobb321/icloud3)
@@ -9,11 +9,10 @@
 iCloud3 is a device_tracker custom_component for iPhones, iPads and iWatches. It is tightly integrated with the Home Assistant IOS App (versions 1 & 2), uses the Waze Route Tracker for distance and time information, creates Dynamic Stationary Zones when you are stationary, lets you monitor distance and time information for the home zone and other zones (work, school, etc.), minimizes battery usage, and much more.
 
 iCloud3 is a Home Assistant device tracker custom component that greatly expands the capabilities of the iCloud (and iCloud2) HA component. It exposes many new attributes, provides many new features, is based on enhanced route tracking methods, is much more accurate, and includes additional service calls.
-
-<div  align="center"><a href="https://gcobb321.github.io/icloud3/#/"><img src="docs/images/button_documentation.jpg"></a><a href="https://github.com/gcobb321/icloud3/releases"><img src="docs/images/button_download_long.jpg"></a></div>
+<div  align="center"><a href="https://gcobb321.github.io/icloud3/#/"><img src="https://github.com/gcobb321/icloud3/blob/master/docs/images/button_documentation.jpg"></a><a href="https://github.com/gcobb321/icloud3/releases"><img src="https://github.com/gcobb321/icloud3/blob/master/docs/images/button_download_long.jpg"></a></div>
 
 ### Features
-* Supports three tracking methods, 
+* Supports three tracking methods: 
   * Find-my-Friends using the *Find My* app location data. This tracking method is used if you have set up 2fa security on your main iCloud account. This method will eliminate the constant notifications when a device has accessed your account.
   * Family Sharing will let you track your family members. This tracking method is used if you have not set up 2fa security on your Apple iCloud account.
   * Home Assistant IOS App (versions 1 & 2). This tracking method is used if the others are not available.
@@ -35,6 +34,6 @@ And much more ...
 
 ### iCloud3 Information Card & Event Log Custom Card
 
-![readme](docs/images/readme.jpg)
+![readme](https://github.com/gcobb321/icloud3/blob/master/docs/images/readme.jpg)
 
 *Gary Cobb, aka GeeksterGary*
