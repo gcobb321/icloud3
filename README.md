@@ -27,7 +27,7 @@ iCloud3 is a Home Assistant device tracker custom component that greatly expands
 - The iCloud3 Custom Card displays events to monitor tracking activity, interactions with the HA IOS App and to troubleshoot device and location issues.
 - Extensive documentation on what iCloud3 does, how to set it up and how to customize it to meet your needs. It includes many sample automations and scripts that you can use to set your own device tracking and presence detection.
 
-And more.
+And much more ...
 
 ### iCloud3 Information Card & Event Log Custom Card
 
