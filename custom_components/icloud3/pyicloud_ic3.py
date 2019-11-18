@@ -17,7 +17,7 @@ The piclkepete version used imports for the services, utilities and exceptions
 modules. These modules have been incorporated into the pyicloud-ic3 version.
 """
 
-VERSION = '0.9.2b1'
+VERSION = '1.0'
 
 import six
 import uuid
