@@ -22,12 +22,14 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.0.1d'     #Custom Component Updater
+VERSION = '2.0.1e'     #Custom Component Updater
 '''
-2.0.1
-- If no location data was available while calculating the distance from Home using Waze, iCloud3 would would go into an error correction loop and hang up. This has been corrected.
+2.0.1e
+- If no location data was available while calculating the distance from Home using Waze, iCloud3 would go into an error correction loop and hang up. This has been corrected.
 - If the a `location` request was made using the `icloud3_update` service and the `notify.mobile_app_devicename` service was not available, an unformatted error would be added to the HA log file that did not correctly explain the error. A friendly error message better explaining the problem is now added to the Event Log and HA log file.
-
+- Stationary zone location information was not being refreshed correctly on subsequest polls. It was showing as (None, None) in the HA log file and may have generated an error message or used the wrong location when moving back to the center of the zone. This has been corrected.
+- Using the FamShr tracking method generated an 'IndexError: tuple index out of range' error message and would not work. This has been corrected.
+- Additional error checking has been added to recover from situations when no location information was available when calculating the distance moved from the last location. If this happens, the distance moved will be 0km.
 '''
 import logging
 import os
@@ -75,7 +77,7 @@ except ImportError:
 
 _LOGGER = logging.getLogger(__name__)
 #REQUIREMENTS = ['pyicloud==0.9.1']
-DEBUG_TRACE_CONTROL_FLAG = False
+DEBUG_TRACE_CONTROL_FLAG = True
 
 HA_ENTITY_REGISTRY_FILE_NAME='/config/.storage/core.entity_registry'
 
@@ -349,8 +351,8 @@ NOT_SET                 = 'not_set'
 STATIONARY              = 'stationary'
 AWAY_FROM               = 'Away'
 PAUSED                  = 'Paused'
-BASE_STATIONARY_LAT     = 90
-BASE_STATIONARY_LONG    = 180
+STATIONARY_LAT_90       = 90
+STATIONARY_LONG_180     = 180
 
 #Devicename config parameter file extraction
 DI_DEVICENAME           = 0
@@ -1027,8 +1029,9 @@ class Icloud(DeviceScanner):
 
             #nothing to do if no devices to track
             if self.track_devicename_list == '':
-                event_msg = ("iCloud3 Error: Setup aborted for group '{}', "
-                    "no devices to track").format(self.group)
+                event_msg = ("iCloud3 Error: Setup aborted for Group-{}, "
+                    "Username-{}. No devices to track.").format(
+                    self.group, self.username)
                 self._save_event_halog_error("*", event_msg)
                 return False
 
@@ -1567,13 +1570,13 @@ class Icloud(DeviceScanner):
 
                 #iosapp has just entered or exited the north poll stationary
                 #zone in error. Try to reset to the last zone location.
-                elif (dev_latitude == BASE_STATIONARY_LAT and
-                        dev_longitude == BASE_STATIONARY_LONG):
+                elif (dev_latitude == STATIONARY_LAT_90 and
+                        dev_longitude == STATIONARY_LONG_180):
                     #If this location is 90:180 and the last location is 90:180,
                     #something went wrong on the last poll. Reinitialize the
                     #device and reloate it.
-                    if (self.last_lat.get(devicename) == BASE_STATIONARY_LAT or
-                            self.last_long.get(devicename) == BASE_STATIONARY_LONG):
+                    if (self.last_lat.get(devicename) == STATIONARY_LAT_90 or
+                            self.last_long.get(devicename) == STATIONARY_LONG_180):
                         self.restart_icloud_group_request_flag = True
 
                         log_msg = ("iCloud3 Error: Could not recover from device "
@@ -1960,7 +1963,7 @@ class Icloud(DeviceScanner):
                     attrs)
                 self.log_debug_msg(devicename, log_msg)
 
-                self._update_last_latitude_longitude(devicename, latitude, longitude, 1909)
+                self._update_last_latitude_longitude(devicename, latitude, longitude, 1963)
                 self.count_update_iosapp[devicename] += 1
                 self.last_battery[devicename]      = battery
                 self.last_gps_accuracy[devicename] = gps_accuracy
@@ -2440,7 +2443,7 @@ class Icloud(DeviceScanner):
                     self.count_update_icloud[devicename] += 1
 
                     if not location_isold_flag:
-                        self._update_last_latitude_longitude(devicename, latitude, longitude, 2389)
+                        self._update_last_latitude_longitude(devicename, latitude, longitude, 4439)
 
                     if altitude is None:
                         altitude = -2
@@ -2793,8 +2796,7 @@ class Icloud(DeviceScanner):
             device   = self.icloud_api_devices.get(devicename)
             status   = device.status(DEVICE_STATUS_SET)
 
-            self._trace_device_attributes(
-                devicename, 'FamShr Status', fct_name, status)
+            self._trace_device_attributes(devicename, 'FamShr Status', fct_name, status)
 
         except Exception as err:
 #           No icloud data, reauthenticate (status=None)
@@ -2819,8 +2821,7 @@ class Icloud(DeviceScanner):
             device_status  = DEVICE_STATUS_CODES.get(status[ATTR_ICLOUD_DEVICE_STATUS], 'error')
             low_power_mode = status['lowPowerMode']
 
-            self._trace_device_attributes(
-                devicename, 'iCloud Loc', fct_name, location)
+            self._trace_device_attributes(devicename, 'iCloud Loc', fct_name, location)
 
             if location:
                 loc_time_secs   = location[ATTR_ICLOUD_LOC_TIMESTAMP] / 1000
@@ -2876,7 +2877,8 @@ class Icloud(DeviceScanner):
             return (True, latitude, longitude, location_isold_attr,
                     loc_time_hhmmss, gps_accuracy, battery, battery_status,
                     device_status, low_power_mode,
-                    location_isold_flag, loc_time_secs, altitude)
+                    location_isold_flag, loc_time_secs, altitude,
+                    vertical_accuracy)
 
         except PyiCloudNoDevicesException:
             self.log_error_msg("No FamShr Devices found")
@@ -4416,18 +4418,21 @@ class Icloud(DeviceScanner):
         if zone_name:
             zone_lat  = self.zone_latitude.get(zone_name)
             zone_long = self.zone_longitude.get(zone_name)
-            if self._update_last_latitude_longitude(devicename, zone_lat, zone_long, 4350):
-                event_msg  = ("__Moving back to zone `{}` center, "
-                    "GPS-({}, {}) to ({}, {})").format(
-                    zone_name,
-                    latitude,
-                    longitude,
-                    zone_lat,
-                    zone_long)
-                self._save_event_halog_debug(devicename, event_msg)
+            #TRACE('4119 zone_lat ',zone_name,self.zone_latitude)
+            #TRACE('4119 zone_long',zone_name,self.zone_longitude)
+            if zone_lat:
+                if self._update_last_latitude_longitude(devicename, zone_lat, zone_long, 4419):
+                    event_msg  = ("__Moving back to zone `{}` center, "
+                        "GPS-({}, {}) to ({}, {})").format(
+                        zone_name,
+                        latitude,
+                        longitude,
+                        zone_lat,
+                        zone_long)
+                    self._save_event_halog_debug(devicename, event_msg)
 
-                latitude  = zone_lat
-                longitude = zone_long
+                    latitude  = zone_lat
+                    longitude = zone_long
 
         gps_lat_long           = (latitude, longitude)
         kwargs                 = {}
@@ -4734,16 +4739,32 @@ class Icloud(DeviceScanner):
         #Make sure that the last latitude/longitude is not set to the
         #base stationary one before updating. If it is, do not save them
 
-        if latitude != BASE_STATIONARY_LAT and longitude != BASE_STATIONARY_LONG:
+        #TRACE('4668 _update_last_latitude_longitude',line_no)
+        #TRACE('last-lat ',devicename,latitude,self.last_lat)
+        #TRACE('last-long',devicename,longitude,self.last_long)
+        if latitude == None or longitude == None:
+            error_log = ("Error: Setting {} `Last latitude/longitude` GPS to "
+                "({}, {}), discarded (line {})").format(
+                devicename,
+                latitude,
+                longitude,
+                line_no)
+              
+        elif latitude == STATIONARY_LAT_90 or longitude == STATIONARY_LONG_180:
+            error_log = ("Error: Setting {} `Last latitude/longitude` GPS to "
+                "Stationary Base Location ({}, {}), discarded (line {})").format(
+                devicename,
+                latitude,
+                longitude,
+                line_no)
+            
+        else:
             self.last_lat[devicename]  = latitude
             self.last_long[devicename] = longitude
-
-            #TRACE('4668 _update_last_latitude_longitude',line_no)
-            #TRACE('last-lat g',self.last_lat)
-            #TRACE('last-long',self.last_long)
             return True
-        else:
-            return False
+            
+        self._save_event_halog_error('*', error_log)   
+        return False
 
 #--------------------------------------------------------------------
     @staticmethod
@@ -5323,8 +5344,8 @@ class Icloud(DeviceScanner):
         self.stat_zone_timer           = {}  #Time when distance set to 0
         self.stat_zone_base_latitude   = self.zone_home_lat
         self.stat_zone_base_longitude  = self.zone_home_long
-        self.stat_zone_base_latitude   = BASE_STATIONARY_LAT
-        self.stat_zone_base_longitude  = BASE_STATIONARY_LONG
+        self.stat_zone_base_latitude   = STATIONARY_LAT_90
+        self.stat_zone_base_longitude  = STATIONARY_LONG_180
         self.stat_min_dist_from_zone   = round(self.zone_home_radius * 2.5, 2)
         self.stat_dist_move_limit      = round(self.zone_home_radius * 1.5, 2)
         self.stat_zone_radius          = round(self.zone_home_radius * 2, 2)
@@ -5403,6 +5424,7 @@ class Icloud(DeviceScanner):
         #location, gps
         self.location_isold_cnt[devicename]     = 0
         self.location_isold_msg[devicename]     = False
+        #TRACE('initialize-from-home-zone',devicename,self.zone_home_lat,self.zone_home_long)
         self.last_lat[devicename]               = self.zone_home_lat
         self.last_long[devicename]              = self.zone_home_long
 
@@ -5670,10 +5692,11 @@ class Icloud(DeviceScanner):
                     self._save_event("*", event_msg)
 
         except Exception as err:
-            _LOGGER.exception(err)
+            #_LOGGER.exception(err)
 
-            log_msg = ("iCloud3 Setup Aborted, Error authenticating "
-                        "devices for {}").format(self.group)
+            log_msg = ("iCloud3 Error: Setup aborted for Group-{}, "
+                    "Username-{}. Error authenticating account.").format(
+                    self.group, self.username)
             self.log_error_msg(log_msg)
 
 #--------------------------------------------------------------------
@@ -7167,6 +7190,9 @@ class Icloud(DeviceScanner):
 #--------------------------------------------------------------------
     @staticmethod
     def _calc_distance_km(from_lat, from_long, to_lat, to_long):
+        if from_lat == None or from_long == None or to_lat == None or to_long == None:
+            return 0
+
         d = distance(from_lat, from_long, to_lat, to_long) / 1000
         if d < .05:
             d = 0
@@ -7174,6 +7200,9 @@ class Icloud(DeviceScanner):
 
     @staticmethod
     def _calc_distance_m(from_lat, from_long, to_lat, to_long):
+        if from_lat == None or from_long == None or to_lat == None or to_long == None:
+            return 0
+
         d = distance(from_lat, from_long, to_lat, to_long)
 
         return round(d, 2)

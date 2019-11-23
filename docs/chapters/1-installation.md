@@ -21,22 +21,39 @@ Another custom component module (`pyicloud_ic3.py`) is responsible for communica
 
 iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample Lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
 
-- Create a `config/custom_components/icloud` directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` GitHub directory (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml`)  into that directory so the directory structure looks like:
+1. Create a `config/custom_components/icloud` directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` GitHub directory (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml`)  into that directory so the directory structure looks like:
 
-  ```yaml
-  config
-    custom_components
-      icloud3
-        device_tracker.py
-        pyicloud_ic3.py
-        __init__.py
-        manifest.json
-        services.yaml
-  ```
+```yaml
+config
+  custom_components
+    icloud3
+      device_tracker.py
+      pyicloud_ic3.py
+      __init__.py
+      manifest.json
+      services.yaml
+```
 
-The Waze Route Calculator component is use to calculate driving distance and time from your location to your Home or another zone). Normally, it is installed with the Home Assistant and Hass.io framework. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and install Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from the Home or another zone. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see the Parameters, Attributes and Sensors section for more information).
+2. Install the `iCloud3 Event Log` card using the procedures below.
 
-iCloud3 logs information to the HA log file and to an internal table that can be viewed using the iCloud3 Event Log Lovelace Custom Card. Information about this custom card, and installation instructions are in the Support Programs chapter.
+3. Set up the iCloud3 device_tracker configuration parameters. Instructions, including examples, are found in the Setting up iCloud3 chapter.
+4. Restart Home Assistant.
+
+### Installing iCloud3 with HACS (Home Assistant Community Store)
+
+iCloud3 is listed on the default HACS Repositories/Integrations page and can be to Home Assistant using HACS. Do the following:
+
+1. Display the HACS control panel. Then type `icloud3` in the 'Please enter a search term...' field.
+2. The `iCloud3 Device Tracker` card is displayed, Select it.
+3. Click `Install`. This will install all of the custom component files above into the 'config/custom_components/icloud3' directory on your Raspberry Pi or the device you are running Home Assistant on.
+4. Log onto your Pi.
+5. Install the `iCloud3 Event Log` card using the procedures below. The `icloud3-event-log-card-js` is installed in the `config/custom_components/icloud3` directory with the other files.
+6. Set up the iCloud3 device_tracker configuration parameters. Instructions, including examples, are found in the Setting up iCloud3 chapter.
+7. Restart Home Assistant.
+
+!> The Waze Route Calculator component is use to calculate driving distance and time from your location to your Home or another zone). Normally, it is installed with the Home Assistant and Hass.io framework. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and install Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from the Home or another zone. Add the `distance_method: calc` parameter to your device_tracker: icloud3 configuration setup (see the Parameters, Attributes and Sensors section for more information).
+
+!> iCloud3 logs information to the HA log file and to an internal table that can be viewed using the iCloud3 Event Log Lovelace Custom Card. Information about this custom card, and installation instructions are in the Support Programs chapter.
 
 ### About the iCloud3 Event Log Custom Card
 As iCloud3 runs, various entries are written to the HA log file that show device information, how it is tracked, operational errors, startup information and other items that may help determine what is going on if there is a problem and to monitor when the device's information is determined and updated. A lot of this information is also written to the `iCloud3 Event Log` which can be viewed using the `iCloud3 Event Log Lovelace Card`. 
@@ -51,7 +68,7 @@ Custom Lovelace cards are typically stored in the `/www/custom_cards` directory.
 
 1. Create the `/www/custom_cards` directory if it does not exist. 
 
-2. Copy the `icloud3-event-log-card.js` into the `/www/custom-cards` directory. If you are already using custom cards and they are in a different directory,  copy the `icloud3-event-log-card.js` file into the one you are using.
+2. Copy the `icloud3-event-log-card.js` into the `/www/custom-cards` directory. If you are installing iCloud3 using HACS, the file is in the `custom_components/icloud3` directory. If you are already using custom cards and they are in a different directory,  copy the `icloud3-event-log-card.js` file into the one you are using.
 
 3. Open the `ui-lovelace.yaml` file and add the following lines to the beginning of the file. Again, change the directory name if you are using a different location.
 
