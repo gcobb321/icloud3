@@ -2793,8 +2793,7 @@ class Icloud(DeviceScanner):
             device   = self.icloud_api_devices.get(devicename)
             status   = device.status(DEVICE_STATUS_SET)
 
-            self._trace_device_attributes(
-                devicename, 'FamShr Status', fct_name, status)
+            self._trace_device_attributes(devicename, 'FamShr Status', fct_name, status)
 
         except Exception as err:
 #           No icloud data, reauthenticate (status=None)
@@ -2819,8 +2818,7 @@ class Icloud(DeviceScanner):
             device_status  = DEVICE_STATUS_CODES.get(status[ATTR_ICLOUD_DEVICE_STATUS], 'error')
             low_power_mode = status['lowPowerMode']
 
-            self._trace_device_attributes(
-                devicename, 'iCloud Loc', fct_name, location)
+            self._trace_device_attributes(devicename, 'iCloud Loc', fct_name, location)
 
             if location:
                 loc_time_secs   = location[ATTR_ICLOUD_LOC_TIMESTAMP] / 1000
@@ -2876,7 +2874,8 @@ class Icloud(DeviceScanner):
             return (True, latitude, longitude, location_isold_attr,
                     loc_time_hhmmss, gps_accuracy, battery, battery_status,
                     device_status, low_power_mode,
-                    location_isold_flag, loc_time_secs, altitude)
+                    location_isold_flag, loc_time_secs, altitude,
+                    vertical_accuracy)
 
         except PyiCloudNoDevicesException:
             self.log_error_msg("No FamShr Devices found")
@@ -4740,14 +4739,29 @@ class Icloud(DeviceScanner):
         TRACE('4668 _update_last_latitude_longitude',line_no)
         TRACE('last-lat ',devicename,latitude,self.last_lat)
         TRACE('last-long',devicename,longitude,self.last_long)
-        if latitude != STATIONARY_LAT_90 and longitude != STATIONARY_LONG_180:
+        if latitude == None or longitude == None:
+            error_log = ("Error: Setting {} `Last latitude/longitude` GPS to "
+                "({}, {}), discarded (line {})").format(
+                devicename,
+                latitude,
+                longitude,
+                line_no)
+              
+        elif latitude == STATIONARY_LAT_90 or longitude == STATIONARY_LONG_180:
+            error_log = ("Error: Setting {} `Last latitude/longitude` GPS to "
+                "Stationary Base Location ({}, {}), discarded (line {})").format(
+                devicename,
+                latitude,
+                longitude,
+                line_no)
+            
+        else:
             self.last_lat[devicename]  = latitude
             self.last_long[devicename] = longitude
-
-            
             return True
-        else:
-            return False
+            
+        self._save_event_halog_error('*', error_log)   
+        return False
 
 #--------------------------------------------------------------------
     @staticmethod
@@ -7174,7 +7188,7 @@ class Icloud(DeviceScanner):
     def _calc_distance_km(from_lat, from_long, to_lat, to_long):
         if from_lat == None or from_long == None or to_lat == None or to_long == None:
             return 0
-            
+
         d = distance(from_lat, from_long, to_lat, to_long) / 1000
         if d < .05:
             d = 0
@@ -7184,7 +7198,7 @@ class Icloud(DeviceScanner):
     def _calc_distance_m(from_lat, from_long, to_lat, to_long):
         if from_lat == None or from_long == None or to_lat == None or to_long == None:
             return 0
-            
+
         d = distance(from_lat, from_long, to_lat, to_long)
 
         return round(d, 2)
