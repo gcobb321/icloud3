@@ -1,6 +1,5 @@
 {
   "name": "iCloud3 Device Tracker",
   "homeassistant": "0.95.0",
-  "render_readme": false,
-  "domains": ["icloud3"]
+  "domains": ["device_tracker"]
 }
