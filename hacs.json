@@ -1,5 +1,5 @@
-{
+i{
   "name": "iCloud3 Device Tracker",
   "render_readme": true,
-  "domains": ["icloud3"]
+  "domains": ["device_tracker"]
 }
