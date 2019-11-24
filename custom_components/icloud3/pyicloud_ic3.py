@@ -113,10 +113,10 @@ class PyiCloudSession(requests.Session):
             if content_type not in json_mimetypes:
                 self.req_no-=1
                 return response
-
+                
         except Exception as err:
             logger.exception(err)
-
+            
         try:
             json = response.json()
 
@@ -177,11 +177,11 @@ class PyiCloudSession(requests.Session):
             self.session.cookies.save()
 
             error_msg = "Error {}".format(code)
-
+            
         except Exception as err:
             _LOGGER.exception(err)
             error_msg = "Other Error"
-
+            
         return error_msg, reason
         #raise(api_error)
 
@@ -198,7 +198,7 @@ class PyiCloudService(object):
         pyicloud.iphone.location()
     """
 
-    def __init__(self, apple_id, password=None, cookie_directory=None,
+    def __init__(self, apple_id, password=None, cookie_directory=None, 
             verify=True, client_id=None):
         #if password is None:
         #    password = get_password_from_keyring(apple_id)
@@ -241,10 +241,10 @@ class PyiCloudService(object):
                 'Origin': self.referer,
                 'Referer': '%s/' % self.referer,
                 'User-Agent': self.user_agent})
-
+            
         except Exception as err:
             _LOGGER.exception(err)
-
+            
         try:
             self.cookiejar_path = self._get_cookiejar_path()
             self.session.cookies = cookielib.LWPCookieJar(filename=self.cookiejar_path)
@@ -306,7 +306,7 @@ class PyiCloudService(object):
             req = self.session.post(
                 self._setup_endpoint + '/accountLogin',
                 data=json.dumps(data))
-
+                
         except PyiCloudAPIResponseError as error:
             msg = 'Invalid user email/password credentials'
             raise PyiCloudFailedLoginException(msg, error)
@@ -668,7 +668,7 @@ class IdmsaAppleService(HTTPService):
 
         url = self.urlAuth + appleWidgetKey
         user_pw_payload = self.getRequestPayload(user, password)
-
+        
         self.response = self.session.post(self.urlAuth + appleWidgetKey,
                                           user_pw_payload)
         try:
@@ -714,7 +714,7 @@ class IdmsaAppleService(HTTPService):
 
         try:
             headers = self.response.headers
-
+            
         except Exception as e:
             err_str = "requestAppleTwoSVToken: " + \
                       "Apple Session 2SV Token query failed"
@@ -785,7 +785,7 @@ class FindFriendsService(object):
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
         logger = logging.getLogger(module.__name__).getChild('http')
-
+        
         self.session = session
         self.params = params
         self._service_root = service_root
@@ -862,7 +862,7 @@ class FindMyiPhoneServiceManager(object):
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
         logger = logging.getLogger(module.__name__).getChild('http')
-
+        
 
         self.session = session
         self.params = params
@@ -1114,8 +1114,8 @@ class PyiCloud2SARequiredError(PyiCloudException):
         super(PyiCloud2SARequiredError, self).__init__(message)
 
 
-class PyiCloudNoDevicesException(Exception):
-    pass
+#class PyiCloudNoDevicesException(Exception):
+#    pass
 
 
 class NoStoredPasswordAvailable(PyiCloudException):

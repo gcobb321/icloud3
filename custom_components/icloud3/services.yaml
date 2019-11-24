@@ -1,4 +1,4 @@
-icloud_update:
+icloud3_update:
   description: This service allows you to change the way iCloud3 operates.
   fields:
     device_name:
@@ -6,21 +6,9 @@ icloud_update:
       example: gary_iphone
     command:
       description: The action to be performed (see below). (Required)
-      example: zone home
-      
-    command:
-        pause            - Pause iCloud3 from polling the device
-        resume           - Resume polling the device    
-        pause-resume     - Toggle the pause and resume commands
-        zone zonename    - Set iCloud3 state and zone to 'zonename'        - 
-        waze on          - Turn Waze route calculator on
-        waze off         - Turn Waze route calculator off, use  'calc' method of calculating distance from home
-        waze toggle      - Toggle between waze on and waze off
-        waze reset_range - Reset the minimum and maximum waze distances to the default values (min-1, max = 9999)
-        info interval    - Show how the polling interval is calculated in the 'info' field.
-        info logging     - Toggle writing detailed debug information to the HA log file on and off.
+      example: log_level debug
 
-icloud_set_interval:
+icloud3_set_interval:
   description: This service allows you to override the interval between location updates to a fixed time. It is reset when a zone is entered or when the icloud_update service call is processed with the 'resume' command.
   fields:
     device_name:
@@ -30,14 +18,14 @@ icloud_set_interval:
       description: The interval between location updates. This can be in seconds, minutes or hours. Examples are 30 sec, 45 min, 1 hr, hrs, 30 (minutes are assumed if no time descriptor is specified). (Required)
       example: '2 hrs'
 
-icloud_restart:
+icloud3_restart:
   description: This service will refresh all of the devices being handled by iCloud3 and can be used when you have added a new device to your Apple account. You will have to restart Home Assist if you have made changes to the platform parameters (new device type, new device name, etc.)
   fields:
     account_name:
       description: account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. (Required)
       example: gary_icloud
       
-icloud_lost_iphone:
+icloud3_lost_iphone:
   description: This service will play the Lost iPhone sound on a specific device.
   fields:
     device_name:
