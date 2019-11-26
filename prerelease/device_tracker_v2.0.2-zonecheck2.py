@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.0.2'     #Custom Component Updater
+VERSION = '2.0.2zc2'     #Custom Component Updater
 '''
 v2.0.2
 - Fixed problem calculating distance and intervals for a second zone.
