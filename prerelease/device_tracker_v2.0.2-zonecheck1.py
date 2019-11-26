@@ -4263,19 +4263,29 @@ class Icloud(DeviceScanner):
         'entity_picture': '/local/gary-caller_id.png'}
         """
 
-        state = self.state_this_poll.get(devicename)
+        state        = self.state_this_poll.get(devicename)
+        current_zone = self.zone_current.get(devicename)
 
+
+
+        #######################################################################
         #If the state when the original trigger fired is stationary and the
         #current zone, based on location is also a zone but not the stationary
         #zone, change the state to the current zone name. Do this so the state
         #shows the name of the zone based on location instead of the 'stationary'
         #value it was when this poll was triggered.
-        current_zone = self.zone_current.get(devicename)
         if (state == STATIONARY and
                 self._is_inzone(current_zone) and
                 instr(current_zone, STATIONARY) == False):
+            event_log = ("__State/Zone mismatch > Setting `state` value ({}) "
+                "to `zone` value ({})").format(
+                state, current_zone)
+            self._save_event(devicename, event_msg)
             state = current_zone
-            
+        #######################################################################
+
+
+        
         #Get friendly name or capitalize and reformat state
         if self._is_inzoneZ(state):
             state_fn = self.zone_friendly_name.get(state)

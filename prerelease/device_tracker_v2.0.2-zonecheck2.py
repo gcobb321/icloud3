@@ -4266,6 +4266,8 @@ class Icloud(DeviceScanner):
         state        = self.state_this_poll.get(devicename)
         current_zone = self.zone_current.get(devicename)
         
+        
+        #######################################################################
         #The current zone is based on location of the device after it is looked
         #up in the zone tables.
         #The state is from the original trigger value when the poll started.
@@ -4279,14 +4281,18 @@ class Icloud(DeviceScanner):
         
         #If state is 'stationary' and in another zone, reset the state to the 
         #current zone that was based on the device location.
-        elif state == STATIONARY and self._is_inzone(current_zone):
-            state = current_zone
-        
         #If the state is in a zone but not the current zone, change the state
         #to the current zone that was based on the device location.
-        elif (self._is_inzone(state) and self._is_inzone(current_zone) and
-                state != current_zone):
+        elif ((state == STATIONARY and self._is_inzone(current_zone)) or
+                (self._is_inzone(state) and self._is_inzone(current_zone) and
+                    state != current_zone)):
+            event_log = ("__State/Zone mismatch > Setting `state` value ({}) "
+                    "to `zone` value ({})").format(
+                    state, current_zone)
+            self._save_event(devicename, event_msg)
             state = current_zone
+        #######################################################################
+        
         
 
         #Get friendly name or capitalize and reformat state
