@@ -32,7 +32,8 @@ VERSION = '2.0.2'     #Custom Component Updater
 - Additional error checking has been added to recover from situations when no location information was available when calculating the distance moved from the last location to the current location. If this happens, the distance moved will be 0km.
 
 v2.0.2
-- Fixed problem calculating distance and intervals from a second zone.
+- Fixed problem calculating distance and intervals for a second zone.
+- If the device_tracker.state is 'stationary' when the next update time is reached and you have moved into another zone that is not stationary, the 'zone' attribute is correct because it is based on the device's location values but the device_tracker.state is still 'stationary' instead of the zone the device is now in. This has been fixed.
 '''
 import logging
 import os
@@ -3451,10 +3452,10 @@ class Icloud(DeviceScanner):
 
             #When put into stationary zone, also set last_poll so it
             #won't trigger again on next cycle as a state change
-            #elif (self.state_last_poll.get(devicename) == NOT_HOME and
-            #        STATIONARY in current_zone):
-            elif (current_zone.endswith(STATIONARY) or
-                    self.state_this_poll.get(devicename).endswith(STATIONARY)):
+            #elif (current_zone.endswith(STATIONARY) or
+            #        self.state_this_poll.get(devicename).endswith(STATIONARY)):
+            elif (instr(current_zone, STATIONARY) or
+                    instr(self.state_this_poll.get(devicename), STATIONARY)):
                 current_zone                     = STATIONARY
                 self.state_last_poll[devicename] = STATIONARY
 
@@ -4262,9 +4263,20 @@ class Icloud(DeviceScanner):
         'entity_picture': '/local/gary-caller_id.png'}
         """
 
-        #Get friendly name or capitalize and reformat state
         state = self.state_this_poll.get(devicename)
 
+        #If the state when the original trigger fired is stationary and the
+        #current zone, based on location is also a zone but not the stationary
+        #zone, change the state to the current zone name. Do this so the state
+        #shows the name of the zone based on location instead of the 'stationary'
+        #value it was when this poll was triggered.
+        current_zone = self.zone_current.get(devicename)
+        if (state == STATIONARY and
+                self._is_inzone(current_zone) and
+                instr(current_zone, STATIONARY) == False):
+            state = current_zone
+            
+        #Get friendly name or capitalize and reformat state
         if self._is_inzoneZ(state):
             state_fn = self.zone_friendly_name.get(state)
 
@@ -4405,7 +4417,7 @@ class Icloud(DeviceScanner):
             zone_lat  = self.zone_latitude.get(zone_name)
             zone_long = self.zone_longitude.get(zone_name)
 
-            if zone_lat:
+            if zone_lat and (latitude != zone_lat or longitude != zone_long):
                 if self._update_last_latitude_longitude(devicename, zone_lat, zone_long, 4419):
                     event_msg  = ("__Moving back to zone `{}` center, "
                         "GPS-({}, {}) to ({}, {})").format(
@@ -4573,7 +4585,7 @@ class Icloud(DeviceScanner):
 
         if zone_selected is None:
             #See if device is in it's stationary zone
-            zone               = self._format_zone_name(devicename, STATIONARY)
+            zone      = self._format_zone_name(devicename, STATIONARY)
             zone_dist = self._calc_distance_km(latitude, longitude,
                     self.zone_latitude.get(zone), self.zone_longitude.get(zone))
 
@@ -4590,8 +4602,7 @@ class Icloud(DeviceScanner):
 
         #If the zone changed from a previous poll, save it and set the new one
         if (self.zone_current.get(devicename) != zone_selected):
-            self.zone_last[devicename] = \
-                    self.zone_current.get(devicename)
+            self.zone_last[devicename] = self.zone_current.get(devicename)
 
             #First time thru, initialize zone_last
             if (self.zone_last.get(devicename) == ''):
