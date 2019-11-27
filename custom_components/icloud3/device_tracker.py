@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.0.2'     #Custom Component Updater
+VERSION = '2.0.3'     #Custom Component Updater
 '''
 v2.0.2
 - Fixed problem calculating distance and intervals for a second zone.
@@ -1008,11 +1008,14 @@ class Icloud(DeviceScanner):
                 else:
                     event_msg_prefix = "Not "
 
-                event_msg = ("{}Tracking ({}) > {} ({})").format(
+                event_msg = ("{}Tracking ({}) > {}").format(
                     event_msg_prefix,
                     self.trk_method_short_name,
-                    devicename,
-                    self.fmf_devicename_email.get(devicename))
+                    devicename)
+                if self.fmf_devicename_email.get(devicename):
+                    event_msg = "{} ({})".format(
+                        event_msg,
+                        self.fmf_devicename_email.get(devicename))
 
                 if error_log_msg:
                     self._save_event_halog_error(devicename, event_msg)
@@ -1694,7 +1697,7 @@ class Icloud(DeviceScanner):
                             ios_update_reason      = None
                             location_age =self._secs_since(dev_timestamp_secs)
                             
-                            event_msg = ("__Discarding > Old location, GPS-(}, {}), "
+                            event_msg = ("__Discarding > Old location, GPS-({}, {}), "
                                 "GPSAccuracy-{}, Located-{} ({} ago)").format(
                                 dev_latitude,
                                 dev_longitude,
@@ -5679,26 +5682,34 @@ class Icloud(DeviceScanner):
         Extract the friendly_name & device_type from the icloud data
         '''
         try:
+            api_devicename_list = ''
+            any_device_tracked_flag = False
             for device in self.api.devices:
                 status      = device.status(DEVICE_STATUS_SET)
                 location    = status['location']
                 devicename  = slugify(status[CONF_NAME].replace(' ', '', 99))
                 device_type = status['deviceClass'].lower()
 
+                api_devicename_list = '{}, {}'.format(
+                        api_devicename_list,
+                        devicename)
+
                 if devicename in self.devicename_verified:
                     self.devicename_verified[devicename] = True
-
-                    self.track_devicename_list = '{}, {}'.format(
-                        self.track_devicename_list,
-                        devicename)
+                    any_device_tracked_flag = True
+                    api_devicename_list += "(OK)"
 
                     self.icloud_api_devices[devicename] = device
                     self.device_type[devicename]        = device_type
+                else:
+                    api_devicename_list += "(Not Tracked)"
 
-                    event_msg = ("Tracking {}-{}").format(
-                        devicename,
-                        self.group)
-                    self._save_event("*", event_msg)
+            event_msg = ("iCloud Account devices{}").format(
+                api_devicename_list)
+            if any_device_tracked_flag:
+                self._save_event_halog_info("*", event_msg)
+            else:
+                self._save_event_halog_error("*", event_msg)
 
         except Exception as err:
             #_LOGGER.exception(err)
@@ -5870,7 +5881,7 @@ class Icloud(DeviceScanner):
             devicename_parameters = track_device_line.lower().split('>')
             devicename  = slugify(devicename_parameters[0].replace(' ', '', 99))
             log_msg = ("Decoding > {}").format(track_device_line)
-            self._save_event_halog_info(devicename, log_msg)
+            self._save_event_halog_info("*", log_msg)
 
             fname = devicename
             for dev_type in APPLE_DEVICE_TYPES:

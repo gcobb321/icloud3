@@ -1,5 +1,10 @@
 # iCloud3 Change Log
 
+#### v2.0.3 (11/27/2019)
+
+- Fixed a problem with a malformed message that displayed old location information in the Event Log.
+- Added a list of devices that are tracked and not tracked for the Family Sharing (famshr) tracking method. This is creaed when the iCloud account is scanned looking for the devices in the `track_devices` configuration parameter.
+
 #### v2.0.2 (11/27/2019)
 
 - Fixed problem calculating distance and intervals for a second zone.
