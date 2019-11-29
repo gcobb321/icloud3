@@ -43,7 +43,7 @@ The above example is for the Home zone. If you are also tracking another zone, t
 
 ### The Badge Sensor
 
-The `badge` sensor displays either the zone name or distance from the Home zone and the person's picture that is associated with the device.  The name of the file containing the person's picture is also entered on the `tracked_devices` configuration parameter for the device. The picture must be located in the `www/local/` directory and end with '.jpg' or '.png'.
+The `badge` sensor displays either the zone name or distance from the Home zone and the person's picture that is associated with the device.  The name of the file containing the person's picture is also entered on the `track_devices` configuration parameter for the device. The picture must be located in the `www/local/` directory and end with '.jpg' or '.png'.
 
 Example:
 

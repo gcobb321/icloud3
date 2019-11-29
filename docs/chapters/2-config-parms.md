@@ -65,7 +65,7 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 - devicename > badge_picture_name
 - devicename > badge_picture_name, zone, sensor_prefix_name
 
-###### Examples of tracked_devices formats
+###### Examples of track_devices formats
 - gary_iphone > gary-icloud-acct@email.com, /local/gary.png
 - gary_iphone > gary-icloud-acct, gary.png, whse
 - gary_iphone > gary-icloud-acct, gary.png, garyc

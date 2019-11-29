@@ -6,7 +6,7 @@ Many attributes are updated when the device is polled for it's location, distanc
 
 ### Location and Polling Attributes
 
-The following attributes are all based on the zone's location. The information for the Home zone is always calculated. They are also calculated when another zone is found on the `tracked_devices` parameter for a device. You can have more than one zone on the configuration parameter for a device. For example:
+The following attributes are all based on the zone's location. The information for the Home zone is always calculated. They are also calculated when another zone is found on the `track_devices` parameter for a device. You can have more than one zone on the configuration parameter for a device. For example:
 
 - to monitor the distance and travel time to work (offc zone):  
 	`gary_iphone > gary-icloud-acct@email.com, gary.png, offc`
@@ -94,7 +94,7 @@ Device information provided by the iCloud account.  This information is not veri
 When the device's iCloud account was last authenticated.  
 
 ###### tracking 
-The devices that are being tracked based on the `tracked_devices` configuration parameter. The devices are verified when iCloud3 starts (valid email address, valid devicename, etc.). The device's suffix number is displayed if the device is using the IOS App version 2 `(_2)`.  
+The devices that are being tracked based on the `track_devices` configuration parameter. The devices are verified when iCloud3 starts (valid email address, valid devicename, etc.). The device's suffix number is displayed if the device is using the IOS App version 2 `(_2)`.  
 
 ###### icloud3_version 
 The version of iCloud3 you are running.  

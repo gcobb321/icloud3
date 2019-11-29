@@ -60,13 +60,33 @@ You set up the device’s primary user as a friend on the `Find My` app (iOS 13)
 
 *This diagram shows how the Find-my-Friends Contact List information is stored on your iCloud Account. iCloud3 accesses this information to locate your devices. If any of the information is missing or not set up correctly, iCloud3 can not locate your device.*<br>
 
+#### Trouble Shooting FmF {docsify-ignore}   
+
+#####  iCloud3 Error: No devices to track message
+
+This can be caused by the following conditions:
+
+1. The contacts have not been added to the non-2fa with the email address on the track_devices parameter. See item 4 above and verify they are visible on the `Find My` app.
+2. The non-2fa username or password is invalid and the account can not be authorized. Verify the account can be accessed in the `Find My` app. If you need additional help, the links in the Apple iCloud Documentation paragraph above are a good source of information.
+3. You can not connect to iCloud Location Services. Check the username and password. Check for network errors. 
+
 #### Family Sharing (FamShr) {docsify-ignore}
 
 If you do not have 2fa turned on on your 'real' iCloud account, you can use the Family Sharing tracking method to locate your device(s). iCloud3 looks for the devices to be tracked in the list of people that are in the Family Sharing list on your iCloud account. With Family Sharing, you use your 'real' iCloud account email address for the `username`  configuration parameter.
 
-The `tracking_method` and `tracked_devices` configuration parameters are used to indicate how tracking should be done and the devices to be tracked.
+The `tracking_method` and `track_devices` configuration parameters are used to indicate how tracking should be done and the devices to be tracked.
 
 !> Family Sharing was the only tracking method used on iCloud3 version 1.
+
+#### Trouble Shooting FamShr
+
+##### You get an iCloud3 Error: No devices to track message
+
+iCloud3 scans through the list of devices that have been set up in the Family Sharing part of your iCloud account. If it can not match the devicename with one in the account, that device will not be tracked. 
+
+1. A message is added to the HA log file and the iCloud3 Event Log with all of the devicenames in the iCloud account, if a matching entry is found and the device will be tracked or if no matching entry is found and the device will not be tracked. Verify the devicename matches the name of the device in the' Settings App>General>About' for the device you want to track but is not. See the the 'Associating the iPhone Device Name with Home Assistant using the Home Assistant IOS App' below for information about naming your phone.
+2. The username or password is invalid and the account can not be authorized. Verify the account can be accessed in the `Find My` app. If you need additional help, the links in the Apple iCloud Documentation paragraph above are a good source of information.
+3. You can not connect to iCloud Location Services. Check the username and password. Check for network errors. 
 
 ### Authenticating Your iCloud Account
 Home Assistant and iCloud3 needs to be authorized to access your iCloud account. It requests authorization by asking iCloud to send an authentication code via a text message to a trusted device, which is then entered in Home Assistant. The duration of this authentication is determined by Apple, but is now at 2 months.  
@@ -80,32 +100,58 @@ When your account needs to be authorized, or reauthorized, the request will be d
 ### Associating the iPhone Device Name with Home Assistant using the Home Assistant IOS App
 The name in `Settings App>General>About>Name` field on the iPhone and iPad and in the Apple Watch App for the iWatch is stored in the iCloud account and used by Home Assistant to identify the device. HA converts any special characters found to an underscore, e.g., `Gary-iPhone` becomes `gary_iphone` in HA (entity registry and `known_devices.yaml`) which is then used in automations, sensors, scripts, etc. The way this ties to the iCloud3 tracked_device depends on the version of the HA IOS App you are using on the device.
 
+!> TIP: Device names should be simple, the same format on all devices you track with HA, easy to remember and easy to use in automations and scripts. I use the`Person-DeviceType` format for everything. My phone is`Gary-iPhone` which becomes `gary_iphone`.
+
+A lot of times, the device name is filled by Apple when the device is first set up. Usually it is something like `Gary's iPhone X`. Since HA and Apple  convert special characters and spaces into underscores, you may end up with a devicename like `gary_s_iphone_x` or `garys_iphonex` or `garysiphone` if you have several devices that are named differently by the different people using the device. This can be cumbersome, confusing, often leads to errors in specifying the device you want to track, not to mention adding it to automations and scripts. Additionally, having the type of device in it's name makes upgrading to the next version even more confusing. Simple is better. I name devices with the person's name and type of device, e.g., `Gary-iPhone`, `Gary-iPad`, `Gary-PC` (my windows computer that on my home network), etc. These become `gary_iphone` and `gary_ipad` and are simple to remember and use.
+
 #### IOS App version 1
 The devicename is entered into the Device ID field in the `HA IOS App>Settings` window, i.e. `gary_iphone` would be typed in the Device Id field.
 
 #### IOS App version 2
-You can not specify the device's devicename within the HA IOS App. When the HA IOS App is added to the device, a device_tracker entity is added to HA and is assigned a name (`gary_iphone`) followed by a suffix (sequence number) to make the name unique, i.e., `gary_iphone_2` if `gary_iphone` already exists. 
+You can not specify the device's devicename within the HA IOS App like you could with version 1. When the HA iOS App is added to the device, a device_tracker entity is added to HA and is assigned a name (`gary_iphone`) followed by a suffix (sequence number) to make the name unique, i.e., `gary_iphone_2` if `gary_iphone` already exists. 
 
 When HA starts, iCloud3 reads the HA Entity Registry file (./storage/core.entity_registry) and searches for a mobile device entry beginning with the devicename on the tracker_devices configuration parameter (i.e., `gary_iphone`). If it finds the entry, the suffix is read and iCloud3 monitors that device_tracker entity (`device_tracker.gary_iphone_2`) for zone changes.
 
-***IMPORTANT NOTE***: If the IOS App v2 was installed before iCloud3, the app may have been assigned the device_tracker entity name without the suffix. If you then install iCloud3 and use the same name on the track_devices parameter, a devicename conflict occurs. HA does not allow the same name to be used by a device in the Entity Registry and a custom component. An error message is displayed in the HA log file and on the iCloud3 Event Log Card. 
+!> The iCloud3 devicename in the track_devices parameter should be the devicename without the suffix in order to link it to your iCloud account. It's entity_id should be `device_tracker.devicename`,e.g., `gary_iphone`. The HA iOS App must be the device with the suffix.
 
-To correct this conflict, you should change the Entity ID of the IOS App v2 device_tracker entity to another name on the `HA Sidebar>Configuration>Integrations` screen. Do the following:
+If the IOS App v2 was installed before iCloud3, the app may have been assigned the device_tracker entity name without the suffix. If you then install iCloud3 and use the same name on the track_devices parameter, a devicename conflict occurs. HA does not allow the same name to be used by a device in the Entity Registry and a custom component. An error message is displayed in the HA log file and on the iCloud3 Event Log Card. 
+
+If this occurs, you must change the mobile_app entity_id name of the IOS App v2 device_tracker entity to another name on the `HA Sidebar>Configuration>Integrations` or `Sidebar>Developer Tools>Entity Registry` screen. Do the following:
 
 1. Select the *Mobile_App* entry for the device.
-2. Scroll to the *device_tracker.devicename* statement.
+
+2. Scroll to the *device_tracker.devicename* statement or type 'device' in the search field.
+
 3. Select it.
+
 4. Click *Settings* icon in the upper-right corner.
-5. Change *Entity ID* to another value bu changing the suffix assigned to the Entity ID. Suggestion *device_tracker.devicename_2* or *device_tracker.devicename_3* .
-6. Restart HA.
 
-!> If no mobile_app entry with a devicename starting with the one on the tracked_devices parameter is found, iCloud3 will monitor that device using the IOS App version 1.
+5. Change *Entity ID* to another value by changing the suffix assigned to the Entity ID. In the example below, *gary_iphone_4* was assigned.
 
-!> iCloud3 also monitors the sensor.devicename_last_update_trigger entity associated with the device for Background Fetch, Significant Location Update and Manual location triggers.
+   ![setup_fmf_icloud3](../images/entity_name_change.jpg)
 
-!> When you have several devices being tracked, one device can use version 1 and the other device can use version 2 of the IOS App.
+6. Restart iCloud3 to rescan the entity registry for the updated IOS App 'device_tracker' entity you changed above. Use one of the following methods:
 
-!> If you have both version 1 and version 2 on the same device, version 2 will be used. You can override this with an entry on the tracked_devices configuration parameter to use version 1.
+   - Go to `Sidebar>Developer Tools>Services`, scroll down and select `device_tracker.icloud3_restart`, click `call service`.
+
+     ![icloud3_restart_service](../images/icloud3_restart_service.jpg)
+
+
+   - or run the `Restart iCloud (Command)` script.
+  
+   - or restart Home Assistant.
+  
+     
+
+The following happens:
+
+- If no mobile_app entry with a devicename starting with the one on the track_devices parameter is found, iCloud3 will monitor that device using the IOS App version 1.
+
+- Cloud3 also monitors the `sensor.devicename_last_update_trigger` entity associated with the device for Background Fetch, Significant Location Update and Manual location triggers.
+
+- When you have several devices being tracked, one device can use version 1 and the other device can use version 2 of the IOS App.
+
+!> If you have both version 1 and version 2 on the same device, version 2 will be used. You can override this with an entry on the track_devices configuration parameter to use version 1.
 
 ### What happens if the iCloud Location Service is not available or I don't want to use it
 When iCloud3 starts and if the `tracking_method` is 'fmf' of 'famshr', the iCloud account is accessed for device and location information. If the iCloud account can not be accessed (the Apple iCloud service is down, an error authorization error is returned from the iCloud service, the account can not be found, the account name and password are not correct, etc.), iCloud3 will issue an error message and revert to using the IOS App (`tracking_method: iopsapp`). The following occurs:
