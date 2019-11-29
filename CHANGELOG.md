@@ -1,5 +1,10 @@
 # iCloud3 Change Log
 
+#### v2.0.4 (11/29/2019)
+- When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
+- Waze history data is used to avoid calling Waze for route information when you are near another device or in a stationary zone with accurate Waze route information. If you were in a stationary zone and entered another zone without a zone exit trigger, the Waze history was still pointing to the old stationary zone. The old location information was being used for distance and interval calculations instead of the new location information.  A check was added to always refresh the Waze route information when the state changes.
+- Made some corrections to the iCloud3 documentation.
+
 #### v2.0.3 (11/27/2019)
 
 - Fixed a problem with a malformed message that displayed old location information in the Event Log.

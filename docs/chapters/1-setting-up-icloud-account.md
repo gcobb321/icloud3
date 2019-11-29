@@ -39,7 +39,7 @@ The Apple support web site has several articles that will help you set up yout i
 - Go [here](https://support.apple.com/en-us/HT201088) for Set up Family Sharing
 - Go [here](https://support.apple.com/en-us/HT210400) for Set up Find My app
 
-#### Find-my-Friends (FmF) {docsify-ignore}
+#### Find-my-Friends (FmF) tracking method
 You set up the device’s primary user as a friend on the `Find My` app (iOS 13) or the `Find-my-Friends` app (iOS 12) and iCloud3 will locate them just like the app does. Since your Apple iCloud account probably has 2fa turned on, you need to create a new iCloud account without 2fa, then add the person using the device as a friend to that account, share their location and verify their location is being shared before setting up iCloud3.
 
 1. Add a new iCloud account with a different email address. Do not select the 2fa option, otherwise you will be in the same constant notification situation you are trying to avoid. You will use this email address in the `username` configuration parameter.
@@ -60,17 +60,17 @@ You set up the device’s primary user as a friend on the `Find My` app (iOS 13)
 
 *This diagram shows how the Find-my-Friends Contact List information is stored on your iCloud Account. iCloud3 accesses this information to locate your devices. If any of the information is missing or not set up correctly, iCloud3 can not locate your device.*<br>
 
-#### Trouble Shooting FmF {docsify-ignore}   
+#### Trouble Shooting the Find-my-Friends (FmF) tracking method {docsify-ignore}   
 
 #####  iCloud3 Error: No devices to track message
 
 This can be caused by the following conditions:
 
-1. The contacts have not been added to the non-2fa with the email address on the track_devices parameter. See item 4 above and verify they are visible on the `Find My` app.
-2. The non-2fa username or password is invalid and the account can not be authorized. Verify the account can be accessed in the `Find My` app. If you need additional help, the links in the Apple iCloud Documentation paragraph above are a good source of information.
-3. You can not connect to iCloud Location Services. Check the username and password. Check for network errors. 
+1. The contacts have not been added to the*Find-my-Friends* non-2fa account with the email address you have entered on the track_devices parameter. See item 4 above and verify they are visible on the `Find My` app.
+2. The *Find-my-Friends* non-2fa account username or password is invalid and the account can not be authorized. Verify that the account can be accessed in the `Find My` app. If you need additional help, the links in the Apple iCloud Documentation paragraph above are a good source of information.
+3. You can not connect to the iCloud Location Services. Again, check the *Find-my-Friends* non-2fa account username and password. Check for network errors. 
 
-#### Family Sharing (FamShr) {docsify-ignore}
+#### Family Sharing (FamShr) Tracking Method
 
 If you do not have 2fa turned on on your 'real' iCloud account, you can use the Family Sharing tracking method to locate your device(s). iCloud3 looks for the devices to be tracked in the list of people that are in the Family Sharing list on your iCloud account. With Family Sharing, you use your 'real' iCloud account email address for the `username`  configuration parameter.
 
@@ -78,7 +78,7 @@ The `tracking_method` and `track_devices` configuration parameters are used to i
 
 !> Family Sharing was the only tracking method used on iCloud3 version 1.
 
-#### Trouble Shooting FamShr
+#### Trouble Shooting the Family Sharing (FamShr) Tracking Method {docsify-ignore}   
 
 ##### You get an iCloud3 Error: No devices to track message
 
@@ -87,6 +87,12 @@ iCloud3 scans through the list of devices that have been set up in the Family Sh
 1. A message is added to the HA log file and the iCloud3 Event Log with all of the devicenames in the iCloud account, if a matching entry is found and the device will be tracked or if no matching entry is found and the device will not be tracked. Verify the devicename matches the name of the device in the' Settings App>General>About' for the device you want to track but is not. See the the 'Associating the iPhone Device Name with Home Assistant using the Home Assistant IOS App' below for information about naming your phone.
 2. The username or password is invalid and the account can not be authorized. Verify the account can be accessed in the `Find My` app. If you need additional help, the links in the Apple iCloud Documentation paragraph above are a good source of information.
 3. You can not connect to iCloud Location Services. Check the username and password. Check for network errors. 
+
+#### iCloud3 Event Log During Initialization
+
+The Event Log provides a lot of information on the iCloud initialization process.
+
+![event_log_initializing](../images/event_log_initializing.jpg)
 
 ### Authenticating Your iCloud Account
 Home Assistant and iCloud3 needs to be authorized to access your iCloud account. It requests authorization by asking iCloud to send an authentication code via a text message to a trusted device, which is then entered in Home Assistant. The duration of this authentication is determined by Apple, but is now at 2 months.  

@@ -22,8 +22,16 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.0.3'     #Custom Component Updater
+VERSION = '2.0.4'     #Custom Component Updater
 '''
+v2.0.4
+- When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
+- Waze history data is used to avoid calling Waze for route information when you are near another device or in a stationary zone with accurate Waze route information. If you were in a stationary zone and entered another zone without a zone exit trigger, the Waze history was still pointing to the old stationary zone. The old location information was being used for distance and interval calculations instead of the new location information.  A check was added to always refresh the Waze route information when the state changes.
+
+v2.0.3
+- Fixed a problem with a malformed message that displayed old location information in the Event Log.
+- Added a list of devices that are tracked and not tracked for the Family Sharing (famshr) tracking method. This is created when the iCloud account is scanned looking for the devices in the track_devices configuration parameter.
+
 v2.0.2
 - Fixed problem calculating distance and intervals for a second zone.
 - If the device_tracker.state is 'stationary' when the next update time is reached and you have moved into another zone that is not stationary, the 'zone' attribute is correct because it is based on the device's location values but the device_tracker.state is still 'stationary' instead of the zone the device is now in. This has been fixed.
@@ -80,8 +88,9 @@ except ImportError:
     pass
 
 _LOGGER = logging.getLogger(__name__)
-#REQUIREMENTS = ['pyicloud==0.9.1']
+
 DEBUG_TRACE_CONTROL_FLAG = False
+#from .const_ic3 import "*"
 
 HA_ENTITY_REGISTRY_FILE_NAME='/config/.storage/core.entity_registry'
 
@@ -1571,7 +1580,7 @@ class Icloud(DeviceScanner):
                 #icloud poll
                 elif (self.location_isold_cnt.get(devicename) > 5 or
                         self.poor_gps_accuracy_cnt.get(devicename) > 5):
-                    event_msg = "__Discarding, Old data or Poor GPS"
+                    event_msg = "__Discarding > Old data or Poor GPS"
                     self._save_event(devicename, event_msg)
                     continue
 
@@ -1718,7 +1727,7 @@ class Icloud(DeviceScanner):
 
                             #set to last gps if in a zone
                             if dist_from_zone < self.zone_home_radius * 1000:
-                                event_msg = ("__Moving back to zone `{}` center, "
+                                event_msg = ("__Moving to zone `{}` center, "
                                     "distance-{}m, GPS-({}, {}) to ({}, {})").format(
                                     current_zone,
                                     dist_from_zone,
@@ -4276,7 +4285,7 @@ class Icloud(DeviceScanner):
         state        = self.state_this_poll.get(devicename)
         current_zone = self.zone_current.get(devicename)
         
-        '''
+
         #######################################################################
         #The current zone is based on location of the device after it is looked
         #up in the zone tables.
@@ -4285,7 +4294,7 @@ class Icloud(DeviceScanner):
         #may not have been issued. If the trigger was the next update time
         #reached, the state and zone many now not match. (v2.0.2)
         
-        if state == NOT_SET:
+        if state == NOT_SET or current_zone == NOT_SET or current_zone == '':
             pass
             
         #If state is 'stationary' and in a stationary zone, nothing to do
@@ -4305,7 +4314,7 @@ class Icloud(DeviceScanner):
             self._save_event(devicename, event_msg)
             state = current_zone
         #######################################################################
-        '''
+
         
 
         #Get friendly name or capitalize and reformat state
@@ -4445,13 +4454,14 @@ class Icloud(DeviceScanner):
         elif self._is_inzoneZ(state):
             zone_name = self._format_zone_name(devicename, state)
 
-        if zone_name:
+        #v2.0.4-Added 'zone_name == state' check
+        if zone_name and zone_name == state:
             zone_lat  = self.zone_latitude.get(zone_name)
             zone_long = self.zone_longitude.get(zone_name)
               
             if zone_lat and (latitude != zone_lat or longitude != zone_long):
                 if self._update_last_latitude_longitude(devicename, zone_lat, zone_long, 4450):
-                    event_msg  = ("__Moving back to zone `{}` center, "
+                    event_msg  = ("__Moving to zone `{}` center, "
                         "GPS-({}, {}) to ({}, {})").format(
                         zone_name,
                         latitude,
@@ -6733,7 +6743,7 @@ class Icloud(DeviceScanner):
         '''
         Before getting Waze data, look at all other devices to see
         if there are any really close. If so, don't call waze but use their
-        distance & time instead if the data it it passes distance and age
+        distance & time instead if the data it passes distance and age
         tests.
 
         The other device's distance from home and distance from last
@@ -6751,6 +6761,10 @@ class Icloud(DeviceScanner):
             return None
         elif self.base_zone != HOME:
             return None
+        elif _isnot_inzone(devicename):
+            pass
+        elif self.state_this_poll.get(devicename) != self.zone_current.get(devicename):
+            return None
 
         #Calculate how far the old data can be from the new data before the
         #data will be refreshed.
@@ -6763,8 +6777,7 @@ class Icloud(DeviceScanner):
                 devicename_zone = self._format_devicename_zone(devicename)
 
                 self.waze_history_data_used_flag[devicename_zone] = False
-                waze_data_other_device = self.waze_distance_history.get(
-                                                        near_devicename_zone)
+                waze_data_other_device = self.waze_distance_history.get(near_devicename_zone)
                 #Skip if this device doesn't have any Waze data saved or it's for
                 #another base_zone.
                 if len(waze_data_other_device) == 0:
