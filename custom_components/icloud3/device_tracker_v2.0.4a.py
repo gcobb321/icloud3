@@ -22,10 +22,11 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.0.4a'     #Custom Component Updater
+VERSION = '2.0.5'     #Custom Component Updater
 '''
-v2.0.4a
-- Added GPS location to Stationary Zone Set Location Evet Log message
+v2.0.5
+- Fix a bug introduced in v2.0.4 where a coding error caused NoRoute information to be returned Waze.
+- Added GPS location to Stationary Zone Set Location Evet Log message.
 - Reset the Stationary Zone to it's base location (90, 180) when an update is being done, the device is in a non-Stationary zone and the Stationary Zone is set to a valid location.
 v2.0.4
 - When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
