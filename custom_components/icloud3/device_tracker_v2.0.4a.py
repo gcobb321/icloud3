@@ -6777,7 +6777,7 @@ class Icloud(DeviceScanner):
             return None
         elif self.base_zone != HOME:
             return None
-        elif _isnot_inzone(devicename):
+        elif self._isnot_inzone(devicename):
             pass
         elif self.state_this_poll.get(devicename) != self.zone_current.get(devicename):
             return None
