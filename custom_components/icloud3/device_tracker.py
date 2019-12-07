@@ -28,7 +28,7 @@ v2.0.5
 - Fix a bug introduced in v2.0.4 where a coding error caused NoRoute information to be returned Waze.
 - Added GPS location to Stationary Zone Set Location Evet Log message.
 - Reset the Stationary Zone to it's base location (90, 180) when an update is being done, the device is in a non-Stationary zone and the Stationary Zone is set to a valid location.
-- Contact info will be displayed as it is read from icloud when setting up FmF the tracking method when 'log_level: debug' is specified
+- Raw contact data from the 'username' non-2fa iCloud account will be added to the HA log file when setting up the FmF tracking method. Add the 'log_level: debug' parameter to the iCloud3 configuration and restart HA. Go to 'Sidebar>Developer Tools>Logs' to see the Log entries. Look for '===== FmF Contact Data ========' and review the raw data for each contact on the following line. It will be in json format, e.g., 'email': ['gary_2fa_acct@email.com'].
 
 v2.0.4
 - When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
