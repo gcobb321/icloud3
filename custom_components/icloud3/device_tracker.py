@@ -28,7 +28,7 @@ v2.0.5
 - Fix a bug introduced in v2.0.4 where a coding error caused NoRoute information to be returned Waze.
 - Added GPS location to Stationary Zone Set Location Evet Log message.
 - Reset the Stationary Zone to it's base location (90, 180) when an update is being done, the device is in a non-Stationary zone and the Stationary Zone is set to a valid location.
-- Raw contact data from the 'username' non-2fa iCloud account will be added to the HA log file when setting up the FmF tracking method. Add the 'log_level: debug' parameter to the iCloud3 configuration and restart HA. Go to 'Sidebar>Developer Tools>Logs' to see the Log entries. Look for '===== FmF Contact Data ========' and review the raw data for each contact on the following line. It will be in json format, e.g., 'email': ['gary_2fa_acct@email.com'].
+- Raw contact data from the 'username' non-2fa iCloud account will be added to the HA log file when setting up the FmF tracking method. Add the 'log_level: debug' parameter to the iCloud3 configuration and restart HA. Go to 'Sidebar>Developer Tools>Logs' to see the Log entries. Look for "_____ Raw iCloud Contact Data _______" and review the raw data for each contact on the following line. It will be in json format, e.g., 'emails': ['gary_2fa_acct@email.com', 'gary_456@tw'].
 
 v2.0.4
 - When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
@@ -5605,29 +5605,29 @@ class Icloud(DeviceScanner):
         '''
         '''
         contact={
-            'emails': ['gary678tw@', 'lillian123@gmail.com'],
-            'firstName': 'Lillian',
+            'emails': ['gary678tw@', 'gary_2fa_acct@email.com'],
+            'firstName': 'Gary',
             'lastName': '',
             'photoUrl': 'PHOTO;X-ABCROP-RECTANGLE=ABClipRect_1&64&42&1228&1228&
                     //mOVw+4cc3VJSJmspjUWg==;
                     VALUE=uri:https://p58-contacts.icloud.com:443/186297810/wbs/
                     0123efg8a51b906789fece
             'contactId': '8590AE02-7D39-42C1-A2E8-ACCFB9A5E406',60110127e5cb19d1daea',
-            'phones': ['(772)\xa0321-3765'],
+            'phones': ['(222)\xa0m456-7899'],
             'middleName': '',
             'id': 'ABC0DEFGH2NzE3'}
 
         cycle thru config>track_devices devicename/email parameter
         looking for a match with the fmf contact record emails item
                 fmf_devicename_email:
-                   'gary_iphone'       = 'gary678@gmail.com'
-                   'gary678@gmail.com' = 'gary_iphone@'
+                   'gary_iphone'       = 'gary_2fa_acct@email.com'
+                   'gary_2fa_acct@email.com' = 'gary_iphone@'
              - or -
                    'gary_iphone'       = 'gary678@'
                    'gary678@'          = 'gary_iphone@gmail'
 
                 emails:
-                   ['gary456tw@', 'gary456@gmail.com]
+                   ['gary456tw@', 'gary_2fa_acct@email.com]
 
         When complete, erase fmf_devicename_email and replace it with full
         email list
@@ -5646,7 +5646,7 @@ class Icloud(DeviceScanner):
                 contact_emails = contact.get('emails')
                 id_contact     = contact.get('id')
                 
-                log_msg = ("=== Processing FmF Contact Info ===============")
+                log_msg = ("_____ Raw iCloud Contact Data __________")
                 self.log_debug_msg("*", log_msg)
                 log_msg = ("{}").format(contact)
                 self.log_debug_msg("*", log_msg)
