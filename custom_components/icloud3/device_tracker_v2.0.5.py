@@ -5655,6 +5655,10 @@ class Icloud(DeviceScanner):
                     devicename = self.fmf_devicename_email.get(parm_email)
 
                     for contact_email in contact_emails:
+                        log_msg = ("=== FmF Contact === <<{}>> {}").format(
+                            parm_email, contact_email)
+                        self.log_debug_msg(devicename, log_msg)
+                        
                         #if contacts_valid_emails.find(contact_email) >= 0:
                         if instr(contacts_valid_emails, contact_email) == False:
                             contacts_valid_emails += contact_email + ","
