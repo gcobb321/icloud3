@@ -1,5 +1,11 @@
 # iCloud3 Change Log
 
+#### v2.0.5 (12/8/2019)
+- Fixed a bug introduced in v2.0.4 where a coding error caused NoRoute information to be returned from Waze.
+- Added GPS location to Stationary Zone Set Location Event Log message.
+- Reset the Stationary Zone to it's base location (90, 180) when an update is being done, the device is in a non-Stationary zone and the Stationary Zone is set to a valid location.
+- Raw contact data from the 'username' non-2fa iCloud account will be added to the HA log file when setting up the FmF tracking method. Add the 'log_level: debug' parameter to the iCloud3 configuration and restart HA. Go to 'Sidebar>Developer Tools>Logs' to see the Log entries. Look for "_____ Raw iCloud Contact Data _______" and review the raw data for each contact on the following line. It will be in json format, e.g., 'emails': ['gary_2fa_acct@email.com', 'gary_456@tw'].
+
 #### v2.0.4 (11/29/2019)
 - When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
 - Waze history data is used to avoid calling Waze for route information when you are near another device or in a stationary zone with accurate Waze route information. If you were in a stationary zone and entered another zone without a zone exit trigger, the Waze history was still pointing to the old stationary zone. The old location information was being used for distance and interval calculations instead of the new location information.  A check was added to always refresh the Waze route information when the state changes.
