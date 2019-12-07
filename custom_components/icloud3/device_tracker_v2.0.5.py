@@ -28,6 +28,8 @@ v2.0.5
 - Fix a bug introduced in v2.0.4 where a coding error caused NoRoute information to be returned Waze.
 - Added GPS location to Stationary Zone Set Location Evet Log message.
 - Reset the Stationary Zone to it's base location (90, 180) when an update is being done, the device is in a non-Stationary zone and the Stationary Zone is set to a valid location.
+- Contact info will be displayed as it is read from icloud when setting up FmF the tracking method when 'log_level: debug' is specified
+
 v2.0.4
 - When the device's location, interval and next poll information were being updated, there were times when the state was 'stationary' but it had actualy moved into another zone. This might be caused by zones being close together, by no zone exit notification from the ios app or by the next update trigger being processed before the zone exit trigger had been received. This caused the device's location to be reset to the old location instead of the new location. This has been fixed.
 - Waze history data is used to avoid calling Waze for route information when you are near another device or in a stationary zone with accurate Waze route information. If you were in a stationary zone and entered another zone without a zone exit trigger, the Waze history was still pointing to the old stationary zone. The old location information was being used for distance and interval calculations instead of the new location information.  A check was added to always refresh the Waze route information when the state changes.
@@ -5642,8 +5644,12 @@ class Icloud(DeviceScanner):
 
             for contact in fmf.contacts:
                 contact_emails = contact.get('emails')
-
-                id_contact = contact.get('id')
+                id_contact     = contact.get('id')
+                
+                log_msg = ("=== Processing FmF Contact Info ===============")
+                self.log_debug_msg("*", log_msg)
+                log_msg = ("{}").format(contact)
+                self.log_debug_msg("*", log_msg)
 
                 #cycle thru the emails on the tracked_devices config parameter
                 for parm_email in self.fmf_devicename_email:
@@ -5655,10 +5661,6 @@ class Icloud(DeviceScanner):
                     devicename = self.fmf_devicename_email.get(parm_email)
 
                     for contact_email in contact_emails:
-                        log_msg = ("=== FmF Contact === <<{}>> {}").format(
-                            parm_email, contact_email)
-                        self.log_debug_msg(devicename, log_msg)
-                        
                         #if contacts_valid_emails.find(contact_email) >= 0:
                         if instr(contacts_valid_emails, contact_email) == False:
                             contacts_valid_emails += contact_email + ","
@@ -5688,7 +5690,7 @@ class Icloud(DeviceScanner):
                 if self.devicename_verified.get(devicename) is False:
                     parm_email = self.fmf_devicename_email.get(devicename)
                     devicename_contact_emails[devicename] = parm_email
-                    log_msg = ("Error validating track_device: {}. The email "
+                    log_msg = ("iCloud3 Error: Setting up-{} > The email "
                         "{} is invalid or is not in the Username: {} "
                         "FMF contact list. Valid {} contacts are {}.").format(
                         devicename,
