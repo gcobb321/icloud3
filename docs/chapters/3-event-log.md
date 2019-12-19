@@ -30,7 +30,7 @@ Custom Lovelace cards are typically stored in the `/www/custom_cards` directory.
     - title: iCloud Event Log
       icon: mdi:information-outline 
       cards: 
-        - type: custom: icloud3-event-log-card
+        - type: custom:icloud3-event-log-card
           entity: sensor.icloud3_event_log
    ```
 
