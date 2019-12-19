@@ -28,10 +28,10 @@ Custom Lovelace cards are typically stored in the `/www/custom_cards` directory.
 
    ```
     - title: iCloud Event Log
-       icon: mdi:information-outline 
-       cards: 
-         - type: custom: icloud3-event-log-card
-           entity: sensor.icloud3_event_log
+      icon: mdi:information-outline 
+      cards: 
+        - type: custom: icloud3-event-log-card
+          entity: sensor.icloud3_event_log
    ```
 
 More information is found in the Home Assistant Lovelace documentation regarding setting up and using custom cards. Be sure to refer to it if you have any problems. Go [here](https://community.home-assistant.io/t/how-do-i-add-custom-cards-with-the-lovelace-ui/97902) for more information if you are not using the `ui-lovelace.yaml` file to set up your cards.
