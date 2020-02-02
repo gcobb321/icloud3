@@ -104,14 +104,14 @@ The following sensors are updated using the device_tracker's attributes values:
 | Tracking Sensors | Code  |      | Special Sensors  | Code  |      | Device Sensors         | Code   |
 | ---------------- | ----- | ---- | ---------------- | ----- | ---- | ---------------------- | ------ |
 | interval        | intvl |      | zone            | zon   |      | battery               | bat    |
-| travel_time     | ttim  |      | zone_name1      | zon1  |      | altitude              | alt    |
-| zone_distance   | zdis  |      | zone_name2      | zon2  |      | gps_accuracy          | gpsacc |
-| waze_distance   | wdis  |      | zone_name3      | zon3  |      | trigger               | trig   |
-| calc_distance   | cdis  |      | zone_timestamp  | zonts |      |                        |        |
-| travel_distance | tdis  |      | last_zone       | lzon  |      |                        |        |
-| dir_of_travel   | dir   |      | last_zone_name1 | lzon1 |      |                        |        |
-| last_update     | lupdt |      | last_zone_name2 | lzon2 |      |  |        |
-| next_update     | nupdt |      | last_zone_name3 | lzon3 |      |                  | spd    |
+| travel_time     | ttim  |      | zone_name1      | zon1  |      | battery _status | batstat |
+| zone_distance   | zdis  |      | zone_name2      | zon2  |      |  |  |
+| waze_distance   | wdis  |      | zone_name3      | zon3  |      | gps_accuracy      | gpsac   |
+| calc_distance   | cdis  |      | zone_timestamp  | zonts |      | altitude          | alt     |
+| travel_distance | tdis  |      | last_zone       | lzon  |      | vertical_accuracy | vacc    |
+| dir_of_travel   | dir   |      | last_zone_name1 | lzon1 |      |                   |         |
+| last_update     | lupdt |      | last_zone_name2 | lzon2 |      | trigger           | trig    |
+| next_update     | nupdt |      | last_zone_name3 | lzon3 |      | badge | badge |
 | last_located    | lloc  |      | last_zone_name3 | lzon3 |      |          |  |
 | poll_cnt        | cnt   |      |                  |       |      |            |  |
 | info            | info  |      | base_zone       | bzon  |      |          | |
