@@ -2,11 +2,12 @@
 
 #### v2.0.6 (Under Development, Not Released, Last Updated 2/2/2020)
 
-- The picture specified on the track_devices parameter was only being displayed on the Lovelace card if the device was specified in the `known_devices.yaml` file. The `entity_picture` attribute was added to the device_tracker entity (e.g., `device_tracker.gary_iphone`) so it would always be displayed.
-- Added the Battery Status ('batstat') and Badge ('badge') codes to the create_sensors and exclude_sensors list.
-- If there was an iCloud authorization error 5-times, the tracking method is reset from fmf/famshr to IOSAPP. If iCloud3 was then restarted, the IOSAPP tracking method would still be used after the restart instead of being reset to the configuration file tracking method (fmf/famshr). This has been corrected.
-- Fixed the Lovelace documentation error for the 4x3 layout.
-- The Event Log message is now being verified to make sure it is not blank.
+- ##### Version 2.0.6a (2/2/2020)
+  - The picture specified on the track_devices parameter was only being displayed on the Lovelace card if the device was specified in the `known_devices.yaml` file. The `entity_picture` attribute was added to the device_tracker entity (e.g., `device_tracker.gary_iphone`) so it would always be displayed.
+  - Added the Battery Status ('batstat') and Badge ('badge') codes to the create_sensors and exclude_sensors list.
+  - If there was an iCloud authorization error 5-times, the tracking method is reset from fmf/famshr to IOSAPP. If iCloud3 was then restarted, the IOSAPP tracking method would still be used after the restart instead of being reset to the configuration file tracking method (fmf/famshr). This has been corrected.
+  - Fixed the Lovelace documentation error for the 4x3 layout.
+  - The Event Log message is now being verified to make sure it is not blank.
 
 #### v2.0.5 (12/8/2019)
 
