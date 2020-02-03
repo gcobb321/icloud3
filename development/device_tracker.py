@@ -22,9 +22,9 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.0.6'     #Custom Component Updater
+VERSION = '2.0.6a'     #Custom Component Updater
 '''
-v2.0.6
+v2.0.6a
 - The picture specified on the track_devices parameter was only being displayed on the Lovelace card if the device was specified in the `known_devices.yaml` file. The `entity_picture` attribute was added to the device_tracker entity (e.g., `device_tracker.gary_iphone`) so it would always be displayed.
 - Added the Battery Status (batstat) and Badge (badge) codes to the create_sensors and exclude_sensors list.
 - If there was an iCloud authorization error 5-times, the tracking method is reset from fmf/famshr to IOSAPP. If iCloud3 was then restarted, the IOSAPP tracking method would still be used after the restart instead of being reset to the configuration file tracking method (fmf/famshr). This has been corrected.
