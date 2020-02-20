@@ -25,7 +25,7 @@
 - PyiCloud-ic3.py Support Program Changes (Interface between iCloud3 and Apple's iCloud Location Services)
 
     - PyiCloud_ic3.py (the iCloud Location Services interface module) will now display raw data for all data requests. To display this information, include the `custom_components.icloud3.pyicloud_ic3`: debug  statement in the `logger: /logs:`  section of the HA configuration.yaml file. For example:
-        
+      
         `
         
         ```
