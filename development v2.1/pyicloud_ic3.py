@@ -1,5 +1,5 @@
 """
-Customized version of pyicloud.py to support iCloud3  Custom Component
+Customized version of pyicloud.py to support iCloud3 Custom Component
 
 Platform that supports importing data from the iCloud Location Services
 and Find My Friends api routines. Modifications to pyicloud were made
@@ -473,8 +473,16 @@ class PyiCloudService(object):
 #------------------------------------------------------------------
     @property
     def friends(self):
-        service_root = self.webservices['fmf']['url']
-        return FindFriendsService(service_root, self.session, self.params)
+        try:
+            service_root = self.webservices['fmf']['url']
+            return FindFriendsService(service_root, self.session, self.params)
+            
+        except:
+            logger.error(("Find-my-Friends data error. No contacts or "
+                    "friends data was returned from Apple Web Services "
+                    "for account {}").format(self.apple_id))
+            
+        return None
 
 #------------------------------------------------------------------
     '''
@@ -1137,8 +1145,11 @@ class PyiCloud2SARequiredError(PyiCloudException):
         super(PyiCloud2SARequiredError, self).__init__(message)
 
 
-#class PyiCloudNoDevicesException(Exception):
-#    pass
+class PyiCloudFmFNoDataError(PyiCloudException):
+    def __init__(self):
+        message = ("FmF Data Error. No contacts have been entered in the " 
+            "iCloud account or no contacts are being followed.")
+        super(PyiCloudFmFNoDataError, self).__init__(message)
 
 
 class NoStoredPasswordAvailable(PyiCloudException):
