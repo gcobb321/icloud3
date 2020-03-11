@@ -4285,13 +4285,20 @@ class Icloud(DeviceScanner):
                     longitude = zone_long
                     
         '''
-        #v2.0.6
+        #v2.1
+        debug_msg=(f"zone_name={zone_name}, inzone-state={self._is_inzoneZ(state)}")
+        self.log_debug_msg(devicename, debug_msg)
+        
         if zone_name and self._is_inzoneZ(state):
             zone_lat  = self.zone_lat.get(zone_name)
             zone_long = self.zone_long.get(zone_name)
-            zone_dist = self._calc_distance_m(latitude, longitude,
-                                            zone_lat, zone_long) 
-                                            
+            zone_dist = self._calc_distance_m(latitude, longitude, zone_lat, zone_long) 
+            
+            debug_msg=(f"zone_lat/long=({zone_lat}, {zone_long}), "
+                    f"lat-long=({latitude}, {longitude}), zone_dist={zone_dist}, "
+                    f"zone-radius={self.zone_radius.get(zone_name)}")
+            self.log_debug_msg(devicename, debug_msg)
+                                        
             #Move center of stationary zone to new location if more than 10m from old loc
             if instr(zone_name, STATIONARY) and zone_dist > 10:
                 rtn_code = self._update_stationary_zone(
@@ -4301,7 +4308,7 @@ class Icloud(DeviceScanner):
                         STATIONARY_ZONE_VISIBLE)
                         
             #inside zone, move to center
-            elif (zone_dist <= self.zone_radius.get(zone_name) and 
+            elif (zone_dist <= self.zone_radius.get(zone_name)*1000 and 
                     (latitude != zone_lat or longitude != zone_long)):
                 event_msg  = ("Moving to zone center > {}, "
                     "GPS-({}, {}) to ({}, {}), Dist-{}m").format(
@@ -6513,23 +6520,35 @@ class Icloud(DeviceScanner):
             event_text = event_text.replace('Geographic','Geo', 99)
             #event_text = event_text.replace(STATIONARY,'stat', 99)
             event_text = event_text.replace('Significant','Sig', 99)
-                   
-            event_text = event_text[:250]
             if len(event_text) == 0:
                 event_text = 'Info Message'
+             
+            #Break the event_text string into chunks of 250 characters each and
+            #create an event_log recd for each chunk
+            et_pos_end = len(event_text)
+            et_pos_start = int(et_pos_end/250) * 250
+            while et_pos_start >= 0:
+                event_text_chunk = event_text[et_pos_start:et_pos_end]
+                et_pos_end = et_pos_start
+                et_pos_start -= 250
+                if len(event_text) > 250: event_text_chunk += ' .....'
+                if et_pos_start < 0:
+                    event_recd = [devicename, this_update_time,
+                                  state, zone, interval, travel_time,
+                                  distance, event_text_chunk]
+                else:
+                    event_recd = [devicename, '',
+                                  '', '', '', '',
+                                  '', event_text_chunk]
+                   
+                if self.event_log_table is None:
+                    self.event_log_table = []
 
-            event_recd = [devicename, this_update_time,
-                            state, zone, interval, travel_time,
-                            distance, event_text]
+                if devicename != '*':
+                   while len(self.event_log_table) > self.log_table_length:
+                        self.event_log_table.pop(0)
 
-            if self.event_log_table is None:
-                self.event_log_table = []
-
-            if devicename != '*':
-               while len(self.event_log_table) > self.log_table_length:
-                    self.event_log_table.pop(0)
-
-            self.event_log_table.append(event_recd)
+                self.event_log_table.append(event_recd)
 
         except Exception as err:
             _LOGGER.exception(err)
@@ -7616,9 +7635,9 @@ class Icloud(DeviceScanner):
 
         elif arg_command_cmd == 'refresh_event_log':
             self._update_event_log_sensor_line_items(arg_devicename)
-            #self._save_event_halog_info("*", log_msg)
-            
+            return
             '''
+            Test code to send msg to the phone
             devicename = 'gary_iphone'
             if self.iosapp_version[devicename] == 1:
                 entity_id = f"ios_{devicename}"
@@ -7632,7 +7651,19 @@ class Icloud(DeviceScanner):
                 "data": {"subtitle": "Stationary Zone Exit Trigger was not received"}}
             self.hass.services.call("notify", entity_id, service_data)
             '''
+            return
             
+        elif arg_command_cmd == 'event_log':
+            error_msg = ("Error > Then refresh the Event Log page in your browser. v2.1 "
+                         "has [Refresh] [Debug] [Restart-ic3] at the top. "
+                         "Also, swipe down in the iOS App to refresh it on your devices.")
+            self._save_event("*", error_msg)
+            error_msg = ("Error > Event Log v1.0 is being used. Clear your browser "
+                         "cache or add `?v=2.1` to the ui-lovelace.yaml so it reads "
+                         "`- url: .../icloud3-event-log-card.js?v=2.1`. ")
+            self._save_event("*", error_msg)
+            
+            self._update_event_log_sensor_line_items(arg_devicename)
             return
 
         #command preprocessor, reformat specific commands
