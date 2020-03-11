@@ -5197,7 +5197,7 @@ class Icloud(DeviceScanner):
                 if instr(zone_name.lower(), STATIONARY):
                     self.zone_friendly_name[zone_name] = 'Stationary'  
                     if 'icon' in zone_data:
-                        devicename = fname.replace('_stationary', '')
+                        devicename = zone_name.replace('_stationary', '')
                         self.stat_zone_devicename_icon[devicename] = zone_data('icon')
                 
                 if ATTR_LATITUDE in zone_data:
