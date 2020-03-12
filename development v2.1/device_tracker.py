@@ -4033,7 +4033,7 @@ class Icloud(DeviceScanner):
     def _get_attr(attributes, attribute_name, numeric = False):
         ''' Get an attribute out of the attrs attributes if it exists'''
         if attribute_name in attributes:
-            return attributes.get([attribute_name]
+            return attributes[attribute_name]
         elif numeric:
             return 0
         else:
