@@ -1430,29 +1430,36 @@ class Icloud(DeviceScanner):
                     #self._trace_device_attributes(
                     #        devicename, '5sPoll', update_reason, dev_attrs)
 
-                    dist_from_zone = self._current_zone_distance(
+                    dist_from_zone_m = self._current_zone_distance_m(
                                 devicename,
                                 current_zone,
                                 dev_latitude,
                                 dev_longitude)
-                    if current_zone in self.zone_radius:
-                        current_zone_radius = self.zone_radius.get(current_zone)
-                    else:
-                        current_zone_radius = self.zone_radius.get(HOME)
+                    #if current_zone in self.zone_radius_km:
+                    #    current_zone_radius_km = self.zone_radius_km.get(current_zone)
+                    #else:
+                    #    current_zone_radius_km = self.zone_radius_km.get(HOME)
+                    current_zone_radius_km = self.zone_radius_km.get(current_zone, self.zone_radius_km.get(HOME))
+                    current_zone_radius_m = self.zone_radius_m.get(current_zone, self.zone_radius_m.get(HOME))
 
                     if dev_trigger in IOS_TRIGGERS_ENTER_ZONE:
+                        #if (current_zone in self.zone_lat and
+                        #        dist_from_zone_m > self.zone_radius_km.get(current_zone) * 200 and
                         if (current_zone in self.zone_lat and
-                                dist_from_zone > self.zone_radius.get(current_zone) * 200 and
-                                dist_from_zone < 999999):
+                                dist_from_zone_m > self.zone_radius_m.get(current_zone)*2 and
+                                dist_from_zone_m < 999999):
                             event_msg = ("Conflicting enter zone trigger, "
                                 "Moving into zone > "
                                 "Zone-{}, Dist-{}m, ZoneVerifyDist-{}m, "
                                 "GPS-({}, {})").format(
                                 current_zone,
-                                dist_from_zone,
-                                self.zone_radius.get(current_zone)*200,
+                                dist_from_zone_m,
+                                self.zone_radius_m.get(current_zone)*2,
                                 dev_latitude,
                                 dev_longitude)
+                                #self.zone_radius_km.get(current_zone)*200,
+                                #dev_latitude,
+                                #dev_longitude)
                             self._save_event_halog_info(devicename, event_msg)
 
                             dev_latitude             = self.zone_lat.get(current_zone)
@@ -1491,15 +1498,16 @@ class Icloud(DeviceScanner):
 
                             #if the zone is a stationary zone and no exit trigger,
                             #the zones in the ios app may not be current.
-                            if (dist_from_zone >= current_zone_radius * 2 and
+                            if (dist_from_zone_m >= current_zone_radius_m * 2 and
                                     instr(current_zone, STATIONARY) and 
                                     instr(self.zone_last.get(devicename), STATIONARY)):
                                 event_msg = ("Outside Stationary Zone without "
                                     "Exit Trigger > Check iOS App Configuration/"
                                     "Location for stationary zones. Force app "
                                     "refresh to reload zones if necessary. "
-                                    f"Dist-{round(dist_from_zone/1000, 2)}km, "
-                                    f"StatZoneSize-{current_zone_radius * 200}m")
+                                    f"Dist-{round(dist_from_zone_m/1000, 2)}km, "
+                                    f"StatZoneTestDist-{current_zone_radius_m * 2}m")
+                                    #f"StatZoneSize-{current_zone_radius_km * 200}m")
                                 self._save_event_halog_info(devicename, event_msg) 
                                 
                                 self.iosapp_stat_zone_action_msg_cnt[devicename] += 1
@@ -1513,15 +1521,15 @@ class Icloud(DeviceScanner):
                                         "message": "The iCloud3 Stationary Zone may "\
                                             "not be loaded in the iOSApp. Force close "\
                                             "the iOSApp from the iOS App Switcher. "\
-                                            "Then restart the iOSApp to reload the HA zones."\
-                                            f"Dist-{dist_from_zone}, "\
-                                            f"StatZoneSize-{current_zone_radius * 2}",
+                                            "Then restart the iOSApp to reload the HA zones. "\
+                                            f"Dist-{round(dist_from_zone_m/1000, 2)}km, "
+                                            f"StatZoneTestDist-{current_zone_radius_m * 2}m",
                                         "data": {"subtitle": "Stationary Zone Exit "\
                                             "Trigger was not received"}}
                                     self.hass.services.call("notify", entity_id, service_data)
 
                             #discard if between 0-zone _radius*4 due to gps errors
-                            elif dist_from_zone <= current_zone_radius * 4:
+                            elif dist_from_zone_m <= current_zone_radius_km * 4:
                                 update_via_iosapp_flag = False
                                 ios_update_reason      = None
 
@@ -1529,19 +1537,19 @@ class Icloud(DeviceScanner):
                                     "Keeping in zone > Zone-{}, Dist-{}m, "
                                     "DiscardInsideRadius-{}m").format(
                                     self.state_last_poll.get(devicename),
-                                    dist_from_zone,
-                                    current_zone_radius*4)
+                                    dist_from_zone_m,
+                                    current_zone_radius_km*4)
                                 self._save_event_halog_info(devicename, event_msg)
 
                             #update via icloud to verify location if less than home_radius*100
-                            elif (dist_from_zone <= current_zone_radius * 100 and 
+                            elif (dist_from_zone_m <= current_zone_radius_km * 100 and 
                                     self.CURRENT_TRK_METHOD_FMF_FAMSHR):
                                 event_msg = ("iCloud being called to verify location > "
                                     "Zone-{}, Dist-{}m, ZoneVerifyDist-{}m, "
                                     "GPS-({}, {})").format(
                                     current_zone,
-                                    dist_from_zone,
-                                    current_zone_radius*100,
+                                    dist_from_zone_m,
+                                    current_zone_radius_km*100,
                                     dev_latitude,
                                     dev_longitude)
                                 self._save_event_halog_info(devicename, event_msg)
@@ -2782,7 +2790,7 @@ class Icloud(DeviceScanner):
             self.base_zone_name   = self.zone_friendly_name.get(self.base_zone)
             self.base_zone_lat    = self.zone_lat.get(self.base_zone)
             self.base_zone_long   = self.zone_long.get(self.base_zone)
-            self.base_zone_radius = float(self.zone_radius.get(self.base_zone))
+            self.base_zone_radius_km = float(self.zone_radius_km.get(self.base_zone))
 
             location_data = self._get_distance_data(
                 devicename,
@@ -2798,22 +2806,22 @@ class Icloud(DeviceScanner):
             if (location_data[0] == 'ERROR'):
                 return location_data[1]     #(attrs)
 
-            current_zone              = location_data[0]
-            dir_of_travel             = location_data[1]
-            dist_from_zone            = location_data[2]
-            dist_from_zone_moved      = location_data[3]
-            dist_last_poll_moved      = location_data[4]
-            waze_dist_from_zone       = location_data[5]
-            calc_dist_from_zone       = location_data[6]
-            waze_dist_from_zone_moved = location_data[7]
-            calc_dist_from_zone_moved = location_data[8]
-            waze_dist_last_poll_moved = location_data[9]
-            calc_dist_last_poll_moved = location_data[10]
-            waze_time_from_zone       = location_data[11]
-            last_dist_from_zone       = location_data[12]
-            last_dir_of_travel        = location_data[13]
-            dir_of_trav_msg           = location_data[14]
-            timestamp                 = location_data[15]
+            current_zone                 = location_data[0]
+            dir_of_travel                = location_data[1]
+            dist_from_zone_km            = location_data[2]
+            dist_from_zone_moved_km      = location_data[3]
+            dist_last_poll_moved_km      = location_data[4]
+            waze_dist_from_zone_km       = location_data[5]
+            calc_dist_from_zone_km       = location_data[6]
+            waze_dist_from_zone_moved_km = location_data[7]
+            calc_dist_from_zone_moved_km = location_data[8]
+            waze_dist_last_poll_moved_km = location_data[9]
+            calc_dist_last_poll_moved_km = location_data[10]
+            waze_time_from_zone          = location_data[11]
+            last_dist_from_zone_km       = location_data[12]
+            last_dir_of_travel           = location_data[13]
+            dir_of_trav_msg              = location_data[14]
+            timestamp                    = location_data[15]
 
         except Exception as err:
             attrs_msg = self._internal_error_msg(fct_name, err, 'SetLocation')
@@ -2833,7 +2841,7 @@ class Icloud(DeviceScanner):
     #       when you are real close to home. When home is reached,
     #       the distance will be 0.
 
-            calc_interval = round(self._km_to_mi(dist_from_zone) / 1.5) * 60
+            calc_interval = round(self._km_to_mi(dist_from_zone_km) / 1.5) * 60
             if self.waze_status == WAZE_USED:
                 waze_interval = \
                     round(waze_time_from_zone * 60 * self.travel_time_factor , 0)
@@ -2893,14 +2901,14 @@ class Icloud(DeviceScanner):
 
                 #entered 'near_zone' zone if close to HOME and last is NOT_HOME
                 elif (near_zone_flag and wasnot_inzone_flag and
-                        calc_dist_from_zone < 2):
+                        calc_dist_from_zone_km < 2):
                     interval = 15
                     dir_of_travel = 'NearZone'
                     log_method="1nz-EnterHomeNearZone"
 
                 #entered 'near_zone' zone if close to HOME and last is NOT_HOME
                 elif (near_zone_flag and was_inzone_flag and
-                        calc_dist_from_zone < 2):
+                        calc_dist_from_zone_km < 2):
                     interval = 15
                     dir_of_travel = 'NearZone'
                     log_method="1nhz-EnterNearHomeZone"
@@ -2971,7 +2979,7 @@ class Icloud(DeviceScanner):
                 #    interval_multiplier = 2
 
             elif (inzone_home_flag or
-                    (dist_from_zone < .05 and dir_of_travel == 'towards')):
+                    (dist_from_zone_km < .05 and dir_of_travel == 'towards')):
                 interval   = self.inzone_interval
                 log_method = '4iz-InZone'
                 log_msg    = 'Zone={}'.format(current_zone)
@@ -2997,11 +3005,11 @@ class Icloud(DeviceScanner):
                 log_msg    = 'ZoneLeft={}'.format(current_zone)
 
 
-            elif dist_from_zone < 2.5 and self.went_3km.get(devicename):
+            elif dist_from_zone_km < 2.5 and self.went_3km.get(devicename):
                 interval   = 15             #1.5 mi=real close and driving
                 log_method = '10a-Dist < 2.5km(1.5mi)'
 
-            elif dist_from_zone < 3.5:      #2 mi=30 sec
+            elif dist_from_zone_km < 3.5:      #2 mi=30 sec
                 interval   = 30
                 log_method = '10b-Dist < 3.5km(2mi)'
 
@@ -3010,35 +3018,35 @@ class Icloud(DeviceScanner):
                 log_method = '10c-WazeTime'
                 log_msg    = 'TimeFmHome={}'.format(waze_time_from_zone)
 
-            elif dist_from_zone < 5:        #3 mi=1 min
+            elif dist_from_zone_km < 5:        #3 mi=1 min
                 interval   = 60
                 log_method = '10d-Dist < 5km(3mi)'
 
-            elif dist_from_zone < 8:        #5 mi=2 min
+            elif dist_from_zone_km < 8:        #5 mi=2 min
                 interval   = 120
                 log_method = '10e-Dist < 8km(5mi)'
 
-            elif dist_from_zone < 12:       #7.5 mi=3 min
+            elif dist_from_zone_km < 12:       #7.5 mi=3 min
                 interval   = 180
                 log_method = '10f-Dist < 12km(7mi)'
 
 
-            elif dist_from_zone < 20:       #12 mi=10 min
+            elif dist_from_zone_km < 20:       #12 mi=10 min
                 interval   = 600
                 log_method = '10g-Dist < 20km(12mi)'
 
-            elif dist_from_zone < 40:       #25 mi=15 min
+            elif dist_from_zone_km < 40:       #25 mi=15 min
                 interval   = 900
                 log_method = '10h-Dist < 40km(25mi)'
 
-            elif dist_from_zone > 150:      #90 mi=1 hr
+            elif dist_from_zone_km > 150:      #90 mi=1 hr
                 interval   = 3600
                 log_method = '10i-Dist > 150km(90mi)'
 
             else:
                 interval   = calc_interval
                 log_method = '20-Calculated'
-                log_msg    = 'Value={}/1.5'.format(self._km_to_mi(dist_from_zone))
+                log_msg    = 'Value={}/1.5'.format(self._km_to_mi(dist_from_zone_km))
 
         except Exception as err:
             attrs_msg = self._internal_error_msg(fct_name, err, 'SetInterval')
@@ -3179,9 +3187,9 @@ class Icloud(DeviceScanner):
             self.last_update_time[devicename_zone] = self._secs_to_time(self.this_update_secs)
 
             #if more than 3km(1.8mi) then assume driving, used later above
-            if dist_from_zone > 3:                # 1.8 mi
+            if dist_from_zone_km > 3:                # 1.8 mi
                 self.went_3km[devicename] = True
-            elif dist_from_zone < .03:            # home, reset flag
+            elif dist_from_zone_km < .03:            # home, reset flag
                  self.went_3km[devicename] = False
 
         except Exception as err:
@@ -3207,7 +3215,7 @@ class Icloud(DeviceScanner):
                 self.interval_str.get(devicename_zone),
                 interval_multiplier,
                 self.overrideinterval_seconds.get(devicename),
-                dist_last_poll_moved, current_zone)
+                dist_last_poll_moved_km, current_zone)
             self.log_debug_interval_msg(devicename, log_msg)
 
         except Exception as err:
@@ -3224,32 +3232,32 @@ class Icloud(DeviceScanner):
                "WazeMoved={}").format(
                dir_of_travel,
                last_dir_of_travel,
-               dist_from_zone,
-               last_dist_from_zone,
+               dist_from_zone_km,
+               last_dist_from_zone_km,
                self.zone_dist.get(devicename_zone),
-               dist_from_zone_moved,
-               waze_dist_from_zone_moved)
+               dist_from_zone_moved_km,
+               waze_dist_from_zone_moved_km)
             self.log_debug_interval_msg(devicename, log_msg)
 
             #if poor gps and moved less than 1km, redisplay last distances
             if (self.state_change_flag.get(devicename) == False and
                     self.poor_gps_accuracy_flag.get(devicename) and
-                            dist_last_poll_moved < 1):
-                dist_from_zone      = self.zone_dist.get(devicename_zone)
-                waze_dist_from_zone = self.waze_dist.get(devicename_zone)
-                calc_dist_from_zone = self.calc_dist.get(devicename_zone)
+                            dist_last_poll_moved_km < 1):
+                dist_from_zone_km      = self.zone_dist.get(devicename_zone)
+                waze_dist_from_zone_km = self.waze_dist.get(devicename_zone)
+                calc_dist_from_zone_km = self.calc_dist.get(devicename_zone)
                 waze_time_msg       = self.waze_time.get(devicename_zone)
 
             else:
                 waze_time_msg       = self._format_waze_time_msg(devicename,
                                                     waze_time_from_zone,
-                                                    waze_dist_from_zone)
+                                                    waze_dist_from_zone_km)
 
                 #save for next poll if poor gps
-                self.zone_dist[devicename_zone] = dist_from_zone
-                self.waze_dist[devicename_zone] = waze_dist_from_zone
+                self.zone_dist[devicename_zone] = dist_from_zone_km
+                self.waze_dist[devicename_zone] = waze_dist_from_zone_km
                 self.waze_time[devicename_zone] = waze_time_msg
-                self.calc_dist[devicename_zone] = calc_dist_from_zone
+                self.calc_dist[devicename_zone] = calc_dist_from_zone_km
 
         except Exception as err:
             attrs_msg = self._internal_error_msg(fct_name, err, 'SetDistDir')
@@ -3298,15 +3306,15 @@ class Icloud(DeviceScanner):
             attrs[ATTR_WAZE_TIME]     = ''
             if self.waze_status == WAZE_USED:
                 attrs[ATTR_WAZE_TIME]     = waze_time_msg
-                attrs[ATTR_WAZE_DISTANCE] = self._km_to_mi(waze_dist_from_zone)
+                attrs[ATTR_WAZE_DISTANCE] = self._km_to_mi(waze_dist_from_zone_km)
             elif self.waze_status == WAZE_NOT_USED:
                 attrs[ATTR_WAZE_DISTANCE] = 'WazeOff'
             elif self.waze_status == WAZE_ERROR:
                 attrs[ATTR_WAZE_DISTANCE] = 'NoRoutes'
             elif self.waze_status == WAZE_OUT_OF_RANGE:
-                if waze_dist_from_zone < 1:
+                if waze_dist_from_zone_km < 1:
                     attrs[ATTR_WAZE_DISTANCE] = ''
-                elif waze_dist_from_zone < self.waze_min_distance:
+                elif waze_dist_from_zone_km < self.waze_min_distance:
                     attrs[ATTR_WAZE_DISTANCE] = 'DistLow'
                 else:
                     attrs[ATTR_WAZE_DISTANCE] = 'DistHigh'
@@ -3314,22 +3322,22 @@ class Icloud(DeviceScanner):
                 attrs[ATTR_WAZE_DISTANCE] = ''
             elif self.waze_status == WAZE_PAUSED:
                 attrs[ATTR_WAZE_DISTANCE] = PAUSED
-            elif waze_dist_from_zone > 0:
+            elif waze_dist_from_zone_km > 0:
                 attrs[ATTR_WAZE_TIME]     = waze_time_msg
-                attrs[ATTR_WAZE_DISTANCE] = self._km_to_mi(waze_dist_from_zone)
+                attrs[ATTR_WAZE_DISTANCE] = self._km_to_mi(waze_dist_from_zone_km)
             else:
                 attrs[ATTR_WAZE_DISTANCE] = ''
 
-            attrs[ATTR_ZONE_DISTANCE]   = self._km_to_mi(dist_from_zone)
-            attrs[ATTR_CALC_DISTANCE]   = self._km_to_mi(calc_dist_from_zone)
+            attrs[ATTR_ZONE_DISTANCE]   = self._km_to_mi(dist_from_zone_km)
+            attrs[ATTR_CALC_DISTANCE]   = self._km_to_mi(calc_dist_from_zone_km)
             attrs[ATTR_DIR_OF_TRAVEL]   = dir_of_travel
-            attrs[ATTR_TRAVEL_DISTANCE] = self._km_to_mi(dist_last_poll_moved)
+            attrs[ATTR_TRAVEL_DISTANCE] = self._km_to_mi(dist_last_poll_moved_km)
 
             info_msg = self._format_info_attr(
                     devicename,
                     battery,
                     gps_accuracy,
-                    dist_last_poll_moved,
+                    dist_last_poll_moved_km,
                     current_zone,
                     location_isold_flag, location_time_secs)
                     #loc_timestamp)
@@ -3339,7 +3347,7 @@ class Icloud(DeviceScanner):
             #save for event log
             self.last_tavel_time[devicename_zone]   = waze_time_msg
             self.last_distance_str[devicename_zone] = '{} {}'.format(
-                self._km_to_mi(dist_from_zone),
+                self._km_to_mi(dist_from_zone_km),
                 self.unit_of_measurement)
 
             self._trace_device_attributes(devicename, 'Results', fct_name, attrs)
@@ -3350,7 +3358,7 @@ class Icloud(DeviceScanner):
                 latitude,
                 longitude,
                 interval_str,
-                self._km_to_mi(dist_from_zone),
+                self._km_to_mi(dist_from_zone_km),
                 self.unit_of_measurement,
                 waze_time_msg,
                 dir_of_travel,
@@ -3494,7 +3502,7 @@ class Icloud(DeviceScanner):
             Returns:
                 - current_zone (current zone from lat & long)
                   set to HOME if distance < home zone radius
-                - dist_from_zone (mi or km)
+                - dist_from_zone_km (mi or km)
                 - dist_traveled (since last poll)
                 - dir_of_travel (towards, away_from, stationary, in_zone,
                                        left_zone, near_home)
@@ -3514,16 +3522,16 @@ class Icloud(DeviceScanner):
             self.log_debug_interval_msg(devicename, log_msg)
 
             last_dir_of_travel        = NOT_SET
-            last_dist_from_zone       = 0
+            last_dist_from_zone_km       = 0
             last_waze_time            = 0
             last_lat                  = self.base_zone_lat
             last_long                 = self.base_zone_long
             dev_timestamp_secs        = 0
 
             current_zone              = self.base_zone
-            calc_dist_from_zone       = 0
-            calc_dist_last_poll_moved = 0
-            calc_dist_from_zone_moved = 0
+            calc_dist_from_zone_km       = 0
+            calc_dist_last_poll_moved_km = 0
+            calc_dist_from_zone_moved_km = 0
 
 
             #Get the devicename's icloud3 attributes
@@ -3548,8 +3556,8 @@ class Icloud(DeviceScanner):
                 else:
                     dev_timestamp_secs = 0
 
-                last_dist_from_zone_s = self._get_attr(attrs, ATTR_ZONE_DISTANCE, NUMERIC)
-                last_dist_from_zone   = self._mi_to_km(last_dist_from_zone_s)
+                last_dist_from_zone_km_s = self._get_attr(attrs, ATTR_ZONE_DISTANCE, NUMERIC)
+                last_dist_from_zone_km   = self._mi_to_km(last_dist_from_zone_km_s)
 
                 last_waze_time        = self._get_attr(attrs, ATTR_WAZE_TIME)
                 last_dir_of_travel    = self._get_attr(attrs, ATTR_DIR_OF_TRAVEL)
@@ -3597,19 +3605,19 @@ class Icloud(DeviceScanner):
             # Get Waze distance & time
             #   Will return [error, 0, 0, 0] if error
             #               [out_of_range, dist, time, info] if
-            #                           last_dist_from_zone >
+            #                           last_dist_from_zone_km >
             #                           last distance from home
             #               [ok, 0, 0, 0]  if zone=home
             #               [ok, distFmHome, timeFmHome, info] if OK
 
-            calc_dist_from_zone       = self._calc_distance_km(this_lat, this_long,
+            calc_dist_from_zone_km       = self._calc_distance_km(this_lat, this_long,
                                             self.base_zone_lat, self.base_zone_long)
-            calc_dist_last_poll_moved = self._calc_distance_km(last_lat, last_long,
+            calc_dist_last_poll_moved_km = self._calc_distance_km(last_lat, last_long,
                                             this_lat, this_long)
-            calc_dist_from_zone_moved = (calc_dist_from_zone - last_dist_from_zone)
-            calc_dist_from_zone       = self._round_to_zero(calc_dist_from_zone)
-            calc_dist_last_poll_moved = self._round_to_zero(calc_dist_last_poll_moved)
-            calc_dist_from_zone_moved = self._round_to_zero(calc_dist_from_zone_moved)
+            calc_dist_from_zone_moved_km= (calc_dist_from_zone_km - last_dist_from_zone_km)
+            calc_dist_from_zone_km       = self._round_to_zero(calc_dist_from_zone_km)
+            calc_dist_last_poll_moved_km = self._round_to_zero(calc_dist_last_poll_moved_km)
+            calc_dist_from_zone_moved_km= self._round_to_zero(calc_dist_from_zone_moved_km)
 
             if self.distance_method_waze_flag:
                 #If waze paused via icloud_command or close to a zone, default to pause
@@ -3623,21 +3631,21 @@ class Icloud(DeviceScanner):
             debug_log = ("3664 dnZone-{}, wStatus-{}, calc_dist-{}, wManualPauseFlag-{},"
                     "wCloseToZoneFlag-{}").format(devicename_zone,
                     self.waze_status,
-                    calc_dist_from_zone,
+                    calc_dist_from_zone_km,
                     self.waze_manual_pause_flag,
                     self.waze_close_to_zone_pause_flag)
             #self._save_event(devicename, debug_log)
 
             #Make sure distance and zone are correct for HOME, initialize
-            if calc_dist_from_zone <= .05 or current_zone == self.base_zone:
+            if calc_dist_from_zone_km <= .05 or current_zone == self.base_zone:
                 current_zone              = self.base_zone
-                calc_dist_from_zone       = 0
-                calc_dist_last_poll_moved = 0
-                calc_dist_from_zone_moved = 0
+                calc_dist_from_zone_km       = 0
+                calc_dist_last_poll_moved_km = 0
+                calc_dist_from_zone_moved_km= 0
                 self.waze_status          = WAZE_PAUSED
 
             #Near home & towards or in near_zone
-            elif (calc_dist_from_zone < 1 and
+            elif (calc_dist_from_zone_km < 1 and
                     last_dir_of_travel in ('towards', 'near_zone')):
                 self.waze_status = WAZE_PAUSED
                 self.waze_close_to_zone_pause_flag = True
@@ -3648,15 +3656,15 @@ class Icloud(DeviceScanner):
                 #self._save_event(devicename, event_msg)
 
             #Determine if Waze should be used based on calculated distance
-            elif (calc_dist_from_zone > self.waze_max_distance or
-                  calc_dist_from_zone < self.waze_min_distance):
+            elif (calc_dist_from_zone_km > self.waze_max_distance or
+                  calc_dist_from_zone_km < self.waze_min_distance):
                 self.waze_status = WAZE_OUT_OF_RANGE
 
             #Initialize Waze default fields
-            waze_dist_from_zone       = calc_dist_from_zone
+            waze_dist_from_zone_km       = calc_dist_from_zone_km
             waze_time_from_zone       = 0
-            waze_dist_last_poll_moved = calc_dist_last_poll_moved
-            waze_dist_from_zone_moved = calc_dist_from_zone_moved
+            waze_dist_last_poll_moved_km = calc_dist_last_poll_moved_km
+            waze_dist_from_zone_moved_km= calc_dist_from_zone_moved_km
             self.waze_history_data_used_flag[devicename_zone] = False
 
             #Use Calc if close to home, Waze not accurate when close
@@ -3665,7 +3673,7 @@ class Icloud(DeviceScanner):
                     "wCloseToZoneFlag-{}").format(
                     devicename_zone,
                     self.waze_status,
-                    calc_dist_from_zone,
+                    calc_dist_from_zone_km,
                     self.waze_manual_pause_flag,
                     self.waze_close_to_zone_pause_flag)
             #self._save_event(devicename, debug_log)
@@ -3681,7 +3689,7 @@ class Icloud(DeviceScanner):
                     #See if another device is close with valid Waze data.
                     #If so, use it instead of calling Waze again.
                     waze_dist_time_info = self._get_waze_from_data_history(
-                            devicename, calc_dist_from_zone,
+                            devicename, calc_dist_from_zone_km,
                             this_lat, this_long)
 
                     #No Waze data from close device. Get it from Waze
@@ -3691,19 +3699,19 @@ class Icloud(DeviceScanner):
                                                 this_lat, this_long,
                                                 last_lat, last_long,
                                                 current_zone,
-                                                last_dist_from_zone)
+                                                last_dist_from_zone_km)
 
                     self.waze_status = waze_dist_time_info[0]
 
                     if self.waze_status != WAZE_ERROR:
-                        waze_dist_from_zone       = waze_dist_time_info[1]
+                        waze_dist_from_zone_km       = waze_dist_time_info[1]
                         waze_time_from_zone       = waze_dist_time_info[2]
-                        waze_dist_last_poll_moved = waze_dist_time_info[3]
-                        waze_dist_from_zone_moved = round(waze_dist_from_zone
-                                                    - last_dist_from_zone, 2)
+                        waze_dist_last_poll_moved_km = waze_dist_time_info[3]
+                        waze_dist_from_zone_moved_km= round(waze_dist_from_zone_km
+                                                    - last_dist_from_zone_km, 2)
                         debug_log = ("3740 Waze request successful, distance {}{}, "
                                 "time {} min").format(
-                                self._km_to_mi(waze_dist_from_zone),
+                                self._km_to_mi(waze_dist_from_zone_km),
                                 self.unit_of_measurement,
                                 waze_time_from_zone)
                         #self._save_event(devicename, debug_log)
@@ -3732,74 +3740,73 @@ class Icloud(DeviceScanner):
 
         try:
             if self.waze_status == WAZE_ERROR:
-                waze_dist_from_zone       = calc_dist_from_zone
+                waze_dist_from_zone_km       = calc_dist_from_zone_km
                 waze_time_from_zone       = 0
-                waze_dist_last_poll_moved = calc_dist_last_poll_moved
-                waze_dist_from_zone_moved = calc_dist_from_zone_moved
+                waze_dist_last_poll_moved_km = calc_dist_last_poll_moved_km
+                waze_dist_from_zone_moved_km = calc_dist_from_zone_moved_km
                 self.waze_distance_history[devicename_zone] = []
                 self.waze_history_data_used_flag[devicename_zone] = False
 
             #don't reset data if poor gps, use the best we have
             if current_zone == self.base_zone:
-                distance_method      = 'Home/Calc'
-                dist_from_zone       = 0
-                dist_last_poll_moved = 0
-                dist_from_zone_moved = 0
+                distance_method         = 'Home/Calc'
+                dist_from_zone_km       = 0
+                dist_last_poll_moved_km = 0
+                dist_from_zone_moved_km = 0
             elif self.waze_status == WAZE_USED:
-                distance_method      = 'Waze'
-                dist_from_zone       = waze_dist_from_zone
-                dist_last_poll_moved = waze_dist_last_poll_moved
-                dist_from_zone_moved = waze_dist_from_zone_moved
+                distance_method         = 'Waze'
+                dist_from_zone_km       = waze_dist_from_zone_km
+                dist_last_poll_moved_km = waze_dist_last_poll_moved_km
+                dist_from_zone_moved_km = waze_dist_from_zone_moved_km
             else:
-                distance_method      = 'Calc'
-                dist_from_zone       = calc_dist_from_zone
-                dist_last_poll_moved = calc_dist_last_poll_moved
-                dist_from_zone_moved = calc_dist_from_zone_moved
+                distance_method         = 'Calc'
+                dist_from_zone_km       = calc_dist_from_zone_km
+                dist_last_poll_moved_km = calc_dist_last_poll_moved_km
+                dist_from_zone_moved_km = calc_dist_from_zone_moved_km
 
-            if dist_from_zone > 99: dist_from_zone = int(dist_from_zone)
-            if dist_last_poll_moved > 99: dist_last_poll_moved = int(dist_last_poll_moved)
-            if dist_from_zone_moved > 99: dist_from_zone_moved = int(dist_from_zone_moved)
+            if dist_from_zone_km > 99: dist_from_zone_km = int(dist_from_zone_km)
+            if dist_last_poll_moved_km > 99: dist_last_poll_moved_km = int(dist_last_poll_moved_km)
+            if dist_from_zone_moved_km> 99: dist_from_zone_moved_km= int(dist_from_zone_moved_km)
 
-            dist_from_zone_moved = self._round_to_zero(dist_from_zone_moved)
+            dist_from_zone_moved_km= self._round_to_zero(dist_from_zone_moved_km)
 
             log_msg = ("►DISTANCES CALCULATED, "
                 "Zone={}, Method={},LastDistFmHome={}, WazeStatus={}").format(
                 current_zone,
                 distance_method,
-                last_dist_from_zone,
+                last_dist_from_zone_km,
                 self.waze_status)
             self.log_debug_interval_msg(devicename, log_msg)
             log_msg = ("►DISTANCES ...Waze, Dist={}, LastPollMoved={}, "
                 "FmHomeMoved={}, Time={}, Status={}").format(
-                waze_dist_from_zone,
-                waze_dist_last_poll_moved,
-                waze_dist_from_zone_moved,
+                waze_dist_from_zone_km,
+                waze_dist_last_poll_moved_km,
+                waze_dist_from_zone_moved_km,
                 waze_time_from_zone,
                 self.waze_status)
             self.log_debug_interval_msg(devicename, log_msg)
             log_msg = ("►DISTANCES ...Calc, Dist={}, LastPollMoved={}, "
                 "FmHomeMoved={}").format(
-                calc_dist_from_zone,
-                calc_dist_last_poll_moved,
-                calc_dist_from_zone_moved)
+                calc_dist_from_zone_km,
+                calc_dist_last_poll_moved_km,
+                calc_dist_from_zone_moved_km)
             self.log_debug_interval_msg(devicename, log_msg)
 
             #if didn't move far enough to determine towards or away_from,
             #keep the current distance and add it to the distance on the next
             #poll
-            if (dist_from_zone_moved > -.3 and dist_from_zone_moved < .3):
-                dist_from_zone_moved += \
-                        self.dist_from_zone_small_move_total.get(devicename)
-                self.dist_from_zone_small_move_total[devicename] = \
-                        dist_from_zone_moved
+            if (dist_from_zone_moved_km> -.3 and dist_from_zone_moved_km< .3):
+                dist_from_zone_moved_km+= \
+                        self.dist_from_zone_km_small_move_total.get(devicename)
+                self.dist_from_zone_km_small_move_total[devicename] = \
+                        dist_from_zone_moved_km
             else:
-                 self.dist_from_zone_small_move_total[devicename] = 0
+                 self.dist_from_zone_km_small_move_total[devicename] = 0
 
         except Exception as err:
             _LOGGER.exception(err)
             attrs = self._internal_error_msg(fct_name, err, 'CalcDist')
             return ('ERROR', attrs)
-
 
         try:
             section = "dir_of_trav"
@@ -3813,13 +3820,13 @@ class Icloud(DeviceScanner):
                 dir_of_travel   = 'left_zone'
                 dir_of_trav_msg = ("LastZone={}").format(last_dir_of_travel)
 
-            elif dist_from_zone_moved <= -.3:            #.18 mi
+            elif dist_from_zone_moved_km<= -.3:            #.18 mi
                 dir_of_travel   = 'towards'
-                dir_of_trav_msg = ("Dist={}").format(dist_from_zone_moved)
+                dir_of_trav_msg = ("Dist={}").format(dist_from_zone_moved_km)
 
-            elif dist_from_zone_moved >= .3:             #.18 mi
+            elif dist_from_zone_moved_km>= .3:             #.18 mi
                 dir_of_travel   = AWAY_FROM
-                dir_of_trav_msg = ("Dist={}").format(dist_from_zone_moved)
+                dir_of_trav_msg = ("Dist={}").format(dist_from_zone_moved_km)
 
             elif self.poor_gps_accuracy_flag.get(devicename):
                 dir_of_travel   = 'Poor.GPS'
@@ -3828,13 +3835,13 @@ class Icloud(DeviceScanner):
             else:
                 #didn't move far enough to tell current direction
                 dir_of_travel   = ("{}?").format(last_dir_of_travel)
-                dir_of_trav_msg = ("Moved={}").format(dist_last_poll_moved)
+                dir_of_trav_msg = ("Moved={}").format(dist_last_poll_moved_km)
 
             #If moved more than stationary zone limit (~.06km(200ft)),
             #reset check StatZone 5-min timer and check again next poll
             #Use calc distance rather than waze for better accuracy
             section = "test if home"
-            if (calc_dist_from_zone > self.stat_min_dist_from_zone and
+            if (calc_dist_from_zone_km > self.stat_min_dist_from_zone_km and
                 current_zone == NOT_HOME):
 
                 section = "test moved"
@@ -3842,7 +3849,7 @@ class Icloud(DeviceScanner):
                 if devicename not in self.stat_zone_moved_total:
                     reset_stat_zone_flag = True
 
-                elif (calc_dist_last_poll_moved > self.stat_dist_move_limit):
+                elif (calc_dist_last_poll_moved_km > self.stat_dist_move_limit):
                     reset_stat_zone_flag = True
 
                 if reset_stat_zone_flag:
@@ -3853,7 +3860,7 @@ class Icloud(DeviceScanner):
 
                     log_msg = ("►STATIONARY ZONE, Reset timer, "
                         "Moved={}, Timer={}").format(
-                        calc_dist_last_poll_moved,
+                        calc_dist_last_poll_moved_km,
                         self._secs_to_time(self.stat_zone_timer.get(devicename)))
                     self.log_debug_interval_msg(devicename, log_msg)
 
@@ -3862,7 +3869,7 @@ class Icloud(DeviceScanner):
                 elif devicename in self.stat_zone_moved_total:
                     section = "StatZonePrep"
                     move_into_stationary_zone_flag = False
-                    self.stat_zone_moved_total[devicename] += calc_dist_last_poll_moved
+                    self.stat_zone_moved_total[devicename] += calc_dist_last_poll_moved_km
                     stat_zone_timer_left       = self.stat_zone_timer.get(devicename) - self.this_update_secs
                     stat_zone_timer_close_left = stat_zone_timer_left - self.stat_zone_still_time/2
 
@@ -3873,8 +3880,8 @@ class Icloud(DeviceScanner):
                         self._secs_to_time(self.stat_zone_timer.get(devicename)),
                         stat_zone_timer_left,
                         stat_zone_timer_close_left,
-                        dist_from_zone,
-                        self.zone_radius.get(self.base_zone)*4)
+                        dist_from_zone_km,
+                        self.zone_radius_km.get(self.base_zone)*4)
                     self.log_debug_interval_msg(devicename, log_msg)
 
                     section = "CheckNowInStatZone"
@@ -3886,7 +3893,7 @@ class Icloud(DeviceScanner):
                             move_into_stationary_zone_flag = True
 
                         #See if close to zone and 1/2 of the timer is left
-                        elif (dist_from_zone <= self.zone_radius.get(self.base_zone)*4 and
+                        elif (dist_from_zone_km <= self.zone_radius_km.get(self.base_zone)*4 and
                               (stat_zone_timer_close_left <= 0)):
                             move_into_stationary_zone_flag = True
 
@@ -3913,28 +3920,28 @@ class Icloud(DeviceScanner):
                         dir_of_trav_msg)
             self.log_debug_interval_msg(devicename, log_msg)
 
-            dist_from_zone            = self._round_to_zero(dist_from_zone)
-            dist_from_zone_moved      = self._round_to_zero(dist_from_zone_moved)
-            dist_last_poll_moved      = self._round_to_zero(dist_last_poll_moved)
-            waze_dist_from_zone       = self._round_to_zero(waze_dist_from_zone)
-            calc_dist_from_zone_moved = self._round_to_zero(calc_dist_from_zone_moved)
-            waze_dist_last_poll_moved = self._round_to_zero(waze_dist_last_poll_moved)
-            calc_dist_last_poll_moved = self._round_to_zero(calc_dist_last_poll_moved)
-            last_dist_from_zone       = self._round_to_zero(last_dist_from_zone)
+            dist_from_zone_km            = self._round_to_zero(dist_from_zone_km)
+            dist_from_zone_moved_km      = self._round_to_zero(dist_from_zone_moved_km)
+            dist_last_poll_moved_km      = self._round_to_zero(dist_last_poll_moved_km)
+            waze_dist_from_zone_km       = self._round_to_zero(waze_dist_from_zone_km)
+            calc_dist_from_zone_moved_km = self._round_to_zero(calc_dist_from_zone_moved_km)
+            waze_dist_last_poll_moved_km = self._round_to_zero(waze_dist_last_poll_moved_km)
+            calc_dist_last_poll_moved_km = self._round_to_zero(calc_dist_last_poll_moved_km)
+            last_dist_from_zone_km       = self._round_to_zero(last_dist_from_zone_km)
 
             log_msg = ("►GET DEVICE DISTANCE DATA Complete, "
                         "CurrentZone={}, DistFmHome={}, DistFmHomeMoved={}, "
                         "DistLastPollMoved={}").format(
-                        current_zone, dist_from_zone,
-                        dist_from_zone_moved, dist_last_poll_moved)
+                        current_zone, dist_from_zone_km,
+                        dist_from_zone_moved_km, dist_last_poll_moved_km)
             self.log_debug_interval_msg(devicename, log_msg)
 
             distance_data = (current_zone, dir_of_travel,
-                    dist_from_zone, dist_from_zone_moved, dist_last_poll_moved,
-                    waze_dist_from_zone, calc_dist_from_zone,
-                    waze_dist_from_zone_moved, calc_dist_from_zone_moved,
-                    waze_dist_last_poll_moved, calc_dist_last_poll_moved,
-                    waze_time_from_zone, last_dist_from_zone,
+                    dist_from_zone_km, dist_from_zone_moved_km, dist_last_poll_moved_km,
+                    waze_dist_from_zone_km, calc_dist_from_zone_km,
+                    waze_dist_from_zone_moved_km, calc_dist_from_zone_moved_km,
+                    waze_dist_last_poll_moved_km, calc_dist_last_poll_moved_km,
+                    waze_time_from_zone, last_dist_from_zone_km,
                     last_dir_of_travel, dir_of_trav_msg, dev_timestamp_secs)
 
             log_msg = ("►DISTANCE DATA={}-{}").format(
@@ -4026,7 +4033,7 @@ class Icloud(DeviceScanner):
     def _get_attr(attributes, attribute_name, numeric = False):
         ''' Get an attribute out of the attrs attributes if it exists'''
         if attribute_name in attributes:
-            return attributes[attribute_name]
+            return attributes.get([attribute_name]
         elif numeric:
             return 0
         else:
@@ -4296,7 +4303,7 @@ class Icloud(DeviceScanner):
             
             debug_msg=(f"zone_lat/long=({zone_lat}, {zone_long}), "
                     f"lat-long=({latitude}, {longitude}), zone_dist={zone_dist}, "
-                    f"zone-radius={self.zone_radius.get(zone_name)}")
+                    f"zone-radius={self.zone_radius_km.get(zone_name)}")
             self.log_debug_msg(devicename, debug_msg)
                                         
             #Move center of stationary zone to new location if more than 10m from old loc
@@ -4308,7 +4315,8 @@ class Icloud(DeviceScanner):
                         STATIONARY_ZONE_VISIBLE)
                         
             #inside zone, move to center
-            elif (zone_dist <= self.zone_radius.get(zone_name)*1000 and 
+            #elif (zone_dist <= self.zone_radius_km.get(zone_name)*1000 and 
+            elif (zone_dist <= self.zone_radius_m.get(zone_name) and 
                     (latitude != zone_lat or longitude != zone_long)):
                 event_msg  = ("Moving to zone center > {}, "
                     "GPS-({}, {}) to ({}, {}), Dist-{}m").format(
@@ -4456,10 +4464,10 @@ class Icloud(DeviceScanner):
             zone_dist = self._calc_distance_km(latitude, longitude,
                 self.zone_lat.get(zone), self.zone_long.get(zone))
 
-            in_zone      = zone_dist < self.zone_radius.get(zone)
+            in_zone      = zone_dist < self.zone_radius_km.get(zone)
             closer_zone  = zone_selected is None or zone_dist < zone_selected_dist
             smaller_zone = (zone_dist == zone_selected_dist and
-                    self.zone_radius.get(zone) < self.zone_radius.get(zone_selected))
+                    self.zone_radius_km.get(zone) < self.zone_radius_km.get(zone_selected))
 
             if in_zone and (closer_zone or smaller_zone):
                 zone_selected_dist  = round(zone_dist, 2)
@@ -4468,7 +4476,9 @@ class Icloud(DeviceScanner):
             log_msg += ("{}-{}km/r{}, ").format(
                 zone,
                 zone_dist,
-                round(self.zone_radius.get(zone)*1000))
+                round(self.zone_radius_m.get(zone)))
+                #round(self.zone_radius_km.get(zone)*1000)) 
+               
         
         log_msg = ("{} > Selected-{}").format(log_msg[:-2], zone_selected)
         self.log_debug_msg(devicename, log_msg)
@@ -4547,7 +4557,7 @@ class Icloud(DeviceScanner):
         return "{}_stationary".format(devicename) if zone == STATIONARY else zone
 
 #--------------------------------------------------------------------
-    def _current_zone_distance(self, devicename, zone, latitude, longitude):
+    def _current_zone_distance_m(self, devicename, zone, latitude, longitude):
         '''
         Get the distance from zone `zone`
         '''
@@ -4656,7 +4666,7 @@ class Icloud(DeviceScanner):
             attrs[CONF_NAME]      = zone_name
             attrs[ATTR_LATITUDE]  = latitude
             attrs[ATTR_LONGITUDE] = longitude
-            attrs[ATTR_RADIUS]    = self.stat_zone_radius_meters
+            attrs[ATTR_RADIUS]    = self.stat_zone_radius_m
             attrs['passive']      = False
             attrs['icon']         = (f"mdi:{self.stat_zone_devicename_icon.get(devicename)}")
             attrs[ATTR_FRIENDLY_NAME] = 'Stationary'
@@ -4671,10 +4681,11 @@ class Icloud(DeviceScanner):
                     self.zone_lat.get(zone_name), self.zone_long.get(zone_name)) 
             zone_dist_msg = f"{zone_dist}m" if zone_dist < 500 else f"{round(zone_dist/1000, 2)}km" 
             
-            self.zone_lat[zone_name]      = latitude
-            self.zone_long[zone_name]     = longitude
-            self.zone_radius[zone_name]   = self.stat_zone_radius
-            self.zone_passive[zone_name]  = not visible_flag
+            self.zone_lat[zone_name]       = latitude
+            self.zone_long[zone_name]      = longitude
+            self.zone_radius_km[zone_name] = self.stat_zone_radius_km
+            self.zone_radius_m[zone_name]  = self.stat_zone_radius_m
+            self.zone_passive[zone_name]   = not visible_flag
 
             self.hass.states.set("zone." + zone_name, "zoning", attrs)
 
@@ -4847,7 +4858,7 @@ class Icloud(DeviceScanner):
 
 #--------------------------------------------------------------------
     def _format_info_attr(self, devicename, battery,
-                            gps_accuracy, dist_last_poll_moved,
+                            gps_accuracy, dist_last_poll_moved_km,
                             current_zone, location_isold_flag, location_time_secs):  #loc_timestamp):
 
         """
@@ -5065,7 +5076,7 @@ class Icloud(DeviceScanner):
         self.last_v2_trigger              = {}
         self.last_v2_trigger_changed_time = {}
         self.last_v2_trigger_changed_secs = {}
-        self.dist_from_zone_small_move_total = {}
+        self.dist_from_zone_km_small_move_total = {}
         self.fmf_location_data             = {}
         self.iosapp_version                = {}
         self.iosapp_v2_last_trigger_entity = {} #sensor entity extracted from entity_registry
@@ -5170,12 +5181,13 @@ class Icloud(DeviceScanner):
         '''
         Get friendly name of all zones to set the device_tracker state
         '''
-        self.zones        = []
+        self.zones           = []
         self.zone_friendly_name = {}
-        self.zone_lat     = {}
-        self.zone_long    = {}
-        self.zone_radius  = {}
-        self.zone_passive = {}
+        self.zone_lat       = {}
+        self.zone_long      = {}
+        self.zone_radius_km = {}
+        self.zone_radius_m  = {}
+        self.zone_passive   = {}
 
         if self.initial_startup_flag == False:
             self.hass.services.call("zone", "reload")
@@ -5196,25 +5208,17 @@ class Icloud(DeviceScanner):
                 
                 if instr(zone_name.lower(), STATIONARY):
                     self.zone_friendly_name[zone_name] = 'Stationary'  
-                    if 'icon' in zone_data:
-                        devicename = zone_name.replace('_stationary', '')
-                        self.stat_zone_devicename_icon[devicename] = zone_data('icon')
                 
                 if ATTR_LATITUDE in zone_data:
-                    self.zone_lat[zone_name]    = zone_data[ATTR_LATITUDE]
-                    self.zone_long[zone_name]   = zone_data[ATTR_LONGITUDE]
+                    self.zone_lat[zone_name]       = zone_data[ATTR_LATITUDE]
+                    self.zone_long[zone_name]      = zone_data[ATTR_LONGITUDE]
                     self.zone_passive[zone_name]   = zone_data['passive']
+                    self.zone_radius_m[zone_name]  = int(zone_data.get(ATTR_RADIUS, 100))
+                    self.zone_radius_km[zone_name] = round(self.zone_radius_m[zone_name]/1000, 4)
+                    xxxx = round(zone_data.get('xxxx', 100)/1000, 4)
+                    TRACE("XXXXX",self.zone_radius_km.get(zone_name),xxxx)
+                    self.zone_friendly_name[zone_name] = zone_data.get(ATTR_FRIENDLY_NAME, zone_name)
                     
-                    if ATTR_FRIENDLY_NAME in zone_data:
-                        self.zone_friendly_name[zone_name] = zone_data[ATTR_FRIENDLY_NAME]
-                    else:
-                        self.zone_friendly_name[zone_name] = zone_name
-                         
-                    if ATTR_RADIUS in zone_data:
-                        self.zone_radius[zone_name] = round(zone_data[ATTR_RADIUS]/1000, 4)
-                    else:
-                        self.zone_radius[zone_name] = 100
-
                 else:
                     log_msg = (f"Error loading zone {zone_name} > No data was returned from HA. "
                                f"Zone data returned is `{zone_data}`")
@@ -5228,23 +5232,21 @@ class Icloud(DeviceScanner):
                 _LOGGER.exception(err)
                 
             zone_msg = (f"{zone_msg}{zone_name}/{self.zone_friendly_name.get(zone_name)}"
-                        f"-({zone_data[ATTR_RADIUS]}m), ")
+                        f"-({self.zone_radius_m[zone_name]}m), ")
             
         log_msg = (f"Set up Zones-{zone_msg[:-2]}")
         self._save_event_halog_info("*", log_msg)
 
         self.zone_home_lat    = self.zone_lat.get(HOME)
         self.zone_home_long   = self.zone_long.get(HOME)
-        self.zone_home_radius = float(self.zone_radius.get(HOME))
+        self.zone_home_radius_km = float(self.zone_radius_km.get(HOME))
+        self.zone_home_radius_m = self.zone_radius_m.get(HOME)
 
         self.base_zone        = HOME
         self.base_zone_name   = self.zone_friendly_name.get(HOME)
         self.base_zone_lat    = self.zone_lat.get(HOME)
         self.base_zone_long   = self.zone_long.get(HOME)
-        self.base_zone_radius = float(self.zone_radius.get(HOME))
-        #self.zone_dist_2000m  = round(self.zone_home_radius * 2000,2)
-        #self.zone_dist_1000m  = round(self.zone_home_radius * 1000,2)
-        #self.zone_dist_250m   = round(self.zone_home_radius * 250,2)
+        self.base_zone_radius_km = float(self.zone_radius_km.get(HOME))
 
         return
 
@@ -5260,23 +5262,23 @@ class Icloud(DeviceScanner):
         self.stat_zone_devicename_icon = {}  #icon to be used for a devicename
         self.stat_zone_moved_total     = {}  #Total of small distances
         self.stat_zone_timer           = {}  #Time when distance set to 0
-        self.stat_min_dist_from_zone   = round(self.zone_home_radius * 2.5, 2)
-        self.stat_dist_move_limit      = round(self.zone_home_radius * 1.5, 2)
-        self.stat_zone_radius          = round(self.zone_home_radius * 2, 2)
-        self.stat_zone_radius_meters   = self.stat_zone_radius * 1000
+        self.stat_min_dist_from_zone_km   = round(self.zone_home_radius_km * 2.5, 2)
+        self.stat_dist_move_limit      = round(self.zone_home_radius_km * 1.5, 2)
+        self.stat_zone_radius_km       = round(self.zone_home_radius_km * 2, 2)
+        self.stat_zone_radius_m        = self.zone_home_radius_m * 2
         self.stat_zone_base_long       = self.zone_home_long
         
         #Offset the stat zone 1km north of Home if north of the equator or 
         #1km south of Home is south of the equator. (offset of 0.005=1km degrees)
         #Switch direction if near the north or south pole. 
-        offset = 0.0485      #0.005=1km
+        offset = 0.00465     #0.005=1km
         offset = -1*offset if self.zone_home_lat < 0 else offset
         offset = -1*offset if self.zone_home_lat > 89.8 or self.zone_home_lat < -89.8 else offset
         self.stat_zone_base_lat = round(self.zone_home_lat + offset, 6)
         
         log_msg = (f"Set up Initial Stationary Zone Location > "
                    f"GPS-({self.stat_zone_base_lat}, {self.stat_zone_base_long}), "
-                   f"Radius-{self.stat_zone_radius_meters}m")
+                   f"Radius-{self.stat_zone_radius_m}m")
         self.log_debug_msg("*", log_msg)
         self._save_event("*", log_msg)
         
@@ -5346,7 +5348,7 @@ class Icloud(DeviceScanner):
     def _initialize_device_tracking_fields(self, devicename):
         #times, flags
         self.overrideinterval_seconds[devicename] = 0
-        self.dist_from_zone_small_move_total[devicename] = 0
+        self.dist_from_zone_km_small_move_total[devicename] = 0
         self.update_timer[devicename]           = time.time()
 
         #location, gps
@@ -6618,7 +6620,7 @@ class Icloud(DeviceScanner):
 #########################################################
     def _get_waze_data(self, devicename,
                             this_lat, this_long, last_lat,
-                            last_long, current_zone, last_dist_from_zone):
+                            last_long, current_zone, last_dist_from_zone_km):
 
         try:
             if not self.distance_method_waze_flag:
@@ -6648,17 +6650,17 @@ class Icloud(DeviceScanner):
                 return (WAZE_ERROR, 0, 0, 0)
 
             try:
-                waze_dist_from_zone = self._round_to_zero(waze_from_zone[1])
+                waze_dist_from_zone_km = self._round_to_zero(waze_from_zone[1])
                 waze_time_from_zone = self._round_to_zero(waze_from_zone[2])
                 waze_dist_last_poll = self._round_to_zero(waze_from_last_poll[1])
 
-                if waze_dist_from_zone == 0:
+                if waze_dist_from_zone_km == 0:
                     waze_time_from_zone = 0
                 else:
                     waze_time_from_zone = self._round_to_zero(waze_from_zone[2])
 
-                if ((waze_dist_from_zone > self.waze_max_distance) or
-                     (waze_dist_from_zone < self.waze_min_distance)):
+                if ((waze_dist_from_zone_km > self.waze_max_distance) or
+                     (waze_dist_from_zone_km < self.waze_min_distance)):
                     waze_status = WAZE_OUT_OF_RANGE
 
             except Exception as err:
@@ -6670,14 +6672,14 @@ class Icloud(DeviceScanner):
                 " DistLastPoll={}, "
                 "WazeFromHome={}, WazeFromLastPoll={}").format(
                 waze_status,
-                waze_dist_from_zone,
+                waze_dist_from_zone_km,
                 waze_time_from_zone,
                 waze_dist_last_poll,
                 waze_from_zone,
                 waze_from_last_poll)
             self.log_debug_interval_msg(devicename, log_msg)
 
-            return (waze_status, waze_dist_from_zone, waze_time_from_zone,
+            return (waze_status, waze_dist_from_zone_km, waze_time_from_zone,
                     waze_dist_last_poll)
 
         except Exception as err:
@@ -6735,7 +6737,7 @@ class Icloud(DeviceScanner):
             return (WAZE_ERROR, 0, 0)
 #--------------------------------------------------------------------
     def _get_waze_from_data_history(self, devicename,
-                        curr_dist_from_zone, this_lat, this_long):
+                        curr_dist_from_zone_km, this_lat, this_long):
         '''
         Before getting Waze data, look at all other devices to see
         if there are any really close. If so, don't call waze but use their
@@ -6764,7 +6766,7 @@ class Icloud(DeviceScanner):
 
         #Calculate how far the old data can be from the new data before the
         #data will be refreshed.
-        test_distance = curr_dist_from_zone * .05
+        test_distance = curr_dist_from_zone_km * .05
         if test_distance > 5:
             test_distance = 5
 
