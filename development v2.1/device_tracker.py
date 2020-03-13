@@ -5680,14 +5680,14 @@ class Icloud(DeviceScanner):
                             self.fmf_id[id_contact] = devicename
                             self.fmf_id[devicename] = id_contact
                             self.devicename_verified[devicename] = True
-                            fname = contact.get('firstName', \
-                                        self.friendly_name.get(devicename, devicename))       
+                            #fname = contact.get('firstName', \
+                            #            self.friendly_name.get(devicename, devicename))       
                                         
-                            if fname != '' and fname != self.friendly_name.get(devicename):
-                                self.friendly_name[devicename] = fname
-                                event_msg = (f"Friendly Name Change > Using {fname} from iCloud "
-                                             f"Contacts")
-                                self._save_event(devicename, event_msg)
+                            #if fname != '' and fname != self.friendly_name.get(devicename):
+                            #    self.friendly_name[devicename] = fname
+                            #    event_msg = (f"Friendly Name Change > Using {fname} from iCloud "
+                            #                 f"Contacts")
+                            #    self._save_event(devicename, event_msg)
                                 
                             log_msg = ("Matched FmF Contact > {}({}) with {}, Id: {}").format(
                                 devicename,
