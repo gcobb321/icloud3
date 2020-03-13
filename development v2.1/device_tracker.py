@@ -444,6 +444,7 @@ STATIONARY_LAT_90       = 90
 STATIONARY_LONG_180     = 180
 STATIONARY_ZONE_VISIBLE = True
 STATIONARY_ZONE_HIDDEN  = False
+STATIONARY_ZONE_HOME_OFFSET  = .00492
 
 #Devicename config parameter file extraction
 DI_DEVICENAME           = 0
@@ -1010,12 +1011,13 @@ class Icloud(DeviceScanner):
                 else:
                     event_msg_prefix = "Not "
 
-                event_msg = ("{}Tracking ({}) > {}").format(
+                event_msg = ("{}Tracking ({}) > {}({})").format(
                     event_msg_prefix,
                     self.trk_method_short_name,
-                    devicename)
+                    devicename,
+                    self.friendly_name.get(devicename))
                 if self.fmf_devicename_email.get(devicename):
-                    event_msg = "{} ({})".format(
+                    event_msg = "{} via {}".format(
                         event_msg,
                         self.fmf_devicename_email.get(devicename))
 
@@ -5215,8 +5217,6 @@ class Icloud(DeviceScanner):
                     self.zone_passive[zone_name]   = zone_data['passive']
                     self.zone_radius_m[zone_name]  = int(zone_data.get(ATTR_RADIUS, 100))
                     self.zone_radius_km[zone_name] = round(self.zone_radius_m[zone_name]/1000, 4)
-                    xxxx = round(zone_data.get('xxxx', 100)/1000, 4)
-                    TRACE("XXXXX",self.zone_radius_km.get(zone_name),xxxx)
                     self.zone_friendly_name[zone_name] = zone_data.get(ATTR_FRIENDLY_NAME, zone_name)
                     
                 else:
@@ -5271,7 +5271,7 @@ class Icloud(DeviceScanner):
         #Offset the stat zone 1km north of Home if north of the equator or 
         #1km south of Home is south of the equator. (offset of 0.005=1km degrees)
         #Switch direction if near the north or south pole. 
-        offset = 0.00465     #0.005=1km
+        offset = STATIONARY_ZONE_HOME_OFFSET  #0.00468    #0.005=1km
         offset = -1*offset if self.zone_home_lat < 0 else offset
         offset = -1*offset if self.zone_home_lat > 89.8 or self.zone_home_lat < -89.8 else offset
         self.stat_zone_base_lat = round(self.zone_home_lat + offset, 6)
@@ -5680,20 +5680,17 @@ class Icloud(DeviceScanner):
                             self.fmf_id[id_contact] = devicename
                             self.fmf_id[devicename] = id_contact
                             self.devicename_verified[devicename] = True
-
-                            if self.friendly_name.get(devicename) == None:
-                                try:
-                                    if 'firstName' in contact:
-                                        self.friendly_name[devicename] = contact.get('firstName')
-                                    else:
-                                        self.friendly_name[devicename] = \
-                                                self._extract_name_device_type(devicename)[0]
-                                except Exception as err:
-                                    _LOGGER.exception(err)
-
-                            log_msg = ("Matched <{} ({})> with FmF contact {}-{}, Id: {}").format(
+                            fname = contact.get('firstName', \
+                                        self.friendly_name.get(devicename, devicename))       
+                                        
+                            if fname != '' and fname != self.friendly_name.get(devicename):
+                                self.friendly_name[devicename] = fname
+                                event_msg = (f"Friendly Name Change > Using {fname} from iCloud "
+                                             f"Contacts")
+                                self._save_event(devicename, event_msg)
+                                
+                            log_msg = ("Matched FmF Contact > {}({}) with {}, Id: {}").format(
                                 devicename,
-                                self.group,
                                 self.friendly_name.get(devicename),
                                 contact_email,
                                 id_contact)
@@ -5939,7 +5936,7 @@ class Icloud(DeviceScanner):
             devicename_parameters = track_device_line.split('>')
             devicename  = slugify(devicename_parameters[0].replace(' ', '', 99).lower())
             log_msg = ("Decoding > {}").format(track_device_line)
-            self._save_event_halog_info("*", log_msg)
+            self._save_event_halog_info(devicename, log_msg)
 
             #If tracking method is IOSAPP or FAMSHR, try to make a friendly
             #name from the devicename. If FMF, it will be retrieved from the
@@ -5947,20 +5944,6 @@ class Icloud(DeviceScanner):
             #overridden with the specified name later.
 
             fname, device_type = self._extract_name_device_type(devicename)
-            if self.CURRENT_TRK_METHOD_FMF:
-                fname = ''
-
-                '''
-                _extract_name_device_type(devicename)
-                for dev_type in APPLE_DEVICE_TYPES:
-                    dev_type_pos = devicename.find(dev_type)
-                    if dev_type_pos > 0:
-                        fnamew = devicename.replace(dev_type, "", 99)
-                        fname  = fnamew.replace("_", "", 99)
-                        fname  = fname.replace("-", "", 99).title()
-                        device_type  = dev_type
-                '''
-
             self.tracked_devices_config_parm[devicename] = track_device_line
 
             if len(devicename_parameters) > 1:
@@ -5993,13 +5976,19 @@ class Icloud(DeviceScanner):
                         else:
                             zones.append(item)
                 else:
-                    #sensor_prefix = item
                     fname = item_entered
 
             zones.append(HOME)
             if badge_picture and instr(badge_picture, '/') == False:
                 badge_picture = '/local/' + badge_picture
 
+            event_log = (f"Results > FriendlyName-{fname}, Email-{email}, "
+                         f"Picture-{badge_picture}, DeviceType-{device_type}")
+            if zones != []:
+                event_log += f", TrackFromZone-{zones}"
+            self._save_event(devicename, event_log)
+            
+            
             #Cycle through the mobile_app 'core.entity_registry' items and see
             #if this 'device_tracker.devicename' exists. If so, it is using
             #the iosapp v2 component. Return the devicename with the device suffix (_#)
@@ -6897,8 +6886,10 @@ class Icloud(DeviceScanner):
 #   log_, trace_ MESSAGE ROUTINES
 #
 #########################################################
-    @staticmethod
-    def log_info_msg(log_msg):
+    def log_info_msg(self, log_msg):
+        if self.log_level_eventlog_flag: 
+            if log_msg.startswith("►") == False: log_msg = f"►{log_msg}"
+            self._save_event("*", log_msg)
         _LOGGER.info(log_msg)
 
     def _save_event_halog_info(self, devicename, log_msg):
@@ -7308,7 +7299,8 @@ class Icloud(DeviceScanner):
         '''Extract the name and device type from the devicename'''
 
         try:
-            fname = ''
+            fname    = devicename.title()
+            dev_type = ''
 
             for dev_type in APPLE_DEVICE_TYPES:
                 if instr(devicename, dev_type):
