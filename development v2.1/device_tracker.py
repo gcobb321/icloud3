@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.1'
+VERSION = '2.1rc3'
 '''
 v2.1
 - iCloud3 will have HA reload the zone configuration when iCloud3 is restarted. You can add new zones to HA using the Configuration/Zones Sidebar screen or zone configuration file and then restart iCloud3 using the button on the Event Log Card to reload the zone information without restarting HA. Be sure to forse restart the iOA App to also reload the new zones.
@@ -5212,12 +5212,12 @@ class Icloud(DeviceScanner):
                     self.zone_friendly_name[zone_name] = 'Stationary'  
                 
                 if ATTR_LATITUDE in zone_data:
-                    self.zone_lat[zone_name]       = zone_data[ATTR_LATITUDE]
-                    self.zone_long[zone_name]      = zone_data[ATTR_LONGITUDE]
-                    self.zone_passive[zone_name]   = zone_data['passive']
+                    self.zone_lat[zone_name]       = zone_data.get(ATTR_LATITUDE, 0)
+                    self.zone_long[zone_name]      = zone_data.get(ATTR_LONGITUDE, 0)
+                    self.zone_passive[zone_name]   = zone_data.get('passive', True)
                     self.zone_radius_m[zone_name]  = int(zone_data.get(ATTR_RADIUS, 100))
                     self.zone_radius_km[zone_name] = round(self.zone_radius_m[zone_name]/1000, 4)
-                    self.zone_friendly_name[zone_name] = zone_data.get(ATTR_FRIENDLY_NAME, zone_name)
+                    self.zone_friendly_name[zone_name] = zone_data.get(ATTR_FRIENDLY_NAME, zone_name.title())
                     
                 else:
                     log_msg = (f"Error loading zone {zone_name} > No data was returned from HA. "
