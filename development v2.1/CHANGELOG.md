@@ -52,7 +52,7 @@
 
 ![event_log_initializing](../docs/images/event_log_initializing.jpg)
 
-> If you do not see the Refresh/Debug/Restart-iC3 buttons, refresh your browser. You might have to do this several times and you will probably have to delete the cached images. If this still doesn't work, add `?v2.1` to the end of the `icloud3-event-log-card.js` line in the resources section in the *ui-lovelace.yaml* configuration file.
+> If you do not see the **Refresh/Debug/Restart-iC3** buttons, refresh your browser. You might have to do this several times and you will probably have to delete the cached images. If this still doesn't work, add `?v2.1` to the end of the `icloud3-event-log-card.js` line in the resources section in the *ui-lovelace.yaml* configuration file.
 
 
 
