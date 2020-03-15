@@ -1,10 +1,10 @@
 # iCloud3 Change Log
 
-#### v2.1 (2/15/2020) - Release Candidate
+### v2.1 (2/15/2020) - Release Candidate
 
 
 
-###### Device Tracking
+#### Device Tracking
 
 - In some cases, no contact data was being returned from the iCloud Find-my-Friends Service. Because of this, iCloud3 could not match the email address on the tracked devices parameter with the iCloud contacts and no devices would  be tracked. Now, if this occurs, a secondary source of contact identification will be used and the device will be tracked. However, the Contact's First Name is not available in this secondary data source so it should be specified on the track_devices configuration parameter (see next item).
 
@@ -18,7 +18,7 @@
 
   
 
-###### Stationary Zone
+#### Stationary Zone
 
 - The Stationary Zone is now set up the first time it is needed rather than when iCloud3 starts. This solves the problem of HA Map and Zone Configuration screens being completely zoomed out to show the default Stationary Zone location at the North Pole.
 
@@ -36,7 +36,7 @@
 
   
 
-###### iCloud3 Event Log Card and Lovelace 
+#### iCloud3 Event Log Card and Lovelace 
 
 - Changed the look of the Event Log Card to better highlight a complete location update from when it started to when it completed. 
 - Added a lot of information to the Event Log as location, trigger and zone events take place to make it easier to see why things happen the way they do.
@@ -56,7 +56,7 @@
 
 
 
-###### iCloud3 Sensor Changes
+#### iCloud3 Sensor Changes
 
 - Added the `sensor.name` sensor that displays the person's name associated with the device. It can be included or excluded using the 'name' sensor code.
 
@@ -66,7 +66,7 @@
 
   
 
-###### PyiCloud-ic3.py Support Program Changes (Interface between iCloud3 and Apple's iCloud Location Services)
+#### PyiCloud-ic3.py Support Program Changes (Interface between iCloud3 and Apple's iCloud Location Services)
 
 - PyiCloud_ic3.py (the iCloud Location Services interface module) will now display raw data for all data requests. To display this information, include the `custom_components.icloud3.pyicloud_ic3`: debug  statement in the `logger: /logs:`  section of the HA configuration.yaml file. For example:
 
