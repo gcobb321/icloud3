@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.1rc3'
+VERSION = '2.1rc4'
 '''
 v2.1
 - iCloud3 will have HA reload the zone configuration when iCloud3 is restarted. You can add new zones to HA using the Configuration/Zones Sidebar screen or zone configuration file and then restart iCloud3 using the button on the Event Log Card to reload the zone information without restarting HA. Be sure to forse restart the iOA App to also reload the new zones.
