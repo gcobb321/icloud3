@@ -91,7 +91,8 @@ A comprehensive list of all of the new features and enhancements for iCloud3 v2.
 
 [![button_documentation](../docs/images/button_documentation.jpg)](https://gcobb321.github.io/icloud3_docs/#/)
 
+<!--
 [![button_download_long](../docs/images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
 
 [![button_github](../docs/images/button_github.jpg)](https://github.com/gcobb321/icloud3)
-
+-->
