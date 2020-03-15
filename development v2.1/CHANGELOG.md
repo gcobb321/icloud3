@@ -48,9 +48,9 @@
     - Cleaned up some event and error messages.
 - Images of new Event Log Card showing the start-complete grouping for a successful location update, Refresh/Debug/Restart-iC3 buttons, iCloud3 Initialization screens.
 
-![event_log](../../../GitHub/iCoud3/docs/images/event_log.jpg)
+![event_log](../docs/images/event_log.jpg)
 
-![event_log_initializing](../../../GitHub/iCoud3/docs/images/event_log_initializing.jpg)
+![event_log_initializing](../docs/images/event_log_initializing.jpg)
 
 !> If you do not see the Refresh/Debug/Restart-iC3 buttons, refresh your browser. You might have to do this several times and you will probably have to delete the cached images. If this still doesn't work, add `?v2.1` to the end of the `icloud3-event-log-card.js` line in the resources section in the *ui-lovelace.yaml* configuration file.
 
@@ -89,9 +89,9 @@
 
 A comprehensive list of all of the new features and enhancements for iCloud3 v2.1 is in the Change Log in the iCloud3 Documentation.
 
-[![button_documentation](docs/images/button_documentation.jpg)](https://gcobb321.github.io/icloud3/#/)
+[![button_documentation](../docs/images/button_documentation.jpg)](https://gcobb321.github.io/icloud3_docs/#/)
 
-[![button_download_long](docs/images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
+[![button_download_long](../docs/images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
 
-[![button_github](docs/images/button_github.jpg)](https://github.com/gcobb321/icloud3)
+[![button_github](../docs/images/button_github.jpg)](https://github.com/gcobb321/icloud3)
 
