@@ -1,5 +1,5 @@
 """
-Customized version of pyicloud.py to support iCloud3  Custom Component
+Customized version of pyicloud.py to support iCloud3 Custom Component
 
 Platform that supports importing data from the iCloud Location Services
 and Find My Friends api routines. Modifications to pyicloud were made
@@ -15,9 +15,14 @@ by various people to include:
 
 The piclkepete version used imports for the services, utilities and exceptions
 modules. These modules have been incorporated into the pyicloud-ic3 version.
+
+iCloud3 v2.0.6b (2.10.2020)
+- Added 'following' property to Find-my-Friends to return 'following' data.
+- The version number was changed to indicate the required iCloud3 version any 
+    change was implemented.
 """
 
-VERSION = '1.0'
+VERSION = '2.0.6'
 
 import six
 import uuid
@@ -93,12 +98,24 @@ class PyiCloudSession(requests.Session):
 
             if self.service._password_filter not in logger.filters:
                 logger.addFilter(self.service._password_filter)
-
+                
+            logger.debug("________ Raw PyiCloudSession request data ________") 
+            log_msg = ("Callee={}").format(callee)
+            logger.debug(log_msg)
+            logger.debug("..........................")
+            log_msg = ("PyiCloud request, args={}, kwargs={}").format(
+                *args,**kwargs)
+            logger.debug(log_msg)
+            
         except Exception as err:
             logger.exception(err)
         try:
             response = super(PyiCloudSession, self).request(*args, **kwargs)
-
+          
+            log_msg = ("Response={}").format(response)
+            logger.debug(log_msg)
+            logger.debug("--------------------------")
+            
         except Exception as err:
             logger.exception(err)
 
@@ -456,8 +473,16 @@ class PyiCloudService(object):
 #------------------------------------------------------------------
     @property
     def friends(self):
-        service_root = self.webservices['fmf']['url']
-        return FindFriendsService(service_root, self.session, self.params)
+        try:
+            service_root = self.webservices['fmf']['url']
+            return FindFriendsService(service_root, self.session, self.params)
+            
+        except:
+            logger.error(("Find-my-Friends data error. No contacts or "
+                    "friends data was returned from Apple Web Services "
+                    "for account {}").format(self.apple_id))
+            
+        return None
 
 #------------------------------------------------------------------
     '''
@@ -800,7 +825,7 @@ class FindFriendsService(object):
         Fetches all data from Find my Friends endpoint
         """
         params = dict(self.params)
-        fake_data = json.dumps({
+        requested_data = json.dumps({
             'clientContext': {
                 'appVersion': '1.0',
                 'contextApp': 'com.icloud.web.fmf',
@@ -815,8 +840,14 @@ class FindFriendsService(object):
             'serverContext': None
         })
         req = self.session.post(self._friend_endpoint,
-                                data=fake_data, params=params)
+                                data=requested_data, params=params)
         self.response = req.json()
+        
+        logger.debug("________ Raw FindFriendsService data ________")  
+        log_msg = ("Response={}").format(self.response)
+        logger.debug(log_msg)
+        logger.debug("--------------------------")  
+        
         return self.response
 
     @property
@@ -847,8 +878,8 @@ class FindFriendsService(object):
         return self.data.get('contactDetails')
 
     @property
-    def details(self):
-        return self.data.get('contactDetails')
+    def following(self):
+        return self.data.get('following')
 #==================================================================
 class FindMyiPhoneServiceManager(object):
     """ The 'Find my iPhone' iCloud service
@@ -1114,8 +1145,11 @@ class PyiCloud2SARequiredError(PyiCloudException):
         super(PyiCloud2SARequiredError, self).__init__(message)
 
 
-#class PyiCloudNoDevicesException(Exception):
-#    pass
+class PyiCloudFmFNoDataError(PyiCloudException):
+    def __init__(self):
+        message = ("FmF Data Error. No contacts have been entered in the " 
+            "iCloud account or no contacts are being followed.")
+        super(PyiCloudFmFNoDataError, self).__init__(message)
 
 
 class NoStoredPasswordAvailable(PyiCloudException):

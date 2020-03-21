@@ -1,0 +1,89 @@
+##############################################################
+#
+#   HOME/AWAY SCRIPTS - Gary
+#
+##############################################################
+
+gary_status:
+  alias: Send Gary Status
+  sequence:
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Gary Status'
+        message: 'Zone={{states.sensor.gary_iphone_zone.state}}, 
+                  Zone1={{states.sensor.gary_iphone_zone_name1.state}}, 
+                  Zone2={{states.sensor.gary_iphone_zone_name2.state}}, 
+                  Distance={{states.sensor.gary_iphone_zone_distance.state}},
+                  DriveFlag={{states.input_boolean.gary_driving_flag.state}},
+                  FarFlag={{states.input_boolean.gary_far_away_flag.state}}'
+  
+#-------------------------------------------------------------
+#   Arrive Home
+#-------------------------------------------------------------
+gary_arrives_home:
+  alias: 'Gary Arrives Home'
+  sequence:
+    #Open garage door if driving flag is on
+    - service: script.open_garage_door 
+    
+    #Turn off 'Away' flags
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.gary_driving_flag
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.gary_far_away_flag
+    
+    #Change Gary badge to home
+    - service: mqtt.publish
+      data_template:
+        topic: 'location/gary' 
+        payload: 'home'
+        
+    #If already home, do not issue 'zone home' command
+    - condition: template
+      value_template: '{{states.device_tracker.gary_iphone.state != "home"}}'
+    
+    #Issue 'zone home' command
+    - service: device_tracker.icloud3_update
+      data:
+        device_name:  gary_iphone
+        command:     'zone home'
+
+#-------------------------------------------------------------
+#   Leave Home
+#-------------------------------------------------------------
+gary_leaves_home:
+  alias: 'Gary Leaves Home'
+  sequence:
+    #Change Gary badge to Away
+    - service: mqtt.publish
+      data_template:
+        topic: 'location/gary' 
+        payload: 'not_home'
+       
+#-------------------------------------------------------------
+#    Leave Other Zone
+#-------------------------------------------------------------
+gary_leaves_zone:
+  alias: 'Gary Leaves Zone'
+  sequence:
+    #Change Gary badge to Away
+    - service: mqtt.publish
+      data_template:
+        topic: 'location/gary' 
+        payload: 'not_home'
+ 
+#-------------------------------------------------------------
+#   Send Message to Gary - Central Notify Command
+#-------------------------------------------------------------
+notify_gary_iphone:
+  alias: 'Send Message to Gary'
+  sequence:
+    - service: notify.ios_gary_iphone
+      data_template:
+        title: "{{ title }} (IOS)"
+        message: "{{ message }}"
+          
+#    - service: notify.mobile_app_gary_iphone
+#      data_template:
+#        title: "{{ title }} (mobile_app)"
+#        message: "{{ message }}"

@@ -1,0 +1,312 @@
+#########################################################
+#
+#   DEVICE_TRACKER/ICLOUD3.PY CUSTOM COMPONENT SUPPORT SCRIPTS
+#
+#########################################################
+
+
+#--------------------------------------------------------------
+#   GENERAL ICLOUD COMMANDS
+#-------------------------------------------------------------
+icloud3_command_restart:
+  alias: 'Restart iCloud (Command)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: restart
+       
+icloud3_command_resume_polling:
+  alias: 'Resume Polling'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: resume
+        
+icloud3_command_pause_polling:
+  alias: 'Pause Polling'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: pause
+
+icloud3_command_toggle_waze:
+  alias: 'Toggle Waze On/Off'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: waze toggle
+        
+icloud3_command_reset_waze_range:
+  alias: 'Reset Waze Range'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: waze reset_range
+        
+icloud3_update_location:
+  alias: 'Update Location (all)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: location
+#------------------------------------------------------------          
+icloud3_set_interval_1_min:
+  alias: 'Interval - 1 min'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        interval: 1
+        
+icloud3_set_interval_5_min:
+  alias: 'Interval - 5 min'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        interval: 5
+               
+icloud3_set_interval_15_min:
+  alias: 'Interval - 15 min'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        interval: '15 min'
+
+icloud3_set_interval_30_min:
+  alias: 'Interval - 30 min'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        interval: '30 min'
+ 
+icloud3_set_interval_1_hrs:
+  alias: 'Interval -  1 hrs'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        interval: '1 hr'
+                
+icloud3_set_interval_5_hrs:
+  alias: 'Interval -   5 hrs'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        interval: '5 hr'
+  
+
+#--------------------------------------------------------------
+#   Set iCloud commands for Gary
+#--------------------------------------------------------------
+icloud3_command_resume_polling_gary:
+  alias: 'Resume (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name: gary_iphone
+        command:     resume
+        
+icloud3_command_pause_polling_gary:
+  alias: 'Pause (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name: gary_iphone
+        command:     pause
+              
+icloud3_set_interval_10_min_gary:
+  alias: 'Interval - 10 min (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        device_name: gary_iphone
+        interval:   '10 min'
+
+icloud3_set_interval_2_min_gary:
+  alias: 'Interval -  1 min (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        device_name: gary_iphone
+        interval:   '1 min'
+        
+icloud3_lost_iphone_gary:
+  alias: 'Find Lost Phone Alert (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_lost_iphone
+      data:
+        device_name: gary_iphone
+       
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Lost iPhone Notification'
+        message: 'Lost iPhone was triggered for Gary (gary_icloud/gary_iphone)'
+
+icloud3_update_location_gary:
+  alias: 'Update Location (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name: gary_iphone
+        command:     location
+#--------------------------------------------------------------
+#   Set iCloud polling interval for Lillian (lillian_icloud account)
+#--------------------------------------------------------------
+icloud3_command_resume_polling_lillian:
+  alias: 'Resume (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name: lillian_icloud
+        command:     resume
+        
+icloud3_command_pause_polling_lillian:
+  alias: 'Pause (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name: lillian_icloud
+        command:     pause
+ 
+icloud3_set_interval_10_min_lillian:
+  alias: 'Interval - 10 min (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        device_name: lillian_iphone
+        interval:    '10 min'
+
+icloud3_set_interval_1_min_lillian:
+  alias: 'Interval - 1 min (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_set_interval
+      data:
+        device_name: lillian_iphone
+        interval: 1
+        
+icloud3_lost_iphone_lillian:
+  alias: 'Find Lost Phone Alert (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_lost_iphone
+      data:
+        device_name: lillian_iphone
+
+icloud3_lost_iwatch_lillian:
+  alias: 'Find Lost Watch Alert (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_lost_iphone
+      data:
+        device_name: lillian_iwatch
+        
+icloud3_lost_iphone_invalid:
+  alias: 'Find Lost Phone Alert (Invalid)'
+  sequence:
+    - service: device_tracker.icloud3_lost_iphone
+      data:
+        device_name: invalid_iphone 
+
+icloud3_update_location_lillian:
+  alias: 'Update Location (Lillian)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name: lillian_iphone
+        command:     location
+#--------------------------------------------------------------
+#   ZONE COMMANDS
+#--------------------------------------------------------------
+
+icloud3_command_gary_iphone_zone_home:
+  alias: 'Set Zone Home (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name:  gary_iphone
+        command:     'zone home'
+
+icloud3_command_gary_iphone_zone_quail:
+  alias: 'Set Zone Quail (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name:  gary_iphone
+        command:     'zone Quail'
+        
+icloud3_command_gary_iphone_zone_not_home:
+  alias: 'Set Zone Away (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name:  gary_iphone
+        command:     'zone not_home'
+        
+icloud3_command_lillian_iphone_zone_home:
+  alias: 'Set Zone Home (Lillian/gary_icloud)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name:  lillian_iphone
+        command:     'zone home'
+        
+icloud3_command_lillian_iphone_zone_not_home:
+  alias: Set Zone Away (Lillian/gary_icloud)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        device_name:  lillian_iphone
+        command:     'zone not_home'
+        
+icloud3_gary_iphone_see_away:
+  alias: 'Set Away via device_tracker.see svc call (Gary)'
+  sequence:
+    - service: device_tracker.see
+      data:
+        dev_id: gary_iphone
+        location_name: 'not_home'
+        
+ 
+
+#--------------------------------------------------------------
+#   INFORMATION COMMANDS
+#--------------------------------------------------------------
+icloud3_command_loglevel_debug:
+  alias: 'LogLevel-Debug Info to HA Log (Toggle)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: log_level debug
+        
+icloud3_command_loglevel_intervalcalc:
+  alias: 'LogLevel-Interval Calc (Toggle)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: log_level _intervalcalc
+        
+icloud3_command_loglevel_eventlog:
+  alias: 'LogLevel-Event Log (Toggle)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: log_level eventlog
+
+icloud3_command_loglevel_debug_eventlog:
+  alias: 'LogLevel-Debug Info to HA Log & EventLog(Toggle)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: log_level debug, eventlog
+ 
+icloud3_command_loglevel_intervalcalc_eventlog:
+  alias: 'LogLevel-Interval Calc & EventLog (Toggle)'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: log_level intervalcalc, eventlog
+
+icloud3_command_loglevel_info:
+  alias: 'LogLevel-Display Flags'
+  sequence:
+    - service: device_tracker.icloud3_update
+      data:
+        command: log_level info
+
+
