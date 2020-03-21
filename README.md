@@ -37,6 +37,6 @@ And much more ...
 
 ### iCloud3 Information Card & Event Log Custom Card
 
-![Sample Card](./docs/images/readme.jpg)
+![Sample Card](https://github.com/gcobb321/icloud3/blob/master/docs/images/readme.jpg)
 
 *Gary Cobb, aka GeeksterGary*
