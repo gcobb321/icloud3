@@ -1,8 +1,6 @@
 # iCloud3 Change Log
 
-### v2.1 (3/22/2020) - Release Candidate
-
-
+### v2.1 (3/22/2020)
 
 #### Device Tracking
 
@@ -42,17 +40,18 @@
 - Added a lot of information to the Event Log as location, trigger and zone events take place to make it easier to see why things happen the way they do.
 - Added Debug and Restart-iC3 buttons to be able to turn on and turn off debug logging. All debug messages that were being added to the HA log are now added to the Event Log. You can also restart iCloud3 to see initialization errors or to reauthenticate the iCloud account. Although changes to the configuration parameters are not reloaded, zone changes are reloaded.
 - The picture specified on the track_devices parameter was only being displayed on the Lovelace card if the device was specified in the `known_devices.yaml` file. The `entity_picture` attribute was added to the device_tracker entity (e.g., `device_tracker.gary_iphone`) so it would always be displayed.
-
 - Fixed the Lovelace documentation error for the 4x3 layout.
     - The Event Log message is now being verified to make sure it is not blank.
     - Cleaned up some event and error messages.
 - Images of new Event Log Card showing the start-complete grouping for a successful location update, Refresh/Debug/Restart-iC3 buttons, iCloud3 Initialization screens.
+- The `sensor.icloud3-event-log` entity can become quite large as more events occur within iCloud3. Now, after 5-minutes, it will be updated and only show the last 15 events and a 'Refresh' reminder message.
+- The `sensor.icloud3_event_log` entity is used to pass the event records to the Event Log Card and can become extremely large after a period of time.  It will now be cleared after 5-minutes and display the last 15 entries with a 'Refresh' message .
 
 ![event_log](../docs/images/event_log.jpg)
 
 ![event_log_initializing](../docs/images/event_log_initializing.jpg)
 
-> If you do not see the **Refresh/Debug/Restart-iC3** buttons, refresh your browser. You might have to do this several times and you will probably have to delete the cached images. If this still doesn't work, add `?v2.1` to the end of the `icloud3-event-log-card.js` line in the resources section in the *ui-lovelace.yaml* configuration file.
+!> If you do not see the Refresh/Debug/Restart-iC3 buttons, refresh your browser. You might have to do this several times and you will probably have to delete the cached images. If this still doesn't work, add `?v2.1` to the end of the `icloud3-event-log-card.js` line in the resources section in the *ui-lovelace.yaml* configuration file.
 
 
 
@@ -66,7 +65,7 @@
 
   
 
-#### PyiCloud-ic3.py Support Program Changes (Interface between iCloud3 and Apple's iCloud Location Services)
+#### PyiCloud-ic3.py Support Program Changes
 
 - PyiCloud_ic3.py (the iCloud Location Services interface module) will now display raw data for all data requests. To display this information, include the `custom_components.icloud3.pyicloud_ic3`: debug  statement in the `logger: /logs:`  section of the HA configuration.yaml file. For example:
 
@@ -91,8 +90,7 @@ A comprehensive list of all of the new features and enhancements for iCloud3 v2.
 
 [![button_documentation](../docs/images/button_documentation.jpg)](https://gcobb321.github.io/icloud3_docs/#/)
 
-<!--
-[![button_download_long](../docs/images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
+[![button_download_long](./docs/images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
 
 [![button_github](../docs/images/button_github.jpg)](https://github.com/gcobb321/icloud3)
--->
+
