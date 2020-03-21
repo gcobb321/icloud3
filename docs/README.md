@@ -1,7 +1,7 @@
 # iCloud3  Device Tracker Custom Component
 
-[![Version](https://img.shields.io/badge/Version-v2.0.5-blue.svg)](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-December_8,_2019-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Version](https://img.shields.io/badge/Version-v2.1-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Released](https://img.shields.io/badge/Released-March_22,_2020-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
 [![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/gcobb321/icloud3)
@@ -23,7 +23,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 *Gary Cobb, aka GeeksterGary*
 
 
-![Sample Card](https://github.com/gcobb321/icloud3/blob/master/docs/images/readme.jpg)
+![Sample Card](../docs/images/readme.jpg)
 
 
 ### What's different
@@ -50,11 +50,5 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 | Dynamic Stationary Zone | No | Yes, a Stationary Zone is created if no movement has been detected in 8-minutes (configurable). The polling interval is set to 30-minutes (default) until zone exit notification is received. |
 | Service call commands | Set polling interval, reset devices | Set polling interval, reset devices, pause/restart polling, change zone, enable/disable Waze Route information usage, information logging (some commands can be for all devices or for a specific device) |
 | Track device from more than one location | No, can only track from the 'home' zone | Yes, can track from the Home zone and another *base_zone* zone (office, second home, etc.). |
-| Display an Event Log of significant events | No | Yes |
+| Event Log Lovelace Card | No | Yes. Displays significant events as iCloud3 starts up and locates devices. |
 | Create Sensors for device attributes | No | Yes. Sensors created for many of the device_tracker attributes. You can also customize the list of sensors to only create the ones you are interested in. |
-| | | |
-| <u>Geekster Statistics:</u> | | |
-| -Config variables | 5 | 22 |
-| -Attributes | 20 | 35+ |
-| -Service Calls | 4 | 4 + 15 special commands |
-| -Lines of code | 425 | 6500+ |

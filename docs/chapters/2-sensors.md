@@ -29,7 +29,7 @@ The following sensors are updated using the device_tracker's attributes values:
 | zone_distance   | zone_name2       | gps_accuracy   |
 | waze_distance   | zone_name3      | trigger        |
 | calc_distance   | zone_timestamp   |                |
-| last_update     | last_zone        |                |
+| last_update     | last_zone        | name (user's name) |
 | next_update     | last_zone_name1 |                |
 | last_located    | last_zone_name2 |                |
 | poll_count      | last_zone_name3 |                |
@@ -37,7 +37,7 @@ The following sensors are updated using the device_tracker's attributes values:
 
 ### Naming the sensors
 
-Normally, the devicename is used as a prefix for the sensor (`gary_iphone_zone_distance`). However, you can enter a custom prefix on the `track_devices` parameter line and that entry will be used to name the sensors associated with the device. For example, if `garyc` is entered on the configuration line for the device, the zone distance sensor will be named `garyc_zone_distance`
+The devicename is added to the beginning of each sensor ; e.g., `gary_iphone_zone_distance`. 
 
 The above example is for the Home zone. If you are also tracking another zone, the zone name will be added onto the sensor name before the devicename. For example, if you are also tracking information for the 'whse' zone, the zone distance sensor becomes `whse_gary_iphone_zone_distance`.
 
@@ -112,7 +112,7 @@ The following sensors are updated using the device_tracker's attributes values:
 | dir_of_travel   | dir   |      | last_zone_name1 | lzon1 |      |                   |         |
 | last_update     | lupdt |      | last_zone_name2 | lzon2 |      | trigger           | trig    |
 | next_update     | nupdt |      | last_zone_name3 | lzon3 |      | badge | badge |
-| last_located    | lloc  |      | last_zone_name3 | lzon3 |      |          |  |
+| last_located    | lloc  |      | last_zone_name3 | lzon3 |      | name | name |
 | poll_cnt        | cnt   |      |                  |       |      |            |  |
 | info            | info  |      | base_zone       | bzon  |      |          | |
 

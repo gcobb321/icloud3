@@ -20,9 +20,9 @@ The device will be updated, however, on the next poll by iCloud3. The problem wi
 When you set up an Apple iCloud account, '2-step authentication or 2-factor authentication (2fa)' is normally turned on account. This has an enormous impact on how your iCloud account is accessed. 
 
 #### 2fa is turned on {docsify-ignore}
-In order retrieve location information, iCloud3 must establish a computer-to-computer link with the Apple iCloud account and it has to be authenticated every time the account is accessed. Unfortunately, the HA computer can not be set up as a 'Trusted Device', so every 30-minutes, or so, Apple logs the HA computer, and thus iCloud3, out of the account. The result is HA and iCloud3 must log back into the account when it wants new location information. 
+In order retrieve location information, iCloud3 must establish a computer-to-computer link with the Apple iCloud account and it has to be authenticated every time the account is accessed. Unfortunately, the HA computer can not be set up as a 'Trusted Device', so every 30-minutes, or so, Apple signs into the HA computer, and thus iCloud3, out of the account. The result is HA and iCloud3 must sign back into the account when it wants new location information. 
 
-  Every time you log into your Apple iCloud account, Apple sends a notification to all of your trusted devices informing you that your account has been logged into for your approval (a map is displayed with an Allow/Don't Allow message), followed by a second notification containing a 6-digit code that you can not do anything with.  
+  Every time you sign into your Apple iCloud account, Apple sends a notification to all of your trusted devices informing you that your account has been signed into for your approval (a map is displayed with an Allow/Don't Allow message), followed by a second notification containing a 6-digit code that you can not do anything with.  
 
   This gets annoying and makes working with iCloud accounts with 2fa unworkable.
 

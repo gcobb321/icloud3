@@ -12,7 +12,10 @@ The name of the group of devices being tracked for this iCloud3 device_tracker p
 *Default:*  'group#' where # is the sequence number of the iCloud3 device_tracker platforms found in the configuration file.
 
 ###### entity_registry_file_name
-The Home Assistant Entity Registry stores information about the devices and entities. It is searched when iCloud3 starts to determine if the HA IOS App version 2 is being used for tracking a device, and if it is, to extract the names of the entities to be monitored for the devices being tracked.  This parameter is used if a different file should be searched for device information. Normally, you should not have to specify this parameter.  
+The Home Assistant Entity Registry stores information about the devices and entities. It is searched when iCloud3 starts to determine if the HA IOS App version 2 is being used for tracking a device, and if it is, to extract the names of the entities to be monitored for the devices being tracked. 
+
+Normally, this parameter will not be used since the name of the entity file is extracted from Home Assistant. However, this parameter can be used if a different file should be searched for device information. 
+
 *Valid values:* Entity registry file name
 
 The following are the path/name of the entirety registry file for Home Assistant running on different platforms:  
@@ -37,42 +40,41 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 | badge_picture_name | The file name containing a picture of the person normally associated with the device. See the Badge Sensor in the Sensor chapter for more information about the sensor_badge.<br><br>The file is normally in the `config/www/` directory (referred to as `/local/` in HA). You can use the full name `(/local/gary.png)` or an abbreviated name `(gary.png)`.<br><br>This parameter is identified as the `badge_picture_name` since it ends in '.png' or '.jpg'. |
 | IOS App Id Number (version 2) | This only applies if you are using the IOS App version 2 and want to override the device's name discovered by iCloud3 during the entity registry scan. Normally, you will not use this parameter.<br><br>1. Enter the new suffix (_3, _iosappv2, _v2, etc.) to use a different device_tracker.<br>2. Enter 'iosappv1' to use version 1 of the IOS App instead of version 2 when both versions are installed on the device. |
 | zone | Name of an additional zone(s) you want to monitor. This will create additional sensors with it's distance and travel time calculations that can be used in automations and scripts. See the Sensors chapter for more information.<br><br>Note: The Home zone information is always calculated. |
-| sensor_name_prefix            | Sensors entities created by iCloud3 are prefixed with the devicename or zone_devicename (`sensor.gary_iphone_travel_time` or `sensor.whse_gary_iphone_travel_time`). The prefix replaces the devicename with the value specified (`sensor.garyc_travel_time` or `sensor.whse_garyc_travel_time`).<br><br>See the Naming Sensors in the Sensor chapter for a complete description of this field. <br><br>This parameter is identified as the `sensor_name_prefix` since it is none of the above. |
+| user's name   | The user's name is displayed on the iCloud3 Event Log card, various messages and in the HA log file. It is created by removing the device type (iPhone, iPad, iCloud, etc) and any special characters (-, _, etc) from the devicename.  It is also retrieved from the First Name field on the data returned from iCloud when the devices are authenticated as iCloud3 starts up.<br><br>There may be times when the name is not available or you want to override the name that is extracted from the devicename. If that case, specify the name on the track_devices parameter. |
 
 #### Parameters for Different Tracking Methods
 ###### Find my Friends:
 - devicename > email_address
 - devicename > email_address, badge_picture_name, zone
-- devicename > email_address, badge_picture_name, iosapp_number, sensor_prefix_name
+- devicename > email_address, badge_picture_name, iosapp_number, user_name
 - devicename > email_address, iosappv1
-- devicename > email_address, iosapp_number, zone, sensor_prefix_name
-- devicename > email_address, badge_picture_name, sensor_prefix_name
-- devicename > email_address, sensor_prefix_name
+- devicename > email_address, iosapp_number, zone, user_name
+- devicename > email_address, badge_picture_name, user_name
+- devicename > email_address, user_name
 
 ###### Family Sharing
 - devicename
 - devicename > badge_picture_name, zone
-- devicename > badge_picture_name, sensor_prefix_name
+- devicename > badge_picture_name, user_name
 - devicename > iosapp_number
-- devicename > iosapp_number, sensor_prefix_name
-- devicename > sensor_prefix_name
+- devicename > iosapp_number, user_name
 
 ###### IOS App Version 1
 - devicename
 - devicename > badge_picture_name, zone
-- devicename > badge_picture_name, sensor_prefix_name
+- devicename > badge_picture_name, user_name
 
 ###### IOS App Version 2
 - devicename
 - devicename > iosapp_device_tracker_number
 - devicename > badge_picture_name
-- devicename > badge_picture_name, zone, sensor_prefix_name
+- devicename > badge_picture_name, zone, user_name
 
 ###### Examples of track_devices formats
 - gary_iphone > gary-icloud-acct@email.com, /local/gary.png
 - gary_iphone > gary-icloud-acct, gary.png, whse
-- gary_iphone > gary-icloud-acct, gary.png, garyc
-- gary_iphone > gary.png, iosappv1, garyc
+- gary_iphone > gary-icloud-acct, gary.png, GaryC
+- gary_iphone > gary.png, iosappv1, GaryC
 - gary_iphone > gary.png, _2
 - gary_iphone > /local/gary.png
 - gary_iphone
@@ -169,6 +171,7 @@ Create all sensors except the ones specified. See Customizing sensors in the Sen
 Display iCloud3 debug information in the HA Log file and, optionally, on the iCloud3 Event Log Card.  The following parameters are available:  
 
 * `debug` -  Entries related to device_tracker location operations  
+* `debug+rawdata` -  Entries related to device_tracker location operations  and the raw data that is returned from the PyiCloud Apple Web Services interface program. This raw data can sometimes help identify a problem with information stored on the iCloud Location Servers when devices are not tracked, when accounts are not set up correctly and an error is displayed by iCloud3.
 * `intervalcalc` -The methods and calculations related to the interval, next update time, zone, etc.
 * `eventlog` - Display the logged information on the iCloud3 Event Log Card.  
 *  `info` - Display the current log_level options on the iCloud3 Event Log Card and the Info status line for the devices being tracked.  
@@ -209,7 +212,7 @@ When using Waze and the distance from your current location to home is more than
 device_tracker:
   - platform: icloud3
     username: !secret gary_fmf_username
-    password: !secret gary_fmf__password
+    password: !secret gary_fmf_password
     track_devices:
       - gary_iphone > gary-icloud-acct@email.com, gary.png
       - lillian_iphone > lillian-icloud-acct@email.com, lillian.png

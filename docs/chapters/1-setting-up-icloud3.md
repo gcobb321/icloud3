@@ -64,3 +64,10 @@ device_tracker:
 - iCloud3 also creates sensors for most of the attributes associated with a device. They can be used on Lovelace cards and in automations and scripts. Using configuration parameters, you can specify what sensors you want to create and not create. See the Sensors chapter for more information.
 - When a device's location is polled, the GPS coordinates are returned. This is passed to the Waze Route Calculator to get distance and the travel time to Home or another zone. The data returned from the Waze Route Calculator is saved and later by other devices close to your current location.
 
+!> When you first install iCloud3, the Stationary Zone will also be created. Since the iOS App does not automatically update information about new zones, you must force close the iOS App using the iPhone App Switcher and then restart it to reload the zone information, which will include the Stationary Zone.
+
+------
+
+### What to do next
+
+The next thing to do is review the following chapters that discuss the configuration parameters used to specify how iCloud3 operates, the attributes and sensors that iCloud3 updates when a device's location changes, the iCloud3 services which control iCloud3 and the example Lovelace cards that display the device's tracking data.

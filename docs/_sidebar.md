@@ -33,7 +33,6 @@
   - [Service Calls](chapters/3-services.md)
   
 - Other Information
-  - [Troubleshooting](chapters/9-trouble-shooting.md)
   - [Technical Information](chapters/9-tech-info.md)
   - [Special Thanks](chapters/9-special-thanks.md)
 

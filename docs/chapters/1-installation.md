@@ -60,7 +60,7 @@ As iCloud3 runs, various entries are written to the HA log file that show device
 
 Below are 3 screens. The one on the left shows iCloud3 starting up, the middle one shows arriving Home and the one on the right shows entering the 'Whse' zone.
 
-![event_log](../images/event_log.jpg)
+![event_log](../images/event_log_initializing.jpg)
 
 ---
 ### Installing the iCloud3 Event Log Custom Card
@@ -90,3 +90,8 @@ Custom Lovelace cards are typically stored in the `/www/custom_cards` directory.
 
 More information is found in the Home Assistant Lovelace documentation regarding setting up and using custom cards. Be sure to refer to it if you have any problems. Go [here](https://community.home-assistant.io/t/how-do-i-add-custom-cards-with-the-lovelace-ui/97902) for more information if you are not using the `ui-lovelace.yaml` file to set up your cards.
 
+------
+
+### What to do next
+
+The next thing to do is set up your iCloud account so you can get location information for the devices you want to track. This is described in the next chapter, Setting Up iCloud Account.

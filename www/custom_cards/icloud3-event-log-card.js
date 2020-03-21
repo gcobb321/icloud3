@@ -791,7 +791,6 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 //alert(tText)
                 classEventMsg = 'updateItem'
-
                 if (tText.indexOf("update started") >= 0) {
                     classEventMsg = 'updateRecd'
                     classTime     = 'updateRecd'
@@ -808,6 +807,8 @@ class iCloud3EventLogCard extends HTMLElement {
                 } else if (tText.indexOf("^^^") >= 0) {
                     classEventMsg = 'dateRecd'
                     classTime     = 'dateRecd'
+                    tText = tText.replace("^^^", "")
+                    tText = tText.replace("^^^", "")
                 } else if (tText.indexOf("Initializing") >= 0) {
                     classEventMsg = 'ic3StartupMsg'
                     classTime     = 'ic3StartupMsg'
