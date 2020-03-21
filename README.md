@@ -30,7 +30,7 @@ iCloud3 is a Home Assistant device tracker custom component that greatly expands
 * Additional service call commands (setting intervals, pausing and resuming polling, zone assignment, etc.)
 * You no longer need any other program (other than the HA IOS app) to handle device tracking and presence detection. You will not need Nmap, OwnTracks, router based tracking components to name a few.
 * New Configuration variables and Attributes let you customize how you want to use iCloud3.
-* The iCloud3 Custom Card displays events to monitor tracking activity, interactions with the HA IOS App and to troubleshoot device and location issues.
+* The iCloud3 Event Log Lovelace Custom Card displays significant events that help you monitor tracking activity, interactions with the HA IOS App and to troubleshoot start u, authentication, configuration and location problems.
 * Extensive documentation on what iCloud3 does, how to set it up and how to customize it to meet your needs. It includes many sample automations and scripts that you can use to set your own device tracking and presence detection.
 
 And much more ...
