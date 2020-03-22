@@ -12,7 +12,7 @@
 </nav>
 
 - What's New and What Changed
-  - [Change Logs](/CHANGELOG.md)
+  - [Change Logs](CHANGELOG.md)
   
 - Welcome to iCloud3
   - [Installation](chapters/1-installation.md)
