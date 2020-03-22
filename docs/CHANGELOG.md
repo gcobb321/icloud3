@@ -3,7 +3,7 @@
 The following changes and enhancements have been made to the iCloud3 Device Tracker custom component. 
 
 * The best way to monitor new releases is to add HACS (Home Assistant Community Store) to your HA system and set up the HACS/iCloud3 link using the instructions in the iCloud3 documentation [here](https://gcobb321.github.io/icloud3/#/chapters/3-hacs). 
-* You can also go to the iCloud3 releases page [here]() to download the latest version and do a manual update.
+* You can also go to the iCloud3 releases page [here](https://github.com/gcobb321/icloud3/releases) to download the latest version and do a manual update.
 
 
 
