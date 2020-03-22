@@ -88,7 +88,7 @@
 
 A comprehensive list of all of the new features and enhancements for iCloud3 v2.1 is in the Change Log in the iCloud3 Documentation.
 
-[![button_documentation](./images/button_documentation.jpg)](https://gcobb321.github.io/icloud3_docs/#/)
+[![button_documentation](./images/button_documentation.jpg)](https://gcobb321.github.io/icloud3/#/)
 
 [![button_download_long](./images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
 
