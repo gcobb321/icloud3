@@ -1,3 +1,5 @@
+# yamllint disable rule:document-start
+
 #########################################################
 #
 #   IPHONE/ICLOUD SELECTION AUTOMATIONS
@@ -24,7 +26,7 @@
     - service: device_tracker.icloud3_update
       data_template:
         account_name: gary_icloud
-        command: "{{ states.input_select.icloud3_commands.state }}"        
+        command: "{{ states.input_select.icloud3_commands.state }}"
 
 - alias: iCloud Debug Command
   id: icloud3_debug_command

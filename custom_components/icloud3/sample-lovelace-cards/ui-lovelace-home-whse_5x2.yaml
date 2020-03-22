@@ -1,3 +1,4 @@
+# yamllint disable rule:document-start
 
 resources:
   - url: /local/custom_cards/icloud3-event-log-card.js?v=1.001
@@ -24,11 +25,11 @@ views:
                 icon: mdi:clock-outline
               - entity: sensor.gary_iphone_zone_distance
                 name: Home
-                icon: mdi:map-marker-distance 
+                icon: mdi:map-marker-distance
               - entity: sensor.gary_iphone_next_update
                 name: NextUpdt
                 icon: mdi:update
-         
+
           - type: glance
             column_width: 20%
             entities:
@@ -47,20 +48,20 @@ views:
               - entity: sensor.gary_iphone_last_update
                 name: LastUpdt
                 icon: mdi:history
-              
+
           - type: horizontal-stack
             cards:
-            - type: entities
-              entities:
-                - entity: sensor.gary_iphone_info
-                  name: Info
-                  icon: mdi:information-outline 
+              - type: entities
+                entities:
+                  - entity: sensor.gary_iphone_info
+                    name: Info
+                    icon: mdi:information-outline
 
           - type: entities
             entities:
               - script.icloud3_update_location_gary
               - script.homeassistant_restart
-              
+
       - type: vertical-stack
         cards:
           - type: glance
@@ -77,11 +78,11 @@ views:
                 icon: mdi:clock-outline
               - entity: sensor.whse_gary_iphone_zone_distance
                 name: Whse
-                icon: mdi:map-marker-distance 
+                icon: mdi:map-marker-distance
               - entity: sensor.whse_gary_iphone_next_update
                 name: NextUpdt
                 icon: mdi:update
-         
+
           - type: glance
             column_width: 20%
             entities:
@@ -100,10 +101,9 @@ views:
               - entity: sensor.whse_gary_iphone_last_update
                 name: LastUpdt
                 icon: mdi:history
- 
+
           - type: entities
             entities:
               - entity: sensor.whse_gary_iphone_info
                 name: Info
-                icon: mdi:information-outline 
-
+                icon: mdi:information-outline

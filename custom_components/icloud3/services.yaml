@@ -1,3 +1,6 @@
+# yamllint disable rule:document-start
+# yamllint disable rule:line-length
+
 icloud3_update:
   description: This service allows you to change the way iCloud3 operates.
   fields:
@@ -24,7 +27,7 @@ icloud3_restart:
     account_name:
       description: account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. (Required)
       example: gary_icloud
-      
+
 icloud3_lost_iphone:
   description: This service will play the Lost iPhone sound on a specific device.
   fields:

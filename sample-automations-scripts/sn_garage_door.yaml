@@ -1,3 +1,5 @@
+# yamllint disable rule:document-start
+
 #########################################################
 #
 #   GARAGE DOOR MQTT SENSOR
@@ -14,4 +16,3 @@
   name: "garage_door_battery"
   state_topic: "smartthings/Garage Door/battery/state"
   device_class: battery
-  

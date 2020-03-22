@@ -1,3 +1,5 @@
+# yamllint disable rule:document-start
+
 #########################################################
 #
 #   IPHONE/ICLOUD ATTRIBUTE INPUT SELECTS
@@ -13,7 +15,7 @@ icloud3_commands:
     - Pause garyiphone
     - Resume garyiphone
   icon: mdi:apple-keyboard-command
-  
+
 icloud3_set_interval:
   name: iCloud Set Interval
   options:
@@ -40,4 +42,3 @@ icloud3_debug_commands:
     - debug gps
     - debug old
   icon: mdi:android-debug-bridge
- 
