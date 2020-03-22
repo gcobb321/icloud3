@@ -1,3 +1,12 @@
+# iCloud3 Change Log
+
+The following changes and enhancements have been made to the iCloud3 Device Tracker custom component. 
+
+* The best way to monitor new releases is to add HACS (Home Assistant Community Store) to your HA system and set up the HACS/iCloud3 link using the instructions in the iCloud3 documentation [here](https://gcobb321.github.io/icloud3/#/chapters/3-hacs). 
+* You can also go to the iCloud3 releases page [here]() to download the latest version and do a manual update.
+
+
+
 ------
 
 ### v2.1 (3/22/2020)
@@ -82,15 +91,4 @@
 
 - pyicloud_ic3 cookie file used to store Apple iCloud cookies file location was changed from /config/icloud to /config/.storage/icloud. This is the same location used by the HA Apple iCloud integration. The iCloud3 authentication cookies will now be shared if the iCloud Integration is installed. This may generate a one-time notification from Apple about a new account login.
 
-
-
----
-
-A comprehensive list of all of the new features and enhancements for iCloud3 v2.1 is in the Change Log in the iCloud3 Documentation.
-
-[![button_documentation](./images/button_documentation.jpg)](https://gcobb321.github.io/icloud3/#/)
-
-[![button_download_long](./images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
-
-[![button_github](./images/button_github.jpg)](https://github.com/gcobb321/icloud3)
 
