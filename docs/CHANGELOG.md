@@ -47,9 +47,9 @@
 - The `sensor.icloud3-event-log` entity can become quite large as more events occur within iCloud3. Now, after 5-minutes, it will be updated and only show the last 15 events and a 'Refresh' reminder message.
 - The `sensor.icloud3_event_log` entity is used to pass the event records to the Event Log Card and can become extremely large after a period of time.  It will now be cleared after 5-minutes and display the last 15 entries with a 'Refresh' message .
 
-![event_log](./docs/images/event_log.jpg)
+![event_log](./images/event_log.jpg)
 
-![event_log_initializing](./docs/images/event_log_initializing.jpg)
+![event_log_initializing](./images/event_log_initializing.jpg)
 
 !> If you do not see the Refresh/Debug/Restart-iC3 buttons, refresh your browser. You might have to do this several times and you will probably have to delete the cached images. If this still doesn't work, add `?v2.1` to the end of the `icloud3-event-log-card.js` line in the resources section in the *ui-lovelace.yaml* configuration file.
 
@@ -88,9 +88,9 @@
 
 A comprehensive list of all of the new features and enhancements for iCloud3 v2.1 is in the Change Log in the iCloud3 Documentation.
 
-[![button_documentation](./docs/images/button_documentation.jpg)](https://gcobb321.github.io/icloud3_docs/#/)
+[![button_documentation](./images/button_documentation.jpg)](https://gcobb321.github.io/icloud3_docs/#/)
 
-[![button_download_long](./docs/images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
+[![button_download_long](./images/button_download_long.jpg)](https://github.com/gcobb321/icloud3/releases)
 
-[![button_github](./docs/images/button_github.jpg)](https://github.com/gcobb321/icloud3)
+[![button_github](./images/button_github.jpg)](https://github.com/gcobb321/icloud3)
 
