@@ -1,10 +1,13 @@
+# yamllint disable rule:document-start
+# yamllint disable rule:comments-indentation
+
 #########################################################
 #
 #   DEVICE_TRACKERS
 #
 #########################################################
 
-#----  iCloud iPhone Location Services ------------------------
+# ---  iCloud iPhone Location Services ------------------------
 device_tracker:
   - platform: icloud3
     username: gary-fmf-acct@email.com
@@ -13,16 +16,14 @@ device_tracker:
       - gary_iphone > gary-icloud-acct@email.com, gary.jpg
       - lillian_iphone > lillian-icloud-acct@email.com, lillian.jpg
 
+  # ---- Second instance of iCloud3 -----
+  # - platform: icloud3
+  #   username: sydney-fmf-acct@email.com
+  #   password: sydney-fmf-password
+  #   track_devices:
+  #     - sydney > sydney-icloud-acct@email.com, sydney.png
 
-#----- Second instance of iCloud3 ----- 
-#  - platform: icloud3
-#    username: sydney-fmf-acct@email.com
-#    password: sydney-fmf-password
-#    track_devices:
-#      - sydney > sydney-icloud-acct@email.com, sydney.png
-  
-  
-#----- Other Configuration Variables -----
+# ---- Other Configuration Variables -----
 #    group: family
 
 #    inzone_interval: '2 hrs'
@@ -45,4 +46,3 @@ device_tracker:
 #    exclude_sensors: cnt,lupdt,zon3,lzon3,alt
 
 #    log_level: debug
-  

@@ -1,3 +1,5 @@
+# yamllint disable rule:document-start
+
 title: Home
 views:
   - title: Location (Gary)
@@ -19,11 +21,11 @@ views:
                 icon: mdi:clock-outline
               - entity: sensor.gary_iphone_zone_distance
                 name: Home
-                icon: mdi:map-marker-distance 
+                icon: mdi:map-marker-distance
               - entity: sensor.gary_iphone_next_update
                 name: NextUpdt
                 icon: mdi:update
-         
+
           - type: glance
             column_width: 20%
             entities:
@@ -42,17 +44,16 @@ views:
               - entity: sensor.gary_iphone_last_update
                 name: LastUpdt
                 icon: mdi:history
-              
+
           - type: horizontal-stack
             cards:
-            - type: entities
-              entities:
-                - entity: sensor.gary_iphone_info
-                  name: Info
-                  icon: mdi:information-outline 
+              - type: entities
+                entities:
+                  - entity: sensor.gary_iphone_info
+                    name: Info
+                    icon: mdi:information-outline
 
           - type: entities
             entities:
               - script.icloud3_update_location_gary
               - script.homeassistant_restart
-

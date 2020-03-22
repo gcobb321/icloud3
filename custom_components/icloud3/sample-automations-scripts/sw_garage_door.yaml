@@ -1,10 +1,12 @@
+# yamllint disable rule:document-start
+
 #########################################################
 #
 #   GARAGE DOOR ZWAVE SWITCH VIA SMARTTHINGS
 #
 #########################################################
 
-#---- Garage Door Z-Wave switch ----------------------------
+# --- Garage Door Z-Wave switch ----------------------------
 - platform: mqtt
   name: "garage_door"
   state_topic: "smartthings/Garage Door/switch/state"
@@ -12,5 +14,3 @@
   payload_on: "on"
   payload_off: "off"
   retain: false
-         
-          
