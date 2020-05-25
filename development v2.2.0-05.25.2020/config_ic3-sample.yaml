@@ -1,0 +1,40 @@
+###########################################################
+#
+#   iCloud3 Configuration Parameters
+#
+#   These parameters will override those specified in the HA
+#   configuration.yaml file. They can be used to change the
+#   iCloud3 operations without restarting HA. To do this,
+#   change the parameter in this file and select 'Restart-iC3'
+#   on the iCloud3 Event Log screen.
+#
+###########################################################
+
+#log_level: debug
+#log_level: debug+rawdata
+
+#--Tracking Parameters-------------------------------------
+#track_devices:
+#  - gary_iphone > gary@email.com, gary.png
+#  - lillian_iphone > lillian@email.com, lillian.png
+
+#--Zone Parameters-----------------------------------------
+#inzone_interval: '1 hr'
+#center_in_zone: True
+#stationary_inzone_interval: '20 min'
+#stationary_still_time: '10 min'
+
+#--Accuracy Parameters-------------------------------------
+#gps_accuracy_threshold: 100
+#ignore_gps_accuracy_inzone: True
+#old_location_threshold: '3 min'
+
+#--Waze Parameters-----------------------------------------
+#distance_method: calc
+#waze_region: US
+#waze_min_distance: 1
+#waze_max_distance: 9999
+#waze_realtime: False
+
+#-- Other Parameters---------------------------------------
+#travel_time_factor: .6
