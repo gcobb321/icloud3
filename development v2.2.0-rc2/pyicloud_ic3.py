@@ -311,7 +311,9 @@ class PyiCloudService(object):
 
     def validate_verification_code(self, device, code):
         """Verifies a verification code received on a trusted device."""
-        device.update(f"{'verificationCode': code, 'trustBrowser': True}")
+        device.update({
+            'verificationCode': code,
+            'trustBrowser': True})
         data = json.dumps(device)
 
         try:

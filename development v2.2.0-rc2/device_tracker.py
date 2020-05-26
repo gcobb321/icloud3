@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc1'
+VERSION = '2.2.0rc2'
 '''
 
 
@@ -191,6 +191,7 @@ TIME_24H                = True
 UTC_TIME                = True
 LOCAL_TIME              = False
 NUMERIC                 = True
+NEW_LINE                = '\n'
 
 SENSOR_EVENT_LOG_ENTITY = 'sensor.icloud3_event_log'
 
@@ -517,24 +518,13 @@ IOS_TRIGGER_ABBREVIATIONS    = {'Geographic Region Entered': 'Geo Region Enter',
                                 'Push Notification': 'iOSApp Loc Request',
                                 'Background Fetch': 'Bkgnd Fetch',}
 
-#If the location data is old during the _update_device_icloud routine,
-#it will retry polling the device (or all devices) after 3 seconds,
-#up to 4 times. If the data is still old, it will set the next normal
-#interval to C_LOCATION_ISOLD_INTERVAL and keep track of the number of
-#times it overrides the normal polling interval. If it is still old after
-#C_MAX_old_loc_poor_gps_cnt retries, the normal intervl will be used and
-#the cycle starts over on the next poll. This will prevent a constant
-#repolling if the location data is always old.
-C_LOCATION_ISOLD_INTERVAL = 15
-C_MAX_old_loc_poor_gps_cnt = 4
 
 #Lists to hold the group names, group objects and iCloud device configuration
 #The ICLOUD3_GROUPS is filled in on each platform load, the GROUP_OBJS is
 #filled in after the polling timer is setup.
 ICLOUD3_GROUPS     = []
 ICLOUD3_GROUP_OBJS = {}
-ICLOUD_ACCT_DEVICE_CONFIG = {}
-ICLOUD3_TRACKED_DEVICES   = {}
+ICLOUD3_TRACKED_DEVICES = {}
 '''
 DEVICE_STATUS_SET = ['deviceModel', 'rawDeviceModel', 'deviceStatus',
                     'deviceClass', 'batteryLevel', 'id', 'lowPowerMode',
@@ -882,6 +872,8 @@ class Icloud3(DeviceScanner):
 
 
         """Initialize the iCloud3 device tracker."""
+        self.hass_configurator_request_id    = {}
+
         self.hass                         = hass
         self.see                          = see
         self.username                     = username
@@ -904,8 +896,8 @@ class Icloud3(DeviceScanner):
         self.start_icloud3_request_flag   = False
         self.start_icloud3_inprocess_flag = False
         self.authenticated_time           = 0
+        self.log_level                    = log_level
 
-        self._initialize_debug_control(log_level)
 
         self.attributes_initialized_flag  = False
         self.track_devices                = track_devices
@@ -954,7 +946,12 @@ class Icloud3(DeviceScanner):
 
         try:
             start_timer = time.time()
-            self.startup_log_msgs = "\n-------------------------------------------------------------------"
+            self.start_icloud3_inprocess_flag = True
+            self.start_icloud3_request_flag   = False
+            self.startup_log_msgs             = ''
+            self.startup_log_msgs_prefix = NEW_LINE + '-'*55
+
+            self._initialize_debug_control(self.log_level)
             self._initialize_um_formats(self.unit_of_measurement)
             self._define_device_fields()
             self._define_device_status_fields()
@@ -962,14 +959,12 @@ class Icloud3(DeviceScanner):
             self._define_device_zone_fields()
             self._define_tracking_control_fields()
             self._setup_tracking_method(self.tracking_method_config)
-            self.start_icloud3_inprocess_flag = True
-            self.start_icloud3_request_flag   = False
 
             event_msg = (f"^^^ Initializing iCloud3 v{VERSION} > "
                          f"{dt_util.now().strftime('%A, %b %d')}")
             self._save_event_halog_info("*", event_msg)
 
-            self.startup_log_msgs += "\n"
+            self.startup_log_msgs_prefix = NEW_LINE
             event_msg = (f"Stage 1 > Prepare iCloud3 for {self.username}")
             self._save_event_halog_info("*", event_msg)
 
@@ -987,7 +982,7 @@ class Icloud3(DeviceScanner):
             _LOGGER.exception(err)
 
         try:
-            self.startup_log_msgs += "\n"
+            self.startup_log_msgs_prefix = NEW_LINE
             event_msg = (f"Stage 2 > Set up tracking method & identify devices")
             self._save_event_halog_info("*", event_msg)
 
@@ -1016,7 +1011,7 @@ class Icloud3(DeviceScanner):
             _LOGGER.exception(err)
 
         try:
-            self.startup_log_msgs += "\n"
+            self.startup_log_msgs_prefix = NEW_LINE
             event_msg = (f"Stage 3 > Verify tracked devices")
             self._save_event_halog_info("*", event_msg)
 
@@ -1092,7 +1087,7 @@ class Icloud3(DeviceScanner):
             event_msg = (f"Tracking Devices > {self.track_devicename_list}")
             self._save_event_halog_info("*", event_msg)
 
-            self.startup_log_msgs += "\n"
+            self.startup_log_msgs_prefix = NEW_LINE
             event_msg = (f"Stage 4 > Configure valid tracked devices")
             self._save_event_halog_info("*", event_msg)
 
@@ -1147,7 +1142,7 @@ class Icloud3(DeviceScanner):
             self._update_event_log_sensor_line_items(self.tracked_devices[0])
 
             #Everying reset. Now do an iCloud update to set up the device info.
-            self.startup_log_msgs += "\n"
+            self.startup_log_msgs_prefix = NEW_LINE
             event_msg = (f"Stage 5 > Locating tracked devices")
             self._save_event_halog_info("*", event_msg)
 
@@ -1165,15 +1160,15 @@ class Icloud3(DeviceScanner):
             if self.log_level_debug_flag or self.log_level_eventlog_flag:
                 self._display_usage_counts(devicename, force_display=(not self.start_icloud3_initial_load_flag))
 
-        self.startup_log_msgs += "\n"
+        self.startup_log_msgs_prefix = NEW_LINE
         event_msg = (f"^^^ Initializing iCloud3 v{VERSION} > Complete, "
                      f"Took {round(time.time()-start_timer, 2)} sec")
         self._save_event_halog_info("*", event_msg)
 
         self.start_icloud3_inprocess_flag = False
 
-        self.startup_log_msgs += "\n-------------------------------------------------------------------"
-        self.startup_log_msgs = self.startup_log_msgs.replace("CRLF", "\n")
+        self.startup_log_msgs_prefix = NEW_LINE + '-'*55
+        self.startup_log_msgs = self.startup_log_msgs.replace("CRLF", NEW_LINE)
         _LOGGER.info(self.startup_log_msgs)
         self.startup_log_msgs = ''
 
@@ -1499,7 +1494,7 @@ class Icloud3(DeviceScanner):
                                     f"GPS-{format_gps(dev_latitude, dev_longitude)}, "
                                     f"GPSAccuracy-{dev_gps_accuracy}, "
                                     f"OldLocThreshold-{self._secs_to_time_str(self.old_location_secs.get(devicename))}")
-                            self._save_event_halog_info(devicename, event_msg)
+                            self._save_event_halog_debug(devicename, event_msg)
 
                         #If got these triggers and not old location check a few
                         #other things
@@ -1566,6 +1561,7 @@ class Icloud3(DeviceScanner):
                     self.iosapp_update_flag[devicename] = True
 
                     update_method = self._update_device_iosapp(devicename, update_reason, dev_data)
+                    self.any_device_being_updated_flag = False
 
                 if update_method == ICLOUD_UPDATE and self.TRK_METHOD_FMF_FAMSHR:
                     self._update_device_icloud(devicename, update_reason)
@@ -1764,7 +1760,7 @@ class Icloud3(DeviceScanner):
 
                     event_msg = ("iOS update was not completed, "
                         f"will retry with {self.trk_method_short_name}")
-                    self._save_event_halog_info(devicename, event_msg)
+                    self._save_event_halog_debug(devicename, event_msg)
 
                     return ICLOUD_UPDATE
 
@@ -2071,7 +2067,10 @@ class Icloud3(DeviceScanner):
                 #update time has not been reached, do not update device
                 #information. Do this in case this device currently has bad gps
                 #and really doesn't need to be polled at this time anyway.
-                if self._check_in_zone_and_before_next_update(devicename):
+                #If the iOS App triggered the update and it was not done by the
+                #iosapp_update routine, do one now anyway.
+                if (self._check_in_zone_and_before_next_update(devicename) and
+                        arg_devicename == None):
                     continue
 
                 event_msg = (f"{self.trk_method_short_name} update started "
@@ -5110,6 +5109,7 @@ class Icloud3(DeviceScanner):
         #times, flags
         self.update_timer             = {}
         self.overrideinterval_seconds = {}
+        self.dist_from_zone_km_small_move_total = {}
         self.this_update_secs         = 0
 
         #location, gps
@@ -5163,7 +5163,6 @@ class Icloud3(DeviceScanner):
 
 #--------------------------------------------------------------------
     def _initialize_usage_counters(self, devicename, clear_counters=True):
-        TRACE("5336 _initialize_usage_counters",devicename,clear_counters)
         if devicename not in self.count_update_iosapp or clear_counters:
             self.count_update_iosapp[devicename]   = 0
             self.count_update_ignore[devicename]   = 0
@@ -5354,11 +5353,14 @@ class Icloud3(DeviceScanner):
         self.zone_radius_m  = {}
         self.zone_passive   = {}
 
-        if self.start_icloud3_initial_load_flag == False:
-            self.hass.services.call(ATTR_ZONE, "reload")
+        try:
+            if self.start_icloud3_initial_load_flag == False:
+                self.hass.services.call(ATTR_ZONE, "reload")
+        except:
+            pass
 
-            log_msg = (f"Reloading Zone.yaml config file")
-            self.log_debug_msg("*", log_msg)
+        log_msg = (f"Reloading Zone.yaml config file")
+        self.log_debug_msg("*", log_msg)
 
         zones = self.hass.states.entity_ids(ATTR_ZONE)
         zone_msg = ''
@@ -5425,7 +5427,6 @@ class Icloud3(DeviceScanner):
         self.stat_zone_devicename_icon = {}  #icon to be used for a devicename
         self.stat_zone_moved_total     = {}  #Total of small distances
         self.stat_zone_timer           = {}  #Time when distance set to 0
-        self.dist_from_zone_km_small_move_total = {}
         self.stat_min_dist_from_zone_km  = round(self.zone_home_radius_km * 2.5, 2)
         self.stat_dist_move_limit      = round(self.zone_home_radius_km * 1.5, 2)
         self.stat_zone_radius_km       = round(self.zone_home_radius_km * 2, 2)
@@ -7095,8 +7096,9 @@ class Icloud3(DeviceScanner):
 #
 #########################################################
     def log_info_msg(self, log_msg):
-        if len(self.startup_log_msgs) > 0:
-            self.startup_log_msgs += '\n' + log_msg
+        if self.start_icloud3_inprocess_flag and not self.log_level_debug_flag:
+            self.startup_log_msgs       += f"{self.startup_log_msgs_prefix}\n {log_msg}"
+            self.startup_log_msgs_prefix = ""
         else:
             _LOGGER.info(log_msg)
 
@@ -7107,17 +7109,20 @@ class Icloud3(DeviceScanner):
 #--------------------------------------
     def _save_event_halog_info(self, devicename, log_msg):
         self._save_event(devicename, log_msg)
+
         if devicename != "*":
             log_msg = (f"{self._format_fname_devtype(devicename)} {log_msg}")
 
-        if len(self.startup_log_msgs) > 0:
-            self.startup_log_msgs += '\n' + log_msg
+        if self.start_icloud3_inprocess_flag and not self.log_level_debug_flag:
+            self.startup_log_msgs       += f"{self.startup_log_msgs_prefix}\n {log_msg}"
+            self.startup_log_msgs_prefix = ""
         else:
             self.log_info_msg(log_msg)
 
 #--------------------------------------
     def _save_event_halog_debug(self, devicename, log_msg):
         self._save_event(devicename, log_msg)
+
         if devicename != "*":
             log_msg = (f"{self._format_fname_devtype(devicename)} {log_msg}")
         self.log_debug_msg(devicename, log_msg)
@@ -7141,8 +7146,10 @@ class Icloud3(DeviceScanner):
 
         self._save_event(devicename, log_msg)
         log_msg = (f"{self._format_fname_devtype(devicename)} {log_msg}")
-        if len(self.startup_log_msgs) > 0:
-            self.startup_log_msgs += '\n' + log_msg
+
+        if self.start_icloud3_inprocess_flag and not self.log_level_debug_flag:
+            self.startup_log_msgs       += f"{self.startup_log_msgs_prefix}\n {log_msg}"
+            self.startup_log_msgs_prefix = ""
 
         self.log_error_msg(log_msg)
 
@@ -7541,36 +7548,51 @@ class Icloud3(DeviceScanner):
 #   iCloud Account trusted device verification code.
 #
 #########################################################
-    def icloud_need_trusted_device(self):
+    def icloud_show_trusted_device_request_form(self):
         """We need a trusted device."""
         configurator = self.hass.components.configurator
-        if self.group in ICLOUD_ACCT_DEVICE_CONFIG:
+
+        log_msg = (f"Get Trusted Device, User={self.username}, Config={self.hass_configurator_request_id}")
+        self.log_debug_msg('*', log_msg)
+
+        #Exit if verification in process
+        if self.username in self.hass_configurator_request_id:
             return
 
-        devicesstring = ''
-        if self.valid_trusted_device_ids == 'Invalid Entry':
-            devicesstring = '\n\n'\
+        device_list = ''
+        self.trusted_device_list = {"Error": None}
+        if self.trusted_device_list.get("Error") != None:
+            device_list = '\n\n'\
                 '----------------------------------------------\n'\
                 '●●● Previous Trusted Device Id Entry is Invalid ●●●\n\n\n' \
                 '----------------------------------------------\n\n\n'
-            self.valid_trusted_device_ids = None
+            #self.valid_trusted_device_ids = None
+            self.trusted_device_list = {"Error": None}
 
         self.trusted_devices = self.api.trusted_devices
-
-        device_list = "ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Phone Number\n" \
+        device_list += "ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Phone Number\n" \
                       "––&nbsp;&nbsp;&nbsp;&nbsp;––––––––––––\n"
-        for i, device in enumerate(self.trusted_devices):
-            device_list += (f"{i}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+
+        log_msg = (f"Trusted Device={self.trusted_devices}")
+        self.log_debug_msg('*', log_msg)
+
+        for device in self.trusted_devices:
+            device_list += (f"{device['deviceId']}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
                             f"&nbsp;&nbsp;{device.get('phoneNumber')}\n")
 
-            self.valid_trusted_device_ids = (f"{i},{self.valid_trusted_device_ids}")
+            #self.valid_trusted_device_ids = (f"{i},{self.valid_trusted_device_ids}")
+            self.trusted_device_list[device['deviceId']] = device
 
-        description_msg = (f"Enter the ID for the Trusted Device to receive "
-            f"the verification code via a text message.\n\n\n{device_list}")
+        log_msg = (f"Valid Trusted IDs={self.trusted_device_list}")
+        self.log_debug_msg('*', log_msg)
 
-        ICLOUD_ACCT_DEVICE_CONFIG[self.group] = configurator.request_config(
-            (f"iCloud Account Verification Required for {self.username} ({self.group})"),
-            self.icloud_trusted_device_callback,
+        description_msg = (f"Account {self.username} needs to be verified. Enter the "
+                           f"ID for the Trusted Device that will receive the "
+                           f"verification code via a text message.\n\n\n{device_list}")
+
+        self.hass_configurator_request_id[self.username] = configurator.request_config(
+            (f"Select iCloud Trusted Device"),
+            self.icloud_handle_trusted_device_entry,
             description    = (description_msg),
             entity_picture = "/static/images/config_icloud.png",
             submit_caption = 'Confirm',
@@ -7579,7 +7601,7 @@ class Icloud3(DeviceScanner):
         )
 
 #--------------------------------------------------------------------
-    def icloud_trusted_device_callback(self, callback_data):
+    def icloud_handle_trusted_device_entry(self, callback_data):
         """
         Take the device number enterd above, get the api.device info and
         have pyiCloud validate the device.
@@ -7590,48 +7612,49 @@ class Icloud3(DeviceScanner):
                     {'deviceType': 'SMS', 'areaCode': '', 'phoneNumber':
                     '********66', 'deviceId': '2'}]
         """
-        self.trusted_device_id = int(callback_data.get('trusted_device'))
+        device_id_entered = callback_data.get('trusted_device')
+        if device_id_entered not in self.trusted_device_list:
+            event_msg = (f"iCloud3 Error > Invalid Trusted Device ID, "
+                         f"Entered-{device_id_entered}")
+            self._save_event_halog_error("*", event_msg)
 
-        self.trusted_device    = self.trusted_devices[self.trusted_device_id]
+            self.trusted_device = None
+            self.trusted_device_list["Error"] = str(device_id_entered)
+            return
+            #self.icloud_show_trusted_device_request_form()
 
-        if self.group in ICLOUD_ACCT_DEVICE_CONFIG:
-            request_id   = ICLOUD_ACCT_DEVICE_CONFIG.pop(self.group)
+        self.trusted_device = self.trusted_device_list[device_id_entered]
+
+        if self.username not in self.hass_configurator_request_id:
+            request_id   = self.hass_configurator_request_id.pop(self.username)
             configurator = self.hass.components.configurator
             configurator.request_done(request_id)
 
-        if str(self.trusted_device_id) not in self.valid_trusted_device_ids:
-            event_msg = (f"iCloud3 Error > Invalid Trusted Device ID. "
-                         f"Entered-{self.trusted_device_id}, "
-                         f"Valid IDs-{self.valid_trusted_device_ids}")
-            self._save_event_halog_error(event_msg)
-
-            self.trusted_device = None
-            self.valid_trusted_device_ids = 'Invalid Entry'
-            self.icloud_need_trusted_device()
-
         elif not self.api.send_verification_code(self.trusted_device):
             event_msg = ("iCloud3 Error > Failed to send verification code")
-            self._save_event_halog_error(event_msg)
+            self._save_event_halog_error("*", event_msg)
 
             self.trusted_device = None
             self.valid_trusted_device_ids = None
 
         else:
             # Get the verification code, Trigger the next step immediately
-
-            self.icloud_need_verification_code()
+            self.icloud_show_verification_code_entry_form()
 
 #------------------------------------------------------
-    def icloud_need_verification_code(self):
+    def icloud_show_verification_code_entry_form(self):
         """Return the verification code."""
         configurator = self.hass.components.configurator
-        if self.group in ICLOUD_ACCT_DEVICE_CONFIG:
-            return
+        if self.username in self.hass_configurator_request_id:
+            request_id   = self.hass_configurator_request_id.pop(self.username)
+            configurator = self.hass.components.configurator
+            configurator.request_done(request_id)
+            #return
 
-        ICLOUD_ACCT_DEVICE_CONFIG[self.group] = configurator.request_config(
-            (f"iCloud Account Verification Code for {self.group}"),
-            self.icloud_verification_callback,
-            description    = ('Enter the Verification Code'),
+        self.hass_configurator_request_id[self.username] = configurator.request_config(
+            (f"Enter iCloud Verification Code"),
+            self.icloud_handle_verification_code_entry,
+            description    = ('Enter the Verification Code sent to the Trusted Device'),
             entity_picture = "/static/images/config_icloud.png",
             submit_caption = 'Confirm',
             fields         = [{'id': 'code', \
@@ -7639,7 +7662,7 @@ class Icloud3(DeviceScanner):
         )
 
 #--------------------------------------------------------------------
-    def icloud_verification_callback(self, callback_data):
+    def icloud_handle_verification_code_entry(self, callback_data):
         """Handle the chosen trusted device."""
         from .pyicloud_ic3 import PyiCloudException
         self.verification_code = callback_data.get('code')
@@ -7658,10 +7681,10 @@ class Icloud3(DeviceScanner):
             self.verification_code = None
 
             # Trigger the next step immediately
-            self.icloud_need_trusted_device()
+            self.icloud_show_trusted_device_request_form()
 
-        if self.group in ICLOUD_ACCT_DEVICE_CONFIG:
-            request_id   = ICLOUD_ACCT_DEVICE_CONFIG.pop(self.group)
+        if self.username in self.hass_configurator_request_id:
+            request_id   = self.hass_configurator_request_id.pop(self.username)
             configurator = self.hass.components.configurator
             configurator.request_done(request_id)
 
@@ -7709,11 +7732,11 @@ class Icloud3(DeviceScanner):
                 from .pyicloud_ic3 import PyiCloudException
                 try:
                     if self.trusted_device is None:
-                        self.icloud_need_trusted_device()
+                        self.icloud_show_trusted_device_request_form()
                         return True  #Authentication needed
 
                     if self.verification_code is None:
-                        self.icloud_need_verification_code()
+                        self.icloud_show_verification_code_entry_form()
 
                         devicename = list(self.tracked_devices.keys())[0]
                         self._display_info_status_msg(devicename, '')
@@ -7804,7 +7827,6 @@ class Icloud3(DeviceScanner):
         log_msg = (f"iCloud3 Command Entered, Device: {arg_devicename}, "
                  f"Command: {arg_command}")
         self.log_debug_msg("*", log_msg)
-        #self._save_event("*", log_msg)
 
         if arg_devicename:
             if (arg_devicename != 'restart'):
@@ -7815,7 +7837,7 @@ class Icloud3(DeviceScanner):
 
         if instr(arg_command, 'event_log') == False:
             self._save_event(arg_devicename,
-                        f"Service Call Command received ({arg_command})")
+                        f"Service Call Command Received > {arg_command}")
 
         arg_command         = (f"{arg_command} .")
         arg_command_cmd     = arg_command.split(' ')[0].lower()
@@ -7823,8 +7845,8 @@ class Icloud3(DeviceScanner):
         arg_command_parmlow = arg_command_parm.lower()
         log_level_msg       = ""
 
-        log_msg = (f"iCloud3 Command Processed, Device: {arg_devicename} ({group}), "
-                   f"Command: {arg_command}")
+        log_msg = (f"iCloud3 Command Processed > Device-{arg_devicename} ({group}), "
+                   f"Command-{arg_command}")
 
         #System level commands
         if arg_command_cmd == 'restart':
@@ -7855,6 +7877,10 @@ class Icloud3(DeviceScanner):
         elif arg_command_cmd == "counts":
             for devicename in self.count_update_iosapp:
                 self._display_usage_counts(devicename)
+            return
+
+        elif arg_command_cmd == 'trusted_device':
+            self.icloud_show_trusted_device_request_form()
             return
 
         #command preprocessor, reformat specific commands
@@ -7980,7 +8006,7 @@ class Icloud3(DeviceScanner):
 
             else:
                 cmd_type = CMD_ERROR
-                info_msg = (f"● INVALID COMMAND ({arg_command_cmd}) ●")
+                info_msg = (f"● INVALID COMMAND > {arg_command_cmd} ●")
                 self._display_info_status_msg(devicename, info_msg)
 
             if attrs:
