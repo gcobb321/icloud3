@@ -128,7 +128,7 @@ class iCloud3EventLogCard extends HTMLElement {
             }
             #background {
                 position: relative;
-                height: 680 px;
+                height: 680px;
             }
             //    670px;
             //}
@@ -254,117 +254,109 @@ class iCloud3EventLogCard extends HTMLElement {
             }
 
             .eltBody tr:nth-child(odd) {background-color: white;}
-            .eltBody tr:nth-child(even) {background-color: #F7F7F7;}
+            .eltBody tr:nth-child(even) {background-color: #F2F2F2;}
 
-            .colTime     {width: 16%; color: silver;}
-            .colState    {width: 22%; color: silver;}
-            .colZone     {width: 22%; color: silver;}
-            .colInterval {width: 14%; text-align: left; color: silver;}
-            .colTravTime {width: 14%; text-align: left; color: silver;}
-            .colDistance {width: 14%; text-align: left; color: silver;}
+            .colTime            {width: 16%; color: darkgray; vertical-align: text-top;}
+            .colState           {width: 22%; color: darkgray;}
+            .colZone            {width: 22%; color: darkgray;}
+            .colInterval        {width: 14%; text-align: left; color: darkgray;}
+            .colTravTime        {width: 14%; text-align: left; color: darkgray;}
+            .colDistance        {width: 14%; text-align: left; color: darkgray;}
+            .colText            {text-align: left; color: black}
 
-            .hdrTime     {width: 71px; text-align: left; color: black;}
-            .hdrState    {width: 97px; text-align: left; color: black;}
-            .hdrZone     {width: 96px; text-align: left; color: black;}
-            .hdrInterval {width: 63px; text-align: left; color: black;}
-            .hdrTravTime {width: 63px; text-align: left; color: black;}
-            .hdrDistance {width: 63px; text-align: left; color: black;}
+            .hdrTime            {width: 71px; text-align: left; color: black;}
+            .hdrState           {width: 97px; text-align: left; color: black;}
+            .hdrZone            {width: 96px; text-align: left; color: black;}
+            .hdrInterval        {width: 63px; text-align: left; color: black;}
+            .hdrTravTime        {width: 63px; text-align: left; color: black;}
+            .hdrDistance        {text-align: left; color: black;}
 
-            .hdriPadTime     {width: 73px; text-align: left; color: black;}
-            .hdriPadState    {width: 102px; text-align: left; color: black;}
-            .hdriPadZone     {width: 99px; text-align: left; color: black;}
-            .hdriPadInterval {width: 65px; text-align: left; color: black;}
-            .hdriPadTravTime {width: 63px; text-align: left; color: black;}
-            .hdriPadDistance {width: 63px; text-align: left; color: black;}
+            .hdriPadTime        {width: 73px; text-align: left; color: black;}
+            .hdriPadState       {width: 102px; text-align: left; color: black;}
+            .hdriPadZone        {width: 99px; text-align: left; color: black;}
+            .hdriPadInterval    {width: 65px; text-align: left; color: black;}
+            .hdriPadTravTime    {width: 63px; text-align: left; color: black;}
+            .hdriPadDistance    {width: 63px; text-align: left; color: black;}
 
-            .hdriPhoneTime     {width: 66px; text-align: left; color: black;}
-            .hdriPhoneState    {width: 84px; text-align: left; color: black;}
-            .hdriPhoneZone     {width: 68px; text-align: left; color: black;}
-            .hdriPhoneInterval {width: 40px; text-align: left; color: black;}
-            .hdriPhoneTravTime {width: 44px; text-align: left; color: black;}
-            .hdriPhoneDistance {width: 34px; text-align: left; color: black;}
+            .hdriPhoneTime      {width: 66px; text-align: left; color: black;}
+            .hdriPhoneState     {width: 84px; text-align: left; color: black;}
+            .hdriPhoneZone      {width: 68px; text-align: left; color: black;}
+            .hdriPhoneInterval  {width: 40px; text-align: left; color: black;}
+            .hdriPhoneTravTime  {width: 36px; text-align: left; color: black;}
+            .hdriPhoneDistance  {text-align: left; color: black;}
 
-            .coliPhoneZone     {width: 23%; color: silver;}
-            .coliPhoneInterval {width: 12%; text-align: left; color: silver;}
-            .coliPhoneTravTime {width: 12%; text-align: left; color: silver;}
+            .coliPhoneTime      {width: 16%; color: darkgray; vertical-align: text-top;}
+            .coliPhoneState     {width: 22%; color: darkgray;}
+            .coliPhoneZone      {width: 26%; color: darkgray;}
+            .coliPhoneInterval  {width: 14%; text-align: left; color: darkgray;}
+            .coliPhoneTravTime  {width: 14%; text-align: left; color: darkgray;}
+            .coliPhoneDistance  {text-align: left; color: darkgray;}
+            .coliPhoneText      {text-align: left; color: black}
+
+            //.coliPhoneZone      {width: 36%; color: darkgray;}
+            //.coliPhoneInterval  {width: 12%; text-align: left; color: darkgray;}
+            //.coliPhoneTravTime  {width: 12%; text-align: left; color: darkgray;}
 
 
-            .rowBorder   {border-left: 2px solid cyan;}
-            .updateEdgeBar  {border-left-style: solid; border-left-color:
-                             dodgerblue; border-left-width: thick;}
-            .startupEdgeBar {border-left-style: solid; border-left-color:
-                             mediumorchid; border-left-width: thick;}
+            .rowBorder          {border-left: 2px solid cyan;}
 
              // Text special colors
-            .iosappRecd  {color: teal;}
-            .errorMsg    {color: red;
-                          border-style: solid; border-color: Red; border-width: 0px 5px 0px 3px;}
-            .warningMsg  {color: green;}
+            .iosappRecd         {color: teal;}
+            .errorMsg           {color: red; border-left: 2px solid red;}
+            .warningMsg         {color: green;}
 
             //DarkGoldenRod, Fushia, DeepPink, OrangeRed, #e600e6 (Purpleish), MediumVioletRed
-            .note1       {color: MediumVioletRed;
-                          border-style: solid; border-color: MediumVioletRed; border-width: 0px 5px 0px 3px;}
-            .note2       {color: DodgerBlue;
-                          border-style: solid; border-color: DodgerBlue; border-width: 0px 5px 0px 3px;}
-            .note3       {color: DarkGoldenRod;
-                          border-style: solid; border-color: DarkGoldenRod; border-width: 0px 5px 0px 3px;}
-            .star1       {color: #e600e6;
-                          border-style: solid; border-color: #e600e6; border-width: 0px 5px 0px 3px;}
-            .star2       {color: Fushia;
-                          border-style: solid; border-color: Fushia; border-width: 0px 5px 0px 3px;}
-            .star3       {color: OrangeRed;
-                          border-style: solid; border-color: OrangeRed; border-width: 0px 5px 0px 3px;}
+            .note1              {color: MediumVioletRed; border-left: 2px solid MediumVioletRed;}
+            .note2              {color: DodgerBlue;      border-left: 2px solid DodgerBlue;}
+            .note3              {color: DarkGoldenRod;   border-left: 2px solid DarkGoldenRod;}
+            .star1              {color: #e600e6;         border-left: 2px solid #e600e6;}
+            .star2              {color: Fushia;          border-left: 2px solid Fushia;}
+            .star3              {color: OrangeRed;       border-left: 2px solid OrangeRed;}
 
-            .updateRecd  {color: white; background-color: dodgerblue; font-weight: 450;}
-            .trigger     {color: black; font-weight: 300;}
-            .updateItem  {color: black;}
-            .ic3StartupMsg {color: white; background-color: mediumorchid; font-weight: 450;}
-            .dateRecd    {color: white; background-color: darkred;}
-            .event       {colspan: 5;}
 
-            .blue        {color: blue;}
-            .teal        {color: teal;}
-            .darkgray    {color: darkgray;}
-            .dimgray     {color: dimgray;}
-            .black       {color: black}
-            .red         {color: red;}
-            .table_head  {color: DodgerBlue;
-                            text-decoration: underline;
-                            font-weight: 500;}
-            .highlight_row  {color: red;}
-            .highlight_item {color: silver;}
-            .highlight_itemChg {color: silver;}
-            .darkred     {color: darkred;}
-            .green       {color: green;}
-            .redChg {
-                color: red;
-            }
+            .trigger            {color: black; font-weight: 300;}
+            .normalText         {color: black;}
+            .event              {colspan: 5;}
 
-            .redbox {
-                border: 1px solid red;
-                border-collapse: collapse;
-            }
+            .updateRecdHdr      {color: white; background-color: dodgerblue; font-weight: 450;
+                                 border-left: 3px solid dodgerblue;}
+            .updateEdgeBar      {border-left: 3px solid dodgerblue;}
+            .stageRecdHdr       {color: white; background-color: mediumorchid; font-weight: 450;
+                                 border-top: 1px solid white; border-bottom: 1px solid white;}
+            .stageEdgeBar       {border-left: 3px solid mediumorchid;}
+            .dateBarHdr         {color: white; background-color: darkred;
+                                 border-top: 1px solid white; border-bottom: 1px solid white;
+                                 border-left: 3px solid darkred;}
+            .noLeftEdge         {border-left: none;}
+
+            .blue               {color: blue;}
+            .teal               {color: teal;}
+            .darkgray           {color: darkgray;}
+            .dimgray            {color: dimgray;}
+            .black              {color: black;}
+            .silver             {color: silver;}
+            .darkred            {color: darkred;}
+            .green              {color: green;}
+            .red                {color: red;}
+            .redChg             {color: red;}
+            .redbox             {border: 1px solid red; border-collapse: collapse;}
+
+            .tableStyle         {color: DodgerBlue; border-left: 2px solid DodgerBlue;}
+            .tableHeaderL       {color: DodgerBlue; text-align: left; text-decoration: underline; font-weight: 450;
+                                 border-left: 2px solid DodgerBlue;}
+            .tableHeaderR       {color: DodgerBlue; text-align: left; text-decoration: underline; font-weight: 450;}
+            .tableHeaderREdge   {border-right: 2px solid DodgerBlue;}
+
+            .highlightRow       {color: red;}
+            .highlightItem      {color: silver;}
+            .highlightItemChg   {color: silver;}
 
             /* Buttons */
-            #buttonBody {
-                position: relative;
-                width: 100%;
-                border: 1px solid red;
-            }
-            .buttonBarTop {
-                position: relative;
-                height: 25px;
-                margin: 8px 0px 8px 0px;
-                width: 100%;
-                border: 1px solid blue;
-            }
-            .buttonBarBot {
-                position: relative;
-                height: 25px;
-                margin: 8px 0px 8px 0px;
-                width: 100%;
-                border: 1px solid green;
-            }
+            #buttonBody         {position: relative; width: 100%; border: 1px solid red;}
+            .buttonBarTop       {position: relative; height: 25px; margin: 8px 0px 8px 0px;
+                                 width: 100%; border: 1px solid blue;}
+            .buttonBarBot       {position: relative; height: 25px; margin: 8px 0px 8px 0px;
+                                 width: 100%; border: 1px solid green;}
 
             .btnClassSelect {
                 display: inline-block;
@@ -380,67 +372,42 @@ class iCloud3EventLogCard extends HTMLElement {
                 color: #0080F0;
                 text-align: center;
             }
-            .btnClassCmd {
-                border: 1px solid darkred;
-                color: darkred;
-            }
-            .btnClassCmdRefresh {
-                //padding: 2px 8px;
-                border: 1px solid darkgreen;
-                //margin: 0px 14px 4px 0px;
-                color: darkgreen;
-            }
-            #btnDebug {
-                color:  darkred;
-                border: 1px solid darkred;
-                background-color: transparent;
-            }
-            #btnRestart {
-                color:  darkred;
-                border: 1px solid darkred;
-                background-color: transparent;
-            }
-            #btnRefresh {
-                color:  darkgreen;
-                border: 1px solid darkgreen;
-                background-color: transparent;
-            }
+            .btnClassCmd        {color: darkred;   border: 1px solid darkred;}
+            .btnClassCmdRefresh {color: darkgreen; border: 1px solid darkgreen;}
+            #btnDebug           {color: darkred;   border: 1px solid darkred; background-color: transparent;}
+            #btnRestart         {color: darkred;   border: 1px solid darkred; background-color: transparent;}
+            #btnRefresh         {color: darkgreen; border: 1px solid darkgreen; background-color: transparent;}
 
 
-            /* iPhone with smaller screen */
+            /* iPhone with smaller screen*/
             @media only screen and (max-device-width: 640px),
-                only screen and (max-device-width: 667px),
-                only screen and (max-width: 480px) {
+                    only screen and (max-device-width: 667px),
+                    only screen and (max-width: 480px) {
 
-                    ha-card       {padding: 4px 4px 4px 4px;}
-                    //#eltInfoBar   {width: 100%;}
-                    //#thisButtonId {font-size: 8px;}
-                    .eltTable     {width: 360px;}
-                    .eltHeader    {background-color: #ebf6f9;
-                                    height: 15px;
-                                    padding: 0px 0px 3px 0px;}
-                    .eltHeader tr {width: 360px;}
-                    .eltBody tr   {width: 360px;}
-                    //.eltBody tr   {width: 100%;}
-                    .btnClassSelect {margin: 0px 2px 4px 0px; padding: 1px 3px;)
-                    .btnClassCmdRefresh {margin: 0px 1px 4px 0px;)
-
-                    .hdrTime     {width: 78px; text-align: left; color: black;}
-                    .hdrState    {width: 107px; text-align: left; color: red;}
-                    .hdrZone     {width: 107px; text-align: left; color: black;}
-                    .hdrInterval {width: 65px; text-align: left; color: black;}
-                    .hdrTravTime {width: 65px; text-align: left; color: black;}
-
-                    .updateRecd  {font-weight: 450;}
-                    .updateEdgeBar {border-left-width: thick;}
-                    .ic3StartupMsg {font-weight: 450;}
-
-                    .eltBody tr:nth-child(even) {background-color: #EEF2F5;}
-                    //.eltBody tr:nth-child(even) {background-color: oldlace;}
-                    ::-webkit-scrollbar {width: 1px;}
-                    ::-webkit-scrollbar-thumb {background: #818181;}
+                ha-card         {padding: 4px 4px 4px 4px;}
+                .eltTable       {width: 362px;}
+                .eltHeader      {background-color: #ebf6f9; height: 15px; padding: 0px 0px 3px 0px;}
+                .eltHeader tr   {width: 360px;}
+                .eltBody tr     {width: 360px;}
+                .btnClassSelect {margin: 0px 2px 4px 0px; padding: 1px 3px;)
+                .btnClassCmdRefresh {margin: 0px 1px 4px 0px;)
+                .hdrTime        {width: 78px;  text-align: left; color: black;}
+                .hdrState       {width: 107px; text-align: left; color: red;}
+                .hdrZone        {width: 107px; text-align: left; color: black;}
+                .hdrInterval    {width: 65px;  text-align: left; color: black;}
+                .hdrTravTime    {width: 65px;  text-align: left; color: black;}
+                .updateRecd     {font-weight: 450;}
+                //.tableHeaderL   {border-left: 2px solid DodgerBlue;}
+                //.updateEdgeBar  {border-left-width: 2px;}
+                //.tableStyle     {color: DodgerBlue; border-left: 3px solid DodgerBlue;}
+                //.tableStyle     {border-left: 2px solid red;}
+                .ic3StartupMsg  {font-weight: 450;}
+                .eltBody tr:nth-child(even) {background-color: #EEF2F5;}
+                ::-webkit-scrollbar {width: 1px;}
+                ::-webkit-scrollbar-thumb {background: #818181;}
                 }
-            /* iPad ??? */
+
+            /* iPad ???
             @media only screen
                 and (min-device-width : 768px)
                 and (max-device-width : 1024px) {
@@ -451,7 +418,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     .hdrTravTime {width: 65px; text-align: left; color: black;}
 
                     .updateRecd  {font-weight: 450;}
-                    .updateEdgeBar {border-left-width: thick;}
+                    .updateEdgeBar {border-left-width: 3px;}
                     .ic3StartupMsg {font-weight: 450;}
 
 
@@ -459,6 +426,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     ::-webkit-scrollbar {width: 1px;}
                     ::-webkit-scrollbar-thumb {background: #818181;}
                 }
+            */
 
         `;
 
@@ -635,32 +603,26 @@ class iCloud3EventLogCard extends HTMLElement {
 
         let row = 0
         var sameTextCnt = 0
-        var eltRowId
         var lText = ''
 
         const userAgentStr = navigator.userAgent
-        var iPhone = 'no'
+        var iPhone = false
+        var iPad   = false
         var userAgent = userAgentStr.indexOf("iPhone")
-        if (userAgent > 0) {
-            iPhone = 'yes'
-        }
-        var iPad = 'no'
+        if (userAgent > 0) {iPhone = true}
         var userAgent = userAgentStr.indexOf("iPad")
-        if (userAgent > 0) {
-            iPad = 'yes'
-        }
+        if (userAgent > 0) {iPad = true}
 
-        var tTextDebugMsg = ''    //userAgentStr
         let logTableHeadHTML = ''
         logTableHeadHTML += '<thead id="eltHeader">'
         logTableHeadHTML += '<tr class="eltHeader">'
-        if (iPhone == 'yes') {
+        if (iPhone) {
             logTableHeadHTML += '<th class="hdriPhoneTime">Time</th>'
             logTableHeadHTML += '<th class="hdriPhoneState">State</th>'
             logTableHeadHTML += '<th class="hdriPhoneZone">Zone</th>'
             logTableHeadHTML += '<th class="hdriPhoneInterval">Intrvl</th>'
-            logTableHeadHTML += '<th class="hdriPhoneTravTime">Travel</th>'
-            logTableHeadHTML += '<th class="hdriPhoneDistance">Dist</th>'
+            logTableHeadHTML += '<th class="hdriPhoneTravTime">Trav</th>'
+            logTableHeadHTML += '<th class="hdriPhoneDistance">Distance</th>'
         } else if (iPad == 'yes') {
             logTableHeadHTML += '<th class="hdriPadTime">Time</th>'
             logTableHeadHTML += '<th class="hdriPadState">State</th>'
@@ -708,10 +670,11 @@ class iCloud3EventLogCard extends HTMLElement {
             var logEntriesRaw = logAttr.slice(2,-2)
             var logEntries    = logEntriesRaw.split('], [',99999)
             var i, eltRow
-            var classUpdateEdgeBar = ''
-            var classStartupEdgeBar = ''
             var completed_item_highlight_next_row = false
-            var stage_item__highlight_next_row = false
+            var lastRecdTestChg = ''
+            var classUpdateEdgeBar = ''
+            var classStageEdgeBar = ''
+            var cancelEdgeBarFlag = false
 
             //alert(logEntries)
             for (i = 0; i < logEntries.length-1; i++) {
@@ -726,7 +689,6 @@ class iCloud3EventLogCard extends HTMLElement {
                 var tText     = thisRecd[6].slice(0,-1)
 
                 var nextRecd  = logEntries[i+1].split("', '",10)
-                var nTime     = nextRecd[0].slice(1)
                 var nState    = nextRecd[1]
                 var nZone     = nextRecd[2]
                 var nInterval = nextRecd[3]
@@ -737,28 +699,27 @@ class iCloud3EventLogCard extends HTMLElement {
                 var thisRecdTestChg = tState + tZone + tInterval + tTravTime + tDistance
                 var nextRecdTestChg = nState + nZone + nInterval + nTravTime + nDistance
 
-                var chgState = ''
-                var chgZone  = ''
-                var chgIntvl = ''
-                var chgTTime = ''
-                var chgDist  = ''
-
-                var classTime     = 'colTime'
-                var classState    = 'colState'
-                var classZone     = 'colZone'
-                var classDistance = 'colDistance'
-                if (iPhone == 'yes') {
+                if (iPhone) {
+                    var classTime     = 'coliPhoneTime'
+                    var classState    = 'coliPhoneState'
+                    var classZone     = 'coliPhoneZone'
                     var classInterval = 'coliPhoneInterval'
                     var classTravTime = 'coliPhoneTravTime'
+                    var classDistance = 'coliPhoneDistance'
+                    var classText     = 'coliPhoneText'
                 } else {
+                    var classTime     = 'colTime'
+                    var classState    = 'colState'
+                    var classZone     = 'colZone'
                     var classInterval = 'colInterval'
                     var classTravTime = 'colTravTime'
+                    var classDistance = 'colDistance'
+                    var classText     = 'colText'
                 }
 
                 if (tText == nText) {
                     ++sameTextCnt
                     if (sameTextCnt == 1) {var firstTime = tTime}
-                    var sameTextTime = tTime
                     continue
                 }
                 if (sameTextCnt > 0) {
@@ -766,26 +727,27 @@ class iCloud3EventLogCard extends HTMLElement {
                     tText += ' (+'+ sameTextCnt +' more times)'
                     sameTextCnt = 0
                 }
+
+                //This is set when the previous item was an update complete item
                 if (completed_item_highlight_next_row) {
-                    classTime     += ' highlight_row'
-                    classState    += ' highlight_row'
-                    classZone     += ' highlight_row'
-                    classInterval += ' highlight_row'
-                    classTravTime += ' highlight_row'
-                    classDistance += ' highlight_row'
+                    classTime     += ' highlightRow'
+                    classState    += ' highlightRow'
+                    classZone     += ' highlightRow'
+                    classInterval += ' highlightRow'
+                    classTravTime += ' highlightRow'
+                    classDistance += ' highlightRow'
                     completed_item_highlight_next_row = false
 
+                //display the info in red if starting an update
                 } else if (tText.indexOf("update started") >= 0) {
-                    classTime     += ' highlight_row'
-                    classState    += ' highlight_row'
-                    classZone     += ' highlight_row'
-                    classInterval += ' highlight_row'
-                    classTravTime += ' highlight_row'
-                    classDistance += ' highlight_row'
+                    classTime     += ' highlightRow'
+                    classState    += ' highlightRow'
+                    classZone     += ' highlightRow'
+                    classInterval += ' highlightRow'
+                    classTravTime += ' highlightRow'
+                    classDistance += ' highlightRow'
 
-                } else if (thisRecdTestChg !== nextRecdTestChg) {
-                    classTime     += ' highlight_item'
-
+                //Display info in first row in red
                 } else if (row == 0) {
                     classTime     += ' red'
                     classState    += ' red'
@@ -795,118 +757,84 @@ class iCloud3EventLogCard extends HTMLElement {
                     classDistance += ' red'
                 }
 
-                if (tText.indexOf("¤s") >= 0) {
-                    classState    += ' table_head'
-                    //classState    += '"; colspan="2";'
-                    classInterval += ' table_head'
-                    classInterval += '"; colspan="2";'
-                } else {
-                    classState    += '"; colspan="1"'
-                    classInterval += '"; colspan="1"'
-                }
-
-                if (iPhone == 'yes') {
-                    tInterval = tInterval.replace(' sec','s')
-                    tInterval = tInterval.replace(' min','m')
-                    tInterval = tInterval.replace(' hrs','h')
-                    tInterval = tInterval.replace(' hr','h')
-
-                    tTravTime = tTravTime.replace(' sec','s')
-                    tTravTime = tTravTime.replace(' min','m')
-                    tTravTime = tTravTime.replace(' hrs','h')
-                    tTravTime = tTravTime.replace(' hr','h')
-
-                    tDistance  = tDistance.replace(' mi','mi')
-                    tDistance  = tDistance.replace(' km','km')
-                }
-
-                var classEventMsg = 'trigger'
-
-                classTime    += classUpdateEdgeBar
-                classTime    += classStartupEdgeBar
-                logTableHTML += '<tr class = "eltRow">'
-                logTableHTML += '<td class="'+classTime +'">'+tTime    +'</td>'
-                logTableHTML += '<td class="'+classState    +'">'+tState    +'</td>'
-                logTableHTML += '<td class="'+classZone     +'">'+tZone   +'</td>'
-                logTableHTML += '<td class="'+classInterval +'">'+tInterval+'</td>'
-                logTableHTML += '<td class="'+classTravTime +'">'+tTravTime+'</td>'
-                logTableHTML += '<td class="'+classDistance +'">'+tDistance+'</td>'
-                logTableHTML += '</tr>'
-                ++row
-
-                //Update & error records
-                classEventMsg = 'updateItem'
+                //Set header recd background bar color and turn edge bar on/off
+                //Set Startup start/complete & stage bar colors and edge bars
+                var classRecdType = ' normalText'
+                var classHeaderBar = ''
                 if (tText.indexOf("update started") >= 0) {
-                    classEventMsg = 'updateRecd'
-                    classTime     = 'updateRecd'
-                    classUpdateEdgeBar = ''
+                    classHeaderBar = ' updateRecdHdr'
+                    cancelEdgeBarFlag = true
                 } else if (tText.indexOf("update complete") >= 0) {
                     completed_item_highlight_next_row = true
-                    classEventMsg = 'updateRecd'
-                    classTime     = 'updateRecd'
+                    classHeaderBar = ' updateRecdHdr'
                     classUpdateEdgeBar = ' updateEdgeBar'
-                } else if (tText.indexOf("Error") >= 0) {
-                    classEventMsg = 'errorMsg'
-                } else if (tText.indexOf("Failed") >= 0) {
-                    classEventMsg = 'errorMsg'
-                }
-
-                //Special color characters
-                if (tText.startsWith("$$$")) {
-                    classEventMsg = 'note3'
-                    tText = tText.slice(3)
-                } else if (tText.startsWith("$$")) {
-                    classEventMsg = 'note2'
-                    tText = tText.slice(2)
-                } else if (tText.startsWith("$")) {
-                    classEventMsg = 'note1'
-                    tText = tText.slice(1)
-                } else if (tText.startsWith("***")) {
-                    classEventMsg = 'star3'
-                    tText = tText.slice(3)
-                } else if (tText.startsWith("**")) {
-                    classEventMsg = 'star2'
-                    tText = tText.slice(2)
-                } else if (tText.startsWith("*")) {
-                    classEventMsg = 'star1'
-                    tText = tText.slice(1)
-                }else if (tText.startsWith("__")) {
-                    classEventMsg = 'updateItem'
-                }else if (tText.startsWith("!")) {
-                    classEventMsg = 'errorMsg'
-                    tText = tText.slice(1)
-                }
-
-                //Status messages with special full line background color
-                if (tText.startsWith("^^^")) {
-                    classEventMsg = 'dateRecd'
-                    classTime     = 'dateRecd'
+                } else if (tText.startsWith("^^^")) {
+                    classHeaderBar = ' dateBarHdr'
                     tText = tText.replace("^^^", "")
                     tText = tText.replace("^^^", "")
-                    //stage_item_highlight_next_row = false
-                    classStartupEdgeBar = ''
                 } else if (tText.indexOf("Initializing") >= 0) {
-                    //stage_item_highlight_next_row = false
-                    classStartupEdgeBar = ''
-                    classEventMsg = 'ic3StartupMsg'
-                    classTime     = 'ic3StartupMsg'
+                    classStageEdgeBar = ''
+                    classHeaderBar = ' stageRecdHdr'
                 } else if (tText.indexOf("Stage") >= 0) {
-                    //stage_item_highlight_next_row = true
-                    classEventMsg = 'ic3StartupMsg'
-                    classTime     = 'ic3StartupMsg'
-                    classStartupEdgeBar = ' startupEdgeBar'
+                    classHeaderBar = ' stageRecdHdr'
+                    classStageEdgeBar = ' stageEdgeBar'
                 } else if (tText.indexOf("Warning") >= 0) {
-                    classEventMsg = 'warningMsg'
+                    classHeaderBar = ' warningMsg'
                 }
                 if (tText.indexOf("Stage 1") >= 0) {
-                    //stage_item_highlight_next_row = false
-                    classStartupEdgeBar = ''
+                    cancelEdgeBarFlag = true
                 }
 
-                //New line
-                //tText = tText.replace(/CRLF/g, "<b>")
+                //Set text color the text starts with a special color character
+                var classSpecialTextColor = ''
+                var specialColorFlag = true
+                if (tText.startsWith("$$$")) {
+                    classSpecialTextColor = ' note3'
+                    tText = tText.slice(3)
+                } else if (tText.startsWith("$$")) {
+                    classSpecialTextColor = ' note2'
+                    tText = tText.slice(2)
+                } else if (tText.startsWith("$")) {
+                    classSpecialTextColor = ' note1'
+                    tText = tText.slice(1)
+                } else if (tText.startsWith("***")) {
+                    classSpecialTextColor = ' star3'
+                    tText = tText.slice(3)
+                } else if (tText.startsWith("**")) {
+                    classSpecialTextColor = ' star2'
+                    tText = tText.slice(2)
+                } else if (tText.startsWith("*")) {
+                    classSpecialTextColor = ' star1'
+                    tText = tText.slice(1)
+                } else if (tText.startsWith("__")) {
+                    classSpecialTextColor = ' normalText'
+
+                } else {
+                    specialColorFlag = false
+                    classSpecialTextColor = ''
+                }
+
+                var classErrorMsg = ''
+                if (tText.indexOf("Error") >= 0) {
+                    classErrorMsg = ' errorMsg'
+                } else if (tText.indexOf("Failed") >= 0) {
+                    classHeadeclassErrorMsgrBar = ' errorMsg'
+                } else if (tText.startsWith("!")) {
+                    classErrorMsg = ' errorMsg'
+                    tText = tText.slice(1)
+                }
+
+                //Change CRLF in the text string to HTML >b> for a new line
                 while (tText.indexOf("CRLF") >= 0) {
                     tText = tText.replace("CRLF", "<br>")
+                }
+
+                //If displaying a table, the State & Interval can contain column titles
+                var classTable = ''
+                if (tText.indexOf("¤s") >= 0) {
+                    classTable     = ' tableStyle'
+                    classState    += ' tableHeaderL'
+                    classInterval += ' tableHeaderR'
                 }
 
                 //Build the table HTML from the special characters in the recd
@@ -930,18 +858,73 @@ class iCloud3EventLogCard extends HTMLElement {
                 tText = tText.replace(/¦35/g, "</td><td style='width: 35%'>")
                 tText = tText.replace(/¦50/g, "</td><td style='width: 50%'>")
 
-                //Display special msg on first row
-                if (i == 0 && tTextDebugMsg !== '') { 
-                    tText += '<br>----------<br>'+tTextDebugMsg
+                //Abbreviate text if displaying on an iPhone with a smaller display
+                if (iPhone) {
+                    tInterval = tInterval.replace(' sec','s')
+                    tInterval = tInterval.replace(' min','m')
+                    tInterval = tInterval.replace(' hrs','h')
+                    tInterval = tInterval.replace(' hr','h')
+
+                    tTravTime = tTravTime.replace(' sec','s')
+                    tTravTime = tTravTime.replace(' min','m')
+                    tTravTime = tTravTime.replace(' hrs','h')
+                    tTravTime = tTravTime.replace(' hr','h')
+
+                    tDistance  = tDistance.replace(' mi','mi')
+                    tDistance  = tDistance.replace(' km','km')
                 }
 
-                classTime    += classUpdateEdgeBar
-                classTime    += classStartupEdgeBar
+                //Determine if the state/zone/dist/time line should be displayed
+                var displayStateZoneLineFlag = false
+                if (thisRecdTestChg != nextRecdTestChg)     {displayStateZoneLineFlag = true}
+                if (classTime.indexOf("highlightRow") >= 0) {displayStateZoneLineFlag = true}
+                if (classTime.indexOf("red") >= 0)          {displayStateZoneLineFlag = true}
+                if (tState == '' && tZone == '')            {displayStateZoneLineFlag = false}
+                if (tText.startsWith("^^^"))                {displayStateZoneLineFlag = false}
+
+                if (row > 1) {classTime += classUpdateEdgeBar + classStageEdgeBar}
+
+                //Display Info Row
+                if (displayStateZoneLineFlag) {
+                    logTableHTML += '<tr class = "eltRow">'
+                    logTableHTML += '<td class="'+classTime     +'">'+tTime    +'</td>'
+                    logTableHTML += '<td class="'+classState    +'">'+tState   +'</td>'
+                    logTableHTML += '<td class="'+classZone     +'">'+tZone    +'</td>'
+                    logTableHTML += '<td class="'+classInterval +'">'+tInterval+'</td>'
+                    logTableHTML += '<td class="'+classTravTime +'">'+tTravTime+'</td>'
+                    logTableHTML += '<td class="'+classDistance +'">'+tDistance+'</td>'
+                    logTableHTML += '</tr>'
+                    ++row
+                }
+
+                //Display Text Row
+                classTime = classTime.replace("highlightRow", "")
+                classTime = classTime.replace("highlightItem", "")
+                classTime += classRecdType + classHeaderBar
+                classTime += ' darkgray'
+
+                classText += classHeaderBar + classSpecialTextColor + classTable + classErrorMsg
+
                 logTableHTML += '<tr class = "eltRow">'
-                logTableHTML += '<td class="'+classTime+'"></td>'
-                logTableHTML += '<td class="'+classEventMsg+'"; colspan="5">'+tText+'</td>'
+
+                if (classTime.indexOf("Hdr") >= 0) {
+                    classText    += ' noLeftEdge'
+                    logTableHTML += '<td class="'+classTime+'"></td>'
+                } else {
+                    logTableHTML += '<td class="'+classTime+'">'+tTime+'</td>'
+                }
+
+                logTableHTML += '</td>'
+                logTableHTML += '<td class="'+classText+'"; colspan="5">'+tText+'</td>'
                 logTableHTML += '</tr>'
                 ++row
+
+                if (cancelEdgeBarFlag) {
+                    classUpdateEdgeBar = ''
+                    classStageEdgeBar  = ''
+                    cancelEdgeBarFlag  = false
+                }
+                var lastRecdTestChg = tState + tZone + tInterval + tTravTime + tDistance
 
                 if (row == 20) {
                     eventLogTable.innerHTML = logTableHTML + '</tbody>'
@@ -951,7 +934,7 @@ class iCloud3EventLogCard extends HTMLElement {
             logTableHTML += ''
         }
 
-        logTableHTML += `</tbody></table></div>`;
+        logTableHTML += '</tbody></table></div>'
 
         eventLogTable.innerHTML = logTableHTML;
 
@@ -965,18 +948,11 @@ class iCloud3EventLogCard extends HTMLElement {
             btnDebug.style.color = "white"
             btnDebug.style.backgroundColor = "darkred"
             this._displayTimeName("Debug Logging On ... "+updateTimeAttr)
-            //this._displayTimeName(updateTimeAttr)
         } else {
             btnDebug.style.color = "darkred"
             btnDebug.style.backgroundColor = "transparent"
             this._displayTimeName(updateTimeAttr)
         }
-       //eltInfoUpdateTime.innerText = updateTimeAttr
-
-        //this._hass.callService("device_tracker", "icloud3_update", {
-        //    device_name: 'reset', command: 'event_log'})
-
-        //this._displayInfoTimeFldMsg(userAgentStr)
     }
 
 //---------------------------------------------------------------------------
@@ -1038,7 +1014,6 @@ class iCloud3EventLogCard extends HTMLElement {
         } else {
             var buttonPressX  = buttonPressId.substr(-1)
             var eltInfoName = names[buttonPressX]+"  ("+devicenames[buttonPressX]+")"
-            //var eltInfoName = devicenames[buttonPressX]
 
             this._displayInfoName(eltInfoName)
             thisButtonId.innerText = buttonPressId

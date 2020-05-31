@@ -1,4 +1,4 @@
-# iCloud3 Version 2.2.0 Change Log
+## iCloud3 Version 2.2.0 Change Log
 
 The following enhancements and changes have been made iCloud3 v2.1.0
 
@@ -19,6 +19,7 @@ Note: You can set up this prerelease version in another custom_components direct
   * `old_location_threshold` - The timestamp age for the location is checked to insure it is timely. It the location is older than the threshold, it is discarded. The threshold can be calculated (12.5% of the travel time to the zone with a 5 minute maximum (default)) or you can specify a fixed time.
   * `config_ic3_file_name` - The name of the special iCloud3 configuration file. Default: *config_ic3.yaml*.
 * The distance used to check if the device has wandered outside the zone is now based on the zone radius and gps accuracy threshold.
+* The battery level from the iOS App is now displayed when using the Find-my-Friends tracking method.
 * Revamped a lot of the error and information messages displayed on the Event Log.
 
 #### Bug Fixes
@@ -44,8 +45,24 @@ Note: You can set up this prerelease version in another custom_components direct
 1. Change to the `config\custom_components` directory. You should see the `icloud3` directory listed.
 2. Create the `icloud3_dev` iCloud3 Development directory.
 3. Download all of the files in the GitHub `icloud3\development v2.2.0` into the `icloud3_dev` directory you just created on your HA system.
-4. Copy the `icloud3-event-log.js` file into the `config\www\custom_cards` directory or into the directory you are currently using for the Event Log lovelace card.
-5. In the HA configuration.yaml file defining the icloud3 platform, change `-platform: icloud3` to `-platform: icloud3_dev`. This points to the directory created in step 2 above.
+4. In the HA configuration.yaml file defining the icloud3 platform, change `-platform: icloud3` to `-platform: icloud3_dev`. This points to the directory created in step 2 above.
+5. Copy the `icloud3-event-log.js` file into the `config\www\custom_cards` directory or into the directory you are currently using for the Event Log lovelace card. 
+6. Refresh your browser so the new Event Log will load when you select it. You can do the following:
+   1. Chrome: 
+      1. Select the 3-dots in the upper-right corner of the Chrome window next to your picture (Customize and Control Google Chrome).
+      2. Select  `More Tools`.
+      3. Select `Clear Browsing Data`.  Check `Cached Images and Data`. Then click `Clear Data`.
+      4. Reload the HA window as you normally do.
+      5. Select the Lovelace window containing the Event Log card. 
+      6. Click the `Refresh` button on the Chrome Title bar to refresh the page.
+   2. iPhone or iPad:
+      1. Open the iOA App.
+      2. Touch the `App Configuration` in the HA Sidebar on the left side of the screen.
+      3. Scroll to the bottom. Touch `Reset Frontend cache`
+      4. Touch `Done` to close the App Configuration window.
+      5. Close the Sidebar. Scroll down from the top of the screen to reload Lovelace on the iPhone or iPad. 
+
+
 
 
 
