@@ -319,14 +319,14 @@ class iCloud3EventLogCard extends HTMLElement {
             .event              {colspan: 5;}
 
             .updateRecdHdr      {color: white; background-color: dodgerblue; font-weight: 450;
-                                 border-left: 3px solid dodgerblue;}
-            .updateEdgeBar      {border-left: 3px solid dodgerblue;}
+                                 border-left: 4px solid dodgerblue;}
+            .updateEdgeBar      {border-left: 4px solid dodgerblue;}
             .stageRecdHdr       {color: white; background-color: mediumorchid; font-weight: 450;
                                  border-top: 1px solid white; border-bottom: 1px solid white;}
-            .stageEdgeBar       {border-left: 3px solid mediumorchid;}
+            .stageEdgeBar       {border-left: 4px solid mediumorchid;}
             .dateBarHdr         {color: white; background-color: darkred;
                                  border-top: 1px solid white; border-bottom: 1px solid white;
-                                 border-left: 3px solid darkred;}
+                                 border-left: 4px solid darkred;}
             .noLeftEdge         {border-left: none;}
 
             .blue               {color: blue;}

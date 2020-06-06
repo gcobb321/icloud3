@@ -22,8 +22,10 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc4'
+VERSION = '2.2.0rc5'
 '''
+-rc5 6/2/2020
+    - Added the startionary_zone_offset parameter. With it, you can specify the exact GPS cordinates of the Initial Stationary Zone or specify a 1km offset multiplier (north or south, east or west) of the Home zone. Examples: '1,0' - Offset 1km North, '2,-1' - Offset 2km North, 1km East of Home, '(27.738520, -75.380462)' - Specify the GPS cordinates
 -rc4 5/30/2020
     - The Event Log will only show the state/zone/interval/traveltime/distance line when the values change. This redices the size of the Event Log and improves it's readability.
     - Cleaned up the Event Log code and made several visual changes.
@@ -100,49 +102,50 @@ except ImportError:
 
 DEBUG_TRACE_CONTROL_FLAG = False
 
-HA_ENTITY_REGISTRY_FILE_NAME='/config/.storage/core.entity_registry'
-ENTITY_REGISTRY_FILE_KEY    = 'core.entity_registry'
-STORAGE_KEY_ICLOUD          = 'icloud'
-STORAGE_KEY_ENTITY_REGISTRY = 'core.entity_registry'
-STORAGE_VERSION             = 1
-STORAGE_DIR                 = ".storage"
+HA_ENTITY_REGISTRY_FILE_NAME    ='/config/.storage/core.entity_registry'
+ENTITY_REGISTRY_FILE_KEY        = 'core.entity_registry'
+STORAGE_KEY_ICLOUD              = 'icloud'
+STORAGE_KEY_ENTITY_REGISTRY     = 'core.entity_registry'
+STORAGE_VERSION                 = 1
+STORAGE_DIR                     = ".storage"
 
-CONF_ACCOUNT_NAME           = 'account_name'
-CONF_GROUP                  = 'group'
-CONF_DEVICENAME             = 'device_name'
-CONF_NAME                   = 'name'
-CONF_TRACKING_METHOD        = 'tracking_method'
-CONF_iosapp_locate_request_max_cnt  = 'iosapp_locate_request_max_cnt'
-CONF_TRACK_DEVICES          = 'track_devices'
-CONF_TRACK_DEVICE           = 'track_device'
-CONF_UNIT_OF_MEASUREMENT    = 'unit_of_measurement'
-CONF_INTERVAL               = 'interval'
-CONF_BASE_ZONE              = 'base_zone'
-CONF_INZONE_INTERVAL        = 'inzone_interval'
-CONF_CENTER_IN_ZONE         = 'center_in_zone'
-CONF_STATIONARY_STILL_TIME  = 'stationary_still_time'
+CONF_ACCOUNT_NAME               = 'account_name'
+CONF_GROUP                      = 'group'
+CONF_DEVICENAME                 = 'device_name'
+CONF_NAME                       = 'name'
+CONF_TRACKING_METHOD            = 'tracking_method'
+CONF_IOSAPP_LOCATE_REQUEST_MAX_CNT = 'iosapp_locate_request_max_cnt'
+CONF_TRACK_DEVICES              = 'track_devices'
+CONF_TRACK_DEVICE               = 'track_device'
+CONF_UNIT_OF_MEASUREMENT        = 'unit_of_measurement'
+CONF_INTERVAL                   = 'interval'
+CONF_BASE_ZONE                  = 'base_zone'
+CONF_INZONE_INTERVAL            = 'inzone_interval'
+CONF_CENTER_IN_ZONE             = 'center_in_zone'
+CONF_STATIONARY_STILL_TIME      = 'stationary_still_time'
 CONF_STATIONARY_INZONE_INTERVAL = 'stationary_inzone_interval'
-CONF_MAX_INTERVAL           = 'max_interval'
-CONF_TRAVEL_TIME_FACTOR     = 'travel_time_factor'
-CONF_GPS_ACCURACY_THRESHOLD = 'gps_accuracy_threshold'
-CONF_OLD_LOCATION_THRESHOLD = 'old_location_threshold'
-CONF_IGNORE_GPS_ACC_INZONE  = 'ignore_gps_accuracy_inzone'
-CONF_HIDE_GPS_COORDINATES   = 'hide_gps_coordinates'
-CONF_WAZE_REGION            = 'waze_region'
-CONF_WAZE_MAX_DISTANCE      = 'waze_max_distance'
-CONF_WAZE_MIN_DISTANCE      = 'waze_min_distance'
-CONF_WAZE_REALTIME          = 'waze_realtime'
-CONF_DISTANCE_METHOD        = 'distance_method'
-CONF_COMMAND                = 'command'
-CONF_CREATE_SENSORS         = 'create_sensors'
-CONF_EXCLUDE_SENSORS        = 'exclude_sensors'
-CONF_ENTITY_REGISTRY_FILE   = 'entity_registry_file_name'
-CONF_LOG_LEVEL              = 'log_level'
-CONF_CONFIG_IC3_FILE_NAME   = 'config_ic3_file_name'
-CONF_LEGACY_MODE            = 'legacy_mode'
+CONF_STATIONARY_ZONE_OFFSET     = 'stationary_zone_offset'
+CONF_MAX_INTERVAL               = 'max_interval'
+CONF_TRAVEL_TIME_FACTOR         = 'travel_time_factor'
+CONF_GPS_ACCURACY_THRESHOLD     = 'gps_accuracy_threshold'
+CONF_OLD_LOCATION_THRESHOLD     = 'old_location_threshold'
+CONF_IGNORE_GPS_ACC_INZONE      = 'ignore_gps_accuracy_inzone'
+CONF_HIDE_GPS_COORDINATES       = 'hide_gps_coordinates'
+CONF_WAZE_REGION                = 'waze_region'
+CONF_WAZE_MAX_DISTANCE          = 'waze_max_distance'
+CONF_WAZE_MIN_DISTANCE          = 'waze_min_distance'
+CONF_WAZE_REALTIME              = 'waze_realtime'
+CONF_DISTANCE_METHOD            = 'distance_method'
+CONF_COMMAND                    = 'command'
+CONF_CREATE_SENSORS             = 'create_sensors'
+CONF_EXCLUDE_SENSORS            = 'exclude_sensors'
+CONF_ENTITY_REGISTRY_FILE       = 'entity_registry_file_name'
+CONF_LOG_LEVEL                  = 'log_level'
+CONF_CONFIG_IC3_FILE_NAME       = 'config_ic3_file_name'
+CONF_LEGACY_MODE                = 'legacy_mode'
 
 # entity attributes (iCloud FmF & FamShr)
-ATTR_ICLOUD_TIMESTAMP       = 'timeStamp'
+ATTR_ICLOUD_TIMESTAMP           = 'timeStamp'
 ATTR_ICLOUD_HORIZONTAL_ACCURACY = 'horizontalAccuracy'
 ATTR_ICLOUD_VERTICAL_ACCURACY   = 'verticalAccuracy'
 ATTR_ICLOUD_BATTERY_STATUS      = 'batteryStatus'
@@ -152,270 +155,280 @@ ATTR_ICLOUD_DEVICE_STATUS       = 'deviceStatus'
 ATTR_ICLOUD_LOW_POWER_MODE      = 'lowPowerMode'
 
 # device data attributes
-ATTR_LOCATION           = 'location'
-ATTR_ATTRIBUTES         = 'attributes'
-ATTR_RADIUS             = 'radius'
-ATTR_FRIENDLY_NAME      = 'friendly_name'
-ATTR_NAME               = 'name'
-ATTR_ISOLD              = 'isOld'
-ATTR_DEVICE_CLASS       = 'device_class'
+ATTR_LOCATION                   = 'location'
+ATTR_ATTRIBUTES                 = 'attributes'
+ATTR_RADIUS                     = 'radius'
+ATTR_FRIENDLY_NAME              = 'friendly_name'
+ATTR_NAME                       = 'name'
+ATTR_ISOLD                      = 'isOld'
+ATTR_DEVICE_CLASS               = 'device_class'
 
 # entity attributes
-ATTR_ZONE               = 'zone'
-ATTR_ZONE_TIMESTAMP     = 'zone_timestamp'
-ATTR_LAST_ZONE          = 'last_zone'
-ATTR_GROUP              = 'group'
-ATTR_TIMESTAMP          = 'timestamp'
-ATTR_TIMESTAMP_TIME     = 'timestamp_time'
-ATTR_AGE                = 'age'
-ATTR_TRIGGER            = 'trigger'
-ATTR_BATTERY            = 'battery'
-ATTR_BATTERY_LEVEL      = 'battery_level'
-ATTR_BATTERY_STATUS     = 'battery_status'
-ATTR_INTERVAL           = 'interval'
-ATTR_ZONE_DISTANCE      = 'zone_distance'
-ATTR_CALC_DISTANCE      = 'calc_distance'
-ATTR_WAZE_DISTANCE      = 'waze_distance'
-ATTR_WAZE_TIME          = 'travel_time'
-ATTR_DIR_OF_TRAVEL      = 'dir_of_travel'
-ATTR_TRAVEL_DISTANCE    = 'travel_distance'
-ATTR_DEVICE_STATUS      = 'device_status'
-ATTR_LOW_POWER_MODE     = 'low_power_mode'
-ATTR_TRACKING           = 'tracking'
-ATTR_DEVICENAME_IOSAPP  = 'iosapp_device'
-ATTR_AUTHENTICATED      = 'authenticated'
-ATTR_LAST_UPDATE_TIME   = 'last_update'
-ATTR_NEXT_UPDATE_TIME   = 'next_update'
-ATTR_LAST_LOCATED       = 'last_located'
-ATTR_INFO               = 'info'
-ATTR_GPS_ACCURACY       = 'gps_accuracy'
-ATTR_GPS                = 'gps'
-ATTR_LATITUDE           = 'latitude'
-ATTR_LONGITUDE          = 'longitude'
-ATTR_POLL_COUNT         = 'poll_count'
-ATTR_ICLOUD3_VERSION    = 'icloud3_version'
-ATTR_VERT_ACCURACY  = 'vertical_accuracy'
-ATTR_ALTITUDE           = 'altitude'
-ATTR_BADGE              = 'badge'
-ATTR_EVENT_LOG          = 'event_log'
-ATTR_PICTURE            = 'entity_picture'
+ATTR_ZONE                       = 'zone'
+ATTR_ZONE_TIMESTAMP             = 'zone_timestamp'
+ATTR_LAST_ZONE                  = 'last_zone'
+ATTR_GROUP                      = 'group'
+ATTR_TIMESTAMP                  = 'timestamp'
+ATTR_TIMESTAMP_TIME             = 'timestamp_time'
+ATTR_AGE                        = 'age'
+ATTR_TRIGGER                    = 'trigger'
+ATTR_BATTERY                    = 'battery'
+ATTR_BATTERY_LEVEL              = 'battery_level'
+ATTR_BATTERY_STATUS             = 'battery_status'
+ATTR_INTERVAL                   = 'interval'
+ATTR_ZONE_DISTANCE              = 'zone_distance'
+ATTR_CALC_DISTANCE              = 'calc_distance'
+ATTR_WAZE_DISTANCE              = 'waze_distance'
+ATTR_WAZE_TIME                  = 'travel_time'
+ATTR_DIR_OF_TRAVEL              = 'dir_of_travel'
+ATTR_TRAVEL_DISTANCE            = 'travel_distance'
+ATTR_DEVICE_STATUS              = 'device_status'
+ATTR_LOW_POWER_MODE             = 'low_power_mode'
+ATTR_TRACKING                   = 'tracking'
+ATTR_DEVICENAME_IOSAPP          = 'iosapp_device'
+ATTR_AUTHENTICATED              = 'authenticated'
+ATTR_LAST_UPDATE_TIME           = 'last_update'
+ATTR_NEXT_UPDATE_TIME           = 'next_update'
+ATTR_LAST_LOCATED               = 'last_located'
+ATTR_INFO                       = 'info'
+ATTR_GPS_ACCURACY               = 'gps_accuracy'
+ATTR_GPS                        = 'gps'
+ATTR_LATITUDE                   = 'latitude'
+ATTR_LONGITUDE                  = 'longitude'
+ATTR_POLL_COUNT                 = 'poll_count'
+ATTR_ICLOUD3_VERSION            = 'icloud3_version'
+ATTR_VERT_ACCURACY              = 'vertical_accuracy'
+ATTR_ALTITUDE                   = 'altitude'
+ATTR_BADGE                      = 'badge'
+ATTR_EVENT_LOG                  = 'event_log'
+ATTR_PICTURE                    = 'entity_picture'
 
 
-TIMESTAMP_ZERO          = '0000-00-00 00:00:00'
-HHMMSS_ZERO             = '00:00:00'
-HIGH_INTEGER            = 9999999999
-TIME_24H                = True
-UTC_TIME                = True
-LOCAL_TIME              = False
-NUMERIC                 = True
-NEW_LINE                = '\n'
+TIMESTAMP_ZERO                  = '0000-00-00 00:00:00'
+HHMMSS_ZERO                     = '00:00:00'
+HIGH_INTEGER                    = 9999999999
+TIME_24H                        = True
+UTC_TIME                        = True
+LOCAL_TIME                      = False
+NUMERIC                         = True
+NEW_LINE                        = '\n'
 
 SENSOR_EVENT_LOG_ENTITY = 'sensor.icloud3_event_log'
 
-DEVICE_ATTRS_BASE       = {ATTR_LATITUDE: 0,
-                           ATTR_LONGITUDE: 0,
-                           ATTR_BATTERY: 0,
-                           ATTR_BATTERY_LEVEL: 0,
-                           ATTR_BATTERY_STATUS: '',
-                           ATTR_GPS_ACCURACY: 0,
-                           ATTR_VERT_ACCURACY: 0,
-                           ATTR_TIMESTAMP: TIMESTAMP_ZERO,
-                           ATTR_ICLOUD_TIMESTAMP: HHMMSS_ZERO,
-                           ATTR_TRIGGER: '',
-                           ATTR_DEVICE_STATUS: '',
-                           ATTR_LOW_POWER_MODE: '',
-                           }
+DEVICE_ATTRS_BASE = {
+         ATTR_LATITUDE: 0,
+         ATTR_LONGITUDE: 0,
+         ATTR_BATTERY: 0,
+         ATTR_BATTERY_LEVEL: 0,
+         ATTR_BATTERY_STATUS: '',
+         ATTR_GPS_ACCURACY: 0,
+         ATTR_VERT_ACCURACY: 0,
+         ATTR_TIMESTAMP: TIMESTAMP_ZERO,
+         ATTR_ICLOUD_TIMESTAMP: HHMMSS_ZERO,
+         ATTR_TRIGGER: '',
+         ATTR_DEVICE_STATUS: '',
+         ATTR_LOW_POWER_MODE: '',
+         }
 
-INITIAL_LOCATION_DATA   = {'name': '',
-                           'device_class': 'iPhone',
-                           'battery_level': 0,
-                           'battery_status': 'Unknown',
-                           'device_status': '',
-                           'low_power_mode': False,
-                           'timestamp': 0,
-                           'timestamp_time': HHMMSS_ZERO,
-                           'age': HIGH_INTEGER,
-                           'latitude': 0.0,
-                           'longitude': 0.0,
-                           'altitude': 0.0,
-                           'isOld': False,
-                           'gps_accuracy': 0.0,
-                           'vertical_accuracy': 0.0}
+INITIAL_LOCATION_DATA  = {
+        ATTR_NAME: '',
+        ATTR_DEVICE_CLASS: 'iPhone',
+        ATTR_BATTERY_LEVEL: 0,
+        ATTR_BATTERY_STATUS: 'Unknown',
+        ATTR_DEVICE_STATUS: '',
+        ATTR_LOW_POWER_MODE: False,
+        ATTR_TIMESTAMP: 0,
+        ATTR_TIMESTAMP_TIME: HHMMSS_ZERO,
+        ATTR_AGE: HIGH_INTEGER,
+        ATTR_LATITUDE: 0.0,
+        ATTR_LONGITUDE: 0.0,
+        ATTR_ALTITUDE: 0.0,
+        ATTR_ISOLD: False,
+        ATTR_GPS_ACCURACY: 0.0,
+        ATTR_VERT_ACCURACY: 0.0,
+        }
 
-TRACE_ATTRS_BASE        = {ATTR_NAME: '',
-                           ATTR_ZONE: '',
-                           ATTR_LAST_ZONE: '',
-                           ATTR_ZONE_TIMESTAMP: '',
-                           ATTR_LATITUDE: 0,
-                           ATTR_LONGITUDE: 0,
-                           ATTR_TRIGGER: '',
-                           ATTR_TIMESTAMP: TIMESTAMP_ZERO,
-                           ATTR_ZONE_DISTANCE: 0,
-                           ATTR_INTERVAL: 0,
-                           ATTR_DIR_OF_TRAVEL: '',
-                           ATTR_TRAVEL_DISTANCE: 0,
-                           ATTR_WAZE_DISTANCE: '',
-                           ATTR_CALC_DISTANCE: 0,
-                           ATTR_LAST_LOCATED: '',
-                           ATTR_LAST_UPDATE_TIME: '',
-                           ATTR_NEXT_UPDATE_TIME: '',
-                           ATTR_POLL_COUNT: '',
-                           ATTR_INFO: '',
-                           ATTR_BATTERY: 0,
-                           ATTR_BATTERY_LEVEL: 0,
-                           ATTR_GPS: 0,
-                           ATTR_GPS_ACCURACY: 0,
-                           ATTR_VERT_ACCURACY: 0,
-                           }
+TRACE_ATTRS_BASE = {
+        ATTR_NAME: '',
+        ATTR_ZONE: '',
+        ATTR_LAST_ZONE: '',
+        ATTR_ZONE_TIMESTAMP: '',
+        ATTR_LATITUDE: 0,
+        ATTR_LONGITUDE: 0,
+        ATTR_TRIGGER: '',
+        ATTR_TIMESTAMP: TIMESTAMP_ZERO,
+        ATTR_ZONE_DISTANCE: 0,
+        ATTR_INTERVAL: 0,
+        ATTR_DIR_OF_TRAVEL: '',
+        ATTR_TRAVEL_DISTANCE: 0,
+        ATTR_WAZE_DISTANCE: '',
+        ATTR_CALC_DISTANCE: 0,
+        ATTR_LAST_LOCATED: '',
+        ATTR_LAST_UPDATE_TIME: '',
+        ATTR_NEXT_UPDATE_TIME: '',
+        ATTR_POLL_COUNT: '',
+        ATTR_INFO: '',
+        ATTR_BATTERY: 0,
+        ATTR_BATTERY_LEVEL: 0,
+        ATTR_GPS: 0,
+        ATTR_GPS_ACCURACY: 0,
+        ATTR_VERT_ACCURACY: 0,
+        }
 
-TRACE_ICLOUD_ATTRS_BASE = {CONF_NAME: '', 'deviceStatus': '',
-                           ATTR_ISOLD: False,
-                           ATTR_LATITUDE: 0,
-                           ATTR_LONGITUDE: 0,
-                           ATTR_ICLOUD_TIMESTAMP: 0,
-                           ATTR_ICLOUD_HORIZONTAL_ACCURACY: 0,
-                           ATTR_ICLOUD_VERTICAL_ACCURACY: 0,
-                          'positionType': 'Wifi',
-                          }
+TRACE_ICLOUD_ATTRS_BASE = {
+        CONF_NAME: '', ATTR_ICLOUD_DEVICE_STATUS: '',
+        ATTR_ISOLD: False,
+        ATTR_LATITUDE: 0,
+        ATTR_LONGITUDE: 0,
+        ATTR_ICLOUD_TIMESTAMP: 0,
+        ATTR_ICLOUD_HORIZONTAL_ACCURACY: 0,
+        ATTR_ICLOUD_VERTICAL_ACCURACY: 0,
+        'positionType': 'Wifi',
+        }
 
-SENSOR_DEVICE_ATTRS     = ['zone',
-                           'zone_name1',
-                           'zone_name2',
-                           'zone_name3',
-                           'last_zone',
-                           'last_zone_name1',
-                           'last_zone_name2',
-                           'last_zone_name3',
-                           'zone_timestamp',
-                           'base_zone',
-                           'zone_distance',
-                           'calc_distance',
-                           'waze_distance',
-                           'travel_time',
-                           'dir_of_travel',
-                           'interval',
-                           'info',
-                           'last_located',
-                           'last_update',
-                           'next_update',
-                           'poll_count',
-                           'travel_distance',
-                           'trigger',
-                           'battery',
-                           'battery_status',
-                           'gps_accuracy',
-                           'vertical accuracy',
-                           'badge',
-                           'name',
-                           ]
+SENSOR_DEVICE_ATTRS = [
+        'zone',
+        'zone_name1',
+        'zone_name2',
+        'zone_name3',
+        'last_zone',
+        'last_zone_name1',
+        'last_zone_name2',
+        'last_zone_name3',
+        'zone_timestamp',
+        'base_zone',
+        'zone_distance',
+        'calc_distance',
+        'waze_distance',
+        'travel_time',
+        'dir_of_travel',
+        'interval',
+        'info',
+        'last_located',
+        'last_update',
+        'next_update',
+        'poll_count',
+        'travel_distance',
+        'trigger',
+        'battery',
+        'battery_status',
+        'gps_accuracy',
+        'vertical accuracy',
+        'badge',
+        'name',
+        ]
 
-SENSOR_ATTR_FORMAT      = {'zone_distance': 'dist',
-                           'calc_distance': 'dist',
-                           'waze_distance': 'diststr',
-                           'travel_distance': 'dist',
-                           'battery': '%',
-                           'dir_of_travel': 'title',
-                           'altitude': 'm-ft',
-                           'badge': 'badge',
-                           }
+SENSOR_ATTR_FORMAT = {
+        'zone_distance': 'dist',
+        'calc_distance': 'dist',
+        'waze_distance': 'diststr',
+        'travel_distance': 'dist',
+        'battery': '%',
+        'dir_of_travel': 'title',
+        'altitude': 'm-ft',
+        'badge': 'badge',
+        }
 
 #---- iPhone Device Tracker Attribute Templates ----- Gary -----------
-SENSOR_ATTR_FNAME       = {'zone': 'Zone',
-                           'zone_name1': 'Zone',
-                           'zone_name2': 'Zone',
-                           'zone_name3': 'Zone',
-                           'last_zone': 'Last Zone',
-                           'last_zone_name1': 'Last Zone',
-                           'last_zone_name2': 'Last Zone',
-                           'last_zone_name3': 'Last Zone',
-                           'zone_timestamp': 'Zone Timestamp',
-                           'base_zone': 'Base Zone',
-                           'zone_distance': 'Zone Distance',
-                           'calc_distance': 'Calc Dist',
-                           'waze_distance': 'Waze Dist',
-                           'travel_time': 'Travel Time',
-                           'dir_of_travel': 'Direction',
-                           'interval': 'Interval',
-                           'info': 'Info',
-                           'last_located': 'Last Located',
-                           'last_update': 'Last Update',
-                           'next_update': 'Next Update',
-                           'poll_count': 'Poll Count',
-                           'travel_distance': 'Travel Dist',
-                           'trigger': 'Trigger',
-                           'battery': 'Battery',
-                           'battery_status': 'Battery Status',
-                           'gps_accuracy': 'GPS Accuracy',
-                           'vertical_accuracy': 'Vertical Accuracy',
-                           'badge': 'Badge',
-                           'name': 'Name',
-                           }
+SENSOR_ATTR_FNAME = {
+        'zone': 'Zone',
+        'zone_name1': 'Zone',
+        'zone_name2': 'Zone',
+        'zone_name3': 'Zone',
+        'last_zone': 'Last Zone',
+        'last_zone_name1': 'Last Zone',
+        'last_zone_name2': 'Last Zone',
+        'last_zone_name3': 'Last Zone',
+        'zone_timestamp': 'Zone Timestamp',
+        'base_zone': 'Base Zone',
+        'zone_distance': 'Zone Distance',
+        'calc_distance': 'Calc Dist',
+        'waze_distance': 'Waze Dist',
+        'travel_time': 'Travel Time',
+        'dir_of_travel': 'Direction',
+        'interval': 'Interval',
+        'info': 'Info',
+        'last_located': 'Last Located',
+        'last_update': 'Last Update',
+        'next_update': 'Next Update',
+        'poll_count': 'Poll Count',
+        'travel_distance': 'Travel Dist',
+        'trigger': 'Trigger',
+        'battery': 'Battery',
+        'battery_status': 'Battery Status',
+        'gps_accuracy': 'GPS Accuracy',
+        'vertical_accuracy': 'Vertical Accuracy',
+        'badge': 'Badge',
+        'name': 'Name',
+        }
 
-SENSOR_ATTR_ICON        = {'zone': 'mdi:cellphone-iphone',
-                           'last_zone': 'mdi:cellphone-iphone',
-                           'base_zone': 'mdi:cellphone-iphone',
-                           'zone_timestamp': 'mdi:restore-clock',
-                           'zone_distance': 'mdi:map-marker-distance',
-                           'calc_distance': 'mdi:map-marker-distance',
-                           'waze_distance': 'mdi:map-marker-distance',
-                           'travel_time': 'mdi:clock-outline',
-                           'dir_of_travel': 'mdi:compass-outline',
-                           'interval': 'mdi:clock-start',
-                           'info': 'mdi:information-outline',
-                           'last_located': 'mdi:restore-clock',
-                           'last_update': 'mdi:restore-clock',
-                           'next_update': 'mdi:update',
-                           'poll_count': 'mdi:counter',
-                           'travel_distance': 'mdi:map-marker-distance',
-                           'trigger': 'mdi:flash-outline',
-                           'battery': 'mdi:battery',
-                           'battery_status': 'mdi:battery',
-                           'gps_accuracy': 'mdi:map-marker-radius',
-                           'altitude': 'mdi:image-filter-hdr',
-                           'vertical_accuracy': 'mdi:map-marker-radius',
-                           'badge': 'mdi:shield-account',
-                           'name': 'mdi:account',
-                           'entity_log': 'mdi:format-list-checkbox',
-                           }
+SENSOR_ATTR_ICON = {
+        'zone': 'mdi:cellphone-iphone',
+        'last_zone': 'mdi:cellphone-iphone',
+        'base_zone': 'mdi:cellphone-iphone',
+        'zone_timestamp': 'mdi:restore-clock',
+        'zone_distance': 'mdi:map-marker-distance',
+        'calc_distance': 'mdi:map-marker-distance',
+        'waze_distance': 'mdi:map-marker-distance',
+        'travel_time': 'mdi:clock-outline',
+        'dir_of_travel': 'mdi:compass-outline',
+        'interval': 'mdi:clock-start',
+        'info': 'mdi:information-outline',
+        'last_located': 'mdi:restore-clock',
+        'last_update': 'mdi:restore-clock',
+        'next_update': 'mdi:update',
+        'poll_count': 'mdi:counter',
+        'travel_distance': 'mdi:map-marker-distance',
+        'trigger': 'mdi:flash-outline',
+        'battery': 'mdi:battery',
+        'battery_status': 'mdi:battery',
+        'gps_accuracy': 'mdi:map-marker-radius',
+        'altitude': 'mdi:image-filter-hdr',
+        'vertical_accuracy': 'mdi:map-marker-radius',
+        'badge': 'mdi:shield-account',
+        'name': 'mdi:account',
+        'entity_log': 'mdi:format-list-checkbox',
+        }
 
-SENSOR_ID_NAME_LIST     = {'zon': 'zone',
-                           'zon1': 'zone_name1',
-                           'zon2': 'zone_name2',
-                           'zon3': 'zone_name3',
-                           'bzon': 'base_zone',
-                           'lzon': 'last_zone',
-                           'lzon1': 'last_zone_name1',
-                           'lzon2': 'last_zone_name2',
-                           'lzon3': 'last_zone_name3',
-                           'zonts': 'zone_timestamp',
-                           'zdis': 'zone_distance',
-                           'cdis': 'calc_distance',
-                           'wdis': 'waze_distance',
-                           'tdis': 'travel_distance',
-                           'ttim': 'travel_time',
-                           'dir': 'dir_of_travel',
-                           'intvl':  'interval',
-                           'lloc': 'last_located',
-                           'lupdt': 'last_update',
-                           'nupdt': 'next_update',
-                           'cnt': 'poll_count',
-                           'info': 'info',
-                           'trig': 'trigger',
-                           'bat': 'battery',
-                           'batstat': 'battery_status',
-                           'alt': 'altitude',
-                           'gpsacc': 'gps_accuracy',
-                           'vacc': 'vertical_accuracy',
-                           'badge': 'badge',
-                           'name': 'name',
-                           }
+SENSOR_ID_NAME_LIST = {
+        'zon': 'zone',
+        'zon1': 'zone_name1',
+        'zon2': 'zone_name2',
+        'zon3': 'zone_name3',
+        'bzon': 'base_zone',
+        'lzon': 'last_zone',
+        'lzon1': 'last_zone_name1',
+        'lzon2': 'last_zone_name2',
+        'lzon3': 'last_zone_name3',
+        'zonts': 'zone_timestamp',
+        'zdis': 'zone_distance',
+        'cdis': 'calc_distance',
+        'wdis': 'waze_distance',
+        'tdis': 'travel_distance',
+        'ttim': 'travel_time',
+        'dir': 'dir_of_travel',
+        'intvl':  'interval',
+        'lloc': 'last_located',
+        'lupdt': 'last_update',
+        'nupdt': 'next_update',
+        'cnt': 'poll_count',
+        'info': 'info',
+        'trig': 'trigger',
+        'bat': 'battery',
+        'batstat': 'battery_status',
+        'alt': 'altitude',
+        'gpsacc': 'gps_accuracy',
+        'vacc': 'vertical_accuracy',
+        'badge': 'badge',
+        'name': 'name',
+        }
 
 
 ATTR_TIMESTAMP_FORMAT    = '%Y-%m-%d %H:%M:%S.%f'
 APPLE_DEVICE_TYPES  = ['iphone', 'ipad', 'ipod', 'watch', 'iwatch', 'icloud',
                        'iPhone', 'iPad', 'iPod', 'Watch', 'iWatch', 'iCloud']
 FMF_FAMSHR_LOCATION_FIELDS = ['altitude', 'latitude', 'longitude', 'timestamp',
-                       'horizontalAccuracy', 'verticalAccuracy', 'batteryStatus']
+                       'horizontalAccuracy', 'verticalAccuracy', ATTR_ICLOUD_BATTERY_STATUS]
 #icloud_update commands
 CMD_ERROR    = 1
 CMD_INTERVAL = 2
@@ -442,8 +455,8 @@ STATIONARY_LAT_90       = 90
 STATIONARY_LONG_180     = 180
 STATIONARY_ZONE_VISIBLE = True
 STATIONARY_ZONE_HIDDEN  = False
-#STATIONARY_ZONE_HOME_OFFSET  = .00492   #(.5km) Subtract/add from home zone latitude to make stat zone location
-STATIONARY_ZONE_HOME_OFFSET  = .00925   #(1km)   Subtract/add from home zone latitude to make stat zone location
+STATIONARY_ZONE_1KM_LAT = 0.008983      #Subtract/add from home zone latitude to make stat zone location
+STATIONARY_ZONE_1KM_LONG= 0.010094
 EVENT_LOG_CLEAR_SECS    = 600           #Clear event log data interval
 EVENT_LOG_CLEAR_CNT     = 15            #Number of recds to display when clearing event log
 ICLOUD3_ERROR_MSG       = "ICLOUD3 ERROR-SEE EVENT LOG FOR MORE INFO"
@@ -489,51 +502,66 @@ IOSAPP1           = 'iosapp1'   #HA IOS App v1.5x only
 FMF_FAMSHR        = [FMF, FAMSHR]
 IOSAPP_IOSAPP1    = [IOSAPP, IOSAPP1]
 
+BACKGROUND_FETCH          = 'Background Fetch'
+GEOGRAPHIC_REGION_ENTERED = 'Geographic Region Entered'
+GEOGRAPHIC_REGION_EXITED  = 'Geographic Region Exited'
+SIGNIFICANT_UPDATE        = 'Significant Location Update'
+IBEACON_REGION_ENTERED    = 'iBeacon Region Entered'
+PUSH_NOTIFICATION         = 'Push Notification'
+
 TRK_METHOD_NAME = {
-    'fmf': 'Find My Friends',
-    'famshr': 'Family Sharing',
-    'iosapp': 'IOS App',
-    'iosapp1': 'IOS App v1',
-}
+        FMF: 'Find My Friends',
+        FAMSHR: 'Family Sharing',
+        IOSAPP: 'IOS App',
+        IOSAPP1: 'IOS App v1',
+        }
 TRK_METHOD_SHORT_NAME = {
-    'fmf': 'FmF',
-    'famshr': 'FamShr',
-    'iosapp': 'IOSApp',
-    'iosapp1': 'IOSApp1',
-}
+        FMF: 'FmF',
+        FAMSHR: 'FamShr',
+        IOSAPP: 'IOSApp',
+        IOSAPP1: 'IOSApp1',
+        }
 DEVICE_TYPE_FNAME = {
-    'iphone': 'iPhone',
-    'phone': 'iPhone',
-    'ipad': 'iPad',
-    'iwatch': 'iWatch',
-    'watch': 'iWatch',
-    'ipod': 'iPod',
-}
-IOS_TRIGGERS_VERIFY_LOCATION = ['Background Fetch',
-                                'Initial',
-                                'Manual',
-                                'Significant Location Update',
-                                'Push Notification',
-                                'iOSApp Loc Update',
-                                'Bkgnd Fetch',
-                                'Sig Loc Update',
-                                'iOSApp Loc Request',]
-IOS_TRIGGERS_ENTER_ZONE      = ['Geographic Region Entered',
-                                'iBeacon Region Entered'
-                                'Geo Region Enter',
-                                'iBeacon Enter',]
-IOS_TRIGGERS_ENTER_EXIT_IC3  = ['Geographic Region Entered',
-                                'Geographic Region Exited',
-                                'iBeacon Region Entered'
-                                'Geo Region Enter',
-                                'Geo Region Exit',
-                                'iBeacon Enter',]
-IOS_TRIGGER_ABBREVIATIONS    = {'Geographic Region Entered': 'Geo Region Enter',
-                                'Geographic Region Exited': 'Geo Region Exit',
-                                'iBeacon Region Entered': 'iBeacon Enter',
-                                'Significant Location Update': 'Sig Loc Update',
-                                'Push Notification': 'iOSApp Loc Request',
-                                'Background Fetch': 'Bkgnd Fetch',}
+        'iphone': 'iPhone',
+        'phone': 'iPhone',
+        'ipad': 'iPad',
+        'iwatch': 'iWatch',
+        'watch': 'iWatch',
+        'ipod': 'iPod',
+        }
+IOS_TRIGGERS_VERIFY_LOCATION = [
+        BACKGROUND_FETCH,
+        SIGNIFICANT_UPDATE,
+        PUSH_NOTIFICATION,
+        'Initial',
+        'Manual',
+        'iOSApp Loc Update',
+        'Bkgnd Fetch',
+        'Sig Loc Update',
+        'iOSApp Loc Request',
+        ]
+IOS_TRIGGERS_ENTER_ZONE = [
+        GEOGRAPHIC_REGION_ENTERED,
+        IBEACON_REGION_ENTERED,
+        'Geo Region Enter',
+        'iBeacon Enter',
+        ]
+IOS_TRIGGERS_ENTER_EXIT_IC3 = [
+        GEOGRAPHIC_REGION_ENTERED,
+        GEOGRAPHIC_REGION_EXITED,
+        IBEACON_REGION_ENTERED,
+        'Geo Region Enter',
+        'Geo Region Exit',
+        'iBeacon Enter',
+        ]
+IOS_TRIGGER_ABBREVIATIONS = {
+        GEOGRAPHIC_REGION_ENTERED: 'Geo Region Enter',
+        GEOGRAPHIC_REGION_EXITED: 'Geo Region Exit',
+        IBEACON_REGION_ENTERED: 'iBeacon Enter',
+        SIGNIFICANT_UPDATE: 'Sig Loc Update',
+        PUSH_NOTIFICATION: 'iOSApp Loc Request',
+        BACKGROUND_FETCH: 'Bkgnd Fetch',
+        }
 
 
 #Lists to hold the group names, group objects and iCloud device configuration
@@ -543,42 +571,45 @@ ICLOUD3_GROUPS     = []
 ICLOUD3_GROUP_OBJS = {}
 ICLOUD3_TRACKED_DEVICES = {}
 '''
-DEVICE_STATUS_SET = ['deviceModel', 'rawDeviceModel', 'deviceStatus',
-                    'deviceClass', 'batteryLevel', 'id', 'lowPowerMode',
-                    'deviceDisplayName', 'name', 'batteryStatus', 'fmlyShare',
-                    'location',
-                    'locationCapable', 'locationEnabled', 'isLocating',
-                    'remoteLock', 'activationLocked', 'lockedTimestamp',
-                    'lostModeCapable', 'lostModeEnabled', 'locFoundEnabled',
-                    'lostDevice', 'lostTimestamp',
-                    'remoteWipe', 'wipeInProgress', 'wipedTimestamp',
-                    'isMac']
+DEVICE_STATUS_SET = [
+        'deviceModel', 'rawDeviceModel', 'deviceStatus',
+        'batteryStatus', 'batteryLevel', 'id', 'lowPowerMode',
+        'deviceDisplayName', 'name', 'fmlyShare',
+        'location',
+        'locationCapable', 'locationEnabled', 'isLocating',
+        'remoteLock', 'activationLocked', 'lockedTimestamp',
+        'lostModeCapable', 'lostModeEnabled', 'locFoundEnabled',
+        'lostDevice', 'lostTimestamp',
+        'remoteWipe', 'wipeInProgress', 'wipedTimestamp',
+        'isMac']
 '''
 #Default values are ["batteryLevel", "deviceDisplayName", "deviceStatus", "name"]
-DEVICE_STATUS_SET = ['deviceClass', 'batteryStatus', 'lowPowerMode',
-                     'location']
-
+DEVICE_STATUS_SET = [
+        ATTR_ICLOUD_DEVICE_CLASS,
+        ATTR_ICLOUD_BATTERY_STATUS,
+        ATTR_ICLOUD_LOW_POWER_MODE,
+        ATTR_LOCATION
+        ]
 DEVICE_STATUS_CODES = {
-    '200': 'online',
-    '201': 'offline',
-    '203': 'pending',
-    '204': 'unregistered',
-    '0': ''
-}
-
+        '200': 'online',
+        '201': 'offline',
+        '203': 'pending',
+        '204': 'unregistered',
+        '0': ''
+        }
 SERVICE_SCHEMA = vol.Schema({
     vol.Optional(CONF_GROUP):  cv.slugify,
     vol.Optional(CONF_DEVICENAME): cv.slugify,
     vol.Optional(CONF_INTERVAL): cv.slugify,
     vol.Optional(CONF_COMMAND): cv.string
-})
+    })
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_USERNAME): cv.string,
     vol.Optional(CONF_PASSWORD, default=''): cv.string,
     vol.Optional(CONF_GROUP, default='group'): cv.slugify,
-    vol.Optional(CONF_TRACKING_METHOD, default='fmf'): cv.slugify,
-    vol.Optional(CONF_iosapp_locate_request_max_cnt, default=100): cv.string,
+    vol.Optional(CONF_TRACKING_METHOD, default=FMF): cv.slugify,
+    vol.Optional(CONF_IOSAPP_LOCATE_REQUEST_MAX_CNT, default=100): cv.string,
     vol.Optional(CONF_ENTITY_REGISTRY_FILE): cv.string,
     vol.Optional(CONF_CONFIG_IC3_FILE_NAME, default='config_ic3.yaml'): cv.string,
     vol.Optional(CONF_LEGACY_MODE, default=False): cv.boolean,
@@ -609,11 +640,35 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     #-----►►Other Attributes ----------
     vol.Optional(CONF_STATIONARY_INZONE_INTERVAL, default='30 min'): cv.string,
     vol.Optional(CONF_STATIONARY_STILL_TIME, default='8 min'): cv.string,
+    vol.Optional(CONF_STATIONARY_ZONE_OFFSET, default='1,0'): cv.string,
     vol.Optional(CONF_CREATE_SENSORS, default=[]): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional(CONF_EXCLUDE_SENSORS, default=[]): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional(CONF_COMMAND): cv.string,
     })
 
+default_config_values = {
+    CONF_UNIT_OF_MEASUREMENT: 'mi',
+    CONF_INZONE_INTERVAL: '2 hrs',
+    CONF_CENTER_IN_ZONE: False,
+    CONF_MAX_INTERVAL: 0,
+    CONF_TRAVEL_TIME_FACTOR: .60,
+    CONF_GPS_ACCURACY_THRESHOLD: 100,
+    CONF_OLD_LOCATION_THRESHOLD: '-1 min',
+    CONF_IGNORE_GPS_ACC_INZONE: True,
+    CONF_HIDE_GPS_COORDINATES: False,
+    CONF_LOG_LEVEL: '',
+    CONF_TRACK_DEVICES: [],
+    CONF_TRACK_DEVICE: [],
+    CONF_DISTANCE_METHOD: 'waze',
+    CONF_LEGACY_MODE: False,
+    CONF_WAZE_REGION: 'US',
+    CONF_WAZE_MAX_DISTANCE: 1000,
+    CONF_WAZE_MIN_DISTANCE: 1,
+    CONF_WAZE_REALTIME: False,
+    CONF_STATIONARY_INZONE_INTERVAL: '30 min',
+    CONF_STATIONARY_STILL_TIME: '8 min',
+    CONF_STATIONARY_ZONE_OFFSET: '1, 0',
+    }
 #==============================================================================
 #
 #   SYSTEM LEVEL FUNCTIONS
@@ -699,7 +754,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     log_level             = config.get(CONF_LOG_LEVEL)
     entity_registry_file  = config.get(CONF_ENTITY_REGISTRY_FILE)
     config_ic3_file_name  = config.get(CONF_CONFIG_IC3_FILE_NAME)
-    iosapp_locate_request_max_cnt = int(config.get(CONF_iosapp_locate_request_max_cnt))
+    iosapp_locate_request_max_cnt = int(config.get(CONF_IOSAPP_LOCATE_REQUEST_MAX_CNT))
     legacy_mode           = config.get(CONF_LEGACY_MODE)
 
     #make sure the same group is not specified in more than one platform. If so,
@@ -736,26 +791,27 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     else:
         inzone_interval_str = config.get(CONF_MAX_INTERVAL)
 
-    max_interval           = config.get(CONF_MAX_INTERVAL)
-    center_in_zone_flag    = config.get(CONF_CENTER_IN_ZONE)
-    gps_accuracy_threshold = config.get(CONF_GPS_ACCURACY_THRESHOLD)
-    old_location_threshold_str = config.get(CONF_OLD_LOCATION_THRESHOLD)
+    max_interval                    = config.get(CONF_MAX_INTERVAL)
+    center_in_zone_flag             = config.get(CONF_CENTER_IN_ZONE)
+    gps_accuracy_threshold          = config.get(CONF_GPS_ACCURACY_THRESHOLD)
+    old_location_threshold_str      = config.get(CONF_OLD_LOCATION_THRESHOLD)
     ignore_gps_accuracy_inzone_flag = config.get(CONF_IGNORE_GPS_ACC_INZONE)
-    hide_gps_coordinates   = config.get(CONF_HIDE_GPS_COORDINATES)
-    unit_of_measurement    = config.get(CONF_UNIT_OF_MEASUREMENT)
+    hide_gps_coordinates            = config.get(CONF_HIDE_GPS_COORDINATES)
+    unit_of_measurement             = config.get(CONF_UNIT_OF_MEASUREMENT)
 
-    stationary_inzone_interval_str = config.get(CONF_STATIONARY_INZONE_INTERVAL)
-    stationary_still_time_str = config.get(CONF_STATIONARY_STILL_TIME)
+    stationary_inzone_interval_str  = config.get(CONF_STATIONARY_INZONE_INTERVAL)
+    stationary_still_time_str       = config.get(CONF_STATIONARY_STILL_TIME)
+    stationary_zone_offset          = config.get(CONF_STATIONARY_ZONE_OFFSET)
 
-    sensor_ids             = _combine_lists(config.get(CONF_CREATE_SENSORS))
-    exclude_sensor_ids     = _combine_lists(config.get(CONF_EXCLUDE_SENSORS))
+    sensor_ids                      = _combine_lists(config.get(CONF_CREATE_SENSORS))
+    exclude_sensor_ids              = _combine_lists(config.get(CONF_EXCLUDE_SENSORS))
 
-    travel_time_factor     = config.get(CONF_TRAVEL_TIME_FACTOR)
-    waze_realtime          = config.get(CONF_WAZE_REALTIME)
-    distance_method        = config.get(CONF_DISTANCE_METHOD).lower()
-    waze_region            = config.get(CONF_WAZE_REGION)
-    waze_max_distance      = config.get(CONF_WAZE_MAX_DISTANCE)
-    waze_min_distance      = config.get(CONF_WAZE_MIN_DISTANCE)
+    travel_time_factor              = config.get(CONF_TRAVEL_TIME_FACTOR)
+    waze_realtime                   = config.get(CONF_WAZE_REALTIME)
+    distance_method                 = config.get(CONF_DISTANCE_METHOD).lower()
+    waze_region                     = config.get(CONF_WAZE_REGION)
+    waze_max_distance               = config.get(CONF_WAZE_MAX_DISTANCE)
+    waze_min_distance               = config.get(CONF_WAZE_MIN_DISTANCE)
     if waze_region not in WAZE_REGIONS:
         log_msg = (f"Invalid Waze Region ({waze_region}). Valid Values are: "
             "NA=US or North America, EU=Europe, IL=Isreal")
@@ -764,33 +820,6 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
         waze_region       = 'US'
         waze_max_distance = 0
         waze_min_distance = 0
-
-    '''
-    TxRACE("group",group)
-    TxRACE("base_zone",base_zone)
-    TxRACE("tracking_method",tracking_method)
-    TxRACE("track_devices",track_devices)
-    TxRACE("entity_registry_file",entity_registry_file)
-    TxRACE("iosapp_locate_request_max_cnt",iosapp_locate_request_max_cnt)
-    TxRACE("inzone_interval_str",inzone_interval_str)
-    TxRACE("center_in_zone_flag",center_in_zone_flag)
-    TxRACE("gps_accuracy_threshold",gps_accuracy_threshold)
-    TxRACE("old_location_threshold_str",old_location_threshold_str)
-    TxRACE("stationary_inzone_interval_str",stationary_inzone_interval_str)
-    TxRACE("stationary_still_time_str",stationary_still_time_str)
-    TxRACE("ignore_gps_accuracy_inzone_flag",ignore_gps_accuracy_inzone_flag)
-    TxRACE("hide_gps_coordinates",hide_gps_coordinates)
-    TxRACE("sensor_ids",sensor_ids)
-    TxRACE("exclude_sensor_ids",exclude_sensor_ids)
-    TxRACE("unit_of_measurement",unit_of_measurement)
-    TxRACE("travel_time_factor",travel_time_factor)
-    TxRACE("distance_method",distance_method)
-    TxRACE("waze_region",waze_region)
-    TxRACE("waze_realtime",waze_realtime)
-    TxRACE("waze_max_distance",waze_max_distance)
-    TxRACE("waze_min_distance",waze_min_distance)
-    TxRACE("log_level",log_level)
-    '''
 
 #---------------------------------------------
     #icloud_group =
@@ -801,6 +830,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
         center_in_zone_flag,
         gps_accuracy_threshold, old_location_threshold_str,
         stationary_inzone_interval_str, stationary_still_time_str,
+        stationary_zone_offset,
         ignore_gps_accuracy_inzone_flag, hide_gps_coordinates,
         sensor_ids, exclude_sensor_ids,
         unit_of_measurement, travel_time_factor, distance_method,
@@ -897,6 +927,7 @@ class Icloud3(DeviceScanner):
         center_in_zone_flag,
         gps_accuracy_threshold, old_location_threshold_str,
         stationary_inzone_interval_str, stationary_still_time_str,
+        stationary_zone_offset,
         ignore_gps_accuracy_inzone_flag, hide_gps_coordinates,
         sensor_ids, exclude_sensor_ids,
         unit_of_measurement, travel_time_factor, distance_method,
@@ -953,8 +984,9 @@ class Icloud3(DeviceScanner):
         self.waze_min_distance            = waze_min_distance
         self.waze_max_distance            = waze_max_distance
         self.waze_realtime                = waze_realtime
-        self.stationary_still_time_str    = stationary_still_time_str
         self.stationary_inzone_interval_str = stationary_inzone_interval_str
+        self.stationary_still_time_str    = stationary_still_time_str
+        self.stationary_zone_offset       = stationary_zone_offset
 
         #define & initialize fields to carry across icloud3 restarts
         self._define_event_log_fields()
@@ -981,12 +1013,13 @@ class Icloud3(DeviceScanner):
 
         try:
             start_timer = time.time()
+            self._initialize_debug_control(self.log_level)
+
             self.start_icloud3_inprocess_flag = True
             self.start_icloud3_request_flag   = False
             self.startup_log_msgs             = ''
-            self.startup_log_msgs_prefix = NEW_LINE + '-'*55
+            self.startup_log_msgs_prefix      = ''
 
-            self._initialize_debug_control(self.log_level)
             self._initialize_um_formats(self.unit_of_measurement)
             self._define_device_fields()
             self._define_device_status_fields()
@@ -1123,7 +1156,7 @@ class Icloud3(DeviceScanner):
             self._save_event_halog_info("*", event_msg)
 
             self.startup_log_msgs_prefix = NEW_LINE
-            event_msg = (f"Stage 4 > Configure valid tracked devices")
+            event_msg = (f"Stage 4 > Configure tracked devices")
             self._save_event_halog_info("*", event_msg)
 
             for devicename in self.tracked_devices:
@@ -1135,11 +1168,13 @@ class Icloud3(DeviceScanner):
                     event_msg = (f"Tracking from zones > {w}")
                     self._save_event_halog_info("*", event_msg)
 
+                event_msg = (f"Initialize Data Fields > {devicename}")
+                self._save_event("*", event_msg)
+
                 self._initialize_device_status_fields(devicename)
                 self._initialize_device_tracking_fields(devicename)
                 self._initialize_usage_counters(devicename, self.start_icloud3_initial_load_flag)
                 self._initialize_device_zone_fields(devicename)
-                self._setup_sensor_base_attrs(devicename, self.start_icloud3_initial_load_flag)
 
                 #check to see if devicename's stationary zone already exists
                 #if so, use that location. If not, use home zone +.0005
@@ -1171,6 +1206,11 @@ class Icloud3(DeviceScanner):
                     '_start_icloud3')
 
                 if self.start_icloud3_initial_load_flag:
+                    self._setup_sensor_base_attrs(devicename)
+
+                    event_msg = (f"Initialize Sensors > {devicename}")
+                    self._save_event("*", event_msg)
+
                     self._update_device_sensors(devicename, kwargs)
                     self._update_device_sensors(devicename, attrs)
 
@@ -1199,9 +1239,12 @@ class Icloud3(DeviceScanner):
 
         self.start_icloud3_inprocess_flag = False
 
-        self.startup_log_msgs_prefix = NEW_LINE + '-'*55
-        self.startup_log_msgs = self.startup_log_msgs.replace("CRLF", NEW_LINE)
-        _LOGGER.info(self.startup_log_msgs)
+        if self.log_level_debug_flag:
+            #self.startup_log_msgs_prefix = NEW_LINE + '-'*55
+            self.startup_log_msgs = (NEW_LINE + '-'*55 +
+                                    self.startup_log_msgs.replace("CRLF", NEW_LINE) +
+                                    NEW_LINE + '-'*55)
+            _LOGGER.info(self.startup_log_msgs)
         self.startup_log_msgs = ''
 
         return True
@@ -1248,6 +1291,9 @@ class Icloud3(DeviceScanner):
             if self.this_update_secs >= self.event_log_clear_secs and \
                         self.log_level_debug_flag == False:
                 self._update_event_log_sensor_line_items('clear_log_items')
+
+            if self.this_update_secs >= self.authentication_error_retry_secs:
+                self._authenticate_pyicloud()
 
             for devicename in self.tracked_devices:
                 devicename_zone = self._format_devicename_zone(devicename, HOME)
@@ -1372,6 +1418,8 @@ class Icloud3(DeviceScanner):
                             f"GPS-{format_gps(v2_dev_attrs[ATTR_LATITUDE], v2_dev_attrs[ATTR_LONGITUDE])}, "
                             f"LastLocated-{self.last_located_time.get(devicename)}")
                         if ((update_via_v2_flag
+                                and (self.log_level_debug_flag
+                                    or self.log_level_eventlog_flag)
                                 and iosapp_msg != self.last_iosapp_msg.get(devicename))
                                 and self.last_iosapp_msg.get(devicename) != ''):
                             self._save_event_halog_debug(devicename, iosapp_msg)
@@ -2428,7 +2476,7 @@ class Icloud3(DeviceScanner):
                     'type': 'friend'}],
                 'tempLangForAddrAndPremises': None,
                 'verticalAccuracy': 0.0,
-                'batteryStatus': None,
+                ATTR_ICLOUD_BATTERY_STATUS: None,
                 'locationId': 'a6b0ee1d-be34-578a-0d45-5432c5753d3f',
                 'locationTimestamp': 0,
                 'longitude': -45.67890123,
@@ -4996,7 +5044,6 @@ class Icloud3(DeviceScanner):
         self.update_in_process_flag          = False
         self.track_devicename_list           = ''
         self.any_device_being_updated_flag   = False
-        #self.tracked_devices             = {}
         self.tracked_devices_config_parm     = {} #config file item for devicename
         self.tracked_devices                 = []
 
@@ -5019,6 +5066,8 @@ class Icloud3(DeviceScanner):
         self.iosapp_locate_update_secs       = {}
         self.iosapp_stat_zone_action_msg_cnt = {}
         self.authenticated_time              = 0
+        self.authentication_error_cnt        = 0
+        self.authentication_error_retry_secs = HIGH_INTEGER
         self.info_notification               = ''
 
         this_update_time = dt_util.now().strftime('%H:%M:%S')
@@ -5119,6 +5168,7 @@ class Icloud3(DeviceScanner):
         self.trk_method            = trk_method_primary
         self.trk_method_name       = TRK_METHOD_NAME.get(trk_method_primary)
         self.trk_method_short_name = TRK_METHOD_SHORT_NAME.get(trk_method_primary)
+        #self.fmf_famshr_auth_err_retry_secs = 0 #Retry time when changed to
 
         if self.TRK_METHOD_FMF_FAMSHR and self.password == '':
             event_msg = ("iCloud3 Error > The password is required for the "
@@ -5178,7 +5228,7 @@ class Icloud3(DeviceScanner):
         self.seen_this_device_flag[devicename]        = False
         self.device_being_updated_flag[devicename]    = False
         self.device_being_updated_retry_cnt[devicename] = 0
-        self.iosapp_locate_update_secs[devicename]  = 0
+        self.iosapp_locate_update_secs[devicename]      = 0
 
         #if devicename not in self.sensor_prefix_name:
         self.sensor_prefix_name[devicename] = devicename
@@ -5227,8 +5277,6 @@ class Icloud3(DeviceScanner):
         self.last_battery[devicename]           = 0
         self.last_gps_accuracy[devicename]      = 0
 
-        #self.event_cnt[devicename]              = 0
-
         #Other items
         self.data_source[devicename]            = ''
         self.last_iosapp_msg[devicename]        = ''
@@ -5243,7 +5291,7 @@ class Icloud3(DeviceScanner):
         self.count_trigger_changed          = {}
         self.count_waze_locates             = {}
         self.time_waze_calls                = {}
-        self.iosapp_locate_request_cnt    = {}
+        self.iosapp_locate_request_cnt      = {}
         self.count_pyicloud_authentications = 0
         self.count_pyicloud_location_update = 0
         self.time_pyicloud_calls            = 0.0
@@ -5304,7 +5352,6 @@ class Icloud3(DeviceScanner):
         self.zone_dist              = {}
 
         self.last_dev_timestamp_ses = {}
-        #self.old_loc_poor_gps_cnt   = {}
 
 #--------------------------------------------------------------------
     def _initialize_device_zone_fields(self, devicename):
@@ -5401,9 +5448,9 @@ class Icloud3(DeviceScanner):
         attrs[ATTR_ZONE_TIMESTAMP]     = ''
         attrs[ATTR_INTERVAL]           = ''
         attrs[ATTR_WAZE_TIME]          = ''
-        attrs[ATTR_ZONE_DISTANCE]      = 1
-        attrs[ATTR_CALC_DISTANCE]      = 1
-        attrs[ATTR_WAZE_DISTANCE]      = 1
+        attrs[ATTR_ZONE_DISTANCE]      = 0
+        attrs[ATTR_CALC_DISTANCE]      = 0
+        attrs[ATTR_WAZE_DISTANCE]      = 0
         attrs[ATTR_LAST_LOCATED]       = HHMMSS_ZERO
         attrs[ATTR_LAST_UPDATE_TIME]   = HHMMSS_ZERO
         attrs[ATTR_NEXT_UPDATE_TIME]   = HHMMSS_ZERO
@@ -5417,7 +5464,7 @@ class Icloud3(DeviceScanner):
         attrs[ATTR_BATTERY_STATUS]     = ''
         attrs[ATTR_INFO]               = ''
         attrs[ATTR_ALTITUDE]           = 0
-        attrs[ATTR_VERT_ACCURACY]  = 0
+        attrs[ATTR_VERT_ACCURACY]      = 0
         attrs[ATTR_DEVICE_STATUS]      = ''
         attrs[ATTR_LOW_POWER_MODE]     = ''
         attrs[CONF_GROUP]              = self.group
@@ -5520,17 +5567,23 @@ class Icloud3(DeviceScanner):
         self.stat_zone_radius_m        = self.zone_home_radius_m * 2
         self.stat_zone_base_long       = self.zone_home_long
 
-        #Offset the stat zone 1km north of Home if north of the equator or
-        #1km south of Home is south of the equator. (offset of 0.005=1km degrees)
-        #Switch direction if near the north or south pole.
-        offset = STATIONARY_ZONE_HOME_OFFSET  #0.00468    #0.005=1km
-        offset = -1*offset if self.zone_home_lat < 0 else offset
-        offset = -1*offset if self.zone_home_lat > 89.8 or self.zone_home_lat < -89.8 else offset
-        self.stat_zone_base_lat = self.zone_home_lat + offset
+        #Offset the stat zone from the Home zone based on the stationary_zone_offset parameter
+        if instr(self.stationary_zone_offset, "("):
+            szo = self.stationary_zone_offset.replace("(", "").replace(")", "")
+            self.stat_zone_base_lat  =  float(szo.split(',')[0])
+            self.stat_zone_base_long =  float(szo.split(',')[1])
+        else:
+            offset_lat  = float(self.stationary_zone_offset.split(',')[0]) * STATIONARY_ZONE_1KM_LAT
+            offset_long = float(self.stationary_zone_offset.split(',')[1]) * STATIONARY_ZONE_1KM_LONG
+            self.stat_zone_base_lat  = self.zone_home_lat  + offset_lat
+            self.stat_zone_base_long = self.zone_home_long + offset_long
+
+        dist = self._calc_distance_km(self.zone_home_lat, self.zone_home_long,
+                    self.stat_zone_base_lat, self.stat_zone_base_long)
 
         log_msg = (f"Set Initial Stationary Zone Location > "
                    f"GPS-{format_gps(self.stat_zone_base_lat, self.stat_zone_base_long)}, "
-                   f"Radius-{self.stat_zone_radius_m} m")
+                   f"Radius-{self.stat_zone_radius_m} m, DistFromHome-{dist} km")
         self.log_debug_msg("*", log_msg)
         self._save_event("*", log_msg)
 
@@ -5601,6 +5654,7 @@ class Icloud3(DeviceScanner):
         '''
         try:
             self.count_pyicloud_authentications += 1
+
             self.authenticated_time = time.time()
 
             self.api = PyiCloudService(self.username, self.password,
@@ -5608,22 +5662,45 @@ class Icloud3(DeviceScanner):
                                        verify=True)
             self.time_pyicloud_calls += (time.time() - self.authenticated_time)
 
+            if self.authentication_error_retry_secs != HIGH_INTEGER:
+                self.authentication_error_cnt = 0
+                self.authentication_error_retry_secs = HIGH_INTEGER
+                self._setup_tracking_method(self.tracking_method_config)
+
             #for devicename in self.tracked_devices:
-            event_msg = (f"{EVLOG_COLOR_AUTHENTICATE}iCloud Account Authentication Successful > {self.username}")
+            event_msg = (f"{EVLOG_COLOR_AUTHENTICATE}iCloud Account Authentication Successful > "
+                         f"{self.username}")
             self._save_event_halog_info("*", event_msg)
 
         except (PyiCloudFailedLoginException, PyiCloudNoDevicesException,
                 PyiCloudAPIResponseException) as err:
 
-            self.api = None
-            self._setup_iosapp_tracking_method()
+            self._authentication_error()
+            return
 
-            event_msg = ("iCloud3 Error > An error was encountered authenticating the iCloud "
-                f"account for {self.username}. The iCloud Web Services "
-                f"may be down or the Username/Password may be invalid. "
-                f"The {self.trk_method_short_name} Location Service "
-                "is disabled and the IOS App tracking_method will be used.")
+    def _authentication_error(self):
+            #Set up for retry in X minutes
+            self.authentication_error_cnt += 1
+            if self.authentication_error_cnt >= 8:
+                retry_secs = 3600           #1 hours
+            elif self.authentication_error_cnt >= 4:
+                retry_secs = 1800           #30 minutes
+            else:
+                retry_secs = 900            #15 minutes
+
+            self.authentication_error_retry_secs = self.this_update_secs + retry_secs
+            auth_retry_time = self._secs_to_time(self.authentication_error_retry_secs)
+
+            event_msg = (f"iCloud3 Error > An error occurred authenticating "
+                f"CRLFThe iCloud Web Services may be down or the Username/Password"
+                f" may be invalid. The {self.trk_method_short_name} tracking method "
+                f"is disabled and the iOS App tracking method will be used. "
+                f"CRLFThe authentication will be retried in "
+                f"{self._secs_to_time_str(retry_secs)} at {auth_retry_time}.")
             self._save_event_halog_error("*", event_msg)
+
+            self._setup_iosapp_tracking_method()
+            self.api = None
 
 #--------------------------------------------------------------------
     def _setup_tracked_devices_for_fmf(self):
@@ -6186,13 +6263,10 @@ class Icloud3(DeviceScanner):
 #   DEVICE SENSOR SETUP ROUTINES
 #
 #########################################################
-    def _setup_sensor_base_attrs(self, devicename, initial_load_flag):
+    def _setup_sensor_base_attrs(self, devicename):
         '''
         The sensor name prefix can be the devicename or a name specified on
         the track_device configuration parameter        '''
-
-        if initial_load_flag == False:
-            return
 
         self.sensor_prefix_name[devicename] = devicename
 
@@ -6217,7 +6291,7 @@ class Icloud3(DeviceScanner):
                 zone_prefix = ''
             else:
                 zone_prefix = zone + '_'
-            event_msg = (f"Sensor entity prefix > sensor.{zone_prefix} "
+            event_msg = (f"Sensor entity prefix > sensor.{zone_prefix}"
                          f"{self.sensor_prefix_name.get(devicename)}")
             self._save_event("*", event_msg)
 
@@ -6340,16 +6414,11 @@ class Icloud3(DeviceScanner):
                 if (devicename is None or devicename_zone.startswith(devicename)):
                     time_till_update = self.next_update_secs.get(devicename_zone) - \
                             self.this_update_secs
-                    #self.next_update_in_secs[devicename_zone] = time_till_update
 
-                    #debug_msg=f">>>CheckUpdtTime  {devicename}-{devicename_zone}-{time_till_update}-{self.next_update_devicenames}"
-                    #self._save_event('*',debug_msg)
                     if time_till_update <= 5:
                         self.next_update_devicenames.append(devicename_zone.split(':')[0])
 
                         return (f"{devicename_zone.split(':')[0]}")
-                        #return (f"{devicename_zone}@"
-                        #        f"{self._secs_to_time(self.next_update_secs.get(devicename_zone))}")
 
 
         except Exception as err:
@@ -6443,9 +6512,9 @@ class Icloud3(DeviceScanner):
 
         """
         Status-{'batteryLevel': 1.0, 'deviceDisplayName': 'iPhone X',
-        'deviceStatus': '200', CONF_NAME: 'Gary-iPhone',
+        ATTR_ICLOUD_DEVICE_STATUS: '200', CONF_NAME: 'Gary-iPhone',
         'deviceModel': 'iphoneX-1-2-0', 'rawDeviceModel': 'iPhone10,6',
-        'deviceClass': 'iPhone',
+        ATTR_ICLOUD_DEVICE_CLASS: 'iPhone',
         'id':'qyXlfsz1BIOGxcqDxDleX63Mr63NqBxvJcajuZT3y05RyahM3/OMpuHYVN
         SUzmWV', 'lowPowerMode': False, 'batteryStatus': 'NotCharging',
         'fmlyShare': False, 'location': {'isOld': False,
@@ -6472,7 +6541,7 @@ class Icloud3(DeviceScanner):
             f"●deviceDisplayName-{status['deviceDisplayName']}, "
             f"●deviceStatus-{status[ATTR_ICLOUD_DEVICE_STATUS]}, "
             f"●name-{status[CONF_NAME]}, "
-            f"●deviceClass-{status['deviceClass']}, "
+            f"●deviceClass-{status[ATTR_ICLOUD_DEVICE_CLASS]}, "
             f"●batteryLevel-{status[ATTR_ICLOUD_BATTERY_LEVEL]}, "
             f"●batteryStatus-{status[ATTR_ICLOUD_BATTERY_STATUS]}, "
             f"●isOld-{location[ATTR_ISOLD]}, "
@@ -7066,6 +7135,9 @@ class Icloud3(DeviceScanner):
             return
 
         try:
+            for parameter_name in default_config_values:
+                self._set_parameter_item(parameter_name, default_config_values.get(parameter_name))
+
             parameter_list      = []
             parameter_list_name = ""
             log_success_msg     = ""
@@ -7149,7 +7221,7 @@ class Icloud3(DeviceScanner):
 
             if parameter_name in [CONF_TRACK_DEVICES, CONF_TRACK_DEVICE]:
                 self.track_devices = parameter_value
-            elif parameter_name == CONF_iosapp_locate_request_max_cnt:
+            elif parameter_name == CONF_IOSAPP_LOCATE_REQUEST_MAX_CNT:
                 self.iosapp_locate_request_max_cnt = int(parameter_value)
             elif parameter_name == CONF_UNIT_OF_MEASUREMENT:
                 self.unit_of_measurement = parameter_value
@@ -7163,6 +7235,8 @@ class Icloud3(DeviceScanner):
                 self.stationary_still_time_str = parameter_value
             elif parameter_name == CONF_STATIONARY_INZONE_INTERVAL:
                 self.stationary_inzone_interval_str = parameter_value
+            elif parameter_name == CONF_STATIONARY_ZONE_OFFSET:
+                self.stationary_zone_offset = parameter_value
             elif parameter_name == CONF_TRAVEL_TIME_FACTOR:
                 self.travel_time_factor = float(parameter_value)
             elif parameter_name == CONF_GPS_ACCURACY_THRESHOLD:
@@ -7250,8 +7324,8 @@ class Icloud3(DeviceScanner):
 
         if instr(log_msg, "iCloud3 Error"):
             self.info_notification = ICLOUD3_ERROR_MSG
-            for devicename in self.tracked_devices:
-                self._display_info_status_msg(devicename, ICLOUD3_ERROR_MSG)
+            for td_devicename in self.tracked_devices:
+                self._display_info_status_msg(td_devicename, ICLOUD3_ERROR_MSG)
 
         self._save_event(devicename, log_msg)
         log_msg = (f"{self._format_fname_devtype(devicename)} {log_msg}")
@@ -7802,7 +7876,7 @@ class Icloud3(DeviceScanner):
 #--------------------------------------------------------------------
     def icloud_authenticate_account(self, restarting_flag = False):
         '''
-        Make sure iCloud is still available and doesn't need to be reauthenticated
+        Make sure iCloud is still available and doesn't need to be authenticationd
         in 15-second polling loop
 
         Returns True  if Authentication is needed.
@@ -7936,7 +8010,7 @@ class Icloud3(DeviceScanner):
         #one. Exit if this instance of iCloud is not the one handling this
         #device. But if devicename = 'reset', it is an event_log service cmd.
         log_msg = (f"iCloud3 Command Entered, Device: {arg_devicename}, "
-                 f"Command: {arg_command}")
+                   f"Command: {arg_command}")
         self.log_debug_msg("*", log_msg)
 
         if arg_devicename:
@@ -7987,7 +8061,7 @@ class Icloud3(DeviceScanner):
 
         elif arg_command_cmd == "counts":
             for devicename in self.count_update_iosapp:
-                self._display_usage_counts(devicename)
+                self._display_usage_counts(devicename, force_display=True)
             return
 
         elif arg_command_cmd == 'trusted_device':
