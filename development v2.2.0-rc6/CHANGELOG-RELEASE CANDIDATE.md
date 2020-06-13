@@ -1,5 +1,14 @@
 ## iCloud3 Version 2.2.0 - Release Candidate Change Log
 
+#### Release Candidate 6 (6/12/2020)
+
+* Added an Event Log card version check. When iCloud3 starts, the version of the Event Log in the *custom_components /icloud3* directory is compared to the Event Log in the *www/custom_cards* directory. If the version in the custom_components directory is newer, it will be copied to the custom cards directory and a message is displayed in the Event Log indicating that the Event Log was updated and the browser and the iOS App cache's need to be cleared and refreshed. See the Change Log for more details.
+
+#### Release Candidate 5 (6/2/2020)
+
+* The initial stationary zone's location is 1 km north of your home zone and, if your normal driving route takes you through the stationary zone, you will trigger zone enters/exits. This update lets you move the initial stationary zone to avoid this situation using the `stationary_zone_offse`t parameter. With it, you can specify the exact GPS coordinates of the Initial Stationary Zone or specify a 1km offset multiplier (north or south, east or west) of the Home zone. 
+  * Examples: '1,0' - Offset 1km North, '2,-1' - Offset 2km North, 1km East of Home, '(27.738520, -75.380462)' - Specify the GPS coordinates
+
 #### Release Candidate 4 (5/31/2020)
 
 * The Event Log will only show the state/zone/interval/travel time/distance line when the values change. This reduces the size of the Event Log and improves it's readability.
