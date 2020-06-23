@@ -2,10 +2,12 @@
 
 ### User and Account Items
 ###### username 
-*(Required)* The username (email address) for the iCloud account. 
+*(Required)* The username (email address) for the iCloud account.  
+*Note:* This is also required for the iOS App tracking method and is used to identify the iCloud3 instance.
 
 ###### password 
-*(Required)* The password for the account.
+The password for the account.  
+*Note:* This is required for Family Sharing & Find-my-Friends tracking method and not required for the iOS App tracking method.
 
 ###### group 
 The name of the group of devices being tracked for this iCloud3 device_tracker platform.   
@@ -21,6 +23,13 @@ Normally, this parameter will not be used since the name of the entity file is e
 The following are the path/name of the entirety registry file for Home Assistant running on different platforms:  
 - Linux(default): '/.storage/core.entity_registry'
 - MacOS: ‘/Users/USERNAME/.homeassistant/.storage/core.entity_registry’  
+
+###### config_ic3_file_name  
+iCloud3 parameters can be specified in it's own configuration file (*config_ic3.yaml*) and the paramerers are used when iCloud3 is restarted on the Event Log screen and when HA starts. This lets you change the the parameters and have them take effect without restarting HA. All parameters except the username/password, tracking method and included/excluded sensors and this parameter can be specified. This includes the devices to be tracked, timings, accuracy thresholds, location parameters, log_level, and others. If you want to use a different file, specify it's name with this parameter.   
+
+*Valid Values:* Typical yaml file name. *Default:* config_ic3.yaml   
+*Note:* The file is located in the `custom_components/icloud3` directory.
+*Note:* A sample file, `config_ic3_sample.yaml`, is installed with iCloud3 and contains the parameters that can be specified in this file..  
 
 ### Devices to be tracked
 ###### tracking_method 
@@ -83,16 +92,8 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 
 #### Sample Configuration File Parameters
 
-##### tracking_method: Find-my-Friends (fmf), 2 iPhones: 
-```yaml
-- platform: icloud3
-  username: gary-fmf-acct@email.com
-  password: gary-fmf-password
-  track_devices:
-    - gary_iphone > gary-icloud-acct@email.com, gary.png
-    - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
-```
 ##### tracking_method: Family Sharing (famshr), 2 iPhones, family group:
+
 ```yaml
 - platform: icloud3
   username: gary-icloud-acct@email.com
@@ -104,26 +105,25 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
     - lillian_iphone > lillian.png
 ```
 
-##### tracking_method: Find-my-Friends (fmf), 2 iPhones, do not use waze, also track 'whse' zone:
+##### 
+
+##### tracking_method: Find-my-Friends (fmf), 2 iPhones: 
+
 ```yaml
 - platform: icloud3
   username: gary-fmf-acct@email.com
   password: gary-fmf-password
   track_devices:
-    - gary_iphone > gary.png, whse
-    - lillian_iphone > lillian.png
-  gps_accuracy_threshold: 100
-  distance_method: calc
+    - gary_iphone > gary-icloud-acct@email.com, gary.png
+    - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
 ```
-
-##### tracking_method: iosapp, gary_iphone uses IOS App version 1, customize sensors created:
+##### tracking_method: iosapp, track gary_iphone using home and whse zones,  customize sensors created:
 ```yaml
 - platform: icloud3
-  username: gary-fmf-acct@email.com
-  password: gary-fmf-password
+  username: gary@email.com
   tracking_method: iosapp
   track_devices:
-    - gary_iphone > gary.png, iosapp1, whse
+    - gary_iphone > gary.png, whse
     - lillian_iphone > lillian.png
   gps_accuracy_threshold: 100
   create_sensors: zon,zon1,ttim,zdis,cdis,wdis,nupdt,lupdt,info
@@ -134,6 +134,10 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 The interval between location updates when the device is in a zone. This can be in seconds, minutes or hours, e.g., 30 secs, 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).  
 *Default:* 2 hrs
 
+###### center_in_zone   
+Specify if the device's location should be changed to the center of the zone when it is in a zone. Previously, would always be moved to the zone center.  
+*Valid Values*: True, False  *Default:* False
+
 ###### stationary_inzone_interval 
 The interval between location updates when the device is in a Dynamic Stationary Zone. See Special Zones chapter for more information about stationary zones. This can be minutes or hours, e.g., 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).  
 *Default:* 30 min
@@ -141,6 +145,16 @@ The interval between location updates when the device is in a Dynamic Stationary
 ###### stationary_still_time 
 The number minutes with little movement (1.5 times the Home zone radius) before the device will be put into its Dynamic Stationary Zone.   
 *Valid values:* Number. *Default:* 8
+
+###### stationary_zone_offset  
+The stationary zone is created when iCloud3 starts (or is restarted) and is located 1km north of the Home Zone location. There may be times when this conflicts with your normal driving route and you find yourself going in and out of the stationary zone. With this parameter, you can change it's initial location. The format is:
+
+* latitude-adjustment, longitude-adjustment - Specify the number of kilometers from the Home zone. The first parameter adjusts the latitude (north/south), the second parameter adjusts the longitude (east/west).
+* (latitude, longitude) - Specify the actual GPS coordinates (the parentheses are required). 
+
+*Valid Values:* latitude-adjustment, longitude-adjustment.  *Default*: 1,0   
+*Example:* stationary_zone_offset: (24.738520, -75.380462)  
+*Example:* stationary_zone_offset: '2,0'
 
 ###### unit_of_measurement 
 The unit of measure for distances in miles or kilometers.   
@@ -151,7 +165,7 @@ iCloud location updates come with some gps_accuracy varying from 10 to 5000 mete
 *Default*: 125m
 
 ###### old_location_threshold
-When the device is located, it’s location coordinates and the time it was located are updated. If the time is older than this value (in minutes), the transaction is discarded and the device is repolled until a current location is available. It is repolled on a 15-second interval, followed by a 1-minute, 5-minute and 15-minute interval.  
+When a device is located, the location's age is calculated and the update is discarded if the age is greater than the threshold. The threshold can be calculated (12.5% of the travel time to the zone with a 5 minute maximum (default)) or you can specify a fixed time using this parameter.  
 *Valid values:* Number of minutes *Default*: 2
 
 ##### ignore_gps_accuracy_inzone
@@ -207,12 +221,13 @@ When using Waze and the distance from your current location to home is more than
 
 !> Using the default value, the next update will be 3/4 of the time it takes to drive home from your current location. The one after that will be 3/4 of the time from that point. The result is a smaller interval as you get closer to home and a larger one as you get further away.  
 
-### Examples of all Configuration Parameters
+### Examples the Configuration Parameters
 ```yaml
 device_tracker:
   - platform: icloud3
-    username: !secret gary_fmf_username
-    password: !secret gary_fmf_password
+    username: !secret gary_famshr_username
+    password: !secret gary_famsh_password
+    tracking_method: famshr
     track_devices:
       - gary_iphone > gary-icloud-acct@email.com, gary.png
       - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
@@ -221,8 +236,10 @@ device_tracker:
     
     inzone_interval: '2 hrs'
     max_interval: '30 min'
+    center_in_zone: False
     stationary_inzone_interval: '30 min'
     stationary_still_time: '8 min'
+    stationary_zone_offset: '2,0'
     
     gps_accuracy_threshold: 75
     old_location_threshold: '2 min'
@@ -238,5 +255,6 @@ device_tracker:
     create_sensors: intvl,ttim,zdis,wdis,cdis,lupdt,nupdt,zon,zon1,zon2
     exclude_sensors: cnt,lupdt,zon3,lzon3,alt
     
-    log_level: debug, eventlog
+    log_level: debug+eventlog
+    config_ic3_file_name: 'config_ic3.yaml'
 ```

@@ -25,12 +25,14 @@ Custom Lovelace cards are typically stored in the `/www/custom_cards` directory.
 
 2. Copy the `icloud3-event-log-card.js` into the `/www/custom-cards` directory. If you are already using custom cards and they are in a different directory,  copy the `icloud3-event-log-card.js` file into the one you are using.
 
-3. Open the `ui-lovelace.yaml` file and add the following lines to the beginning of the file. Again, change the directory name if you are using a different location.
+3. Open the configuration.yaml` file and add the following lines to the beginning of the file. Again, change the directory name if you are using a different location.
 
    ```
-   resources:
-     - url: /local/custom_cards/icloud3-event-log-card.js?v=1.000
-       type: js
+   lovelace:
+     mode: yaml (if you are not using the lovelace configurator)
+     resources:
+       - url: /local/custom_cards/icloud3-event-log-card.js
+         type: module
    ```
 
 4. Add the following lines to the `ui-lovelace.yaml` file to create the custom card. 
@@ -54,7 +56,6 @@ During iCloud3 initialization, it goes through 5 stages to get everything prepar
 * Stage 2 - Verify iCloud Location Services - Determine the tracking method and authorize the iCloud account
 * Stage 3 - Set up Tracked Devices - Decode the track_device configuration parameter, determine the iOS App version, analyze the entity registry file and match the the v2 entities with the device.
 * Stage 4 - Set up the devices to be tracked - Set the device's Stationary Zone, set up the device's sensors and initialize device related variables to prepare for tracking.
-* Stage 5 - Locate the devices - Use the appropriate tracking method to determine where the device located.
 
 Things can go wrong during any of these steps from logging into Apple iCloud , invalid device identification data, not being able to find the device in the iCloud account, location GPS errors, etc. The Event Log can help identify and solve these issues. Below are sample screens showing authentication errors and device errors.
 

@@ -7,15 +7,29 @@ iCloud3 uses the device_tracker platform entity in your `configuration.yaml` fil
 
 The minimum information you need to get iCloud3 running is the username/password of your Apple iCloud account and the devices you want to track. Below are some examples of the configuration parameters that set up a platform using the Find-my-Friends tracking method.
 
-- username/password - The Apple iCloud account to use to locate the device.
+- username/password - The Apple iCloud account to use to locate the devices.
+- username - The iOS App is used to locate the devices
+- tracking_method - famshr (Family Sharing), fmf (Find-my-Friends), iosapp (iOS App)
 -  track_devices - The devices you want to track.
 
 See the Configuration Section for more examples and information about these parameters.
 
 !> You can have more than one iCloud3 device_tracker platform using different iCloud accounts to track different devices. When iCloud3 requests location information for an iCloud account, the location of all of the devices associated with that account (friends or family members) are returned. Knowing this, it does not make sense to have different iCloud3 platforms access the same iCloud account. All devices to be tracked should be grouped together.
 
-
 ### Examples of the iCloud3 platform
+
+###### Tracking devices with the Family Sharing tracking method
+
+```yaml
+device_tracker:
+  - platform: icloud3
+    username: gary-icloud-acct@email.com
+    password: gary-icloud-password
+    tracking _method: famshr
+    track_devices:
+      - gary_iphone > gary.png
+      - lillian_iphone > lillian.png
+```
 
 ###### Tracking gary and lillian's iPhone using the gary-fmf-acct.
 ```yaml
@@ -44,18 +58,6 @@ device_tracker:
     password: sydney-fmf-password
     track_devices:
       - sydney > sydney-icloud-acct@email.com, sydney.png
-```
-
-###### Tracking devices with the Family Sharing tracking method
-```yaml
-device_tracker:
-  - platform: icloud3
-    username: gary-icloud-acct@email.com
-    password: gary-icloud-password
-    tracking _method: famshr
-    track_devices:
-      - gary_iphone > gary.png
-      - lillian_iphone > lillian.png
 ```
 
 ### How location information is used

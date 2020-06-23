@@ -35,6 +35,7 @@ The following describe the commands that are available.
 | waze reset_range | Reset the Waze range to the default distances (min=1, max=99999). |
 | log_level | Display iCloud3 debug information in the HA Log file and, optionally, on the iCloud3 Event Log Card. <br>The following parameters are available:<br>- `debug` =  Entries related to device_tracker location operations <br>- `intervalcalc` =The methods and calculations related to the interval, next update time, zone, etc.<br>- `eventlo`g = Display the logged information on the iCloud3 Event Log Card.<br>- `info` = Display the current log_level options on the iCloud3 Event Log Card and the Info status line for the devices being tracked. |
 | restart | Restart the iCloud3 custom component. Restart iCloud3.This will recheck the availability of the iCloud Location Service and relocate all devices. |
+| counts | Display the Device Information and the iCloud/iOS App counters in the Event Log. |
 
 #### Example Automations or Scripts
 

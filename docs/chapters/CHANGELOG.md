@@ -2,15 +2,14 @@
 
 The following enhancements and changes have been made iCloud3 v2.1.0
 
-* The best way to monitor new releases is to add HACS (Home Assistant Community Store) to your HA system and set up the HACS/iCloud3 link using the instructions in the iCloud3 documentation [here](https://gcobb321.github.io/icloud3/#/chapters/3-hacs). 
-* You can also go to the iCloud3 releases page [here](https://github.com/gcobb321/icloud3/releases) to download the latest version and do a manual update.
+Note: You can set up this prerelease version in another custom_components directory and still keep the v2.1.0 version maintained by HACS that you are currently using. Instructions on doing this are at the end of the Change Log.
 
 ------
 
 #### Major Enhancements
 
 * iCloud 2fa accounts live again. The `Family Sharing` tracking method has been rewritten with the new version of iCloud Web Services Interface program (pyicloud-ic3.py). You can now track devices that are shared on your 2fa account without receiving constant account access notifications. You are not forced to set up a non-2fa account and use the Find-my-Friends tracking method any more, although it still works.
-* The `last_changed_time` attribute for the iOS App device_tracker entity is now being monitored to detect a location time change. When a change is detected, a new `iOSApp Location Trigger` is issued and the updated location data is processed. This gets around the current problem with the iOS App trigger changes not being picked up by HA and then iCloud3. These include the Geographic Region Enter/Exit, Background Fetch, Significant Location Updates, and others.
+* The *last_changed_time* attribute for the iOS App device_tracker entity is now being monitored to detect a location time change. When a change is detected, a new `iOSApp Location Trigger` is issued and the updated location data is processed. This gets around the current problem with the iOS App trigger changes not being picked up by HA and then iCloud3. These include the Geographic Region Enter/Exit, Background Fetch, Significant Location Updates, and others.
 * Extensive performance enhancements have been made to minimize the number of calls to the iCloud Web Services for location information and to Authenticate the device's access to the iCloud account. Previously, the account was Authenticated for each request. Now, it only Authenticates when needed. This has cut the number of data requests by over 60% and improves the response time, especially in poor cell areas.
 * The Next Update Time determines when the next location request is made for the Family Sharing and Find-my-Friends tracking methods. The location request is now made 5-seconds before the Next Update Time is reached to, hopefully, give more time for the iCloud Web Service to locate all of the devices being tracked and, hopefully, reduce the number of old location being being returned and discarded.
 * The Event Log has had some enhancements that improve the readability of the messages. The iCloud3 Statistics have been improved and provide more information in an easier to read format.
@@ -47,6 +46,30 @@ The following enhancements and changes have been made iCloud3 v2.1.0
 
 ------
 
+#### Installing the iCloud3 Development Version into another custom_components directory
+
+1. Change to the `config\custom_components` directory. You should see the `icloud3` directory listed.
+2. Create the `icloud3_dev` iCloud3 Development directory.
+3. Download all of the files in the GitHub `icloud3\development v2.2.0` into the `icloud3_dev` directory you just created on your HA system.
+4. In the HA *configuration.yaml* file that defines the icloud3 platform, change `-platform: icloud3` to `-platform: icloud3_dev`. This points to the directory created in step 2 above.
+5. Copy the `icloud3-event-log.js` file into the `config\www\custom_cards` directory or into the directory you are currently using for the Event Log lovelace card. 
+6. Refresh your browser so the new Event Log will load when you select it. You can do the following:
+   1. Chrome: 
+      1. Select the 3-dots in the upper-right corner of the Chrome window next to your picture (Customize and Control Google Chrome).
+      2. Select  `More Tools`.
+      3. Select `Clear Browsing Data`.  Check `Cached Images and Data`. Then click `Clear Data`.
+      4. Reload the HA window as you normally do.
+      5. Select the Lovelace window containing the Event Log card. 
+      6. Click the `Refresh` button on the Chrome Title bar to refresh the page.
+   2. iPhone or iPad:
+      1. Open the iOS App.
+      2. Touch the `App Configuration` in the HA Sidebar on the left side of the screen.
+      3. Scroll to the bottom. Touch `Reset Frontend cache`
+      4. Touch `Done` to close the App Configuration window.
+      5. Close the Sidebar. Scroll down from the top of the screen to reload Lovelace on the iPhone or iPad. 
+
+------
+
 #### Special Notice for iOS App Version 1 users
 
 * This version of iCloud3 still supports the iOS App version 1, which was discontinued over 6-months ago. This will be removed on the next update.
@@ -55,7 +78,7 @@ The following enhancements and changes have been made iCloud3 v2.1.0
 
 Hopefully, you will find this release useful. I am especially excited to be able to use 2fa iCloud accounts again rather than going through the process of setting up non-2fa Find-my-Friends accounts. I hope the tuning and reducing the number of calls to iCloud Web Services for location information will make the program more responsive, especially in poor cell areas.
 
-Version 2.1 was released in March, 2020 and has now been downloaded over 1200 times to users all over the world. If you do find it useful, you don't have to buy me a coffee, beer, gin-and-tonic or a glass of find New Zealand Sauvignon Blanc. But I would appreciate it if you would go to the iCloud repository (https://github.com/gcobb321/icloud3) and click on the star in the upper right corner.
+Version 2.1 was released in March, 2020 and has now been downloaded over 1000 times to users all over the world. If you do find it useful, you don't have to buy me a coffee, beer, gin-and-tonic or a glass of find New Zealand Sauvignon Blanc. But I would appreciate it if you would go to the iCloud repository (https://github.com/gcobb321/icloud3) and click on the star in the upper right corner.
 
 Gary Cobb *(aka geekstergary)*
 

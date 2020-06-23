@@ -12,11 +12,10 @@ You do not have to create the Stationary Zone in the `zones.yaml` file or on the
 
 !> THE STATIONARY ZONE AND THE IOS APP - When you first install iCloud3, the Stationary Zone will also be created. Since the iOS App does not automatically update information about new zones, you must force close the iOS App using the iPhone App Switcher and then restart it to reload the zone information, which will include the Stationary Zone.
 
+#### Details about the Stationary Zone:
 
-
-Details about the Stationary Zone:
-
-- It is initially located about 1/2km north or south of your Home zone depending whether you live north or south of the equator. The zone center is relocated to your current location when the device is polled and you are inside it. 
+- The stationary zone is created when iCloud3 starts (or is restarted) and is located 1km north of the Home Zone location. There may be times when this conflicts with your normal driving route and you find yourself going in and out of the stationary zone. You can change it's initial location with the `stationary_zone_offset` configuration parameter.
+- The zone center is relocated to your current location when the device is polled and you are inside it. 
 - You must be at least 2.5 times the Home zone radius before you can be put into a stationary zone.
 - The Stationary Zone radius is 2 times the Home zone radius. The radius is reset to 10m when the device exits the Stationary Zone. It will be expanded when the device moves back into a new Stationary Zone at the same or a different location.
 - If your distance from a zone (Home) is less than 4 times the zone's radius and you haven't moved for one-half of the `stationary_still_time` (4-minutes if using the default value), you will be put into the Stationary Zone. Normally, the polling interval will be 15-seconds at this distance. This reduces the number of polls if you are close to but not in a zone and are not moving.

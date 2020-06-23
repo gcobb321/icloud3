@@ -1,6 +1,10 @@
 # Special Thanks
 
+I want to thank several people for their efforts in developing the supporting code used by iCloud3.
 
-I want to thank Walt Howd, (iCloud2 fame) who inspired me to tackle this project. I also want to give a shout out to Kovács Bálint, Budapest, Hungary who wrote the Python WazeRouteCalculator and some awesome HA guys (Petro31, scop, tsvi, troykellt, balloob, Myrddyn1, mountainsandcode,  diraimondo, fabaff, squirtbrnr, and mhhbob) who gave me the idea of using Waze in iCloud3.
+* A special shout out goes to Quentame in Lyon, France. He has taken over support for the program (pyicloud.py) used to interface the HA iCloud with Apples iCloud Web Services. This is the basis for the customized version used by iCloud3 (pyicloud_ic3.py)
+* Another special thanks goes to Z Zeleznick at Berekley for developing the pyicloud.py Find-my-Friends add-on that is incorporated into the customized version (pyicloud_ic3.py) used by iCloud3.
+* And I can not forget Kovács Bálint, Budapest, Hungary who wrote the Python WazeRouteCalculator
 
 `Gary Cobb, aka GeeksterGary`
+
