@@ -1,5 +1,16 @@
 ## iCloud3 Version 2.2.0 - Release Candidate Change Log
 
+
+
+#### Release Candidate 8 (6/25/2020)
+
+- Added checks to make make sure the initial stationary zone would not be selected when entering a zone.
+
+- Changed the location of the Stationary Zone back to it's base location when it is Exited rather than keeping it at it's current location, hiding it and reducing it's size.
+
+- Fixed a problem where the Stationary Zone not was being relocated before the device's distance and polling calculations were done. This lead to selecting the Stationary Zone in error when it had really been exited from.
+- Adjusted some column sizes on the Event Log.
+
 #### Release Candidate 7 (6/23/2020)
 
 - If iCloud did not return device data for a device being tracked when iCloud3 is being initialized, the iCloud account will be reauthenticated, the iCloud device will be requested again. and the devices will be reverified. If a device (devicename) is still not found, an iCloud Error will be generated and the devicename will not be tracked.

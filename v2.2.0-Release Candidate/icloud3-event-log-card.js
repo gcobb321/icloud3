@@ -12,7 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.01 (6/12/2020)
+//  Version=2.2.0.02 (6/25/2020)
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -246,15 +246,17 @@ class iCloud3EventLogCard extends HTMLElement {
                 position: sticky;
                 table-layout: fixed;
                 display: block;
-                height: 14px;
-                padding: 2px 0px 4px 0px;
+                height: 16px;
+                padding: 0px 0px 3px 0px;
                 background-color: #d8ecf3;
                 border-collapse: collapse;
                 border-top: 1px solid #9dd3e2;
                 border-bottom: 1px solid #9dd3e2;;
             }
+
             .eltHeader tr {
                 display: block;
+
             }
             .eltBody {
                 display: block;
@@ -274,6 +276,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .eltBody tr:nth-child(odd) {background-color: white;}
             .eltBody tr:nth-child(even) {background-color: #F2F2F2;}
 
+            /* Browser Text */
             .colTime            {width: 64px; color: darkgray; vertical-align: text-top;}
             .colState           {width: 90px; color: darkgray;}
             .colZone            {width: 90px; color: darkgray;}
@@ -282,6 +285,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .colDistance        {width: 60px; color: darkgray;}
             .colText            {color: black}
 
+            /* Browser Header */
             .hdrTime            {width: 66px; text-align: left; color: black;}
             .hdrState           {width: 90px; text-align: left; color: black;}
             .hdrZone            {width: 93px; text-align: left; color: black;}
@@ -289,15 +293,15 @@ class iCloud3EventLogCard extends HTMLElement {
             .hdrTravTime        {width: 62px; text-align: left; color: black;}
             .hdrDistance        {width: 60px; text-align: left; color: black;}
 
-            /* iPad (w=375, h=724)  */
-            .hdriPadTime        {width: 68px; text-align: left; color: black;}
-            .hdriPadState       {width: 96px; text-align: left; color: black;}
-            .hdriPadZone        {width: 96px; text-align: left; color: black;}
-            .hdriPadInterval    {width: 67px; text-align: left; color: black;}
-            .hdriPadTravTime    {width: 64px; text-align: left; color: black;}
-            .hdriPadDistance    {width: 59px; text-align: left; color: black;}
+            /* iPad Header - Portrait (w=724, h=375)  */
+            .hdriPadPTime        {width: 68px; text-align: left; color: black;}
+            .hdriPadPState       {width: 96px; text-align: left; color: black;}
+            .hdriPadPZone        {width: 96px; text-align: left; color: black;}
+            .hdriPadPInterval    {width: 67px; text-align: left; color: black;}
+            .hdriPadPTravTime    {width: 64px; text-align: left; color: black;}
+            .hdriPadPDistance    {width: 59px; text-align: left; color: black;}
 
-            /* iPad (w=724, h=375)  */
+            /* iPad Header - Landscape (w=724, h=375)  */
             .hdriPadLTime        {width: 68px; text-align: left; color: black;}
             .hdriPadLState       {width: 96px; text-align: left; color: black;}
             .hdriPadLZone        {width: 96px; text-align: left; color: black;}
@@ -305,7 +309,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .hdriPadLTravTime    {width: 64px; text-align: left; color: black;}
             .hdriPadLDistance    {width: 59px; text-align: left; color: black;}
 
-            /* iPhone Portrait (w=375, h=768) */
+            /* iPhone Header - Portrait (w=375, h=768) */
             .hdriPhonePTime      {width: 71px; text-align: left; color: black;}
             .hdriPhonePState     {width: 75px; text-align: left; color: black;}
             .hdriPhonePZone      {width: 71px; text-align: left; color: black;}
@@ -313,7 +317,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .hdriPhonePTravTime  {width: 41px; text-align: left; color: black;}
             .hdriPhonePDistance  {width: 42px; text-align: left; color: black;}
 
-            /* iPhone Portrait (w=375, h=768) */
+            /* iPhone Text - Portrait (w=375, h=768) */
             .coliPhonePTime      {width: 66px; color: darkgray; vertical-align: text-top;}
             .coliPhonePState     {width: 57px; color: darkgray;}
             .coliPhonePZone      {width: 57px; color: darkgray;}
@@ -322,7 +326,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .coliPhonePDistance  {width: 31px; color: darkgray;}
             .coliPhonePText      {color: black}
 
-            /* iPhone Landscape (w=724, h=375)  */
+            /* iPhone Header - Landscape (w=724, h=375)  */
             .hdriPhoneLTime      {width: 76px; text-align: left; color: black;}
             .hdriPhoneLState     {width: 99px; text-align: left; color: black;}
             .hdriPhoneLZone      {width: 99px; text-align: left; color: black;}
@@ -360,7 +364,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .event              {colspan: 5;}
 
             .updateRecdHdr      {color: white; background-color: dodgerblue; font-weight: 450;
-                                 border-left: 4px solid dodgerblue;}
+                                 border-left: 4px solid dodgerblue; border-bottom: 1px solid white;}
             .updateEdgeBar      {border-left: 4px solid dodgerblue;}
             .stageRecdHdr       {color: white; background-color: mediumorchid; font-weight: 450;
                                  border-top: 1px solid white; border-bottom: 1px solid white;}
@@ -643,15 +647,25 @@ class iCloud3EventLogCard extends HTMLElement {
         var iPhoneP = false
         var iPhoneL = false
         var iPad    = false
+        var iPadP   = false
+        var iPadL   = false
         var deviceWidth = window.innerWidth
         var deviceHeight = window.innerHeight
 
         const userAgentStr = navigator.userAgent
         var userAgent = userAgentStr.indexOf("Alamofire")
         if (userAgent > 0) {
-            if (deviceWidth < 400 && deviceHeight < 800) {iPhoneP = true}
-            if (deviceWidth < 800 && deviceHeight < 400) {iPhoneL = true}
-            if (deviceWidth < 850 && deviceHeight > 800) {iPad    = true}
+            if (deviceWidth < 400 && deviceHeight < 800) {
+                iPhoneP = true
+            } else if (deviceWidth < 800 && deviceHeight < 400) {
+                iPhoneL = true
+            } else if (deviceWidth < 850 && deviceHeight > 800) {
+                iPad    = true
+                iPadP   = true
+            } else if (deviceWidth > 800 && deviceHeight < 850) {
+                iPad    = true
+                iPadL   = true
+            }
         }
 
         let logTableHeadHTML = ''
@@ -671,13 +685,20 @@ class iCloud3EventLogCard extends HTMLElement {
             logTableHeadHTML += '<th class="hdriPhoneLInterval">Interval</th>'
             logTableHeadHTML += '<th class="hdriPhoneLTravTime">Travel</th>'
             logTableHeadHTML += '<th class="hdriPhoneLDistance">Distance</th>'
-        } else if (iPad) {
-            logTableHeadHTML += '<th class="hdriPadTime">Time</th>'
-            logTableHeadHTML += '<th class="hdriPadState">iOSApp State</th>'
-            logTableHeadHTML += '<th class="hdriPadZone">iC3 Zone</th>'
-            logTableHeadHTML += '<th class="hdriPadInterval">Interval</th>'
-            logTableHeadHTML += '<th class="hdriPadTravTime">Travel</th>'
-            logTableHeadHTML += '<th class="hdriPadDistance">Distance</th>'
+        } else if (iPadP) {
+            logTableHeadHTML += '<th class="hdriPadPTime">Time</th>'
+            logTableHeadHTML += '<th class="hdriPadPState">iOSApp State</th>'
+            logTableHeadHTML += '<th class="hdriPadPZone">iC3 Zone</th>'
+            logTableHeadHTML += '<th class="hdriPadPInterval">Interval</th>'
+            logTableHeadHTML += '<th class="hdriPadPTravTime">Travel</th>'
+            logTableHeadHTML += '<th class="hdriPadPDistance">Distance</th>'
+        } else if (iPadL) {
+            logTableHeadHTML += '<th class="hdriPadLTime">Time</th>'
+            logTableHeadHTML += '<th class="hdriPadLState">iOSApp State</th>'
+            logTableHeadHTML += '<th class="hdriPadLZone">iC3 Zone</th>'
+            logTableHeadHTML += '<th class="hdriPadLInterval">Interval</th>'
+            logTableHeadHTML += '<th class="hdriPadLTravTime">Travel</th>'
+            logTableHeadHTML += '<th class="hdriPadLDistance">Distance</th>'
         } else {
             logTableHeadHTML += '<th class="hdrTime">Time</th>'
             logTableHeadHTML += '<th class="hdrState">iOSApp State</th>'
