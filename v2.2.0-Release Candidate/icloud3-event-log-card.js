@@ -12,7 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.02 (6/25/2020)
+//  Version=2.2.0.03 (7/9/2020)
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -345,18 +345,18 @@ class iCloud3EventLogCard extends HTMLElement {
 
             .rowBorder          {border-left: 2px solid cyan;}
 
-             // Text special colors
+             /* Text special colors */
             .iosappRecd         {color: teal;}
             .errorMsg           {color: red; border-left: 2px solid red;}
             .warningMsg         {color: green;}
 
-            //DarkGoldenRod, Fushia, DeepPink, OrangeRed, #e600e6 (Purpleish), MediumVioletRed
-            .note1              {color: MediumVioletRed; border-left: 2px solid MediumVioletRed;}
-            .note2              {color: DodgerBlue;      border-left: 2px solid DodgerBlue;}
-            .note3              {color: DarkGoldenRod;   border-left: 2px solid DarkGoldenRod;}
-            .star1              {color: #e600e6;         border-left: 2px solid #e600e6;}
-            .star2              {color: Fushia;          border-left: 2px solid Fushia;}
-            .star3              {color: OrangeRed;       border-left: 2px solid OrangeRed;}
+            /* DarkGoldenRod, Fushia, DeepPink, OrangeRed, #e600e6 (Purpleish), MediumVioletRed*/
+            .star1              {color: Purple;     border-left: 2px solid Purple;}
+            .star2              {color: BlueViolet; border-left: 2px solid BlueViolet;}
+            .star3              {color: OrangeRed;  border-left: 2px solid OrangeRed;}
+            .dollar1            {color: SeaGreen;   border-left: 2px solid SeaGreen;}
+            .dollar2            {color: DodgerBlue; border-left: 2px solid DodgerBlue;}
+            .dollar3            {color: Blue;       border-left: 2px solid RoyalBlue;}
 
 
             .trigger            {color: black; font-weight: 300;}
@@ -873,13 +873,13 @@ class iCloud3EventLogCard extends HTMLElement {
                 var classSpecialTextColor = ''
                 var specialColorFlag = true
                 if (tText.startsWith("$$$")) {
-                    classSpecialTextColor = ' note3'
+                    classSpecialTextColor = ' dollar3'
                     tText = tText.slice(3)
                 } else if (tText.startsWith("$$")) {
-                    classSpecialTextColor = ' note2'
+                    classSpecialTextColor = ' dollar2'
                     tText = tText.slice(2)
                 } else if (tText.startsWith("$")) {
-                    classSpecialTextColor = ' note1'
+                    classSpecialTextColor = ' dollar1'
                     tText = tText.slice(1)
                 } else if (tText.startsWith("***")) {
                     classSpecialTextColor = ' star3'
@@ -1004,7 +1004,6 @@ class iCloud3EventLogCard extends HTMLElement {
                     logTableHTML += '</tr>'
                     ++row
                 }
-
                 //Display Text Row
                 classTime = classTime.replace("highlightRow", "")
                 classTime = classTime.replace("highlightItem", "")
