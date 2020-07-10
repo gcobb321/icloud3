@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc9'
+VERSION = '2.2.0rc9a'
 
 '''
 rc9
@@ -290,7 +290,8 @@ TRACE_ATTRS_BASE = {
         }
 
 TRACE_ICLOUD_ATTRS_BASE = {
-        CONF_NAME: '', ATTR_ICLOUD_DEVICE_STATUS: '',
+        CONF_NAME: '', 
+        ATTR_ICLOUD_DEVICE_STATUS: '',
         ATTR_ISOLD: False,
         ATTR_LATITUDE: 0,
         ATTR_LONGITUDE: 0,
@@ -1039,6 +1040,7 @@ class Icloud3:#(DeviceScanner):
             self.start_icloud3_request_flag   = False
             self.startup_log_msgs             = ''
             self.startup_log_msgs_prefix      = ''
+            devicename = ''
 
             self._initialize_um_formats(self.unit_of_measurement)
             self._define_device_fields()
@@ -1055,12 +1057,17 @@ class Icloud3:#(DeviceScanner):
             self.startup_log_msgs_prefix = NEW_LINE
             event_msg = (f"Stage 1 > Prepare iCloud3 for {self.username}")
             self._save_event_halog_info("*", event_msg)
-
+            
+            self._display_info_status_msg(devicename, "Loading conf_ic3.yaml", self.start_icloud3_initial_load_flag)
             self._check_config_ic3_yaml_parameter_file()
             self._check_ic3_event_log_file_version()
+            
+            self._display_info_status_msg(devicename, "Loading Zones", self.start_icloud3_initial_load_flag)
             self._initialize_zone_tables()
             self._define_stationary_zone_fields(self.stationary_inzone_interval_str,
                         self.stationary_still_time_str)
+                        
+            self._display_info_status_msg(devicename, "Initializing Waze Route Tracker", self.start_icloud3_initial_load_flag)
             self._initialize_waze_fields(self.waze_region, self.waze_min_distance,
                         self.waze_max_distance, self.waze_realtime)
 
@@ -1079,6 +1086,7 @@ class Icloud3:#(DeviceScanner):
             self._save_event_halog_info("*", event_msg)
 
             if self.TRK_METHOD_FMF_FAMSHR:
+                self._display_info_status_msg(devicename, "Authenticating iCloud Account", self.start_icloud3_initial_load_flag)
                 self._initialize_pyicloud_device_api()
 
             self.this_update_secs     = self._time_now_secs()
@@ -1087,6 +1095,7 @@ class Icloud3:#(DeviceScanner):
             self._setup_tracked_devices_config_parm(self.track_devices)
             self._define_sensor_fields(self.start_icloud3_initial_load_flag)
 
+            self._display_info_status_msg(devicename, "Setting up Tracked Devices", self.start_icloud3_initial_load_flag)
             if self.TRK_METHOD_FMF:
                 self._setup_tracked_devices_for_fmf()
 
@@ -1564,14 +1573,14 @@ class Icloud3:#(DeviceScanner):
                                     f"Zone-{ic3dev_state}")
                     self._save_event(devicename, event_msg)
 
-                elif (self.stat_zone_timer.get(devicename, 0) > 0
-                        and self.this_update_secs >= self.stat_zone_timer.get(devicename)):
-                    event_msg = (f"Move into Stationary Zone Timer reached > {devicename}, "
-                                 f"Expired-{self._secs_to_time(self.stat_zone_timer.get(devicename, -1))}")
-                    self._save_event(devicename, event_msg)
+                #elif (self.stat_zone_timer.get(devicename, 0) > 0
+                 #       and self.this_update_secs >= self.stat_zone_timer.get(devicename)):
+                 #   event_msg = (f"Move into Stationary Zone Timer reached > {devicename}, "
+                #                 f"Expired-{self._secs_to_time(self.stat_zone_timer.get(devicename, -1))}")
+                 #   self._save_event(devicename, event_msg)
 
-                    update_method  = IOSAPP_UPDATE
-                    ic3dev_trigger = update_reason = "MoveIntoStatZone"
+                #    update_method  = IOSAPP_UPDATE
+                 #   ic3dev_trigger = update_reason = "MoveIntoStatZone"
 
                 #The state can be changed via device_tracker.see service call
                 #with a different location_name in an automation or by an
@@ -1657,7 +1666,6 @@ class Icloud3:#(DeviceScanner):
 
                         #If old location, discard
                         old_loc_poor_gps_flag = True
-                        self.old_loc_poor_gps_cnt[devicename] = 133
                         if old_loc_poor_gps_flag:
                             location_age = self._secs_since(ic3dev_timestamp_secs)
                             event_msg = (f"Update via iCloud > Old location or poor GPS "
@@ -1679,7 +1687,7 @@ class Icloud3:#(DeviceScanner):
                             #    self.old_loc_poor_gps_cnt[devicename] = 0
 
                             #else:
-                            self._save_event_info(devicename, event_msg)
+                            self._save_event(devicename, event_msg)
                             update_method     = ICLOUD_UPDATE
                             ios_update_reason = "OldLocPoorGPS"
 
@@ -2383,7 +2391,8 @@ class Icloud3:#(DeviceScanner):
                 elif do_not_update_flag:
                     pass
 
-                elif device_status != "" and instr(self.device_status_online, device_status) == False:
+                #elif device_status != "" and instr(self.device_status_online, device_status) == False:
+                elif device_status not in ["online", "pending", ""]:
                     do_not_update_flag = True
                     info_msg = "DEVICE OFFLINE"
                     self._determine_interval_retry_after_error(
@@ -3510,7 +3519,7 @@ class Icloud3:#(DeviceScanner):
         devicename_zone = self._format_devicename_zone(devicename)
 
         try:
-            if device_status in ["online" "pending"]:
+            if device_status in ["online", "pending", ""]:
                 interval = self._get_interval_for_error_retry_cnt(retry_cnt)
             else:
                 interval = 900
@@ -3938,18 +3947,18 @@ class Icloud3:#(DeviceScanner):
                     stat_zone_timer_left       = self.stat_zone_timer.get(devicename) - self.this_update_secs
                     stat_zone_timer_close_left = stat_zone_timer_left - self.stat_zone_still_time/2
 
-                    log_msg = (f"STATIONARY ZONE, Small movement check, "
+                    log_msg = (f"Stat Zone Movement > "
                         f"TotalMoved-{self.stat_zone_moved_total.get(devicename)}, "
                         f"Timer-{self._secs_to_time(self.stat_zone_timer.get(devicename))}, "
-                        f"TimerLeft-{stat_zone_timer_left}, "
-                        f"thisSecs-{self.this_update_secs}::{self.stat_zone_timer.get(devicename)}, "
-                        f"ThisSecssGTTimetTest-{self.this_update_secs > self.stat_zone_timer.get(devicename)}! "
-                        f"CloseTimerLeft-{stat_zone_timer_close_left}, "
+                        f"TimerLeft-{stat_zone_timer_left} secs, "
+                        f"TimerExpired?-{stat_zone_timer_left <= 0}, "
+                        f"TimerExpired?-{self.this_update_secs > self.stat_zone_timer.get(devicename)}")
+                    self._evlog_debug_msg(devicename, log_msg)
+                    log_msg += (f"CloseTimerLeft-{stat_zone_timer_close_left}, "
                         f"SmallDistOK-{self.stat_zone_moved_total.get(devicename) <= self.stat_dist_move_limit}, "
                         f"DistFmZone-{dist_from_zone_km}, "
                         f"CloseDist-{self.zone_radius_km.get(self.base_zone)*4}")
-                    self._log_debug_interval_msg(devicename, log_msg)
-                    self._evlog_debug_msg(devicename, log_msg)
+                    self._log_debug_msg(devicename, log_msg)
                     section = "CheckNowinzone_stationary"
 
                     #See if moved less than the stationary zone movement limit
@@ -5101,7 +5110,7 @@ class Icloud3:#(DeviceScanner):
         return info_msg
 
 #--------------------------------------------------------------------
-    def _display_info_status_msg(self, devicename_zone, info_msg):
+    def _display_info_status_msg(self, devicename_zone, info_msg, start_icloud3_initial_load_flag=False):
         '''
         Display a status message in the info sensor. If the devicename_zone
         parameter contains the base one (devicename:zone), display only for that
@@ -5109,9 +5118,14 @@ class Icloud3:#(DeviceScanner):
         the devicename.
         '''
         try:
+            if start_icloud3_initial_load_flag:
+                return
+
             save_base_zone = self.base_zone
 
-            #if devicename_zone.find(':') >= 0:
+            if devicename_zone == "":
+                devicename_zone = self.track_from_zone[0]
+                
             if instr(devicename_zone, ':'):
                 devicename = devicename_zone.split(':')[0]
                 devicename_zone_list = [devicename_zone.split(':')[1]]
@@ -5119,11 +5133,15 @@ class Icloud3:#(DeviceScanner):
                 devicename = devicename_zone
                 devicename_zone_list = self.track_from_zone.get(devicename)
 
-            elapsed_time = f"+{round(time.time()-self.start_timer, 2)} sec"
+            #if self.start_icloud3_inprocess_flag:
+            #    elapsed_time = f" (+{round(time.time()-self.start_timer, 1)} sec)"
+            #else:
+            elapsed_time = ""
+             #db   
             for zone in devicename_zone_list:
                 self.base_zone = zone
                 attrs = {}
-                attrs[ATTR_INFO] = f"●● {info_msg} ({elapsed_time}) ●●"
+                attrs[ATTR_INFO] = f"●● {info_msg}{elapsed_time} ●●"
                 self._update_device_sensors(devicename, attrs)
 
         except:
@@ -8507,6 +8525,9 @@ class Icloud3:#(DeviceScanner):
 
         #System level commands
         if arg_command_cmd == 'restart':
+            self._start_icloud3()
+            return
+   
             if self.tracked_devices == []:
                 self._start_icloud3()
             elif self.start_icloud3_inprocess_flag is False:
