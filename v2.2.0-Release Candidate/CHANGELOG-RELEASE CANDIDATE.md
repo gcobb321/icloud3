@@ -1,5 +1,17 @@
 ## iCloud3 Version 2.2.0 - Release Candidate Change Log
 
+#### Release Candidate 9b (7/11/2020)
+[Programs changed: *device_tracker.py*]
+
+- Update reason was sometimes not displayed on messages
+- Added back Moving into Stationary Zone time check to use iCloud update rather that the iOS App update routines. This will recheck any movement and retest moving into the Stationary Zone.
+- When selecting the zone, the Stationary Zone is now bypassed if it is set to it's base location (radius = 1m)
+- Fixed a problem where an update was discarded if the it was trigged by a state or trigger change and the Location was old or the gps was poor. It should have verified the location using iCloud and it was not. This could cause Region Enter/Exit triggers to be delayed until the next update time was reached.
+- Fixed the old location/poor gps accuracy test in the main polling loop..
+- Removed debug code left in by mistake when testing the old location/poor gps accuracy value. The debug code always returned True and would fill the HA log file and Event Log with incorrect Discarded messages when it shouldn't have.
+- Changed the formatting of Old Location/Poor GPS Accuracy messages.
+- Change the formatting of the GPS Location in the Event Log to show the GPS Accuracy value. <br>Example: GPS-(27.4343, -84.343434)/65m) where the accuracy is 65m
+
 #### Release Candidate 9 (7/9/2020)
 
 [Programs changed: *device_tracker.py, icloud3-event-log-card.js*]
