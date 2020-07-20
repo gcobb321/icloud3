@@ -4,6 +4,18 @@
 
 
 
+#### Installation Instructions
+
+Download the programs that have been changed into the `\config\custom_components\icloud3`directory on the device running Home Assistant. When iCloud3 starts, the *icloud3-event-log-card.js* file will be copied to the `\config\www\custom_cards` directory (or the directory you have specified on the *event_log_card_directory* configuration file parameter).
+
+
+
+If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
+
+------
+
+
+
 #### Release Candidate 10 (7/20/2020)
 
 [Programs changed: *device_tracker.py, icloud3-event-log-card.js*]
