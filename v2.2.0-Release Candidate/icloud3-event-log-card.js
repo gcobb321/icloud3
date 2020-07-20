@@ -12,18 +12,18 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.03 (7/9/2020)
+//  Version=2.2.0.04 (7/20/2020)
 //
 /////////////////////////////////////////////////////////////////////////////
 
 class iCloud3EventLogCard extends HTMLElement {
-
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
     }
-//---------------------------------------------------------------------------
-     setConfig(config) {
+    //---------------------------------------------------------------------------
+    setConfig(config) {
+        const version   = "2.2.0.04"
         const cardTitle = "iCloud3 Event Log"
 
         const root = this.shadowRoot;
@@ -44,6 +44,9 @@ class iCloud3EventLogCard extends HTMLElement {
         thisButtonId.id = "thisButtonId";
         thisButtonId.innerText = "setup";
         thisButtonId.style.setProperty('color', 'white');
+        const versionText = document.createElement("div");
+        versionText.id = "version";
+        versionText.textContent = 'v' + version
 
         // Button Bar
         const buttonBody = document.createElement("body");
@@ -60,66 +63,154 @@ class iCloud3EventLogCard extends HTMLElement {
         buttonBar1.class = "buttonBarBot";
         buttonBar1.style.setProperty('visibility', 'hidden');
 
-
-        // Buttons
+        // Name Buttons
         const btnName0     = document.createElement('btnName');
         btnName0.id        = "btnName0";
-        btnName0.classList.add("btnClassSelect");
+        btnName0.classList.add("btnBaseFormat");
         btnName0.style.setProperty('visibility', 'hidden');
         const btnName1     = document.createElement('btnName');
         btnName1.id        = "btnName1";
-        btnName1.classList.add("btnClassSelect");
+        btnName1.classList.add("btnBaseFormat");
         btnName1.style.setProperty('visibility', 'hidden');
         const btnName2     = document.createElement('btnName');
         btnName2.id        = "btnName2";
-        btnName2.classList.add("btnClassSelect");
+        btnName2.classList.add("btnBaseFormat");
         btnName2.style.setProperty('visibility', 'hidden');
         const btnName3     = document.createElement('btnName');
         btnName3.id        = "btnName3";
-        btnName3.classList.add("btnClassSelect");
+        btnName3.classList.add("btnBaseFormat");
         btnName3.style.setProperty('visibility', 'hidden');
         const btnName4     = document.createElement('btnName');
         btnName4.id        = "btnName4";
-        btnName4.classList.add("btnClassSelect");
+        btnName4.classList.add("btnBaseFormat");
         btnName4.style.setProperty('visibility', 'hidden');
         const btnName5     = document.createElement('btnName');
         btnName5.id        = "btnName5";
-        btnName5.classList.add("btnClassSelect");
+        btnName5.classList.add("btnBaseFormat");
         btnName5.style.setProperty('visibility', 'hidden');
         const btnName6     = document.createElement('btnName');
         btnName6.id        = "btnName6";
-        btnName6.classList.add("btnClassSelect");
+        btnName6.classList.add("btnBaseFormat");
         btnName6.style.setProperty('visibility', 'hidden');
         const btnName7     = document.createElement('btnName');
         btnName7.id        = "btnName7";
-        btnName7.classList.add("btnClassSelect");
+        btnName7.classList.add("btnBaseFormat");
         btnName7.style.setProperty('visibility', 'hidden');
         const btnName8     = document.createElement('btnName');
         btnName8.id        = "btnName8";
-        btnName8.classList.add("btnClassSelect");
+        btnName8.classList.add("btnBaseFormat");
         btnName8.style.setProperty('visibility', 'hidden');
         const btnName9     = document.createElement('btnName');
         btnName9.id        = "btnName9";
-        btnName9.classList.add("btnClassSelect");
+        btnName9.classList.add("btnBaseFormat");
         btnName9.style.setProperty('visibility', 'hidden');
 
-        const btnRestart = document.createElement('btnName');
-        btnRestart.id    = "btnRestart";
-        btnRestart.style.setProperty('visibility', 'visible');
-        btnRestart.classList.add("btnClassSelect");
-        btnRestart.classList.add("btnClassCmd");
+        /* Action Select Box */
+        const btnAction = document.createElement('select');
+        btnAction.id    = "btnAction";
+        btnAction.style.setProperty('visibility', 'visible');
+        btnAction.setDefault;
+        btnAction.classList.add("btnBaseFormat");
+        btnAction.classList.add("btnAction");
 
-        const btnDebug = document.createElement('btnName');
-        btnDebug.id    = "btnDebug";
-        btnDebug.classList.add("btnClassSelect");
-        btnDebug.classList.add("btnClassCmd");
-        btnDebug.style.setProperty('visibility', 'visible');
+        var btnActionOptA    = document.createElement("option");
+        var btnActionOptATxt = document.createTextNode("Actions");
+        btnActionOptA.setAttribute("value", "action");
+        btnActionOptA.setAttribute("id", "optAction");
+        btnActionOptA.classList.add("btnActionOptionTransparent");
+        btnActionOptA.appendChild(btnActionOptATxt);
+        btnAction.appendChild(btnActionOptA);
 
+        var btnActionOptG = document.createElement("optGroup");
+        btnActionOptG.setAttribute("label", "——— Global Actions ———");
+        btnActionOptG.classList.add("btnActionOptionGroup");
+        btnAction.appendChild(btnActionOptG);
+
+        var btnActionOptG1    = document.createElement("option");
+        var btnActionOptG1Txt = document.createTextNode("Restart iCloud3");
+        btnActionOptG1.setAttribute("value", "restart");
+        btnActionOptG1.classList.add("btnActionOption");
+        btnActionOptG1.appendChild(btnActionOptG1Txt);
+        btnAction.appendChild(btnActionOptG1);
+
+        var btnActionOptG2    = document.createElement("option");
+        var btnActionOptG2Txt = document.createTextNode("Pause Polling");
+        btnActionOptG2.setAttribute("value", "pause");
+        btnActionOptG2.classList.add("btnActionOption");
+        btnActionOptG2.appendChild(btnActionOptG2Txt);
+        btnAction.appendChild(btnActionOptG2);
+
+        var btnActionOptG3    = document.createElement("option");
+        var btnActionOptG3Txt = document.createTextNode("Resume Polling");
+        btnActionOptG3.setAttribute("value", "resume");
+        btnActionOptG3.classList.add("btnActionOption");
+        btnActionOptG3.appendChild(btnActionOptG3Txt);
+        btnAction.appendChild(btnActionOptG3);
+
+        var btnActionOptG7    = document.createElement("option");
+        var btnActionOptG7Txt = document.createTextNode("Request iOS App Locations");
+        btnActionOptG7.setAttribute("value", "location");
+        btnActionOptG7.classList.add("btnActionOption");
+        btnActionOptG7.appendChild(btnActionOptG7Txt);
+        btnAction.appendChild(btnActionOptG7);
+
+        var btnActionOptG4    = document.createElement("option");
+        var btnActionOptG4Txt = document.createTextNode("Show Event Log Tracking Details");
+        btnActionOptG4.setAttribute("value", "dev-log_level: eventlog");
+        btnActionOptG4.setAttribute("id", "optEvlog");
+        btnActionOptG4.classList.add("btnActionOption");
+        btnActionOptG4.appendChild(btnActionOptG4Txt);
+        btnAction.appendChild(btnActionOptG4);
+
+        var btnActionOptG5    = document.createElement("option");
+        var btnActionOptG5Txt = document.createTextNode("Export Event Log");
+        btnActionOptG5.setAttribute("value", "dev-export_event_log");
+        btnActionOptG5.classList.add("btnActionOption");
+        btnActionOptG5.appendChild(btnActionOptG5Txt);
+        btnAction.appendChild(btnActionOptG5);
+
+        var btnActionOptG6    = document.createElement("option");
+        var btnActionOptG6Txt = document.createTextNode("Start HA Debug Logging");
+        btnActionOptG6.setAttribute("value", "dev-log_level: debug");
+        btnActionOptG6.setAttribute("id", "optHalog");
+        btnActionOptG6.classList.add("btnActionOption");
+        btnActionOptG6.appendChild(btnActionOptG6Txt);
+        btnAction.appendChild(btnActionOptG6);
+
+        //---------------------------------------------------------
+        var btnActionOptD = document.createElement("optGroup");
+        btnActionOptD.setAttribute("label", "——— Device Actions ———");
+        btnActionOptD.classList.add("btnActionOptionGroup");
+        btnAction.appendChild(btnActionOptD);
+
+        var btnActionOptD1    = document.createElement("option");
+        var btnActionOptD1Txt = document.createTextNode("Pause Polling");
+        btnActionOptD1.setAttribute("value", "dev-pause");
+        btnActionOptD1.classList.add("btnActionOption");
+        btnActionOptD1.appendChild(btnActionOptD1Txt);
+        btnAction.appendChild(btnActionOptD1);
+
+        var btnActionOptD2    = document.createElement("option");
+        var btnActionOptD2Txt = document.createTextNode("Resume Polling");
+        btnActionOptD2.setAttribute("value", "dev-resume");
+        btnActionOptD2.classList.add("btnActionOption");
+        btnActionOptD2.appendChild(btnActionOptD2Txt);
+        btnAction.appendChild(btnActionOptD2);
+
+        var btnActionOptD3    = document.createElement("option");
+        var btnActionOptD3Txt = document.createTextNode("Request iOS App Location");
+        btnActionOptD3.setAttribute("value", "dev-location");
+        btnActionOptD3.classList.add("btnActionOption");
+        btnActionOptD3.appendChild(btnActionOptD3Txt);
+        btnAction.appendChild(btnActionOptD3);
+
+        //-------------------------------------------------------------
         const btnRefresh = document.createElement('btnName');
         btnRefresh.id    = "btnRefresh";
-        btnRefresh.classList.add("btnClassSelect");
-        btnRefresh.classList.add("btnClassCmdRefresh");
+        btnRefresh.classList.add("btnBaseFormat");
+        btnRefresh.classList.add("btnRefresh");
         btnRefresh.style.setProperty('visibility', 'visible');
+        btnRefresh.innerText = "Refresh";
 
         // Message Bar
         const eltInfoBar = document.createElement("div");
@@ -148,8 +239,6 @@ class iCloud3EventLogCard extends HTMLElement {
                 position: relative;
                 height: 680px;
             }
-            //    670px;
-            //}
 
             /* Title Bar set up */
             #titleBar {
@@ -176,9 +265,15 @@ class iCloud3EventLogCard extends HTMLElement {
                 height: 100%;
                 width: 10%;
                 margin: 0px 0px 0px 0px;
-                color: green;
+                color: white;
                 font-size: 10px;
                 //border: 1px solid green;
+            }
+            #version    {
+                width: 10%;
+                color: lightgray;
+                float: right;
+                margin: -32px 12px 0px 0px;
             }
 
             /* Message Bar setup */
@@ -192,7 +287,7 @@ class iCloud3EventLogCard extends HTMLElement {
             #eltInfoName {
                 height: 18px;
                 width: 40%;
-                color: indianred;
+                color: darkred;
                 float: left;
                 font-size: 14px;
                 font-weight: 400;
@@ -201,8 +296,7 @@ class iCloud3EventLogCard extends HTMLElement {
             #eltInfoUpdateTime {
                 height: 18px;
                 width: 60%;
-                //padding: 0px 6px 0px 0px;
-                color: indianred;
+                color: darkred;
                 float: right;
                 text-align: right;
                 font-size: 14px;
@@ -403,27 +497,68 @@ class iCloud3EventLogCard extends HTMLElement {
             .buttonBarBot       {position: relative; height: 25px; margin: 8px 0px 8px 0px;
                                  width: 100%; border: 1px solid green;}
 
-            .btnClassSelect {
+            .btnBaseFormat {
                 display: inline-block;
                 padding: 2px 4px;
                 border: 1px solid #0080F0;
                 background-color: transparent;
+                border-radius: 3px;
                 margin: 0px 4px 4px 0px;
-                border-radius: 2px;
                 box-sizing: border-box;
                 text-decoration: none;
                 text-align: center;
-                font-weight: 500;
+                font-weight: bolder;
                 color: #0080F0;
                 text-align: center;
             }
-            .btnClassCmd        {color: darkred;   border: 1px solid darkred;}
-            .btnClassCmdRefresh {color: darkgreen; border: 1px solid darkgreen;}
-            #btnDebug           {color: darkred;   border: 1px solid darkred; background-color: transparent;}
-            #btnRestart         {color: darkred;   border: 1px solid darkred; background-color: transparent;}
+
+            /* Refresh Select Button */
+            .btnRefresh         {color: darkgreen; border: 1px solid darkgreen;}
             #btnRefresh         {color: darkgreen; border: 1px solid darkgreen; background-color: transparent;}
 
+            /* Action Select Button */
+            #btnAction          {color: darkred;   border: 1px solid darkred; background-color: transparent;}
+            .btnAction {
+                height: 26px;
+                width: 85px;
+                font-size: 14px;
+                font-weight: bolder;
+                /*border: 1px solid white;*/
+                border-radius: 3px;
+                margin: 0px 4px 4px 0px;
+                overflow: hidden;
+                background: transparent;
 
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                transition: color 0.3s ease, background-color 0.3s ease, border-bottom-color 0.3s ease;
+
+                background-image:
+                    linear-gradient(darkred, darkred),
+                    linear-gradient(darkred 40%, transparent 35%),
+                    linear-gradient(-135deg, transparent 58%, darkred 50%),
+                    linear-gradient(-225deg, transparent 58%, darkred 50%);
+                background-size: 1px 100%, 22px 26px, 22px 26px, 22px 100%;
+                background-repeat: no-repeat;
+                background-position: right 20px center, right bottom, right bottom, right bottom;
+            }
+            .btnAction::-ms-expand {
+                display: none;
+            }
+            .btnActionOptionGroup {
+                background-color: #f9ebeb;
+                color: black;
+            }
+            .btnActionOptionTransparent {
+                background-color: white;
+                color: transparent;
+            }
+            .btnActionOption {
+                background-color: white;
+                color: black;
+            }
+
+            /*  IPHONE IPAD Mods */
             /* iPhone with smaller screen*/
             @media only screen and (max-device-width: 640px),
                     only screen and (max-device-width: 667px),
@@ -434,19 +569,22 @@ class iCloud3EventLogCard extends HTMLElement {
                 .eltHeader      {background-color: #ebf6f9; height: 15px; padding: 0px 0px 3px 0px;}
                 .eltHeader tr   {width: 360px;}
                 .eltBody tr     {width: 360px;}
-                .btnClassSelect {margin: 0px 2px 4px 0px; padding: 1px 3px;)
-                .btnClassCmdRefresh {margin: 0px 1px 4px 0px;)
+                .btnBaseFormat  {margin: 0px 2px 4px 0px; padding: 1px 3px;)
+                .btnRefresh     {margin: 0px 1px 4px 0px;)
+                .btnAction      {width: 45px; height: 22px;}
                 .updateRecd     {font-weight: 450;}
 
-                //.tableHeaderL   {border-left: 2px solid DodgerBlue;}
-                //.updateEdgeBar  {border-left-width: 2px;}
-                //.tableStyle     {color: DodgerBlue; border-left: 3px solid DodgerBlue;}
-                //.tableStyle     {border-left: 2px solid red;}
+                /*
+                .tableHeaderL   {border-left: 2px solid DodgerBlue;}
+                .updateEdgeBar  {border-left-width: 2px;}
+                .tableStyle     {color: DodgerBlue; border-left: 3px solid DodgerBlue;}
+                .tableStyle     {border-left: 2px solid red;}
+                */
                 .ic3StartupMsg  {font-weight: 450;}
                 .eltBody tr:nth-child(even) {background-color: #EEF2F5;}
                 ::-webkit-scrollbar {width: 1px;}
                 ::-webkit-scrollbar-thumb {background: #818181;}
-                }
+            }
 
             /* iPad ???
             @media only screen
@@ -466,6 +604,8 @@ class iCloud3EventLogCard extends HTMLElement {
         // Build title
         titleBar.appendChild(title);
         titleBar.appendChild(thisButtonId);
+        titleBar.appendChild(versionText);
+
 
         // Build Message Bar
         eltInfoBar.appendChild(eltInfoName);
@@ -477,8 +617,7 @@ class iCloud3EventLogCard extends HTMLElement {
         buttonBar0.appendChild(btnName2);
         buttonBar0.appendChild(btnName3);
         buttonBar0.appendChild(btnName4);
-        buttonBar0.appendChild(btnRestart);
-        buttonBar0.appendChild(btnDebug);
+        buttonBar0.appendChild(btnAction);
         buttonBar0.appendChild(btnRefresh);
 
         buttonBar1.appendChild(btnName5);
@@ -508,27 +647,18 @@ class iCloud3EventLogCard extends HTMLElement {
             let buttonId = 'btnName' + i
             let button   = root.getElementById(buttonId)
 
-            button.addEventListener("mousedown", event => { this._buttonPress(buttonId); });
+            button.addEventListener("mousedown", event => { this._nameButtonPress(buttonId); });
             button.addEventListener("mouseover", event => { this._btnClassMouseOver(buttonId); });
             button.addEventListener("mouseout",  event => { this._btnClassMouseOut(buttonId); });
         }
 
-        btnRestart.addEventListener("mousedown", event => { this._buttonPress("btnRestart"); });
-        btnRestart.addEventListener("mouseover", event => { this._btnClassMouseOver("btnRestart"); });
-        btnRestart.addEventListener("mouseout",  event => { this._btnClassMouseOut("btnRestart"); });
+        btnAction.addEventListener("change", event => { this._commandButtonPress("btnAction"); });
+        btnAction.addEventListener("mouseover", event => { this._btnClassMouseOver("btnAction"); });
+        btnAction.addEventListener("mouseout",  event => { this._btnClassMouseOut("btnAction"); });
 
-        btnDebug.addEventListener("mousedown", event => { this._buttonPress("btnDebug"); });
-        btnDebug.addEventListener("mouseover", event => { this._btnClassMouseOver("btnDebug"); });
-        btnDebug.addEventListener("mouseout",  event => { this._btnClassMouseOut("btnDebug"); });
-
-        btnRefresh.addEventListener("mousedown", event => { this._buttonPress("btnRefresh"); });
+        btnRefresh.addEventListener("mousedown", event => { this._commandButtonPress("btnRefresh"); });
         btnRefresh.addEventListener("mouseover", event => { this._btnClassMouseOver("btnRefresh"); });
         btnRefresh.addEventListener("mouseout",  event => { this._btnClassMouseOut("btnRefresh"); });
-
-        btnRefresh.innerText = "Refresh";
-        btnDebug.innerText   = "Debug";
-        btnRestart.innerText = "Restart iC3";
-
 
         // Add to root
         this._config = config;
@@ -549,10 +679,9 @@ class iCloud3EventLogCard extends HTMLElement {
 
         if (eltInfoUpdateTime.innerText == "setup") {
             this._setupButtonNames()
-            this._buttonPress(this._currentButtonId())
+            this._nameButtonPress(this._currentButtonId())
         }
 
-        //if (eltInfoUpdateTime.innerText !== updateTimeAttr) {
         if (eltInfoUpdateTime.innerText.indexOf(updateTimeAttr) == -1) {
             this._setupEventLogTable('hass')
         }
@@ -566,8 +695,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const root         = this.shadowRoot;
         const hass         = this._hass;
         const thisButtonId = root.getElementById("thisButtonId")
-        const btnDebug     = root.getElementById('btnDebug')
-        const btnRestart   = root.getElementById('btnRestart')
+        const btnAction      = root.getElementById('btnAction')
         const btnRefresh   = root.getElementById('btnRefresh')
         const filtername   = hass.states['sensor.icloud3_event_log'].attributes['filtername']
         const logLevelDebug= hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
@@ -602,16 +730,7 @@ class iCloud3EventLogCard extends HTMLElement {
         btnRefresh.style.color = "darkgreen"
         btnRefresh.style.background_color = "transparent"
 
-        if (logLevelDebug == 'On') {
-            btnDebug.style.color = "white"
-            btnDebug.style.backgroundColor = "darkred"
-        } else {
-            btnDebug.style.color = "darkred"
-            btnDebug.style.backgroundColor = "transparent"
-        }
-
-        btnDebug.style.cssFloat = "right"
-        btnRestart.style.cssFloat = "right"
+        btnAction.style.cssFloat = "right"
         btnRefresh.style.cssFloat = "right"
     }
 
@@ -627,8 +746,6 @@ class iCloud3EventLogCard extends HTMLElement {
 
         const eltInfoNameID = root.getElementById("eltInfoName")
         const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
-        const logLevelDebug = hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
-        const btnDebug     = root.getElementById('btnDebug')
         var eltInfoName = eltInfoNameID.innerText
         var devicenameX = eltInfoName.indexOf("(")+1
         var devicename  = eltInfoName.slice(devicenameX,-1)
@@ -917,12 +1034,8 @@ class iCloud3EventLogCard extends HTMLElement {
                 var classTable = ''
                 if (tText.indexOf("¤s") >= 0) {
                     classTable     = ' tableStyle'
-                    //classState    += ' tableHeaderL"; colspan="1"'
-                    //classInterval += ' tableHeaderR"; colspan="2"'
 
                     if (iPhoneP || iPhoneL || iPad) {
-                        //classState    += ' tableHeaderL"; colspan="1"'
-                        //classInterval += ' tableHeaderR"; colspan="2"'
                         tState    = ""
                         tInterval = ""
                     } else {
@@ -946,21 +1059,6 @@ class iCloud3EventLogCard extends HTMLElement {
                 tText = tText.replace(/¦RT-/g, "</td><td style='width: 28%'>")
                 tText = tText.replace(/¦RC-/g, "</td><td style='width: 8%'>")
                 tText = tText.replace(/»/g, "</td></tr>")
-
-                //tText = tText.replace(/«30/g, "<tr><td style='width: 30%'>")
-                //tText = tText.replace(/«35/g, "<tr><td style='width: 28%'>")
-                //tText = tText.replace(/«35/g, "<tr><td style='width: 110px'>")
-                //tText = tText.replace(/«50/g, "<tr><td style='width: 50%'>")
-                //tText = tText.replace(/¦10/g, "</td><td style='width: 8%'>")
-                //tText = tText.replace(/¦15/g, "</td><td style='width: 8%'>")
-                //tText = tText.replace(/¦20/g, "</td><td style='width: 20%'>")
-                //tText = tText.replace(/¦30/g, "</td><td style='width: 25%'>")
-                //tText = tText.replace(/¦35/g, "</td><td style='width: 25%'>")
-                //tText = tText.replace(/¦50/g, "</td><td style='width: 50%'>")
-                //tText = tText.replace(/¦10/g, "</td><td style='width: 40px'>")
-                //tText = tText.replace(/¦15/g, "</td><td style='width: 40px'>")
-                //tText = tText.replace(/¦20/g, "</td><td style='width: 110px'>")
-                //tText = tText.replace(/¦30/g, "</td><td style='width: 110px'>")
 
                 //Abbreviate text if displaying on an iPhone with a smaller display
                 if (iPhoneP) {
@@ -1049,23 +1147,30 @@ class iCloud3EventLogCard extends HTMLElement {
             this._resize_header_width()
         }
 
-        var updateTimeAttr  = hass.states['sensor.icloud3_event_log'].attributes['update_time']
+        const updateTimeAttr    = hass.states['sensor.icloud3_event_log'].attributes['update_time']
+        const logLevelDebug     = hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
+        const optEvlog  = root.getElementById("optEvlog")
+        const optHalog  = root.getElementById("optHalog")
+        const optAction = root.getElementById('optAction')
 
-        if (logLevelDebug == 'On') {
-            btnDebug.style.color = "white"
-            btnDebug.style.backgroundColor = "darkred"
-            this._displayTimeName("Debug Logging On ... "+updateTimeAttr)
+        if (logLevelDebug.indexOf("evlog") >= 0) {
+            optEvlog.text = "Hide Event Log Tracking Details"
         } else {
-            btnDebug.style.color = "darkred"
-            btnDebug.style.backgroundColor = "transparent"
-            this._displayTimeName(updateTimeAttr)
+            optEvlog.text = "Show Event Log Tracking Details"
+        }
+        if (logLevelDebug.indexOf("halog") >= 0) {
+            optHalog.text = "Stop HA Debug Logging"
+            this._displayTimeName("Debug Logging: On, "+updateTimeAttr)
+        } else {
+            optHalog.text = "Start HA Debug Logging"
+            this._displayTimeName("")
         }
     }
 
 //---------------------------------------------------------------------------
     _resize_header_width() {
-        const root        = this.shadowRoot;
-        const hass        = this._hass;
+        const root              = this.shadowRoot;
+        const hass              = this._hass;
         const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
         const eventLogTable     = root.getElementById("eventLogTable")
         const eventLogTableHdr  = root.getElementById("eltHeader")
@@ -1082,77 +1187,96 @@ class iCloud3EventLogCard extends HTMLElement {
         }
     }
 //---------------------------------------------------------------------------
-    _buttonPress(buttonPressId) {
+    _nameButtonPress(buttonPressId) {
         /* Handle the button press events. Get the devicename, do an 'icloud3_update'
         event_log devicename' service call to have the event_log attribute populated.
         */
-        const root        = this.shadowRoot;
-
-        const hass        = this._hass;
-        this.namesAttr    = hass.states['sensor.icloud3_event_log'].attributes['names']
-        const logLevelDebug= hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
-        const namesAttr   = this.namesAttr
-
-        const names       = Object.values(namesAttr)
-        const devicenames = Object.keys(namesAttr)
-        const thisButtonId = root.getElementById("thisButtonId")
-        const btnRefresh   = root.getElementById('btnRefresh')
-        const btnDebug     = root.getElementById('btnDebug')
-        const btnRestart   = root.getElementById('btnRestart')
+        const root              = this.shadowRoot;
+        const hass              = this._hass;
+        this.namesAttr          = hass.states['sensor.icloud3_event_log'].attributes['names']
+        const namesAttr         = this.namesAttr
+        const names             = Object.values(namesAttr)
+        const devicenames       = Object.keys(namesAttr)
+        const thisButtonId      = root.getElementById("thisButtonId")
         const thisButtonPressed = root.getElementById(buttonPressId)
         const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
 
-        var lastButtonId  = this._currentButtonId()
-        var lastButtonPressed = root.getElementById(lastButtonId)
+        var lastButtonId        = this._currentButtonId()
+        var lastButtonPressed   = root.getElementById(lastButtonId)
+        var buttonPressX        = buttonPressId.substr(-1)
+        var eltInfoName         = names[buttonPressX]+"  ("+devicenames[buttonPressX]+")"
 
-        if (buttonPressId == "btnRefresh") {
-            if (lastButtonId == '') {
-                return
-            }
+        this._displayInfoName(eltInfoName)
+        thisButtonId.innerText = buttonPressId
 
-            var buttonPressX  = lastButtonId.substr(-1)
-
-        } else if (buttonPressId == "btnDebug") {
-            var buttonPressX  = lastButtonId.substr(-1)
-
-        } else if (buttonPressId == "btnRestart") {
-            var buttonPressX  = lastButtonId.substr(-1)
-
-        } else {
-            var buttonPressX  = buttonPressId.substr(-1)
-            var eltInfoName = names[buttonPressX]+"  ("+devicenames[buttonPressX]+")"
-
-            this._displayInfoName(eltInfoName)
-            thisButtonId.innerText = buttonPressId
-        }
-
-        if (buttonPressId == "btnRefresh") {
-            btnRefresh.style.color = "white"
-            btnRefresh.style.backgroundColor = "darkgreen"
-
-        } else if (buttonPressId == "btnDebug") {
-            btnDebug.style.color = "white"
-            btnDebug.style.backgroundColor = "darkred"
-            this._hass.callService("device_tracker", "icloud3_update", {
-                command: 'log_level eventlog'})
-
-        } else if (buttonPressId == "btnRestart") {
-            btnRestart.style.color = "white"
-            btnRestart.style.backgroundColor = "darkred"
-            this._displayTimeName("iCloud3 Restarting")
-            this._hass.callService("device_tracker", "icloud3_update", {
-                command: 'restart'})
-
-         } else {
-            lastButtonPressed.style.color = "#0088F0"
-            lastButtonPressed.style.backgroundColor = "transparent"
-            thisButtonPressed.style.color = "white"
-            thisButtonPressed.style.backgroundColor = "#0088F0"
-        }
+        lastButtonPressed.style.color = "#0088F0"
+        lastButtonPressed.style.backgroundColor = "transparent"
+        thisButtonPressed.style.color = "white"
+        thisButtonPressed.style.backgroundColor = "#0088F0"
 
         this._hass.callService("device_tracker", "icloud3_update", {
             device_name: devicenames[buttonPressX],
             command: 'refresh_event_log'})
+    }
+//---------------------------------------------------------------------------
+    _commandButtonPress(actionButton) {
+        /* Handle the button press events. Get the devicename, do an 'icloud3_update'
+        event_log devicename' service call to have the event_log attribute populated.
+        */
+        const root          = this.shadowRoot;
+        const hass          = this._hass;
+        const logLevelDebug = hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
+        this.namesAttr      = hass.states['sensor.icloud3_event_log'].attributes['names']
+        const namesAttr     = this.namesAttr
+        const names         = Object.values(namesAttr)
+        const devicenames   = Object.keys(namesAttr)
+        const btnRefresh    = root.getElementById('btnRefresh')
+        const btnAction     = root.getElementById('btnAction')
+        const optAction     = root.getElementById('optAction')
+        const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
+        var actionSelected  = ""
+
+        var lastButtonId  = this._currentButtonId()
+        var buttonPressX  = lastButtonId.substr(-1)
+        var actionDevicename = devicenames[buttonPressX]
+
+        if (actionButton == "btnRefresh") {
+            btnRefresh.style.color = "white"
+            btnRefresh.style.backgroundColor = "darkgreen"
+            actionSelected = "refresh_event_log"
+
+            this._hass.callService("device_tracker", "icloud3_update", {
+                device_name: actionDevicename,
+                command: "refresh_event_log"})
+
+        } else if (actionButton == "btnAction") {
+            var actionValue = btnAction.value
+            var actionIndex = btnAction.selectedIndex
+            btnAction.options[actionIndex].selected = false
+
+            //Device Actions
+            if (actionValue.startsWith("dev-")) {
+                actionValue = actionValue.slice(4)
+
+                this._hass.callService("device_tracker", "icloud3_update", {
+                device_name: actionDevicename,
+                command: actionValue})
+
+            //Global Actions
+            } else {
+                this._hass.callService("device_tracker", "icloud3_update", {
+                    command: actionValue})
+
+                if (actionValue == "restart") {
+                    this._displayTimeName("iCloud3 Restarting")
+
+                } else if (actionValue == "log_level: eventlog") {
+                    this._hass.callService("device_tracker", "icloud3_update", {
+                        device_name: actionDevicename,
+                        command: "refresh_event_log"})
+                }
+            }
+        }
     }
 //---------------------------------------------------------------------------
     _clearbtnRefresh() {
@@ -1161,48 +1285,31 @@ class iCloud3EventLogCard extends HTMLElement {
         btnRefresh.style.color = "darkgreen"
         btnRefresh.style.backgroundColor = "transparent"
     }
+
 //---------------------------------------------------------------------------
-    _clearbtnDebug() {
+    _clearbtnAction() {
         const root = this.shadowRoot;
-        const btnDebug = root.getElementById('btnDebug')
-        btnDebug.style.color = "darkred"
-        btnDebug.style.backgroundColor = "transparent"
+        const btnAction = root.getElementById('btnAction')
+        btnAction.style.color = "darkred"
+        btnAction.style.backgroundColor = "transparent"
     }
-//---------------------------------------------------------------------------
-    _clearbtnRestart() {
-        const root = this.shadowRoot;
-        const btnRestart = root.getElementById('btnRestart')
-        btnRestart.style.color = "darkred"
-        btnRestart.style.backgroundColor = "transparent"
-    }
+
 //---------------------------------------------------------------------------
     _btnClassMouseOver(buttonId) {
-        const root   = this.shadowRoot;
-        const button = root.getElementById(buttonId)
-        const btnDebug      = root.getElementById('btnDebug')
-        const btnRestart    = root.getElementById('btnRestart')
-        const hass          = this._hass;
+        const root     = this.shadowRoot;
+        const button   = root.getElementById(buttonId)
+        const btnAction  = root.getElementById('btnAction')
+        const hass     = this._hass;
         const logLevelDebug = hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
-        //const logLevelDebug = this.logLevelDebug
         const thisButtonId = root.getElementById("thisButtonId")
 
         if (buttonId == "btnRefresh") {
             button.style.backgroundColor = "#c6ecd7"
             this._displayTimeName("Refresh Event Log")
 
-        } else if (buttonId == "btnDebug") {
-            btnDebug.style.color = "darkred"
+        } else if (buttonId == "btnAction") {
             button.style.backgroundColor = "#f9ebeb"
-            if (logLevelDebug == 'On') {
-                this._displayTimeName("Turn off debug logging")
-            } else {
-                this._displayTimeName("Turn on debug logging")
-            }
-
-        } else if (buttonId == "btnRestart") {
-            btnRestart.style.color = "darkred"
-            button.style.backgroundColor = "#f9ebeb"
-            this._displayTimeName("Restart iCloud3")
+            this._displayTimeName("Show iCloud3 Action Command List")
 
         } else if (buttonId !== thisButtonId.innerText) {
             button.style.backgroundColor = "#d8ecf3"
@@ -1217,40 +1324,16 @@ class iCloud3EventLogCard extends HTMLElement {
         const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
         const button        = root.getElementById(buttonId)
         const btnRefresh    = root.getElementById('btnRefresh')
-        const btnDebug      = root.getElementById('btnDebug')
-        const btnRestart      = root.getElementById('btnRestart')
+        const btnAction     = root.getElementById('btnAction')
         const thisButtonId  = root.getElementById("thisButtonId")
 
         btnRefresh.style.color = "darkgreen"
         btnRefresh.style.backgroundColor = "transparent"
-
-        if (buttonId == "btnDebug") {
-            var updateTimeAttr = hass.states['sensor.icloud3_event_log'].attributes['update_time']
-
-            if (logLevelDebug == 'On') {
-                btnDebug.style.color = "white"
-                btnDebug.style.backgroundColor = "darkred"
-                this._displayTimeName("Debug Logging On ... "+updateTimeAttr)
-                //this._displayTimeName(updateTimeAttr)
-            } else {
-                btnDebug.style.color = "darkred"
-                btnDebug.style.backgroundColor = "transparent"
-                this._displayTimeName("")
-            }
-
-        } else if (buttonId == "btnRestart") {
-            if (eltInfoUpdateTime.innerText != "iCloud3 Restarting") {
-                btnRestart.style.color = "darkred"
-                btnRestart.style.backgroundColor = "transparent"
-                this._displayTimeName("")
-            }
-
-        } else {
-            if (buttonId !== thisButtonId.innerText) {
-                button.style.backgroundColor = "transparent"
-                this._displayTimeName("")
-            }
+        btnAction.style.backgroundColor  = "transparent"
+        if (buttonId !== thisButtonId.innerText) {
+            button.style.backgroundColor = "transparent"
         }
+        this._displayTimeName("")
     }
 //---------------------------------------------------------------------------
     _currentButtonId() {
@@ -1262,43 +1345,24 @@ class iCloud3EventLogCard extends HTMLElement {
 //---------------------------------------------------------------------------
     _displayTimeName(msg) {
         // Display  message before time field
-
         const root = this.shadowRoot;
         const hass = this._hass;
         const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
-        var updateTimeAttr      = hass.states['sensor.icloud3_event_log'].attributes['update_time']
+        const updateTimeAttr    = hass.states['sensor.icloud3_event_log'].attributes['update_time']
 
         if (msg == "") {
-            eltInfoUpdateTime.innerText = updateTimeAttr
-            eltInfoUpdateTime.style.color = "darkred"
+            eltInfoUpdateTime.innerText = "Refreshed: " + updateTimeAttr
         } else {
             eltInfoUpdateTime.innerText = msg
-            eltInfoUpdateTime.style.color = "blue"
         }
-
-        //alert("iC3 Message-"+msg);
     }
 
 //---------------------------------------------------------------------------
     _displayInfoName(msg) {
-        /* Display test messages
-        */
+        /* Display test messages */
         const root = this.shadowRoot;
         root.getElementById("eltInfoName").innerText = msg
-
-        //alert("Hello World!"+buttonX);
     }
-
-//---------------------------------------------------------------------------
-    _displayInfoTimeFldMsg(msg) {
-        /* Display test messages
-        */
-        const root = this.shadowRoot;
-        root.getElementById("eltInfoUpdateTime").innerText = msg
-
-        //alert("Hello World!"+buttonX);
-    }
-
 
 //---------------------------------------------------------------------------
      getCardSize() {

@@ -1,6 +1,22 @@
 ## iCloud3 Version 2.2.0 - Release Candidate Change Log
 
+> iCloud3 Documentation, with the new features (well most of them), is almost done and can be found [here](https://gcobb321.github.io/icloud3_docs/#/).
+
+
+
+#### Release Candidate 10 (7/20/2020)
+
+[Programs changed: *device_tracker.py, icloud3-event-log-card.js*]
+
+* Added the `Actions` selection list to the Event Log card. This list contains iCloud3 commands that interact with and control iCloud operations. The commands include Restart iCloud3, Pause and Resume polling, Show/Hide tracking details, Start/Stop adding debug records to the HA Log file, Export the Event Log to a text file. Some commands can be used on the selected device.
+* Added the ability to export the Event Log to a tab delimited file suitable for importing into Excel or another spreadsheet program. The file, `\config\icloud3-event-log.log` , is created using a command on the `Actions` selection list on the Event Log.
+* The iOS App has been changed to issue a zone Region Enter trigger before it has really entered the zone if the zone's radius is less than 100m. Since the distance to the zone was greater than the zone's radius, the device was really outside the zone and iCloud3 would keep the device in an Away state instead of accepting the trigger. This has been changed to support the new way the iOS App determines when a device is close enough to a zone to issue a Region Enter trigger.
+* When iCloud3 starts, it matches the track_devices devicenames with the iOS App device_tracker entities. To help solve problems when iCloud3 starts and the entities can not be matched, all of the mobile_app device_tracker entities are now displayed in the Event Log. 
+
+
+
 #### Release Candidate 9b (7/11/2020)
+
 [Programs changed: *device_tracker.py*]
 
 - Update reason was sometimes not displayed on messages

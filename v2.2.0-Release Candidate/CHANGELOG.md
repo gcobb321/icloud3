@@ -41,6 +41,31 @@ Note: You can set up this prerelease version in another custom_components direct
 
 ------
 
+#### Event Log
+
+- Added the ability to export the Event Log to a tab delimited file suitable for importing into Excel or another spreadsheet program. The file, `\config\icloud3-event-log.log` , is created using a command on the `Actions` selection list on the Event Log.
+
+- The `icloud3-event-log-card` version number is now displayed.
+
+- Added the `Actions` selection list containing iCloud3 Commands that are used to interact with and control iCloud operations. They contain the following:
+
+  - Global Actions:
+    - *Restart iCloud3* - Restart iCloud3 to apply changes to the `config_ic3.yaml` configuration file without restarting Home Assistant.
+    - *Pause Polling* - Stop updating/locating all devices. Note: You may want to pause location updates for a device if you are a long way from home or out of the country and it doesn't make sense to continue locating your device.
+    - *Resume Polling* - Start updating/locating all devices after they have been paused.
+    - *Request iOS App Locations* - Send a 'location update' request to the iOS App for all devices being tracked. This is done using the iOS App's notify service call.
+    - S*how/Hide Event Log Tracking Details* - Display or hide additional details about the iCloud3 tracking events and operations in the iCloud3 Event Log Card.
+    - *Export the Event Log* - Export the Event Log items to `\config\icloud3-event-log.log` file.  This is a tab delimited file suitable for importing into Excel or another spreadsheet program with all of the Event Log entries.
+    - *Start/Stop HA Debug Logging* - Start/stop adding entries related to iCloud3 location operations to the HA log file.
+  - Device Actions - These Actions are performed with device that is selected.
+    - *Pause Polling* - Stop updating/locating the selected device.
+    - *Resume Polling* - Start updating/locating the selected device after it has been paused.
+    - *Request iOS App Location* - Send a 'location update' request to the iOS App for the selected device.
+
+  
+
+------
+
 #### Other Changes
 
 * The distance used to check if the device has wandered outside the zone is now based on the zone radius and gps accuracy threshold.
