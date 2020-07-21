@@ -223,6 +223,11 @@ class iCloud3EventLogCard extends HTMLElement {
         eltInfoUpdateTime.id = "eltInfoUpdateTime";
         eltInfoUpdateTime.innerText = "setup";
 
+        const eltInfoLoadError  = document.createElement("div");
+        eltInfoLoadError.id = "eltInfoLoadError";
+        eltInfoLoadError.classList.add("eltInfoLoadError");
+        eltInfoLoadError.style.setProperty('visibility', 'hidden');
+
         const eltContainer = document.createElement("div");
         eltContainer.id = "eltContainer";
         const eventLogTable = document.createElement("table");
@@ -282,7 +287,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 height: 18px;
                 margin: 0px 10px 12px 0px;
                 width: 100%;
-                //border: 1px solid dodgerblue;
+                /*border: 1px solid dodgerblue;*/
             }
             #eltInfoName {
                 height: 18px;
@@ -291,7 +296,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 float: left;
                 font-size: 14px;
                 font-weight: 400;
-                //border: 1px solid red;
+                /*border: 1px solid red;*/
             }
             #eltInfoUpdateTime {
                 height: 18px;
@@ -301,14 +306,26 @@ class iCloud3EventLogCard extends HTMLElement {
                 text-align: right;
                 font-size: 14px;
                 font-weight: 400;
-                //border: 1px solid green;
+                /*border: 1px solid green;*/
+            }
+            .eltInfoLoadError {
+                width: 85%;
+                margin-left: auto;
+                margin-right: auto;
+                color: white;
+                background-color: red;
+                padding: 12px 12px;
+                border: 1px solid darkred;
+                text_align: center;
+                font-size: 14px;
+                font-weight: 400;
             }
 
             /* Event Log Table Setup
             #eventLogTableHdr {
                 position: relative;
                 margin: 0px 0px;
-                height: 25px
+                /*height: 25px;*/
                 width: 100%;
             }*/
             #eventLogTable {
@@ -331,10 +348,9 @@ class iCloud3EventLogCard extends HTMLElement {
                 position: sticky;
                 display: block;
                 table-layout: fixed;
-                width: 426px;
+                /*width: 426px;*/
+                width: 100%;
                 border-collapse: collapse;
-                //border: 1px solid red;
-
             }
             .eltHeader {
                 position: sticky;
@@ -345,18 +361,19 @@ class iCloud3EventLogCard extends HTMLElement {
                 background-color: #d8ecf3;
                 border-collapse: collapse;
                 border-top: 1px solid #9dd3e2;
-                border-bottom: 1px solid #9dd3e2;;
+                border-bottom: 1px solid #9dd3e2;
             }
-
             .eltHeader tr {
                 display: block;
-
             }
             .eltBody {
                 display: block;
                 table-layout: fixed;
-                height: 556px;
+                /*height: 556px;*/
+                height: 545px;
                 border-collapse: collapse;
+                border: 1px solid #d8ecf3;
+                border-top: 1px solid white;
                 overflow-y: scroll;
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
@@ -566,7 +583,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 ha-card         {padding: 4px 4px 4px 4px;}
                 .eltTable       {width: 362px;}
-                .eltHeader      {background-color: #ebf6f9; height: 15px; padding: 0px 0px 3px 0px;}
+                .eltHeader      {background-color: #ebf6f9; height: 15px; padding: 0px 0px 5px 0px;}
                 .eltHeader tr   {width: 360px;}
                 .eltBody tr     {width: 360px;}
                 .btnBaseFormat  {margin: 0px 2px 4px 0px; padding: 1px 3px;)
@@ -610,6 +627,7 @@ class iCloud3EventLogCard extends HTMLElement {
         // Build Message Bar
         eltInfoBar.appendChild(eltInfoName);
         eltInfoBar.appendChild(eltInfoUpdateTime);
+        eltInfoBar.appendChild(eltInfoLoadError)
 
         // Create Buttons
         buttonBar0.appendChild(btnName0);
@@ -672,19 +690,44 @@ class iCloud3EventLogCard extends HTMLElement {
         */
         const root   = this.shadowRoot;
         const config = this._config;
-        this._hass = hass;
-        const thisButtonId   = root.getElementById("thisButtonId")
-        const updateTimeAttr = hass.states['sensor.icloud3_event_log'].attributes['update_time']
+        this._hass   = hass;
+        const thisButtonId      = root.getElementById("thisButtonId")
         const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
 
-        if (eltInfoUpdateTime.innerText == "setup") {
-            this._setupButtonNames()
-            this._nameButtonPress(this._currentButtonId())
+        try {
+            const updateTimeAttr    = hass.states['sensor.icloud3_event_log'].attributes['update_time']
+
+            if (eltInfoUpdateTime.innerText == "setup") {
+                this._setupButtonNames()
+                this._nameButtonPress(this._currentButtonId())
+            }
+
+            if (eltInfoUpdateTime.innerText.indexOf(updateTimeAttr) == -1) {
+                this._setupEventLogTable('hass')
+            }
+        }
+        catch(err) {
+            const buttonBar0        = root.getElementById("buttonBar0")
+            const btnAction         = root.getElementById('btnAction')
+            const btnRefresh        = root.getElementById('btnRefresh')
+            const eltInfoName       = root.getElementById("eltInfoName")
+            const eltInfoUpdateTime = root.getElementById("eltInfoUpdateTime")
+            const eltInfoLoadError  = root.getElementById("eltInfoLoadError")
+
+            const errorMsg = 'Error: iCloud3 must be running to use the iCloud3 Event Log. It is not installed, not running, has not been set up or there are errors.<hr>Be sure you have setup the iCloud3 device_tracker platform in the HA configuration.yaml file.<br><br>Check for iCloud3 load errors in the HA Logs here:<br>HA Sidebar>Configuration>Logs.<br\><br\>Review the iCloud3 documentation for more information here:<br>https://gcobb321.github.io/icloud3/#/chapters/1-installing-icloud3>'
+
+            buttonBar0.style.setProperty('visibility', 'hidden')
+            btnAction.style.setProperty('visibility', 'hidden')
+            btnRefresh.style.setProperty('visibility', 'hidden')
+            eltInfoName.style.setProperty('visibility', 'hidden')
+            eltInfoUpdateTime.style.setProperty('visibility', 'hidden')
+            eltInfoLoadError.style.setProperty('visibility', 'visible')
+            eltInfoLoadError.innerHTML = errorMsg
+
+
         }
 
-        if (eltInfoUpdateTime.innerText.indexOf(updateTimeAttr) == -1) {
-            this._setupEventLogTable('hass')
-        }
+
     }
 
 //---------------------------------------------------------------------------
