@@ -12,7 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.05(8/17/2020)
+//  Version=2.2.0.05 (8/17/2020)
 //
 /////////////////////////////////////////////////////////////////////////////
 

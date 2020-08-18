@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc11'
+VERSION = '2.2.0rc11a'
 
 '''
 rc11
@@ -1417,7 +1417,7 @@ class Icloud3:#(DeviceScanner):
 
                         #If error exists for 10 minutes, display error and restart ic3
                         if self.iosapp_monitor_error_cnt.get(devicename) == 1:
-                            event_msg = (f"iCloud3 Error > {self._format_fname_devicename(devicename)}, {devicenme} > "
+                            event_msg = (f"iCloud3 Error > {self._format_fname_devicename(devicename)}, {devicename} > "
                                 f"iOS App Entity {entity_id} does not "
                                 f"contain location attributes (latitude, longitude). "
                                 f"iCloud3 will be restarted in the 10 minutes if "
@@ -1426,7 +1426,7 @@ class Icloud3:#(DeviceScanner):
                             self._save_event_halog_error("*", event_msg)
                         elif self.iosapp_monitor_error_cnt.get(devicename) > 120:
                             self.iosapp_monitor_dev_trk_flag[devicename] = False
-                            event_msg = (f"iCloud3 Error > {self._format_fname_devicename(devicename)}, {devicenme} > "
+                            event_msg = (f"iCloud3 Error > {self._format_fname_devicename(devicename)}, {devicename} > "
                                 f"iOS App Entity {entity_id} does not "
                                 f"contain location attributes (latitude, longitude). This error "
                                 f"has occurred 120 times in the last 10 minutes. iCloud3 will be restated."
@@ -4435,18 +4435,18 @@ class Icloud3:#(DeviceScanner):
         if devicename == "*":
             return ""
         else:
-            return (f"{self.fname.get(devicename), ''} ({self.device_type.get(devicename), ''})")
+            return (f"{self.fname.get(devicename, '')} ({self.device_type.get(devicename, '')})")
 
 #--------------------------------------------------------------------
     def _format_fname_devicename(self, devicename):
         if devicename == "*":
             return ""
         else:
-            return (f"{self.fname.get(devicename), ''} ({devicename})")
+            return (f"{self.fname.get(devicename, '')} ({devicename})")
 
 #--------------------------------------------------------------------
     def _format_fname_zone(self, zone):
-        return (f"{self.zone_fname.get(zone)}")
+        return (f"{self.zone_fname.get(zone, zone.title())}")
 
 #--------------------------------------------------------------------
     def _format_devicename_zone(self, devicename, zone = None):
@@ -4517,30 +4517,28 @@ class Icloud3:#(DeviceScanner):
                     "Trigger was not received"}}
         '''
         try:
-            entity_id = self.notify_iosapp_entity.get(devicename)
-            if entity_id.startswith("x--"):
-                evlog_msg = (f"Notify entity for {devicename} disabled > Notify-{entity_id}")
-                self._save_event_halog_info(devicename, evlog_msg)
-
-                return False
-
-            evlog_msg = (f"Sending Msg to Device > {entity_id}, Messge-{service_data}")
+            evlog_msg = (f"Sending Msg to Device > "
+                         f"{self.notify_iosapp_entity.get(devicename)}, "
+                         f"Messge-{service_data}")
             self._save_event_halog_info(devicename, evlog_msg)
-
+            
+            entity_id = (f"mobile_app_{self.notify_iosapp_entity.get(devicename)}")
             self.hass.services.call("notify", entity_id, service_data)
+            
             #self.hass.async_create_task(
             #    self.hass.services.async_call('notify', entity_id, service_data))
 
             return True
 
         except Exception as err:
-            event_msg = (f"An error occurred sending a message to device {entity_id}CRLF")
+            event_msg = (f"iCloud3 Error > An error occurred sending a message to device "
+                         f"`{self.notify_iosapp_entity.get(devicename)}`. "
+                         f"CRLF• Message-{str(service_data)}")
             if instr(err, "notify/none"):
-                event_msg += "Error: The devicename can not be foundCRLF"
+                event_msg += "CRLF• The devicename can not be found."
                 devicename = "*"
             else:
-                event_msg += f"Error: {err}CRLF"
-            event_msg += f"Message: {str(service_data)}"
+                event_msg += f"CRLF• Error-{err}"
             self._save_event_halog_error(devicename, event_msg)
 
         return False
@@ -4551,7 +4549,7 @@ class Icloud3:#(DeviceScanner):
         Send a message test message request_location_update
         '''
         try:
-            entity_id = f"{self.notify_iosapp_entity.get(devicename)}"
+            entity_id = (f"mobile_app_{self.notify_iosapp_entity.get(devicename)}")
 
             self.hass.services.call("notify", entity_id, {"message": "request_location_update"})
 
@@ -4564,17 +4562,17 @@ class Icloud3:#(DeviceScanner):
         except Exception as err:
             error_msg = (f"iCloud3 Error > Error sending test msg to "
                          f"{self._format_fname_devicename(devicename)} > "
-                         f"Device-{self.notify_iosapp_entity.get(devicename)}, Error-{err}"
+                         f"Device-`{self.notify_iosapp_entity.get(devicename)}`, Error-{err}"
                          f"CRLF{'-'*25}CRLFThe Device Name on the phone must be the same as the "
-                         f"iOS App device_tracker being monitored."
+                         f"iOS App device_tracker being monitored. Select the correct device_tracker "
+                         f"entity or do the following to change the Device Name on the phone."
                          f"CRLF 1. Open the iOS App on the phone."
                          f"CRLF 2. Select HA Sidebar>General."
-                         f"CRLF 3. Change the Device Name on the phone to {entity_id}."
+                         f"CRLF 3. Change the Device Name on the phone to `{entity_id}`."
                          f"CRLF 4. Close, unload and restart the iOS App on the phone to "
                          f"send the new Device Name to HA."
                          f"CRLF 5. Restart HA.")
             self._save_event_halog_error("*", error_msg)
-            self.notify_iosapp_entity[devicename] = f"x--{self.notify_iosapp_entity.get(devicename)}"
 
         return False
 
@@ -6504,7 +6502,7 @@ class Icloud3:#(DeviceScanner):
         if dev_trk_entity_cnt > 1:
             self.info_notification = (f"iOS APP Device Tracker not specified, found-"
                             f"{dev_trk_list}. See Event Log for more information.")
-            dev_trk_list += "  {---- Will be monitored"
+            dev_trk_list += " ←← Will be monitored"
             event_msg = (f"iCloud3 Setup Error > There are {dev_trk_entity_cnt} iOS App "
                         f"device_tracker entities for {devicename}, iCloud3 can only monitor one."
                         f"CRLF{'-'*25}CRLFDo one of the following:"
@@ -6537,13 +6535,12 @@ class Icloud3:#(DeviceScanner):
             sensor_last_trigger_entity  = ''
             sensor_battery_level_entity = ''
 
-        self.devicename_iosapp_entity[devicename]    = dev_trk_entity_id
-        self.devicename_iosapp_suffix[devicename]    = dev_trk_iosapp_suffix
-        self.iosapp_last_trigger_entity[devicename]  = sensor_last_trigger_entity
-        self.iosapp_battery_level_entity[devicename] = sensor_battery_level_entity
-
+        self.devicename_iosapp_entity[devicename]     = dev_trk_entity_id
+        self.devicename_iosapp_suffix[devicename]     = dev_trk_iosapp_suffix
+        self.iosapp_last_trigger_entity[devicename]   = sensor_last_trigger_entity
+        self.iosapp_battery_level_entity[devicename]  = sensor_battery_level_entity
         self.device_tracker_entity_iosapp[devicename] = (f"device_tracker.{dev_trk_entity_id}")
-        self.notify_iosapp_entity[devicename]         = (f"mobile_app_{dev_trk_entity_id}")
+        self.notify_iosapp_entity[devicename]         = dev_trk_entity_id
 
         return
 
