@@ -22,9 +22,14 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc11a'
+VERSION = '2.2.0rc11b'
 
 '''
+rc11b
+    - Eliminated the need to change the Device Name on the phone to match the iOS App mobile_app device name being monitored. iCloud3 now scanns hass.services/notify list and extracts all of the notify service invormation necessare to send locations requests to the iOS App on the phone. The device names to be notified are listed in Stage 3 of iCloud3 initialization.
+    - The 'move into stationary zone' timer is reset if an old location or poor gps trigger is discarded.
+    - If an iCloud3 configuration file is specified (config_ic3.yaml), the file locations checked are /config & /config/custom_components/icloud3 directories/
+
 rc11
     - Tracking method FmF now works with the normal 2f iCloud account.
     - A request_location_update message is sent to the tracked_device during initilization to see if a notify can be successfully sent or if it generates an error. If an error is found, an iCloud3 Error message is displayed with instructions on changing the Device Name on the phone to correct the error.
@@ -1155,6 +1160,15 @@ class Icloud3:#(DeviceScanner):
 
             iosapp_entities = self._get_entity_registry_entities('mobile_app')
 
+            #Extract notify services devicenames from hass
+            services = self.hass.services
+            notify_services = dict(services.__dict__)['_services']['notify']
+            notify_devicenames = []
+
+            for notify_service in notify_services:
+                if notify_service.startswith("mobile_app_"):
+                    notify_devicenames.append(notify_service)
+
             self.track_devicename_list == ''
             for devicename in self.devicename_verified:
                 error_log_msg = None
@@ -1170,8 +1184,8 @@ class Icloud3:#(DeviceScanner):
                     self.track_devicename_list = (f"{self.track_devicename_list}, {devicename}")
                     if self.iosapp_monitor_dev_trk_flag.get(devicename):
                         self._setup_monitored_iosapp_entities(devicename, iosapp_entities,
-                                    self.devicename_iosapp_suffix.get(devicename))
-                        self._send_test_message_to_device(devicename)
+                            notify_devicenames, self.devicename_iosapp_suffix.get(devicename))
+
 
                         self.track_devicename_list = (f"{self.track_devicename_list} "
                              f"({self.devicename_iosapp_entity.get(devicename).replace(devicename, ' ... ')})")
@@ -1184,6 +1198,10 @@ class Icloud3:#(DeviceScanner):
                         event_msg = (f"iOS App monitoring > {self._format_fname_devicename(devicename)} > "
                                      f"CRLF• device_tracker.{self.devicename_iosapp_entity.get(devicename)}, "
                                      f"CRLF• sensor.{self.iosapp_last_trigger_entity.get(devicename)}")
+                        self._save_event_halog_info("*", event_msg)
+
+                        event_msg = (f"iOS App Location Requests > {self._format_fname_devicename(devicename)} > "
+                                     f"CRLF• {self._format_list(self.notify_iosapp_entity.get(devicename)).replace(',', 'CRLF•')}")
                         self._save_event_halog_info("*", event_msg)
                     else:
                         event_msg = (f"iOS App monitoring > device_tracker.{devicename}")
@@ -1350,6 +1368,10 @@ class Icloud3:#(DeviceScanner):
         elif count_reset_timer == '01:00:00':
             self._timer_tasks_1am()
 
+        #Test code to check ios monitor, display it every minute
+        #if count_reset_timer.endswith(':00'):
+        #    self.last_iosapp_msg['gary_iphone'] = ""
+
         try:
             if self.this_update_secs >= self.event_log_clear_secs and \
                         self.log_level_debug_flag == False:
@@ -1514,11 +1536,6 @@ class Icloud3:#(DeviceScanner):
                         iosapp_msg += (f", {ios_update_reason}")
                         self._log_debug_msg(devicename, iosapp_msg)
                         self._evlog_debug_msg(devicename, iosapp_msg)
-
-                    #iosapp_msg = (f"iOSApp Monitor > "
-                    #              f"Trigger-{iosapp_trigger}@{iosapp_trigger_changed_time}, "
-                    #              f"State-{iosapp_state}@{HHMMSS_ZERO}, "
-                    #              f"GPS-{format_gps(iosapp_dev_attrs[ATTR_LATITUDE], iosapp_dev_attrs[ATTR_LONGITUDE], ic3dev_gps_accuracy)}")
 
                     #This devicename is entering a zone also assigned to another device. The ios app
                     #will move issue a Region Entered trigger and the state is the other devicename's
@@ -4454,6 +4471,9 @@ class Icloud3:#(DeviceScanner):
             zone = self.base_zone
         return (f"{devicename}:{zone}")
 #--------------------------------------------------------------------
+    def _format_list(self, arg_list):
+        return (str(arg_list).replace("[", "").replace("]", "").replace("'", ""))
+#--------------------------------------------------------------------
     def _trace_device_attributes(self, devicename, description,
             fct_name, attrs):
 
@@ -4518,13 +4538,14 @@ class Icloud3:#(DeviceScanner):
         '''
         try:
             evlog_msg = (f"Sending Msg to Device > "
-                         f"{self.notify_iosapp_entity.get(devicename)}, "
+                         f"{self._format_list(self.notify_iosapp_entity.get(devicename))}, "
                          f"Messge-{service_data}")
             self._save_event_halog_info(devicename, evlog_msg)
-            
-            entity_id = (f"mobile_app_{self.notify_iosapp_entity.get(devicename)}")
-            self.hass.services.call("notify", entity_id, service_data)
-            
+
+            for notify_devicename in self.notify_iosapp_entity.get(devicename):
+                entity_id = (f"mobile_app_{notify_devicename}")
+                self.hass.services.call("notify", entity_id, service_data)
+
             #self.hass.async_create_task(
             #    self.hass.services.async_call('notify', entity_id, service_data))
 
@@ -4532,7 +4553,7 @@ class Icloud3:#(DeviceScanner):
 
         except Exception as err:
             event_msg = (f"iCloud3 Error > An error occurred sending a message to device "
-                         f"`{self.notify_iosapp_entity.get(devicename)}`. "
+                         f"{notify_devicename} via notify.{entity_id} service. "
                          f"CRLF• Message-{str(service_data)}")
             if instr(err, "notify/none"):
                 event_msg += "CRLF• The devicename can not be found."
@@ -4544,19 +4565,16 @@ class Icloud3:#(DeviceScanner):
         return False
 
 #--------------------------------------------------------------------
-    def _send_test_message_to_device(self, devicename):
+    def _xxsend_test_message_to_device(self, devicename, entity_id):
         '''
         Send a message test message request_location_update
         '''
         try:
-            entity_id = (f"mobile_app_{self.notify_iosapp_entity.get(devicename)}")
-
             self.hass.services.call("notify", entity_id, {"message": "request_location_update"})
 
             event_msg = (f"iOS App Device Name Verified > {self._format_fname_devicename(devicename)} > "
                          f"CRLF• notify.{self.notify_iosapp_entity.get(devicename)}")
             self._save_event_halog_info("*", event_msg)
-
             return True
 
         except Exception as err:
@@ -4906,7 +4924,7 @@ class Icloud3:#(DeviceScanner):
             attrs[ATTR_LATITUDE]      = latitude
             attrs[ATTR_LONGITUDE]     = longitude
             attrs['icon']             = (f"mdi:{self.stat_zone_devicename_icon.get(devicename)}")
-            attrs[ATTR_FRIENDLY_NAME] = (f"{stat_zone_name[0].capitalize()}{STATIONARY}")   #stat_zone_name
+            attrs[ATTR_FRIENDLY_NAME] = (f"{stat_zone_name[:3].title()}:{STATIONARY}")   #stat_zone_name
 
             #If Stationary zone is exited, move it back to it's base location
             #and reduce it's size
@@ -5747,7 +5765,7 @@ class Icloud3:#(DeviceScanner):
         attrs[ATTR_AUTHENTICATED]      = ''
         attrs[ATTR_BATTERY]            = 0
         attrs[ATTR_BATTERY_STATUS]     = ''
-        attrs[ATTR_INFO]               = "● Loading iCloud3, Waiting on HA ●"
+        attrs[ATTR_INFO]               = "● HA is initializing dev_trk attributes ●"
         attrs[ATTR_ALTITUDE]           = 0
         attrs[ATTR_VERT_ACCURACY]      = 0
         attrs[ATTR_DEVICE_STATUS]      = ''
@@ -6440,7 +6458,7 @@ class Icloud3:#(DeviceScanner):
         return device_info
 
     #--------------------------------------------------------------------
-    def _setup_monitored_iosapp_entities(self, devicename, iosapp_entities, dev_trk_iosapp_suffix):
+    def _setup_monitored_iosapp_entities(self, devicename, iosapp_entities, notify_devicenames, dev_trk_iosapp_suffix):
 
         #Cycle through the mobile_app 'core.entity_registry' items and see
         #if this 'device_tracker.devicename' exists. If so, it is using
@@ -6454,11 +6472,12 @@ class Icloud3:#(DeviceScanner):
             self.notify_iosapp_entity[devicename]  = (f"ios_{devicename}")
             return ("", "", "", "")
 
-        dev_trk_iosapp_suffix = "" if dev_trk_iosapp_suffix == None else dev_trk_iosapp_suffix
-        dev_trk_entity_id = devicename + dev_trk_iosapp_suffix if dev_trk_iosapp_suffix != "" else ""
-        sensor_last_trigger_entity  = ''
-        sensor_battery_level_entity = ''
+        dev_trk_iosapp_suffix       = "" if dev_trk_iosapp_suffix == None else dev_trk_iosapp_suffix
+        dev_trk_entity_id           = devicename + dev_trk_iosapp_suffix if dev_trk_iosapp_suffix != "" else ""
+        sensor_last_trigger_entity  = ""
+        sensor_battery_level_entity = ""
         dev_trk_list                = ""
+        dev_trk_device_id           = ""
 
         #Cycle through iosapp_entities in
         #.storage/core.entity_registry (mobile_app pltform) and get the
@@ -6500,9 +6519,9 @@ class Icloud3:#(DeviceScanner):
         self.iosapp_monitor_dev_trk_flag[devicename] = (dev_trk_entity_cnt > 0)
 
         if dev_trk_entity_cnt > 1:
-            self.info_notification = (f"iOS APP Device Tracker not specified, found-"
-                            f"{dev_trk_list}. See Event Log for more information.")
-            dev_trk_list += " ←← Will be monitored"
+            self.info_notification = (f"iOS App Device Tracker not specified for "
+                            f"{self._format_fname_devicename(devicename)}. See Event Log for more information.")
+            dev_trk_list += " ← ← Will be monitored"
             event_msg = (f"iCloud3 Setup Error > There are {dev_trk_entity_cnt} iOS App "
                         f"device_tracker entities for {devicename}, iCloud3 can only monitor one."
                         f"CRLF{'-'*25}CRLFDo one of the following:"
@@ -6511,7 +6530,7 @@ class Icloud3:#(DeviceScanner):
                         f"should be monitored to the `{devicename}` track_devices parameter, or"
                         f"CRLF●  Change the device_tracker entity's name of the one that should not be monitored "
                         f"so it does not start with `{devicename}`."
-                        f"CRLF{'-'*25}CRLFDevice_tracker entities (suffix) found:"
+                        f"CRLF{'-'*25}CRLFDevice_tracker entities (suffixes) found:"
                         f"{dev_trk_list}")
             self._save_event_halog_error("*", event_msg)
 
@@ -6525,7 +6544,7 @@ class Icloud3:#(DeviceScanner):
             event_msg = (f"iCloud3 Setup Error > {dev_trk_entity_id} > "
                             f"The iOS App device_tracker entity was not found in the "
                             f"Entity Registry."
-                            f"CRLFDevice_tracker entities (suffix) found -"
+                            f"CRLFDevice_tracker entities (suffixes) found -"
                             f"{dev_trk_list}")
             self._save_event_halog_error("*", event_msg)
             self.info_notification = ICLOUD3_ERROR_MSG
@@ -6540,7 +6559,14 @@ class Icloud3:#(DeviceScanner):
         self.iosapp_last_trigger_entity[devicename]   = sensor_last_trigger_entity
         self.iosapp_battery_level_entity[devicename]  = sensor_battery_level_entity
         self.device_tracker_entity_iosapp[devicename] = (f"device_tracker.{dev_trk_entity_id}")
-        self.notify_iosapp_entity[devicename]         = dev_trk_entity_id
+
+        #Extract all notify entitity id's with this devicename in them from hass notify services notify list
+        notify_devicename_list = []
+        for notify_devicename in notify_devicenames:
+            if instr(notify_devicename, devicename):
+                notify_devicename_list.append(notify_devicename.replace("mobile_app_", ""))
+
+        self.notify_iosapp_entity[devicename] = notify_devicename_list
 
         return
 
@@ -6738,6 +6764,7 @@ class Icloud3:#(DeviceScanner):
 
             if location_isold_flag or poor_gps_flag:
                 self.old_loc_poor_gps_cnt[devicename] += 1
+                self.stat_zone_timer[devicename] = 0
                 discard_reason += (f" (#{self.old_loc_poor_gps_cnt.get(devicename)})")
             else:
                 self.old_loc_poor_gps_cnt[devicename]  = 0
@@ -7580,24 +7607,41 @@ class Icloud3:#(DeviceScanner):
 #      file but these items are onlyu processed when iC3 initially loads.
 #      A restart will discard these items
 #
+#   Default file is config/custom_components/icloud3/config-ic3.yaml
+#   if no '/' on the config_ic3_file_name parameter:
+#       check the default directory
+#       if not found, check the /config directory
+#
+#
 #######################################################################
     def _check_config_ic3_yaml_parameter_file(self):
 
         try:
             ic3_directory = os.path.abspath(os.path.dirname(__file__))
-
+            #default
             if self.config_ic3_file_name == "":
                 config_filename=(f"{ic3_directory}/config_ic3.yaml")
+
+            #slash in name
+            elif instr(self.config_ic3_file_name, "/"):
+                config_filename = (f"/config/{self.config_ic3_file_name}")
+
+            #file name specified
             else:
-                config_filename = (f"{ic3_directory.split('custom_components')[0]}"
-                                   f"{self.config_ic3_file_name.replace('config/', '')}")
-                config_filename = config_filename.replace("//", "/")
+                #check icloud3 directory
+                config_filename=(f"{ic3_directory}/{self.config_ic3_file_name}")
+                if os.path.exists(config_filename) == False:
+                    #if not in icloud3 directory, check /config directory
+                    config_filename = (f"/config/{self.config_ic3_file_name}")
+
+            config_filename = config_filename.replace("//", "/")
             config_ic3_file = open(config_filename)
 
         except (FileNotFoundError, IOError):
             if self.config_ic3_file_name != "":
-                event_msg = (f"iCloud3 Error opening '{config_filename}` > File not Found")
-                self._save_event_halog_info("*", event_msg)
+                event_msg = (f"iCloud3 Error opening '{self.config_ic3_file_name}` > File not Found")
+                self._save_event_halog_error("*", event_msg)
+                self.info_notification = event_msg
             return
 
         except Exception as err:
