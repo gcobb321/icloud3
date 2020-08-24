@@ -29,6 +29,26 @@ It is a work in process and can be viewed in the iCloud3-docs repository [here](
 If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
 
 ------
+#### Release Candidate 11d (8/24/2020)
+
+- If no data is available from the iOS App (no Latitude attribute), the iCloud3 data will be used instead of restarting iCloud3. This potentially solves a timing issue where iCloud3 starts before the iOS App has been initialized. A message is added to the Event Log every 2-minutes until the iOS App data becomes available.
+
+- Fixed a bug where an iOS App trigger was not being processed when the last_update_trigger change time was the same as the iOS App's device_tracker state change time.
+
+- All iOS App location data, except enter/exit triggers, is now validated for GPS accuracy and to determine if the location is old. Previously, only triggers in a specific list of triggers, based on the iOS App documentation, were validated. This eliminates needing to update iCloud3 if new triggers are added to the iOS App.
+
+
+
+#### Release Candidate 11c (8/22/2020)
+
+- Added error checking in the mobile_app notify services extraction routine.
+
+- If this was a new installation and the icloud user account has not been authenticated with the 6-digit verification code, accessing the iCloud account when icloud3 was starting was generating errors, preventing the account from being authenticated.This has been fixed (I hope).
+
+- Reverted resetting the stationary zone timer on an old Location or bad gps item. Now, the timer will not be reset and the location must be good when the time is reached to move into a stationary zone.
+
+
+
 #### Release Candidate 11b (8/19/2020)
 
 - iCloud3 now scans the hass.services/notify list and extracts the iOS App Device Name for the phone that is used to send locations requests to. This eliminates the need to make any changes to the Device Name on the phone. They are listed in the Event Log iCloud3 Initialization Stage 3 for reference.
