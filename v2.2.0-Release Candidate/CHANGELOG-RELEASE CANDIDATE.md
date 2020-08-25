@@ -29,12 +29,23 @@ It is a work in process and can be viewed in the iCloud3-docs repository [here](
 If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
 
 ------
+#### Release Candidate 11e (8/25/2020)
+
+- The iOS App state will be updated when it becomes available after the initial iCloud locate.
+- Fixed a bug related to the Waze Region not being decoded correctly. Example: The valid Europe code is EU but iCloud3 was using a validation code 'eu' causing it to default to US.
+- Added back the max_interval parameter. If the interval is greater than the max_interval and you are not in a zone, the interval is set to the max_interval. This is useful if you are a far from Home and want to refresh your location data on a shorter interval than one based on the Waze travel time. Default: '4 hrs'
+- Changed the nature of the *config_ic3.yaml* file handling. 
+  - If the file name is fully qualified and contains the directory and filename (it have to has a '/'), that is used
+  - If the filename is found in */config/custom_components* directory, that file is used.
+  - If the filename is found in the */config* directory, that file is used.
+  - Otherwise a file not found error is added to the Event Log. 
+
+
+
 #### Release Candidate 11d (8/24/2020)
 
 - If no data is available from the iOS App (no Latitude attribute), the iCloud3 data will be used instead of restarting iCloud3. This potentially solves a timing issue where iCloud3 starts before the iOS App has been initialized. A message is added to the Event Log every 2-minutes until the iOS App data becomes available.
-
 - Fixed a bug where an iOS App trigger was not being processed when the last_update_trigger change time was the same as the iOS App's device_tracker state change time.
-
 - All iOS App location data, except enter/exit triggers, is now validated for GPS accuracy and to determine if the location is old. Previously, only triggers in a specific list of triggers, based on the iOS App documentation, were validated. This eliminates needing to update iCloud3 if new triggers are added to the iOS App.
 
 

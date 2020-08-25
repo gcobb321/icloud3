@@ -20,6 +20,7 @@
 
 #--Zone Parameters-----------------------------------------
 #inzone_interval: '1 hr'
+#max_interval: '4 hrs'
 #center_in_zone: True
 #stationary_inzone_interval: '20 min'
 #stationary_still_time: '10 min'
@@ -38,3 +39,6 @@
 
 #-- Other Parameters---------------------------------------
 #travel_time_factor: .6
+#display_text_as:
+#  - gary-real@gmail.com > gary-fake@email.com
+#  - lillian_real@gmail.com > lillian-fake@email.com

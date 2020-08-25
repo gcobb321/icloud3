@@ -22,9 +22,22 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc11d'
+VERSION = '2.2.0rc11e'
 
 '''
+## Release Candidate 11e is available
+
+Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
+Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
+Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+
+rc11e
+    - The iOS App state will be updated when it becomes abailable after the initial iCloud locate.
+    - Fixed a bug related to the Waze Region not being decoced correctly.
+    - Changed the nature of the config_ic3.yaml file handling. It first looks at a fully qualified file name where the directory and filename are specified (it have to has a '/'). If there is no '/' in the name, it checks the /config/custom_components directory and uses that if the file exists.  If not, it checks the /config directory and uses that if the file exists. The entry and file used are displayed in the Event Log initialization area.
+    - Added back the max_interval parameter. If the interval is greater than the max_interval and you are not in a zone, the interval is set to the max_interval. This is useful if you are a far from Home and want to refresh your location data on a shorter interval than one based on the Waze travel time. Default: 4 hrs.
+
 rc11d
     - If no data is available from the iOS App (no Latitude attribute), the iCloud3 data will be used instead of restarting iCloud3. This potentially solves a timing issue where iCloud3 starts before the iOS App has been initialized.
     - Fixed a bug where an iOS App trigger was not being processed when the last_update_trigger change time was the same as the iOS App's device_tracker state change time.
@@ -688,7 +701,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_UNIT_OF_MEASUREMENT, default='mi'): cv.slugify,
     vol.Optional(CONF_INZONE_INTERVAL, default='2 hrs'): cv.string,
     vol.Optional(CONF_CENTER_IN_ZONE, default=False): cv.boolean,
-    vol.Optional(CONF_MAX_INTERVAL, default=0): cv.string,
+    vol.Optional(CONF_MAX_INTERVAL, default='4 hrs'): cv.string,
     vol.Optional(CONF_TRAVEL_TIME_FACTOR, default=.60): cv.string,
     vol.Optional(CONF_GPS_ACCURACY_THRESHOLD, default=100): cv.string,
     vol.Optional(CONF_OLD_LOCATION_THRESHOLD, default='-1 min'): cv.string,
@@ -721,7 +734,7 @@ DEFAULT_CONFIG_VALUES = {
     CONF_UNIT_OF_MEASUREMENT: 'mi',
     CONF_INZONE_INTERVAL: '2 hrs',
     CONF_CENTER_IN_ZONE: False,
-    CONF_MAX_INTERVAL: 0,
+    CONF_MAX_INTERVAL: '4 hrs',
     CONF_TRAVEL_TIME_FACTOR: .60,
     CONF_GPS_ACCURACY_THRESHOLD: 100,
     CONF_OLD_LOCATION_THRESHOLD: '-1 min',
@@ -743,6 +756,7 @@ DEFAULT_CONFIG_VALUES = {
     CONF_EVENT_LOG_CARD_DIRECTORY: 'www/custom_cards',
     CONF_DISPLAY_TEXT_AS: [],
     }
+
 #==============================================================================
 #
 #   SYSTEM LEVEL FUNCTIONS
@@ -863,12 +877,8 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
         log_msg = (f"{log_msg}, using device_tracker.legacy code")
     _LOGGER.info(log_msg)
 
-    if config.get(CONF_MAX_INTERVAL) == '0':
-        inzone_interval_str = config.get(CONF_INZONE_INTERVAL)
-    else:
-        inzone_interval_str = config.get(CONF_MAX_INTERVAL)
-
-    max_interval                    = config.get(CONF_MAX_INTERVAL)
+    inzone_interval_str             = config.get(CONF_INZONE_INTERVAL)
+    max_interval_str                = config.get(CONF_MAX_INTERVAL)
     center_in_zone_flag             = config.get(CONF_CENTER_IN_ZONE)
     gps_accuracy_threshold          = config.get(CONF_GPS_ACCURACY_THRESHOLD)
     old_location_threshold_str      = config.get(CONF_OLD_LOCATION_THRESHOLD)
@@ -887,11 +897,13 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     waze_realtime                   = config.get(CONF_WAZE_REALTIME)
     distance_method                 = config.get(CONF_DISTANCE_METHOD).lower()
     waze_region                     = config.get(CONF_WAZE_REGION)
+    waze_region                     = waze_region.upper()
     waze_max_distance               = config.get(CONF_WAZE_MAX_DISTANCE)
     waze_min_distance               = config.get(CONF_WAZE_MIN_DISTANCE)
+
     if waze_region not in WAZE_REGIONS:
         log_msg = (f"Invalid Waze Region ({waze_region}). Valid Values are: "
-            "NA=US or North America, EU=Europe, IL=Isreal")
+            "NA=US or North America, EU=Europe, IL=Isreal, AU=Australia")
         _LOGGER.error(log_msg)
 
         waze_region       = 'US'
@@ -903,7 +915,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
         hass, see, username, password, group, base_zone,
         tracking_method, track_devices,
         iosapp_locate_request_max_cnt, inzone_interval_str,
-        center_in_zone_flag,
+        max_interval_str, center_in_zone_flag,
         gps_accuracy_threshold, old_location_threshold_str,
         stationary_inzone_interval_str, stationary_still_time_str,
         stationary_zone_offset,
@@ -988,7 +1000,7 @@ class Icloud3:#(DeviceScanner):
         hass, see, username, password, group, base_zone,
         tracking_method, track_devices,
         iosapp_locate_request_max_cnt, inzone_interval_str,
-        center_in_zone_flag,
+        max_interval_str, center_in_zone_flag,
         gps_accuracy_threshold, old_location_threshold_str,
         stationary_inzone_interval_str, stationary_still_time_str,
         stationary_zone_offset,
@@ -1012,7 +1024,7 @@ class Icloud3:#(DeviceScanner):
 
         self.api                          = None
         self.entity_registry_file         = entity_registry_file
-        self.config_ic3_file_name         = "" if config_ic3_file_name == "config_ic3.yaml" else config_ic3_file_name
+        self.config_ic3_file_name         = config_ic3_file_name
         self.event_log_card_directory     = event_log_card_directory
         self.group                        = group
         self.base_zone                    = HOME
@@ -1034,7 +1046,8 @@ class Icloud3:#(DeviceScanner):
         self.attributes_initialized_flag  = False
         self.track_devices                = track_devices
         self.distance_method_waze_flag    = (distance_method.lower() == 'waze')
-        self.inzone_interval              = self._time_str_to_secs(inzone_interval_str)
+        self.inzone_interval_secs         = self._time_str_to_secs(inzone_interval_str)
+        self.max_interval_secs            = self._time_str_to_secs(max_interval_str)
         self.center_in_zone_flag          = center_in_zone_flag
         self.gps_accuracy_threshold       = int(gps_accuracy_threshold)
         self.old_location_threshold       = self._time_str_to_secs(old_location_threshold_str)
@@ -1105,6 +1118,7 @@ class Icloud3:#(DeviceScanner):
 
             self.startup_log_msgs_prefix = NEW_LINE
             self._check_config_ic3_yaml_parameter_file()
+            self._check_ic3_event_log_file_version()
 
             for item in self.display_text_as:
                 from_to_text = item.split(">")
@@ -1114,8 +1128,6 @@ class Icloud3:#(DeviceScanner):
             self._save_event_halog_info("*", event_msg)
 
             self._display_info_status_msg(devicename, "Loading conf_ic3.yaml", self.start_icloud3_initial_load_flag)
-
-            self._check_ic3_event_log_file_version()
 
             self._display_info_status_msg(devicename, "Loading Zones", self.start_icloud3_initial_load_flag)
             self._initialize_zone_tables()
@@ -1450,36 +1462,6 @@ class Icloud3:#(DeviceScanner):
                 update_via_iosapp_flag = False
 
                 if self.iosapp_monitor_dev_trk_flag.get(devicename):
-                    '''
-                    entity_id        = self.device_tracker_entity_iosapp.get(devicename)
-                    iosapp_state     = self._get_state(entity_id)
-                    iosapp_dev_attrs = self._get_device_attributes(entity_id)
-
-                    if ATTR_LATITUDE in iosapp_dev_attrs:
-                        self.iosapp_monitor_error_cnt[devicename] = 0
-                    else:
-                        self.iosapp_monitor_error_cnt[devicename] += 1
-
-                        #If error exists for 10 minutes, display error and restart ic3
-                        if self.iosapp_monitor_error_cnt.get(devicename) == 1:
-                            event_msg = (f"iCloud3 Error > {self._format_fname_devicename(devicename)}, {devicename} > "
-                                f"iOS App Entity {entity_id} does not "
-                                f"contain location attributes (latitude, longitude). "
-                                f"iCloud3 will be restarted in the 10 minutes if "
-                                f"this error continues."
-                                f"CRLF{'-'*25}CRLFAttributus-{iosapp_state}, {iosapp_dev_attrs}")
-                            self._save_event_halog_error("*", event_msg)
-                        elif self.iosapp_monitor_error_cnt.get(devicename) > 120:
-                            self.iosapp_monitor_dev_trk_flag[devicename] = False
-                            event_msg = (f"iCloud3 Error > {self._format_fname_devicename(devicename)}, {devicename} > "
-                                f"iOS App Entity {entity_id} does not "
-                                f"contain location attributes (latitude, longitude). This error "
-                                f"has occurred 120 times in the last 10 minutes. iCloud3 will be restated."
-                                f"CRLF{'-'*25}CRLFAttributus-{iosapp_state}, {iosapp_dev_attrs}")
-                            self._save_event_halog_error("*", event_msg)
-                            self._start_icloud3()
-                        continue
-                    '''
                     iosapp_state, iosapp_dev_attrs, iosapp_data_flag = \
                             self._get_iosapp_device_tracker_state_attributes(
                                     devicename, iosapp_state, iosapp_dev_attrs)
@@ -3084,8 +3066,7 @@ class Icloud3:#(DeviceScanner):
             waze_time_msg = ""
             calc_interval = round(self._km_to_mi(dist_from_zone_km) / 1.5) * 60
             if self.waze_status == WAZE_USED:
-                waze_interval = \
-                    round(waze_time_from_zone * 60 * self.travel_time_factor , 0)
+                waze_interval = round(waze_time_from_zone * 60 * self.travel_time_factor , 0)
             else:
                 waze_interval = 0
             interval = 15
@@ -3142,7 +3123,7 @@ class Icloud3:#(DeviceScanner):
                         log_method = '1iz-OldLocPoorGPS'
 
                     else:
-                        interval = self.inzone_interval
+                        interval = self.inzone_interval_secs
                         log_method="1ez-EnterZone"
 
                 #entered 'near_zone' zone if close to HOME and last is NOT_HOME
@@ -3210,7 +3191,7 @@ class Icloud3:#(DeviceScanner):
             elif (inzone_home_flag
                     or (dist_from_zone_km < .05
                     and dir_of_travel == 'towards')):
-                interval   = self.inzone_interval
+                interval   = self.inzone_interval_secs
                 log_method = '4iz-InZone'
                 log_msg    = f"Zone-{zone}"
 
@@ -3221,8 +3202,8 @@ class Icloud3:#(DeviceScanner):
 
             #in another zone and inzone time > travel time
             elif (inzone_flag
-                    and self.inzone_interval > waze_interval):
-                interval   = self.inzone_interval
+                    and self.inzone_interval_secs > waze_interval):
+                interval   = self.inzone_interval_secs
                 log_method = '4iz-InZone'
                 log_msg    = f"Zone-{zone}"
 
@@ -3278,6 +3259,7 @@ class Icloud3:#(DeviceScanner):
                 interval   = calc_interval
                 log_method = '20-Calculated'
                 log_msg    = f"Value-{self._km_to_mi(dist_from_zone_km)}/1.5"
+
         except Exception as err:
             attrs_msg = self._internal_error_msg(fct_name, err, 'SetInterval')
 
@@ -3367,6 +3349,11 @@ class Icloud3:#(DeviceScanner):
             interval     = interval * interval_multiplier
             interval, x  = divmod(interval, 15)
             interval     = interval * 15
+
+            #check for max interval
+            if self.max_interval_secs > interval and not_inzone_flag:
+                interval = self.max_interval_secs
+
             interval_str = self._secs_to_time_str(interval)
 
             interval_debug_msg = (f"●Interval-{interval_str} ({log_method}, {log_msg}), "
@@ -5749,7 +5736,7 @@ class Icloud3:#(DeviceScanner):
         #Keep distance data to be used by another device if nearby. Also keep
         #source of copied data so that device won't reclone from the device
         #using it.
-        self.waze_region   = waze_region
+        self.waze_region   = waze_region.upper()
         self.waze_realtime = waze_realtime
 
         min_dist_msg = (f"{waze_min_distance} {self.unit_of_measurement}")
@@ -7786,30 +7773,41 @@ class Icloud3:#(DeviceScanner):
 
         try:
             ic3_directory = os.path.abspath(os.path.dirname(__file__))
-            #default
-            if self.config_ic3_file_name == "":
-                config_filename=(f"{ic3_directory}/config_ic3.yaml")
+            self._save_event("*", f"iCloud3 Directory > {ic3_directory}")
 
-            #slash in name
-            elif instr(self.config_ic3_file_name, "/"):
+            if self.config_ic3_file_name == "":
+                return
+
+            event_msg = (f"iCloud3 Configuration File > "
+                         f"Specified-{self.config_ic3_file_name}, ")
+
+            #fully qualified name specified ('/' in filename)
+            if (instr(self.config_ic3_file_name, "/")
+                    and os.path.exists(self.config_ic3_file_name)):
+                config_filename = self.config_ic3_file_name
+
+            elif os.path.exists(f"{ic3_directory}/{self.config_ic3_file_name}"):
+                config_filename = (f"{ic3_directory}/{self.config_ic3_file_name}")
+
+            elif os.path.exists(f"/config/{self.config_ic3_file_name}"):
                 config_filename = (f"/config/{self.config_ic3_file_name}")
 
-            #file name specified
             else:
-                #check icloud3 directory
-                config_filename=(f"{ic3_directory}/{self.config_ic3_file_name}")
-                if os.path.exists(config_filename) == False:
-                    #if not in icloud3 directory, check /config directory
-                    config_filename = (f"/config/{self.config_ic3_file_name}")
+                event_msg += "Error-File Not Found"
+                self._save_event("*", event_msg)
+                return
 
             config_filename = config_filename.replace("//", "/")
+
+            event_msg += (f"Found-{config_filename}")
+            self._save_event("*", event_msg)
+
             config_ic3_file = open(config_filename)
 
         except (FileNotFoundError, IOError):
-            if self.config_ic3_file_name != "":
-                event_msg = (f"iCloud3 Error opening '{self.config_ic3_file_name}` > File not Found")
-                self._save_event_halog_error("*", event_msg)
-                self.info_notification = event_msg
+            event_msg = (f"iCloud3 Error Opening {config_filename} > File not Found")
+            self._save_event_halog_error("*", event_msg)
+            self.info_notification = event_msg
             return
 
         except Exception as err:
@@ -7817,9 +7815,6 @@ class Icloud3:#(DeviceScanner):
             return
 
         try:
-            event_msg = (f"Reading iCloud3 configuration file > {config_filename}")
-            self._save_event_halog_info("*", event_msg)
-
             if self.start_icloud3_initial_load_flag:
                 self.last_config_ic3_items = []
 
@@ -7916,7 +7911,9 @@ class Icloud3:#(DeviceScanner):
             elif parameter_name == CONF_BASE_ZONE:
                 self.base_zone = parameter_value
             elif parameter_name == CONF_INZONE_INTERVAL:
-                self.inzone_interval = self._time_str_to_secs(parameter_value)
+                self.inzone_interval_secs = self._time_str_to_secs(parameter_value)
+            elif parameter_name == CONF_MAX_INTERVAL:
+                self.max_interval_secs = self._time_str_to_secs(parameter_value)
             elif parameter_name == CONF_CENTER_IN_ZONE:
                 self.center_in_zone_flag = (parameter_value == 'true')
             elif parameter_name == CONF_STATIONARY_STILL_TIME:
@@ -7941,7 +7938,7 @@ class Icloud3:#(DeviceScanner):
             elif parameter_name == CONF_WAZE_MIN_DISTANCE:
                 self.waze_min_distance = int(parameter_value)
             elif parameter_name == CONF_WAZE_REALTIME:
-                self.waze_realtime = parameter_value
+                self.waze_realtime = (parameter_value == 'true')
             elif parameter_name == CONF_DISTANCE_METHOD:
                 self.distance_method_waze_flag = (parameter_value == 'waze')
             elif parameter_name == CONF_LOG_LEVEL:
@@ -8317,6 +8314,9 @@ class Icloud3:#(DeviceScanner):
         The time attribute is in the form of '15 sec' ',
         '2 min', '60 min', etc
         """
+
+        if time_str == "":
+            return 0
 
         s1 = str(time_str).replace('_', ' ') + " min"
         time_part = float((s1.split(" ")[0]))
