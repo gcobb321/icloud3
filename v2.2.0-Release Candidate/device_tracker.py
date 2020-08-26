@@ -32,6 +32,9 @@ Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f48
 v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
 Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 
+rc11f
+    - Fixed a bug introduced in rc11e resulting in a 4 hrs Interval when not in a zone. This was caused by testing if the max_interval > interval when it should been interval > max_interval. If the max_interval is used, the Interval that is displayed will be max_interval(interval), e.g., '4 hrs(7.5 hrs)'.
+
 rc11e
     - The iOS App state will be updated when it becomes abailable after the initial iCloud locate.
     - Fixed a bug related to the Waze Region not being decoced correctly.
@@ -3351,10 +3354,12 @@ class Icloud3:#(DeviceScanner):
             interval     = interval * 15
 
             #check for max interval
-            if self.max_interval_secs > interval and not_inzone_flag:
+            if interval > self.max_interval_secs and not_inzone_flag:
+                interval_str = (f"{self._secs_to_time_str(self.max_interval_secs)}({self._secs_to_time_str(interval)})")
                 interval = self.max_interval_secs
-
-            interval_str = self._secs_to_time_str(interval)
+                log_method = (f"40-MaxIntervalOverride {interval_str}")
+            else:
+                interval_str = self._secs_to_time_str(interval)
 
             interval_debug_msg = (f"●Interval-{interval_str} ({log_method}, {log_msg}), "
                                   f"●DirOfTrav-{dir_of_trav_msg}, "

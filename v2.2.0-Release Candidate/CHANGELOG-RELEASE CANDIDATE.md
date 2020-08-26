@@ -12,23 +12,17 @@
 
 When iCloud3 starts, the *icloud3-event-log-card.js* file will be copied to the `\config\www\custom_cards` directory (or the directory you have specified on the *event_log_card_directory* configuration file parameter). 
 
-##### iCloud3 v2.2.0 Documentation
-
-The documentation for v2.2.0 is undergoing a major reorganization to better explain how to:
-
-- Prepare for using iCloud3
-- Install and configure the support programs needed for iCloud3
-- Install iCloud3
-- Set up iCloud3 to begin tracking devices
-- Trouble shoot issues getting iCloud3 up-and-running, when devices are not being tracked, etc.
-
-It is a work in process and can be viewed in the iCloud3-docs repository [here](https://https://gcobb321.github.io/icloud3_docs/#/).
-
-
+The documentation for v2.2.0 is undergoing a major reorganization that is a work in process. It can be viewed in the iCloud3-docs repository [here](https://https://gcobb321.github.io/icloud3_docs/#/).
 
 If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
 
 ------
+#### Release Candidate 11f (8/26/2020)
+
+- Fixed a bug introduced in rc11e resulting in a 4 hrs Interval when not in a zone. This was caused by testing if the max_interval > interval when it should been interval > max_interval. If the max_interval is used, the Interval that is displayed will be max_interval(interval), e.g., '4 hrs(7.5 hrs)'.
+
+  
+
 #### Release Candidate 11e (8/25/2020)
 
 - The iOS App state will be updated when it becomes available after the initial iCloud locate.
