@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc11e'
+VERSION = '2.2.0rc11g'
 
 '''
 ## Release Candidate 11e is available
@@ -31,6 +31,15 @@ Download the installation zip file [here](https://github.com/gcobb321/icloud3/tr
 Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
 Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+
+
+rc1h (not released yet)
+    - The Event Log custom card has been revamped to support themes, including light and dark mode released in HA v0.114.
+
+rc11g
+    - The Event Log will display the first 10 letters of the iOS State and iC3 Zone names to prevent formating errors.
+    - The Stationary Zone is not set to a passive state when it is at it's base location to try to prevent the iOS App from moving a phone into it.
+    - Reverted the Stationary Zone's friendly name to using the complete zone name rather than an abbreviation using the first 3 letters of the devcename (gary_iphone_stationary instead of gar:stationary). This was creating a problem when the first three letters of multiple devices being tracked are the same.
 
 rc11f
     - Fixed a bug introduced in rc11e resulting in a 4 hrs Interval when not in a zone. This was caused by testing if the max_interval > interval when it should been interval > max_interval. If the max_interval is used, the Interval that is displayed will be max_interval(interval), e.g., '4 hrs(7.5 hrs)'.
@@ -4952,12 +4961,13 @@ class Icloud3:#(DeviceScanner):
             attrs[ATTR_LATITUDE]      = latitude
             attrs[ATTR_LONGITUDE]     = longitude
             attrs['icon']             = (f"mdi:{self.stat_zone_devicename_icon.get(devicename)}")
-            attrs[ATTR_FRIENDLY_NAME] = (f"{stat_zone_name[:3].title()}:{STATIONARY}")   #stat_zone_name
+            #attrs[ATTR_FRIENDLY_NAME] = (f"{stat_zone_name[:3]}:{STATIONARY}")   #stat_zone_name
+            attrs[ATTR_FRIENDLY_NAME] = stat_zone_name
 
             #If Stationary zone is exited, move it back to it's base location
             #and reduce it's size
             if enter_exit_flag == STAT_ZONE_MOVE_TO_BASE:
-                attrs['passive']                    = False
+                attrs['passive']                    = True
                 attrs[ATTR_RADIUS]                  = 1
                 self.zone_radius_m[stat_zone_name]  = 1
                 self.zone_radius_km[stat_zone_name] = .1
@@ -7217,12 +7227,14 @@ class Icloud3:#(DeviceScanner):
                 #    event_text  = f"• {event_text}"
 
             else:
-                #state       = self.state_this_poll.get(devicename, '')
-                #v2.2.0rc7
                 iosapp_state= self.last_iosapp_state.get(devicename, '')
+                if len(iosapp_state) > 12:
+                    iosapp_state = (f"{iosapp_state[:12]}...")
                 zone_names  = self._get_zone_names(self.zone_current.get(devicename, ''))
-                zone        = zone_names[1] if zone_names != '' else ''
-                interval    = self.interval_str.get(devicename_zone, '')
+                zone        = zone_names[1][:12] if zone_names != '' else ''
+                if len(zone) > 12:
+                    zone = (f"{zone[:12]}...")
+                interval    = self.interval_str.get(devicename_zone, '').split("(")[0]
                 travel_time = self.last_tavel_time.get(devicename_zone, '')
                 distance    = self.last_distance_str.get(devicename_zone, '')
 

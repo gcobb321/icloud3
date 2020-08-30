@@ -17,6 +17,16 @@ The documentation for v2.2.0 is undergoing a major reorganization that is a work
 If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
 
 ------
+#### Release Candidate 11g (8/30/2020)
+
+- The Event Log will display the first 10 letters of the iOS State and iC3 Zone names to prevent formatting errors.
+
+- The Stationary Zone is not set to a passive state when it is at it's base location to try to prevent the iOS App from moving a phone into it.
+
+- Reverted the Stationary Zone's friendly name to using the complete zone name rather than an abbreviation using the first 3 letters of the devicename (gary_iphone_stationary instead of gar:stationary). This was creating a problem when the first three letters of multiple devices being tracked are the same.
+
+
+
 #### Release Candidate 11f (8/26/2020)
 
 - Fixed a bug introduced in rc11e resulting in a 4 hrs Interval when not in a zone. This was caused by testing if the max_interval > interval when it should been interval > max_interval. If the max_interval is used, the Interval that is displayed will be max_interval(interval), e.g., '4 hrs(7.5 hrs)'.
