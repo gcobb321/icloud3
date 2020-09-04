@@ -17,6 +17,18 @@ The documentation for v2.2.0 is undergoing a major reorganization that is a work
 If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
 
 ------
+#### Release Candidate 11h (9/3/2020)
+
+- **Themes-Themes-Themes...** The Event Log custom card has been revamped to support themes, including the light and dark mode released in HA v0.114, google themes and others found on HACS.
+
+- If an error was encountered when iCloud3 starts or an Alert message needs to be displayed, an Error/Alert reminder is displayed under the Actions pulldown showing the time of the message. This makes it easier to know an error was encountered and easier to find it in the log.
+
+- The option 'Show Startup Events & Errors' has been added to the Actions pulldown. This filters out tracking events so only the startup events and important messages are displayed.
+
+- The iOS App State and iC3 Zone will now expand to a 2nd line if the state/zone name is very long.
+
+
+
 #### Release Candidate 11g (8/30/2020)
 
 - The Event Log will display the first 10 letters of the iOS State and iC3 Zone names to prevent formatting errors.

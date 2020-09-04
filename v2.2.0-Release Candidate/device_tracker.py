@@ -22,10 +22,10 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc11g'
+VERSION = '2.2.0rc11h'
 
 '''
-## Release Candidate 11e is available
+## Release Candidate 11h is available
 
 Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
 Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
@@ -33,8 +33,11 @@ v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
 Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 
 
-rc1h (not released yet)
-    - The Event Log custom card has been revamped to support themes, including light and dark mode released in HA v0.114.
+rc1h
+    - Themes-Themes-Themes... The Event Log custom card has been revamped to support themes, including the light and dark mode released in HA v0.114, google themes and others found on HACS.
+    - If an error was encountered when iCloud3 starts or an Alert mesage needs to be displayed, an Error/Alert remiderr is displayed under the Actions pulldown showing the time of the message. This makes it easier to know an error was encountered and to find it in the log.
+    - The option 'Show Startup Events & Errors' has been added to the Actions pulldown. This filters out tracking events  so only the startup events and important messages are displayed.
+    - The iOS App State and iC3 Zone will now expand to a 2nd line if the state/zone name is very long.
 
 rc11g
     - The Event Log will display the first 10 letters of the iOS State and iC3 Zone names to prevent formating errors.
@@ -1246,10 +1249,13 @@ class Icloud3:#(DeviceScanner):
                         event_msg = (f"iOS App location requests sent to > {self._format_fname_devicename(devicename)} > "
                                      f"{self._format_list(self.notify_iosapp_entity.get(devicename))}")
                         self._save_event_halog_info("*", event_msg)
+
+                        #Send a message to all devices during startup
+                        if self.broadcast_msg != '':
+                            self._send_message_to_device(devicename, self.broadcast_msg)
                     else:
                         event_msg = (f"iOS App monitoring > device_tracker.{devicename}")
                         self._save_event_halog_info("*", event_msg)
-
 
                 #If the devicename is not valid & verified, it will not be tracked
                 else:
@@ -1270,6 +1276,9 @@ class Icloud3:#(DeviceScanner):
                     event_msg = (f"Not Tracking Device > "
                         f"{self._format_fname_devicename(devicename)}")
                     self._save_event_halog_info("*", event_msg)
+
+            #Reset msg sent to all devices during startup
+            self.broadcast_msg = ''
 
             #Now that the devices have been set up, finish setting up
             #the Event Log Sensor
@@ -3582,7 +3591,7 @@ class Icloud3:#(DeviceScanner):
                          f"OldLocThreshold-{old_location_secs_msg}")
             if self.stat_zone_timer.get(devicename) > 0:
                 event_msg += (f", WillMoveIntoStatZoneAfter-{self._secs_to_time(self.stat_zone_timer.get(devicename))}")
-            self._save_event_halog_info(devicename, event_msg, log_title="LOCATION UPDATE RESULTS ")
+            self._save_event_halog_info(devicename, event_msg, log_title="")
 
             return attrs
 
@@ -4509,8 +4518,9 @@ class Icloud3:#(DeviceScanner):
         return (f"{devicename}:{zone}")
 #--------------------------------------------------------------------
     def _format_list(self, arg_list):
-        formatted_list = str(arg_list).replace("[", "").replace("]", "")
-        formatted_list = str(arg_list).replace("{", "").replace("}", "")
+        formatted_list = str(arg_list)
+        formatted_list = formatted_list.replace("[", "").replace("]", "")
+        formatted_list = formatted_list.replace("{", "").replace("}", "")
         formatted_list = formatted_list.replace("'", "").replace(",", "CRLF• ")
         return (f"CRLF• {formatted_list}")
 #--------------------------------------------------------------------
@@ -4560,6 +4570,13 @@ class Icloud3:#(DeviceScanner):
             #_LOGGER.exception(err)
 
         return
+
+#--------------------------------------------------------------------
+    def _broadcast_message(self, service_data):
+        '''Send a message to all devices '''
+
+        for devicename in self.tracked_devices:
+            self._send_message_to_device(devicename, service_data)
 
 #--------------------------------------------------------------------
     def _send_message_to_device(self, devicename, service_data):
@@ -5320,12 +5337,12 @@ class Icloud3:#(DeviceScanner):
             state_trig_count = self.count_state_changed.get(devicename) + self.count_trigger_changed.get(devicename)
 
             if self.TRK_METHOD_FMF_FAMSHR:
-                column_right_hdr_text = "iCloud.Cnts"
+                column_right_hdr_text = "iCloudCnts"
                 count_msg += (f"«LT-State/Trigger Chgs¦LC-{state_trig_count}¦RT-Authentications¦RC-{self.count_pyicloud_authentications}»"
                               f"«LT-iCloud Updates¦LC-{self.count_update_icloud.get(devicename)}¦RT-Web Svc Locates¦RC-{self.count_pyicloud_location_update}»"
                               f"«LT-iOS App Updates¦LC-{self.count_update_iosapp.get(devicename)}¦RT-Time/Locate¦RC-{round(pyi_avg_time_per_call, 2)}sec»")
             else:
-                column_right_hdr_text = "iOSApp.Cnts"
+                column_right_hdr_text = "iOSAppCnts"
                 count_msg += (f"«LT-State/Triggers Chgs¦LC-{state_trig_count}¦RT-iOS Locate Rqsts¦RC-{self.iosapp_locate_request_cnt.get(devicename)}»"
                               f"«LT-iCloud Updates¦LC-{self.count_update_icloud.get(devicename)}¦RT-iOS App Updates ¦RC-{self.count_update_iosapp.get(devicename)}»")
 
@@ -5333,7 +5350,7 @@ class Icloud3:#(DeviceScanner):
                           f"¤e")
 
             self._save_event(devicename, f"{count_msg}",
-                        column_left_hdr="Device.Cnts", column_right_hdr=column_right_hdr_text)
+                        column_left_hdr="DeviceCnts", column_right_hdr=column_right_hdr_text)
 
         except Exception as err:
             _LOGGER.exception(err)
@@ -5424,6 +5441,7 @@ class Icloud3:#(DeviceScanner):
         self.authentication_error_cnt        = 0
         self.authentication_error_retry_secs = HIGH_INTEGER
         self.info_notification               = ''
+        self.broadcast_msg                   = ''
 
         this_update_time = dt_util.now().strftime('%H:%M:%S')
 #--------------------------------------------------------------------
@@ -7228,12 +7246,8 @@ class Icloud3:#(DeviceScanner):
 
             else:
                 iosapp_state= self.last_iosapp_state.get(devicename, '')
-                if len(iosapp_state) > 12:
-                    iosapp_state = (f"{iosapp_state[:12]}...")
                 zone_names  = self._get_zone_names(self.zone_current.get(devicename, ''))
                 zone        = zone_names[1][:12] if zone_names != '' else ''
-                if len(zone) > 12:
-                    zone = (f"{zone[:12]}...")
                 interval    = self.interval_str.get(devicename_zone, '').split("(")[0]
                 travel_time = self.last_tavel_time.get(devicename_zone, '')
                 distance    = self.last_distance_str.get(devicename_zone, '')
@@ -7340,17 +7354,12 @@ class Icloud3:#(DeviceScanner):
 
             if devicename is None:
                 return
-            elif devicename == 'clear_log_items':
+            elif devicename == "clear_log_items":
                 log_attrs["filtername"] = "ClearLogItems"
             elif devicename == "*" :
                 log_attrs["filtername"] = "Initialize"
             else:
                 log_attrs["filtername"] = self.fname.get(devicename)
-                #self.event_cnt[devicename] += 1
-
-            #log_msg = (f"Updating Event Log for {devicename}")
-            #self._log_debug_msg(devicename, log_msg)
-
 
             if devicename == 'clear_log_items':
                 max_recds  = EVENT_LOG_CLEAR_CNT
@@ -7364,7 +7373,6 @@ class Icloud3:#(DeviceScanner):
             #The state must change for the recds to be refreshed on the
             #Lovelace card. If the state does not change, the new information
             #is not displayed. Add the update time to make it unique.
-
             log_update_time = (f"{dt_util.now().strftime('%a, %m/%d')}, "
                                f"{dt_util.now().strftime(self.um_time_strfmt)}")
             log_attrs["update_time"] = log_update_time
@@ -7385,6 +7393,8 @@ class Icloud3:#(DeviceScanner):
         Select the items for the devicename or '*' and return the string of
         the resulting list to be passed to the Event Log
         '''
+        if devicename == "startup_log":
+            devicename = "*"
 
         el_devicename_check=['*', devicename]
 
@@ -8022,17 +8032,31 @@ class Icloud3:#(DeviceScanner):
             if ic3_version > www_version:
                 shutil.copy(ic3_evlog_filename, www_evlog_filename)
                 event_msg = (f"{EVLOG_ALERT}"
-                             f"Event Log Version Check > Old Version, Update Completed, "
+                             f"Alert: Event Log Version Check > Old Version, Update Completed, "
                              f"CRLFInstalled-{www_version_text}, "
                              f"Latest-v{ic3_version_text}, "
                              f"CRLFCopied-`{ic3_evlog_filename}` to `{www_directory}`"
                              f"CRLF-----"
-                             f"CRLFRefresh your browser and Reset Frontend Cache "
-                             f"on each tracked device using the iOS App to load the latest version.")
+                             f"CRLFThe Event Log Card was updated to v{ic3_version_text}. "
+                              "Refresh your browser and do the following on every tracked "
+                              "devices running the iOS App to load the new version."
+                              "CRLF1. Select HA Sidebar > APP Configuration."
+                              "CRLF2. Scroll to the botton of the General screen."
+                              "CRLF3. Select Reset Frontend Cache, then select Done."
+                              "CRLF4. Display the Event Log, then pull down to refresh the page. "
+                              "You should see the busy spinning wheel as the new version is loaded.")
                 self._save_event_halog_info("*", event_msg)
-                self.info_notification = (f"The Event Log Card was updated to v{ic3_version_text}. "
-                             f"Refresh your browser and Reset Frontend Cache "
-                             f"on each tracked device using the iOS App to load the latest version.")
+                self.info_notification = (f"Event Log Card updated to v{ic3_version_text}. "
+                              "See Event Log for more info.")
+                title       = (f"iCloud3 Event Log Card updated to v{ic3_version_text}")
+                message     = ("Refresh the iOS App to load the new version. "
+                              "Select HA Sidebar > APP Configuration. Scroll down. Select Refresh "
+                              "Frontend Cache. Select Done. Pull down to refresn App.")
+                self.broadcast_msg = {
+                            "title": title,
+                            "message": message,
+                            "data": {"subtitle": "Event Log needs to be refreshed"}}
+
             else:
                 event_msg = (f"Event Log Version Check > Current release is being used. "
                              f"Version-{www_version_text}, {www_directory}")
@@ -8788,7 +8812,7 @@ class Icloud3:#(DeviceScanner):
         log_msg = (f"iCLOUD3 COMMAND, Device: `{arg_devicename}`, Command: `{arg_command}`")
         self._log_debug_msg("*", log_msg)
 
-        if arg_devicename:
+        if (arg_devicename and arg_devicename != "startup_log"):
             if (arg_devicename != 'restart'):
                 valid_devicename = self._service_multi_acct_devicename_check(
                     "Update iCloud Service", group, arg_devicename)
@@ -8828,6 +8852,10 @@ class Icloud3:#(DeviceScanner):
             self._update_sensor_ic3_event_log(arg_devicename)
             return
 
+        elif arg_command_cmd == 'startuplog':
+            self._update_sensor_ic3_event_log("*")
+            return
+
         elif arg_command_cmd == "counts":
             for devicename in self.count_update_iosapp:
                 self._display_usage_counts(devicename, force_display=True)
@@ -8849,6 +8877,7 @@ class Icloud3:#(DeviceScanner):
             self.last_iosapp_msg[arg_devicename] = ""
             self._update_sensor_ic3_event_log(arg_devicename)
             return
+
         #command preprocessor, reformat specific commands
         elif instr(arg_command_cmd, 'log_level'):
             if instr(arg_command_parm, 'debug'):
