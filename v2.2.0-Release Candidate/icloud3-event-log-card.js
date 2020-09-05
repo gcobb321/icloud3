@@ -12,7 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.06
+//  Version=2.2.0.07
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -579,7 +579,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 color: white;
                 background-color: darkred;
                 float: right;
-                margin: 0 2px 0 0;
+                margin: 4px 2px 0 0;
                 border: 1px solid #ff4d4d;
             }
             /*#btnAction:hover {border: 1px solid red;}*/

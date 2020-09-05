@@ -17,6 +17,16 @@ The documentation for v2.2.0 is undergoing a major reorganization that is a work
 If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
 
 ------
+#### Release Candidate 11j (9/4/2020)
+
+- Added the age of the Trigger & State Last Changed Time to the iOSApp Monitor Event Log entry to be able to see if the iOS App is actually being updated on a timely basis.
+
+- Added an Alert to the Event Log if the iOS App Trigger or State has not been updated in 6 hours. This may indicate the device_tracker entity being monitored is wrong.
+
+- Added back code in v2.1.0 dealing with a Stationary/Zone mismatch that was removed in v2.2.0.
+
+
+
 #### Release Candidate 11h (9/3/2020)
 
 - **Themes-Themes-Themes...** The Event Log custom card has been revamped to support themes, including the light and dark mode released in HA v0.114, google themes and others found on HACS.
