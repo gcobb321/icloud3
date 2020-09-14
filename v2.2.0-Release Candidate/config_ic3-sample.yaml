@@ -11,19 +11,24 @@
 ###########################################################
 
 #log_level: debug
+#log_level: debug+intervalcalc
 #log_level: debug+rawdata
 
-#--Tracking Parameters-------------------------------------
+#--Track Devices Parameters-------------------------------------
 #track_devices:
 #  - gary_iphone > gary@email.com, gary.png
 #  - lillian_iphone > lillian@email.com, lillian.png
 
-#--Zone Parameters-----------------------------------------
-#inzone_interval: '1 hr'
+#event_log_card_directory: 'www/custom_cards'
+
+#--Zone/Tracking Parameters-----------------------------------------
+#inzone_interval: '60 min'
 #max_interval: '4 hrs'
 #center_in_zone: True
-#stationary_inzone_interval: '20 min'
-#stationary_still_time: '10 min'
+#stationary_inzone_interval: '30 min'
+#stationary_still_time: '8 min'
+#stationary_zone_offset: 1, 0
+#travel_time_factor: .6
 
 #--Accuracy Parameters-------------------------------------
 #gps_accuracy_threshold: 100
@@ -31,14 +36,13 @@
 #old_location_threshold: '3 min'
 
 #--Waze Parameters-----------------------------------------
-#distance_method: calc
+#distance_method: waze
 #waze_region: US
 #waze_min_distance: 1
 #waze_max_distance: 9999
 #waze_realtime: False
 
 #-- Other Parameters---------------------------------------
-#travel_time_factor: .6
 #display_text_as:
-#  - gary-real@gmail.com > gary-fake@email.com
-#  - lillian_real@gmail.com > lillian-fake@email.com
+#  - gary-real-email@gmail.com > gary-email@email.com
+#  - lillian-real-email@gmail.com > lillian-emailt@email.com
