@@ -12,7 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.07
+//  Version=2.2.0.08
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -23,7 +23,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version   = "2.2.0.06"
+        const version   = "2.2.0.08"
         const cardTitle = "iCloud3 Event Log"
 
         const root = this.shadowRoot;
@@ -55,7 +55,7 @@ class iCloud3EventLogCard extends HTMLElement {
         devType.innerText = "";
         const hdrCellWidth = document.createElement("div");
         hdrCellWidth.id = "hdrCellWidth";
-        hdrCellWidth.innerText = "0,66.67px,92.22px,90px,76.67px,65.56px,62.22px";
+        hdrCellWidth.innerText = "0,66.7px,97.8px,94.4px,80px,70px,66.7px";
         const versionText = document.createElement("div");
         versionText.id = "versionText";
         versionText.style.setProperty('visibility', 'hidden');
@@ -159,7 +159,7 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionOptG7);
 
         var btnActionOptG4    = document.createElement("option");
-        var btnActionOptG4Txt = document.createTextNode("Show Event Log Tracking Details");
+        var btnActionOptG4Txt = document.createTextNode("Show Tracking Monitors");
         btnActionOptG4.setAttribute("value", "dev-log_level: eventlog");
         btnActionOptG4.setAttribute("id", "optEvlog");
         btnActionOptG4.classList.add("btnActionOption");
@@ -167,7 +167,7 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionOptG4);
 
         var btnActionOptG8    = document.createElement("option");
-        var btnActionOptG8Txt = document.createTextNode("Show Startup Events & Errors");
+        var btnActionOptG8Txt = document.createTextNode("Show Startup Log, Errors & Alerts");
         btnActionOptG8.setAttribute("value", "dev-refresh_event_log");
         btnActionOptG8.setAttribute("id", "optStartuplog");
         btnActionOptG8.classList.add("btnActionOption");
@@ -241,10 +241,10 @@ class iCloud3EventLogCard extends HTMLElement {
         eltInfoName.innerText = "Select Person";
         eltInfoName.style.color = "firebrick"
 
-        const eltInfoTimeMsg = document.createElement("div");
-        eltInfoTimeMsg.id = "eltInfoTimeMsg";
-        eltInfoTimeMsg.innerText = "setup";
-        eltInfoTimeMsg.style.color = "firebrick"
+        const eltInfoTime = document.createElement("div");
+        eltInfoTime.id = "eltInfoTime";
+        eltInfoTime.innerText = "setup";
+        eltInfoTime.style.color = "firebrick"
 
         const eltInfoMsgPopup  = document.createElement("div");
         eltInfoMsgPopup.id = "eltInfoMsgPopup";
@@ -308,24 +308,21 @@ class iCloud3EventLogCard extends HTMLElement {
                                 }
             .updateRecdHdr      {color: white;
                                 background-color: rgba(var(--rgb-primary-color), 0.85);
-                                /*border-left: 4px solid rgba(var(--rgb-primary-color), 0.85);*/
-                                /*border-left: 4px solid var(--dark-primary-color);*/
                                 border-top: 1px solid var(--light-primary-color);
                                 border-bottom: 1px solid var(--light-primary-color);
                                 font-weight: 450;
                                 }
             .updateEdgeBar      {border-left: 4px solid var(--dark-primary-color);}
             .stageRecdHdr       {color: white;
-                                background-color: firebrick; font-weight: 450;
-                                border-top: 1px solid firebrick;
-                                border-bottom: 1px solid firebrick;
+                                background-color: peru; font-weight: 450;
+                                border-top: 1px solid peru;
+                                border-bottom: 1px solid peru;
                                 }
-            .stageEdgeBar       {border-left: 4px solid firebrick;}
+            .stageEdgeBar       {border-left: 4px solid peru;}
             .dateBarHdr         {color: white;
-                                background-color: darkgreen;
-                                border-top: 1px solid green;
-                                border-bottom: 1px solid green;
-                                border-left: 4px solid darkgreen;
+                                background-color: peru;
+                                border-top: 1px solid peru;
+                                border-bottom: 1px solid peru;
                                 }
             .noLeftEdge         {border-left: none;}
 
@@ -401,7 +398,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 margin: 2px 0px 4px 0px;
                 /*border: 1px solid var(--label-badge-red);*/
             }
-            #eltInfoTimeMsg {
+            #eltInfoTime {
                 margin: 2px 2px 4px 0px;
                 color: firebrick;
                 float: right;
@@ -427,24 +424,23 @@ class iCloud3EventLogCard extends HTMLElement {
             .eltInfoMsgPopupHidden {
                 height: 0px;
                 width: 0px;
-                /*margin: 0px;*/
-                /*padding: 0px;*/
                 visibility: hidden;
                 border: 0px;
             }
 
             /* Scrollbar */
-            ::-webkit-scrollbar {width: 12px;}
-            ::-webkit-scrollbar-track {background: var(--primary-background-color); border-left: 1px solid rgba(var(--rgb-primary-color), 0.2);}
-            ::-webkit-scrollbar-thumb {background: rgba(var(--rgb-accent-color), 0.7); border-radius: 8px;}
+            ::-webkit-scrollbar {width: 7px;}
+            ::-webkit-scrollbar-track {background-color: transparent;
+                border-left: 1px solid rgba(var(--rgb-primary-color), 0.2);}
+            ::-webkit-scrollbar-thumb {background: rgba(var(--rgb-accent-color), 0.7);
+                border-radius: 4px;}
             ::-webkit-scrollbar-thumb:hover {background: var(--accent-color);}
 
             /* Event Log Table */
-            .tableStyle         {color: var(--dark-primary-color); border-left: 2px solid var(--dark-primary-color);}
-            .tableHeaderL       {color: var(--dark-primary-color); text-decoration: underline; font-weight: 450;
-                                 border-left: 2px solid var(--dark-primary-color);}
-            .tableHeaderR       {color: var(--dark-primary-color); text-decoration: underline; font-weight: 450;}
-            .tableHeaderREdge   {border-right: 2px solid var(--dark-primary-color);}
+            .txtTblStyle        {color: var(--dark-primary-color);}
+            .txtTblHdr          {border-left: 1px solid var(--dark-primary-color);}
+            .txtTblHdrRow       {color: var(--dark-primary-color);}
+            .txtTblEdge         {border-left: 1px solid var(--dark-primary-color);}
 
             .highlightResults   {color: red;}
             .inprocessResults   {color: firebrick;}
@@ -469,6 +465,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 position: sticky;
                 table-layout: fixed;
                 display: block;
+                width: 100%;
                 height: 16px;
                 padding: 0px 0px 3px 0px;
                 border-collapse: collapse;
@@ -481,6 +478,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .tblEvlogBody {
                 display: block;
                 table-layout: fixed;
+                width: 100%;
                 height: 560px;
                 border-collapse: collapse;
                 border: 1px solid rgba(var(--rgb-primary-color), 0.2);
@@ -496,8 +494,8 @@ class iCloud3EventLogCard extends HTMLElement {
 
             .noTopBorder {border: 1px solid transparent;}
             .rowBorder {border-left: 2px solid cyan;}
-            .tblEvlogBody tr:nth-child(odd) {background-color: rgba(var(--rgb-primary-text-color), 0.05);}
-            .tblEvlogBody tr:nth-child(even) {background-color: var(--primary-background-color);}
+            .tblEvlogBody tr:nth-child(even) {background-color: rgba(var(--rgb-primary-text-color), 0.05);}
+            .tblEvlogBody tr:nth-child(odd) {background-color: var(--primary-background-color);}
 
             /* Browser Text */
             .colTime        {width: 66.67px; vertical-align: text-top;}
@@ -540,8 +538,6 @@ class iCloud3EventLogCard extends HTMLElement {
                 margin: 4px 6px 0px 0px;
                 border: 1px solid #ff4d4d;
                 border-radius: 3px;
-                /* box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 8px 1px; */
-                box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 8px 1px, rgba(0, 0, 0, 0.2) -0px -0px 8px 1px;
                 box-sizing: border-box;
                 /*border: 1px solid #0080F0;*/
             }
@@ -562,7 +558,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 color: var(--primary-text-color);
                 background-color: transparent;
                 height: 24px;
-                padding: 1px 4px;
+                margin: -4px 2px;
                 float: right;
                 box-sizing: border-box;
             }
@@ -678,7 +674,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
         // Build Message Bar
         eltInfoBar.appendChild(eltInfoName);
-        eltInfoBar.appendChild(eltInfoTimeMsg);
+        eltInfoBar.appendChild(eltInfoTime);
         eltInfoBar.appendChild(eltInfoMsgPopup)
 
         tblEvlog.appendChild(tblEvlogHdr)
@@ -726,25 +722,25 @@ class iCloud3EventLogCard extends HTMLElement {
         */
        const root            = this.shadowRoot
        this._hass            = hass
-       const eltInfoTimeMsg  = root.getElementById("eltInfoTimeMsg")
+       const eltInfoTime  = root.getElementById("eltInfoTime")
        const eltInfoMsgPopup = root.getElementById("eltInfoMsgPopup")
 
         try {
             const updateTimeAttr = hass.states['sensor.icloud3_event_log'].attributes['update_time']
-            if (eltInfoTimeMsg.innerText == "setup") {
+            if (eltInfoTime.innerText == "setup") {
                 this._setupDevType()
                 this._setupButtonNames()
                 this._nameButtonPress(this._currentButtonId())
             }
 
-            if (eltInfoTimeMsg.innerText.indexOf(updateTimeAttr) == -1) {
+            if (eltInfoTime.innerText.indexOf(updateTimeAttr) == -1) {
                 this._setupEventLogTable('hass')
             }
             eltInfoMsgPopup.classList.add('eltInfoMsgPopupHidden')
         }
         catch(err) {
             const eltInfoMsgPopup = root.getElementById("eltInfoMsgPopup")
-            const eltInfoTimeMsg  = root.getElementById("eltInfoTimeMsg")
+            const eltInfoTime  = root.getElementById("eltInfoTime")
 
             if (eltInfoMsgPopup.classList.contains('eltInfoMsgPopupHidden') == false) {
                 return
@@ -754,7 +750,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
             if (err.name == 'TypeError') {
                 if (err.message.indexOf('attributes') > -1) {
-                    if (eltInfoTimeMsg.innerText == 'setup') {
+                    if (eltInfoTime.innerText == 'setup') {
                         eltInfoMsgPopup.innerHTML = msgNotRunning
                     } else {
                         eltInfoMsgPopup.innerHTML = msgRestarting
@@ -815,7 +811,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const root           = this.shadowRoot;
         const hass           = this._hass;
         const tblEvlog       = root.getElementById("tblEvlog")
-        const eltInfoTimeMsg = root.getElementById("eltInfoTimeMsg")
+        const eltInfoTime    = root.getElementById("eltInfoTime")
         const hdrCellWidth   = root.getElementById("hdrCellWidth")
         const logRecdCnt     = root.getElementById("logRecdCnt")
         const devType        = root.getElementById("devType")
@@ -845,7 +841,7 @@ class iCloud3EventLogCard extends HTMLElement {
         logRecdCnt.innerText = logAttr.length
         let row = 0
         var sameTextCnt = 0
-        var infoErrorMsg = ""
+        var infoTimeText = ""
 
         var iPhoneP = false
         var iPhoneL = false
@@ -912,17 +908,19 @@ class iCloud3EventLogCard extends HTMLElement {
         2. Split on '], ][' to create a list item for each record.
         3. Cycle through list records. Split on ', ' to create each element.
         */
-        if (eltInfoTimeMsg.innerText == "iCloud3 Restarting") {
+        if (eltInfoTime.innerText == "iCloud3 Restarting") {
             logTableHTML += '<tr class = "eltRow">'
             logTableHTML += '<td>iCloud3 Restarting (You may have to refresh the browser screen)</td>'
             logTableHTML += '</tr>'
 
         } else if (logAttr.length != 0) {
-            var completed_item_highlight_next_row = false
+            var completedItemHighlightNextRowFlag = false
             var classUpdateEdgeBar = ''
             var classStageEdgeBar = ''
             var cancelEdgeBarFlag = false
             var initializationRecdFound = false
+            var iosappUpdateCompleteFlag = false
+            var icloudUpdateCompleteFlag = false
 
             for (var i = 0; i < logEntries.length-1; i++) {
                 var thisRecd  = logEntries[i].split("', '",10)
@@ -982,9 +980,9 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 var highlightResultsFlag = false
                 //This is set when the previous item was an update complete item
-                if (completed_item_highlight_next_row) {
+                if (completedItemHighlightNextRowFlag) {
                     highlightResultsFlag = true
-                    completed_item_highlight_next_row = false
+                    completedItemHighlightNextRowFlag = false
 
                 //display the info in var(--label-badge-red) if starting an update
                 } else if (tText.indexOf("update started") >= 0) {
@@ -1018,25 +1016,31 @@ class iCloud3EventLogCard extends HTMLElement {
                     classHeaderBar = ' updateRecdHdr'
                     cancelEdgeBarFlag = true
                 } else if (tText.indexOf("update complete") >= 0) {
-                    completed_item_highlight_next_row = true
+                    if (tText.indexOf("iOS App") >=0) {
+                        iosappUpdateCompleteFlag = true
+                    } else {
+                        icloudUpdateCompleteFlag = true
+                    }
+                    completedItemHighlightNextRowFlag = true
                     classHeaderBar = ' updateRecdHdr'
                     classUpdateEdgeBar = ' updateEdgeBar'
                 } else if (tText.startsWith("^^^")) {
+                    //if (tText.indexOf("started") >= 0) {
+                    cancelEdgeBarFlag = (tText.indexOf("started") >= 0)
+                    //}
                     classHeaderBar = ' dateBarHdr'
+                    classStageEdgeBar = ' stageEdgeBar'
                     tText = tText.replace("^^^", "")
                     tText = tText.replace("^^^", "")
-                } else if (tText.indexOf("Initializing") >= 0) {
-                    classStageEdgeBar = ''
-                    classHeaderBar = ' stageRecdHdr'
                 } else if (tText.indexOf("Stage") >= 0) {
                     classHeaderBar = ' stageRecdHdr'
                     classStageEdgeBar = ' stageEdgeBar'
                 } else if (tText.indexOf("Warning") >= 0) {
                     classHeaderBar = ' warningMsg'
                 }
-                if (tText.indexOf("Stage 1") >= 0) {
-                    cancelEdgeBarFlag = true
-                }
+                //if (tText.indexOf("Stage 1") >= 0) {
+                    //cancelEdgeBarFlag = true
+                //}
                 if (classHeaderBar != "") {
                     classHeaderBar = " hdrTopBottomShadow" + classHeaderBar
                 }
@@ -1064,7 +1068,6 @@ class iCloud3EventLogCard extends HTMLElement {
                     tText = tText.slice(1)
                 } else if (tText.startsWith("__")) {
                     classSpecialTextColor = ' normalText'
-
                 } else {
                     specialColorFlag = false
                     classSpecialTextColor = ''
@@ -1077,15 +1080,20 @@ class iCloud3EventLogCard extends HTMLElement {
                 if (tText.indexOf("Error") >= 0) {
                     classErrorMsg = ' errorMsg'
                     if (initializationRecdFound == false) {
-                        infoErrorMsg = "●● iCloud Error Msg at "+tTime+" ●●"
+                        infoTimeText = "●● iCloud3 Error Msg at "+tTime+" ●●"
                     }
-                } else if (tText.indexOf("Alert") >= 0) {
+                } else if (tText.indexOf("iCloud Alert") >= 0) {
                     classErrorMsg = ' errorMsg'
-                    if (initializationRecdFound == false) {
-                        infoErrorMsg = "●● iCloud Alert Msg at "+tTime+" ●●"
+                    if (initializationRecdFound == false
+                            && icloudUpdateCompleteFlag == false) {
+                        infoTimeText = "●● iCloud Alert Msg at "+tTime+" ●●"
                     }
-                } else if (tText.indexOf("Failed") >= 0) {
-                    classHeadeclassErrorMsgrBar = ' errorMsg'
+                } else if (tText.indexOf("ios App Alert") >= 0) {
+                    classErrorMsg = ' errorMsg'
+                    if (initializationRecdFound == false
+                            && iosappUpdateCompleteFlag == false) {
+                        infoTimeText = "●● iOS App Alert Msg at "+tTime+" ●●"
+                    }
                 } else if (tText.startsWith("!")) {
                     classErrorMsg = ' errorMsg'
                     tText = tText.slice(1)
@@ -1093,7 +1101,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 //Change CRLF in the text string to HTML >b> for a new line
                 while (tText.indexOf("CRLF•") >= 0) {
-                    tText = tText.replace("CRLF•","<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•")
+                    tText = tText.replace("CRLF•","<br>&nbsp;&nbsp;&nbsp;•")
                 }
                 while (tText.indexOf("CRLF") >= 0) {
                     tText = tText.replace("CRLF", "<br>")
@@ -1101,16 +1109,10 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 //If displaying a table, the State & Interval can contain column titles
                 var classTable = ''
+                var txtTblFlag = false
                 if (tText.indexOf("¤s") >= 0) {
-                    classTable     = ' tableStyle'
-
-                    if (iPhoneP || iPhoneL || iPad) {
-                        tStat = ""
-                        tIntv = ""
-                    } else {
-                        classStat += ' tableHeaderL'
-                        classIntv += ' tableHeaderR'
-                    }
+                    txtTblFlag = true
+                    classTable     = ' txtTblStyle'
                 }
 
                 //Build the table HTML from the special characters in the recd
@@ -1121,13 +1123,20 @@ class iCloud3EventLogCard extends HTMLElement {
                 // ¦0=</td><td>                       Col end, next col start
                 // ¦10=</td><td style='width: 10%'>   Col end, next col start-width 10%
                 // ¦40=</td><td style='width: 40%'>
-                tText = tText.replace(/¤s/g, "<table style='width: 100%'>")
-                tText = tText.replace(/¤e/g, "</table>")
-                tText = tText.replace(/«LT-/g, "<tr><td style='width: 28%'>")
-                tText = tText.replace(/¦LC-/g, "</td><td style='width: 8%'>")
-                tText = tText.replace(/¦RT-/g, "</td><td style='width: 28%'>")
-                tText = tText.replace(/¦RC-/g, "</td><td style='width: 8%'>")
-                tText = tText.replace(/»/g, "</td></tr>")
+                tText = tText.replace(/¤s/g, '<table style="width: 100%">')
+                tText = tText.replace(/¤e/g, '</table>')
+
+                tText = tText.replace(/«HS/g, '<thead id="txtTblHdr"><tr class="txtTblHdrRow">')
+                tText = tText.replace(/¦LH-/g, '<th class="txtTblHdr" colSpan="2">')
+                tText = tText.replace(/¦RH-/g, '</th><th class="txtTblHdr" colSpan="2">')
+                tText = tText.replace(/»HE/g, '</th></thead>')
+
+                tText = tText.replace(/«LT-/g, '<tr><td class="txtTblEdge" style="width: 28%">&nbsp;')
+                tText = tText.replace(/¦LC-/g, '</td><td style="width: 7%">')
+                tText = tText.replace(/¦RT-/g, '</td><td class="txtTblEdge" style="width: 28%">&nbsp;')
+                tText = tText.replace(/¦RC-/g, '</td><td style="width: 7%">')
+
+                tText = tText.replace(/»/g, '</td></tr>')
 
                 //Abbreviate text if displaying on an iPhone with a smaller display
                 if (iPhoneP) {
@@ -1143,6 +1152,13 @@ class iCloud3EventLogCard extends HTMLElement {
 
                     tDist  = tDist.replace(' mi','mi')
                     tDist  = tDist.replace(' km','km')
+
+                    if (txtTblFlag) {
+                        tText = tText.replace("App Updates", "App Updts")
+                        tText = tText.replace("Rqsts", "")
+                        tText = tText.replace("Trigger Chgs", "Trig Chg")
+                        tText = tText.replace("Locate", "Loc")
+                    }
                 }
 
                 //Determine if the state/zone/dist/time line should be displayed
@@ -1215,22 +1231,18 @@ class iCloud3EventLogCard extends HTMLElement {
         const optHalog       = root.getElementById("optHalog")
         const optStartuplog  = root.getElementById("optStartuplog")
 
-
         if (logLevelDebug.indexOf("evlog") >= 0) {
-            optEvlog.text = "Hide Event Log Tracking Details"
+            optEvlog.text = "Hide Tracking Monitors"
         } else {
-            optEvlog.text = "Show Event Log Tracking Details"
+            optEvlog.text = "Show Tracking Monitors"
         }
         if (logLevelDebug.indexOf("halog") >= 0) {
             optHalog.text = "Stop HA Debug Logging"
-            this._displayTimeName("Debug Log, "+updateTimeAttr)
+            infoTimeText = "Debug Log, "+updateTimeAttr
         } else {
             optHalog.text = "Start HA Debug Logging"
-            this._displayTimeName("")
         }
-        if (infoErrorMsg != "") {
-            this._displayTimeName(infoErrorMsg)
-        }
+        this._displayTimeMsgR(infoTimeText)
     }
 
 //---------------------------------------------------------------------------
@@ -1250,7 +1262,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 for (var i = 0; i < cellCnt; i++) {
                     var cellBCRObj   = tblEvlog.rows[row].cells[i].getBoundingClientRect()
                     var cellWidthBCR = cellBCRObj.width + 2
-                    if (i == 5 && devType.innerText == "") {cellWidthBCR += 10}
+                    if (i == 5 && devType.innerText == "") {cellWidthBCR -= 10}
                     hdrCellWidthStr += cellWidthBCR + 'px,'
                     tblEvlog.rows[0].cells[i].style.width = cellWidthBCR+'px'
                 }
@@ -1313,7 +1325,7 @@ class iCloud3EventLogCard extends HTMLElement {
         if (filtername == null) {
             lastButtonPressed.style.color = thisButtonId.style.color
             lastButtonPressed.style.backgroundColor = "transparent"
-            this._displayMsgR("Select Person")
+            this._displayNameMsgL("Select Person")
             return
         }
 
@@ -1348,7 +1360,7 @@ class iCloud3EventLogCard extends HTMLElement {
         var buttonPressX        = buttonPressId.substr(-1)
         var eltInfoName         = names[buttonPressX]+"  ("+devicenames[buttonPressX]+")"
 
-        this._displayMsgR(eltInfoName)
+        this._displayNameMsgL(eltInfoName)
         thisButtonId.innerText = buttonPressId
 
         lastButtonPressed.style.color = thisButtonId.style.color
@@ -1405,14 +1417,12 @@ class iCloud3EventLogCard extends HTMLElement {
                     command: actionValue})
 
                 if (actionValue == "restart") {
-                    this._displayTimeName("iCloud3 Restarting")
-
-                } else if (actionValue == "log_level: eventlog") {
-                    this._hass.callService("device_tracker", "icloud3_update", {
-                        device_name: actionDevicename,
-                        command: "refresh_event_log"})
+                    this._displayTimeMsgR("iCloud3 Restarting")
                 }
             }
+
+            //Lose btnAction focus to reset selected option
+            btnAction.blur()
         }
     }
 
@@ -1426,11 +1436,11 @@ class iCloud3EventLogCard extends HTMLElement {
         const devType       = root.getElementById("devType")
 
         if (buttonId == "btnRefresh") {
-            this._displayTimeName("Refresh Event Log")
+            this._displayTimeMsgR("Refresh Event Log")
             versionText.style.setProperty('visibility', 'visible');
 
         } else if (buttonId == "btnAction") {
-            this._displayTimeName("Show Action Command List")
+            this._displayTimeMsgR("Show Action Command List")
         }
 
         if (devType.innerText == "") {button.classList.add("btnHover")}
@@ -1451,7 +1461,7 @@ class iCloud3EventLogCard extends HTMLElement {
         }
 
         if (devType.innerText == "") {button.classList.remove("btnHover")}
-        this._displayTimeName("")
+        this._displayTimeMsgR("")
     }
 //---------------------------------------------------------------------------
     _currentButtonId() {
@@ -1461,24 +1471,24 @@ class iCloud3EventLogCard extends HTMLElement {
         return thisButtonId.innerText
     }
 //---------------------------------------------------------------------------
-    _displayTimeName(msg) {
+    _displayTimeMsgR(msg) {
         // Display  message before time field
         const root = this.shadowRoot;
         const hass = this._hass;
-        const eltInfoTimeMsg = root.getElementById("eltInfoTimeMsg")
+        const eltInfoTime = root.getElementById("eltInfoTime")
         const updateTimeAttr    = hass.states['sensor.icloud3_event_log'].attributes['update_time']
 
-        if (eltInfoTimeMsg.innerText.startsWith("●●")) {
+        //if (eltInfoTime.innerText.startsWith("●●")) {
             //pass
-        } else if (msg == "") {
-            eltInfoTimeMsg.innerText = "Refreshed: " + updateTimeAttr
+        if (msg == "") {
+            eltInfoTime.innerText = "Refreshed: " + updateTimeAttr
         } else {
-            eltInfoTimeMsg.innerText = msg
+            eltInfoTime.innerText = msg
         }
     }
 
     //---------------------------------------------------------------------------
-    _displayMsgR(msg) {
+    _displayNameMsgL(msg) {
         /* Display test messages */
         const root = this.shadowRoot;
         const eltInfoName  = root.getElementById("eltInfoName")
@@ -1486,11 +1496,11 @@ class iCloud3EventLogCard extends HTMLElement {
     }
 
     //---------------------------------------------------------------------------
-     getCardSize() {
+    getCardSize() {
         return 1;
     }
-}
 
+}
 
 
 customElements.define('icloud3-event-log-card', iCloud3EventLogCard);

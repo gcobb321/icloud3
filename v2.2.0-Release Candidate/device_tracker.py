@@ -22,106 +22,117 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc11h'
+VERSION = '2.2.0rc12'
 
 '''
-## Release Candidate 11h is available
+## Release Candidate 11j is available
 
-Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
-Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
-v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
-Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+Important Links:
+- Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
+- Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+- v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
+- Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 
+rc12
+- Added the age of the Trigger & State Last Changed Time to the iOSApp Monitor Event Log entry to be able to see if the iOS App is actually being updated on a timely basis.
+- Added an Alert to the Event Log if the iOS App Trigger or State has not been updated in 6 hours. This may indicate the device_tracker entity being monitored is wrong.
+- Added back code in v2.1.0 dealing with a Stationary/Zone mismatch that was removed in v2.2.0.
+- A Zone will now be selected if the phone's distance from the Zone is the same as the zone's radius to match the in-zone test method used by the ios App. Previously, the  iCloud3 zone would be see to Away if the distance was the same as the zone's size.
+- Reformatted some startup event messages for clarity.
+- Reformatted the metric counts in the Event Log for clarity.
+- Changed 'Show Startup Logs, Errors & Alerts' to included alerts in the Event Log Action pulldown menu. The Alert notification message under Action will now not he displayed if there was a successful location update.
 
 rc1h
-    - Themes-Themes-Themes... The Event Log custom card has been revamped to support themes, including the light and dark mode released in HA v0.114, google themes and others found on HACS.
-    - If an error was encountered when iCloud3 starts or an Alert mesage needs to be displayed, an Error/Alert remiderr is displayed under the Actions pulldown showing the time of the message. This makes it easier to know an error was encountered and to find it in the log.
-    - The option 'Show Startup Events & Errors' has been added to the Actions pulldown. This filters out tracking events  so only the startup events and important messages are displayed.
-    - The iOS App State and iC3 Zone will now expand to a 2nd line if the state/zone name is very long.
+- Themes-Themes-Themes... The Event Log custom card has been revamped to support themes, including the light and dark mode released in HA v0.114, google themes and others found on HACS.
+- If an error was encountered when iCloud3 starts or an Alert mesage needs to be displayed, an Error/Alert remiderr is displayed under the Actions pulldown showing the time of the message. This makes it easier to know an error was encountered and to find it in the log.
+- The option 'Show Startup Events & Errors' has been added to the Actions pulldown. This filters out tracking events  so only the startup events and important messages are displayed.
+- The iOS App State and iC3 Zone will now expand to a 2nd line if the state/zone name is very long.
 
 rc11g
-    - The Event Log will display the first 10 letters of the iOS State and iC3 Zone names to prevent formating errors.
-    - The Stationary Zone is not set to a passive state when it is at it's base location to try to prevent the iOS App from moving a phone into it.
-    - Reverted the Stationary Zone's friendly name to using the complete zone name rather than an abbreviation using the first 3 letters of the devcename (gary_iphone_stationary instead of gar:stationary). This was creating a problem when the first three letters of multiple devices being tracked are the same.
+- The Event Log will display the first 10 letters of the iOS State and iC3 Zone names to prevent formating errors.
+- The Stationary Zone is not set to a passive state when it is at it's base location to try to prevent the iOS App from moving a phone into it.
+- Reverted the Stationary Zone's friendly name to using the complete zone name rather than an abbreviation using the first 3 letters of the devcename (gary_iphone_stationary instead of gar:stationary). This was creating a problem when the first three letters of multiple devices being tracked are the same.
 
 rc11f
-    - Fixed a bug introduced in rc11e resulting in a 4 hrs Interval when not in a zone. This was caused by testing if the max_interval > interval when it should been interval > max_interval. If the max_interval is used, the Interval that is displayed will be max_interval(interval), e.g., '4 hrs(7.5 hrs)'.
+- Fixed a bug introduced in rc11e resulting in a 4 hrs Interval when not in a zone. This was caused by testing if the max_interval > interval when it should been interval > max_interval. If the max_interval is used, the Interval that is displayed will be max_interval(interval), e.g., '4 hrs(7.5 hrs)'.
 
 rc11e
-    - The iOS App state will be updated when it becomes abailable after the initial iCloud locate.
-    - Fixed a bug related to the Waze Region not being decoced correctly.
-    - Changed the nature of the config_ic3.yaml file handling. It first looks at a fully qualified file name where the directory and filename are specified (it have to has a '/'). If there is no '/' in the name, it checks the /config/custom_components directory and uses that if the file exists.  If not, it checks the /config directory and uses that if the file exists. The entry and file used are displayed in the Event Log initialization area.
-    - Added back the max_interval parameter. If the interval is greater than the max_interval and you are not in a zone, the interval is set to the max_interval. This is useful if you are a far from Home and want to refresh your location data on a shorter interval than one based on the Waze travel time. Default: 4 hrs.
+- The iOS App state will be updated when it becomes abailable after the initial iCloud locate.
+- Fixed a bug related to the Waze Region not being decoced correctly.
+- Changed the nature of the config_ic3.yaml file handling. It first looks at a fully qualified file name where the directory and filename are specified (it have to has a '/'). If there is no '/' in the name, it checks the /config/custom_components directory and uses that if the file exists.  If not, it checks the /config directory and uses that if the file exists. The entry and file used are displayed in the Event Log initialization area.
+- Added back the max_interval parameter. If the interval is greater than the max_interval and you are not in a zone, the interval is set to the max_interval. This is useful if you are a far from Home and want to refresh your location data on a shorter interval than one based on the Waze travel time. Default: 4 hrs.
 
 rc11d
-    - If no data is available from the iOS App (no Latitude attribute), the iCloud3 data will be used instead of restarting iCloud3. This potentially solves a timing issue where iCloud3 starts before the iOS App has been initialized.
-    - Fixed a bug where an iOS App trigger was not being processed when the last_update_trigger change time was the same as the iOS App's device_tracker state change time.
-    - All iOS App location data, except enter/exit triggers, is now validated.  Previously, only triggers in a specific list of triggers, based on the iOS App documentation, were validated. Now, updates to the iOS App triggers will not require an update to iCloud3.
+- If no data is available from the iOS App (no Latitude attribute), the iCloud3 data will be used instead of restarting iCloud3. This potentially solves a timing issue where iCloud3 starts before the iOS App has been initialized.
+- Fixed a bug where an iOS App trigger was not being processed when the last_update_trigger change time was the same as the iOS App's device_tracker state change time.
+- All iOS App location data, except enter/exit triggers, is now validated.  Previously, only triggers in a specific list of triggers, based on the iOS App documentation, were validated. Now, updates to the iOS App triggers will not require an update to iCloud3.
 
 rc11c
-    - Added error checking in the mobile_app notify services extraction routine.
-    - If this was a new installation and the icloud  user account has not been  authenticated with the 6-digit verification code, accessing the iCloud account when icloud3 was starting was generating errors, preventing the account from being authenticated.This has been fixed (I hope).
-    - Reverted resetting the stationary zone timer on an old Location or bad gps item. Now, the timer will not be reset and the location must be good when the time is reached to move into a stationary zone.
+- Added error checking in the mobile_app notify services extraction routine.
+- If this was a new installation and the icloud  user account has not been  authenticated with the 6-digit verification code, accessing the iCloud account when icloud3 was starting was generating errors, preventing the account from being authenticated.This has been fixed (I hope).
+- Reverted resetting the stationary zone timer on an old Location or bad gps item. Now, the timer will not be reset and the location must be good when the time is reached to move into a stationary zone.
+
 rc11b
-    - Eliminated the need to change the Device Name on the phone to match the iOS App mobile_app device name being monitored. iCloud3 now scanns hass.services/notify list and extracts all of the notify service invormation necessare to send locations requests to the iOS App on the phone. The device names to be notified are listed in Stage 3 of iCloud3 initialization.
-    - The 'move into stationary zone' timer is reset if an old location or poor gps trigger is discarded.
-    - If an iCloud3 configuration file is specified (config_ic3.yaml), the file locations checked are /config & /config/custom_components/icloud3 directories/
+- Eliminated the need to change the Device Name on the phone to match the iOS App mobile_app device name being monitored. iCloud3 now scanns hass.services/notify list and extracts all of the notify service invormation necessare to send locations requests to the iOS App on the phone. The device names to be notified are listed in Stage 3 of iCloud3 initialization.
+- The 'move into stationary zone' timer is reset if an old location or poor gps trigger is discarded.
+- If an iCloud3 configuration file is specified (config_ic3.yaml), the file locations checked are /config & /config/custom_components/icloud3 directories/
 
 rc11
-    - Tracking method FmF now works with the normal 2f iCloud account.
-    - A request_location_update message is sent to the tracked_device during initilization to see if a notify can be successfully sent or if it generates an error. If an error is found, an iCloud3 Error message is displayed with instructions on changing the Device Name on the phone to correct the error.
-    - Cleaned up and optimized code in the Event Log.
-    - Validating the iOS App device to be tracked was from iC3 initialiation Stage 2 to Stage 3. Errors are clearer and correction instruction are clearer.
-    - Changed the way the iOS App monitor is displayed in the Event Log. It now displays if an update will be triggered or not and the reason. The iOS App Monitor is refreshed if you do a 'Refresh' in the Event Log so it will then display if you select ehe 'Show Event Log Tracking Details'.
-    - Added a 'display_as' configuration parameter that changes one text value to another in the Event Log before it is displayed. For example, you can display your email address as' gary-2fa@email.com' instead of your real email address.
+- Tracking method FmF now works with the normal 2f iCloud account.
+- A request_location_update message is sent to the tracked_device during initilization to see if a notify can be successfully sent or if it generates an error. If an error is found, an iCloud3 Error message is displayed with instructions on changing the Device Name on the phone to correct the error.
+- Cleaned up and optimized code in the Event Log.
+- Validating the iOS App device to be tracked was from iC3 initialiation Stage 2 to Stage 3. Errors are clearer and correction instruction are clearer.
+- Changed the way the iOS App monitor is displayed in the Event Log. It now displays if an update will be triggered or not and the reason. The iOS App Monitor is refreshed if you do a 'Refresh' in the Event Log so it will then display if you select ehe 'Show Event Log Tracking Details'.
+- Added a 'display_as' configuration parameter that changes one text value to another in the Event Log before it is displayed. For example, you can display your email address as' gary-2fa@email.com' instead of your real email address.
 
 rc10a
-    - Fixed a problem where the waze distance was being converted from miles to kilometers when it should not have.
-    - Cleaned up a lot of code in the Event Log. Lined up the header column names with the data in the columns.
+- Fixed a problem where the waze distance was being converted from miles to kilometers when it should not have.
+- Cleaned up a lot of code in the Event Log. Lined up the header column names with the data in the columns.
+
 rc10
-    - Enhanced Event Log Debug by saving all debug records as events occur and only displaying them afrer pressing Debug on the Event Log screen.
-    - Added Action button to Event Log to issue service calls.
-    - The iOS App was changed to select a zone when it is outside of the zone and the zone's radius is less than 100m. Now, when selecting the zone name, if the device's distance to the zone center is outside of the zone's radius and the ios app issues a Region Enter trigger and sets the ios app state value to a zone, that zone name will be used instead of Away.
-    - All mobile_app device_tracker entities are listed in the Event Log before the entity registry is scanned to be able to identify device name mismatches.
+- Enhanced Event Log Debug by saving all debug records as events occur and only displaying them afrer pressing Debug on the Event Log screen.
+- Added Action button to Event Log to issue service calls.
+- The iOS App was changed to select a zone when it is outside of the zone and the zone's radius is less than 100m. Now, when selecting the zone name, if the device's distance to the zone center is outside of the zone's radius and the ios app issues a Region Enter trigger and sets the ios app state value to a zone, that zone name will be used instead of Away.
+- All mobile_app device_tracker entities are listed in the Event Log before the entity registry is scanned to be able to identify device name mismatches.
+
 rc9b
-    - Update reason was sometimes not displayed on messages
-    - Added back Moving into Stationary Zone time check to use iCloud update rather that the iOS App to be able to recheck any movement.
-    - Added check when selecting the zone to bypass the Stationary Zone if it was at it's base location (radius = 1m)
-    - Fixed a problem where an update was discarded if the it was trigged by a state or trigger change and the Location was old or the gps was poor. It should have verified the location using iCloud and it was not.  This could cause Region Enter/Exit triggers to be delayed until the next update time was reached.
-    - Fixed the old location/poor gps accuracy test in the main polling loop to be True if either was True. Previously, only the old location test result was being being used.
-    - Removed debug code left in by mistake when testing the old location/poor gps accuracy value. The debug code always returned True and would fill the HA log file and Event Log with incorrect Discarded messages when it shouldn't have.
-    - Changed the formatting of Old Location/Poor GPS Accuracy messages
+- Update reason was sometimes not displayed on messages
+- Added back Moving into Stationary Zone time check to use iCloud update rather that the iOS App to be able to recheck any movement.
+- Added check when selecting the zone to bypass the Stationary Zone if it was at it's base location (radius = 1m)
+- Fixed a problem where an update was discarded if the it was trigged by a state or trigger change and the Location was old or the gps was poor. It should have verified the location using iCloud and it was not.  This could cause Region Enter/Exit triggers to be delayed until the next update time was reached.
+- Fixed the old location/poor gps accuracy test in the main polling loop to be True if either was True. Previously, only the old location test result was being being used.
+- Removed debug code left in by mistake when testing the old location/poor gps accuracy value. The debug code always returned True and would fill the HA log file and Event Log with incorrect Discarded messages when it shouldn't have.
+- Changed the formatting of Old Location/Poor GPS Accuracy messages
 
 rc9a
-    - Removed Move into Stationary Zone timer check to trigger update
+- Removed Move into Stationary Zone timer check to trigger update
 
 rc9
-    - The iOS App v2020.3 Added the Device Name setting to the General Tab option. This may have created a new device_tracker entity for the updated app. When this occurred, there may now be 2 device_tracker entities for the same iPhone or other device. iCloud3 scans the Entity Registry to determine the device_tracker entity to monitor for state & trigger changes. It stops scanning when it finds one a match. This may result in iCloud3 monitoring an entity that is no longer updated by the iOS App and not monitoring the entity that is updated. This has been fixed. Rather than stopping at the first one, it looks for all entities that can be monitored. If there is only one, that one is used. If there is more than one, iCloud3 looks at the track_devices parameter to see if an entity has been specified. If one has been specified, it is used. If one has not been specified, an error message is displayed in the Event Log and the last entity found is used rather than the first one found.
+- The iOS App v2020.3 Added the Device Name setting to the General Tab option. This may have created a new device_tracker entity for the updated app. When this occurred, there may now be 2 device_tracker entities for the same iPhone or other device. iCloud3 scans the Entity Registry to determine the device_tracker entity to monitor for state & trigger changes. It stops scanning when it finds one a match. This may result in iCloud3 monitoring an entity that is no longer updated by the iOS App and not monitoring the entity that is updated. This has been fixed. Rather than stopping at the first one, it looks for all entities that can be monitored. If there is only one, that one is used. If there is more than one, iCloud3 looks at the track_devices parameter to see if an entity has been specified. If one has been specified, it is used. If one has not been specified, an error message is displayed in the Event Log and the last entity found is used rather than the first one found.
 
-    To select the entity in case of duplicates, add the complete entity name or it's iOS App suffix to the track_devices parameter. For example:
-        gary_ipnone > gary.jpg, Gary, _iosapp
-        gary_ipnone > gary.jpg, _iosapp_2
-        gary_ipnone > gary.jpg, gary_iphone_iosapp
-        gary_iphone > gary_2fa@email.com, gary.png, _2
+To select the entity in case of duplicates, add the complete entity name or it's iOS App suffix to the track_devices parameter. For example:
+gary_ipnone > gary.jpg, Gary, _iosapp
+gary_ipnone > gary.jpg, _iosapp_2
+gary_ipnone > gary.jpg, gary_iphone_iosapp
+gary_iphone > gary_2fa@email.com, gary.png, _2
 
-        Note: The iOS App suffix is the full entity name without the devicename, e.g., Entity name=gary_iphone_iosapp , Suffix=_iosapp
+Note: The iOS App suffix is the full entity name without the devicename, e.g., Entity name=gary_iphone_iosapp , Suffix=_iosapp
 
-    - When several phones were in a Stationary Zone and one left and then came back, the iOS App issues a Region Enter trigger for the phone coming back with another phone's Stationary Zone. Since each phone has their own Stationary Zone, this phone's Stationary Zone is now in the wrong location and it was not handling location triggers correctly.  Also, since the iOS App has the phone in 2 Stationary Zones and iCloud3 only has it in one, any Exit triggers would be discarded and iCloud3 would keep the phone in the Stationary Zone rather than changing it to not_home. This has been corrected.
-    - Added status messages that are displayed in the 'sensor.devicename_info' field during iCloud3 startup and when locating devices.
-    - Added a friendly error message when the connection to Wazw (www.wazw.com) was not available. If this occurs, Waze will be turned off.
-    - Changed the way long text items are displayed in the Event Log.
-    - Added a test of the device_status before determining ig the location is old. If not 'online' (offline or pending), the device interval will be immediately set to 15-minutes. This prevents getting into the cycle of discarding the location update because the location is actually ot available.
-        - Added more debug messages to the Event Log.
-
+- When several phones were in a Stationary Zone and one left and then came back, the iOS App issues a Region Enter trigger for the phone coming back with another phone's Stationary Zone. Since each phone has their own Stationary Zone, this phone's Stationary Zone is now in the wrong location and it was not handling location triggers correctly.  Also, since the iOS App has the phone in 2 Stationary Zones and iCloud3 only has it in one, any Exit triggers would be discarded and iCloud3 would keep the phone in the Stationary Zone rather than changing it to not_home. This has been corrected.
+- Added status messages that are displayed in the 'sensor.devicename_info' field during iCloud3 startup and when locating devices.
+- Added a friendly error message when the connection to Wazw (www.wazw.com) was not available. If this occurs, Waze will be turned off.
+- Changed the way long text items are displayed in the Event Log.
+- Added a test of the device_status before determining ig the location is old. If not 'online' (offline or pending), the device interval will be immediately set to 15-minutes. This prevents getting into the cycle of discarding the location update because the location is actually ot available.
+- Added more debug messages to the Event Log.
 
 rc8
-   - Added checks to make make sure the initial stationary zone would not be selected when entering a zone.
-   - Changed the location of the Stationary Zone back to it's base location when it is Exited rather than keeping it at it's current location, hiding it and reeducing it's size.
-   - Fixed a problem where the Stationary Zone not was being relocated before the device's distance and polling calculations were done. This lead to selecting the Stationary Zone in error when it had really been exited from.
+- Added checks to make make sure the initial stationary zone would not be selected when entering a zone.
+- Changed the location of the Stationary Zone back to it's base location when it is Exited rather than keeping it at it's current location, hiding it and reeducing it's size.
+- Fixed a problem where the Stationary Zone not was being relocated before the device's distance and polling calculations were done. This lead to selecting the Stationary Zone in error when it had really been exited from.
 
 rc7
-   - If iCloud did not return device data for a device being tracked when iCloud3 is being initialized, the iCloud account will be reauthenticated, the iCloud device will be requested again. and the devices will be reverified. If a device (devicename) is still not found, an iCloud Error will be generated and the devicename will not be tracked.
-   - iCloud3 was updating the iOSApp's last_trigger_update entity when a location update was done. It would add the time the update was done and the change the reason for the update if it was triggered by iCloud3. HA and the iOS App had been changed so updating the last_update_trigger entity by iCloud3 broke the link between last_update_trigger and the iOS App. The result is HA would throw away the triggers generated by the iOS App. These triggers included the zone Enter/Exit, Signigicant Location Update, Background Fetch, etc. This has been fixed.
+- If iCloud did not return device data for a device being tracked when iCloud3 is being initialized, the iCloud account will be reauthenticated, the iCloud device will be requested again. and the devices will be reverified. If a device (devicename) is still not found, an iCloud Error will be generated and the devicename will not be tracked.
+- iCloud3 was updating the iOSApp's last_trigger_update entity when a location update was done. It would add the time the update was done and the change the reason for the update if it was triggered by iCloud3. HA and the iOS App had been changed so updating the last_update_trigger entity by iCloud3 broke the link between last_update_trigger and the iOS App. The result is HA would throw away the triggers generated by the iOS App. These triggers included the zone Enter/Exit, Signigicant Location Update, Background Fetch, etc. This has been fixed.
 
 '''
 
@@ -1196,7 +1207,7 @@ class Icloud3:#(DeviceScanner):
 
             if self.TRK_METHOD_IOSAPP:
                 if self.CONF_TRK_METHOD_FMF_FAMSHR:
-                    event_msg = (f"{EVLOG_ALERT}Alert: FmF or FamShr Tracking Method is disabled until "
+                    event_msg = (f"{EVLOG_ALERT}iCloud Alert > FmF or FamShr Tracking Method is disabled until "
                                  f"Verification has been completed. iOS App Trackimg Method "
                                  f"wil be used.")
                     self._save_event_halog_info("*", event_msg)
@@ -1308,33 +1319,31 @@ class Icloud3:#(DeviceScanner):
             self._save_event_halog_info("*", event_msg)
 
             for devicename in self.tracked_devices:
+                event_msg = (f"Configuring Device > {self._format_fname_devicename(devicename)}")
+
                 if len(self.track_from_zone.get(devicename)) > 1:
                     w = str(self.track_from_zone.get(devicename))
                     w = w.replace("[", "")
                     w = w.replace("]", "")
                     w = w.replace("'", "")
-                    event_msg = (f"Tracking from zones > {w}")
-                    self._save_event_halog_info("*", event_msg)
+                    event_msg += (f"CRLF• Track from zones > {w}")
 
-                event_msg = (f"Initialize Data Fields > {devicename}")
-                self._save_event_halog_info("*", event_msg)
-                self._display_info_status_msg(devicename, "Initializing Tracking Fields")
-
+                event_msg += self._display_info_status_msg(devicename, "Initialize Tracking Fields")
                 self._initialize_device_status_fields(devicename)
                 self._initialize_device_tracking_fields(devicename)
                 self._initialize_usage_counters(devicename, self.start_icloud3_initial_load_flag)
-                self._display_info_status_msg(devicename, "Initializing Zones")
+                event_msg += self._display_info_status_msg(devicename, "Initialize Zones")
                 self._initialize_device_zone_fields(devicename)
-                self._display_info_status_msg(devicename, "Initializing Stationary Zone")
+                event_msg += self._display_info_status_msg(devicename,
+                            f"Initialize Stationary Zone > {self._format_zone_name(devicename, STATIONARY)}")
                 self._update_stationary_zone(
                         devicename,
                         self.stat_zone_base_lat,
                         self.stat_zone_base_long,
                         STAT_ZONE_MOVE_TO_BASE)
-                self._display_info_status_msg(devicename, "Setup Stationary Zone")
 
                 #Initialize the new attributes
-                self._display_info_status_msg(devicename, "Updating HA Device Entities")
+                event_msg += self._display_info_status_msg(devicename, "Update HA Device Entities")
                 kwargs = self._setup_base_kwargs(
                         devicename,
                         self.zone_home_lat,
@@ -1345,16 +1354,16 @@ class Icloud3:#(DeviceScanner):
                 self._update_device_attributes(devicename, kwargs, attrs, '_start_icloud3')
 
                 if self.start_icloud3_initial_load_flag:
-                    self._setup_sensor_base_attrs(devicename)
+                    event_msg += self._setup_sensor_base_attrs(devicename)
 
-                    event_msg = (f"Initialize Sensors > {devicename}")
-                    self._save_event_halog_info("*", event_msg)
-
-                    self._display_info_status_msg(devicename, "Initializing Sensors")
+                    event_msg += self._display_info_status_msg(devicename, "Initialize Sensor Fields")
                     self._update_device_sensors(devicename, kwargs)
                     self._update_device_sensors(devicename, attrs)
 
-            self._display_info_status_msg(devicename, "Initializing Event Log")
+                self._save_event_halog_info("*", event_msg)
+
+            self._display_info_status_msg(devicename, "Initialize Event Log")
+            self._save_event_halog_info("*", "Initialize Event Log Sensor")
             self._update_sensor_ic3_event_log(self.tracked_devices[0])
 
         except Exception as err:
@@ -1406,22 +1415,22 @@ class Icloud3:#(DeviceScanner):
             return
 
         self.this_update_secs = self._time_now_secs()
-        count_reset_timer     = dt_util.now().strftime('%H:%M:%S')
+        this_update_hhmmss    = dt_util.now().strftime('%H:%M:%S')
         this_minute           = int(dt_util.now().strftime('%M'))
         this_5sec_loop_second = int(dt_util.now().strftime('%S'))
 
         #Reset counts on new day, check for daylight saving time new offset
-        if count_reset_timer.endswith(':00:00'):
+        if this_update_hhmmss.endswith(':00:00'):
             self._timer_tasks_every_hour()
 
-        if count_reset_timer == HHMMSS_ZERO:
+        if this_update_hhmmss == HHMMSS_ZERO:
             self._timer_tasks_midnight()
 
-        elif count_reset_timer == '01:00:00':
+        elif this_update_hhmmss == '01:00:00':
             self._timer_tasks_1am()
 
         #Test code to check ios monitor, display it every minute
-        #if count_reset_timer.endswith(':00'):
+        #if this_update_hhmmss.endswith(':00'):
         #    self.last_iosapp_msg['gary_iphone'] = ""
 
         try:
@@ -1493,18 +1502,20 @@ class Icloud3:#(DeviceScanner):
                         self._save_event(devicename, event_msg)
 
                     entity_id = self.device_tracker_entity_iosapp.get(devicename)
-                    iosapp_state_changed_time, iosapp_state_changed_secs, iosapp_state_changed_timestamp = \
+                    iosapp_state_changed_time, iosapp_state_changed_secs, iosapp_state_changed_timestamp, \
+                            iosapp_state_age_secs, iosapp_state_age_str = \
                             self._get_entity_last_changed_time(entity_id, devicename)
 
-                    iosapp_trigger, iosapp_trigger_changed_time, iosapp_trigger_changed_secs = \
+                    iosapp_trigger, iosapp_trigger_changed_time, iosapp_trigger_changed_secs, \
+                            iosapp_trigger_age_secs,  iosapp_trigger_age_str = \
                             self._get_iosapp_device_sensor_trigger(devicename)
 
                     iosapp_data_msg = "" if iosapp_data_flag else "(Using iC3 data) "
                     iosapp_msg = (f"iOSApp Monitor {iosapp_data_msg}> "
-                                  f"Trigger-{iosapp_trigger}@{iosapp_trigger_changed_time}, "
-                                  f"State-{iosapp_state}@{iosapp_state_changed_time}, "
+                                  f"Trigger-{iosapp_trigger}@{iosapp_trigger_changed_time} (%tage ago), "
+                                  f"State-{iosapp_state}@{iosapp_state_changed_time} (%sage ago), "
                                   f"GPS-{format_gps(iosapp_dev_attrs[ATTR_LATITUDE], iosapp_dev_attrs[ATTR_LONGITUDE], ic3dev_gps_accuracy)}, "
-                                  f"LastUpdtTime-{self.last_update_time.get(devicename_zone)}, ")
+                                  f"LastiC3UpdtTime-{self.last_update_time.get(devicename_zone)}, ")
 
                     #Initialize if first time through
                     if self.last_iosapp_trigger.get(devicename) == '':
@@ -1570,11 +1581,14 @@ class Icloud3:#(DeviceScanner):
                     iosapp_msg += (f"WillUpdate-{update_via_iosapp_flag}")
 
                     #Show iOS App monitor every half hour
-                    if count_reset_timer.endswith(':00:00') or count_reset_timer.endswith(':30:00'):
+                    if this_update_hhmmss.endswith(':00:00') or this_update_hhmmss.endswith(':30:00'):
                         self.last_iosapp_msg[devicename] = ""
 
                     if (iosapp_msg != self.last_iosapp_msg.get(devicename)):
                         self.last_iosapp_msg[devicename] = iosapp_msg
+
+                        iosapp_msg = iosapp_msg.replace("%tage", iosapp_trigger_age_str)
+                        iosapp_msg = iosapp_msg.replace("%sage", iosapp_state_age_str)
                         iosapp_msg += (f", {ios_update_reason}")
                         self._log_debug_msg(devicename, iosapp_msg)
                         self._evlog_debug_msg(devicename, iosapp_msg)
@@ -1618,9 +1632,9 @@ class Icloud3:#(DeviceScanner):
                         if instr(iosapp_state, STATIONARY) and instr(iosapp_state, devicename) == False:
                             continue
 
-
                     if instr(iosapp_state, STATIONARY):
                             iosapp_state = STATIONARY
+
                     #----------------------------------------------------------------------------
                     ic3dev_battery                = iosapp_dev_attrs[ATTR_BATTERY_LEVEL]
                     self.last_battery[devicename] = ic3dev_battery
@@ -1647,6 +1661,26 @@ class Icloud3:#(DeviceScanner):
                         self.last_iosapp_trigger[devicename]              = iosapp_trigger
                         self.last_iosapp_trigger_changed_time[devicename] = iosapp_trigger_changed_time
                         self.last_iosapp_trigger_changed_secs[devicename] = iosapp_trigger_changed_secs
+
+                    #Check ios app for activity every 6-hours
+                    #Issue ios app Location update 15-min before 6-hour alert
+                    elif (this_update_hhmmss in ['23:45:00', '05:45:00', '11:45:00', '17:45:00']
+                            and iosapp_state_age_secs > 20700
+                            and iosapp_trigger_age_secs > 20700):
+                        self._request_iosapp_location_update(devicename)
+
+                    #No activity, display Alert msg in Event Log
+                    elif (this_update_hhmmss in ['00:00:00', '06:00:00', '12:00:00', '18:00:00']
+                            and iosapp_state_age_secs > 21600
+                            and iosapp_trigger_age_secs > 21600):
+                        event_msg = (f"{EVLOG_ALERT}iOS App Alert > No iOS App updates for more than 6 hours > "
+                                    f"Device-{self.device_tracker_entity_iosapp.get(devicename)}, "
+                                    f"LastTrigger-{iosapp_trigger}@{iosapp_trigger_changed_time} ({iosapp_trigger_age_str}), "
+                                    f"LastState-{iosapp_state}@{iosapp_state_changed_time} ({iosapp_state_age_str})")
+                        self._save_event_halog_info(devicename, event_msg)
+                        event_msg = (f"Last iOS App update from {self.device_tracker_entity_iosapp.get(devicename)}"
+                                    f"—{iosapp_trigger_age_str} ago")
+                        self._display_info_status_msg(devicename, event_msg)
 
 
                 zone          = self._format_zone_name(devicename, ic3dev_state)
@@ -1864,7 +1898,7 @@ class Icloud3:#(DeviceScanner):
                     if (ic3dev_data[ATTR_LATITUDE] is None or ic3dev_data[ATTR_LONGITUDE] is None):
                         update_method = ICLOUD_UPDATE
 
-                device_monitor_msg = (f"Device Info > UpdateMethod-{update_method}, UpdateReason-{update_reason}, "
+                device_monitor_msg = (f"Device Monitor > UpdateMethod-{update_method}, UpdateReason-{update_reason}, "
                              f"State-{ic3dev_state}, Trigger-{ic3dev_trigger}, "
                              f"LastLoc-{self._secs_to_time(ic3dev_timestamp_secs)}, "
                              f"Zone-{zone}, ZoneDist-{dist_from_zone_m}m, "
@@ -2246,7 +2280,7 @@ class Icloud3:#(DeviceScanner):
                     event_msg     = (f"State Change detected for {devicename} > "
                                      f"{self.state_last_poll.get(devicename)} to "
                                      f"{state}")
-                    self._save_event_halog_info('*', event_msg)
+                    self._save_event_halog_info(devicename, event_msg)
 
                 if update_method == ICLOUD_UPDATE:
                     if 'nearzone' in state:
@@ -2414,7 +2448,7 @@ class Icloud3:#(DeviceScanner):
                     valid_data_flag = self._get_famshr_data(devicename)
 
                 #An error ocurred accessing the iCloud account. This can be a
-                #Authentication error or an error retrieving the loction data
+                #Authentication error or an error retrieving the loction dataevligale
                 #if ic3dev_data[0] is False:
                 if valid_data_flag == ICLOUD_LOCATION_DATA_ERROR:
                     self.icloud_acct_auth_error_cnt += 1
@@ -2509,7 +2543,6 @@ class Icloud3:#(DeviceScanner):
                 elif do_not_update_flag:
                     pass
 
-                #elif device_status != "" and instr(self.device_status_online, device_status) == False:
                 elif device_status not in ["online", "pending", ""]:
                     do_not_update_flag = True
                     info_msg = "DEVICE OFFLINE"
@@ -2518,7 +2551,7 @@ class Icloud3:#(DeviceScanner):
                         self.old_loc_poor_gps_cnt.get(devicename),
                         device_status,
                         info_msg)
-                    event_msg = (f"{EVLOG_ALERT}Device not Online > Tracking Delayed, Status-{device_status}, "
+                    event_msg = (f"{EVLOG_ALERT}iCloud Alert > {devicename} is Offline > Tracking is delayed, Status-{device_status}, "
                                  f"OnlineStatus-{self.device_status_online}")
                     self._save_event(devicename, event_msg)
 
@@ -4213,11 +4246,14 @@ class Icloud3:#(DeviceScanner):
             secs          = self._timestamp_to_secs(timestamp_utc, UTC_TIME)
             hhmmss        = self._secs_to_time(secs)
             timestamp     = self._secs_to_timestamp(secs)
-            return hhmmss, secs, timestamp
+            age_secs      = self.this_update_secs - secs
+            dhms_age_str  = self._secs_to_minsec_str(age_secs)
+
+            return hhmmss, secs, timestamp, age_secs, dhms_age_str
 
         except Exception as err:
             #_LOGGER.exception(err)
-            return '', 0, TIMESTAMP_ZERO
+            return '', 0, TIMESTAMP_ZERO, 0, ""
 #--------------------------------------------------------------------
     def _get_device_attributes(self, entity_id):
         """ Get attributes of the device """
@@ -4317,11 +4353,22 @@ class Icloud3:#(DeviceScanner):
         elif ic3dev_state == STATIONARY and instr(zone, STATIONARY):
             pass
 
+        #If state is 'stationary' and in another zone, reset the state to the
+        #current zone that was based on the device location.
+        #If the state is in a zone but not the current zone, change the state
+        #to the current zone that was based on the device location.
+        elif ((ic3dev_state == STATIONARY and self._is_inzone(zone)) or
+                (self._is_inzone(ic3dev_state) and self._is_inzone(zone) and
+                    ic3dev_state != zone)):
+            event_msg = (f"State/Zone mismatch > Resetting iC3 State ({ic3dev_state}) "
+                         f"to ({zone})")
+            self._save_event(devicename, event_msg)
+            ic3dev_state = zone
+
         elif ic3dev_state == HOME:
             self.waze_distance_history = {}
 
         #Get friendly name or capitalize and reformat ic3dev_state, reset waze history
-
         if self._is_inzone_zonename(ic3dev_state):
             if self.zone_fname.get(ic3dev_state):
                 ic3dev_state = self.zone_fname.get(ic3dev_state)
@@ -4657,18 +4704,21 @@ class Icloud3:#(DeviceScanner):
             if self.iosapp_monitor_dev_trk_flag.get(devicename):
                 trigger = self.hass.states.get(entity_id).state
 
-                trigger_time, trigger_time_secs, trigger_timestamp = \
+                trigger_time, trigger_time_secs, trigger_timestamp, \
+                        trigger_age_secs, trigger_age_str = \
                         self._get_entity_last_changed_time(entity_id, devicename)
 
                 trigger_abbrev = IOS_TRIGGER_ABBREVIATIONS.get(trigger, trigger)
-                return trigger_abbrev, trigger_time, trigger_time_secs
+
+                return (trigger_abbrev, trigger_time, trigger_time_secs,
+                            trigger_age_secs, trigger_age_str)
 
             else:
-                return '', '', 0
+                return '', '', 0, ""
 
         except Exception as err:
             #_LOGGER.exception(err)
-            return '', '', 0
+            return '', '', 0, ""
 
 #--------------------------------------------------------------------
     def _get_iosapp_device_sensor_battery_level(self, devicename) -> int:
@@ -4722,7 +4772,7 @@ class Icloud3:#(DeviceScanner):
                 in_zone_flag      = zone_dist < self.zone_radius_km.get(zone)
                 closer_zone_flag  = zone_selected is None or zone_dist < zone_selected_dist
                 smaller_zone_flag = (zone_dist == zone_selected_dist
-                        and self.zone_radius_km.get(zone) < self.zone_radius_km.get(zone_selected))
+                        and self.zone_radius_km.get(zone) <= self.zone_radius_km.get(zone_selected))
 
                 if in_zone_flag and (closer_zone_flag or smaller_zone_flag):
                     zone_selected      = zone
@@ -4993,12 +5043,7 @@ class Icloud3:#(DeviceScanner):
 
                 self.hass.states.set("zone." + stat_zone_name, "zoning", attrs)
 
-                if self.start_icloud3_inprocess_flag:
-                    event_msg = (f"Setup Stationary Zone > {stat_zone_name}, "
-                                 f"Using Base Location-{format_gps(latitude, longitude, 0)}, "
-                                 f"DistFromHome-{self._format_dist_m(stat_home_dist)}")
-                    self._save_event("*", event_msg)
-                else:
+                if self.start_icloud3_inprocess_flag == False:
                     event_msg = (f"Reset Stationary Zone Location > {stat_zone_name}, "
                                  f"Moved to Base Location-{format_gps(latitude, longitude, 0)}, "
                                  f"DistFromHome-{self._format_dist_m(stat_home_dist)}")
@@ -5279,6 +5324,9 @@ class Icloud3:#(DeviceScanner):
 
         self.base_zone = save_base_zone
 
+        #return formatted msg for event log
+        return (f"CRLF• {info_msg}")
+
 #--------------------------------------------------------------------
     def _update_count_update_ignore_attribute(self, devicename, info = None):
         self.count_update_ignore[devicename] += 1
@@ -5300,6 +5348,7 @@ class Icloud3:#(DeviceScanner):
 
 #--------------------------------------------------------------------
     def _display_usage_counts(self, devicename, force_display=False):
+
 
         try:
             total_count = self.count_update_icloud.get(devicename) + \
@@ -5337,20 +5386,19 @@ class Icloud3:#(DeviceScanner):
             state_trig_count = self.count_state_changed.get(devicename) + self.count_trigger_changed.get(devicename)
 
             if self.TRK_METHOD_FMF_FAMSHR:
-                column_right_hdr_text = "iCloudCnts"
-                count_msg += (f"«LT-State/Trigger Chgs¦LC-{state_trig_count}¦RT-Authentications¦RC-{self.count_pyicloud_authentications}»"
-                              f"«LT-iCloud Updates¦LC-{self.count_update_icloud.get(devicename)}¦RT-Web Svc Locates¦RC-{self.count_pyicloud_location_update}»"
-                              f"«LT-iOS App Updates¦LC-{self.count_update_iosapp.get(devicename)}¦RT-Time/Locate¦RC-{round(pyi_avg_time_per_call, 2)}sec»")
+                count_msg += (f"«HS¦LH-Device Counts¦RH-iCloud Counts»HE"
+                              f"«LT-State/Trigger Chgs¦LC-{state_trig_count}¦RT-Authentications¦RC-{self.count_pyicloud_authentications}»"
+                              f"«LT-iCloud Updates¦LC-{self.count_update_icloud.get(devicename)}¦RT-Total iCloud Loc Rqsts¦RC-{self.count_pyicloud_location_update}»"
+                              f"«LT-iOS App Updates¦LC-{self.count_update_iosapp.get(devicename)}¦RT-Time/Locate (secs)¦RC-{round(pyi_avg_time_per_call, 2)}»")
             else:
-                column_right_hdr_text = "iOSAppCnts"
-                count_msg += (f"«LT-State/Triggers Chgs¦LC-{state_trig_count}¦RT-iOS Locate Rqsts¦RC-{self.iosapp_locate_request_cnt.get(devicename)}»"
-                              f"«LT-iCloud Updates¦LC-{self.count_update_icloud.get(devicename)}¦RT-iOS App Updates ¦RC-{self.count_update_iosapp.get(devicename)}»")
+                count_msg += (f"«HS¦LH-Device Counts¦RH-iOS App Counts»HE"
+                              f"«LT-State/Triggers Chgs¦LC-{state_trig_count}¦RT-iOS Locate Rqsts¦RC-{self.iosapp_locate_request_cnt.get(devicename)}»"
+                              f"«LT-iCloud Updates¦LC-{self.count_update_icloud.get(devicename)}¦RT-iOS App Updates¦RC-{self.count_update_iosapp.get(devicename)}»")
 
-            count_msg += (f"«LT-Discarded¦LC-{self.count_update_ignore.get(devicename)}¦RT-Waze Routes¦RC-{self.count_waze_locates.get(devicename)}»"
-                          f"¤e")
+            count_msg     += (f"«LT-Discarded¦LC-{self.count_update_ignore.get(devicename)}¦RT-Waze Routes¦RC-{self.count_waze_locates.get(devicename)}»"
+                              f"¤e")
 
-            self._save_event(devicename, f"{count_msg}",
-                        column_left_hdr="DeviceCnts", column_right_hdr=column_right_hdr_text)
+            self._save_event(devicename, f"{count_msg}")
 
         except Exception as err:
             _LOGGER.exception(err)
@@ -6309,8 +6357,8 @@ class Icloud3:#(DeviceScanner):
 
             #Refresh & retry if an unverfied devicename
             if unverified_devicenames != []:
-                event_msg = (f"{EVLOG_ALERT}iCloud did not return device data for a tracked devices > "
-                             f"{self._format_list(unverified_devicenames)}, Will retry Authentication & Verification")
+                event_msg = (f"{EVLOG_ALERT}iCloud Alert > iCloud did not return device data for any tracked devices > "
+                             f"{self._format_list(unverified_devicenames)}, Authentication & Verification will be retried")
                 self._save_event_halog_info("*", event_msg)
 
                 self._pyicloud_authenticate_account(initial_setup=True)
@@ -6320,7 +6368,7 @@ class Icloud3:#(DeviceScanner):
                 unverified_devicenames = [k for k in self.devicename_verified if self.devicename_verified.get(k) == False]
 
                 if unverified_devicenames == []:
-                    event_msg = (f"{EVLOG_ALERT}Authentication & Verification Retry Successful")
+                    event_msg = (f"{EVLOG_ALERT}iCloud Alert > Authentication & Verification Retry Successful")
                 else:
                     event_msg = (f"Verification not successful for devices > "
                                  f"{self._format_list(unverified_devicenames)}")
@@ -6872,20 +6920,21 @@ class Icloud3:#(DeviceScanner):
         badge_attrs['icon']           = SENSOR_ATTR_ICON.get('badge')
         self.sensor_badge_attrs[devicename] = badge_attrs
 
+        event_msg = ""
         for zone in self.track_from_zone.get(devicename):
             if zone == 'home':
                 zone_prefix = ''
             else:
                 zone_prefix = zone + '_'
-            event_msg = (f"Sensor entity prefix > sensor.{zone_prefix}"
+            event_msg = (f"CRLF• Sensor entity prefix > sensor.{zone_prefix}"
                          f"{self.sensor_prefix_name.get(devicename)}")
-            self._save_event("*", event_msg)
 
         log_msg = (f"Set up sensor name for device, devicename-{devicename}, "
                     f"entity_base-{self.sensor_prefix_name.get(devicename)}")
         self._log_debug_msg(devicename, log_msg)
 
-        return
+        #Return text for the event msg during startup
+        return event_msg
 
 #--------------------------------------------------------------------
     def _setup_sensors_custom_list(self, initial_load_flag):
@@ -7199,15 +7248,13 @@ class Icloud3:#(DeviceScanner):
         return
 
 #------------------------------------------------------
-    def _save_event(self, devicename, event_text, column_left_hdr=None, column_right_hdr=None):
+    def _save_event(self, devicename, event_text):
         '''
         Add records to the Event Log table the devicename. If the devicename="*",
         the event_text is added to all devicesnames table.
 
         The event_text can consist of pseudo codes that display a 2-column table (see
         _display_usage_counts function for an example and details)
-        column_left_hdr & column_right_hdr display titles above the table columns in the
-        state and interval areas if specified and indicate that a table is being created.
 
         The event_log lovelace card will display the event in a special color if
         the text starts with a special character:
@@ -7224,14 +7271,7 @@ class Icloud3:#(DeviceScanner):
 
             if devicename is None: devicename = '*'
 
-            if column_left_hdr or column_right_hdr:
-                iosapp_state= column_left_hdr
-                zone        = ''
-                interval    = column_right_hdr
-                travel_time = ''
-                distance    = ''
-
-            elif ((self.start_icloud3_inprocess_flag and self.state_this_poll.get(devicename) == '')
+            if ((self.start_icloud3_inprocess_flag and self.state_this_poll.get(devicename) == '')
                     or devicename == "*"):
                 iosapp_state= ''
                 zone_names  = ''
@@ -7239,10 +7279,6 @@ class Icloud3:#(DeviceScanner):
                 interval    = ''
                 travel_time = ''
                 distance    = ''
-                #if instr(event_text, 'Stage') or instr(event_text, '^^^'):
-                #    pass
-                #else:
-                #    event_text  = f"• {event_text}"
 
             else:
                 iosapp_state= self.last_iosapp_state.get(devicename, '')
@@ -7401,9 +7437,15 @@ class Icloud3:#(DeviceScanner):
         if self.log_level_eventlog_flag:
             attr_recd = [el_recd[1:8] for el_recd in self.event_log_table \
                 if el_recd[0] in el_devicename_check]
+        elif devicename == "*":
+            attr_recd = [el_recd[1:8] for el_recd in self.event_log_table \
+                if ((el_recd[0] in el_devicename_check
+                        or el_recd[7].startswith(EVLOG_ALERT))
+                    and (el_recd[7].startswith(EVLOG_DEBUG) == False))]
         else:
             attr_recd = [el_recd[1:8] for el_recd in self.event_log_table \
-                if (el_recd[0] in el_devicename_check and el_recd[7].startswith(EVLOG_DEBUG) == False)]
+                if (el_recd[0] in el_devicename_check
+                    and el_recd[7].startswith(EVLOG_DEBUG) == False)]
 
         if max_recds == EVENT_LOG_CLEAR_CNT:
             recd_cnt = len(attr_recd)
@@ -8032,9 +8074,9 @@ class Icloud3:#(DeviceScanner):
             if ic3_version > www_version:
                 shutil.copy(ic3_evlog_filename, www_evlog_filename)
                 event_msg = (f"{EVLOG_ALERT}"
-                             f"Alert: Event Log Version Check > Old Version, Update Completed, "
-                             f"CRLFInstalled-{www_version_text}, "
-                             f"Latest-v{ic3_version_text}, "
+                             f"EventLog Alert > Event Log was updated, "
+                             f"CRLFOldVersion-{www_version_text}, "
+                             f"NewVersion-v{ic3_version_text}, "
                              f"CRLFCopied-`{ic3_evlog_filename}` to `{www_directory}`"
                              f"CRLF-----"
                              f"CRLFThe Event Log Card was updated to v{ic3_version_text}. "
@@ -8292,18 +8334,38 @@ class Icloud3:#(DeviceScanner):
 #--------------------------------------------------------------------
     @staticmethod
     def _secs_to_minsec_str(secs):
-        """ Create the time string from seconds """
+        """ Create the time 0d0h0m0s time string from seconds """
 
+        if secs:
+            secs_dhms = float(secs)
+            dhms_str = ""
+            if (secs > 86400): dhms_str += f"{secs_dhms // 86400}d"
+            secs_dhms = secs_dhms % 86400
+            if (secs > 3600): dhms_str += f"{secs_dhms // 3600}h"
+            secs_dhms %= 3600
+            if (secs > 60): dhms_str += f"{secs_dhms // 60}m"
+            secs_dhms %= 60
+            dhms_str += f"{secs_dhms}s"
+            dhms_str = dhms_str.replace('.0', '')
+
+            return dhms_str
+
+        else:
+            return ""
+
+        '''
         if secs:
             secs = int(secs)
             if secs < 60:
-                time_str = f"{secs}s"
-            else:
-                time_str = f"{int(secs/60)}m{(secs % 60)}s"
+                sec_part = f"{secs}s"
+            elif secs < 3600:
+                sec_part = f"{(secs % 60)}s"
+                min_part = f"{int(secs/60)}m"
         else:
             time_str = ""
 
         return time_str
+        '''
 #--------------------------------------------------------------------
     def _secs_since(self, e_secs) -> int:
         #return self.this_update_secs - e_seconds
@@ -8594,7 +8656,7 @@ class Icloud3:#(DeviceScanner):
         self._service_handler_icloud_update(self.group, arg_command='pause')
         configurator = self.hass.components.configurator
 
-        event_msg = (f"{EVLOG_ALERT}Alert: Apple/iCloud Account Verification Required > "
+        event_msg = (f"{EVLOG_ALERT}iCloud Alert > Apple/iCloud Account Verification Required > "
                      f"Open HA Notifications window to select Trusted Device and to "
                      f"enter the 6-digit Verification Code.")
         self._save_event_halog_info('*', event_msg)
@@ -8747,7 +8809,7 @@ class Icloud3:#(DeviceScanner):
             configurator.request_done(request_id)
 
         self._setup_tracking_method(self.tracking_method_config)
-        event_msg = (f"{EVLOG_ALERT}Alert: iCloud Account Verification completed, {self.tracking_method_config}"
+        event_msg = (f"{EVLOG_ALERT}iCloud Alert > iCloud Account Verification completed, {self.tracking_method_config}"
                      f"{self.trk_method_short_name} will be used.")
         self._save_event("*", event_msg)
         self._service_handler_icloud_update(self.group, arg_command='resume')

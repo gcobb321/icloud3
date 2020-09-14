@@ -1,8 +1,13 @@
 ## iCloud3 Version 2.2.0 - Release Candidate Change Log
 
-> iCloud3 Documentation, with the new features (well most of them), is almost done and can be found [here](https://gcobb321.github.io/icloud3_docs/#/).
+> iCloud3 Documentation, with the new features (well most of them), is almost done and can be found [here](https://gcobb321.github.io/icloud3_docs/#/).I
 
+#### Important Links:
 
+- Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
+- Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+- v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
+- Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 
 #### Installation Instructions
 
@@ -14,9 +19,17 @@ When iCloud3 starts, the *icloud3-event-log-card.js* file will be copied to the 
 
 The documentation for v2.2.0 is undergoing a major reorganization that is a work in process. It can be viewed in the iCloud3-docs repository [here](https://https://gcobb321.github.io/icloud3_docs/#/).
 
-If you want to run the Release Candidate from another directory and still keep your 'production' version of iCloud3, see the instructions [here](https://github.com/gcobb321/icloud3/blob/master/v2.2.0-Release%20Candidate/CHANGELOG.md).
-
 ------
+#### Release Candidate 12 (9/14/2020)
+
+- Added the age of the Trigger & State Last Changed Time to the iOSApp Monitor Event Log entry to be able to see if the iOS App is actually being updated on a timely basis.
+- Added an Alert to the Event Log if the iOS App Trigger or State has not been updated in 6 hours. This may indicate the device_tracker entity being monitored is wrong.
+- Added back code in v2.1.0 dealing with a Stationary/Zone mismatch that was removed in v2.2.0.
+- A Zone will now be selected if the phone's distance from the Zone is the same as the zone's radius to match the in-zone test method used by the ios App. Previously, the iCloud3 zone would be see to Away if the distance was the same as the zone's size.
+- Reformatted some startup event messages for clarity.
+- Reformatted the metric counts in the Event Log for clarity.
+- Changed 'Show Startup Logs, Errors & Alerts' to included alerts in the Event Log Action pulldown menu. The Alert notification message under Action will now not he displayed if there was a successful location update.
+
 #### Release Candidate 11j (9/4/2020)
 
 - Added the age of the Trigger & State Last Changed Time to the iOSApp Monitor Event Log entry to be able to see if the iOS App is actually being updated on a timely basis.

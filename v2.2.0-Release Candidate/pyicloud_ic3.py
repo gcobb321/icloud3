@@ -18,7 +18,12 @@ These modules have been incorporated into the pyicloud_ic3.py version used by iC
 
 VERSION = '2.2.0'
 
-"""Library base file."""
+"""
+8/20/20
+    - Changed the _raise_error routine to catch the '2sa needed and missing WEB Cookie' error
+        to generate a Authentication error code rather than generating it's own 2SA Needed Exception
+"""
+
 from six import PY2, string_types
 from uuid import uuid1
 import inspect
@@ -155,17 +160,21 @@ class PyiCloudSession(Session):
         return response
 
     def _raise_error(self, code, reason):
+        if (self.service.requires_2sa
+                and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
+            code = AUTHENTICATION_REQUIRED
 
         if code == AUTHENTICATION_REQUIRED or code == DEVICE_STATUS_ERROR:
-            reason = (f"Reauthentication Required for Account: {self.service.user['apple_id']}")
+            reason = (f"Authentication Required for Account: {self.service.user['apple_id']}")
             api_error = PyiCloudAPIResponseException(reason, code)
-            LOGGER.info(api_error)
+            #LOGGER.info(api_error)
 
             raise (api_error)
 
         elif (self.service.requires_2sa
                 and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
             raise PyiCloud2SARequiredException(self.service.user["apple_id"])
+
 
         elif code in ("ZONE_NOT_FOUND", "AUTHENTICATION_FAILED"):
             reason = ("Please log into https://icloud.com/ to manually "
@@ -328,13 +337,15 @@ class PyiCloudService(object):
             params=self.params,
             data=data,
         )
+        LOGGER.info(f"Send Trusted Device ID result-{request.json()}")
         return request.json().get("success", False)
 
+    #This is called from the iCloud3 in the _icloud_handle_verification_code_entry
+    #code routine
     def validate_verification_code(self, device, code):
         """Verifies a verification code received on a trusted device."""
-        device.update({
-            'verificationCode': code,
-            'trustBrowser': True})
+        #LOGGER.info(f"Verification code-{code}")
+        device.update({'verificationCode': code, 'trustBrowser': True})
         data = json.dumps(device)
 
         try:
@@ -344,10 +355,11 @@ class PyiCloudService(object):
                 data=data,
             )
         except PyiCloudAPIResponseException as error:
+            LOGGER.info(f"Verification Error code-{error.code}")
             if error.code == -21669:
                 # Wrong verification code
                 return False
-            raise
+            #raise
 
         # Re-authenticate, which will both update the HSA data, and
         # ensure that we save the X-APPLE-WEBAUTH-HSA-TRUST cookie.
