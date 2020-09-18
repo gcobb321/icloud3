@@ -22,16 +22,21 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc12'
+VERSION = '2.2.0rc12a'
 
 '''
-## Release Candidate 11j is available
+## Release Candidate 12a is available
 
 Important Links:
 - Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
 - Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 - v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
 - Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+
+rc12a
+- Fixed a ValueError message issue caused by an error retrieving the last trigger time when checking for iOS App updates.
+- Fixed a problem where the stationary timer was not being cleared if it expired and there was a poor gps or old location on the next polling loops. This kept firing off a Move Into Stat Zone triggers every 15-seconds which were not proessed if another trigger came along. It will now retry the Stat Zome trigger for 2-minutes and then reset everything.
+- Reformatted some monitor messages and added one when the Stationary Zone is reset.
 
 rc12
 - Added the age of the Trigger & State Last Changed Time to the iOSApp Monitor Event Log entry to be able to see if the iOS App is actually being updated on a timely basis.
@@ -1693,6 +1698,12 @@ class Icloud3:#(DeviceScanner):
                             ic3dev_latitude,
                             ic3dev_longitude)
 
+                dist_from_home_m = self._zone_distance_m(
+                            devicename,
+                            HOME,
+                            ic3dev_latitude,
+                            ic3dev_longitude)
+
                 zone_radius_m = self.zone_radius_m.get(
                             zone,
                             self.zone_radius_m.get(HOME))
@@ -1898,13 +1909,17 @@ class Icloud3:#(DeviceScanner):
                     if (ic3dev_data[ATTR_LATITUDE] is None or ic3dev_data[ATTR_LONGITUDE] is None):
                         update_method = ICLOUD_UPDATE
 
-                device_monitor_msg = (f"Device Monitor > UpdateMethod-{update_method}, UpdateReason-{update_reason}, "
-                             f"State-{ic3dev_state}, Trigger-{ic3dev_trigger}, "
+                device_monitor_msg = (f"Device Monitor > UpdateMethod-{update_method}, "
+                             f"UpdateReason-{update_reason}, "
+                             f"State-{ic3dev_state}, "
+                             f"Trigger-{ic3dev_trigger}, "
                              f"LastLoc-{self._secs_to_time(ic3dev_timestamp_secs)}, "
-                             f"Zone-{zone}, ZoneDist-{dist_from_zone_m}m, "
+                             f"Zone-{zone}, "
+                             f"HomeDist-{self._format_dist_m(dist_from_home_m)}, "
                              f"inZone-{self._is_inzone_zonename(zone)}, "
                              f"GPS-{format_gps(ic3dev_latitude, ic3dev_longitude, ic3dev_gps_accuracy)}, "
-                             f"StateThisPoll-{ic3dev_state}, StateLastPoll-{self.state_last_poll.get(devicename)}")
+                             f"StateThisPoll-{ic3dev_state}, "
+                             f"StateLastPoll-{self.state_last_poll.get(devicename)}")
                 if self.last_device_monitor_msg.get(devicename) != device_monitor_msg:
                     self._evlog_debug_msg(devicename, device_monitor_msg)
                     self.last_device_monitor_msg[devicename] = device_monitor_msg
@@ -3623,7 +3638,8 @@ class Icloud3:#(DeviceScanner):
                          f"Located-{self._time_to_12hrtime(location_time)} ({location_age_str} ago), "
                          f"OldLocThreshold-{old_location_secs_msg}")
             if self.stat_zone_timer.get(devicename) > 0:
-                event_msg += (f", WillMoveIntoStatZoneAfter-{self._secs_to_time(self.stat_zone_timer.get(devicename))}")
+                event_msg += (f", WillMoveIntoStatZoneAfter-{self._secs_to_time(self.stat_zone_timer.get(devicename))}"
+                              f"({self.stat_zone_moved_total.get(devicename)*100}m)")
             self._save_event_halog_info(devicename, event_msg, log_title="")
 
             return attrs
@@ -3992,20 +4008,20 @@ class Icloud3:#(DeviceScanner):
 
             log_msg = (f"DISTANCES CALCULATED, "
                        f"Zone-{zone}, Method-{distance_method}, "
-                       f"LastDistFmHome-{last_dist_from_zone_km}, "
+                       f"LastDistFmHome-{self._format_dist(last_dist_from_zone_km)}, "
                        f"WazeStatus-{self.waze_status}")
             self._log_debug_interval_msg(devicename, log_msg)
             log_msg = (f"DISTANCES ...Waze, "
-                       f"Dist-{waze_dist_from_zone_km}, "
-                       f"LastPollMoved-{waze_dist_last_poll_moved_km}, "
-                       f"FmHomeMoved-{waze_dist_from_zone_moved_km}, "
+                       f"Dist-{self._format_dist(waze_dist_from_zone_km)}, "
+                       f"LastPollMoved-{self._format_dist(waze_dist_last_poll_moved_km)}, "
+                       f"FmHomeMoved-{self._format_dist(waze_dist_from_zone_moved_km)}, "
                        f"Time-{waze_time_from_zone}, "
                        f"Status-{self.waze_status}")
             self._log_debug_interval_msg(devicename, log_msg)
             log_msg = (f"DISTANCES ...Calc, "
-                       f"Dist-{calc_dist_from_zone_km}, "
-                       f"LastPollMoved-{calc_dist_last_poll_moved_km}, "
-                       f"FmHomeMoved-{calc_dist_from_zone_moved_km}")
+                       f"Dist-{self._format_dist(calc_dist_from_zone_km)}, "
+                       f"LastPollMoved-{self._format_dist(calc_dist_last_poll_moved_km)}, "
+                       f"FmHomeMoved-{self._format_dist(calc_dist_from_zone_moved_km)}")
             self._log_debug_interval_msg(devicename, log_msg)
 
             #if didn't move far enough to determine towards or away_from,
@@ -4038,11 +4054,11 @@ class Icloud3:#(DeviceScanner):
 
             elif dist_from_zone_moved_km<= -.3:            #.18 mi
                 dir_of_travel   = 'towards'
-                dir_of_trav_msg = (f"Dist-{dist_from_zone_moved_km}")
+                dir_of_trav_msg = (f"Dist-{self._format_dist(dist_from_zone_moved_km)}")
 
             elif dist_from_zone_moved_km>= .3:             #.18 mi
                 dir_of_travel   = AWAY_FROM
-                dir_of_trav_msg = (f"Dist-{dist_from_zone_moved_km}")
+                dir_of_trav_msg = (f"Dist-{self._format_dist(dist_from_zone_moved_km)}")
 
             elif self.poor_gps_accuracy_flag.get(devicename):
                 dir_of_travel   = 'Poor.GPS'
@@ -4051,7 +4067,7 @@ class Icloud3:#(DeviceScanner):
             else:
                 #didn't move far enough to tell current direction
                 dir_of_travel   = (f"{last_dir_of_travel}?")
-                dir_of_trav_msg = (f"Moved-{dist_last_poll_moved_km}")
+                dir_of_trav_msg = (f"Moved-{self._format_dist(dist_last_poll_moved_km)}")
 
             #If moved more than stationary zone limit (~.06km(200ft)),
             #reset check StatZone still timer and check again next poll
@@ -4064,15 +4080,26 @@ class Icloud3:#(DeviceScanner):
                 section = "test moved"
                 #Reset stationary zone timer
                 if (calc_dist_last_poll_moved_km > self.stat_dist_move_limit
-                        or devicename not in self.stat_zone_moved_total):
+                        or devicename not in self.stat_zone_moved_total
+                        or self.this_update_secs > self.stat_zone_timer.get(devicename)+120):
                     section = "test moved-reset stat zone "
+
+                    event_msg = (f"Stat Zone > Reset Timer, ")
+                    if calc_dist_last_poll_moved_km > self.stat_dist_move_limit:
+                        event_msg += (f"MovedOverLimit-{(calc_dist_last_poll_moved_km > self.stat_dist_move_limit)}, ")
+                    if devicename not in self.stat_zone_moved_total:
+                        event_msg += "Initial Setup, "
+                    if (self.this_update_secs > self.stat_zone_timer.get(devicename)+120):
+                        event_msg += (f"ResetTimer-{(self.this_update_secs > self.stat_zone_timer.get(devicename)+120)}, ")
+
+                    event_msg += (f"Moved-{self._format_dist(calc_dist_last_poll_moved_km)}, "
+                                  f"Timer-{self._secs_to_time(self.stat_zone_timer.get(devicename))}, ")
+
                     self.stat_zone_moved_total[devicename] = 0
                     self.stat_zone_timer[devicename] = self.this_update_secs + self.stat_zone_still_time
 
-                    log_msg = (f"STATIONARY ZONE, Reset timer, "
-                        f"Moved-{calc_dist_last_poll_moved_km}, "
-                        f"Timer-{self._secs_to_time(self.stat_zone_timer.get(devicename))}")
-                    self._log_debug_interval_msg(devicename, log_msg)
+                    event_msg += (f" to {self._secs_to_time(self.stat_zone_timer.get(devicename))}")
+                    self._evlog_debug_msg(devicename, event_msg)
 
                 #If moved less than the stationary zone limit, update the
                 #distance moved and check to see if now in a stationary zone
@@ -4088,16 +4115,16 @@ class Icloud3:#(DeviceScanner):
                         stat_zone_timer_close_left = HIGH_INTEGER
 
                     log_msg = (f"Stat Zone Movement > "
-                        f"TotalMoved-{self.stat_zone_moved_total.get(devicename)}, "
+                        f"TotalMoved-{self._format_dist(self.stat_zone_moved_total.get(devicename))}, "
                         f"Timer-{self._secs_to_time(self.stat_zone_timer.get(devicename))}, "
-                        f"TimerLeft-{stat_zone_timer_left} secs, "
-                        f"TimerExpired?-{stat_zone_timer_left <= 0}, "
-                        f"TimerExpired?-{self.this_update_secs > self.stat_zone_timer.get(devicename)}")
+                        f"TimerLeft- {stat_zone_timer_left} secs, "
+                        f"TimerExpired-{stat_zone_timer_left <= 0}")
+                        #f"TimerExpired-{self.this_update_secs > self.stat_zone_timer.get(devicename)+120}")
                     self._evlog_debug_msg(devicename, log_msg)
                     log_msg += (f"CloseTimerLeft-{stat_zone_timer_close_left}, "
                         f"SmallDistOK-{self.stat_zone_moved_total.get(devicename) <= self.stat_dist_move_limit}, "
-                        f"DistFmZone-{dist_from_zone_km}, "
-                        f"CloseDist-{self.zone_radius_km.get(self.base_zone)*4}")
+                        f"DistFmZone-{self._format_dist(dist_from_zone_km)}, "
+                        f"CloseDist-{self._format_dist(self.zone_radius_km.get(self.base_zone)*4)}")
                     self._log_debug_msg(devicename, log_msg)
                     section = "CheckNowinzone_stationary"
 
@@ -4159,9 +4186,12 @@ class Icloud3:#(DeviceScanner):
 
             log_msg = (f"DISTANCE DATA-{devicename}-{distance_data}")
             self._log_debug_msg(devicename, log_msg)
-            evlog_msg = (f"Distance Data > DirOfTrav-{dir_of_travel}, LastDirOfTrav-{last_dir_of_travel}, "
-                         f"DistFmZone-{dist_from_zone_km}km, LastDistFmZone{last_dist_from_zone_km}km, "
-                         f"DistFmZoneMoved-{dist_from_zone_moved_km}km, DistFmLastPollMoved-{dist_last_poll_moved_km}km ")
+            evlog_msg = (f"Distance Data > DirOfTrav-{dir_of_travel}, "
+                         f"LastDirOfTrav-{last_dir_of_travel}, "
+                         f"DistFmZone-{self._format_dist(dist_from_zone_km)}, "
+                         f"LastDistFmZone-{self._format_dist(last_dist_from_zone_km)}, "
+                         f"DistFmZoneMoved-{self._format_dist(dist_from_zone_moved_km)}, "
+                         f"DistFmLastPollMoved-{self._format_dist(dist_last_poll_moved_km)}")
             self._evlog_debug_msg(devicename, evlog_msg)
 
             return  distance_data
@@ -4253,7 +4283,7 @@ class Icloud3:#(DeviceScanner):
 
         except Exception as err:
             #_LOGGER.exception(err)
-            return '', 0, TIMESTAMP_ZERO, 0, ""
+            return '', 0, TIMESTAMP_ZERO, 0, ''
 #--------------------------------------------------------------------
     def _get_device_attributes(self, entity_id):
         """ Get attributes of the device """
@@ -4714,11 +4744,11 @@ class Icloud3:#(DeviceScanner):
                             trigger_age_secs, trigger_age_str)
 
             else:
-                return '', '', 0, ""
+                return '', TIMESTAMP_ZERO, 0, 0, ''
 
         except Exception as err:
             #_LOGGER.exception(err)
-            return '', '', 0, ""
+            return '', TIMESTAMP_ZERO, 0, 0, ''
 
 #--------------------------------------------------------------------
     def _get_iosapp_device_sensor_battery_level(self, devicename) -> int:

@@ -20,6 +20,14 @@ When iCloud3 starts, the *icloud3-event-log-card.js* file will be copied to the 
 The documentation for v2.2.0 is undergoing a major reorganization that is a work in process. It can be viewed in the iCloud3-docs repository [here](https://https://gcobb321.github.io/icloud3_docs/#/).
 
 ------
+
+#### Release Candidate 12a is available
+
+- Fixed a ValueError message issue caused by an error retrieving the last trigger time when checking for iOS App updates.
+- Fixed a problem where the stationary timer was not being handled if it was reached and there was a poor gps or old location on the next few polling loops. This kept firing off a Move Into Stat Zone trigger every 15-seconds which were not processed if another trigger came along so it was never reset. It will now retry the Stationary Zone trigger for 2-minutes and then reset everything.
+- Reformatted some monitor messages and added one when the Stationary Zone is reset.
+
+
 #### Release Candidate 12 (9/14/2020)
 
 - Added the age of the Trigger & State Last Changed Time to the iOSApp Monitor Event Log entry to be able to see if the iOS App is actually being updated on a timely basis.
