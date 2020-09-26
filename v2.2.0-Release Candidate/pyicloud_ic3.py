@@ -16,7 +16,7 @@ modules. They have been modified and are now maintained by Quantame & Z Zeleznic
 These modules have been incorporated into the pyicloud_ic3.py version used by iCloud3.
 """
 
-VERSION = '2.2.0'
+VERSION = "2.2.0"
 
 """
 8/20/20
@@ -24,29 +24,30 @@ VERSION = '2.2.0'
         to generate a Authentication error code rather than generating it's own 2SA Needed Exception
 """
 
-from six import PY2, string_types
-from uuid import uuid1
+import http.cookiejar as cookielib
 import inspect
 import json
 import logging
-from requests import Session
 import sys
-from tempfile import gettempdir
-from os import path, mkdir
+from os import mkdir, path
 from re import match
-import http.cookiejar as cookielib
+from tempfile import gettempdir
+from uuid import uuid1
+
+from requests import Session
+from six import PY2, string_types
 
 LOGGER = logging.getLogger(__name__)
 
-#Device Status Codes
-DEVICE_STATUS_ONLINE       = 200
-DEVICE_STATUS_OFFLINE      = 201
-DEVICE_STATUS_PENDING      = 203
+# Device Status Codes
+DEVICE_STATUS_ONLINE = 200
+DEVICE_STATUS_OFFLINE = 201
+DEVICE_STATUS_PENDING = 203
 DEVICE_STATUS_UNREGISTERED = 204
-AUTHENTICATION_REQUIRED    = 450
-DEVICE_STATUS_ERROR        = 500
+AUTHENTICATION_REQUIRED = 450
+DEVICE_STATUS_ERROR = 500
 
-'''
+"""
 #Other Device Status Codes
 SEND_MESSAGE_MSG_DISPLAYED = 200
 REMOTE_WIPE_STARTED = 200
@@ -70,7 +71,8 @@ LOCK_SUCC_PASSCODE_NOT_SET_PASSCD_EXISTS = 2201
 LOCK_SUCCESSFUL_2 = 2204
 LOCK_FAIL_PASSCODE_NOT_SET_CONS_FAIL = 2403
 LOCK_FAIL_NO_PASSCD_2 = 2406
-'''
+"""
+
 
 class PyiCloudPasswordFilter(logging.Filter):
     """Password log hider."""
@@ -104,7 +106,7 @@ class PyiCloudSession(Session):
             request_logger.addFilter(self.service.password_filter)
 
         request_logger.debug(f"{method}, {url}, {kwargs.get('data', '')}")
-        #request_logger.info(f"{method}, {url}, {kwargs.get("data", "")}"")
+        # request_logger.info(f"{method}, {url}, {kwargs.get("data", "")}"")
 
         kwargs_retry_flag = kwargs.get("retried", None)
         kwargs.pop("retried", None)
@@ -115,10 +117,11 @@ class PyiCloudSession(Session):
 
         kwargs_retry_flag = True
         if not response.ok and content_type not in json_mimetypes:
-            if (kwargs_retry_flag is None
-                and (response.status_code == AUTHENTICATION_REQUIRED
-                    or response.status_code == DEVICE_STATUS_ERROR)):
-                message = (f"Reauthentication Required for Account: {self.service.user['apple_id']}")
+            if kwargs_retry_flag is None and (
+                response.status_code == AUTHENTICATION_REQUIRED
+                or response.status_code == DEVICE_STATUS_ERROR
+            ):
+                message = f"Reauthentication Required for Account: {self.service.user['apple_id']}"
 
                 api_error = PyiCloudAPIResponseException(
                     message, response.status_code, retry=True
@@ -140,7 +143,7 @@ class PyiCloudSession(Session):
             return response
 
         request_logger.debug(data)
-        #request_logger.info(data)
+        # request_logger.info(data)
 
         reason = data.get("errorMessage")
         reason = reason or data.get("reason")
@@ -160,33 +163,42 @@ class PyiCloudSession(Session):
         return response
 
     def _raise_error(self, code, reason):
-        if (self.service.requires_2sa
-                and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
+        if (
+            self.service.requires_2sa
+            and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"
+        ):
             code = AUTHENTICATION_REQUIRED
 
         if code == AUTHENTICATION_REQUIRED or code == DEVICE_STATUS_ERROR:
-            reason = (f"Authentication Required for Account: {self.service.user['apple_id']}")
+            reason = (
+                f"Authentication Required for Account: {self.service.user['apple_id']}"
+            )
             api_error = PyiCloudAPIResponseException(reason, code)
-            #LOGGER.info(api_error)
+            # LOGGER.info(api_error)
 
             raise (api_error)
 
-        elif (self.service.requires_2sa
-                and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
+        elif (
+            self.service.requires_2sa
+            and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"
+        ):
             raise PyiCloud2SARequiredException(self.service.user["apple_id"])
 
-
         elif code in ("ZONE_NOT_FOUND", "AUTHENTICATION_FAILED"):
-            reason = ("Please log into https://icloud.com/ to manually "
-                      "finish setting up your iCloud service")
+            reason = (
+                "Please log into https://icloud.com/ to manually "
+                "finish setting up your iCloud service"
+            )
             api_error = PyiCloudServiceNotActivatedException(reason, code)
             LOGGER.error(api_error)
 
             raise (api_error)
 
         elif code == "ACCESS_DENIED":
-            reason += (".  Please wait a few minutes then try again."
-                "The remote servers might be trying to throttle requests.")
+            reason += (
+                ".  Please wait a few minutes then try again."
+                "The remote servers might be trying to throttle requests."
+            )
 
         api_error = PyiCloudAPIResponseException(reason, code)
 
@@ -207,7 +219,7 @@ class PyiCloudService(object):
 
     HOME_ENDPOINT = "https://www.icloud.com"
     SETUP_ENDPOINT = "https://setup.icloud.com/setup/ws/1"
-    #"logout_no_services": "https://setup.icloud.com/setup/ws/1/logout",
+    # "logout_no_services": "https://setup.icloud.com/setup/ws/1/logout",
 
     def __init__(
         self,
@@ -282,7 +294,7 @@ class PyiCloudService(object):
         data = dict(self.user)
 
         # We authenticate every time, so "remember me" is not needed
-        #data.update({"extended_login": False})
+        # data.update({"extended_login": False})
         data.update({"extended_login": True})
 
         try:
@@ -340,12 +352,12 @@ class PyiCloudService(object):
         LOGGER.info(f"Send Trusted Device ID result-{request.json()}")
         return request.json().get("success", False)
 
-    #This is called from the iCloud3 in the _icloud_handle_verification_code_entry
-    #code routine
+    # This is called from the iCloud3 in the _icloud_handle_verification_code_entry
+    # code routine
     def validate_verification_code(self, device, code):
         """Verifies a verification code received on a trusted device."""
-        #LOGGER.info(f"Verification code-{code}")
-        device.update({'verificationCode': code, 'trustBrowser': True})
+        # LOGGER.info(f"Verification code-{code}")
+        device.update({"verificationCode": code, "trustBrowser": True})
         data = json.dumps(device)
 
         try:
@@ -359,7 +371,7 @@ class PyiCloudService(object):
             if error.code == -21669:
                 # Wrong verification code
                 return False
-            #raise
+            # raise
 
         # Re-authenticate, which will both update the HSA data, and
         # ensure that we save the X-APPLE-WEBAUTH-HSA-TRUST cookie.
@@ -391,7 +403,6 @@ class PyiCloudService(object):
             LOGGER.error(api_error)
             raise api_error
 
-
     def _get_webservice_url(self, ws_key):
         """Get webservice URL, raise an exception if not exists."""
         if self._webservices.get(ws_key) is None:
@@ -400,7 +411,7 @@ class PyiCloudService(object):
             )
         return self._webservices[ws_key]["url"]
 
-######################################################################
+    ######################################################################
     @property
     def devices(self):
         """Returns all devices."""
@@ -432,15 +443,18 @@ class PyiCloudService(object):
 
     def __repr__(self):
         return "<{str(self)}>"
+
+
 ####################################################################################
 #
 #   Find my iPhone service
 #
 ####################################################################################
 """Find my iPhone service."""
-#import json
-#from six import PY2, text_type
-#from pyicloud.exceptions import PyiCloudNoDevicesException
+# import json
+# from six import PY2, text_type
+# from pyicloud.exceptions import PyiCloudNoDevicesException
+
 
 class FindMyiPhoneServiceManager(object):
     """The 'Find my iPhone' iCloud service
@@ -649,14 +663,17 @@ class AppleDevice(object):
 
     def __repr__(self):
         return f"<AppleDevice({str(self)})>"
+
+
 ####################################################################################
 #
 #   Find my Friends service
 #
 ####################################################################################
 """Find my Friends service."""
-#from __future__ import absolute_import
-#import json
+# from __future__ import absolute_import
+# import json
+
 
 class FindFriendsService(object):
     """
@@ -670,8 +687,10 @@ class FindFriendsService(object):
         self.session = session
         self.params = params
         self._service_root = service_root
-        #self._friend_endpoint = "%s/fmipservice/client/fmfWeb/initClient" % (self._service_root,)
-        self._friend_endpoint = f"{self._service_root}/fmipservice/client/fmfWeb/initClient"
+        # self._friend_endpoint = "%s/fmipservice/client/fmfWeb/initClient" % (self._service_root,)
+        self._friend_endpoint = (
+            f"{self._service_root}/fmipservice/client/fmfWeb/initClient"
+        )
         self.refresh_always = False
         self.response = {}
 
@@ -795,18 +814,20 @@ class FindFriendsService(object):
 
 class PyiCloudException(Exception):
     """Generic iCloud exception."""
+
     pass
 
 
 # API
 class PyiCloudAPIResponseException(PyiCloudException):
     """iCloud response exception."""
+
     def __init__(self, reason, code=None, retry=False):
         self.reason = reason
         self.code = code
         message = reason or ""
         if code:
-            message += (f" (Error Code {code})")
+            message += f" (Error Code {code})"
         if retry:
             message += ". Retrying ..."
 
@@ -815,17 +836,20 @@ class PyiCloudAPIResponseException(PyiCloudException):
 
 class PyiCloudServiceNotActivatedException(PyiCloudAPIResponseException):
     """iCloud service not activated exception."""
+
     pass
 
 
 # Login
 class PyiCloudFailedLoginException(PyiCloudException):
     """iCloud failed login exception."""
+
     pass
 
 
 class PyiCloud2SARequiredException(PyiCloudException):
     """iCloud 2SA required exception."""
+
     def __init__(self, apple_id):
         message = f"Two-Step Authentication (2SA) Required for Account {apple_id}"
         super(PyiCloud2SARequiredException, self).__init__(message)
@@ -833,12 +857,14 @@ class PyiCloud2SARequiredException(PyiCloudException):
 
 class PyiCloudNoStoredPasswordAvailableException(PyiCloudException):
     """iCloud no stored password exception."""
+
     pass
 
 
 # Webservice specific
 class PyiCloudNoDevicesException(PyiCloudException):
     """iCloud no device exception."""
+
     pass
 
 
@@ -849,9 +875,11 @@ class PyiCloudNoDevicesException(PyiCloudException):
 ####################################################################################
 """Utils."""
 import getpass
-import keyring
 import sys
-#from .exceptions import PyiCloudNoStoredPasswordAvailableException
+
+import keyring
+
+# from .exceptions import PyiCloudNoStoredPasswordAvailableException
 
 KEYRING_SYSTEM = "pyicloud://icloud-password"
 
@@ -865,7 +893,9 @@ def get_password(username, interactive=sys.stdout.isatty()):
             raise
 
         return getpass.getpass(
-            "Enter iCloud password for {username}: ".format(username=username,)
+            "Enter iCloud password for {username}: ".format(
+                username=username,
+            )
         )
 
 
@@ -887,7 +917,9 @@ def get_password_from_keyring(username):
             "No pyicloud password for {username} could be found "
             "in the system keychain.  Use the `--store-in-keyring` "
             "command-line option for storing a password for this "
-            "username.".format(username=username,)
+            "username.".format(
+                username=username,
+            )
         )
 
     return result
@@ -895,12 +927,19 @@ def get_password_from_keyring(username):
 
 def store_password_in_keyring(username, password):
     """Store the password of a username."""
-    return keyring.set_password(KEYRING_SYSTEM, username, password,)
+    return keyring.set_password(
+        KEYRING_SYSTEM,
+        username,
+        password,
+    )
 
 
 def delete_password_in_keyring(username):
     """Delete the password of a username."""
-    return keyring.delete_password(KEYRING_SYSTEM, username,)
+    return keyring.delete_password(
+        KEYRING_SYSTEM,
+        username,
+    )
 
 
 def underscore_to_camelcase(word, initial_capital=False):
