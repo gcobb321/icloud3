@@ -1,8 +1,8 @@
 ## iCloud3 Version 2.2.0 - Release Candidate Change Log
 
-> iCloud3 Documentation, with the new features (well most of them), is almost done and can be found [here](https://gcobb321.github.io/icloud3_docs/#/).I
-
-#### Important Links:
+> iCloud3 Documentation, with the new features (well most of them), is almost done and can be found [here](https://gcobb321.github.io/icloud3_docs/#/).
+>
+> Important Links:
 
 - Download the installation zip file [here](https://github.com/gcobb321/icloud3/tree/master/v2.2.0-Release%20Candidate)
 - Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
@@ -21,7 +21,18 @@ The documentation for v2.2.0 is undergoing a major reorganization that is a work
 
 ------
 
-#### Release Candidate 12a is available
+#### Release Candidate 12b (9/27/2020)
+
+- Added error checking to time conversions routines.
+- Add the 1/2/3 number to the Zone1/2/3 & LastZone1/2/3 sensor friendly name to identify them in the HA History.
+- The phone is moved into the Stationary zone if is less than 4 times the Home zone radius and less than 1/2 of the time left to move it into the zone. The purpose was to reduce the polling when close to Home and moving very little. This was confusing and could lead to errors if the zone information had not been updated in the iOS App. This has been removed.
+- The Stationary Zone location is now updated after the device_tracker entity is updated instead of before. This should prevent any location mismatches on the Lovelace map card when the phone exits the stationary zone, the station zone is moved back to it's base location and the phone's path is being displayed.
+- Fixed an error updating the Event Log during iCloud3 initialization if the *config/www/custom_cards* directory did not exist.
+- Fixed some bugs restarting iCloud3 using the *Event Log > Action* pulldown. The problem occurred when invalid device errors were found while the track_devices configuration was verified, then corrected and then iCloud3 was restarted on the *Event Log > Action* pulldown. This also required updates to the Event Log.
+- When iCloud3 starts, the Home location is used to initialize the device's location because the mobile_app integration has not been started. When restarting from the Event Log, the iOS App's location is now used to initialize the device's location.
+- Tweaked some colors in the Event Log.
+
+#### Release Candidate 12a (9/21/2020)
 
 - Fixed a ValueError message issue caused by an error retrieving the last trigger time when checking for iOS App updates.
 - Fixed a problem where the stationary timer was not being handled if it was reached and there was a poor gps or old location on the next few polling loops. This kept firing off a Move Into Stat Zone trigger every 15-seconds which were not processed if another trigger came along so it was never reset. It will now retry the Stationary Zone trigger for 2-minutes and then reset everything.
