@@ -12,7 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.09
+//  Version=2.2.0.10
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -23,7 +23,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version   = "2.2.0.09"
+        const version   = "2.2.0.10"
         const cardTitle = "iCloud3 Event Log"
 
         const root = this.shadowRoot;
@@ -368,17 +368,11 @@ class iCloud3EventLogCard extends HTMLElement {
             #thisButtonId, #logRecdCnt, #devType, #hdrCellWidth {
                 /*font-size: 2px;*/
                 color: transparent;
-                width: 70px;
+                width: 25px;
                 float: left;
                 /*border: 1px solid green;*/
             }
-            #xhdrCellWidth {
-                font-size: 2px;
-                color: transparent;
-                width: 0px;
-                float: left;
-                /*border: 1px solid green;*/
-            }
+
             #versionText {
                 color: silver;
                 float: right;
