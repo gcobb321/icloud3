@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.0rc12b'
+VERSION = '2.2.0rc12c'
 
 '''
 ## Release Candidate 12a is available
@@ -32,6 +32,10 @@ Important Links:
 - Full Change Log is [here](https://github.com/gcobb321/icloud3/blob/50dd0d9c46f4832864eb695be1916d221ca3354c/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
 - v2.2.0 Documentation is [here](https://gcobb321.github.io/icloud3_docs/#/)
 - Installation instructions are [here](https://github.com/gcobb321/icloud3/blob/700b9cc5d2208f02d14a39df616fe6a742ec9af4/v2.2.0-Release%20Candidate/CHANGELOG-RELEASE%20CANDIDATE.md)
+
+rc12c
+- Reformatted some error and alert messages for clarity.
+- Fixed a bug selecting a zone within a zone.
 
 rc12b
 - Added error checking to time conversions routines.
@@ -4847,7 +4851,7 @@ class Icloud3:#(DeviceScanner):
                         and self.zone_radius_km.get(zone) <= self.zone_radius_km.get(zone_selected))
 
                 if in_zone_flag and (closer_zone_flag or smaller_zone_flag):
-                    zone_selected      = zone
+                    zone_selected_dist = zone_dist
                     zone_selected      = zone
                     iosapp_zone_msg    = ""
 

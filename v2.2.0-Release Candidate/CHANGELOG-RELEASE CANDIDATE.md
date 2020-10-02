@@ -21,9 +21,10 @@ The documentation for v2.2.0 is undergoing a major reorganization that is a work
 
 ------
 
-#### Release Candidate 12c (9/28/2020)
+#### Release Candidate 12c (10/2/2020)
 
 - Fixed an Event Log formatting issue when displayed on an iPhone.
+- Fixed a bug selecting a zone within a zone.
 
 #### Release Candidate 12b (9/27/2020)
 
