@@ -24,9 +24,9 @@ iCloud3 uses the GitHub Releases framework to download all the necessary install
 1. Create a `config/custom_components/icloud` directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` GitHub directory (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml`) into that directory so the directory structure looks like:
 
 ```yaml
-config
-  custom_components
-    icloud3
+config/
+  custom_components/
+    icloud3/
       device_tracker.py
       pyicloud_ic3.py
       __init__.py
