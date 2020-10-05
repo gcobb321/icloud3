@@ -7,21 +7,21 @@ iCloud3 operates on a 5-second cycle, looking for transactions from the HA IOS A
 iCloud3 polls the device on a dynamic schedule and determines the polling interval time based on:
 
 - If the device is in a zone or not in a zone. The zones include the ones you have set up in `zone.yaml` and a special Dynamic Stationary Zone that is created by iCloud3 when you haven't changed your location in a while (shopping center, friends house, doctors office, etc.)
-- A 'line-of-sight' calculated distance from the Home  or other zone to your current location using the GPS coordinates.
-- The driving time and distance between Home or another zone and your current location using the [Waze Route Calculator](http://www.waze.com) map/driving/direction service. 
+- A 'line-of-sight' calculated distance from the Home or other zone to your current location using the GPS coordinates.
+- The driving time and distance between Home or another zone and your current location using the [Waze Route Calculator](http://www.waze.com) map/driving/direction service.
 - The direction you are going — towards Home or other zone, away from the zone or stationary.
 - The battery level of the device if the battery level is available.
 - The accuracy of the GPS location and if the last poll returned a location that the iCloud service determined was 'old'.
 
-The above analysis results in a polling interval. The further away from Home or other zone and the longer the travel time back to the zone, the longer the interval; the closer to the zone, the shorter the interval. The polling interval checks each device being tracked every 15-seconds to see if it's location should be updated. If so, it and all of the other devices being tracked with iCloud3 are updated (more about this below). With a 15-second interval, you track the distance down 1/10 of a mile/kilometer. This gives a much more accurate distance number that can used to trigger automations. You no longer limited to entering or exiting a zone. 
+The above analysis results in a polling interval. The further away from Home or other zone and the longer the travel time back to the zone, the longer the interval; the closer to the zone, the shorter the interval. The polling interval checks each device being tracked every 15-seconds to see if it's location should be updated. If so, it and all of the other devices being tracked with iCloud3 are updated (more about this below). With a 15-second interval, you track the distance down 1/10 of a mile/kilometer. This gives a much more accurate distance number that can used to trigger automations. You no longer limited to entering or exiting a zone.
 
-Another custom component module (`pyicloud_ic3.py`) is responsible for communicating with the iCloud Location Services to authenticate the iCloud account and to locate the devices associated with the account using either Find-my-Friends or family-sharing methods (see the Using iCloud3 chapter for more information about these tracking methods). If the iCloud account is associated with several devices, the location information for the all of the devices in the account is returned on the same poll, whether or not the device is being tracked by Home Assistant.  
+Another custom component module (`pyicloud_ic3.py`) is responsible for communicating with the iCloud Location Services to authenticate the iCloud account and to locate the devices associated with the account using either Find-my-Friends or family-sharing methods (see the Using iCloud3 chapter for more information about these tracking methods). If the iCloud account is associated with several devices, the location information for the all of the devices in the account is returned on the same poll, whether or not the device is being tracked by Home Assistant.
 
 ### Installing iCloud3
 
-iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample Lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file. 
+iCloud3 uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample Lovelace cards, etc). Go to the 'Releases' tab at the top of this repository, select the version of iCloud3 you want and download the .zip file.
 
-1. Create a `config/custom_components/icloud` directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` GitHub directory (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml`)  into that directory so the directory structure looks like:
+1. Create a `config/custom_components/icloud` directory on the device (Raspberry Pi) running Home Assistant. Copy the five component files in the `custom_components-icloud3` GitHub directory (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml`) into that directory so the directory structure looks like:
 
 ```yaml
 config
@@ -56,7 +56,7 @@ iCloud3 is listed on the default HACS Repositories/Integrations page and can be 
 !> iCloud3 logs information to the HA log file and to an internal table that can be viewed using the iCloud3 Event Log Lovelace Custom Card. Information about this custom card, and installation instructions are in the Support Programs chapter.
 
 ### About the iCloud3 Event Log Custom Card
-As iCloud3 runs, various entries are written to the HA log file that show device information, how it is tracked, operational errors, startup information and other items that may help determine what is going on if there is a problem and to monitor when the device's information is determined and updated. A lot of this information is also written to the `iCloud3 Event Log` which can be viewed using the `iCloud3 Event Log Lovelace Card`. 
+As iCloud3 runs, various entries are written to the HA log file that show device information, how it is tracked, operational errors, startup information and other items that may help determine what is going on if there is a problem and to monitor when the device's information is determined and updated. A lot of this information is also written to the `iCloud3 Event Log` which can be viewed using the `iCloud3 Event Log Lovelace Card`.
 
 Below are 3 screens. The one on the left shows iCloud3 starting up, the middle one shows arriving Home and the one on the right shows entering the 'Whse' zone.
 
@@ -66,9 +66,9 @@ Below are 3 screens. The one on the left shows iCloud3 starting up, the middle o
 ### Installing the iCloud3 Event Log Custom Card
 Custom Lovelace cards are typically stored in the `/www/custom_cards` directory. Do the following:
 
-1. Create the `/www/custom_cards` directory if it does not exist. 
+1. Create the `/www/custom_cards` directory if it does not exist.
 
-2. Copy the `icloud3-event-log-card.js` into the `/www/custom-cards` directory. If you are installing iCloud3 using HACS, the file is in the `custom_components/icloud3` directory. If you are already using custom cards and they are in a different directory,  copy the `icloud3-event-log-card.js` file into the one you are using.
+2. Copy the `icloud3-event-log-card.js` into the `/www/custom-cards` directory. If you are installing iCloud3 using HACS, the file is in the `custom_components/icloud3` directory. If you are already using custom cards and they are in a different directory, copy the `icloud3-event-log-card.js` file into the one you are using.
 
 3. Open the `ui-lovelace.yaml` file and add the following lines to the beginning of the file. Again, change the directory name if you are using a different location.
 
@@ -78,12 +78,12 @@ Custom Lovelace cards are typically stored in the `/www/custom_cards` directory.
        type: js
    ```
 
-4. Add the following lines to the `ui-lovelace.yaml` file to create the custom card. 
+4. Add the following lines to the `ui-lovelace.yaml` file to create the custom card.
 
    ```
     - title: iCloud Event Log
-       icon: mdi:information-outline 
-       cards: 
+       icon: mdi:information-outline
+       cards:
          - type: custom: icloud3-event-log-card
            entity: sensor.icloud3_event_log
    ```
