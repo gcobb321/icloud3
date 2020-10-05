@@ -46,7 +46,7 @@ iCloud3 is listed on the default HACS Repositories/Integrations page and can be 
 
 1. Display the HACS control panel. Then type `icloud3` in the 'Please enter a search term...' field.
 2. The `iCloud3 Device Tracker` card is displayed, Select it.
-3. Click `Install`. This will install all of the custom component files above into the 'config/custom_components/icloud3' directory on your Raspberry Pi or the device you are running Home Assistant on.
+3. Click `Install`. This will install all of the custom component files above into the `config/custom_components/icloud3` directory on your Raspberry Pi or the device you are running Home Assistant on.
 4. Log onto your Pi.
 5. Install the `iCloud3 Event Log` card using the [procedures below](#installing-the-icloud3-event-log-custom-card). The `icloud3-event-log-card.js` file is installed in the `config/custom_components/icloud3` directory with the other files.
 6. Set up the iCloud3 device_tracker configuration parameters. Instructions, including examples, are found in the Setting up iCloud3 chapter.
