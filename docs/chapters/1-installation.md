@@ -34,9 +34,10 @@ config
       services.yaml
 ```
 
-2. Install the `iCloud3 Event Log` card using the procedures below.
+2. Install the `iCloud3 Event Log` card using the [procedures below](#installing-the-icloud3-event-log-custom-card).
 
 3. Set up the iCloud3 device_tracker configuration parameters. Instructions, including examples, are found in the Setting up iCloud3 chapter.
+
 4. Restart Home Assistant.
 
 ### Installing iCloud3 with HACS (Home Assistant Community Store)
@@ -47,7 +48,7 @@ iCloud3 is listed on the default HACS Repositories/Integrations page and can be 
 2. The `iCloud3 Device Tracker` card is displayed, Select it.
 3. Click `Install`. This will install all of the custom component files above into the 'config/custom_components/icloud3' directory on your Raspberry Pi or the device you are running Home Assistant on.
 4. Log onto your Pi.
-5. Install the `iCloud3 Event Log` card using the procedures below. The `icloud3-event-log-card-js` is installed in the `config/custom_components/icloud3` directory with the other files.
+5. Install the `iCloud3 Event Log` card using the [procedures below](#installing-the-icloud3-event-log-custom-card). The `icloud3-event-log-card.js` file is installed in the `config/custom_components/icloud3` directory with the other files.
 6. Set up the iCloud3 device_tracker configuration parameters. Instructions, including examples, are found in the Setting up iCloud3 chapter.
 7. Restart Home Assistant.
 
@@ -64,31 +65,33 @@ Below are 3 screens. The one on the left shows iCloud3 starting up, the middle o
 
 ---
 ### Installing the iCloud3 Event Log Custom Card
-Custom Lovelace cards are typically stored in the `/www/custom_cards` directory. Do the following:
+Custom Lovelace cards are typically stored in the `config/www/custom_cards` directory. Do the following:
 
-1. Create the `/www/custom_cards` directory if it does not exist.
+1. Create the `config/www/custom_cards` directory if it does not exist.
 
-2. Copy the `icloud3-event-log-card.js` into the `/www/custom-cards` directory. If you are installing iCloud3 using HACS, the file is in the `custom_components/icloud3` directory. If you are already using custom cards and they are in a different directory, copy the `icloud3-event-log-card.js` file into the one you are using.
+2. Copy `icloud3-event-log-card.js` into the `config/www/custom-cards` directory. If you are installing iCloud3 using HACS, the source file is in the `config/custom_components/icloud3` directory. If you are already using custom cards and they are in a different directory, copy `icloud3-event-log-card.js` into the one you are using.
 
-3. Open the `ui-lovelace.yaml` file and add the following lines to the beginning of the file. Again, change the directory name if you are using a different location.
+3. Open the file `configuration.yaml`, and add similar lines below to the lovelace section to add the new resource.
 
    ```
-   resources:
-     - url: /local/custom_cards/icloud3-event-log-card.js?v=1.000
-       type: js
+   lovelace:
+     mode: yaml
+     resources:
+       - url: /local/custom_cards/icloud3-event-log-card.js?v=1.000
+         type: module
    ```
 
-4. Add the following lines to the `ui-lovelace.yaml` file to create the custom card.
+4. Open the `ui-lovelace.yaml` file and add the following lines to the `ui-lovelace.yaml` file to create the custom card.
 
    ```
     - title: iCloud Event Log
        icon: mdi:information-outline
        cards:
-         - type: custom: icloud3-event-log-card
+         - type: "custom:icloud3-event-log-card"
            entity: sensor.icloud3_event_log
    ```
 
-More information is found in the Home Assistant Lovelace documentation regarding setting up and using custom cards. Be sure to refer to it if you have any problems. Go [here](https://community.home-assistant.io/t/how-do-i-add-custom-cards-with-the-lovelace-ui/97902) for more information if you are not using the `ui-lovelace.yaml` file to set up your cards.
+If you are not using YAML mode for the user interface, please refernce the Home Assistant Lovelace documentation regarding setting up and using custom cards [here](https://community.home-assistant.io/t/how-do-i-add-custom-cards-with-the-lovelace-ui/97902).
 
 ------
 
