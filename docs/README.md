@@ -1,29 +1,31 @@
 # iCloud3  Device Tracker Custom Component
 
-[![Version](https://img.shields.io/badge/Version-v2.2-blue.svg)](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-June,_2020-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Version](https://img.shields.io/badge/Version-v2.2.0-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Released](https://img.shields.io/badge/Released-October,_2020-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
 [![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/gcobb321/icloud3)
 
 ### Introduction
 
-iCloud3 is an improved version of the `iCloud device_tracker component` installed with Home Assistant.  It's  purpose is:
+iCloud3 is an improved version of the `iCloud device_tracker component` installed with Home Assistant.  It is designed to:
 
-* To connect with the iCloud Location Services using Find-my-Friends and Find-my-Phone.
-* To provide easy-to-use presence detection that does not rely on any other program, other than Home Assistant and the Home Assistant IOS app.
-* To be report accurate information, i.e. current zone, location, distance from a zone and travel time on a timely basis that can be used reliably in automations and scripts.
-* To be able to use another zone(s), in addition to the home zone for as a target location for all of the calculations and tracking.
-* To conserve the devices battery.
-* To correct GPS wandering errors leading to incorrect triggering of automations.
-* To provide more distance, travel time, and zone attributes than the base iCloud component and to create sensors for many of the attributes that easily display device information on Lovelace cards.
+* Connect with the iCloud Location Services using Find-my-Friends and Find-my-Phonetracking methods.
+* Provide easy-to-use presence detection that does not rely on any other program, other than Home Assistant and the Home Assistant IOS app.
+* Report accurate information, i.e. current zone, location, distance from a zone and travel time on a timely basis that can be used reliably in automations and scripts.
+* Use the Home zone and other zones for location based calculations and tracking.
+* Conserve the devices battery.
+* Correct GPS wandering errors leading to incorrect triggering of automations.
+* Provide more distance, travel time, and zone attributes than the base iCloud component and to create sensors for many of the attributes that easily display device information on Lovelace cards.
+* Monitor the iOS App for zone and location changes.
+* Display activity on the iCloud3 Event Log custom Lovelace card.
 
 Below are some sample Lovelace screenshots showing how iCloud3 information can be displayed (see *ui-lovelace-icloud3.yaml* in the *sample_automations_scripts* directory of the iCloud3 repository). Example configuration files for sensors, switches, badges, automations and scripts are also found in the *sample_automations_scripts* directory that report location information and device status, along with running automations (opening a garage door) when arriving home. Other uses (security, lighting, heating & cooling control, etc.) can be added to the automations to meet your needs.
 
 *Gary Cobb, aka GeeksterGary*
 
 
-![Sample Card](../docs/images/readme.jpg)
+![readme intro](../images/readme.jpg)
 
 
 ### What's different

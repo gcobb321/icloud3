@@ -14,21 +14,30 @@ The following enhancements and changes have been made iCloud3 v2.1.0
 * Extensive performance enhancements have been made to minimize the number of calls to the iCloud Web Services for location information and to Authenticate the device's access to the iCloud account. Previously, the account was Authenticated for each request. Now, it only Authenticates when needed. This has cut the number of data requests by over 60% and improves the response time, especially in poor cell areas.
 * The Next Update Time determines when the next location request is made for the Family Sharing and Find-my-Friends tracking methods. The location request is now made 5-seconds before the Next Update Time is reached to, hopefully, give more time for the iCloud Web Service to locate all of the devices being tracked and, hopefully, reduce the number of old location being being returned and discarded.
 * The Event Log has had some enhancements that improve the readability of the messages. The iCloud3 Statistics have been improved and provide more information in an easier to read format.
+* New versions of the Event Log will be automatically installed when a new version of iCloud3 is started for the first time.
 * You can make changes to the iCloud3 configuration parameters and restart iCloud3 without restarting HA. The new configuration file, `config_ic3.yaml` in the iCloud3 custom_component directory, lets you can specify most of the configuration parameters normally found in the HA configuration file. This includes the track_devices, waze parameters, zone parameters, timings, log_level, and others. This file is processed when HA loads and iCloud3 starts and when you restart iCloud3 on the Event Log screen. For example, you can add a new device to be tracked or change the stationary_inzone time without restarting HA. Only changes to the system level parameters, including user account/password, tracking method and sensors, require a HA restart.
 
 #### New configuration parameters:
 
-* `center_in_zone` - Specify if the device's location should be changed to the center of the zone when it is in a zone. Previously, would always be moved to the zone center. Valid Values: True, False  (Default: False)
-* `old_location_threshold` - When a device is located, the location's age is calculated and the update is discarded if the age is greater than the threshold. The threshold can be calculated (12.5% of the travel time to the zone with a 5 minute maximum (default)) or you can specify a fixed time using this parameter.
-* `config_ic3_file_name` - iCloud3 parameters can be specified in it's own configuration file (*config_ic3.yaml*) and the parameters are used when iCloud3 is restarted on the Event Log screen and when HA starts. This lets you change the the parameters and have them take effect without restarting HA. All parameters except the username/password, tracking method and included/excluded sensors and this parameter can be specified. This includes the devices to be tracked, timings, location parameters, log_level, and others. If you want to use a different file, specify it's name with this parameter. 
+* **center_in_zone** - Specify if the device's location should be changed to the center of the zone when it is in a zone. Previously, would always be moved to the zone center. Valid Values: True, False  (Default: False)
+
+* **old_location_threshold** - When a device is located, the location's age is calculated and the update is discarded if the age is greater than the threshold. The threshold can be calculated (12.5% of the travel time to the zone with a 5 minute maximum (default)) or you can specify a fixed time using this parameter.
+
+* **config_ic3_file_name** - iCloud3 parameters can be specified in it's own configuration file (*config_ic3.yaml*) and the parameters are used when iCloud3 is restarted on the Event Log screen and when HA starts. This lets you change the the parameters and have them take effect without restarting HA. All parameters except the username/password, tracking method and included/excluded sensors and this parameter can be specified. This includes the devices to be tracked, timings, location parameters, log_level, and others. If you want to use a different file, specify it's name with this parameter. 
   * Note: The file must be in the `custom_components/icloud3` directory.
   * Note: A sample file, `config_ic3_sample.yaml`, is installed with iCloud3.
-* `stationary_zone_offset` - The stationary zone is created when iCloud3 starts (or is restarted) and is located 1km north of the Home Zone location. There may be times when this conflicts with your normal driving route and you find yourself going in and out of the stationary zone. With this parameter, you can change it's initial location. The format is:
+  
+* **stationary_zone_offset** - The stationary zone is created when iCloud3 starts (or is restarted) and is located 1km north of the Home Zone location. There may be times when this conflicts with your normal driving route and you find yourself going in and out of the stationary zone. With this parameter, you can change it's initial location. The format is:
   * stationary_zone_offset: #,# - Specify the number of kilometers from the Home zone. The first parameter adjusts the latitude (north/south), the second parameter adjusts the longitude (east/west).
     * Example: stationary_zone_offset: 1, 2 (1km North, 2km East)
     * Default: stationary_zone_offset: 1, 0
   * stationary_zone_offset: (latitude, longitude) - Specify the GPS coordinates (you must include the parentheses). 
     * Example: stationary_zone_offset: (27.738520, -75.380462)
+  
+* **event_log_card_directory**  - This contains the directory used to store the iCloud3 Event Log Lovelace card. The Event Log version (*'icloud3-event-log-card.js'*) is checked when iCloud3 starts to verify the latest version is installed. If a newer version is available, the newer version in the iCloud3 custom components directory is copied to the Event Log directory. Use this parameter if you are storing your lovelace custom cards in directory other than *'www/custom_cards'*..
+
+  - *Valid values:* Standard file name *Default Value:* 'www/custom_cards'
+  - *Example:* 'www/community' if you are using the 'community' directory.
 
 #### Other Changes
 

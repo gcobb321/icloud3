@@ -1,0 +1,130 @@
+<!-- theme-vue.css customization -->
+body{
+  font-size: 14px;
+}
+.content {
+ padding-top: 10px;
+ left: 250px;
+}
+.sidebar::-webkit-scrollbar {
+  width: 1px;
+  background: var(--theme-color,#42b983)
+}
+
+.sidebar {
+//  font-size: 14px;
+  background: #F6F9FB;
+  color: #364149;
+  padding: 2px 0 0 0;
+  width: 250px;
+}
+.sidebar-toggle span {
+  background-color: red;
+}
+.sidebar>h1 {
+  margin: 5px 10px 0 10px;
+  font-size: 1.5rem;
+  font-weight: 300;
+  text-align: center;
+  color: var(--theme-color,#42b983);
+  border-bottom: 1px solid #33A9F4;
+  word-wrap: break-word;
+  white-space: normal;
+}
+.sidebar ul li a {
+  font-size: 14px;
+  word-wrap: break-word;
+  white-space: normal;
+}
+.sidebar ul li a:hover {
+  text-decoration: underline;
+  color: darkred;
+  white-space: normal;
+}
+.sidebar ul li.active>a {
+  border-right: 4px solid;
+  color: var(--theme-color,#42b983);
+  font-weight: 600;
+}
+.sidebar .sidebar-nav {
+  line-height: 1.4em;
+  //padding-bottom: 40px;
+}
+.markdown-section h1 {
+  color: var(--theme-color,#42b983);
+}
+.markdown-section h1, .markdown-section h2, .markdown-section h3 {
+ margin: 30px 0 -10px 0;
+}
+.markdown-section h4 {
+ margin: 30px 0 -10px 0;
+}
+.markdown-section h5 {
+ margin: 20px 0 -10px 0;
+}
+.markdown-section h6 {
+ margin: 20px 0 -20px 0;
+}
+//.markdown-section p {
+//  line-height: 1.4em;
+//  word-spacing: 0em;
+//}
+.markdown-section p.tip {
+  background-color: #FFF6F4;
+}
+.markdown-section code {
+  color: #005ce6;
+  background-color: transparent;
+  font-family: Source Sans Pro,Helvetica Neue,Arial,sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  font-style: italic;
+  margin: 0 3px 0 0;
+  padding: 0 0;
+}
+
+//.markdown-section pre {
+// -moz-osx-font-smoothing: initial;
+// -webkit-font-smoothing: initial;
+// line-height: 1.5rem;
+// margin: 1.1rem 0;
+// overflow: auto;
+// padding: 0 1.4rem;
+// position: relative;
+// word-wrap: normal;
+//}
+//code block
+.markdown-section pre>code {
+  font-style: normal;
+  margin: 1rem 0;
+  padding: 1rem 0;
+}
+  //
+.pagination-item-title {
+  font-size: 1.25em;
+}
+//.markdown-section em {
+ //color: #005ce6;
+ //font-weight: 500;
+// margin: 0 3px 0 0;
+//}
+
+.button-base {
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  font-size: 15px;
+  background: #ffffff;
+  padding: 1px 20px 1px 20px;
+  text-decoration: none;
+  -webkit-box-shadow: 0px 1px 3px #94592c;
+  -moz-box-shadow: 0px 1px 3px #94592c;
+  box-shadow: 0px 1px 3px #94592c;
+  color: #94592c;
+  border: solid #94592c 1px;
+}
+.button-base:hover {
+  background: #faebe1;
+  text-decoration: none;
+}

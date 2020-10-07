@@ -1,10 +1,10 @@
-# Special Zones
+# Stationary Zone & *near zone* Zone
 
-There are two zones that are special to the iCloud3 device tracker - the `Dynamic Stationary Zone` and the `NearZone` zone.
+There are two zones that are special to the iCloud3 device tracker - the Stationary Zone` and the `NearZone` zone.
 
-### Dynamic Stationary Zone  
+### The Stationary Zone  
 
-A Dynamic Stationary Zone is a zone that iCloud3 creates when the device has not moved much over a period of time. Examples include when you are at a mall, doctor's office, restaurant, friend's house, etc. If the device is stationary, it's Stationary Zone location (latitude and longitude) is automatically updated with the device's gps location, the device state is changed to Stationary and the interval time is set to the `stationary_inzone_interval` value (default is 30 mins). This almost eliminates the number of times the device must be polled to see how far it is from home when you haven't moved for a while. When you leave the Stationary Zone, the IOS App notifies Home Assistant that the Stationary Zone has been exited and the device tracking begins again.
+A Stationary Zone is a zone that iCloud3 creates when the device has not moved much over a period of time. Examples include when you are at a mall, doctor's office, restaurant, friend's house, etc. If the device is stationary, it's Stationary Zone location (latitude and longitude) is automatically updated with the device's gps location, the device state is changed to Stationary and the interval time is set to the `stationary_inzone_interval` value (default is 30 mins). This almost eliminates the number of times the device must be polled to see how far it is from home when you haven't moved for a while. When you leave the Stationary Zone, the IOS App notifies Home Assistant that the Stationary Zone has been exited and the device tracking begins again.
 
 You do not have to create the Stationary Zone in the `zones.yaml` file or on the Zones Configuration screen. The iCloud3 device tracker automatically creates one for the device when needed. It's name is `devicename_stationary`.  
 
@@ -12,9 +12,9 @@ You do not have to create the Stationary Zone in the `zones.yaml` file or on the
 
 !> THE STATIONARY ZONE AND THE IOS APP - When you first install iCloud3, the Stationary Zone will also be created. Since the iOS App does not automatically update information about new zones, you must force close the iOS App using the iPhone App Switcher and then restart it to reload the zone information, which will include the Stationary Zone.
 
-#### Details about the Stationary Zone:
+#### Details about the Stationary Zone  {docsify-ignore}
 
-- The stationary zone is created when iCloud3 starts (or is restarted) and is located 1km north of the Home Zone location. There may be times when this conflicts with your normal driving route and you find yourself going in and out of the stationary zone. You can change it's initial location with the `stationary_zone_offset` configuration parameter.
+- The Stationary Zone is created when iCloud3 starts (or is restarted) and is located 1km north of the Home Zone location. There may be times when this conflicts with your normal driving route and you find yourself going in and out of the Stationary Zone. You can change it's initial location with the `stationary_zone_offset` configuration parameter.
 - The zone center is relocated to your current location when the device is polled and you are inside it. 
 - You must be at least 2.5 times the Home zone radius before you can be put into a stationary zone.
 - The Stationary Zone radius is 2 times the Home zone radius. The radius is reset to 10m when the device exits the Stationary Zone. It will be expanded when the device moves back into a new Stationary Zone at the same or a different location.
@@ -24,7 +24,7 @@ You do not have to create the Stationary Zone in the `zones.yaml` file or on the
 - Since each device can have its own Stationary Zone, the device's icon is now the first letter of the Friendly Name associated with the device. It is displayed on different backgrounds if there is more than one device with the same first initial. The first background displayed is a filled-box, followed by a filled-circle, an outlined-box, an outlined-circle, and the initial itself.
 
 
-### 'near_zone' Zone  
+### The *near_zone* Zone  
 
 There may be times when the Home zone's (or another zone's) cell service is poor and does not track the device adequately when the device gets near the zone. This can create problems triggering automations when the device enters the zone since the Find-My-Friends location service has problems monitoring it's location.  
 

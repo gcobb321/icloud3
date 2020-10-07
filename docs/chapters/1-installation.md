@@ -60,7 +60,7 @@ As iCloud3 runs, various entries are written to the HA log file that show device
 
 Below are 3 screens. The one on the left shows iCloud3 starting up, the middle one shows arriving Home and the one on the right shows entering the 'Whse' zone.
 
-![event_log](../images/event_log_initializing.jpg)
+![event_log](../images/evlog_initializing.jpg)
 
 ---
 ### Installing the iCloud3 Event Log Custom Card

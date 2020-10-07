@@ -33,7 +33,7 @@ The following describe the commands that are available.
 | waze off | Turn off Waze. Use the `calc` method to determine the update interval. |
 | waze toggle |  Toggle waze on or off |
 | waze reset_range | Reset the Waze range to the default distances (min=1, max=99999). |
-| log_level | Display iCloud3 debug information in the HA Log file and, optionally, on the iCloud3 Event Log Card. <br>The following parameters are available:<br>- `debug` =  Entries related to device_tracker location operations <br>- `intervalcalc` =The methods and calculations related to the interval, next update time, zone, etc.<br>- `eventlo`g = Display the logged information on the iCloud3 Event Log Card.<br>- `info` = Display the current log_level options on the iCloud3 Event Log Card and the Info status line for the devices being tracked. |
+| log_level | Display iCloud3 debug information in the HA Log file and, optionally, on the iCloud3 Event Log Card. <br>The following parameters are available:<br>- `eventlog` = Display additional details about the iCloud3 events and operations that are in the iCloud3 Event Log Card.<br>- `debug` =  Add entries related to iCloud3 location operations to the HA log file <br>- `rawdata` = Add the actual raw data records returned from iCloud Web/Location Services to the HA Log file when devices are located.<br>- `intervalcalc` = The methods and calculations related to the interval, next update time, zone, etc. |
 | restart | Restart the iCloud3 custom component. Restart iCloud3.This will recheck the availability of the iCloud Location Service and relocate all devices. |
 | counts | Display the Device Information and the iCloud/iOS App counters in the Event Log. |
 
@@ -128,7 +128,7 @@ icloud3_command_loglevel_intervalcalc:
   sequence:
     - service: device_tracker.icloud3_update
       data:
-        command: log_level _intervalcalc
+        command: log_level intervalcalc
         
 icloud3_command_loglevel_eventlog:
   alias: 'LogLevel-Event Log (Toggle)'
