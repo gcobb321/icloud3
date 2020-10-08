@@ -1,6 +1,3 @@
-# yamllint disable rule:document-start
-# yamllint disable rule:line-length
-
 icloud3_update:
   description: This service allows you to change the way iCloud3 operates.
   fields:
@@ -8,7 +5,7 @@ icloud3_update:
       description: Name of the device to be updated. All devices will be updated if this parameter is not specified. (Optional)
       example: gary_iphone
     command:
-      description: The action to be performed (see below). (Required)
+      description: The action to be performed. (Required)
       example: log_level debug
 
 icloud3_set_interval:
@@ -27,7 +24,7 @@ icloud3_restart:
     account_name:
       description: account_name of the iCloud3 custom component specified in the Configuration Variables section described at the beginning of this document. (Required)
       example: gary_icloud
-
+      
 icloud3_lost_iphone:
   description: This service will play the Lost iPhone sound on a specific device.
   fields:
