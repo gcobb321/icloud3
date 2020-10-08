@@ -1,18 +1,74 @@
-# yamllint disable rule:document-start
-
 #########################################################
 #
-#   GARAGE DOOR MQTT SENSOR
+#   GARAGE DOOR SENSOR
 #
 #########################################################
-- platform: mqtt
-  name: "garage_door"
-  state_topic: "smartthings/Garage Door/contact/state"
-  value_template: "{{ value|capitalize }}"
-  payload_available: "Open"
-  payload_not_available: "Closed"
+#--- Garage Door Open/Closed Badge--------------------
+- platform: template
+  sensors:
+    garage_door_badge:
+      value_template: >-
+        {{states("sensor.garage_door_state") | title}}
+      entity_picture_template: >-
+        {% if is_state("sensor.garage_door_state", "open") %}
+          /local/garage-door-open.png
+        {% else %}
+          /local/garage-door-closed.png 
+        {% endif %}
+           
+#--- Garage Door Open/Closed State --------------------           
+- platform: template
+  sensors:
+    garage_door_state:
+      friendly_name: Garage Door State
+      value_template: >
+        {% if is_state("binary_sensor.garage_door_sensor_contact", "on") %}
+          open
+        {% else %}
+          closed
+        {% endif %}
 
-- platform: mqtt
-  name: "garage_door_battery"
-  state_topic: "smartthings/Garage Door/battery/state"
-  device_class: battery
+#--- Garage Door Moving --------------------           
+- platform: template
+  sensors:
+    garage_door_moving:
+      friendly_name: Garage Door Moving
+      value_template: false
+      
+#--- Garage Door Motion State --------------------           
+- platform: template
+  sensors:
+    garage_door_motion:
+      friendly_name: Garage Door Motion
+      value_template: >
+        {% if is_state("sensor.garage_door_moving", "True") %}
+          {% if is_state("sensor.garage_door_state", "open") %}
+             closing
+          {% else %}
+             opening
+          {% endif %}
+        {% else %}   
+          {{states("sensor.garage_door_state")}}
+        {% endif %}
+        
+#--- Garage Door Motion State --------------------           
+- platform: template
+  sensors:
+    garage_door_motion_test:
+      friendly_name: Garage Door Motion
+      value_template: >
+        {% if is_state("sensor.garage_door_moving", False) %}
+          T1
+        {% else %}   
+            {% if is_state("sensor.garage_door_moving", 'False') %}
+              T2
+            {% endif %}
+        {% endif %}
+
+        
+        
+        
+        
+
+        
+        

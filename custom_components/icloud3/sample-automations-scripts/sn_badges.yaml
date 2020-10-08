@@ -5,24 +5,10 @@
 #   BADGE TEMPLATE SENSORS
 #
 #########################################################
-
 # -- Gary/Lillian location badge --------------------
 - platform: template
   sensors:
-    gary_iphone_badge_x:
+    gary_badge:  
       friendly_name: Gary
-      value_template: '{{states.sensor.garyc_badge.state}}'
+      value_template: '{{states("sensor.gary_iphone_badge")}}'
       entity_picture_template: /local/gary.png
-
-# -- Garage Door Open/Closed --------------------
-- platform: template
-  sensors:
-    garage_door_badge:
-      value_template: >-
-        {{states.sensor.garage_door.state}}
-      entity_picture_template: >-
-        {% if states.sensor.garage_door.state == "Closed" %}
-          /local/garage-door-closed.png
-        {% else %}
-          /local/garage-door-open.png
-        {% endif %}
