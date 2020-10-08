@@ -15,8 +15,13 @@ The following automations and scripts does this reliably as long as I have a goo
 If Gary arrives home, open the garage door if the `gary_driving flag` is set, the garage door is closed, and the `sensor.gary_iphone_zone_name1` changes to Home or the `sensor.gary_iphone_zone_distance` is less than .2 miles.
 
 ```yaml
+################################################################
+#
+#	HOME/AWAY AUTOMATIONS - GARY  (au_home_away_gary.yaml)
+#
+################################################################
 #--------------------------------------------------------------
-#   Gary Arrives Home Automation  (au_home_away_gary.yaml)
+#   Gary arrives home
 #--------------------------------------------------------------
 - alias: Gary Arrives Home
   id: gary_arrives_home
@@ -26,7 +31,7 @@ If Gary arrives home, open the garage door if the `gary_driving flag` is set, th
       to: 'Home'
 
     - platform: template
-      value_template: '{{states.sensor.gary_iphone_distance.state | float <= 0.2}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance") | float <= 0.2}}'
       
   condition: 
     - condition: state
@@ -37,48 +42,13 @@ If Gary arrives home, open the garage door if the `gary_driving flag` is set, th
     - service: script.notify_gary_iphone
       data_template:
         title: 'Gary Arrives Home'
-        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_distance.state }}' 
+        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_zone_distance.state }}' 
             
     - service: script.gary_arrives_home
 ```
 ```yaml
-#-------------------------------------------------------------
-#   Gary Arrives Home Script (sc_home_awy_gary.yaml)
-#-------------------------------------------------------------
-gary_arrives_home:
-  alias: 'Gary Arrives Home'
-  sequence:
-    #Open garage door if driving flag is on
-    - service: script.open_garage_door 
-    
-    #Turn off 'Away' flags
-    - service: input_boolean.turn_off
-      entity_id: input_boolean.gary_driving_flag
-    - service: input_boolean.turn_off
-      entity_id: input_boolean.gary_far_away_flag
-    
-    #Change Gary badge to home
-    - service: mqtt.publish
-      data_template:
-        topic: 'location/gary' 
-        payload: 'home'
-        
-    #If already home, do not issue 'zone home' command
-    - condition: template
-      value_template: '{{states.device_tracker.gary_iphone.state != "home"}}'
-    
-    #Issue 'zone home' command
-    - service: device_tracker.icloud3_update
-      data:
-        device_name:  gary_iphone
-        command:     'zone home'
-```
-
-
-##### Leaving Home Automation & Script
-```yaml
 #--------------------------------------------------------------
-#   Gary Leaves Home Zone Automation (au_home_away_gary.yaml)
+#   Gary leaves home zone
 #--------------------------------------------------------------
 - alias: Gary Leaves Home
   id: gary_leaves_home
@@ -92,7 +62,7 @@ gary_arrives_home:
       value_template: '{{trigger.from_state.state == "Home"}}'
       
     - condition: template
-      value_template: '{{states.sensor.gary_iphone_distance.state | float > 0}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance") | float > 0}}'
     
     - condition: state
       entity_id: input_boolean.ha_started_flag
@@ -103,29 +73,13 @@ gary_arrives_home:
     - service: script.notify_gary_iphone
       data_template:
         title: 'Gary Leaves Home'
-        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_distance.state }}' 
+        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states("sensor.gary_iphone_zone_distance") }}' 
         
     - service: script.gary_leaves_zone
 ```
 ```yaml
-#-------------------------------------------------------------
-#   Gary Leaves Home Script (sc_home_away_gary.yaml)
-#-------------------------------------------------------------
-gary_leaves_home:
-  alias: 'Gary Leaves Home'
-  sequence:
-    #Change Gary badge to Away
-    - service: mqtt.publish
-      data_template:
-        topic: 'location/gary' 
-        payload: 'not_home'
-```
-
-
-##### Leaving a Zone Automation & Script
-```yaml
 #--------------------------------------------------------------
-#   Gary Leaves a Zone Automation (au_home_away_gary.yaml)
+#   Gary leaves a zone
 #--------------------------------------------------------------
 - alias: Gary Leaves Zone
   id: gary_leaves_zone
@@ -139,34 +93,54 @@ gary_leaves_home:
       value_template: '{{trigger.from_state.state != "Home"}}'
       
     - condition: template
-      value_template: '{{states.sensor.gary_iphone_distance.state | float > 0}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance") | float > 0}}'
     
     - condition: state
       entity_id: input_boolean.ha_started_flag
       state: 'on'    
   action:
-    - service: script.gary_leaves_zone
-        
     - service: script.notify_gary_iphone
       data_template:
         title: 'Gary Leaves Zone'
-        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_distance.state }}' 
+        message: 'Zone: {{ trigger.from_state.state }} --> {{ trigger.to_state.state }}, Distance: {{ states.sensor.gary_iphone_zone_distance.state }}' 
+```
+```yaml
+##############################################################
+#
+#   HOME/AWAY SCRIPTS - GARY (sc_home_away_ary.yaml)
+#
+##############################################################
+
+gary_status:
+  alias: Send Gary Status
+  sequence:
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Gary Status'
+        message: 'Zone={{states("sensor.gary_iphone_zone")}}, 
+                  Zone1={{states("sensor.gary_iphone_zone_name1")}}, 
+                  Zone2={{states("sensor.gary_iphone_zone_name2")}}, 
+                  Distance={{states("sensor.gary_iphone_zone_distance")}},
+                  DriveFlag={{states("input_boolean.gary_driving_flag")}},
+                  FarFlag={{states("input_boolean.gary_far_away_flag")}}'
 ```
 ```yaml
 #-------------------------------------------------------------
-#    Gary Leave Other Zone Script  (sc_home_away_gary.yaml)
+#   Arrive Home
 #-------------------------------------------------------------
-gary_leaves_zone:
-  alias: 'Gary Leaves Zone'
+gary_arrives_home:
+  alias: 'Gary Arrives Home (script)'
   sequence:
-    #Change Gary badge to Away
-    - service: mqtt.publish
-      data_template:
-        topic: 'location/gary' 
-        payload: 'not_home'
+    #Open garage door if driving flag is on
+    - service: script.open_garage_door 
+    
+    #Turn off 'Away' flags
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.gary_driving_flag
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.gary_far_away_flag
+
 ```
-
-
 ##### General Notification Script
 Send notifications to `gary_iphone`
 
@@ -177,43 +151,50 @@ Send notifications to `gary_iphone`
 notify_gary_iphone:
   alias: 'Send Message to Gary'
   sequence:
-    - service: notify.ios_gary_iphone
+    - service: notify.mobile_app_gary_iphone
       data_template:
-        title: "{{ title }} (IOS)"
+        title: "{{ title }} (mobile_app)"
         message: "{{ message }}"
-          
-#    - service: notify.mobile_app_gary_iphone
-#      data_template:
-#        title: "{{ title }} (mobile_app)"
-#        message: "{{ message }}"
 ```
-
 
 ##### Garage Door Automations
 Scripts to support opening and closing the garage door if various conditions are met.
 
 ```yaml
-#---------------------------------------------------------------
-#   Open Garage Door Script  (sc_garage_door.yaml) 
-#---------------------------------------------------------------
+#########################################################
+#
+#   SCRIPTS
+#   -------
+#
+#   GARAGE DOOR/SET LOCATION SCRIPTS (sc_garage_door.yaml)
+#
+#########################################################
+toggle_garage_door:
+  alias: Toggle Garage Door
+  sequence: 
+    - service: switch.turn_on
+      entity_id: switch.garage_door
+```
+```yaml
+#--------------------------------------------------------------- 
 #   If garage door is closed and Gary's driving flag is true
 #   open the Garage Door, turn off Gary's driving flag and notify Gary
 #   Called from automation_old/garage_door.yaml
-#---------------------------------------------------------------
+#--------------------------------------------------------------- 
 open_garage_door:
   alias: 'Open Garage Door'
   sequence:
     
-    #- condition: state
-    #  entity_id: input_boolean.ha_started_flag
-    #  state: 'on'
+    - condition: state
+      entity_id: input_boolean.ha_started_flag
+      state: 'on'
       
     - condition: state
-      entity_id: sensor.garage_door
-      state: 'Closed'
+      entity_id: sensor.garage_door_state
+      state: 'closed'
       
     - condition: template 
-      value_template: '{{states.sensor.gary_iphone_distance.state  | float <= 0.30}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance")  | float <= 0.30}}'
    
     - condition: state
       entity_id: input_boolean.gary_driving_flag
@@ -227,23 +208,31 @@ open_garage_door:
   
     - service: switch.turn_on
       entity_id: switch.garage_door
+      
+    - service: script.turn_on
+      entity_id: binary_sensor.garage_door_moving
 
     - service: script.notify_gary_iphone
       data_template:
         title: 'Garage Door Action'
         message: 'Garage Door Opened'
-        
-#---------------------------------------------------------------        
+```
+```yaml
+open_close_garage_door:
+  alias: 'Press Garage Door Button'
+  sequence:
+    - service: switch.turn_on
+      entity_id: switch.garage_door
+```
+```yaml
 show_garage_door_status:
   alias: 'Show Garage Door Status'
   sequence:
     - service: script.notify_gary_iphone
       data_template:
         title: 'Garage Door Control Status'
-        message: 'Door={{states.sensor.garage_door.state}},  DriveFlag={{states.input_boolean.gary_driving_flag.state}}, Distance={{states.sensor.gary_iphone_distance.state}}, FarAway={{states.input_boolean.gary_far_away_flag.state}}, Zone=<{{states.sensor.gary_iphone_zone.state }}'
-
+        message: 'Door={{states("sensor.garage_door_state")}},  DriveFlag={{states("input_boolean.gary_driving_flag")}}, Distance={{states("sensor.gary_iphone_zone_distance")}}, FarAway={{states("input_boolean.gary_far_away_flag")}}, Zone=<{{states("sensor.gary_iphone_zone") }}'
 ```
-
 
 ##### Garage Door Utility Scripts
 The garage door should not be open after 8pm or if Gary is far from home.
@@ -310,38 +299,17 @@ A `Garage Door Badge` is displayed non a Lovelace Card that  shows if door is op
 - platform: template
   covers:
     garage_door:
-      value_template: >-
-        {% if states('sensor.garage_door') %}
-          {% if states('sensor.garage_door') == 'Open' %}
-            Closed
-          {% else %}
-            Open
-          {% endif %}
-        {% else %}
-          Open
-        {% endif %}
       open_cover:
+#        service: script.show_garage_door_status
         service: switch.turn_on
         data:
           entity_id: switch.garage_door
       close_cover:
+#        service: script.show_garage_door_status
         service: switch.turn_on
         data:
-          entity_id: switch.garage_door
-#      icon_template: >-
-#        {% if states('sensor.garage_door') %}
-#          {% if states('switch.garage_door') == 'on' %}
-#            mdi:cached
-#          {% elif states('sensor.garage_door') == 'Open' %}
-#            mdi:arrow-expand-down
-#          {% else %}
-#            mdi:arrow-expand-up
-#          {% endif %}
-#        {% else %}
-#          mdi:arrow-expand-up
-#        {% endif %}
+          entity_id: switch.garage_door         
 ```
-
 
 ##### Set/Clear Driving Flags
 These flags are used to check if Gary was driving and if he is far away from home. 
@@ -351,25 +319,24 @@ These flags are used to check if Gary was driving and if he is far away from hom
 
 ```yaml
 #--------------------------------------------------------------
-#   Turn on Gary's Driving Flag  (au_home_away_gary.yaml)
+#   Turn on Gary's Driving Flag
 #--------------------------------------------------------------
 - alias: Gary Driving Flag Turn On
   id: gary_driving_flag_turn_on
         
   trigger:
     - platform: template
-      value_template: '{{states.sensor.gary_iphone_distance.state | float > 2}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance") | float > 2}}'
+      #value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 2}}'
 
   condition:
     - condition: state
       entity_id: input_boolean.gary_driving_flag
       state: 'off'
-      
-  
+       
   action:
     - service: input_boolean.turn_on
       entity_id: input_boolean.gary_driving_flag
-      
 ```
 ```yaml
 #--------------------------------------------------------------
@@ -383,13 +350,12 @@ These flags are used to check if Gary was driving and if he is far away from hom
       to: 'home'
       for:
         minutes: 15
-  
+    
   condition:
     - condition: state
       entity_id: input_boolean.gary_driving_flag
       state: 'on'
       
-  
   action:
     - service: input_boolean.turn_off
       entity_id: input_boolean.gary_driving_flag
@@ -402,20 +368,19 @@ These flags are used to check if Gary was driving and if he is far away from hom
   id: gary_far_away_flag_turn_on
   trigger:
     - platform: template
-      value_template: '{{states.sensor.gary_iphone_distance.state | float > 5}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance") | float > 5}}'
+      #value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 5}}'
       
-  
   condition:
     - condition: state
       entity_id: input_boolean.gary_far_away_flag
       state: 'off'
       
-  
   action:
-  - service: input_boolean.turn_on
+    - service: input_boolean.turn_on
       entity_id: input_boolean.gary_driving_flag
-  
-  - service: input_boolean.turn_on
+
+    - service: input_boolean.turn_on
       entity_id: input_boolean.gary_far_away_flag
 ```
 ```yaml
@@ -426,18 +391,17 @@ These flags are used to check if Gary was driving and if he is far away from hom
   id: gary_far_away_flag_turn_off
   trigger:
     - platform: template
-      value_template: '{{states.sensor.gary_iphone_distance.state | float <= 5}}'
+      value_template: '{{states("sensor.gary_iphone_zone_distance") | float <= 5}}'
+      #value_template: '{{states.sensor.gary_iphone_zone_distance.state | float <= 5}}'
 
   condition:
     - condition: state
       entity_id: input_boolean.gary_far_away_flag
       state: 'on'
       
-  
   action:
     service: input_boolean.turn_off
     entity_id: input_boolean.gary_far_away_flag
-  
 ```
 
 
@@ -449,45 +413,25 @@ These flags are used to check if Gary was driving and if he is far away from hom
 #--- Gary/Lillian location badge --------------------
 - platform: template
   sensors:
-    gary_iphone_badge_x:  
+    gary_badge:  
       friendly_name: Gary
-      value_template: '{{states.sensor.garyc_badge.state}}'
+      value_template: '{{states("sensor.gary_iphone_badge")}}'
       entity_picture_template: /local/gary.png
-   
-#--- Garage Door Open/Closed --------------------
+```
+```yaml
+#--- Garage Door Open/Closed Badge--------------------
 - platform: template
   sensors:
     garage_door_badge:
       value_template: >-
-        {{states.sensor.garage_door.state}} 
+        {{states("sensor.garage_door_state") | title}}
       entity_picture_template: >-
-        {% if states.sensor.garage_door.state == "Closed" %}
-          /local/garage-door-closed.png
+        {% if is_state("sensor.garage_door_state", "open") %}
+          /local/garage-door-open.png
         {% else %}
-          /local/garage-door-open.png 
+          /local/garage-door-closed.png 
         {% endif %}
-              
 ```
-
-
-##### Garage Door MQTT Sensors for SmartThings
-```yaml
-#--------------------------------------------------------------
-#   Garage Door MQTT Sensor  (sn_garage_door.yaml)
-#--------------------------------------------------------------
-- platform: mqtt
-  name: "garage_door"
-  state_topic: "smartthings/Garage Door/contact/state"
-  value_template: "{{ value|capitalize }}"
-  payload_available: "Open"
-  payload_not_available: "Closed"
-
-- platform: mqtt
-  name: "garage_door_battery"
-  state_topic: "smartthings/Garage Door/battery/state"
-  device_class: battery
-```
-
 
 ##### Garage Door MQTT Switch Setup for SmartThings
 ```yaml

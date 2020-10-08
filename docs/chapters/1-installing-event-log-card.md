@@ -82,7 +82,7 @@ Do the following:
 5. Fill in the **Title** and **Icon** fields. Select **Save**. The example below uses iC3EvLog for the title but you can use what ever you want. The icon, if specified, will be displayed on the dashboard.
    ![event_log](../images/lovelace_evlog_view_configuration.jpg)
 6. Select the **Plus Sign (+)** (Add Card) on the right side of the window to select the custom card to be added.
-   ![event_log](C:/Users/Gary/GitHub/icloud3_docs/docs/images/lovelace_evlog_add_button.jpg)
+   ![event_log](../images/lovelace_evlog_add_button.jpg)
 7. Scroll to the bottom of the list and select *Manual* to display the add Card Configuration window.
    ![event_log](../images/lovelace_evlog_add_manual_card.jpg)
 8. Type **custom:icloud3-event-log-card** in the *Type* field. Then Select **Save**.

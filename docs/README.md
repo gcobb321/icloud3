@@ -10,7 +10,7 @@
 
 iCloud3 is an improved version of the `iCloud device_tracker component` installed with Home Assistant.  It is designed to:
 
-* Connect with the iCloud Location Services using Find-my-Friends and Find-my-Phonetracking methods.
+* Connect with the iCloud Location Services using Find-my-Friends and Find-my-Phone tracking methods.
 * Provide easy-to-use presence detection that does not rely on any other program, other than Home Assistant and the Home Assistant IOS app.
 * Report accurate information, i.e. current zone, location, distance from a zone and travel time on a timely basis that can be used reliably in automations and scripts.
 * Use the Home zone and other zones for location based calculations and tracking.
@@ -25,7 +25,7 @@ Below are some sample Lovelace screenshots showing how iCloud3 information can b
 *Gary Cobb, aka GeeksterGary*
 
 
-![readme intro](../images/readme.jpg)
+![readme intro](images/readme.jpg)
 
 
 ### What's different
@@ -34,9 +34,9 @@ iCloud3 has many features not in the base iCloud device_tracker that is part of 
 
 | Feature | Original iCloud | iCloud3 |
 |---------|-----------------|---------|
-| Integration with the HA IOS App            | No                                                           | Yes, Geographic Zone Enter/Exit, Background Fetch, Significant Location Update & Manual transactions are detected and processed immediately after they are issued. Versions 1 & 2 are supported.|
+| Integration with the HA IOS App            | No                                                           | Yes, Geographic Zone Enter/Exit, Background Fetch, Significant Location Update & Manual transactions are detected and processed immediately after they are issued. |
 | Device Selection                           | None                                                         | Specify devices to be tracked by their devicename, i.e., *gary_iphone* or *lillian_iphone* using the *tracked_devices* parameter. |
-| Locate device using Find-my-Phone | Yes | Yes, using the *tracking_method: fmphn* parameter |
+| Locate device using Family Sharing List                      | Yes | Yes, using the *tracking_method: famshr* parameter |
 | Locate device using Find-my-Friends | No | Yes, using the default *tracking_method: fmf* parameter |
 | Locate device using HA IOS App without iCloud Services | No | Yes, using the *tracking_method: iosapp* parameter |
 | Minimum Poll Interval | 1 minute | 15 second |

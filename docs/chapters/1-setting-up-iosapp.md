@@ -26,11 +26,11 @@ A suffix must be added onto the device_tracker Entity ID so it is not the same a
 
 2. Scroll to the *Mobile App* section for the device_tracker entity of the phone you are setting up.
 
-![entity name change](../images/entity_name_selection.jpg)
+![entity name change](../images/iosapp_entity_name_selection.jpg)
 
 3. Select it (e.g., *Gary-iPhone*) to open the Update window.
 
-![entity name selection](../images/entity_name_change.jpg)
+![entity name selection](../images/iosapp_entity_name_change.jpg)
 4. Change the **Name Override** field to add the suffix (i.e., *Gary-iPhone*  to  *Gary-iPhone-2 or *Gary-iPhone-App*, etc.). This will let you identify the iOS App entity in the HA History logs.
 5. Change the **Entity ID** field to add the suffix (i.e., *device_tracker.gary_iphone*  to  *device_tracker.gary_iphone_app* or *device_tracker.gary_iphone_iosapp*, etc.)
 6. Select **Update**.

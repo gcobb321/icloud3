@@ -12,10 +12,10 @@ This chapter explains how to:
 
 The minimum information you need to get iCloud3 running is the username/password of your Apple iCloud account and the phones you want to track. Below are some examples of the configuration parameters that set up a platform using the different tracking methods. The following parameters are used to create the iCloud3 device_tracker.
 
-- username/password - The Apple iCloud account to use to locate the phones (Find-my-Friends  (fmf) and Family Sharing (famshr) tracking methods).
-- username - The iOS App is used to locate the phones (iOS App (iosapp) tracking method) .
-- tracking_method - fmf (Find-my-Friends), famshr (Family Sharing), iosapp (iOS App)
-- track_devices - The phones you want to track.
+- **username/password** - The Apple iCloud account to use to locate the phones (Find-my-Friends  (fmf) and Family Sharing (famshr) tracking methods).
+- **username** - The iOS App is used to locate the phones (iOS App (iosapp) tracking method) .
+- **tracking_method** - fmf (Find-my-Friends), famshr (Family Sharing), iosapp (iOS App)
+- **track_devices** - The phones you want to track.
 
 See Chapter 2.1 Configuration Parameters for more examples and information about these parameters.
 

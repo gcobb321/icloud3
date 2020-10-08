@@ -233,7 +233,7 @@ The following examples show how Lovelace Cards can show iCloud3 information in v
                 icon: mdi:information-outline 
 
 ```
-### Example 3 - Tracking from 2 Zones - Home and Whse
+### Example 3 - Tracking from two Zones - Home and Whse
 ![lovelace_gc_away_2_zones_5x2](../images/lovelace_gc_away_2_zones_5x2.jpg)
 
 ```yaml

@@ -26,7 +26,7 @@ iCloud3 is listed on the default HACS Repositories/Integrations page and can be 
 
 The iCloud3 programs, files and documentation can be found on the iCloud3 GitHub repository [here](https://github.com/gcobb321/icloud3). It uses the GitHub Releases framework to download all the necessary installation files (iCloud3 custom component, documentation, sample configuration files, sample Lovelace cards, etc). Go to the `GitHub > Releases` tab at the top of this repository and download the icloud3.zip file. 
 
-1. Create a `config/custom_components/icloud3` directory on the computer running Home Assistant. Unzip the six component files in the icloud3.zip file (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml, config_ic3.yam, icloud3-event-log-card.js`)  into that directory so the directory structure looks like:
+1. Create a `config/custom_components/icloud3` directory on the computer running Home Assistant. Unzip the six component files in the icloud3.zip file (`device_tracker.py, pyicloud_ic3.py, init.py, manifest.json, services.yaml, config_ic3.yaml, icloud3-event-log-card.js`)  into that directory so the directory structure looks like:
 
 ```yaml
 config
