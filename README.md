@@ -12,7 +12,7 @@ iCloud3 is a Home Assistant device tracker custom component that greatly expands
 
 
 
-<div  align="center"><a href="https://gcobb321.github.io/icloud3/#/"><img src="https://github.com/gcobb321/icloud3/master/docs/images/button_documentation.jpg"></a><a href="https://github.com/gcobb321/icloud3/releases"><img src="https://github.com/gcobb321/icloud3/master/docs/images/button_download_long.jpg"></a></div>
+<div  align="center"><a href="https://gcobb321.github.io/icloud3/#/"><img src="https://github.com/gcobb321/icloud3/blob/master/docs/images/button_documentation.jpg"></a><a href="https://github.com/gcobb321/icloud3/releases"><img src="https://github.com/gcobb321/icloud3/blob/master/docs/images/button_download_long.jpg"></a></div>
 
 ------
 
