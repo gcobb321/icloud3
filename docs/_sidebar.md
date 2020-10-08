@@ -14,7 +14,7 @@
 - What's New and What Changed
  - [v2.2.0 Change Logs](CHANGELOG.md)
 - Welcome to iCloud3
- - [1.1  Introduction](README.md)
+ - [1.0  Introduction](README.md)
  - [1.1  Quick Start Guide](chapters/1-quick-start-guide.md)
  - [1.2 Getting Started](chapters/1-getting-started.md)
  - [1.3 Preparing for iCloud3](chapters/1-preparing-for-icloud3.md)

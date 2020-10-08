@@ -17,9 +17,9 @@ The above analysis results in a polling interval. The further away from Home or 
 
 Another custom component module (`pyicloud_ic3.py`) is responsible for communicating with the iCloud Location Services to authenticate the iCloud account and to locate the devices associated with the account using either Find-my-Friends or Family Sharing tracking methods.
 
-### Installing and Using iCloud3
+### Guide to installing, setting up and using iCloud3
 
-There are a number of steps you must take to get iCloud3 installed, tracking your devices, interfacing with your iCloud account and the iOS App you have installed on your phones, configuring iCloud3, using the Event Log to help monitor location changes and solve tracking and set up problems, etc. This guide will help you get going with iCloud3. 
+There are a number of steps you must take to get iCloud3 installed, track your devices, interface with your iCloud account and the iOS App you have installed on your phones, configure iCloud3, use the Event Log to help monitor location changes and solve tracking and set up problems, etc. This guide will help you get going with iCloud3. 
 
 The following steps will guide you through setting up and using iCloud3:
 
