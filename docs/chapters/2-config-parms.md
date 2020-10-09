@@ -1,20 +1,20 @@
 # Configuration Parameters
 
-Configuration parameters for HA components are set up in the `configuration.yaml` file. Some iCloud3 parameters can also be set up in it's own configuration file, `config_ic3.yaml`. How these parameters are used depends on how iCloud3 is started (or restarted)
+Configuration parameters for HA components are set up in the *configuration.yaml* file. Some iCloud3 parameters can also be set up in it's own configuration file, *config_ic3.yaml*. How these parameters are used depends on how iCloud3 is started (or restarted)
 
-* When HA starts and iCloud3 is loaded, parameters will be read from both files, `configuration.yaml` and `config_ic3.yaml`. If the same parameter is in both files, the one in `config_ic3.yaml` is used. 
-* When iCloud3 is restarted on the Event Log screen, only the parameters in `config_ic3.yaml` are used.  You can change the parameters in `config.yaml` and then restart iCloud3 without restarting HA. The new parameters are now used to control how iCloud3 operates.
+* When HA starts and iCloud3 is loaded, parameters will be read from both files, *configuration.yaml* and *config_ic3.yaml*. If the same parameter is in both files, the one in *config_ic3.yaml* is used. 
+* When iCloud3 is restarted on the Event Log screen, only the parameters in *config_ic3.yaml* are used.  You can change the parameters in *config_ic3.yaml* and then restart iCloud3 without restarting HA. The new parameters are now used to control how iCloud3 operates.
 
-!>The `config_ic3.yaml` file location defaults to the *config/custom_components/icloud3* directory, however it can be stored with your other configuration files in another directory. To do this, copy it to it's new location and specify the full filename (e.g., *config/configuration_ic3_lc.yaml* or */config/includes/config_ic3.yaml*) on the `config_ic3_file_name` parameter. See below for more information and examples.
+!>The *config_ic3.yaml* file, if used, should be located in the */config* directory, the same directory being used for the HA *configuration.yaml* file.  If it is located in the */config/custom_components/icloud3* directory, it will be deleted when HACS updates iCloud3.
 
-Some parameters must be specified in the `configuration.yaml` file. They are:
+Some parameters must be specified in the *configuration.yaml* file. They are:
 
 * Username & password
-* Tracking method (Family Sharing, Find-my-Friends, iOSApp)
-* config_ic3_file_name
-* create_sensors, exclude_sensors
+* Tracking method -- Family Sharing (famshr), Find-my-Friends (fmf), iOSApp (iosapp)
+* config_ic3_file_name if it is a custom name. This parameter is not needed if you are using the *config_ic3.yaml* file name or if your parameters are in *configuration.yaml*.
+* create_sensors, exclude_sensors if you are configuring your sensor list.
 
-All other parameters, including track_devices, can be in `config_ic3.yaml`.
+All other parameters, including track_devices, can be in *config_ic3.yaml*.
 
 
 
@@ -44,19 +44,18 @@ The following are the path/name of the entirety registry file for Home Assistant
 - MacOS: ‘/Users/USERNAME/.homeassistant/.storage/core.entity_registry’  
 
 ###### config_ic3_file_name  
-Many iCloud3 parameters can be specified in the iCloud3 configuration file and, when iCloud3 loads, these parameters  will be processed as if they were in the HA configuration.yaml file. The major benefit is the ability to change parameters and have them take effect when iCloud3 is restarted on the Event Log > Actions pulldown menu. HA does not need to be restarted. A secondary benefit is keeping several configuration files for special conditions.
+Many iCloud3 parameters can be specified in the iCloud3 configuration file and, when iCloud3 loads, these parameters  will be processed as if they were in the HA *configuration.yaml* file. The major benefit is the ability to change parameters and have them take effect when iCloud3 is restarted on the `Event Log > Actions` pulldown menu. HA does not need to be restarted. A secondary benefit is keeping several configuration files for special conditions.
+
+The *config_ic3.yaml* file, if used, should be located in the */config* directory, the same directory being used for the HA *configuration.yaml* file.  If it is located in the */config/custom_components/icloud3* directory, it will be deleted when HACS updates iCloud3.
 
 The file name itself, if specified, must be in the HA configuration file, When iCloud3 starts, the file is searched for in the following manner:
 
 - If the file name is fully qualified and contains the directory and filename (it have to has a '/'), that is used.
-- If the filename is found in */config/custom_components* directory, that file is used.
 - If the filename is found in the */config* directory, that file is used.
 - Otherwise a file not found error is added to the Event Log. 
 
 *Valid Values:* Typical yaml file name.   
-*Default:* 'config/custom_components/icloud3/config_ic3.yaml '  
-*Example*: `config/config_ic3.yaml` -- located in the 'config' directory with the HA *configuration.yaml* file.  
-*Example*: `config_ic3.yaml` -- located in the `custom_components/icloud3` directory.  
+*Default:* 'config/config_ic3.yaml '  
 *Note:* A sample file, `config_ic3_sample.yaml`, is installed with iCloud3 into the *custom_components/icloud3* directory. It contains examples of all of the parameters that can be specified in this file.  
 
 ###### event_log_card_directory  

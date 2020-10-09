@@ -73,7 +73,7 @@ The following enhancements and changes have been made iCloud3 v2.1.0:
 
 Hopefully, you will find this release useful. I am especially excited to be able to use 2fa iCloud accounts again rather than going through the process of setting up non-2fa Find-my-Friends accounts. I hope the tuning and reducing the number of calls to iCloud Web Services for location information will make the program more responsive, especially in poor cell areas.
 
-Version 2.1 was released in March, 2020 and has now been downloaded over 1200 times to users all over the world. If you do find it useful, you don't have to buy me a coffee, beer, gin-and-tonic or a glass of find New Zealand Sauvignon Blanc. But I would appreciate it if you would go to the iCloud repository (https://github.com/gcobb321/icloud3) and click on the star in the upper right corner.
+Version 2.1 was released in March, 2020 and has now been downloaded over 2500 times to users all over the world. If you do find it useful, you don't have to buy me a coffee, beer, gin-and-tonic or a glass of find New Zealand Sauvignon Blanc. But I would appreciate it if you would go to the iCloud repository (https://github.com/gcobb321/icloud3) and click on the star in the upper right corner.
 
 Gary Cobb *(aka geekstergary)*
 
