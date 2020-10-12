@@ -182,7 +182,13 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 The interval between location updates when the device is in a zone. This can be in seconds, minutes or hours, e.g., 30 secs, 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).  
 *Default:* 2 hrs
 
+###### max_interval
+
+The distance from home is used to calculate the interval. If you are a long way from Home, the interval might be very large. If the calculated value is greater than the max_interval value, the max_interval will be used and iCloud3 will be able to update the phone's location on a regular basis. This also keeps the HA map tracking current.  
+*Default:* 4 hrs
+
 ###### center_in_zone   
+
 Specify if the device's location should be changed to the center of the zone when it is in a zone. Previously, would always be moved to the zone center.  
 *Valid Values*: True, False  *Default:* False
 
@@ -281,37 +287,49 @@ When using Waze and the distance from your current location to home is more than
 ### List of the Configuration Parameters
 >```yaml
 >device_tracker:
->  - platform: icloud3
->    username: !secret gary_famshr_username
->    password: !secret gary_famsh_password
->    tracking_method: famshr
->    track_devices:
->      - gary_iphone > gary-icloud-acct@email.com, gary.png
->      - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
->      
->    group: family
->    
->    inzone_interval: '2 hrs'
->    max_interval: '30 min'
->    center_in_zone: False
->    stationary_inzone_interval: '30 min'
->    stationary_still_time: '8 min'
->    stationary_zone_offset: '2,0'
->    
->    gps_accuracy_threshold: 75
->    old_location_threshold: '2 min'
->    ignore_gps_accuracy_inzone: False
->    
->    travel_time_factor: .6
->    distance_method: calc
->    waze_region: US
->    waze_min_distance: 1
->    waze_max_distance: 9999
->    waze_realtime: false
->    
->    create_sensors: intvl,ttim,zdis,wdis,cdis,lupdt,nupdt,zon,zon1,zon2
->    exclude_sensors: cnt,lupdt,zon3,lzon3,alt
->    
->    log_level: debug+eventlog
->    config_ic3_file_name: 'config_ic3.yaml'
+> - platform: icloud3
+>   username: !secret gary_famshr_username
+>   password: !secret gary_famsh_password
+>   tracking_method: famshr
+>   track_devices:
+>     - gary_iphone > gary-icloud-acct@email.com, gary.png
+>     - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
+>     
+>   #-- General Parameters -----------------------------------------
+>   group: family
+>   event_log_card_directory: 'www/custom_cards'
+>   unit_of_measurement: mi
+>   config_ic3_file_name: '/config/config_ic3.yaml'
+>
+>   #--Zone/Tracking Parameters-----------------------------------------
+>   inzone_interval: '60 min'
+>   max_interval: '4 hrs'
+>   center_in_zone: True
+>   stationary_inzone_interval: '30 min'
+>   stationary_still_time: '8 min'
+>   stationary_zone_offset: 1, 0
+>   travel_time_factor: .6
+>   distance_method: waze
+>
+>   #--Accuracy Parameters-------------------------------------
+>   gps_accuracy_threshold: 100
+>   ignore_gps_accuracy_inzone: True
+>   old_location_threshold: '3 min'
+>
+>   #--Waze Parameters-----------------------------------------
+>   distance_method: waze
+>   waze_region: US
+>   waze_min_distance: 1
+>   waze_max_distance: 9999
+>   waze_realtime: False
+>
+>   #-- Other Parameters---------------------------------------
+>   display_text_as:
+>     - gary-real-email@gmail.com > gary-email@email.com
+>     - lillian-real-email@gmail.com > lillian-emailt@email.com
+>   
+>   #-- Debug/Logging Parameters---------------------------------------
+>   log_level: debug
+>   log_level: debug+rawdata
+>
 >```

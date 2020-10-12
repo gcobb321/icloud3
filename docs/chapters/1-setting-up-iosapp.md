@@ -36,4 +36,20 @@ A suffix must be added onto the device_tracker Entity ID so it is not the same a
 6. Select **Update**.
 7. Restart Home Assistant to load the new device_tracker entity name.  
 
+#### iOS App Settings
+
+Every phone you are tracking with iCloud3 must have the iOS App installed on it, whether you are using the iOS App or not.
+
+!> If you do not install the iOS App on the phone being tracked, an error message is displayed in the Event Log that the iOS App device_tracker entity can not be found.
+
+The following are iOS App screenshots showing how the app should be configured.
+
+- **Notification screen** - A notification is displayed on the phone when these events occur. They should be set to *On* during the installation iCloud3 phase and can be turned off once you have verified everything is working correctly.
+- **Location screen** - The highlighted fields control how triggers are sent to HA and iCloud3 from the iOS App and must be the values indicated. If Location Permission is *Never* and the other items are *Off*, triggers will not be sent and the iOS App will be Inactive.
+- **General screen** - Various messages and location requests are sent to the Device Name. This name is automatically detected when iCloud3 starts.
+
+![iosapp_settings](../images/iosapp_settings.jpg)
+
+
+
 
