@@ -1,0 +1,8 @@
+VERSION = '2.2.1a'
+1. Display an Alert message in the Event Log if the config_ic3.yaml file is found in the icloud3 directory.
+2. Restart iCloud3 to reinitialize location information when the iCloud account is verified with the 6-digit authentication code. Previously, iCloud3 was resuming and, in some cases, would not receive location information from iCloud Location Services on the next poll.
+3. Fixed the iOS App monitor so it would show the iOS App gps accuracy rather than the last iCloud value.
+4. Fixed a determining the polling interval if the last poll was from iCloud data and it was discarded due to poor gps accuracy and the next poll was from the iOS App with good gps accuracy.
+5. Added the 'noiosapp' value to the track_devices parameter that indicates the devicename does not have the iOS App installed on it.
+6. Added the results of the interval calculation to the Event Log Tracking Monitor display.
+7. Changed Event Log > Actions > Request iOS App Location to 'Update Location' to issue an iOS App Locate Reuest if the iOS App is installed or an iCloud Location request if it is not installed.
