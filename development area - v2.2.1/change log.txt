@@ -1,4 +1,11 @@
-VERSION = '2.2.1a'
+v2.2.1b (10/14/2020)
+--------------------
+1. Fixes a Region Entered trigger being discarded when the distance to the center of the zone is between the zone's radius and 100m when the radius is less than 100m. The iOS App issues the Region Enter trigger when the distance is less than 100m, regardless of the zone size. iCloud3 looks at the zone size and not the 100m prezone size like the iOS App.
+2. A location will not be considered old if it's age is less than 1-minute to reduce the number of location upates that are discarded.
+3. Updated sensor icons.
+
+v2.2.1a (10/13/2020)
+--------------------
 1. Display an Alert message in the Event Log if the config_ic3.yaml file is found in the icloud3 directory.
 2. Restart iCloud3 to reinitialize location information when the iCloud account is verified with the 6-digit authentication code. Previously, iCloud3 was resuming and, in some cases, would not receive location information from iCloud Location Services on the next poll.
 3. Fixed the iOS App monitor so it would show the iOS App gps accuracy rather than the last iCloud value.

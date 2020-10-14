@@ -22,16 +22,24 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.1a'
+VERSION = '2.2.1b'
 
 '''
+v2.2.1b
+-------
+1. Fixes a Region Entered trigger being discarded when the distance to the center of the zone is between the zone's radius and 100m when the radius is less than 100m. The iOS App issues the Region Enter trigger when the distance is less than 100m, regardless of the zone size. iCloud3 looks at the zone size and not the 100m prezone size like the iOS App.
+2. A location will not be considered old if it's age is less than 1-minute to reduce the number of location upates that are discarded.
+3. Updated sensor icons.
+
+v2.2.1a
+-------
 1. Display an Alert message in the Event Log if the config_ic3.yaml file is found in the icloud3 directory.
 2. Restart iCloud3 to reinitialize location information when the iCloud account is verified with the 6-digit authentication code. Previously, iCloud3 was resuming and, in some cases, would not receive location information from iCloud Location Services on the next poll.
 3. Fixed the iOS App monitor so it would show the iOS App gps accuracy rather than the last iCloud value.
 4. Fixed a determining the polling interval if the last poll was from iCloud data and it was discarded due to poor gps accuracy and the next poll was from the iOS App with good gps accuracy.
 5. Added the 'noiosapp' value to the track_devices parameter that indicates the devicename does not have the iOS App installed on it.
 6. Added the results of the interval calculation to the Event Log Tracking Monitor display.
-7. the Event Log > Actions > Locate phone will issue an iCloud refresh if the iOS pp is not installed on the selected phone.
+7. Changed Event Log > Actions > Request iOS App Location to 'Update Location' to issue an iOS App Locate Reuest if the iOS App is installed or an iCloud Location request if it is not installed.
 '''
 #Symbols = •▶¦▶ ●►◄ ▬ ▲▼◀▶ oPhone=►▶►
 
@@ -358,9 +366,9 @@ SENSOR_ATTR_FNAME = {
 
 SENSOR_ATTR_ICON = {
         'zone': 'mdi:cellphone-iphone',
-        'last_zone': 'mdi:cellphone-iphone',
-        'base_zone': 'mdi:cellphone-iphone',
-        'zone_timestamp': 'mdi:restore-clock',
+        'last_zone': 'mdi:map-clock-outline',
+        'base_zone': 'mdi:map-clock',
+        'zone_timestamp': 'mdi:clock-in',
         'zone_distance': 'mdi:map-marker-distance',
         'calc_distance': 'mdi:map-marker-distance',
         'waze_distance': 'mdi:map-marker-distance',
@@ -368,14 +376,14 @@ SENSOR_ATTR_ICON = {
         'dir_of_travel': 'mdi:compass-outline',
         'interval': 'mdi:clock-start',
         'info': 'mdi:information-outline',
-        'last_located': 'mdi:restore-clock',
-        'last_update': 'mdi:restore-clock',
+        'last_located': 'mdi:history',
+        'last_update': 'mdi:history',
         'next_update': 'mdi:update',
         'poll_count': 'mdi:counter',
         'travel_distance': 'mdi:map-marker-distance',
         'trigger': 'mdi:flash-outline',
-        'battery': 'mdi:battery',
-        'battery_status': 'mdi:battery',
+        'battery': 'mdi:battery-outline',
+        'battery_status': 'mdi:battery-outline',
         'gps_accuracy': 'mdi:map-marker-radius',
         'altitude': 'mdi:image-filter-hdr',
         'vertical_accuracy': 'mdi:map-marker-radius',
@@ -1803,7 +1811,7 @@ class Icloud3:#(DeviceScanner):
                             #by treating it as poor GPS
                             if self._is_inzone_zonename(zone):
                                 outside_no_exit_trigger_flag, info_msg = \
-                                    self._check_outside_zone_no_exit(devicename, zone,
+                                    self._check_outside_zone_no_exit(devicename, zone, ic3dev_trigger,
                                             ic3dev_latitude, ic3dev_longitude)
                                 if outside_no_exit_trigger_flag:
                                     update_method     = None
@@ -2005,7 +2013,8 @@ class Icloud3:#(DeviceScanner):
                     #discard trigger if outsize zone with no exit trigger
                     if self._is_inzone_zonename(zone):
                         discard_flag, discard_msg = \
-                            self._check_outside_zone_no_exit(devicename, zone, latitude, longitude)
+                            self._check_outside_zone_no_exit(devicename, zone, '',
+                                    latitude, longitude)
 
                         if discard_flag:
                             self._save_event(devicename, discard_msg)
@@ -2465,7 +2474,8 @@ class Icloud3:#(DeviceScanner):
                     info_msg= ''
                 else:
                     outside_no_exit_trigger_flag, info_msg = \
-                        self._check_outside_zone_no_exit(devicename, zone, latitude, longitude)
+                        self._check_outside_zone_no_exit(devicename, zone, '',
+                                latitude, longitude)
 
                 #If not authorized or no data, don't check old or accuracy errors
                 if self.icloud_acct_auth_error_cnt > 0:
@@ -3274,19 +3284,25 @@ class Icloud3:#(DeviceScanner):
                         not_inzone_flag = False
                     else:
                         dir_of_travel = NOT_SET
+            if (dir_of_travel in ('', AWAY_FROM)
+                    and interval < 180
+                    and interval > 0):
+                interval_method += ',xx30dot-Away(<3min)'
 
-            if dir_of_travel in ('', AWAY_FROM) and interval < 180:
+            if (dir_of_travel in ('', AWAY_FROM)
+                    and interval < 180
+                    and interval > 30):
                 interval = 180
-                interval_method_im = '30dot-Away(<3min)'
+                interval_method += ',30dot-Away(<3min)'
 
             elif (dir_of_travel == AWAY_FROM
                     and not self.distance_method_waze_flag):
                 interval_multiplier = 2    #calc-increase timer
-                interval_method_im = '30dot-Away(Calc)'
-
-            elif (dir_of_travel == NOT_SET and interval > 180):
+                interval_method += ',30dot-Away(Calc)'
+            elif (dir_of_travel == NOT_SET
+                    and interval > 180):
                 interval = 180
-                interval_method_im = '301dor->180s'
+                interval_method += ',301dor->180s'
 
             #15-sec interval (close to zone) and may be going into a stationary zone,
             #increase the interval
@@ -3294,7 +3310,7 @@ class Icloud3:#(DeviceScanner):
                     and devicename in self.stat_zone_timer
                     and self.this_update_secs >= self.stat_zone_timer.get(devicename)+45):
                 interval = 30
-                interval_method_im = '31st-StatTimer+45'
+                interval_method += ',31st-StatTimer+45'
 
         except Exception as err:
             attrs_msg = self._internal_error_msg(fct_name, err, 'SetStatZone')
@@ -3305,14 +3321,18 @@ class Icloud3:#(DeviceScanner):
             #Turn off waze close to zone flag to use waze after leaving zone
             if inzone_flag:
                 self.waze_close_to_zone_pause_flag = False
-
+            if (self.iosapp_update_flag.get(devicename)
+                    and interval < 180
+                    and self.override_interval_seconds.get(devicename) == 0):
+                interval_method += ',xx33ios-iosAppTrigger'
             #if triggered by ios app (Zone Enter/Exit, Manual, Fetch, etc.)
             #and interval < 3 min, set to 3 min. Leave alone if > 3 min.
             if (self.iosapp_update_flag.get(devicename)
                     and interval < 180
+                    and interval > 30
                     and self.override_interval_seconds.get(devicename) == 0):
                 interval   = 180
-                interval_method = '0-iosAppTrigger'
+                interval_method += ',33ios-iosAppTrigger'
 
             #if changed zones on this poll reset multiplier
             if self.state_change_flag.get(devicename):
@@ -3325,7 +3345,6 @@ class Icloud3:#(DeviceScanner):
         except Exception as err:
             attrs_msg = self._internal_error_msg(fct_name, err, 'ResetStatZone')
             return attrs_msg
-
 
         try:
             #Real close, final check to make sure interval is not adjusted
@@ -3341,7 +3360,7 @@ class Icloud3:#(DeviceScanner):
             if interval > self.max_interval_secs and not_inzone_flag:
                 interval_str = (f"{self._secs_to_time_str(self.max_interval_secs)}({self._secs_to_time_str(interval)})")
                 interval = self.max_interval_secs
-                interval_method = (f"40-MaxIntervalOverride {interval_str}")
+                interval_method += (f",40-Max")
             else:
                 interval_str = self._secs_to_time_str(interval)
 
@@ -3353,9 +3372,10 @@ class Icloud3:#(DeviceScanner):
             event_msg = (f"Interval basis: {interval_method}, {log_msg}, Direction {dir_of_travel}")
             #self._save_event(devicename, event_msg)
 
-            if interval_multiplier != 1:
-               interval_debug_msg = (f"{interval_debug_msg}, "
-                                     f"Multiplier-{interval_multiplier}({interval_method_im})")
+            if interval_multiplier > 1:
+                interval_method += (f"x{interval_multiplier}")
+                interval_debug_msg = (f"{interval_debug_msg}, "
+                                     f"Multiplier-{interval_multiplier} ({interval_method})")
 
             #check if next update is past midnight (next day), if so, adjust it
             next_poll = round((self.this_update_secs + interval)/15, 0) * 15
@@ -3417,9 +3437,10 @@ class Icloud3:#(DeviceScanner):
                 f"Interval-{interval_str} ({interval_method}), "
                 f"LastUpdate-{self.last_update_time.get(devicename_zone)}, "
                 f"NextUpdate-{self.next_update_time.get(devicename_zone)}, "
-                f"OverrideInterval-{self._secs_to_time_str(self.override_interval_seconds.get(devicename))}, "
                 f"DistTraveled-{self._format_dist(calc_dist_last_poll_moved_km)}, "
                 f"CurrZone-{zone}")
+            if self.override_interval_seconds.get(devicename) > 0:
+                event_msg += (f", OverrideInterval-{self._secs_to_time_str(self.override_interval_seconds.get(devicename))}")
             self._save_event_halog_info(devicename, event_msg, log_title="")
 
         except Exception as err:
@@ -3558,7 +3579,7 @@ class Icloud3:#(DeviceScanner):
                          f"OldLocThreshold-{old_location_secs_msg}")
             if self.stat_zone_timer.get(devicename) > 0:
                 event_msg += (f", WillMoveIntoStatZoneAfter-{self._secs_to_time(self.stat_zone_timer.get(devicename))}"
-                              f"({self.stat_zone_moved_total.get(devicename)*100}m)")
+                              f"({self._format_dist(self.stat_zone_moved_total.get(devicename))}")
             self._save_event_halog_info(devicename, event_msg, log_title="")
 
             return attrs
@@ -4116,19 +4137,19 @@ class Icloud3:#(DeviceScanner):
         if self.old_location_threshold > 0:
             return self.old_location_threshold
 
-        old_location_secs = 14
+        old_location_secs = 60
         if self._is_inzone_zonename(zone):
             old_location_secs = interval * .025     #inzone interval --> 2.5%
             if old_location_secs < 90: old_location_secs = 90
 
         elif interval < 90:
-            old_location_secs = 30                  #30 secs if < 1.5 min
+            old_location_secs = 60                  #60 secs if < 1.5 min
 
         else:
             old_location_secs = interval * .125    #12.5% of the interval
 
-        if old_location_secs < 15:
-            old_location_secs = 15
+        if old_location_secs < 61:
+            old_location_secs = 61
         elif old_location_secs > 600:
             old_location_secs = 600
 
@@ -7043,12 +7064,16 @@ class Icloud3:#(DeviceScanner):
         return False
 
 #--------------------------------------------------------------------
-    def _check_outside_zone_no_exit(self,devicename, zone, latitude, longitude):
+    def _check_outside_zone_no_exit(self,devicename, zone, trigger, latitude, longitude):
         '''
         If the device is outside of the zone and less than the zone radius + gps_acuracy_threshold
         and no Geographic Zone Exit trigger was received, it has probably wandered due to
         GPS errors. If so, discard the poll and try again later
         '''
+        trigger = self.trigger.get(devicename) if trigger == '' else trigger
+        if trigger in IOS_TRIGGERS_ENTER:
+            return False, ''
+
         dist_from_zone_m  = self._zone_distance_m(
                                 devicename,
                                 zone,
