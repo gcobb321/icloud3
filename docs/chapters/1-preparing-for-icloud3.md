@@ -64,7 +64,7 @@ This must be done on a PC or Mac. Using the iPhone or iPad will not work.
 4. Fill in your name, birthday, non-2fa email you will are creating, password, etc.
 5. Fill in the Phone number and go through the account verification process.
 
-​    !> At some point, the Apple ID Security screen is displayed. This is where you select to not set up 2fa. This is important.
+!> At some point, the Apple ID Security screen is displayed. This is where you select to not set up 2fa. This is important.
 
 6. Select **Other Options** on the *Apple ID Security* window.
 7. Select **Don't Upgrade** on the *Protect your account* window.
