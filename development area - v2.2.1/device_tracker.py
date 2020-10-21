@@ -31,9 +31,10 @@ v2.2.1c
 2. Bug fix - If (1) the phone was turned off and not available when HA restarted or (2) became unreachable for an extended period of time while HA/iCloud3 was running (cell service down, turned off, airplane mode, etc.), the phone would be in a not_set state or the location would become older and older. This would hang up iCloud3 in a 5-second update loop, polling iCloud for location data when none was available. It will now retry the data request 4-times at a 15-second interval. The interval will increase to 1, 5, 15, 30, 1 hr and then the max_interval (4-hrs) and remain there until the phone comes back online.  If the phone is then turned on, it will be picked up on the next successful location data request and returned and then tracked as normal.
 3. Bug fix - When old location messages were added to the Event Log if the last located time is old and the phone is in a zone.
 4. Bug fix - If the unit_of_measurement not being set to 'km' if the parameter was in the config_ic3.yaml file. It was being set correctly if it was in the HA configuration.file.
-5. If the phone's name started with iPhone (or iPad), the first character of the sensor.xxx friendly_name attribute would be a '-'. The '-' was removed. Also removed the '-' between the phone's name and the attribute name to match the iOS App friendly_name formatting.
-6. New configuration parameter - 'display_zone_name: True/False(default)' The 'device_tracker.[devicename]' entity displays the zone's friendly_ name, which is then displayed on the lovelace card. The name is truncated if it is longer than 10-12 letters. This option, if True, will display the zone name itself instead of the friendly_name.
-7. Added some logger debug statements to 'pyicloud_ic3.py' to capture icloud request/response events that might help pinpoint what is happening when iCloud needs to do an account verification.
+5. Bug fix - Fixed 'Lost Pnone' notification. It will now work with all tracking methods using the iOS App Notifications platform.
+6. If the phone's name started with iPhone (or iPad), the first character of the sensor.xxx friendly_name attribute would be a '-'. The '-' was removed. Also removed the '-' between the phone's name and the attribute name to match the iOS App friendly_name formatting.
+7. New configuration parameter - 'display_zone_name: True/False(default)' The 'device_tracker.[devicename]' entity displays the zone's friendly_ name, which is then displayed on the lovelace card. The name is truncated if it is longer than 10-12 letters. This option, if True, will display the zone name itself instead of the friendly_name.
+8. Added some logger debug statements to 'pyicloud_ic3.py' to capture icloud request/response events that might help pinpoint what is happening when iCloud needs to do an account verification.
 To turn this on, add the following to your configuration.yaml file:
 logger:
   default: info
@@ -930,8 +931,9 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     def _service_callback_lost_iphone(call):
         """Call the lost iPhone function if the device is found."""
 
-        groups = call.data.get(CONF_GROUP, ICLOUD3_GROUP_OBJS)
+        groups     = call.data.get(CONF_GROUP, ICLOUD3_GROUP_OBJS)
         devicename = call.data.get(CONF_DEVICENAME)
+
         for group in groups:
             if group in ICLOUD3_GROUP_OBJS:
                 ICLOUD3_GROUP_OBJS[group]._service_handler_lost_iphone(
@@ -2830,7 +2832,7 @@ class Icloud3:#(DeviceScanner):
 #   FamShr (Family Sharing) tracking method.
 #
 #########################################################
-    def _refresh_pyicloud_devices_location_data(self, devicename):
+    def _get_famshr_data(self, devicename):
         '''
         Extract the data needed to determine location, direction, interval,
         etc. from the iCloud data set.
@@ -5697,7 +5699,7 @@ class Icloud3:#(DeviceScanner):
             self.um_km_mi_factor          = 1
             self.um_m_ft                  = 'm'
             self.um_kph_mph               = 'kph'
-        TRACE("_init_um",unit_of_measurement,self.um_km_mi_factor)
+
 #--------------------------------------------------------------------
     def _setup_tracking_method(self, tracking_method):
         '''
@@ -6547,7 +6549,7 @@ class Icloud3:#(DeviceScanner):
 
         try:
             self._log_level_debug_rawdata("FamShr iCloud Data - (devices) 5826", api_device_content)
-
+            TRACE("api_device_content",api_device_content)
             for device in api_device_content:
                 device_content_name = device[ATTR_NAME]
                 devicename          = slugify(device_content_name)
@@ -6561,6 +6563,9 @@ class Icloud3:#(DeviceScanner):
                     self.api_device_devicename[device_content_name] = devicename
                     self.api_device_devicename[devicename]          = device_content_name
 
+                    TRACE("adevicename",devicename)
+                    TRACE("device_content_name",device_content_name,device_type)
+                    TRACE("api_device_devicename", self.api_device_devicename)
                     devicename_list_tracked += (f"CRLF• {devicename} ({device_content_name}/{device_type})")
 
                 else:
@@ -9003,28 +9008,14 @@ class Icloud3:#(DeviceScanner):
 #   ICLOUD ROUTINES
 #
 #########################################################
-    def _service_handler_lost_iphone(self, group, arg_devicename):
+    def _service_handler_lost_iphone(self, group, devicename):
         """Call the lost iPhone function if the device is found."""
 
-        if self.TRK_METHOD_FMF_FAMSHR is False:
-            log_msg = (f"Lost Phone Alert Error > Device-{arg_devicename} > "
-                       "Alerts can only be sent when using the FamShr tracking_method")
-            self._log_warning_msg(log_msg)
-            self.info_notification = log_msg
-            self._save_event(arg_devicename, log_msg)
-            return
-
-        valid_devicename = self._service_multi_acct_devicename_check(
-                "Lost iPhone Service", group, arg_devicename)
-        if valid_devicename is False:
-            return
-
-        device = self.tracked_devices.get(arg_devicename)
-        device.play_sound()
-
-        log_msg = (f"iCloud Lost iPhone Alert Sent > Device-{arg_devicename}")
-        self._log_info_msg(log_msg)
-        self._save_event(arg_devicename, "Lost Phone Alert sent")
+        lost_message = ("This phone has been identified as lost. "
+                       "Please contact the owner with it's location.")
+        message = {"title":  "Lost Phone Notification",
+                   "message": lost_message}
+        self._send_message_to_device(devicename, message)
 
 #--------------------------------------------------------------------
     def _service_handler_icloud_update(self, group, arg_devicename=None,
@@ -9348,6 +9339,8 @@ class Icloud3:#(DeviceScanner):
 #--------------------------------------------------------------------
     def _service_multi_acct_devicename_check(self, svc_call_name,
             group, arg_devicename):
+
+        return True
 
         if arg_devicename is None:
             log_msg = (f"{svc_call_name} Error, no devicename specified")

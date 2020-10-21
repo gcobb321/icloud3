@@ -24,7 +24,7 @@ VERSION = '2.2.0'
         to generate a Authentication error code rather than generating it's own 2SA Needed Exception
 """
 
-from six import PY2, string_types
+from six import PY2, string_types, text_type
 from uuid import uuid1
 import inspect
 import json
@@ -109,15 +109,17 @@ class PyiCloudSession(Session):
 
         kwargs_retry_flag = kwargs.get("retried", None)
         kwargs.pop("retried", None)
+
         response = super(PyiCloudSession, self).request(method, url, **kwargs)
+
+        request_logger.debug(f"115 RESPONSE -- {response}, StatusCode-{response.status_code}, okStatus-{response.ok}")
+        request_logger.debug(f"110 RESPONSE -- {25*'-'}")
 
         content_type = response.headers.get("Content-Type", "").split(";")[0]
         json_mimetypes = ["application/json", "text/json"]
 
         kwargs_retry_flag = True
         if not response.ok and content_type not in json_mimetypes:
-            request_logger.debug(f"120 RESPONSE ERROR      -- {25*'-'}")
-            request_logger.debug(f"120 RESPONSE ERROR CODE -- {response}")
             try:
                 data = response.json()
                 request_logger.debug(f"120 RESPONSE ERROR DATA -- {data}")
@@ -128,6 +130,7 @@ class PyiCloudSession(Session):
                 and (response.status_code == AUTHENTICATION_REQUIRED
                     or response.status_code == DEVICE_STATUS_ERROR)):
                 message = (f"Reauthentication Required for Account: {self.service.user['apple_id']}")
+                request_logger.debug(f"133 MESSAGE  -- {message}")
 
                 api_error = PyiCloudAPIResponseException(
                     message, response.status_code, retry=True
@@ -148,8 +151,6 @@ class PyiCloudSession(Session):
             request_logger.warning("Failed to parse response with JSON mimetype")
             return response
 
-        request_logger.debug(f"150 RESPONSE      -- {25*'-'}")
-        request_logger.debug(f"150 RESPONSE CODE -- {response}")
         #request_logger.debug(f"150 RESPONSE DATA -- {data}")
         #request_logger.info(data)
 
