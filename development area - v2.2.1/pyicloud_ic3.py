@@ -150,7 +150,7 @@ class PyiCloudSession(Session):
 
         request_logger.debug(f"150 RESPONSE      -- {25*'-'}")
         request_logger.debug(f"150 RESPONSE CODE -- {response}")
-        request_logger.debug(f"150 RESPONSE DATA -- {data}")
+        #request_logger.debug(f"150 RESPONSE DATA -- {data}")
         #request_logger.info(data)
 
         reason = data.get("errorMessage")
