@@ -12,9 +12,7 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.2.0.11 (10/13/2020)
-//
-//  .11 - Change Action text 'Request iOS App Location' to 'Update Location'
+//  Version=2.2.1.01 (10/28/2020)
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -25,7 +23,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version   = "2.2.0.11"
+        const version   = "2.2.1.01"
         const cardTitle = "iCloud3 Event Log"
 
         const root = this.shadowRoot;
@@ -968,6 +966,8 @@ class iCloud3EventLogCard extends HTMLElement {
                     maxStatZoneLength = 9
                     if (tStat == 'stationary') {tStat = 'stationry'}
                     if (tZone == 'stationary') {tZone = 'stationry'}
+                    if (tStat == 'Stationary') {tStat = 'Stationry'}
+                    if (tZone == 'Stationary') {tZone = 'Stationry'}
                 }
                 if (tStat.length > maxStatZoneLength) {
                     tStat = tStat.substr(0, maxStatZoneLength) + "<br>" + tStat.substr(maxStatZoneLength, tStat.length)
@@ -1093,7 +1093,7 @@ class iCloud3EventLogCard extends HTMLElement {
                         && tText.indexOf("Complete") == -1)  {
                     initializationRecdFound = true
                 }
-                if (tText.indexOf("Error") >= 0) {
+                if (tText.indexOf(" Error ") >= 0) {
                     classErrorMsg = ' errorMsg'
                     if (initializationRecdFound == false) {
                         alertErrorMsg = "iCloud3 Error Msg at "+tTime
