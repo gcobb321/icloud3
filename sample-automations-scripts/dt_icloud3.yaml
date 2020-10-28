@@ -1,36 +1,38 @@
+# yamllint disable rule:document-start
+
 #########################################################
 #
 #   DEVICE_TRACKERS
 #
 #########################################################
 
-#----  iCloud iPhone Location Services ------------------------
+# ----  iCloud iPhone Location Services ------------------------
 - platform: icloud3
   username: !secret gary_icloud_username
   password: !secret gary_icloud_password
-  #tracking_method: famshr
+  # tracking_method: famshr
   tracking_method: fmf
-  #tracking_method: iosapp
+  # tracking_method: iosapp
 
   config_ic3_file_name: config_ic3.yaml
   exclude_sensors: batstat,zon2,zon3,lzon2,lzon3
 
-  #track_devices:
-  #  - gary_iphone > gcobb-icloud@email.com, gary.png
-  #  - lillian_iphone > lillian-icloud@email.com, lillian.png
+  # track_devices:
+  #   - gary_iphone > gcobb-icloud@email.com, gary.png
+  #   - lillian_iphone > lillian-icloud@email.com, lillian.png
 
-  #stationary_still_time: '5 min'
-  #stationary_inzone_interval: '15 min'
-  #inzone_interval: '30 min'
-  #log_level: debug
-  #log_level: debug+intervalcalc
-  #log_level: debug+rawdata
-  #center_in_zone: False
-  #display_text_as:
-  #  - gary-icloud@gmail.com > gary-secret@email.com
-  #  - lillian-icloud@gmail.com > lillian-secret@email.com
+  # stationary_still_time: '5 min'
+  # stationary_inzone_interval: '15 min'
+  # inzone_interval: '30 min'
+  # log_level: debug
+  # log_level: debug+intervalcalc
+  # log_level: debug+rawdata
+  # center_in_zone: False
+  # display_text_as:
+  #   - gary-icloud@gmail.com > gary-secret@email.com
+  #   - lillian-icloud@gmail.com > lillian-secret@email.com
 
-#----- Other Configuration Variables (set to default values) ----
+# ----- Other Configuration Variables (set to default values) ---
 #  group: primary
 #  gps_accuracy_threshold: 175
 #  tracking_method: fmf

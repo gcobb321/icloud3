@@ -5,10 +5,11 @@
 #   BADGE TEMPLATE SENSORS
 #
 #########################################################
+
 # -- Gary/Lillian location badge --------------------
 - platform: template
   sensors:
-    gary_badge:  
+    gary_badge:
       friendly_name: Gary
       value_template: '{{states("sensor.gary_iphone_badge")}}'
       entity_picture_template: /local/gary.png

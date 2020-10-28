@@ -1,9 +1,12 @@
+# yamllint disable rule:document-start
+
 #########################################################
 #
 #   GARAGE DOOR SENSOR
 #
 #########################################################
-#--- Garage Door Open/Closed Badge--------------------
+
+# --- Garage Door Open/Closed Badge----------------------
 - platform: template
   sensors:
     garage_door_badge:
@@ -13,10 +16,10 @@
         {% if is_state("sensor.garage_door_state", "open") %}
           /local/garage-door-open.png
         {% else %}
-          /local/garage-door-closed.png 
+          /local/garage-door-closed.png
         {% endif %}
-           
-#--- Garage Door Open/Closed State --------------------           
+
+# --- Garage Door Open/Closed State ---------------------
 - platform: template
   sensors:
     garage_door_state:
@@ -28,14 +31,14 @@
           closed
         {% endif %}
 
-#--- Garage Door Moving --------------------           
+# --- Garage Door Moving --------------------------------
 - platform: template
   sensors:
     garage_door_moving:
       friendly_name: Garage Door Moving
       value_template: false
-      
-#--- Garage Door Motion State --------------------           
+
+# --- Garage Door Motion State --------------------------
 - platform: template
   sensors:
     garage_door_motion:
@@ -47,11 +50,11 @@
           {% else %}
              opening
           {% endif %}
-        {% else %}   
+        {% else %
           {{states("sensor.garage_door_state")}}
         {% endif %}
-        
-#--- Garage Door Motion State --------------------           
+
+# --- Garage Door Motion State --------------------------
 - platform: template
   sensors:
     garage_door_motion_test:
@@ -59,16 +62,8 @@
       value_template: >
         {% if is_state("sensor.garage_door_moving", False) %}
           T1
-        {% else %}   
+        {% else %}
             {% if is_state("sensor.garage_door_moving", 'False') %}
               T2
             {% endif %}
         {% endif %}
-
-        
-        
-        
-        
-
-        
-        

@@ -1,3 +1,5 @@
+# yamllint disable rule:document-start
+
 ##############################################################
 #
 #   HOME/AWAY SCRIPTS - Gary
@@ -10,27 +12,24 @@ gary_status:
     - service: script.notify_gary_iphone
       data_template:
         title: 'Gary Status'
-        message: 'Zone={{states("sensor.gary_iphone_zone")}}, 
-                  Zone1={{states("sensor.gary_iphone_zone_name1")}}, 
-                  Zone2={{states("sensor.gary_iphone_zone_name2")}}, 
+        message: 'Zone={{states("sensor.gary_iphone_zone")}},
+                  Zone1={{states("sensor.gary_iphone_zone_name1")}},
+                  Zone2={{states("sensor.gary_iphone_zone_name2")}},
                   Distance={{states("sensor.gary_iphone_zone_distance")}},
                   DriveFlag={{states("input_boolean.gary_driving_flag")}},
                   FarFlag={{states("input_boolean.gary_far_away_flag")}}'
-  
-#-------------------------------------------------------------
+
+# -------------------------------------------------------------
 #   Arrive Home
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 gary_arrives_home:
   alias: 'Gary Arrives Home (script)'
   sequence:
-    #Open garage door if driving flag is on
-    - service: script.open_garage_door 
-    
-    #Turn off 'Away' flags
+    # Open garage door if driving flag is on
+    - service: script.open_garage_door
+
+    # Turn off 'Away' flags
     - service: input_boolean.turn_off
       entity_id: input_boolean.gary_driving_flag
     - service: input_boolean.turn_off
       entity_id: input_boolean.gary_far_away_flag
-    
- 
-

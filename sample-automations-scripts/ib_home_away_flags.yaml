@@ -1,3 +1,5 @@
+# yamllint disable rule:document-start
+
 # ----- Gary Home Flags -------------------
 #   This is set in Automation_old>home_away>Set Gary Driving Flag (Turn On)
 #   and reset in Automation_old>home_away>Set Gary Arrive Home

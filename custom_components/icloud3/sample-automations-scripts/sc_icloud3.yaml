@@ -6,7 +6,6 @@
 #
 #########################################################
 
-
 # -------------------------------------------------------------
 #   GENERAL ICLOUD COMMANDS
 # ------------------------------------------------------------
@@ -93,7 +92,6 @@ icloud3_set_interval_5_hrs:
     - service: device_tracker.icloud3_set_interval
       data:
         interval: '5 hr'
-
 
 # -------------------------------------------------------------
 #   Set iCloud commands for Gary
@@ -217,7 +215,6 @@ icloud3_update_location_lillian:
 # -------------------------------------------------------------
 #   ZONE COMMANDS
 # -------------------------------------------------------------
-
 icloud3_command_gary_iphone_zone_home:
   alias: 'Set Zone Home (Gary)'
   sequence:
@@ -265,7 +262,6 @@ icloud3_gary_iphone_see_away:
       data:
         dev_id: gary_iphone
         location_name: 'not_home'
-
 
 # -------------------------------------------------------------
 #   INFORMATION COMMANDS

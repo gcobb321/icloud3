@@ -1,0 +1,64 @@
+# yamllint disable rule:document-start
+
+#########################################################
+#
+#   DEVICE_TRACKERS
+#
+#########################################################
+
+# =====  iCloud iPhone Location Services ===============+
+device_tracker:
+  - platform: icloud3
+    username: gary-fmf-acct@email.com
+    password: gary-fmf-password
+    track_devices:
+      - gary_iphone > gary-icloud-acct@email.com, gary.jpg
+      - lillian_iphone > lillian-icloud-acct@email.com, lillian.jpg
+      
+    config_ic3_file_name: config_ic3.yaml
+    exclude_sensors: batstat,zon2,zon3,lzon2,lzon3
+
+# ===== configuration.yaml or config_ic3.yaml Parameters
+#   track_devices:
+#     - gary_iphone > gcobb-icloud@email.com, gary.png
+#     - lillian_iphone > lillian-icloud@email.com, lillian.png
+#   tracking_method: fmf
+#   tracking_method: famshr
+#   tracking_method: iosapp
+
+# ----- Zone Parameters
+#   stationary_still_time: '5 min'
+#   stationary_inzone_interval: '15 min'
+#   inzone_interval: '30 min'
+#   stationary_still_time: '2 min'
+#   stationary_inzone_interval: '10 min'
+#   display_zone_name: True
+#   max_interval: '30 min'
+#   stationary_inzone_interval: '30 min'
+#   stationary_still_time: '8 min'
+
+# ----- Other Configuration Variables (set to default values) ----
+#   display_text_as:
+#     - gary-icloud@gmail.com > gary-secret@email.com
+#     - lillian-icloud@gmail.com > lillian-secret@email.com
+#   group: primary
+#   entity_registry_file_name: '/config/.storage/core.entity_registry'
+
+# ----- Tracking Parameters
+#   gps_accuracy_threshold: 100
+#   old_location_threshold: '3 min'
+#   ignore_gps_accuracy_inzone: False
+#   travel_time_factor: .6
+
+# ----- Waze Parameters
+#   distance_method: calc
+#   waze_region: EU
+#   waze_min_distance: 1
+#   waze_max_distance: 9999
+#   waze_realtime: False
+
+# ----- Debug parameters
+#   log_level: debug
+#   log_level: debug+intervalcalc
+#   log_level: debug+rawdata
+#   center_in_zone: False
