@@ -7655,6 +7655,8 @@ class Icloud3:#(DeviceScanner):
             if (instr(type(event_text), 'dict') or instr(type(event_text), 'list')):
                  event_text = str(event_text)
 
+            if instr(zone, STATIONARY):         zone = STATIONARY
+            if instr(iosapp_state, STATIONARY): iosapp_state = STATIONARY
             if self.display_zone_name:
                 iosapp_state = iosapp_state.title()
                 zone         = ZONE_FNAME_BASE.get(zone, zone.title())
