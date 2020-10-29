@@ -1,3 +1,9 @@
+v2.2.1f (10/29/2020)
+-------
+1. Bug fix - Fixed an error introduced in v2.2.1e dealing with authentication error checking.
+2. Parameter change - Changed 'display_zone_name:' to 'display_zone_fname' to match what iCloud3 was doing before v2.2.1e.
+3. If the zone name is displayed, it will be reformatted before it is displayed. For example, 'the_shores' will be displayed as 'TheShores'.
+
 v2.2.1e (10/28/2020)
 -------
 1. Enhancement - Updated the iOS App tracking method to request the phone's location when the Next Update Time is reached in the same manner as the iCloud tracking methods. Using the tracking method 'iosapp' eliminates all iCloud account polling, relies only on the data provided by the iOS app and provides a reliable tracking method when access to the iCloud accounts is limited due to 2fa authentication/verification issues. At night, the iOS App usually shuts down when the phone is asleep. When the phone becomes inactive and is not responding to location requests, a message is displayed in the Event Log and on the iCloud3 information screen, the interval is increased until the phone wakes up and the iOS App becomes active again. When iOS App wakes up and begins responding to the location request, polling will automatically resume. Note: If the iOS App is running in the background, it still may not wake up and respond to the location requests. In that case, the iOS App must be restarted. iCloud3 will detect the 'launch' trigger issued by the iOS App and begin polling as normal.
