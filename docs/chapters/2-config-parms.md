@@ -172,11 +172,13 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 The unit of measure for distances in miles or kilometers.   
 *Valid values:* mi, km. *Default*: mi  
 
-###### display_zone_name
+###### display_zone_fname
 
-Display the zone's name rather than it's friendly name in the Zone and iOS App state fields on the Event Log and the iCloud3 information screen. If the friendly name is too long to be displayed, it will overflow to the next line and then be truncated. 
+Display the zone's friendly name rather than it's actual name in the Zone and iOS App state fields on the Event Log and the iCloud3 information screen. If the friendly name is too long to be displayed, it will overflow to the next line and then be truncated. 
 
-*Valid Values:* : True (display the zone name), False (display the zone's friendly name).  *Default:* False 
+*Note:* The zone's actual name will be reformatted before it is displayed. Examples: *the_shores* is displayed as *TheShores*, *school* is displayed as *School*.
+
+*Valid Values:* : True (display the zone friendly name), False (display the zone's actual name).  *Default:* False 
 
 ###### time_format
 
@@ -313,7 +315,7 @@ When using Waze and the distance from your current location to home is more than
 >  #-- Formatting Parameters---------------------------------------
 >  unit_of_measurement: km
 >  time_format: 24
->  display_zone_name: True
+>  display_zone_fname: True
 >  display_text_as:
 >    - gary-real-email@gmail.com > gary-email@email.com
 >    - lillian-real-email@gmail.com > lillian-emailt@email.com
