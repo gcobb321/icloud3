@@ -11,6 +11,7 @@ The previous chapter described the tracking methods you can use.
 
 - **Find-My-Friends (fmf)** - Uses the people that you are sharing your location with on the FindMy App. This is probably most efficient method to use in regards of how iCloud locates devices and lets you  track people that are not on your Family Sharing List.
 - **Family Sharing (famshr)** - The people you want to track are on your Family Sharing list on your iCloud account, along with other Apple devices you don't want to track. Remember, when you use this tracking method, iCloud will locate all of the devices whether you are tracking them or not.
+- **iOS App (iosapp)** - This tracking method does not interact with the iCloud account to located the phones and relies only on the iOS App for zone enter/exit and location data. iCloud3 will react to the phone's device_tracker state entity and monitor location changes triggered by various events. It can be used to track the phone when there are problems authenticating and verifying the iCloud account and HA server due to 2fa security issues.
 
 #### Find-My-Friends Tracking Method and the The FindMy app
 
@@ -94,4 +95,8 @@ Use this non-2fa account in the iCloud username/password configuration parameter
 ![setup_fmf_icloud3](../images/setup_fmf_icloud3.jpg)
 
 *Overview of how iCloud3 uses the people's contact information to link the iCloud location to the tracked device*
+
+#### iOS App Tracking Method
+
+To use this tracking method, you must install the iOS App on each phone you are tracking and associate the device_tracker entity names with the track_devices configuration parameter. This is described in detail in chapter *1.4 Setting up the iOS App*.
 
