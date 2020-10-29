@@ -65,21 +65,8 @@ This contains the directory used to store the iCloud3 Event Log Lovelace card. T
 - *Valid values:* Standard file name *Default Value:* 'www/custom_cards'
 - *Example:* 'www/community' if you are using the 'community' directory.
 
-###### display_text_as  
-
-There may be times when you do not want your email address or other personal data displayed in the Event Log. This parameter lets you replace the text that is normally displayed with something else. For example:
-
-```
-display_text_as:
-  - gcobb-icloud-account@gmail.com > gary-2fa@email.com
-  - lillian-icloud-account@gmail.com > lillian-2fa@email.com
-```
-
-In this example, the *gary-icloud-account@gmail.com* will be displayed as *gary-2fa@emal.com* in the Event Log.
-
-
-
 ### Devices to be tracked
+
 ###### tracking_method 
 Select the method to be used to track your phone or other device. iCloud3 supports three methods of tracking a device -- iCloud Family Sharing Location Services, iCloud Find-My-Friends Location Services and the HA IOS App version 1 and version 2.  
 *Valid values:* fmf, famshr, iosapp.  *Default:* fmf
@@ -98,6 +85,7 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 | zone<br>(Optional) | Name of an additional zone(s) you want to monitor. This will create additional sensors with it's distance and travel time calculations that can be used in automations and scripts. See the Sensors chapter for more information.<br><br>Note: The Home zone information is always calculated. |
 | user's name<br>(Optional) | The user's name is displayed on the iCloud3 Event Log card, various messages and in the HA log file. It is created by removing the device type (iPhone, iPad, iCloud, etc) and any special characters (-, _, etc) from the devicename.  It is also retrieved from the First Name field on the data returned from iCloud when the devices are authenticated as iCloud3 starts up.<br><br>There may be times when the name is not available or you want to override the name that is extracted from the devicename. If that case, specify the name on the track_devices parameter. |
 | iOS App device_tracker entity name or suffix to be monitored<br>(Optional) | Name (or suffix) of the iOS App device_tracker entity to be monitored for state and trigger changes. The device's iOS App entity name must start with the name on the iCloud3 `track_devices`. <br><br>When iCloud3 starts (or restarts), it searches the HA Entity Registry for all mobile app device tracker entities that start with the devicename on the track devices parameter. <br>* If it finds only one entity, that entity is monitored and the suffix (`_xxx` part after the devicename) is displayed on the tracked deices item on the Event Log for your reference. <br>* If more than one is found, an error message is displayed in the Event Log, all of the mobile app entities are listed and the last entity found is monitored. Add the suffix for the correct entity to the track devices parameter. <br>* If no mobile app entity, an error is displayed on the Event Log and iCloud3 will not be able to monitor any iOS App Region Enter/Exit, Significant Location Updates, Background Fetch, triggers.<br><br>*Note:* This is only needed if there is more than one device_tracker entity associated with the device,<br>*Example (Suffix):* `_iosapp`, `_app`, `_2`<br>*Example (iOS App device tracker entity):* `gary_iphone_iosapp`, `lillian_iphone_2` |
+| 'noiosapp' | The iOS App is not installed on this tracked device. Do not monitor any device_tracker or sensors entities associated with the device for zone enter/exit or location events. |
 
 #### Parameters for Different Tracking Methods
 >Find my Friends  
@@ -177,7 +165,39 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 >  create_sensors: zon,zon1,ttim,zdis,cdis,wdis,nupdt,lupdt,info
 >```
 
+### Formatting Parameters
+
+###### unit_of_measurement
+
+The unit of measure for distances in miles or kilometers.   
+*Valid values:* mi, km. *Default*: mi  
+
+###### display_zone_name
+
+Display the zone's name rather than it's friendly name in the Zone and iOS App state fields on the Event Log and the iCloud3 information screen. If the friendly name is too long to be displayed, it will overflow to the next line and then be truncated. 
+
+*Valid Values:* : True (display the zone name), False (display the zone's friendly name).  *Default:* False 
+
+###### time_format
+
+This parameter overrides the unit_of_measurement time format.  
+
+*Valid Values:* 12/24. *Default:* Depends on the unit_of_measurement (mi=12, km=24). 
+
+###### display_text_as
+
+There may be times when you do not want your email address or other personal data displayed in the Event Log. This parameter lets you replace the text that is normally displayed with something else. For example:
+
+```
+display_text_as:
+  - gcobb-icloud-account@gmail.com > gary-2fa@email.com
+  - lillian-icloud-account@gmail.com > lillian-2fa@email.com
+```
+
+In this example, the *gary-icloud-account@gmail.com* will be displayed as *gary-2fa@emal.com* in the Event Log.
+
 ### Zone, Interval and Sensor Configuration Items
+
 ###### inzone_interval 
 The interval between location updates when the device is in a zone. This can be in seconds, minutes or hours, e.g., 30 secs, 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).  
 *Default:* 2 hrs
@@ -209,10 +229,6 @@ The stationary zone is created when iCloud3 starts (or is restarted) and is loca
 *Valid Values:* latitude-adjustment, longitude-adjustment.  *Default*: 1,0   
 *Example:* stationary_zone_offset: (24.738520, -75.380462)  
 *Example:* stationary_zone_offset: '2,0'
-
-###### unit_of_measurement 
-The unit of measure for distances in miles or kilometers.   
-*Valid values:* mi, km. *Default*: mi
 
 ###### gps_accuracy_threshold 
 iCloud location updates come with some gps_accuracy varying from 10 to 5000 meters. This setting defines the accuracy threshold in meters for a location updates. This allows more precise location monitoring and fewer false positive zone changes. If the gps_accuracy is above this threshold, a location update will be retried again to see if the accuracy has improved.  
@@ -278,58 +294,54 @@ When using Waze and the distance from your current location to home is more than
 
 !> Using the default value, the next update will be 3/4 of the time it takes to drive home from your current location. The one after that will be 3/4 of the time from that point. The result is a smaller interval as you get closer to home and a larger one as you get further away.  
 
-### Other Configuration Parameters
-
-
-
-
-
 ### List of the Configuration Parameters
 >```yaml
 >device_tracker:
-> - platform: icloud3
->   username: !secret gary_famshr_username
->   password: !secret gary_famsh_password
->   tracking_method: famshr
->   track_devices:
->     - gary_iphone > gary-icloud-acct@email.com, gary.png
->     - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
->     
->   #-- General Parameters -----------------------------------------
->   group: family
->   event_log_card_directory: 'www/custom_cards'
->   unit_of_measurement: mi
->   config_ic3_file_name: '/config/config_ic3.yaml'
+>- platform: icloud3
+>  username: !secret gary_famshr_username
+>  password: !secret gary_famsh_password
+>  tracking_method: famshr
+>  track_devices:
+>    - gary_iphone > gary-icloud-acct@email.com, gary.png
+>    - lillian_iphone > lillian-icloud-acct@email.com, lillian.png
+>    
+>  #-- General Parameters -----------------------------------------
+>  group: family
+>  event_log_card_directory: 'www/custom_cards'
+>  config_ic3_file_name: '/config/config_ic3.yaml'
 >
->   #--Zone/Tracking Parameters-----------------------------------------
->   inzone_interval: '60 min'
->   max_interval: '4 hrs'
->   center_in_zone: True
->   stationary_inzone_interval: '30 min'
->   stationary_still_time: '8 min'
->   stationary_zone_offset: 1, 0
->   travel_time_factor: .6
->   distance_method: waze
+>  #-- Formatting Parameters---------------------------------------
+>  unit_of_measurement: km
+>  time_format: 24
+>  display_zone_name: True
+>  display_text_as:
+>    - gary-real-email@gmail.com > gary-email@email.com
+>    - lillian-real-email@gmail.com > lillian-emailt@email.com
+>    
+>  #--Zone/Tracking Parameters-----------------------------------------
+>  inzone_interval: '60 min'
+>  max_interval: '4 hrs'
+>  center_in_zone: True
+>  stationary_inzone_interval: '30 min'
+>  stationary_still_time: '8 min'
+>  stationary_zone_offset: 1, 0
+>  travel_time_factor: .6
+>  distance_method: waze
 >
->   #--Accuracy Parameters-------------------------------------
->   gps_accuracy_threshold: 100
->   ignore_gps_accuracy_inzone: True
->   old_location_threshold: '3 min'
+>  #--Accuracy Parameters-------------------------------------
+>  gps_accuracy_threshold: 100
+>  ignore_gps_accuracy_inzone: True
+>  old_location_threshold: '3 min'
 >
->   #--Waze Parameters-----------------------------------------
->   distance_method: waze
->   waze_region: US
->   waze_min_distance: 1
->   waze_max_distance: 9999
->   waze_realtime: False
->
->   #-- Other Parameters---------------------------------------
->   display_text_as:
->     - gary-real-email@gmail.com > gary-email@email.com
->     - lillian-real-email@gmail.com > lillian-emailt@email.com
->   
->   #-- Debug/Logging Parameters---------------------------------------
->   log_level: debug
->   log_level: debug+rawdata
+>  #--Waze Parameters-----------------------------------------
+>  distance_method: waze
+>  waze_region: US
+>  waze_min_distance: 1
+>  waze_max_distance: 9999
+>  waze_realtime: False
+>  
+>  #-- Debug/Logging Parameters---------------------------------------
+>  log_level: debug
+>  log_level: debug+rawdata
 >
 >```
