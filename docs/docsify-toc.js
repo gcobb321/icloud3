@@ -3,7 +3,7 @@ var defaultOptions = {
   scope: '.markdown-section',
 
   // To make work
-  title: 'Contents-gc3',
+  title: 'Contents-gc4',
   listType: 'ul',  
 }
 
