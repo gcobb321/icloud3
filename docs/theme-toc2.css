@@ -1,3 +1,9 @@
+/*
+toc: {
+  tocMaxLevel: 5,
+  target: 'h2, h3, h4, h5',
+  },
+*/
 @media only screen and (max-width: 1299px) {
   aside.toc-nav {
     max-width: 45px;
