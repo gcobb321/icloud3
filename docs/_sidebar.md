@@ -12,6 +12,7 @@
 </nav>
 
 - What's New and What Changed
+ - [Changes](CHANGELOG.md)
  - [Changes - v2.2.0](CHANGELOG-v2.2.0.md)
  - [Changes - v2.2.1](CHANGELOG-v2.2.1.md)
 - Welcome to iCloud3
