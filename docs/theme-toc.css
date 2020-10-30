@@ -62,6 +62,7 @@ aside.nav.nothing {
   padding-left: 10px;
   color: var(--text-color-base, black);
   text-decoration: none;
+  list-style-type: circle;
   font-weight: 300;
   line-height: 1.6em;
 }
@@ -70,8 +71,9 @@ aside.nav.nothing {
     margin: 0 0 0 5px;
 }
 .page_toc ul a:hover span {
+  font-weight: 450;
+  color: var(--theme-color, #42b983);
   border-bottom: none !important;
-  color: var(--theme-color,#42b983);
   text-decoration:none !important;
 }
 
