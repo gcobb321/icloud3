@@ -46,7 +46,7 @@ body{
 }
 .sidebar ul li a:hover {
     text-decoration: underline;
-    color: darkred;
+    color: firebrick;
     white-space: normal;
 }
 .sidebar ul li.active>a {

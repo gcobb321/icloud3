@@ -70,15 +70,11 @@ aside.nav.nothing {
     margin: 0 0 0 5px;
 }
 .page_toc ul a:hover span {
-  color: red;
+  color: crimson;
   border-bottom: none !important;
   text-decoration: none !important;
 }
 
-a:link {
-  color: red;
-  border-bottom: 1px solid red;
-}
 .page_toc ul a {
   color: var(--text-color-base, black);
   text-decoration: none;
