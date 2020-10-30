@@ -70,8 +70,8 @@ aside.nav.nothing {
     margin: 0 0 0 5px;
 }
 .page_toc ul a:hover span {
-  font-weight: 450;
-  color: var(--theme-color, #42b983);
+  /*color: var(--theme-color, #42b983);*/
+  color: royalblue;
   border-bottom: none !important;
   text-decoration:none !important;
 }
