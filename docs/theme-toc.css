@@ -45,11 +45,11 @@ aside.nav.nothing {
 }
 
 .page_toc p.title {
-  margin: 10px 0 0 0;
+  margin: 10px -75% 0 0;
   /*margin: 0px 0 0px 9px;*/
   /*padding-bottom: 5px;*/
   color: var(--theme-color,#42b983);
-  text-decoration: underline var(--theme-color,#42b983);
+  bottom-border: 1px solid var(--theme-color, #42b983);
   /*font-weight: 500;*/
   /*font-size: 1.2em;*/
   font-size: 1.5rem;
