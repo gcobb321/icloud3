@@ -56,6 +56,7 @@ body{
 }
 .sidebar .sidebar-nav {
     line-height: 1.4em;
+    border-top: 1px solid #33A9F4;
 }
 .markdown-section h1 {
     /*color: var(--theme-color,#42b983);*/
