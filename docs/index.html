@@ -9,6 +9,7 @@
   <!--<link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css">-->
   <link rel="stylesheet" href="./theme-vue-min.css">
   <link rel="stylesheet" href="./theme-mods.css">
+  <link rel="stylesheet" href="./theme-toc2.css">
 </head>
 <body>
   <div id="app"></div>
@@ -24,15 +25,15 @@
       subMaxLevel: 4,
       themeColor: '#33A9F4',
       toc: {
-        scope: '.markdown-section',
-        headings: 'h2, h3, h4, h5',
-        title: 'Table of Contents',
+        tocMaxLevel: 5,
+        target: 'h2, h3, h4, h5',
       },
     }
     
   </script>
   <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
   <script src="//unpkg.com/docsify-copy-code"></script>
-  <script src="//unpkg.com/docsify-toc@1.0.0/dist/toc.js"></script>
+  <!--<script src="//unpkg.com/docsify-toc@1.0.0/dist/toc.js"></script>-->
+  <script src="//unpkg.com/docsify-plugin-toc"></script>
 </body>
 </html>
