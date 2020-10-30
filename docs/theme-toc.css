@@ -48,10 +48,7 @@ aside.nav.nothing {
   color: var(--theme-color,#42b983);
   font-size: 1.5rem;
   font-weight: 300;
-  text_decoration: underline var(--theme-color, #42b983);
-  text-decoration-thickness: 1px;
-  -webkit-text_decoration: underline var(--theme-color, #42b983);
-  -webkit-text-decoration-thickness: 1px;
+  border-bottom: 1px solid #33A9F4;
   
 }
 
