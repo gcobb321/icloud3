@@ -54,7 +54,8 @@ body{
     line-height: 1.4em;
 }
 .markdown-section h1 {
-    color: var(--theme-color,#42b983);
+    /*color: var(--theme-color,#42b983);*/
+    color: #33A9F4;
 }
 .markdown-section h1, .markdown-section h2, .markdown-section h3 {
     margin: 30px 0 -10px 0;

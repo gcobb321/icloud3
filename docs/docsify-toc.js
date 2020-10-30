@@ -3,7 +3,7 @@ var defaultOptions = {
   scope: '.markdown-section',
 
   // To make work
-  title: 'Contents-gc',
+  title: 'Contents-gc2',
   listType: 'ul',  
 }
 
@@ -43,6 +43,9 @@ var tocClick = function(e) {
 };
 
 var createList = function(wrapper, count) {
+  if (wrapper === null) {
+    return
+  }
   while (count--) {
     wrapper = wrapper.appendChild(
       document.createElement('ul')
