@@ -58,6 +58,9 @@ body{
     line-height: 1.4em;
     border-top: 1px solid #33A9F4;
 }
+.markdown-section {
+    padding: 0 15px 40px;
+}
 .markdown-section h1 {
     /*color: var(--theme-color,#42b983);*/
     color: #33A9F4;
