@@ -74,9 +74,9 @@ aside.nav.nothing {
 }
 .page_toc ul a:hover span {
   /*color: var(--text-color-tertiary, #42b983);*/
-  /*border-bottom: none !important;*/
+  border-bottom: none !important;
   color: var(--theme-color,#42b983);
-  border-bottom: 1px solid #33A9F4;
+  /*border-bottom: 1px solid #33A9F4;*/
   text-decoration:none !important;
 }
 
@@ -105,7 +105,7 @@ aside.nav.nothing {
     width: 800px;
   }
   .page_toc p.title {
-    font-weight: 700;
+    font-weight: 300;
     /*font-size: 1.8em;*/
     font_size: 1.6em;
   }
