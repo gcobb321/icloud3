@@ -45,10 +45,11 @@ aside.nav.nothing {
 }
 
 .page_toc p.title {
-  margin: 10px 0 0 20px;
+  margin: 10px 0 0 0;
   /*margin: 0px 0 0px 9px;*/
   /*padding-bottom: 5px;*/
-  font-weight: 600;
+  color: #33A9F4;
+  font-weight: 500;
   font-size: 1.2em;
 }
 .page_toc .anchor:hover:after {
@@ -69,8 +70,9 @@ aside.nav.nothing {
     margin: 0 0 0 5px;
 }
 .page_toc ul a:hover span {
-  color: var(--text-color-tertiary, #42b983);
-  border-bottom: none !important;
+  /*color: var(--text-color-tertiary, #42b983);*/
+  /*border-bottom: none !important;*/
+  border-bottom: #33A9F4;
   text-decoration:none !important;
 }
 
@@ -84,7 +86,7 @@ aside.nav.nothing {
 @media screen and (max-width: 1300px) {
   .page_toc {
     position: relative;
-    left: 0;
+    left: -15px;
     top: -20px;
     padding: 10px 0;
     border: none;
@@ -99,8 +101,9 @@ aside.nav.nothing {
     width: 800px;
   }
   .page_toc p.title {
-    font-weight: 300;
-    font-size: 1.8em;
+    font-weight: 700;
+    /*font-size: 1.8em;*/
+    font_size: 1.6em;
   }
   .content {
     display: block;
