@@ -49,11 +49,12 @@ aside.nav.nothing {
   /*margin: 0px 0 0px 9px;*/
   /*padding-bottom: 5px;*/
   color: var(--theme-color,#42b983);
+  text-decoration: underline var(--theme-color,#42b983);
   /*font-weight: 500;*/
   /*font-size: 1.2em;*/
   font-size: 1.5rem;
   font-weight: 300;
-  border-bottom: 1px solid #33A9F4;
+  
 }
 .page_toc .anchor:hover:after {
   content: "";
@@ -94,7 +95,8 @@ aside.nav.nothing {
     top: -20px;
     padding: 10px 0;
     border: none;
-    border-bottom: 1px solid #ddd;
+    /*border-bottom: 1px solid #ddd;*/
+    border-bottom: 1px solid #33A9F4;
     font-size: 1.0em;
   }
   .page_toc a:before {
