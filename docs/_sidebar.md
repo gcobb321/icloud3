@@ -12,8 +12,8 @@
 </nav>
 
 - What's New and What Changed
- - [Changes - v2.2.0 ](CHANGELOG v2.2.0.md)
- - [Changes - v2.2.1](CHANGELOG v2.2.1.md)
+ - [Changes - v2.2.0](CHANGELOG-v2.2.0.md)
+ - [Changes - v2.2.1](CHANGELOG-v2.2.1.md)
 - Welcome to iCloud3
  - [1.0  Introduction](README.md)
  - [1.1  Quick Start Guide](chapters/1-quick-start-guide.md)
