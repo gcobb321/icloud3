@@ -232,15 +232,18 @@ The stationary zone is created when iCloud3 starts (or is restarted) and is loca
 *Example:* stationary_zone_offset: (24.738520, -75.380462)  
 *Example:* stationary_zone_offset: '2,0'
 
-###### gps_accuracy_threshold 
+###### gps_accuracy_threshold
+
 iCloud location updates come with some gps_accuracy varying from 10 to 5000 meters. This setting defines the accuracy threshold in meters for a location updates. This allows more precise location monitoring and fewer false positive zone changes. If the gps_accuracy is above this threshold, a location update will be retried again to see if the accuracy has improved.  
 *Default*: 125m
 
 ###### old_location_threshold
+
 When a device is located, the location's age is calculated and the update is discarded if the age is greater than the threshold. The threshold can be calculated (12.5% of the travel time to the zone with a 5 minute maximum (default)) or you can specify a fixed time using this parameter.  
 *Valid values:* Number of minutes *Default*: 2
 
-##### ignore_gps_accuracy_inzone
+###### ignore_gps_accuracy_inzone
+
 If the device is in a zone, gps accuracy will be ignored.  
 *Valid values:* True, False  *Default:* True
 
