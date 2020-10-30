@@ -70,7 +70,8 @@ aside.nav.nothing {
     margin: 0 0 0 5px;
 }
 .page_toc ul a:hover span {
-  color: crimson;
+  color: firebrick;
+  text-decoration: underline;
   border-bottom: none !important;
   text-decoration: none !important;
 }
