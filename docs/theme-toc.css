@@ -62,7 +62,6 @@ aside.nav.nothing {
   padding-left: 10px;
   color: var(--text-color-base, black);
   text-decoration: none;
-  list-style-type: circle;
   font-weight: 300;
   line-height: 1.6em;
 }
