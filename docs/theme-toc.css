@@ -49,9 +49,7 @@ aside.nav.nothing {
   /*margin: 0px 0 0px 9px;*/
   /*padding-bottom: 5px;*/
   color: var(--theme-color,#42b983);
-  box-shadow:
-    inset 0 -0.175em white,
-    inset 0 -0.2em red;
+  
   /*bottom-border: 1px solid var(--theme-color, #42b983);*/
   /*font-weight: 500;*/
   /*font-size: 1.2em;*/
