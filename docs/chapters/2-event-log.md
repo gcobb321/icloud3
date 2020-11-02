@@ -24,7 +24,23 @@ Typically Lovelace custom cards are stored in their own directory that is within
 
 !>If you are not using the `www/custom_cards` directory, use your directory name (e.g., `www/community`) instead of `www/custom_cards` in the following instructions. Then specify your directory name using the *event_log_card_directory: www/yourcustomcarddirectoryname* configuration parameter.
 
-### The Actions Command 
+### Refreshing Events
+
+The date/time the events were last refreshed is displayed under the *Actions* command at the top of the screen.  Usually the events are refreshed when you display the screen but there are times when you will need to refresh them manually. This may be when:
+
+- The Event Log is displayed and the events for last Person did not automatically refresh. 
+
+- iCloud3 clears the *sensor.icloud3_event_log* that passes events from iCloud3 to the Event Log lovelace card every 15-minutes or so. Only the last 20 events, at the time the sensor is cleared, are displayed. A message informs you that the list needs to be refreshed.
+
+Click the   ![evlog-icon-refresh24](../images/evlog-icon-refresh24.png)  Refresh button in the upper right corner.
+
+### Displaying the *iCloud3 User Manual*
+
+You are reading the  *iCloud3 User Manual* now. 
+
+Click the  ![evlog-icon-help24](../images/evlog-icon-help24.png)  Help button in the upper right corner.
+
+### The Actions Command
 
 The Actions Command lets you interact with iCloud3 while it is running. 
 

@@ -14,7 +14,7 @@ As iCloud3 runs, various entries are written to the iCloud3 Event Log that show:
 - Device information
 - How the device is tracked
 - Operational errors
-- Sartup information
+- Startup information
 - Waze route information
 - Tracking metrics
 
@@ -30,6 +30,45 @@ Below are some examples of the Event Log.
 
 
 ![event_log](../images/evlog.jpg) 
+
+### Do not Record iCloud3 Events in the HA History Database
+
+The *sensor.icloud3_event_log* entity is used to pass events from iCloud3 to the Event Log. The size of the text in this sensor can become very large after you have been running HA for a while. There is no need to record this entity in the HA database every time it changes. To prevent this, add the following to your configuration.yaml file:
+
+```
+recorder:
+  purge_keep_days: 3
+  exclude:
+    entities:
+      - sensor.icloud3_event_log
+```
+
+More information on configuration the *recorder* can be found in the HA documentation [here](https://www.home-assistant.io/integrations/recorder/).
+
+Below is an example of the error that may occur if you do not exclude the *sensor.icloud3_event_log*.
+
+```
+2020-10-31 16:11:11 ERROR (Recorder) [homeassistant.components.recorder] Error executing query: (MySQLdb._exceptions.DataError) (1406, "Data too long for column 'attributes' at row 1")
+[SQL: INSERT INTO states (domain, entity_id, state, attributes, event_id, last_changed, last_updated, created, old_state_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: ('sensor', 'sensor.icloud3_event_log', ...', 13414815, datetime.datetime(2020, 10, 31, 15, 1, 10, 494582, tzinfo=datetime.timezone.utc), datetime.datetime(2020, 10, 31, 15, 1, 10, 494582, tzinfo=datetime.timezone.utc), datetime.datetime(2020, 10, 31, 15, 1, 10, 494716, tzinfo=datetime.timezone.utc), 12914612)]
+(Background on this error at: http://sqlalche.me/e/13/9h9h)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 1276, in _execute_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.8/site-packages/sqlalchemy/engine/default.py", line 593, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.8/site-packages/MySQLdb/cursors.py", line 206, in execute
+    res = self._query(query)
+  File "/usr/local/lib/python3.8/site-packages/MySQLdb/cursors.py", line 319, in _query
+    db.query(q)
+  File "/usr/local/lib/python3.8/site-packages/MySQLdb/connections.py", line 259, in query
+    _mysql.connection.query(self, query)
+MySQLdb._exceptions.DataError: (1406, "Data too long for column 'attributes' at row 1")
+```
+
+
+
+
 
 ### Installing the Event Log
 

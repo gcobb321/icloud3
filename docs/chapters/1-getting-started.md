@@ -70,9 +70,9 @@ When iCloud3 starts, it reads the HA Entity Registry file (*config/.storage/core
 
 ### iCloud3 Tracking Methods
 
-iCloud3 can track your phones using two methods;. You will need to decide which one makes the most sense for you based on your situation. Fortunately, It is easy to switch back and forth by changing only the iCloud3 tracking_method configuration parameter and restarting HA. The methods are:
+iCloud3 can track your phones using three methods. You will need to decide which one makes the most sense for you based on your situation. Fortunately, It is easy to switch back and forth by changing only the iCloud3 *tracking_method* configuration parameter and restarting HA. The methods are:
 
-###### Find-My-Friends (fmf) 
+###### Find-My-Friends (fmf)
 
 The Find-my-Friends tracking method lets you track people you are sharing your location with on the FindMy App.
 
@@ -98,12 +98,25 @@ The Family Sharing tracking method lets you track people on the Family Sharing l
 The Apple support web site has several articles that will help you set up your iCloud account to prepare it for using iCloud3.
 
 - Go [here](https://support.apple.com/en-us/HT210400) for *Set up Find My app*
-
 - Go [here](https://support.apple.com/en-us/HT201493) for *Set up and use Find My Friends*
-
 - Go [here](https://support.apple.com/en-us/HT201088) for *Set up Family Sharing*
 
-### Authenticating Your iCloud Account 
+###### iOS App (iosapp)
+
+The iOS App tracking method lets you track your phones without interacting with iCloud Location Services. Location requests are sent to the iOS App on the phone using the push notification method built into Home Assistant,
+
+- Pros:
+  - It can be used when you do not want to access your iCloud account from HA.
+  - It can be used when iCloud is down.
+  - It can be used when you are having problems authenticating iCloud3 access to your iCloud account because of 2fa verification issues or the *Trusted Device Certificate* keeps expiring.
+- Cons:
+  - When the iPhone goes to sleep, the iOS App may (will) not respond to location requests, even after it wakes up and you start using it. You will need to launch the iOS App, which will then issue a *Launch trigger* to iCloud3 with location information. iOS will then begin running the iOS App in the background.
+
+Information about the iOS App (Home Assistant Companion) can be found [here](https://companion.home-assistant.io/).
+
+
+
+### Authenticating Your iCloud Account
 
 Home Assistant and iCloud3 needs to be authenticated to access your iCloud account. It requests authentication by asking iCloud to send a verification code via a text message to a trusted device, which is then entered in Home Assistant. The duration of this authentication is determined by Apple, but usually several months.  
 
