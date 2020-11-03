@@ -174,9 +174,13 @@ The unit of measure for distances in miles or kilometers.
 
 ###### display_zone_fname
 
-Display the zone's friendly name rather than it's actual name in the Zone and iOS App state fields on the Event Log and the iCloud3 information screen. If the friendly name is too long to be displayed, it will overflow to the next line and then be truncated. 
+Display the zone's friendly name rather than it's actual name in the Zone and iOS App state fields on the Event Log and the iCloud3 information screen. If the friendly name is too long to be displayed, it will overflow to the next line and then be truncated. The following describes how the *device_tracker.[DEVICENAME]* state is displayed and stored:
 
-*Note:* The zone's actual name will be reformatted before it is displayed. Examples: *the_shores* is displayed as *TheShores*, *school* is displayed as *School*.
+- If the phone is home, *Home* is displayed but the actual state value is  *home*.
+- If the phone is not in a zone, *Away* is displayed but the actual state value is *not_home*.
+- If the phone is in a zone, the zone's actual name is  reformatted before it is displayed. For example, *the_shores* is displayed as *TheShores*, *school* is displayed as *School*.
+
+*Note:* The *sensor.[DEVICENAME].zone* contains the actual zone name. The *sensor.[DEVICENAME].zone_1* contains the reformatted zone name. 
 
 *Valid Values:* : True (display the zone friendly name), False (display the zone's actual name).  *Default:* False 
 

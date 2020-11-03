@@ -76,18 +76,22 @@ The `badge` sensor displays either the zone name or distance from the Home zone 
 
 ### Zone Sensors
 
-Zone sensors provide different formats for the zone name. 
+Zone sensors provide different formats for the zone name.  The formatting rules are:
 
-| zone value          | zone_name1 | zone_name    | zone_name3    |
+- *_zone* contains the actual zone name.
+- *_zone_name* is the reformatted zone name (formally *_zone_name1*).
+- *_zone_title* is the reformatted zone name with spaces for the underline characters (formally *_zone_name2*).
+- _zone_fname is the zone's friendly name (formally *_zone_name3*).
+
+| zone value          | zone_name | zone_title | zone_fname   |
 | ------------------- | ---------- |     -------- | ------------- |
 | home                | Home       | Home         | Home          |
-| not_home            | Away       | Not Home     | NotHome       |
-| whse                | Whse       | Whse         | Whse          |
-| gary_iphone_stationary | Stationary | Gary Iphone Stationary | GaryIphoneStationary |
+| not_home            | Away       | Not Home     | Not_Home      |
+| whse                | Whse       | Whse         | Warehouse   |
+| gary_iphone_stationary | Stationary | Gary iPhone Stationary | GaryiPhoneStationary |
+| the_point | ThePoint | The Point | Quail-The Point |
 
-!> `zone_name1` is the recommended sensor for triggering zone changes in automations and scripts.
-
-
+!> `zone_name (formally zone_name1)` is the recommended sensor for triggering zone changes in automations and scripts.
 
 ### Zone exits due to GPS wandering
 
@@ -111,15 +115,15 @@ A lot of sensors are created by iCloud3. If you have several devices you are tra
 This configuration parameter lets you select only the sensors to be created. 
 
 > Example: 
-> - `create_sensors: zon,zon1,ttim,zdis,cdis,wdis,nupdt,lupdt,info`  
->    Create the zone, zone_name1, zone_distance, calc_distance, waze_distance next_update, last_update, and info sensors.
+> - `create_sensors: zon,zonn,ttim,zdis,cdis,wdis,nupdt,lupdt,info`  
+>    Create the zone, zone_name, zone_distance, calc_distance, waze_distance next_update, last_update, and info sensors.
 
 ###### exclude_sensors
 This configuration parameter is the opposite of the `create_sensors` parameter. All sensors except the ones you specify are created.
 
 > Example:
->- `exclude_sensors: zon2,zon3,lzon2,lzon3,zon,zonts,bat`  
->   Create all sensors except zone_name2, zone_name3, last_zone2, last_zone3, zone_timestamp and battery_status.
+>- `exclude_sensors: zont,zonfn,lzont,lzonfn,zonts,bat`  
+>   Create all sensors except zone_title, zone_fname, last_zone_title, last_zone_fname, zone_timestamp and battery_status.
 
 
 The following sensors are updated using the device_tracker's attributes values:
@@ -127,16 +131,20 @@ The following sensors are updated using the device_tracker's attributes values:
 | Tracking Sensors | Code  |      | Special Sensors  | Code  |      | Device Sensors         | Code   |
 | ---------------- | ----- | ---- | ---------------- | ----- | ---- | ---------------------- | ------ |
 | interval        | intvl |      | zone            | zon   |      | battery               | bat    |
-| travel_time     | ttim  |      | zone_name1      | zon1  |      | battery _status | batstat |
-| zone_distance   | zdis  |      | zone_name2      | zon2  |      |  |  |
-| waze_distance   | wdis  |      | zone_name3      | zon3  |      | gps_accuracy      | gpsac   |
+| travel_time     | ttim  |      | zone_name      | zonn |      | battery _status | batstat |
+| zone_distance   | zdis  |      | zone_title  | zont |      |  |  |
+| waze_distance   | wdis  |      | zone_fname     | zonfn |      | gps_accuracy      | gpsac   |
 | calc_distance   | cdis  |      | zone_timestamp  | zonts |      | altitude          | alt     |
 | travel_distance | tdis  |      | last_zone       | lzon  |      | vertical_accuracy | vacc    |
-| dir_of_travel   | dir   |      | last_zone_name1 | lzon1 |      |                   |         |
-| last_update     | lupdt |      | last_zone_name2 | lzon2 |      | trigger           | trig    |
-| next_update     | nupdt |      | last_zone_name3 | lzon3 |      | badge | badge |
-| last_located    | lloc  |      | last_zone_name3 | lzon3 |      | name | name |
+| dir_of_travel   | dir   |      | last_zone_name | lzonn |      |                   |         |
+| last_update     | lupdt |      | last_zone_title | lzont |      | trigger           | trig    |
+| next_update     | nupdt |      | last_zone_fname | lzonfn |      | badge | badge |
+| last_located    | lloc  |      |  |  |      | name | name |
 | poll_cnt        | cnt   |      |                  |       |      |            |  |
 | info            | info  |      | base_zone       | bzon  |      |          | |
 
+*Note:* The names and some formats of the *zone_name#* and *last_zone_name#* sensor names have changed. The new names are:
 
+- *zone_name1* became *zone_name*
+- *zone_name2* became *zone_title*
+- *zone_name3* became *zone_fname*
