@@ -22,7 +22,7 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.2.1'
+VERSION = '2.2.1a'
 
 #Symbols = •▶¦▶ ●►◄ ▬ ▲▼◀▶ oPhone=►▶►
 
@@ -285,15 +285,21 @@ TRACE_ICLOUD_ATTRS_BASE = {
 
 SENSOR_DEVICE_ATTRS = [
         'zone',
+        'last_zone',
+        'base_zone',
         'zone_name1',
         'zone_name2',
         'zone_name3',
-        'last_zone',
+        'zone_name',
+        'zone_title',
+        'zone_fname',
         'last_zone_name1',
         'last_zone_name2',
         'last_zone_name3',
+        'last_zone_name',
+        'last_zone_title',
+        'last_zone_fname',
         'zone_timestamp',
-        'base_zone',
         'zone_distance',
         'calc_distance',
         'waze_distance',
@@ -329,13 +335,19 @@ SENSOR_ATTR_FORMAT = {
 #---- iPhone Device Tracker Attribute Templates -----
 SENSOR_ATTR_FNAME = {
         'zone': 'Zone',
+        'last_zone': 'Last Zone',
         'zone_name1': 'Zone1',
         'zone_name2': 'Zone2',
         'zone_name3': 'Zone3',
-        'last_zone': 'Last Zone',
         'last_zone_name1': 'Last Zone1',
         'last_zone_name2': 'Last Zone2',
         'last_zone_name3': 'Last Zone3',
+        'zone_name': 'Zone Name',
+        'zone_title': 'Zone Title',
+        'zone_fname': 'Zone Fname',
+        'last_zone_name': 'Last Zone Name',
+        'last_zone_title': 'Last Zone Title',
+        'last_zone_fname': 'Last Zone Fname',
         'zone_timestamp': 'Zone Timestamp',
         'base_zone': 'Base Zone',
         'zone_distance': 'Zone Distance',
@@ -389,14 +401,20 @@ SENSOR_ATTR_ICON = {
 
 SENSOR_ID_NAME_LIST = {
         'zon': 'zone',
+        'lzon': 'last_zone',
+        'bzon': 'base_zone',
         'zon1': 'zone_name1',
         'zon2': 'zone_name2',
         'zon3': 'zone_name3',
-        'bzon': 'base_zone',
-        'lzon': 'last_zone',
         'lzon1': 'last_zone_name1',
         'lzon2': 'last_zone_name2',
         'lzon3': 'last_zone_name3',
+        'zonn': 'zone_name',
+        'zont': 'zone_title',
+        'zonfn': 'zone_fname',
+        'lzonn': 'last_zone_name',
+        'lzont': 'last_zone_title',
+        'lzonfn': 'last_zone_fname',
         'zonts': 'zone_timestamp',
         'zdis': 'zone_distance',
         'cdis': 'calc_distance',
@@ -4522,7 +4540,10 @@ class Icloud3:#(DeviceScanner):
         elif ic3dev_state == HOME:
             self.waze_distance_history = {}
 
-        ic3dev_state_fname = self.zone_to_display.get(ic3dev_state, ic3dev_state)
+        if (ic3dev_state == HOME or ic3dev_state == NOT_HOME):
+            pass
+        else:
+            ic3dev_state_fname = self.zone_to_display.get(ic3dev_state, ic3dev_state)
 
         #Update the device timestamp
         if not attrs:
@@ -5010,14 +5031,14 @@ class Icloud3:#(DeviceScanner):
             return False
 
 #--------------------------------------------------------------------
-    @staticmethod
-    def _get_zone_names(zone_name):
+    def _get_zone_names(self, zone_name):
         """
         Make zone_names 1, 2, & 3 out of the zone_name value for sensors
 
         name1 = home --> Home
                 not_home --> Away
                 gary_iphone_stationary --> Stationary
+                the_shores --> TheShores
         name2 = gary_iphone_stationary --> Gary Iphone Stationary
                 office_bldg_1 --> Office Bldg 1
         name3 = gary_iphone_stationary --> GaryIphoneStationary
@@ -5025,23 +5046,23 @@ class Icloud3:#(DeviceScanner):
         """
         if zone_name:
             if instr(zone_name, STATIONARY):
-                name1 = STATIONARY
+                zname = STATIONARY
             elif instr(zone_name, NOT_HOME):
-                name1 = AWAY
+                zname = AWAY
             else:
-                name1 = zone_name.title()
+                zname = zone_name.replace('_',' ').title().replace(' ', '')
 
             if zone_name == ATTR_ZONE:
-                badge_state = name1
+                badge_state = zname
 
-            name2 = zone_name.title().replace('_', ' ')
-            name3 = zone_name.title().replace('_', '')
+            ztitle = zone_name.title().replace('_', ' ')
+            zfname = self.zone_fname.get(zone_name, zone_name.title())
         else:
-            name1 = NOT_SET
-            name2 = 'Not Set'
-            name3 = 'NotSet'
+            zname  = NOT_SET
+            ztitle = 'Not Set'
+            zfname = 'NotSet'
 
-        return [zone_name, name1, name2, name3]
+        return [zone_name, zname, ztitle, zfname]
 
 #--------------------------------------------------------------------
     @staticmethod
@@ -5224,7 +5245,6 @@ class Icloud3:#(DeviceScanner):
                     self._save_event(devicename, event_msg)
 
                 else:
-                    #self.zone_by_fname[stat_zone_name] = stat_zone_name
                     self.zone_to_display[stat_zone_name]   = 'Stationary'
                     self.state_to_zone[stat_zone_name] = stat_zone_name
 
@@ -5367,26 +5387,22 @@ class Icloud3:#(DeviceScanner):
                     zone_names = self._get_zone_names(state_value)
                     if badge_state is None:
                         badge_state = zone_names[1]
-                    self._update_device_sensors_hass(devicename, base_entity,
-                                "zone_name1", zone_names[1], sensor_attrs)
-
-                    self._update_device_sensors_hass(devicename, base_entity,
-                                "zone_name2", zone_names[2], sensor_attrs)
-
-                    self._update_device_sensors_hass(devicename, base_entity,
-                                "zone_name3", zone_names[3], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "zone_name1", zone_names[1], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "zone_name2", zone_names[2], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "zone_name3", zone_names[3], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "zone_name", zone_names[1], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "zone_title", zone_names[2], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "zone_fname", zone_names[3], sensor_attrs)
 
                 elif attr_name == 'last_zone':
                     zone_names = self._get_zone_names(state_value)
 
-                    self._update_device_sensors_hass(devicename, base_entity,
-                                "last_zone_name1", zone_names[1], sensor_attrs)
-
-                    self._update_device_sensors_hass(devicename, base_entity,
-                                "last_zone_name2", zone_names[2], sensor_attrs)
-
-                    self._update_device_sensors_hass(devicename, base_entity,
-                                "last_zone_name3", zone_names[3], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "last_zone_name1", zone_names[1], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "last_zone_name2", zone_names[2], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity,  "last_zone_name3", zone_names[3], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity, "last_zone_name", zone_names[1], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity,  "last_zone_title", zone_names[2], sensor_attrs)
+                    self._update_device_sensors_hass(devicename, base_entity,  "last_zone_fname", zone_names[3], sensor_attrs)
 
                 elif attr_name == 'zone_distance':
                     if state_value and float(state_value) > 0:
@@ -5963,6 +5979,7 @@ class Icloud3:#(DeviceScanner):
         self.zones          = []
         self.zone_to_display= dict(ZONE_TO_DISPLAY_BASE)
         self.state_to_zone  = dict(STATE_TO_ZONE_BASE)
+        self.zone_fname     = {}
         self.zone_lat       = {}
         self.zone_long      = {}
         self.zone_radius_km = {}
@@ -6151,13 +6168,14 @@ class Icloud3:#(DeviceScanner):
                     self.zone_radius_km[zone_name] = round(self.zone_radius_m[zone_name]/1000, 4)
 
                     zone_fname = zone_data.get(ATTR_FRIENDLY_NAME, zone_name)
+                    self.zone_fname[zone_name]     = zone_fname
+                    self.state_to_zone[zone_fname] = zone_name
+
                     if self.display_zone_fname_flag:
                         self.zone_to_display[zone_name] = zone_fname
-                        self.state_to_zone[zone_fname]  = zone_name
                     else:
                         zone_name_title = zone_name.replace('_',' ').title().replace(' ', '')
                         self.zone_to_display[zone_name]     = zone_name_title
-                        self.state_to_zone[zone_fname]      = zone_name
                         self.state_to_zone[zone_name_title] = zone_name
 
                 else:
