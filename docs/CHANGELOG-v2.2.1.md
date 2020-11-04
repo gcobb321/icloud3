@@ -7,6 +7,13 @@ The following enhancements and changes have been made iCloud3 v2.2.0:
 
 ------
 
+**Updated 11/4/2020 (v2.2.1a)**
+
+- Fixed a bug where the *device_tracker/[DEVICENAME]* state was being set to *Home* instead of *home* or *Away* instead of *not_home*.
+- Depreciated the *zone_name1, zone_name2 and zone_name3* entities. They have been renamed to *zone_name, zone_title and zone_fname* respectively. See the 2.4 Using Sensors in the iCloud3 User Manual for more information. You should change any automations and scripts that use the *zone_name#* entities.
+
+------
+
 #### Major Enhancements
 
 * Updated the iOS App tracking method to request the phone's location when the Next Update Time is reached in the same manner as the iCloud tracking methods. Using the tracking method *iosapp* eliminates all iCloud account polling, relies only on the data provided by the iOS app and provides a reliable tracking method when access to the iCloud accounts is limited due to 2fa authentication/verification issues. 
