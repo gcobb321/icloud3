@@ -172,17 +172,16 @@ Select the method to be used to track your phone or other device. iCloud3 suppor
 The unit of measure for distances in miles or kilometers.   
 *Valid values:* mi, km. *Default*: mi  
 
-###### display_zone_fname
+###### display_zone_format
 
-Display the zone's friendly name rather than it's actual name in the Zone and iOS App state fields on the Event Log and the iCloud3 information screen. If the friendly name is too long to be displayed, it will overflow to the next line and then be truncated. The following describes how the *device_tracker.[DEVICENAME]* state is displayed and stored:
+The *device_tracker.[DEVICENAME]* state field displays the zone the device is in or *Away* if it is not in a zone. The one can be displayed in several formats. See chapter *2.4 Using Sensors, Zone Sensors* [here](./2-sensors?id=zone-sensors) for more examples of how the zones are formatted.
 
-- If the phone is home, *Home* is displayed but the actual state value is  *home*.
-- If the phone is not in a zone, *Away* is displayed but the actual state value is *not_home*.
-- If the phone is in a zone, the zone's actual name is  reformatted before it is displayed. For example, *the_shores* is displayed as *TheShores*, *school* is displayed as *School*.
+- `name` - A reformatted zone name. Example: 'the_shores' is displayed as 'TheShores' 
+- `title` - A reformatted zone name. Example: 'the_shores' is displayed as 'The Shores'
+- `fname` - The zones Friendly Name. Example: 'The Shores Development'
+- `zone` - The actual zone name is displayed. Example: 'the_shores' is displayed as 'the_shores'
 
-*Note:* The *sensor.[DEVICENAME].zone* contains the actual zone name. The *sensor.[DEVICENAME].zone_1* contains the reformatted zone name. 
-
-*Valid Values:* : True (display the zone friendly name), False (display the zone's actual name).  *Default:* False 
+*Valid Values:* : name, title, fname, zone  *Default:* name
 
 ###### time_format
 

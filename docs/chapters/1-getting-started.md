@@ -122,17 +122,25 @@ Home Assistant and iCloud3 needs to be authenticated to access your iCloud accou
 
 !>This will all happen after you configure iCloud3 and restart HA for the first time. 
 
+#### 2-factor-authentication  (iCloud3 v2.2.2 and later) {docsify-ignore}
+
 When your account needs to be authenticated for the first time or reauthenticated every several months, the screen below maybe displayed on your phone or other device using the iOS App:
 
-![setup_fmf_icloud3](../images/authentication_apple_id_code.jpg)
+When a the device needs to be authenticated, a dot is displayed next to the Notifications on the Home Assistant sidebar in the lower left. Do the following to complete the authorization process:  
 
-> Touch **Allow** and **OK** to close these popup windows. 
->
-> <u>**You will not do anything with the Apple ID Verification Code shown on this screen. It can be ignored.**</u> 
+1. Select **Notifications** on your Home Assistant screen to open the Notification window. 
+1. Select **Configure** to open the Enter Apple ID Verification Code window used to enter the 6-digit verification code.i
+1. Type the **6-digit verification** code you received on the trusted device you selected in step 2. Then select **Confirm**.
 
-The code displayed on these popup windows is used for authenticating an app you downloaded from the Apple App Store. iCloud3 (and Home Assistant) are not apps, they are programs and the method to authenticate a program is different. 
+Every 2-months or so, you will need to reauthenticate access to your iCloud account using these procedures. A message is displayed in the Event Log and several other places when this happens. The following shows the windows that will be opened:
 
-#### How to Authenticate your iCloud Account  {docsify-ignore}
+![setup_fmf_icloud3](../images/authentication_2fa_steps.jpg)
+
+#### 2-step-authentication  (iCloud3 v2.2.1 and earlier) {docsify-ignore}
+
+The general process for 2-step-authentication is selecting the Trusted Device from a list, receiving a text message with a 6-digit authentication code from Apple and entering that code in another window. 
+
+!>2-step-authentication was discontinued in iCloud3 v2.2.2 when 2-factor authentication became available.
 
 When a the device needs to be authenticated, a dot is displayed next to the Notifications on the Home Assistant sidebar in the lower left. Do the following to complete the authorization process:  
 
@@ -144,7 +152,7 @@ When a the device needs to be authenticated, a dot is displayed next to the Noti
 
 Every 2-months or so, you will need to reauthenticate access to your iCloud account using these procedures. A message is displayed in the Event Log and several other places when this happens. The following shows the windows that will be opened:
 
-![setup_fmf_icloud3](../images/authentication_steps.jpg)
+![setup_fmf_icloud3](../images/authentication_2sa_steps.jpg)
 
 #### How to Force an Immediate Authentication Request  {docsify-ignore}
 
