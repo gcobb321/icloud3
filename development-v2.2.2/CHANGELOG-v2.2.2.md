@@ -1,4 +1,4 @@
-## iCloud3 Version 2.2.2 Change Log
+## iCloud3 Version 2.2.2rc2 Change Log
 
 The following enhancements and changes have been made iCloud3:
 
@@ -19,18 +19,38 @@ When iCloud3 starts, you will get the standard Apple Login warning and the 6-dig
 
 #### Other Changes
 
-Deleted parameter
-*display_zone_fname: True/False* has been eliminated.
+- Bug Fix (Hopefully) - An email was being sent when starting iCloud3 and setting up the iCloud account authorization. It was also being sent when locating the phone at a later time. A change was made to the sign in validation values to remember the computer HA is running on and stop these emails from being sent. You may receive one the first time but the ones sent later should stop.  
 
-New Parameter:
-*display_zone_format: name/title/fname/zone, Default: name*
+  > If you continue to receive them after installing this update. delete the *.storage/icloud/youremail* cookie file and the *.storage/icloud/session* directory to force the verification process to occur.
 
-This parameter indicates how the zone should be displayed in the device_tracker.[DEVICENAME] states field and on the Event Log. The zone is formatted as follows:
+- Deleted parameter
+  *display_zone_fname: True/False* has been eliminated.
 
-- name - A reformatted zone name. Examples: 'the_shores' is displayed as 'TheShores'
-- title - A reformatted zone name. Example: 'the_shores' is displayed as 'The Shores'
-- fname - The zones Friendly Name. Example: 'The Shores Development'
-- zone - The actual zone name is displayed. Example: 'the_shores' is displayed as 'the_shores'
+  New Parameter:
+  *display_zone_format: name/title/fname/zone, Default: name*
+
+  This parameter indicates how the zone should be displayed in the device_tracker.[DEVICENAME] states field and on the Event Log. The zone is formatted as follows:
+
+  - name - A reformatted zone name. Examples: 'the_shores' is displayed as 'TheShores'
+  - title - A reformatted zone name. Example: 'the_shores' is displayed as 'The Shores'
+  - fname - The zones Friendly Name. Example: 'The Shores Development'
+  - zone - The actual zone name is displayed. Example: 'the_shores' is displayed as 'the_shores'
+
+- New Parameter:
+
+  *2sa_verification: True/False, Default: False*
+
+  This parameter forces the 2-step-authentication procedure used in previous versions of iCloud3 instead of the 2-factor-authentication using the native Apple ID Verification Code released in iCloud3 v2.2.2.
+
+- Breaking Change:
+
+  The *device_tracker.icloud3_lost_phone* service call as changed to *device_tracker.icloud3_find_iphone_alert* to match what the service call actually does and eliminate any confusion with the Apple's lost phone process. This service call uses the iCloud native process when using the Family Sharing tracking method and sends an alert (with sound) when using the Find-my-Friends and iOS App tracking method.
+
+- Battery Status
+
+  If the battery state is less than 10%, the polling interval is set to the *stationary_zone_interval* value (default is 30-minutes), regardless of the distance from home. If it is less than 5%, and the distance from Home is less than 1km, it will be set to 15-seconds. This change should help preserve battery life when the phone is in a low power mode.
+
+
 
 Gary Cobb *(aka geekstergary)*
 
