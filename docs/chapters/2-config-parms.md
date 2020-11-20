@@ -20,11 +20,15 @@ All other parameters, including track_devices, can be in *config_ic3.yaml*.
 
 ### User and Account Items
 
-###### username 
+> The User and Account Items must be included in the HA *configuration.yaml* file. They can not be included in the *config_ic3.yaml* file.
+
+###### username
+
 *(Required)* The username (email address) for the iCloud account.  
 *Note:* This is also required for the iOS App tracking method and is used to identify the iCloud3 instance.
 
-###### password 
+###### password
+
 The password for the account.  
 *Note:* This is required for Family Sharing & Find-my-Friends tracking method and not required for the iOS App tracking method.
 
@@ -62,8 +66,14 @@ The file name itself, if specified, must be in the HA configuration file, When i
 
 This contains the directory used to store the iCloud3 Event Log Lovelace card. The Event Log version (*icloud3-event-log-card.js*) is checked when iCloud3 starts to verify the latest version is installed. If a newer version is available, the newer version in the custom components directory is copied to the Event Log directory. Use this parameter if you are storing your lovelace custom cards in another directory.
 
-- *Valid values:* Standard file name *Default Value:* 'www/custom_cards'
+- *Valid values:* Standard file name, *Default:* 'www/custom_cards'
 - *Example:* 'www/community' if you are using the 'community' directory.
+
+**2sa_verification**
+
+This parameter forces the 2-step-authentication procedure used in previous versions of iCloud3 instead of the 2-factor-authentication using the native Apple ID Verification Code released in iCloud3 v2.2.2.
+
+- *Valid values:* True, False, *Default:* False
 
 ### Devices to be tracked
 
@@ -181,13 +191,13 @@ The *device_tracker.[DEVICENAME]* state field displays the zone the device is in
 - `fname` - The zones Friendly Name. Example: 'The Shores Development'
 - `zone` - The actual zone name is displayed. Example: 'the_shores' is displayed as 'the_shores'
 
-*Valid Values:* : name, title, fname, zone  *Default:* name
+*Valid values:* : name, title, fname, zone,  *Default:* name
 
 ###### time_format
 
 This parameter overrides the unit_of_measurement time format.  
 
-*Valid Values:* 12/24. *Default:* Depends on the unit_of_measurement (mi=12, km=24). 
+*Valid values:* 12/24. *Default:* Depends on the unit_of_measurement (mi=12, km=24). 
 
 ###### display_text_as
 
@@ -215,7 +225,7 @@ The distance from home is used to calculate the interval. If you are a long way 
 ###### center_in_zone   
 
 Specify if the device's location should be changed to the center of the zone when it is in a zone. Previously, would always be moved to the zone center.  
-*Valid Values*: True, False  *Default:* False
+*Valid values*: True, False,  *Default:* False
 
 ###### stationary_inzone_interval 
 The interval between location updates when the device is in a Dynamic Stationary Zone. See Special Zones chapter for more information about stationary zones. This can be minutes or hours, e.g., 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).  
@@ -231,7 +241,7 @@ The stationary zone is created when iCloud3 starts (or is restarted) and is loca
 * latitude-adjustment, longitude-adjustment - Specify the number of kilometers from the Home zone. The first parameter adjusts the latitude (north/south), the second parameter adjusts the longitude (east/west).
 * (latitude, longitude) - Specify the actual GPS coordinates (the parentheses are required). 
 
-*Valid Values:* latitude-adjustment, longitude-adjustment.  *Default*: 1,0   
+*Valid values:* latitude-adjustment, longitude-adjustment,  *Default*: 1,0   
 *Example:* stationary_zone_offset: (24.738520, -75.380462)  
 *Example:* stationary_zone_offset: '2,0'
 
@@ -243,12 +253,12 @@ iCloud location updates come with some gps_accuracy varying from 10 to 5000 mete
 ###### old_location_threshold
 
 When a device is located, the location's age is calculated and the update is discarded if the age is greater than the threshold. The threshold can be calculated (12.5% of the travel time to the zone with a 5 minute maximum (default)) or you can specify a fixed time using this parameter.  
-*Valid values:* Number of minutes *Default*: 2
+*Valid values:* Number of minutes, *Default*: 2
 
 ###### ignore_gps_accuracy_inzone
 
 If the device is in a zone, gps accuracy will be ignored.  
-*Valid values:* True, False  *Default:* True
+*Valid values:* True, False,  *Default:* True
 
 ###### create_sensors 
 Specify only the sensors that should be created. See Customizing sensors in the Sensor chapter for more information.
@@ -278,7 +288,7 @@ Display iCloud3 debug information in the HA Log file and, optionally, on the iCl
 
 ###### distance_method 
 iCloud3 uses two methods of determining the distance between home and your current location — by calculating the straight line distance using geometry formulas (like the Proximity sensor) and by using the Waze Route Tracker to determine the distance based on the driving route.  If you do not have Waze in your area or are having trouble with Waze. change this parameter to `calc` to set the interval using the distance between your current location and home rather than the Waze travel time.  
-*Valid values:* waze, calc *Default:* waze
+*Valid values:* waze, calc, *Default:* waze
 
 ###### waze_min_distance, waze_max_distance 
 These values are also used to determine if the polling internal should be based on the Waze distance. If the calculated straight-line distance is between these values, the Waze distance will be requested from the Waze mapping service. Otherwise, the calculated distance is used to determine the polling interval.  
@@ -290,11 +300,11 @@ These values are also used to determine if the polling internal should be based 
 
 ###### waze_realtime 
 Waze reports the travel time estimate two ways — by taking the current, real time traffic conditions into consideration (True) or as an average travel time for the time of day (False).  
-*Valid values:* True, False. *Default:* False 
+*Valid values:* True, False, *Default:* False 
 
 ###### waze_region 
 The area used by Waze to determine the distance and travel time.  
-*Valid values:* US (United States), NA (North America), EU (Europe), IL (Israel). *Default:* US
+*Valid values:* US (United States), NA (North America), EU (Europe), IL (Israel), *Default:* US
 
 ###### travel_time_factor 
 When using Waze and the distance from your current location to home is more than 3 kilometers/miles, the polling interval is calculated by multiplying the driving time to home by the travel_time_factor.  

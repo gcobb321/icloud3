@@ -6,11 +6,10 @@ Four services are available for the iCloud3 device tracker component that are us
 |---------|-------------|
 | icloud3_update | Send commands to iCloud3 that change the way it is running (pause, resume, Waze commands, etc.) |
 | icloud3_set_interval | Override the dynamic interval calculated by iCloud3. |
-| icloud3_lost_phone | Play the Lost Phone sound. |
+| icloud3_find_iphone_alert | Display the *Find My iPhone Alert* notification and play an alert sound on the specified phone. |
 | icloud3_restart | Restart the iCloud3 custom component. Restart iCloud3.This will recheck the availability of the iCloud Location Service and relocate all devices. |
 
-
-### icloud3_update Service
+### *icloud3_update* Service
 
 This service allows you to change the way iCloud3 operates. The following parameters are used:
 
@@ -159,7 +158,7 @@ icloud3_command_loglevel_info:
         command: log_level info
 ```
 
-### icloud3_set_interval Service
+### *icloud3_set_interval* Service
 
 This service allows you to override the interval between location updates to a fixed time. It is reset when a zone is entered or when the icloud3_update service call is processed with the 'resume' command. The following parameters are used:
 
@@ -169,7 +168,7 @@ This service allows you to override the interval between location updates to a f
 | interval | The interval between location updates. This can be in seconds, minutes or hours. Examples are 30 sec, 45 min, 1 hr,  2 hrs, 30 (minutes are assumed if no time descriptor is specified). *(Required)* |
 
 ```yaml
-#Commands to Change Intervals
+#Change Intervals
 
 icloud3_set_interval_15_sec_gary:
   alias: 'Set Gary to 15 sec'
@@ -195,15 +194,36 @@ icloud3_set_interval_5_hrs_all:
         interval: '5 hrs'
 ```
 
-### icloud3_lost_iphone  Service
+### *icloud3_find_iphone_alert*  Service
 
-This service will play the Lost iPhone sound on a specific device when you use the family-sharing tracking method. Due to an Apple limitation, this is not available for the Find-my-Friends tracking method.
+This service will display a notification and play on the specified device based on the tracking method:
+
+- Family Sharing - Display the alert using the Find My iPhone Alert process build into iOS.
+- Find-my-Friends, iOS App - Send a notification with sound to the iOS App on the specified device .
 
 | Parameter | Description |
 |-----------|-------------|
 | device_name | Name of the device *(Required)* |
 
-### icloud3_restart Service
+```
+#Send the Find My iPhone Alert message
+
+icloud3_find_phone_alert_gary:
+  alias: 'Find iPhone Alert (Gary)'
+  sequence:
+    - service: device_tracker.icloud3_find_iphone_alert
+      data:
+        device_name: gary_iphone
+
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Find iPhone Alert'
+        message: 'Find iPhone Alert was triggered for Gary (gary_icloud/gary_iphone)'
+```
+
+
+
+### *icloud3_restart* Service
 
 This service will restart iCloud3 and refresh all of the devices being handled by iCloud3. It does the same action as the `icloud3_command` with the `restart` option described above. You will have to restart Home Assist if you have made changes to the configuration parameters (new device type, new device name, etc.) 
 

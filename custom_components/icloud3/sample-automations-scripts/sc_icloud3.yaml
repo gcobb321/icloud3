@@ -128,17 +128,17 @@ icloud3_set_interval_2_min_gary:
         device_name: gary_iphone
         interval: '1 min'
 
-icloud3_lost_iphone_gary:
-  alias: 'Find Lost Phone Alert (Gary)'
+icloud3_find_phone_alert_gary:
+  alias: 'Find iPhone Alert (Gary)'
   sequence:
-    - service: device_tracker.icloud3_lost_iphone
+    - service: device_tracker.icloud3_find_iphone_alert
       data:
         device_name: gary_iphone
 
     - service: script.notify_gary_iphone
       data_template:
-        title: 'Lost iPhone Notification'
-        message: 'Lost iPhone was triggered for Gary (gary_icloud/gary_iphone)'
+        title: 'Find iPhone Alert'
+        message: 'Find iPhone Alert was triggered for Gary (gary_icloud/gary_iphone)'
 
 icloud3_update_location_gary:
   alias: 'Update Location (Gary)'
@@ -183,26 +183,17 @@ icloud3_set_interval_1_min_lillian:
         device_name: lillian_iphone
         interval: 1
 
-icloud3_lost_iphone_lillian:
-  alias: 'Find Lost Phone Alert (Lillian)'
+icloud3_find_phone_alert_lillian:
+  alias: 'Find iPhone Alert (Lillian)'
   sequence:
-    - service: device_tracker.icloud3_lost_iphone
+    - service: device_tracker.icloud3_find_iphone_alert
       data:
         device_name: lillian_iphone
 
-icloud3_lost_iwatch_lillian:
-  alias: 'Find Lost Watch Alert (Lillian)'
-  sequence:
-    - service: device_tracker.icloud3_lost_iphone
-      data:
-        device_name: lillian_iwatch
-
-icloud3_lost_iphone_invalid:
-  alias: 'Find Lost Phone Alert (Invalid)'
-  sequence:
-    - service: device_tracker.icloud3_lost_iphone
-      data:
-        device_name: invalid_iphone
+    - service: script.notify_gary_iphone
+      data_template:
+        title: 'Find iPhone Alert'
+        message: 'Find iPhone Alert was triggered for Lillian (lillian_iphone)'
 
 icloud3_update_location_lillian:
   alias: 'Update Location (Lillian)'
