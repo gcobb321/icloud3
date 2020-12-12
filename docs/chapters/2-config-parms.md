@@ -282,6 +282,13 @@ Display iCloud3 debug information in the HA Log file and, optionally, on the iCl
 
 *Note:* More than one parameter can be specified on the parameter line. For example `log_level: debug, eventlog`.
 
+!> The HA *logger* parameter must be specified in the HA *configuration.yaml* file.
+
+> ```yaml
+> logger:
+>   default: info
+> ```
+
 ### Waze Configuration Items
 
 > The Waze Route Calculator component is use to calculate driving distance and time from your location to your Home or another zone). Normally, it is installed with the Home Assistant and Hass.io framework. However, if it is not installed on your system, you can go [here](https://github.com/kovacsbalu/WazeRouteCalculator) for instructions to download and install Waze. If you don't want to use Waze or are in an area where Waze is not available, you can use the 'direct distance' method of calculating your distance and time from the Home or another zone. Add the *distance_method: calc* parameter to your icloud3 configuration file (see the Parameters, Attributes and Sensors section for more information).

@@ -1,0 +1,10 @@
+iCloud3 v2.2.2rc6 Change Log
+------------------------------
+1. Incorporates the latest iCloud account authorization routines to minimize the emails received from Apple and reduce the amount of communication between iCloud3 and the iCloud account to authorize an account. (change to pyicloud_ic3.py)
+
+Other Changes
+-------------
+2. The email from Apple about someone signing on to the iCloud account should only occur when starting HA or when selecting Event Log > Actions > Reset iCloud Interface.
+3. Fixed a misspelling of self.format_age that was generating an error. It should be self._format_age.
+4. Fixed a problem occuring when the name of the phone was 'iPhone'.
+5. Fixed a problem where state changes were detected when it did not change. This related to long zone names with spaces and underline characters.
