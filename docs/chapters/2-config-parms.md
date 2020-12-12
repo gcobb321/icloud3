@@ -282,7 +282,7 @@ Display iCloud3 debug information in the HA Log file and, optionally, on the iCl
 
 *Note:* More than one parameter can be specified on the parameter line. For example `log_level: debug, eventlog`.
 
->The HA *logger* parameter must be specified in the HA *configuration.yaml* file or the *log_level* parameter will not add anything to the HA log file (*config/home-assistant.log).   
+>The HA 'logger' parameter must be specified in the HA 'configuration.yaml' file or the 'log_level' parameter will not add anything to the HA log file (config/home-assistant.log).   
 >```yaml
 >logger:
 >  default: info
