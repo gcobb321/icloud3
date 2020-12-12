@@ -282,11 +282,11 @@ Display iCloud3 debug information in the HA Log file and, optionally, on the iCl
 
 *Note:* More than one parameter can be specified on the parameter line. For example `log_level: debug, eventlog`.
 
-!> The HA *logger* parameter must be specified in the HA *configuration.yaml* file.
-!>  ```yaml
-!>  logger:
-!>    default: info
-!>  ```
+> The HA *logger* parameter must be specified in the HA *configuration.yaml* file.
+>  	```yaml
+>  	logger:
+>  	  default: info
+>  	```
 
 ### Waze Configuration Items
 
