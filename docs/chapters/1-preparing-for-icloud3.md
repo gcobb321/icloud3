@@ -30,6 +30,12 @@ The person's email address ties the phone being tracked on the iCloud3 track_dev
 
 > Go to Apple the support web site [here](https://support.apple.com/en-us/HT210400) for more information on the FindMy App and go [here](https://support.apple.com/en-us/HT201493) for more information on setting up and using Find My Friends.
 
+#### Problems with tracking only yourself or tracking only one phone with Find-my-Friends
+
+The FindMy app does not let you track yourself. You can indicate you want to "Use this device to track me" on the *Me* window but iCloud Web Services does not provide the necessary linkage between the device and a person (you) that is used by iCloud3. iCloud3 analyzes the FindMy data when starting -- it searches through the people you are following and the people that are following you for the linkage information. Since you can not follow yourself, you are not in either list and an error is displayed in the Event Log.
+
+You must have someone else follow you. You will be added to 'people following you' list and you will be able to be tracked. If that can not be done, you must use the *Family sharing* tracking method.
+
 #### Family Sharing Tracking Method and the Settings App
 
 The Family Sharing list is part of your iCloud account and set up on the Settings App.
@@ -45,13 +51,21 @@ The Family Sharing list is part of your iCloud account and set up on the Setting
 
 > Go to Apple the support web site [here](https://support.apple.com/en-us/HT201088) for more information on setting up  and using Family Sharing.
 
-### Trouble shooting - iCloud Verification Process works for a short period
+#### iOS App Tracking Method
+
+To use this tracking method, you must install the iOS App on each phone you are tracking and associate the device_tracker entity names with the track_devices configuration parameter. This is described in detail in chapter *1.4 Setting up the iOS App*.
+
+
+
+### Setting up another non-2fa iCloud Account (Used in older versions of iCloud3)
+
+*This process was needed in iCloud3 v2.1 and older to get around the 2fa authentication problems. This is no longer needed but included here for completeness.*
 
 Normally, your iCloud account is used for authentication. You go through the verification process discussed above, the people sharing your location with you are located and everything works as expected. Several months later, access to your account expires and you go through the verification process again.
 
 However, there may be times when you go through the verification process, everything looks normal, the people sharing their location with you are located but iCloud asks for another verification several hours or weeks later. It's as if the access authorization to your account expires immediately. 
 
-!> You must use the *Find-my-Friends* tracking method. The *Family Shari [device_tracker.py](..\..\development area - v2.2.1\device_tracker.py) ng* tracking method will now work.
+!> In this case, you must use the *Find-my-Friends* tracking method, the *Family Sharing* tracking method will not work.
 
 iCloud3 v2.1 solved this problem by creating a second non-2fa account, logging into that account and setting up the FindMy App and then using that account in the username/password configuration parameters. Since this account does not is not a 2fa account, it need to be verified. The following steps explain how to do this and how it will then tie everything together.
 
@@ -81,7 +95,7 @@ Since this is a new iCloud account, you need to add the people that use the devi
 4. Go to an iPhone or iPad and log into your new non-2fa Account in the *Settings App*. It is a lot easier to do this on a device you will not be tracking. If you do this on a phone you are tracking. you will have Sign out of your real iCloud account and sign into the non-2fa account.
 5. Follow the procedures in the *Find-My-Friends Tracking Method and the The FindMy app* paragraph above to add the people you want to track in the FindMy App on this non-2fa account.
 
-!> Verify that the Find My app and your iCloud account at *i*cloud.com* can locate the people you are tracking. They should be displayed on the map in the *FindMy app* when signed into the new non-2fa account and the 'Sharing With ...'  message should be displayed in the app when you are signed into the 2fa account. 
+!> Verify that the Find My app and your iCloud account at *icloud.com* can locate the people you are tracking. They should be displayed on the map in the *FindMy app* when signed into the new non-2fa account and the 'Sharing With ...'  message should be displayed in the app when you are signed into the 2fa account. 
 
 !> **If the devices can not be seen in the app, they will not be located by iCloud3.**
 
@@ -95,8 +109,3 @@ Use this non-2fa account in the iCloud username/password configuration parameter
 ![setup_fmf_icloud3](../images/setup_fmf_icloud3.jpg)
 
 *Overview of how iCloud3 uses the people's contact information to link the iCloud location to the tracked device*
-
-#### iOS App Tracking Method
-
-To use this tracking method, you must install the iOS App on each phone you are tracking and associate the device_tracker entity names with the track_devices configuration parameter. This is described in detail in chapter *1.4 Setting up the iOS App*.
-
