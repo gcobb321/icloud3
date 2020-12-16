@@ -9,11 +9,26 @@ This chapter explains how to:
 
 The previous chapter described the tracking methods you can use.
 
-- **Find-My-Friends (fmf)** - Uses the people that you are sharing your location with on the FindMy App. This is probably most efficient method to use in regards of how iCloud locates devices and lets you  track people that are not on your Family Sharing List.
 - **Family Sharing (famshr)** - The people you want to track are on your Family Sharing list on your iCloud account, along with other Apple devices you don't want to track. Remember, when you use this tracking method, iCloud will locate all of the devices whether you are tracking them or not.
+- **Find-My-Friends (fmf)** - Uses the people that you are sharing your location with on the FindMy App. This is probably most efficient method to use in regards of how iCloud locates devices and lets you  track people that are not on your Family Sharing List.
 - **iOS App (iosapp)** - This tracking method does not interact with the iCloud account to located the phones and relies only on the iOS App for zone enter/exit and location data. iCloud3 will react to the phone's device_tracker state entity and monitor location changes triggered by various events. It can be used to track the phone when there are problems authenticating and verifying the iCloud account and HA server due to 2fa security issues.
 
-#### Find-My-Friends Tracking Method and the The FindMy app
+### Family Sharing Tracking Method and the Settings App
+
+The Family Sharing list is part of your iCloud account and set up on the Settings App.
+
+1. Open the *Settings*.
+2. Select  **Your Profile (Apple ID, iCloud, iTunes & App Store)****. 
+3. This will open *Your Apple Profile* screen. 
+4. Select **Family Sharing** to open the *Family Sharing* screen.
+5. Select **Add Family Member** to open the *Invite via iMessage* popup window.
+6. Select **Invite via iMessage**. They be added to the Family Sharing List after they accept the invitation. Verify that Location Sharing is turned on on their iPhone.
+
+![family sharing screen](../images/famshr_screen.jpg)
+
+> Go to Apple the support web site [here](https://support.apple.com/en-us/HT201088) for more information on setting up  and using Family Sharing.
+
+### Find-My-Friends Tracking Method and the The FindMy app
 
 The Find-my-Friends (FmF) tracking method locates the people you have set up on iPhone's ```FindMy App > People``` screen. When they are added, their iCloud account email address adds the phone to the *Share Location* list and is used on the iCloud3 track_devices parameter. 
 
@@ -32,76 +47,55 @@ The person's email address ties the phone being tracked on the iCloud3 track_dev
 
 #### Problems with tracking only yourself or tracking only one phone with Find-my-Friends
 
-The FindMy app does not let you track yourself. You can indicate you want to "Use this device to track me" on the *Me* window but iCloud Web Services does not provide the necessary linkage between the device and a person (you) that is used by iCloud3. iCloud3 analyzes the FindMy data when starting -- it searches through the people you are following and the people that are following you for the linkage information. Since you can not follow yourself, you are not in either list and an error is displayed in the Event Log.
+##### The FindMy app does not let you track yourself
 
-You must have someone else follow you. You will be added to 'people following you' list and you will be able to be tracked. If that can not be done, you must use the *Family sharing* tracking method.
+- On the FindMy App > People window, you select the *+ Share My Location* in the FindMy App on your phone and enter your own email address (the one you used in the iCloud3 username/password configuration parameters), an error screen is displayed telling you that "You cannot share with yourself." 
+- On the FindMy App > Me window, you select the "Use this device to track me". Unfortunately, iCloud Web Services does not provide the necessary linkage between the device and a person (you) that is used by iCloud3. iCloud3 analyzes the FindMy data when starting -- it searches through the people you are following and the people that are following you for the linkage information. Since you can not follow yourself, you are not in either list and the following error is displayed in the Event Log.
 
-#### Family Sharing Tracking Method and the Settings App
+![evlog_findmyself_error](../images/evlog_findmyself_error.jpg)
 
-The Family Sharing list is part of your iCloud account and set up on the Settings App.
+##### Solution - Create a second iCloud account
 
-1. Open the *Settings*.
-2. Select  **Your Profile (Apple ID, iCloud, iTunes & App Store)****. 
-3. This will open *Your Apple Profile* screen. 
-4. Select **Family Sharing** to open the *Family Sharing* screen.
-5. Select **Add Family Member** to open the *Invite via iMessage* popup window.
-6. Select **Invite via iMessage**. They be added to the Family Sharing List after they accept the invitation. Verify that Location Sharing is turned on on their iPhone.
+The only solution to this problem is to create another iCloud account and use that account in the username/password iCloud3 parameter. Generally, you will do the following. See *Setting up a new iCloud Account (an iCloud Tracking Account)* below for detailed information.
 
-![family sharing screen](../images/famshr_screen.jpg)
+1. Create another iCloud Account with an email address different that your "real" email address. You can use another email address you may have or create one specifically for the Find-my-Friends tracking method.
+2. Log into that account on your iPhone, iPad, Mac or PC. 
+3. Open the FindMy App and select *"+ Share My Location* for each phone you want to track, including yourself with your real email address tied to your real iCloud account.
+4. Sign out of this other account. If you are on your iPhone or iPad, select *No* when asked if you want to merge the contacts, keychain or other items with iCloud. 
+5. Sign back into your real iCloud account.
+6. On each of the devices you are tracking, accept the sharing invitation.
+7. Change the iCloud3 username/password parameters to your second account, the one you just created in step 1.
+8. The iCloud3 track_devices parameter should still have your email address and the email addresses of the people you are following.
+9. Restart HA and iCloud3. You should now be tracking yourself.
 
-> Go to Apple the support web site [here](https://support.apple.com/en-us/HT201088) for more information on setting up  and using Family Sharing.
+#### Setting up a new iCloud Account (an "iCloud Tracking Account")
 
-#### iOS App Tracking Method
+Follow these procedures to be able to track yourself and others using the Find-my-Friends tracking method.
 
-To use this tracking method, you must install the iOS App on each phone you are tracking and associate the device_tracker entity names with the track_devices configuration parameter. This is described in detail in chapter *1.4 Setting up the iOS App*.
-
-
-
-### Setting up another non-2fa iCloud Account (Used in older versions of iCloud3)
-
-*This process was needed in iCloud3 v2.1 and older to get around the 2fa authentication problems. This is no longer needed but included here for completeness.*
-
-Normally, your iCloud account is used for authentication. You go through the verification process discussed above, the people sharing your location with you are located and everything works as expected. Several months later, access to your account expires and you go through the verification process again.
-
-However, there may be times when you go through the verification process, everything looks normal, the people sharing their location with you are located but iCloud asks for another verification several hours or weeks later. It's as if the access authorization to your account expires immediately. 
-
-!> In this case, you must use the *Find-my-Friends* tracking method, the *Family Sharing* tracking method will not work.
-
-iCloud3 v2.1 solved this problem by creating a second non-2fa account, logging into that account and setting up the FindMy App and then using that account in the username/password configuration parameters. Since this account does not is not a 2fa account, it need to be verified. The following steps explain how to do this and how it will then tie everything together.
-
-#### Create a new non-2fa Account
-
-This must be done on a PC or Mac. Using the iPhone or iPad will not work.
+#### Create a new iCloud Tracking Account
 
 1. Go to https://appleid.apple.com.
 2. Click **Create Your Apple Id** at the top of the screen.
 3. Fill in the identification information requested.
-4. Fill in your name, birthday, non-2fa email you will are creating, password, etc.
+4. Fill in your name, birthday, email you will are creating, password, etc.
 5. Fill in the Phone number and go through the account verification process.
 
-!> At some point, the Apple ID Security screen is displayed. This is where you select to not set up 2fa. This is important.
-
-6. Select **Other Options** on the *Apple ID Security* window.
-7. Select **Don't Upgrade** on the *Protect your account* window.
-8. Select **Continue** on the *Apple ID & Privacy* window.
-
-#### Setting up your new non-2fa Account
+#### Setting up your new iCloud Tracking Account
 
 Since this is a new iCloud account, you need to add the people that use the devices you want to track in the `Contacts` screen. You only need to enter their name and the email address of their actual iCloud account. 
 
-1. Go to icloud.com. Log into your new non-2fa account. Agree to the Terms & Conditions.
+1. Go to icloud.com. Log into your new iCloud account. Agree to the Terms & Conditions.
 2. Select **Contacts** to go to the iCloud Contacts screen.
-3. For each phone you are tracking, Click **plus-sign (+)** at the bottom. Fill in the First name and the real email address. You will use this address on the FindMy App and on the track_devices parameter for this person.
-4. Go to an iPhone or iPad and log into your new non-2fa Account in the *Settings App*. It is a lot easier to do this on a device you will not be tracking. If you do this on a phone you are tracking. you will have Sign out of your real iCloud account and sign into the non-2fa account.
-5. Follow the procedures in the *Find-My-Friends Tracking Method and the The FindMy app* paragraph above to add the people you want to track in the FindMy App on this non-2fa account.
+4. Go to an iPhone or iPad and log into your new iCloud Tracking Account in the *Settings App*. It is a lot easier to do this on a device you will not be tracking. If you do this on a phone you are tracking. you will have Sign out of your real iCloud account and sign into the iCloud Tracking Account.
+5. Follow the procedures in the *Find-My-Friends Tracking Method and the The FindMy app* paragraph above to add the people you want to track in the FindMy App on this iCloud Tracking Account.
 
-!> Verify that the Find My app and your iCloud account at *icloud.com* can locate the people you are tracking. They should be displayed on the map in the *FindMy app* when signed into the new non-2fa account and the 'Sharing With ...'  message should be displayed in the app when you are signed into the 2fa account. 
+!> Verify that the Find My app and your iCloud Tracking Account at *icloud.com* can locate the people you are tracking. They should be displayed on the map in the *FindMy app* when signed into the new iCloud Tracking Account and the 'Sharing With ...'  message should be displayed in the app when you are signed into the new iCloud account. 
 
 !> **If the devices can not be seen in the app, they will not be located by iCloud3.**
 
-Now that you have verified that everything is set up correctly, sign out of the non-2fa account and sign back into your 2fa account. You will only need to sign back into the non-2fa account if you want to track another device.
+Now that you have verified that everything is set up correctly, sign out of the new iCloud Tracking Account and sign back into your real iCloud account. You will only need to sign back into the iCloud Tracking Account if you want to track another device.
 
-Use this non-2fa account in the iCloud username/password configuration parameters.
+Use this iCloud Tracking Account in the iCloud3 username/password configuration parameters.
 
 
 
@@ -109,3 +103,7 @@ Use this non-2fa account in the iCloud username/password configuration parameter
 ![setup_fmf_icloud3](../images/setup_fmf_icloud3.jpg)
 
 *Overview of how iCloud3 uses the people's contact information to link the iCloud location to the tracked device*
+
+### iOS App Tracking Method
+
+To use this tracking method, you must install the iOS App on each phone you are tracking and associate the device_tracker entity names with the track_devices configuration parameter. This is described in detail in chapter *1.4 Setting up the iOS App*.

@@ -81,6 +81,7 @@ The Find-my-Friends tracking method lets you track people you are sharing your l
   - You can track phones that are not associated with your iCloud account since anyone can be on the ```FindMy > People > Share My Location list```.
 - Cons:
   - You have to add the people you want to follow to the FindMy App, send them an invitation and they have to accept the invitation.
+  - The FindMy app will not let you track yourself. To get around this limitation, you have to either create a new iCloud account or use a different one than your normal iCloud account, share the new "iCloud Tracking Account" with the friends you are tracking and use this new "iCloud Tracking Account" in iCloud3. This is described in detail in the next chapter, *Preparing for iCloud3*.
 
 ###### Family Sharing (famshr)
 
