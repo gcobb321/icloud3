@@ -60,13 +60,14 @@ The only solution to this problem is to create another iCloud account and use th
 
 1. Create another iCloud Account with an email address different that your "real" email address. You can use another email address you may have or create one specifically for the Find-my-Friends tracking method.
 2. Log into that account on your iPhone, iPad, Mac or PC. 
-3. Open the FindMy App and select *"+ Share My Location* for each phone you want to track, including yourself with your real email address tied to your real iCloud account.
-4. Sign out of this other account. If you are on your iPhone or iPad, select *No* when asked if you want to merge the contacts, keychain or other items with iCloud. 
-5. Sign back into your real iCloud account.
-6. On each of the devices you are tracking, accept the sharing invitation.
-7. Change the iCloud3 username/password parameters to your second account, the one you just created in step 1.
-8. The iCloud3 track_devices parameter should still have your email address and the email addresses of the people you are following.
-9. Restart HA and iCloud3. You should now be tracking yourself.
+3. Add the 'friends', the people that use the devices you want to track, in the `Contacts` app when you are signed into this new account. You only need to enter their name and the email address of their actual iCloud account. 
+4. Open the FindMy App and select *"+ Share My Location* for each phone you want to track, including yourself with your real email address tied to your real iCloud account.
+5. Sign out of this other account. If you are on your iPhone or iPad, select *No* when asked if you want to merge the contacts, keychain or other items with iCloud. 
+6. Sign back into your real iCloud account.
+7. On each of the devices you are tracking, accept the sharing invitation.
+8. Change the iCloud3 username/password parameters to your second account, the one you just created in step 1.
+9. The iCloud3 track_devices parameter should still have your email address and the email addresses of the people you are following.
+10. Restart HA and iCloud3. You should now be tracking yourself.
 
 #### Setting up a new iCloud Account (an "iCloud Tracking Account")
 
@@ -82,12 +83,11 @@ Follow these procedures to be able to track yourself and others using the Find-m
 
 #### Setting up your new iCloud Tracking Account
 
-Since this is a new iCloud account, you need to add the people that use the devices you want to track in the `Contacts` screen. You only need to enter their name and the email address of their actual iCloud account. 
+The following steps are easier if you do this at *icloud.com* on a PC or Mac rather than on your iPhone or iPad signed into your "real" iCloud account. If you do do this on your iPhone or iPad, sign out of your iCloud account on the Settings App.
 
-1. Go to icloud.com. Log into your new iCloud account. Agree to the Terms & Conditions.
-2. Select **Contacts** to go to the iCloud Contacts screen.
-4. Go to an iPhone or iPad and log into your new iCloud Tracking Account in the *Settings App*. It is a lot easier to do this on a device you will not be tracking. If you do this on a phone you are tracking. you will have Sign out of your real iCloud account and sign into the iCloud Tracking Account.
-5. Follow the procedures in the *Find-My-Friends Tracking Method and the The FindMy app* paragraph above to add the people you want to track in the FindMy App on this iCloud Tracking Account.
+2. Go to icloud.com or sign out of your "real" iCloud account on your iPhone or iPad. Then signin into your new iCloud Tracking Account you just created. Agree to the Terms & Conditions.
+2. Select *Contacts* at icloud.com or open the Contacts App. Add the 'friends', the people that use the devices you want to track. You only need to enter their name and the email address of their actual iCloud account. 
+3. Select *Find Friends* at icloud.com or open the FindMy App. Follow the procedures in the *Find-My-Friends Tracking Method and the The FindMy app* above to Share your Location by sending them an invitation using their contact name/email address add in step 2. Do this for everyone you want to track.
 
 !> Verify that the Find My app and your iCloud Tracking Account at *icloud.com* can locate the people you are tracking. They should be displayed on the map in the *FindMy app* when signed into the new iCloud Tracking Account and the 'Sharing With ...'  message should be displayed in the app when you are signed into the new iCloud account. 
 
