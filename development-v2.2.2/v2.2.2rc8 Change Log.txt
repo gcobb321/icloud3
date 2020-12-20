@@ -1,0 +1,31 @@
+iCloud3 v2.2.2rc8 Change Log
+------------------------------
+1. The Find-my-Friends (fmf) and the Family Sharing (famshr) have been combined into a single tracking method (icloud) and operates on a per device basis. When iCloud3 starts, the FindMy People list is analyzed for devices to be tracked, followed by the FindMy Me selection (this device is My Location), followed by the Family sharing list. You no longer need to assign a tracking method to use iCloud Location Services. Each device you are tracking will automatically select the appropriate tracking method based on how it is set up in your iCloud account.
+2. Changed the list in Stage 2 of iCloud3 initialization to show all the people and devices in the FindMy app and all the devices in the Family Sharing list. A check mark is next to the track_device in your configuration parameters indicating the tracking method selected for that device.
+3. Changed the default for the 'ignore_inzone_gps_accuracy' from True to False to prevent wild gps accuracy issues taking you out of a zone.
+4. Code cleanup.
+5. TODO - Further analysis of pyicloud_ic3 data requests for the fmf and famshr support. There is some tuning to be done, reviewing the data returned to make sure unnecessary requests are not being made and investigate the possibility of only requesting location data for the devices that need it rather than every device.
+
+
+
+iCloud3 v2.2.2rc7 Change Log
+------------------------------
+1. Incorporates a new method of automatically authenticating the account within the pyicloud_ic3.py iCloud Web Interface program rather than having iCloud3 do it.
+
+Other changes
+-------------
+2. The email from Apple about someone signing on to the iCloud account should only occur when starting HA or when selecting Event Log > Actions > Reset iCloud Interface.
+3. Fixed a misspelling of self.format_age that was generating an error. It should be self._format_age.
+4. Fixed a problem occuring when the name of the phone was 'iPhone'.
+5. Fixed a problem where state changes were detected when it did not change. This related to long zone names with spaces and underline characters.
+
+iCloud3 v2.2.2rc6 Change Log
+------------------------------
+1. Incorporates the latest iCloud account authorization routines to minimize the emails received from Apple and reduce the amount of communication between iCloud3 and the iCloud account to authorize an account. (change to pyicloud_ic3.py)
+
+Other Changes
+-------------
+2. The email from Apple about someone signing on to the iCloud account should only occur when starting HA or when selecting Event Log > Actions > Reset iCloud Interface.
+3. Fixed a misspelling of self.format_age that was generating an error. It should be self._format_age.
+4. Fixed a problem occuring when the name of the phone was 'iPhone'.
+5. Fixed a problem where state changes were detected when it did not change. This related to long zone names with spaces and underline characters.
