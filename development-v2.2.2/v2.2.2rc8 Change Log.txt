@@ -1,3 +1,9 @@
+
+iCloud3 v2.2.2rc8b Change Log
+------------------------------
+1. Fixed bug where an error message would be added to the Event Log when scanning the FmF People list during initialization if the tracked_device did not have an email address.
+2. Added debug trace code to the _update_location routine
+
 iCloud3 v2.2.2rc8 Change Log
 ------------------------------
 1. The Find-my-Friends (fmf) and the Family Sharing (famshr) have been combined into a single tracking method (icloud) and operates on a per device basis. When iCloud3 starts, the FindMy People list is analyzed for devices to be tracked, followed by the FindMy Me selection (this device is My Location), followed by the Family sharing list. You no longer need to assign a tracking method to use iCloud Location Services. Each device you are tracking will automatically select the appropriate tracking method based on how it is set up in your iCloud account.
