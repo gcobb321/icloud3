@@ -1,3 +1,7 @@
+iCloud3 v2.2.2rc9 Change Log
+------------------------------
+1. The FmF and FamShr tracking method for each device are now analyzed to minimize calls to iCloud Web Services. The goal is to have all devices using either FmF or FamShr but not both. If you are tracking a friend (their email address is specified) that is not on your Family Sharing list, the friend will be located using the FmF method like it always has and the other devices will use FamShr.
+2. Added check for an email addresses used for more than one devicename.
 
 iCloud3 v2.2.2rc8b Change Log
 ------------------------------
