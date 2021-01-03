@@ -1,3 +1,51 @@
+iCloud3 v2.3 Change Log
+-----------------------------
+1. Added configuration parameters that use the standard HA method of defining device_tracker/entity items. The following example will make this clear. They are all acceptible and will all result in tracking the 2 device.
+
+    This is how tracked_device parameters are specified now:
+        track_devices:
+          - gary_iphone > gary_2fa@email.com, gary.png, Gary
+          - lillian_iphone > lillian_2fa@email.com, lillian.png, Lillian
+          
+    You can also use this format:
+        devices:
+          - device: gary_iphone > gary_2fa@email.com, gary.png, Gary
+          - device_name: lillian_iphone
+            email: lillian_2fa@email.com
+            picture: lillian.png
+            name: Lillian
+    
+    Or you can use this format:
+        devices:
+          device: gary_iphone > gary_2fa@email.com, gary.png, Gary
+          device: lillian_iphone > lillian_2fa@email.com, lillian.png, Lillian
+
+            
+    The parameters that can be used to define a device are:
+    - device_name:      
+            Specifies the name of the device that you want to track. It must be the same as the one in the Setting App > General > About > Name field on the device.
+    - name:             
+            The persons name associated with the device. Each device should have it's own name even if it is associated with the same person.
+    - email:            
+            The persons email address that is used to search the FindMy Person list. This is not needed if you want to use the Family Sharing list.
+    - picture:          
+            The picture of the person show on the persons 'badge'.
+    - iosapp_suffix:    
+            The suffix of the iOS App device_tracker entity to monitor for zone enter/exits and location changes (entity name = device_name + suffix). iCloud3 searches the HA Entity Registry and looks for iOS App device_tracker entities that start with the device_name. The last one in the list is selected. This parameter lets you override the iCloud3 selection.
+    - iospp_entity:     
+            The name of the iOS App device_tracker entity to monitor for zone enter/exits and location changes.
+    - noiosapp: True    
+            Used to indicate the iOS App is not installed on this device and it should not be monitored for zone enter/exits and location changes.
+    - zone:             
+            The name of additional zone(s) to be used for location tracking. The Home zone is always monitored and does not need to be specified.
+          
+2. An alert message is now displayed if there are no mobile_app entities found in the Entity Registry. If this happens, no devices will be monitored for zone enter/exits and location changes using the iosapp.
+3. The 'config_ic3_file_name' parameter now only needs to be specified if it is not /config/config_ic3.yaml. iCloud3 will now always look in the /config directory for the config_ic3.yaml file and will use it if it is found. If it is not found, the custom_components/icloud3 directory will be chedked.
+4. Code cleanup and additional error checking.
+5. Bumped the version number to v2.3 since this is a significant update from v2.2.2rc#.
+6. Final release preparations.
+
+
 iCloud3 v2.2.2rc9a Change Log
 ------------------------------
 1. Removed debug logging code from pyicloud3_ic3.

@@ -1,5 +1,0 @@
-iCloud3 v2.2.2rc5 Change Log
-------------------------------
-1. Did a lot of tunning to remove unnecessary iCloud account authentications.
-2. The email from Apple about someone signing on to the iCloud account should only occur when starting HA or when selecting Event Log > Actions > Reset iCloud Interface.
-3. Fixed a misspelling of self.format_age that was generating an error. It should be self._format_age.

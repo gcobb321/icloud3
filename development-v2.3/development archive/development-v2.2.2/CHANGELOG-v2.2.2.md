@@ -1,4 +1,4 @@
-## iCloud3 Version 2.2.2 Change Log
+## iCloud3 Version 2.3 Change Log
 
 The following enhancements and changes have been made iCloud3:
 
