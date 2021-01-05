@@ -1,5 +1,16 @@
 iCloud3 v2.3 Change Log
 -----------------------------
+
+v2.3b (1/5/2021)
+---------------
+1. Fixed a bug where the last device_name in the devices list was not added to the list of tracked devices if it was the last one and there were no parameters after the devices parameter. This didn't happen if there was another parameter after the 'devices:' parameter.
+2. Fixed a bug caused by a misspelled variable name (device_field vs device_fields).
+3. Added error checking to prevent a crash during startup if there were any delays in retrieving location data from iCloud before everything had been set up.
+4. Fixed a bug were quote marks ("...") were not being stripped from values in the config_ic3.yaml file.
+
+
+v2.3 (1/3/2021)
+---------------
 1. Added configuration parameters that use the standard HA method of defining device_tracker/entity items. The following example will make this clear. They are all acceptible and will all result in tracking the 2 device.
 
     This is how tracked_device parameters are specified now:

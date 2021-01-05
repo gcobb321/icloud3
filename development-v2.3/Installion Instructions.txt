@@ -1,0 +1,13 @@
+iCloud3 Development Version Installation Instructions
+-----------------------------------------------------
+
+1. If you are not have iCloud3 already installed, install the v2,2,1 version from HACS to install iCloud3 and it's support files.
+
+2. Download the 'icloud3_v2.3x file'.
+3. Unzip it into the /config/custom_components/icloud3 directory.
+4. Restart Home Assistant.
+
+5. If you are installing v2.3 for the first time, you will be asked to authenticate your Apple iCloud account using the standard iCloud process.
+    5a. You will receive a notification that smeone is logging into your iCloud account. Select Allow.
+    5b. You will then get the standard 6-digit authentication code. Open the HA Notifications Sidebar. Select the Apple ID Entry form. Enter the 6-digit authentication code.
+    5c. You will receive an email from Apple (probably more than one and they may be over several days). This is normal.
