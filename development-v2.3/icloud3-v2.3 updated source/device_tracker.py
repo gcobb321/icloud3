@@ -8793,7 +8793,7 @@ class Icloud3:#(DeviceScanner):
                     else:
                         device_fields[CONF_CONFIG] = 'config_ic3'
                         devices_list.append(device_fields)
-                        config_device_fields = {}
+                        device_fields = {}
                         config_device_flag  = False
 
                 elif track_devices_flag:
