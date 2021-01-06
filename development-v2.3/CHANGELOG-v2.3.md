@@ -84,6 +84,20 @@ Other parameters include:
 
   This parameter forces the 2-step-authentication procedure used in previous versions of iCloud3 instead of the 2-factor-authentication using the native Apple ID Verification Code released in iCloud3 v2.2.2.
 
+- **Changed the priority order of searching for the config_ic3.yaml  configuration file to:**  
+
+  This is based on the *config_ic3_file_name* parameter specified (or not specified) in *configuration.yaml*.
+
+  1. *DirectorySpecified/FileNameSpecified*
+
+  2. /config/*FileNameSpecified*
+
+  3. /config/custom_components/icloud3/*FileNameSpecified*
+
+  4. /config/config_ic3.yaml
+
+  5. /config/custom_components/icloud3/config_ic3.yaml
+
 - **Breaking Change - *icloud3_lost_phone* service**
 
   The *device_tracker.icloud3_lost_phone* service call as changed to *device_tracker.icloud3_find_iphone_alert* to match what the service call actually does and eliminate any confusion with the Apple's lost phone process. This service call uses the iCloud native process when using the Family Sharing tracking method and sends an alert (with sound) when using the Find-my-Friends and iOS App tracking method.
@@ -95,6 +109,7 @@ Other parameters include:
 - **Event Log Actions**
 
   - Reorganized the list of Actions
+  
 - Enhanced the information displayed in the Event Log when iCloud3 starts -- available devices, errors during initialization, current operations, status checks, etc.
   - Added the *Reset iCloud Interface* Action that removes the current iCloud communications sessions and restarts the iCloud interface program (pyicloud_ic3.py) that handles iCloud3 Location requests. It will:
 

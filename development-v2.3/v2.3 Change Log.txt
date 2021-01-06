@@ -1,6 +1,15 @@
 iCloud3 v2.3 Change Log
 -----------------------------
 
+v2.3c (1/6/2021)
+---------------
+1. Reset the priority order for checking for the config_ic3,yaml file to:
+    - DirectorySpecified/FileNameSpecified
+    - /config/FileNameSpecified
+    - /config/custom_components/icloud3/FileNameSpecified
+    - /config/config_ic3.yaml
+    - /config/custom_components/icloud3/config_ic3.yaml
+
 v2.3b (1/5/2021)
 ---------------
 1. Fixed a bug where the last device_name in the devices list was not added to the list of tracked devices if it was the last one and there were no parameters after the devices parameter. This didn't happen if there was another parameter after the 'devices:' parameter.
