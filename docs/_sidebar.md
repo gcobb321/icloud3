@@ -26,10 +26,9 @@
  - [1.2 Getting Started](chapters/1.2-getting-started.md)
  - [1.3 Setting up your iCloud Account](chapters/1.3-setting-up-icloud-account.md)
  - [1.4 Setting up the iOS App](chapters/1.4-setting-up-iosapp.md)
- - [1.5 Setting up the Tracking Methods](chapters/1.5-setting-up-trk-methods.md)
- - [1.6 Installing iCloud3 and the Event Log](chapters/1.6-installing-icloud3.md)
- - [1.7 Setting up iCloud3](chapters/1.7-setting-up-icloud3.md)
- - [1.8 Setting up a Lovelace card for iCloud3 and the Event Log](chapters/1.8-setup-lovelace-event-log-card.md)
+ - [1.5 Installing iCloud3 and the Event Log](chapters/1.5-installing-icloud3.md)
+ - [1.6 Configuring and Starting iCloud3](chapters/1.6-configuring-starting-icloud3)
+ - [1.7 Setting up a Lovelace card for iCloud3 and the Event Log](chapters/178-setup-lovelace-event-log-card.md)
 - Customizing iCloud3 Operations
  - [2.1 Configuration Parameters](chapters/2.1-config-parms.md)
  - [2.2 Attributes](chapters/2.2-attributes.md)
