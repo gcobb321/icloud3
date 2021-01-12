@@ -139,6 +139,13 @@ body{
     color: #94592c;
     border: solid #94592c 1px;
 }
+.sidebar-version-date {
+    font-family: Arial;
+    font-size: 13px;
+    color: darkred;
+    text-align: center;
+    border-bottom: solid darkred 1px;
+}
 .button-base:hover {
     background: #faebe1;
     text-decoration: none;

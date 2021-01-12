@@ -8,21 +8,17 @@ by various people to include:
                         - https://github.com/picklepete
 
     - Updated and maintained by - Quantame
+    - 2fa developed by          - Niccolo Zapponi (nzapponi)
+    - Find My Friends component - Z Zeleznick
 
-    - Find My Friends Update - Z Zeleznick
-
-The piclkepete version used imports for the services, utilities and exceptions
-modules. They have been modified and are now maintained by Quantame & Z Zeleznick.
-These modules have been incorporated into the pyicloud_ic3.py version used by iCloud3.
+The picklepete version used imports for the services, utilities and exceptions
+modules. They are now maintained by Quantame and have been modified by
+Niccolo Zapponi Z Zeleznick.
+These modules and updates have been incorporated into the pyicloud_ic3.py version
+used by iCloud3.
 """
 
-VERSION = '2.2.0'
-
-"""
-8/20/20
-    - Changed the _raise_error routine to catch the '2sa needed and missing WEB Cookie' error
-        to generate a Authentication error code rather than generating it's own 2SA Needed Exception
-"""
+VERSION = '2.3'
 
 from six import PY2, string_types, text_type
 from uuid import uuid1
@@ -30,23 +26,29 @@ import inspect
 import json
 import logging
 from requests import Session
-import sys
 from tempfile import gettempdir
 from os import path, mkdir
 from re import match
 import http.cookiejar as cookielib
+import homeassistant.util.dt as dt_util
 
 LOGGER = logging.getLogger(__name__)
 
-#Device Status Codes
-DEVICE_STATUS_ONLINE       = 200
-DEVICE_STATUS_OFFLINE      = 201
-DEVICE_STATUS_PENDING      = 203
-DEVICE_STATUS_UNREGISTERED = 204
-AUTHENTICATION_REQUIRED    = 450
-DEVICE_STATUS_ERROR        = 500
-
+HEADER_DATA = {
+    "X-Apple-ID-Account-Country": "account_country",
+    "X-Apple-ID-Session-Id": "session_id",
+    "X-Apple-Session-Token": "session_token",
+    "X-Apple-TwoSV-Trust-Token": "trust_token",
+    "scnt": "scnt",
+}
+AUTHENTICATION_REQUIRED_450 = 450
+DEVICE_STATUS_ERROR_500 = 500
+INVALID_GLOBAL_SESSION_421 = 421
+APPLE_ID_VERIFICATION_CODE_INVALID_404 = 404
+AUTHENTICATION_REQUIRED_CODES = [421, 450, 500]
 '''
+https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/ErrorCodes.html#//apple_ref/doc/uid/TP40015240-CH4-SW1
+
 #Other Device Status Codes
 SEND_MESSAGE_MSG_DISPLAYED = 200
 REMOTE_WIPE_STARTED = 200
@@ -72,6 +74,7 @@ LOCK_FAIL_PASSCODE_NOT_SET_CONS_FAIL = 2403
 LOCK_FAIL_NO_PASSCD_2 = 2406
 '''
 
+#================================================================================
 class PyiCloudPasswordFilter(logging.Filter):
     """Password log hider."""
 
@@ -86,7 +89,7 @@ class PyiCloudPasswordFilter(logging.Filter):
 
         return True
 
-
+#================================================================================
 class PyiCloudSession(Session):
     """iCloud session."""
 
@@ -100,43 +103,73 @@ class PyiCloudSession(Session):
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
         request_logger = logging.getLogger(module.__name__).getChild("http")
+
         if self.service.password_filter not in request_logger.filters:
             request_logger.addFilter(self.service.password_filter)
 
-        request_logger.debug(f"106 REQUEST  -- {25*'-'}")
-        request_logger.debug(f"106 REQUEST  -- {method}, {url}, {kwargs.get('data', '')}")
-        #request_logger.info(f"{method}, {url}, {kwargs.get("data", "")}"")
+        request_logger.debug(f"REQUEST -- {dt_util.now().strftime('%X')}, {method}, {url}, {kwargs.get('data', '')}")
 
-        kwargs_retry_flag = kwargs.get("retried", None)
-        kwargs.pop("retried", None)
+        has_retried = kwargs.get("retried", False)
+        kwargs.pop("retried", False)
 
         response = super(PyiCloudSession, self).request(method, url, **kwargs)
 
-        request_logger.debug(f"115 RESPONSE -- {response}, StatusCode-{response.status_code}, okStatus-{response.ok}")
-        request_logger.debug(f"110 RESPONSE -- {25*'-'}")
+        request_logger.debug(f"RESPONSE -- {response}, StatusCode-{response.status_code}, okStatus-{response.ok}, hasRetried-{has_retried}")
 
         content_type = response.headers.get("Content-Type", "").split(";")[0]
         json_mimetypes = ["application/json", "text/json"]
 
-        kwargs_retry_flag = True
-        if not response.ok and content_type not in json_mimetypes:
+        try:
+            data = response.json()
+        except:
+            data = None
+        if (response.status_code != 200 or not response.ok):#or True==True:
+            self._log_debug_msg("RESPONSE CONTENT_TYPE", content_type)
+            self._log_debug_msg("RESPONSE INVALID CONTENT TYPE", (content_type not in json_mimetypes))
+            self._log_debug_msg("RESPONSE DATA", data)
+            self._log_debug_msg("RESPONSE HEADERS", response.headers)
+
+        #self._log_debug_msg("RESPONSE DATA", data)
+
+        for header in HEADER_DATA:
+            if response.headers.get(header):
+                session_arg = HEADER_DATA[header]
+                self.service.session_data.update(
+                    {session_arg: response.headers.get(header)})
+
+        # Save session_data to file
+        with open(self.service.session_path, "w") as outfile:
+            json.dump(self.service.session_data, outfile)
+            LOGGER.debug(f"Session saved to {self.service.session_path}")
+
+        # Save cookies to file
+        self.cookies.save(ignore_discard=True, ignore_expires=True)
+        LOGGER.debug(f"Cookies saved to {self.service.cookiejar_path}")
+
+        if (not response.ok and (content_type not in json_mimetypes
+                or response.status_code in [421, 450, 500])):
+
+            #if (has_retried == False and response.status_code in [421, 450, 500]):
             try:
-                data = response.json()
-                request_logger.debug(f"120 RESPONSE ERROR DATA -- {data}")
-            except:
+                fmip_url = self.service._get_webservice_url("findme")
+                if has_retried == False and response.status_code == 450 and fmip_url in url:
+                    # Handle re-authentication for Find My iPhone
+                    LOGGER.debug("Re-authenticating Find My iPhone service")
+                    try:
+                        self.service.authenticate(True, "find")
+                    except PyiCloudAPIResponseException:
+                        LOGGER.debug("Re-authentication failed")
+                    kwargs["retried"] = True
+                    return self.request(method, url, **kwargs)
+            except Exception:
                 pass
 
-            if (kwargs_retry_flag is None
-                and (response.status_code == AUTHENTICATION_REQUIRED
-                    or response.status_code == DEVICE_STATUS_ERROR)):
-                message = (f"Reauthentication Required for Account: {self.service.user['apple_id']}")
-                request_logger.debug(f"133 MESSAGE  -- {message}")
+            if has_retried == False and response.status_code in [421, 450, 500]:
+                self._log_debug_msg("AUTHENTICTION NEEDED, Status Code", response.status_code)
 
-                api_error = PyiCloudAPIResponseException(
-                    message, response.status_code, retry=True
-                )
-
-                request_logger.info(api_error)
+                #api_error = PyiCloudAPIResponseException(
+                #               response.reason, response.status_code, retry=True)
+                #request_logger.debug(api_error)
                 kwargs["retried"] = True
                 return self.request(method, url, **kwargs)
 
@@ -148,64 +181,69 @@ class PyiCloudSession(Session):
         try:
             data = response.json()
         except:  # pylint: disable=bare-except
-            request_logger.warning("Failed to parse response with JSON mimetype")
+            if not response.ok:
+                msg = (f"Error handling data returned from iCloud, {response}")
+                request_logger.warning(msg)
             return response
 
-        #request_logger.debug(f"150 RESPONSE DATA -- {data}")
-        #request_logger.info(data)
+        if isinstance(data, dict):
+            reason = data.get("errorMessage")
+            reason = reason or data.get("reason")
+            reason = reason or data.get("errorReason")
+            if not reason and isinstance(data.get("error"), string_types):
+                reason = data.get("error")
+            if not reason and data.get("error"):
+                reason = "Unknown reason, will continue"
 
-        reason = data.get("errorMessage")
-        reason = reason or data.get("reason")
-        reason = reason or data.get("errorReason")
-        if not reason and isinstance(data.get("error"), string_types):
-            reason = data.get("error")
-        if not reason and data.get("error"):
-            reason = "Unknown reason"
-
-        code = data.get("errorCode")
-        if not code and data.get("serverErrorCode"):
-            code = data.get("serverErrorCode")
-
-        if reason:
-            self._raise_error(code, reason)
+            code = data.get("errorCode")
+            code = code or data.get("serverErrorCode")
+            if reason:
+                self._raise_error(code, reason)
 
         return response
 
     def _raise_error(self, code, reason):
+        info_msg = False
+        api_error = None
+        if code in ("ZONE_NOT_FOUND", "AUTHENTICATION_FAILED"):
+            reason = ("Please log into https://icloud.com/ to manually "
+                "finish setting up your iCloud service")
+            api_error = PyiCloudServiceNotActivatedException(reason, code)
+
         if (self.service.requires_2sa
                 and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
-            code = AUTHENTICATION_REQUIRED
+            code = 450
 
-        if code == AUTHENTICATION_REQUIRED or code == DEVICE_STATUS_ERROR:
-            reason = (f"Authentication Required for Account: {self.service.user['apple_id']}")
-            api_error = PyiCloudAPIResponseException(reason, code)
-            #LOGGER.info(api_error)
+        if code in [204, 421, 450, 500]:
+            reason = "Authentication needed for Account"
+            info_msg = True
 
-            raise (api_error)
-
-        elif (self.service.requires_2sa
-                and reason == "Missing X-APPLE-WEBAUTH-TOKEN cookie"):
-            raise PyiCloud2SARequiredException(self.service.user["apple_id"])
-
-
-        elif code in ("ZONE_NOT_FOUND", "AUTHENTICATION_FAILED"):
-            reason = ("Please log into https://icloud.com/ to manually "
-                      "finish setting up your iCloud service")
-            api_error = PyiCloudServiceNotActivatedException(reason, code)
-            LOGGER.error(api_error)
-
-            raise (api_error)
+        elif code in [400, 404]:
+            reason = "Apple ID Validation Code Invalid"
 
         elif code == "ACCESS_DENIED":
-            reason += (".  Please wait a few minutes then try again."
+            reason = (reason + ".  Please wait a few minutes then try again."
                 "The remote servers might be trying to throttle requests.")
 
-        api_error = PyiCloudAPIResponseException(reason, code)
+        if not api_error:
+            api_error = PyiCloudAPIResponseException(reason, code)
 
-        LOGGER.error(api_error)
+        if info_msg:
+            LOGGER.info(api_error)
+        else:
+            LOGGER.error(api_error)
+
         raise api_error
 
+    def _log_debug_msg(self, title, display_data):
+        """ Display debug data fields """
+        try:
+            LOGGER.debug(f"{title} -- {display_data}")
+        except:
+            LOGGER.debug(f"{title} -- None")
 
+
+#================================================================================
 class PyiCloudService(object):
     """
     A base authentication class for the iCloud service. Handles the
@@ -217,161 +255,336 @@ class PyiCloudService(object):
         pyicloud.iphone.location()
     """
 
+    AUTH_ENDPOINT = "https://idmsa.apple.com/appleauth/auth"
     HOME_ENDPOINT = "https://www.icloud.com"
     SETUP_ENDPOINT = "https://setup.icloud.com/setup/ws/1"
-    #"logout_no_services": "https://setup.icloud.com/setup/ws/1/logout",
 
     def __init__(
         self,
         apple_id,
         password=None,
         cookie_directory=None,
+        session_directory=None,
         verify=True,
         client_id=None,
         with_family=True,
     ):
-        if password is None:
-            password = get_password_from_keyring(apple_id)
 
+        self.user = {"accountName": apple_id, "password": password}
+        self.apple_id = apple_id
         self.data = {}
-        self.client_id = client_id or str(uuid1()).upper()
+        #self.params = {}
+        self.client_id = client_id or f"auth-{str(uuid1()).lower()}"
+        self.params = {
+            "clientBuildNumber": "2021Project52",
+            "clientMasteringNumber": "2021B29",
+            "ckjsBuildVersion": "17DProjectDev77",
+            "clientId": self.client_id[5:],  ## remove auth - not used here just raw client ID
+            }
         self.with_family = with_family
-        self.user = {"apple_id": apple_id, "password": password}
+        self.session_data = {}
+        if session_directory:
+            self._session_directory = session_directory
+        else:
+            self._session_directory = path.join(gettempdir(), "pyicloud-session")
+
+        try:
+            with open(self.session_path) as session_f:
+                self.session_data = json.load(session_f)
+        except:  # pylint: disable=bare-except
+            LOGGER.info("Session file does not exist")
+
+        if not path.exists(self._session_directory):
+            mkdir(self._session_directory)
 
         self.password_filter = PyiCloudPasswordFilter(password)
         LOGGER.addFilter(self.password_filter)
-
-        self._base_login_url = f"{self.SETUP_ENDPOINT}/login"
 
         if cookie_directory:
             self._cookie_directory = path.expanduser(path.normpath(cookie_directory))
         else:
             self._cookie_directory = path.join(gettempdir(), "pyicloud")
 
-        self.session = PyiCloudSession(self)
-        self.session.verify = verify
-        self.session.headers.update(
-            {
-                "Origin": self.HOME_ENDPOINT,
-                "Referer": f"{self.HOME_ENDPOINT}/",
-                "User-Agent": "Opera/9.52 (X11; Linux i686; U; en)",
-            }
-        )
+        if not path.exists(self._cookie_directory):
+            mkdir(self._cookie_directory)
 
-        cookiejar_path = self._get_cookiejar_path()
+        if self.session_data.get("client_id"):
+            self.client_id = self.session_data.get("client_id")
+        else:
+            self.session_data.update({"client_id": self.client_id})
+
+        self.session = PyiCloudSession(self)
+
+        self.session.verify = verify
+            #"Referer": f"{self.HOME_ENDPOINT}/",
+        self.session.headers.update(
+            {"Origin": self.HOME_ENDPOINT,
+            "Referer": self.HOME_ENDPOINT,})
+            #"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/604.1.25 (KHTML, like Gecko) Version/11.0 Safari/604.1.25",})
+
+        cookiejar_path = self.cookiejar_path
         self.session.cookies = cookielib.LWPCookieJar(filename=cookiejar_path)
         if path.exists(cookiejar_path):
             try:
-                self.session.cookies.load()
-                LOGGER.debug(f"Read cookies from {cookiejar_path}")
+                self.session.cookies.load(ignore_discard=True, ignore_expires=True)
+                LOGGER.debug(f"Read Cookies from {cookiejar_path}")
             except:  # pylint: disable=bare-except
                 # Most likely a pickled cookiejar from earlier versions.
                 # The cookiejar will get replaced with a valid one after
                 # successful authentication.
-                LOGGER.warning(f"Failed to read cookiejar {cookiejar_path}")
+                LOGGER.warning(f"Failed to read cookie file {cookiejar_path}")
 
-        self.params = {
-            "clientBuildNumber": "17DHotfix5",
-            "clientMasteringNumber": "17DHotfix5",
-            "ckjsBuildVersion": "17DProjectDev77",
-            "ckjsVersion": "2.0.5",
-            "clientId": self.client_id,
-        }
-
+        self.authenticate_method = ""
         self.authenticate()
 
-        self._files = None
-        self._photos = None
-
-    def authenticate(self):
+#----------------------------------------------------------------------------
+    def authenticate(self, refresh_session=False, service=None):
         """
-        Handles authentication, and persists the X-APPLE-WEB-KB cookie so that
+        Handles authentication, and persists cookies so that
         subsequent logins will not cause additional e-mails from Apple.
         """
 
-        LOGGER.info(f"Authenticating as {self.user['apple_id']}")
+        login_successful = False
 
-        data = dict(self.user)
+        #if (not refresh_session and self.session_data.get("session_token")):
+        # Validate token - Consider authenticated if token is valid (POST=validate)
+        if (not refresh_session
+                and self.session_data.get("session_token")
+                and 'dsid' in self.params):
+            LOGGER.info("Checking session token validity")
 
-        # We authenticate every time, so "remember me" is not needed
-        #data.update({"extended_login": False})
-        data.update({"extended_login": True})
+            try:
+                self.data = self._validate_token()
+                login_successful = True
+                self.authenticate_method += ", ValidateToken"
+
+            except PyiCloudAPIResponseException:
+                msg = "Invalid authentication token, will log in from scratch."
+
+        # Authenticate with Service
+        if not login_successful and service != None:
+            app = self.data["apps"][service]
+            if "canLaunchWithOneFactor" in app and app["canLaunchWithOneFactor"] == True:
+                LOGGER.debug("Authenticating as %s for %s" % (self.user["accountName"], service))
+                try:
+                    self._authenticate_with_credentials_service(service)
+                    login_successful = True
+                    self.authenticate_method += (f", TrustToken/ServiceLogin")
+                except:
+                    LOGGER.debug("Could not log into service. Attempting brand new login.")
+
+        # Authenticate - Sign into icloud account (POST=/signin)
+        if not login_successful:
+            LOGGER.info(f"Authenticating account {self.user['accountName']} using Account/PasswordSignin")
+
+            data = dict(self.user)
+            data["rememberMe"] = True
+            data["trustTokens"] = []
+            if self.session_data.get("trust_token"):
+                data["trustTokens"] = [self.session_data.get("trust_token")]
+
+            headers = self._get_auth_headers()
+
+            if self.session_data.get("scnt"):
+                headers["scnt"] = self.session_data.get("scnt")
+
+            if self.session_data.get("session_id"):
+                headers["X-Apple-ID-Session-Id"] = self.session_data.get("session_id")
+
+            try:
+                req = self.session.post(
+                    f"{self.AUTH_ENDPOINT}/signin",
+                    params={"isRememberMeEnabled": "true"},
+                    data=json.dumps(data),
+                    headers=headers,)
+                self.authenticate_method = ", Account/PasswordSignin"
+
+            except PyiCloudAPIResponseException as error:
+                msg = "Invalid email/password combination."
+                raise PyiCloudFailedLoginException(msg, error)
+
+            self._authenticate_with_token()
+
+        self._webservices = self.data["webservices"]
+
+        self.authenticate_method = self.authenticate_method[2:]
+        LOGGER.info(f"Authentication completed successfully, method-{self.authenticate_method}")
+
+#----------------------------------------------------------------------------
+    def _authenticate_with_token(self):
+        """Authenticate using session token. Return True if successful."""
+        data = {
+            "accountCountryCode": self.session_data.get("account_country"),
+            "dsWebAuthToken": self.session_data.get("session_token"),
+            "extended_login": True,
+            "trustToken": self.session_data.get("trust_token", ""),}
 
         try:
-            req = self.session.post(
-                self._base_login_url, params=self.params, data=json.dumps(data)
-            )
+            req = self.session.post(f"{self.SETUP_ENDPOINT}/accountLogin"
+                                            f"?clientBuildNumber=2021Project52&clientMasteringNumber=2021B29"
+                                            f"&clientId={self.client_id[5:]}",
+                                        data=json.dumps(data))
+            data = req.json()
+
+        except PyiCloudAPIResponseException as error:
+            msg = "Invalid authentication token."
+            raise PyiCloudFailedLoginException(msg, error)
+
+        self.data = req.json()
+        self._update_dsid(self.data)
+
+        return True
+
+#----------------------------------------------------------------------------
+    def _authenticate_with_credentials_service(self, service):
+        """Authenticate to a specific service using credentials."""
+        data = {
+            "appName": service,
+            "apple_id": self.user["accountName"],
+            "password": self.user["password"],
+            "accountCountryCode": self.session_data.get("account_country"),
+            "dsWebAuthToken": self.session_data.get("session_token"),
+            "extended_login": True,
+            "trustToken": self.session_data.get("trust_token", ""),
+        }
+
+        try:
+            #req = self.session.post(f"{self.SETUP_ENDPOINT}/accountLogin"
+            self.session.post(f"{self.SETUP_ENDPOINT}/accountLogin"
+                        f"?clientBuildNumber=2021Project52&clientMasteringNumber=2021B29"
+                        f"&clientId={self.client_id[5:]}",
+                        data=json.dumps(data))
+            #self.data = req.json()
+            self.data = self._validate_token()
         except PyiCloudAPIResponseException as error:
             msg = "Invalid email/password combination."
             raise PyiCloudFailedLoginException(msg, error)
 
-        self.data = req.json()
-        self.params.update({"dsid": self.data["dsInfo"]["dsid"]})
-        self._webservices = self.data["webservices"]
+#----------------------------------------------------------------------------
+    def _validate_token(self):
+        """Checks if the current access token is still valid."""
+        LOGGER.debug("Checking session token validity")
+        try:
+            req = self.session.post("%s/validate" % self.SETUP_ENDPOINT, data="null")
+            LOGGER.debug("Session token is still valid")
+            return req.json()
+        except PyiCloudAPIResponseException as err:
+            LOGGER.debug("Invalid authentication token")
+            raise err
 
-        if not path.exists(self._cookie_directory):
-            mkdir(self._cookie_directory)
-        self.session.cookies.save()
-        LOGGER.debug(f"Cookies saved to {self._get_cookiejar_path()}")
+#----------------------------------------------------------------------------
+    def _update_dsid(self, data):
+        try:
+            if 'dsInfo' in data:  ## check self.data returned and contains dsid
+                if 'dsid' in data['dsInfo']:        # as above
+                    self.params["dsid"]= str(data["dsInfo"]["dsid"])
+            else:
+                if 'dsid' in self.params:
+                    self.params.pop("dsid")  ## if no dsid given delete it from self.params - until returned.  Otherwise is passing default incorrect dsid
+        except:
+            LOGGER.debug(u"Error setting dsid field.")
+            if 'dsid' in self.params:
+                self.params.pop("dsid")  ## if error, self.data None/empty delete
+        return
 
-        LOGGER.info("Authentication completed successfully")
-        LOGGER.debug(self.params)
+#----------------------------------------------------------------------------
+    def _get_auth_headers(self, overrides=None):
+        headers = {
+            "Accept": "*/*",
+            "Content-Type": "application/json",
+            "X-Apple-OAuth-Client-Id": "d39ba9916b7251055b22c7f910e2ea796ee65e98b2ddecea8f5dde8d9d1a815d",
+            "X-Apple-OAuth-Client-Type": "firstPartyAuth",
+            "X-Apple-OAuth-Redirect-URI": "https://www.icloud.com",
+            "X-Apple-OAuth-Require-Grant-Code": "true",
+            "X-Apple-OAuth-Response-Mode": "web_message",
+            "X-Apple-OAuth-Response-Type": "code",
+            "X-Apple-OAuth-State": self.client_id,
+            "X-Apple-Widget-Key": "d39ba9916b7251055b22c7f910e2ea796ee65e98b2ddecea8f5dde8d9d1a815d",
+        }
+            #"X-Apple-OAuth-State": "auth-" + self.client_id,
 
-    def _get_cookiejar_path(self):
+        if overrides:
+            headers.update(overrides)
+        return headers
+
+#----------------------------------------------------------------------------
+    @property
+    def cookiejar_path(self):
         """Get path for cookiejar file."""
         return path.join(
             self._cookie_directory,
-            "".join([c for c in self.user.get("apple_id") if match(r"\w", c)]),
-        )
+            "".join([c for c in self.user.get("accountName") if match(r"\w", c)]),)
+
+    @property
+    def session_path(self):
+        """Get path for session data file."""
+        return path.join(
+            self._session_directory,
+            "".join([c for c in self.user.get("accountName") if match(r"\w", c)]),)
+
+    @property
+    def authentication_method(self):
+        """
+        Returns the type of authentication method performed
+            - None = No authentication done
+            - TrustToken = Authentication using trust token (/accountLogin)
+            - ValidateToken = Trust token was validated (/validate)
+            - AccountSignin = Signed into the account (/signin)
+        """
+        return self.authenticate_method
 
     @property
     def requires_2sa(self):
         """Returns True if two-step authentication is required."""
-        return (
-            self.data.get("hsaChallengeRequired", False)
-            and self.data["dsInfo"].get("hsaVersion", 0) >= 1
-        )
-        # FIXME: Implement 2FA for hsaVersion == 2  # pylint: disable=fixme
+        return self.data.get("dsInfo", {}).get("hsaVersion", 0) >= 1 and (
+            self.data.get("hsaChallengeRequired", False) or not self.is_trusted_session)
+
+    @property
+    def requires_2fa(self):
+        """Returns True if two-factor authentication is required."""
+        needs_2fa_flag = self.data["dsInfo"].get("hsaVersion", 0) == 2 and (
+            self.data.get("hsaChallengeRequired", False) or not self.is_trusted_session)
+        if needs_2fa_flag:
+            LOGGER.debug(f"NEEDS-2FA, is_trusted_session-{self.is_trusted_session}, data-{self.data}")
+        return needs_2fa_flag
+    @property
+    def is_trusted_session(self):
+        """Returns True if the session is trusted."""
+        return self.data.get("hsaTrustedBrowser", False)
 
     @property
     def trusted_devices(self):
         """Returns devices trusted for two-step authentication."""
         request = self.session.get(
-            f"{self.SETUP_ENDPOINT}/listDevices", params=self.params
-        )
+            "%s/listDevices" % self.SETUP_ENDPOINT, params=self.params)
         return request.json().get("devices")
 
+#----------------------------------------------------------------------------
     def send_verification_code(self, device):
         """Requests that a verification code is sent to the given device."""
         data = json.dumps(device)
         request = self.session.post(
-            f"{self.SETUP_ENDPOINT}/sendVerificationCode",
+            "%s/sendVerificationCode" % self.SETUP_ENDPOINT,
             params=self.params,
-            data=data,
-        )
-        LOGGER.info(f"Send Trusted Device ID result-{request.json()}")
+            data=data,)
         return request.json().get("success", False)
 
-    #This is called from the iCloud3 in the _icloud_handle_verification_code_entry
-    #code routine
+#----------------------------------------------------------------------------
     def validate_verification_code(self, device, code):
         """Verifies a verification code received on a trusted device."""
-        #LOGGER.info(f"Verification code-{code}")
-        device.update({'verificationCode': code, 'trustBrowser': True})
+        device.update({"verificationCode": code, "trustBrowser": True})
         data = json.dumps(device)
 
         try:
             self.session.post(
-                f"{self.SETUP_ENDPOINT}/validateVerificationCode",
+                "%s/validateVerificationCode" % self.SETUP_ENDPOINT,
                 params=self.params,
-                data=data,
-            )
+                data=data,)
         except PyiCloudAPIResponseException as error:
-            LOGGER.info(f"Verification Error code-{error.code}")
             if error.code == -21669:
                 # Wrong verification code
                 return False
-            #raise
+            raise
 
         # Re-authenticate, which will both update the HSA data, and
         # ensure that we save the X-APPLE-WEBAUTH-HSA-TRUST cookie.
@@ -379,62 +592,99 @@ class PyiCloudService(object):
 
         return not self.requires_2sa
 
-    def logout(self):
-        """ Logout from iCloud """
+#----------------------------------------------------------------------------
+    def validate_2fa_code(self, code):
+        """Verifies a verification code received via Apple's 2FA system (HSA2)."""
+        data = {"securityCode": {"code": code}}
+
+        headers = self._get_auth_headers({"Accept": "application/json"})
+
+        if self.session_data.get("scnt"):
+            headers["scnt"] = self.session_data.get("scnt")
+
+        if self.session_data.get("session_id"):
+            headers["X-Apple-ID-Session-Id"] = self.session_data.get("session_id")
+
         try:
-            req = self.session.post(
-                f"{self.SETUP_ENDPOINT}/logout",
-                params=self.params,
-            )
-        except Exception as error:
-            msg = f"Error Logging out of Apple Web Services - {error}"
-            api_error = PyiCloudAPIResponseException(msg, 1)
-            LOGGER.error(api_error)
-            raise api_error
+            self.session.post(
+                f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode",
+                data=json.dumps(data),
+                headers=headers,)
+        except PyiCloudAPIResponseException as error:
+            if error.code == -21669:
+                # Wrong verification code
+                LOGGER.error("Code verification failed")
+                return False
+            raise
 
-    def close_session(self):
-        """ Close current Session """
+        LOGGER.debug("Code verification successful")
+
+        self.trust_session()
+        return not self.requires_2sa
+
+#----------------------------------------------------------------------------
+    def trust_session(self):
+        """Request session trust to avoid user log in going forward."""
+        headers = self._get_auth_headers()
+
+        if self.session_data.get("scnt"):
+            headers["scnt"] = self.session_data.get("scnt")
+
+        if self.session_data.get("session_id"):
+            headers["X-Apple-ID-Session-Id"] = self.session_data.get("session_id")
+
         try:
-            req = self.session.close()
+            self.session.get(
+                f"{self.AUTH_ENDPOINT}/2sv/trust",
+                headers=headers,)
 
-        except Exception as error:
-            msg = f"Error Closing Session - {error}"
-            api_error = PyiCloudAPIResponseException(msg, 1)
-            LOGGER.error(api_error)
-            raise api_error
+            self._authenticate_with_token()
+            return True
+        except PyiCloudAPIResponseException:
+            LOGGER.error("Session trust failed")
+            return False
 
-
+#----------------------------------------------------------------------------
     def _get_webservice_url(self, ws_key):
         """Get webservice URL, raise an exception if not exists."""
         if self._webservices.get(ws_key) is None:
             raise PyiCloudServiceNotActivatedException(
-                "Webservice not available", ws_key
-            )
+                "Webservice not available", ws_key)
         return self._webservices[ws_key]["url"]
 
-######################################################################
+#----------------------------------------------------------------------------
     @property
     def devices(self):
         """Returns all devices."""
+        self.authenticate_method = ""
         service_root = self._get_webservice_url("findme")
-        return FindMyiPhoneServiceManager(
-            service_root, self.session, self.params, self.with_family
-        )
+        data = FindMyiPhoneServiceManager(service_root, self.session, self.params, self.with_family)
+        return data
 
+#----------------------------------------------------------------------------
     @property
     def friends(self):
         """Gets the 'Friends' service."""
+        self.authenticate_method = ""
         service_root = self._get_webservice_url("fmf")
-        return FindFriendsService(service_root, self.session, self.params)
+        data = FindFriendsService(service_root, self.session, self.params)
+        return data
 
-    @property
-    def contacts(self):
-        """Gets the 'Contacts' service."""
-        service_root = self._get_webservice_url("contacts")
-        return ContactsService(service_root, self.session, self.params)
+#----------------------------------------------------------------------------
+    def play_sound(self, device_id, subject="Find My iPhone Alert"):
+        """
+        Send a request to the device to play a sound.
+        It's possible to pass a custom message by changing the `subject`.
+        """
+        self.authenticate_method = ""
+        service_root = self._get_webservice_url("findme")
+        data = FindMyiPhoneServiceManager(service_root, self.session, self.params, self.with_family,
+                 task="PlaySound", device_id=device_id, subject=subject)
+        return data
 
+#----------------------------------------------------------------------------
     def __unicode__(self):
-        return f"iCloud API: {self.user.get('apple_id')}"
+        return "iCloud API: %s" % self.user.get("accountName")
 
     def __str__(self):
         as_unicode = self.__unicode__()
@@ -443,44 +693,70 @@ class PyiCloudService(object):
         return as_unicode
 
     def __repr__(self):
-        return "<{str(self)}>"
+        return "<%s>" % str(self)
+
+
+
 ####################################################################################
 #
 #   Find my iPhone service
 #
 ####################################################################################
-"""Find my iPhone service."""
-#import json
-#from six import PY2, text_type
-#from pyicloud.exceptions import PyiCloudNoDevicesException
-
 class FindMyiPhoneServiceManager(object):
-    """The 'Find my iPhone' iCloud service
+    """
+    The 'Find my iPhone' iCloud service
 
     This connects to iCloud and return phone data including the near-realtime
     latitude and longitude.
     """
 
-    def __init__(self, service_root, session, params, with_family=False):
+    def __init__(self, service_root, session, params, with_family=False, task="RefreshData",
+                device_id=None, subject=None, message=None,
+                sounds=False, number="", newpasscode=""):
+
         self.session = session
         self.params = params
         self.with_family = with_family
+        self.task = task
 
         fmip_endpoint = f"{service_root}/fmipservice/client/web"
         self._fmip_refresh_url = f"{fmip_endpoint}/refreshClient"
-        self._fmip_sound_url = f"{fmip_endpoint}/playSound"
+        self._fmip_sound_url   = f"{fmip_endpoint}/playSound"
         self._fmip_message_url = f"{fmip_endpoint}/sendMessage"
-        self._fmip_lost_url = f"{fmip_endpoint}/lostDevice"
+        self._fmip_lost_url    = f"{fmip_endpoint}/lostDevice"
 
-        self._devices = {}
-        self.refresh_client()
+        fmiDict = {
+			"clientContext": {
+				"appName": "Home Assistant",
+				"appVersion": "0.118",
+				"inactiveTime": 1,
+				"apiVersion": "2.2.2"
+			}
+        }
+        if task == "PlaySound":
+            if device_id:
+                self.play_sound(device_id, subject)
 
-    def refresh_client(self):
-        """Refreshes the FindMyiPhoneService endpoint,
+        elif task == "Message":
+            if device_id:
+                self.display_message(device_id, subject, message)
 
-        This ensures that the location data is up-to-date.
+        elif task == "LostDevice":
+            if device_id:
+                self.lost_device(device_id, number, message, newpasscode="")
 
+        else:
+            self._devices = {}
+            self.refresh_client(device_id)
+
+#----------------------------------------------------------------------------
+    def refresh_client(self, device_id=None):
         """
+        Refreshes the FindMyiPhoneService endpoint,
+        This ensures that the location data is up-to-date.
+        """
+        self.session.authenticate_method = ""
+        selected_device = device_id if device_id else "all"
         req = self.session.post(
             self._fmip_refresh_url,
             params=self.params,
@@ -489,13 +765,17 @@ class FindMyiPhoneServiceManager(object):
                     "clientContext": {
                         "fmly": self.with_family,
                         "shouldLocate": True,
-                        "selectedDevice": "all",
+                        "selectedDevice": selected_device,
                         "deviceListVersion": 1,
                     }
                 }
             ),
         )
-        self.response = req.json()
+        try:
+            self.response = req.json()
+        except:
+            self.response = {}
+            LOGGER.debug("No data returned from fmi refresh request")
 
         for device_info in self.response["content"]:
             device_id = device_info["id"]
@@ -507,14 +787,78 @@ class FindMyiPhoneServiceManager(object):
                     manager=self,
                     sound_url=self._fmip_sound_url,
                     lost_url=self._fmip_lost_url,
-                    message_url=self._fmip_message_url,
-                )
+                    message_url=self._fmip_message_url,)
             else:
                 self._devices[device_id].update(device_info)
 
         if not self._devices:
             raise PyiCloudNoDevicesException()
 
+    def _get_device(self, device_id):
+        return self._devices.get(device_id)
+#----------------------------------------------------------------------------
+    def play_sound(self, device_id, subject):
+        """
+        Send a request to the device to play a sound.
+        It's possible to pass a custom message by changing the `subject`.
+        """
+        if not subject:
+            subject = "Find My iPhone Alert"
+
+        data = json.dumps(
+            {
+                "device": device_id,
+                "subject": subject,
+                "clientContext": {"fmly": True},
+            }
+        )
+        self.session.post(self._fmip_sound_url, params=self.params, data=data)
+        return
+
+#----------------------------------------------------------------------------
+    def display_message(self, device_id, subject="Find My iPhone Alert",
+                message="This is a note", sounds=False):
+        """
+        Send a request to the device to display a message.
+        It's possible to pass a custom message by changing the `subject`.
+        """
+        data = json.dumps(
+            {
+                "device": device_id,
+                "subject": subject,
+                "sound": sounds,
+                "userText": True,
+                "text": message,
+            }
+        )
+        self.session.post(self._fmip_message_url, params=self.params, data=data)
+        return
+
+#----------------------------------------------------------------------------
+    def lost_device(self, number, message="This iPhone has been lost. Please call me.",
+                newpasscode=""):
+        """
+        Send a request to the device to trigger 'lost mode'.
+
+        The device will show the message in `text`, and if a number has
+        been passed, then the person holding the device can call
+        the number without entering the passcode.
+        """
+        data = json.dumps(
+            {
+                "text": message,
+                "userText": True,
+                "ownerNbr": number,
+                "lostModeEnabled": True,
+                "trackingEnabled": True,
+                "device": device_id,
+                "passcode": newpasscode,
+            }
+        )
+        self.session.post(self._fmip_lost_url, params=self.params, data=data)
+        return
+
+#----------------------------------------------------------------------------
     def __getitem__(self, key):
         if isinstance(key, int):
             if PY2:
@@ -538,7 +882,7 @@ class FindMyiPhoneServiceManager(object):
     def __repr__(self):
         return text_type(self)
 
-
+####################################################################################
 class AppleDevice(object):
     """Apple device."""
 
@@ -583,60 +927,7 @@ class AppleDevice(object):
             properties[field] = self.content.get(field)
         return properties
 
-    def play_sound(self, subject="Find My iPhone Alert"):
-        """Send a request to the device to play a sound.
-
-        It's possible to pass a custom message by changing the `subject`.
-        """
-        data = json.dumps(
-            {
-                "device": self.content["id"],
-                "subject": subject,
-                "clientContext": {"fmly": True},
-            }
-        )
-        self.session.post(self.sound_url, params=self.params, data=data)
-
-    def display_message(
-        self, subject="Find My iPhone Alert", message="This is a note", sounds=False
-    ):
-        """Send a request to the device to play a sound.
-
-        It's possible to pass a custom message by changing the `subject`.
-        """
-        data = json.dumps(
-            {
-                "device": self.content["id"],
-                "subject": subject,
-                "sound": sounds,
-                "userText": True,
-                "text": message,
-            }
-        )
-        self.session.post(self.message_url, params=self.params, data=data)
-
-    def lost_device(
-        self, number, text="This iPhone has been lost. Please call me.", newpasscode=""
-    ):
-        """Send a request to the device to trigger 'lost mode'.
-
-        The device will show the message in `text`, and if a number has
-        been passed, then the person holding the device can call
-        the number without entering the passcode.
-        """
-        data = json.dumps(
-            {
-                "text": text,
-                "userText": True,
-                "ownerNbr": number,
-                "lostModeEnabled": True,
-                "trackingEnabled": True,
-                "device": self.content["id"],
-                "passcode": newpasscode,
-            }
-        )
-        self.session.post(self.lost_url, params=self.params, data=data)
-
+#----------------------------------------------------------------------------
     @property
     def data(self):
         """Gets the device data."""
@@ -661,20 +952,19 @@ class AppleDevice(object):
 
     def __repr__(self):
         return f"<AppleDevice({str(self)})>"
+
+
+
 ####################################################################################
 #
 #   Find my Friends service
 #
 ####################################################################################
-"""Find my Friends service."""
-#from __future__ import absolute_import
-#import json
-
 class FindFriendsService(object):
     """
-    The 'Find My' (FKA 'Find My Friends') iCloud service
+    The 'Find My' (aka 'Find My Friends') iCloud service
 
-    This connects to iCloud and returns friend data including
+    This connects to iCloud and returns friend's data including
     latitude and longitude.
     """
 
@@ -682,11 +972,11 @@ class FindFriendsService(object):
         self.session = session
         self.params = params
         self._service_root = service_root
-        #self._friend_endpoint = "%s/fmipservice/client/fmfWeb/initClient" % (self._service_root,)
         self._friend_endpoint = f"{self._service_root}/fmipservice/client/fmfWeb/initClient"
         self.refresh_always = False
         self.response = {}
 
+#----------------------------------------------------------------------------
     def refresh_client(self):
         """
         Refreshes all data from 'Find My' endpoint,
@@ -709,9 +999,17 @@ class FindFriendsService(object):
                 "serverContext": None,
             }
         )
+        self.session.authenticate_method = ""
         req = self.session.post(self._friend_endpoint, data=mock_payload, params=params)
-        self.response = req.json()
+        try:
+            self.response = req.json()
+        except:
+            self.response = {}
+            LOGGER.debug("No data returned on friends refresh request")
 
+        return self.response
+
+#----------------------------------------------------------------------------
     @staticmethod
     def should_refresh_client_fnc(response):
         """Function to override to set custom refresh behavior"""
@@ -727,20 +1025,9 @@ class FindFriendsService(object):
         that takes a single-argument (the last reponse) and returns a boolean.
         """
         return self.refresh_always or FindFriendsService.should_refresh_client_fnc(
-            self.response
-        )
+            self.response)
 
-    @property
-    def data(self):
-        """
-        Convenience property to return data from the 'Find My' endpoint.
-
-        Call `refresh_client()` before property access for latest data.
-        """
-        if not self.response or self.should_refresh_client():
-            self.refresh_client()
-        return self.response
-
+#----------------------------------------------------------------------------
     def contact_id_for(self, identifier, default=None):
         """
         Returns the contact id of your friend with a given identifier
@@ -757,12 +1044,14 @@ class FindFriendsService(object):
             return any([el for el in hit if el == identifier])
 
         candidates = [
-            item.get("id", default) for item in self.contact_details if matcher(item)
-        ]
+            item.get("id", default)
+            for item in self.contact_details
+            if matcher(item)]
         if not candidates:
             return default
         return candidates[0]
 
+#----------------------------------------------------------------------------
     def location_of(self, contact_id, default=None):
         """
         Returns the location of your friend with a given contact_id
@@ -770,11 +1059,22 @@ class FindFriendsService(object):
         candidates = [
             item.get("location", default)
             for item in self.locations
-            if item.get("id") == contact_id
-        ]
+            if item.get("id") == contact_id]
         if not candidates:
             return default
         return candidates[0]
+
+#----------------------------------------------------------------------------
+    @property
+    def data(self):
+        """
+        Convenience property to return data from the 'Find My' endpoint.
+
+        Call `refresh_client()` before property access for latest data.
+        """
+        if not self.response or self.should_refresh_client():
+            self.refresh_client()
+        return self.response
 
     @property
     def locations(self):
@@ -796,6 +1096,11 @@ class FindFriendsService(object):
         """Returns a list of your friends contact details"""
         return self.data.get("contactDetails")
 
+    @property
+    def my_prefs(self):
+        """Returns a list of your own preferences details"""
+        return self.data.get("myPrefs")
+
 
 ####################################################################################
 #
@@ -809,8 +1114,7 @@ class PyiCloudException(Exception):
     """Generic iCloud exception."""
     pass
 
-
-# API
+#----------------------------------------------------------------------------
 class PyiCloudAPIResponseException(PyiCloudException):
     """iCloud response exception."""
     def __init__(self, reason, code=None, retry=False):
@@ -818,107 +1122,35 @@ class PyiCloudAPIResponseException(PyiCloudException):
         self.code = code
         message = reason or ""
         if code:
-            message += (f" (Error Code {code})")
+            message += (f" (Status Code {code})")
         if retry:
             message += ". Retrying ..."
 
         super(PyiCloudAPIResponseException, self).__init__(message)
 
-
+#----------------------------------------------------------------------------
 class PyiCloudServiceNotActivatedException(PyiCloudAPIResponseException):
     """iCloud service not activated exception."""
     pass
 
-
-# Login
+#----------------------------------------------------------------------------
 class PyiCloudFailedLoginException(PyiCloudException):
     """iCloud failed login exception."""
     pass
 
-
+#----------------------------------------------------------------------------
 class PyiCloud2SARequiredException(PyiCloudException):
     """iCloud 2SA required exception."""
     def __init__(self, apple_id):
         message = f"Two-Step Authentication (2SA) Required for Account {apple_id}"
         super(PyiCloud2SARequiredException, self).__init__(message)
 
-
+#----------------------------------------------------------------------------
 class PyiCloudNoStoredPasswordAvailableException(PyiCloudException):
     """iCloud no stored password exception."""
     pass
 
-
-# Webservice specific
+#----------------------------------------------------------------------------
 class PyiCloudNoDevicesException(PyiCloudException):
     """iCloud no device exception."""
     pass
-
-
-####################################################################################
-#
-#   Utilities (utils.py)
-#
-####################################################################################
-"""Utils."""
-import getpass
-import keyring
-import sys
-#from .exceptions import PyiCloudNoStoredPasswordAvailableException
-
-KEYRING_SYSTEM = "pyicloud://icloud-password"
-
-
-def get_password(username, interactive=sys.stdout.isatty()):
-    """Get the password from a username."""
-    try:
-        return get_password_from_keyring(username)
-    except PyiCloudNoStoredPasswordAvailableException:
-        if not interactive:
-            raise
-
-        return getpass.getpass(
-            "Enter iCloud password for {username}: ".format(username=username,)
-        )
-
-
-def password_exists_in_keyring(username):
-    """Return true if the password of a username exists in the keyring."""
-    try:
-        get_password_from_keyring(username)
-    except PyiCloudNoStoredPasswordAvailableException:
-        return False
-
-    return True
-
-
-def get_password_from_keyring(username):
-    """Get the password from a username."""
-    result = keyring.get_password(KEYRING_SYSTEM, username)
-    if result is None:
-        raise PyiCloudNoStoredPasswordAvailableException(
-            "No pyicloud password for {username} could be found "
-            "in the system keychain.  Use the `--store-in-keyring` "
-            "command-line option for storing a password for this "
-            "username.".format(username=username,)
-        )
-
-    return result
-
-
-def store_password_in_keyring(username, password):
-    """Store the password of a username."""
-    return keyring.set_password(KEYRING_SYSTEM, username, password,)
-
-
-def delete_password_in_keyring(username):
-    """Delete the password of a username."""
-    return keyring.delete_password(KEYRING_SYSTEM, username,)
-
-
-def underscore_to_camelcase(word, initial_capital=False):
-    """Transform a word to camelCase."""
-    words = [x.capitalize() or "_" for x in word.split("_")]
-    if not initial_capital:
-        words[0] = words[0].lower()
-
-    return "".join(words)

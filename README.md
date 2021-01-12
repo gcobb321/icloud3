@@ -1,7 +1,7 @@
-# Welcome to iCloud3 v2.2.1!
+# Welcome to iCloud3 v2.3!
 
-[![Version](https://img.shields.io/badge/Version-v2.2.1-blue.svg)](https://github.com/gcobb321/icloud3)
-[![Released](https://img.shields.io/badge/Released-November,_2020-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Version](https://img.shields.io/badge/Version-v2.3-blue.svg)](https://github.com/gcobb321/icloud3)
+[![Released](https://img.shields.io/badge/Released-January,_2021-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/ProjectStage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
 [![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/gcobb321/icloud3)
@@ -18,10 +18,11 @@ iCloud3 is a Home Assistant device tracker custom component that greatly expands
 
 ### Features
 
-* Supports three tracking methods: 
-  * Family Sharing will let you track your family members that are in your iCloud Account's Family Sharing List.
-  * Find-my-Friends using the people who are sharing their location in the *Find My*.
-  * Home Assistant iOS App. This tracking method is used if the others are not available, you do not want to use your iCloud account or there are problems authentication or verifying trusted device access to your account.
+* Supports the Apple iCloud 2-factor-authentication Verification you are familiar with.
+* Supports iCloud Location Services and the HA iOS App tracking methods. The most efficient method is automatically assigned to the devices you are tracking on a per device basis.
+  * Family Sharing locates and tracks your family members that are in your iCloud Account's Family Sharing List.
+  * Find-my-Friends locates and tracks the people who are sharing their location in the *FindMy App*.
+  * Home Assistant iOS App is responsible for zone enter and exit notifications and location update triggers. It is also used if the others are not available, you do not want to use your iCloud account or there are problems with authentication or verifying trusted device access to your account.
 * A variable polling interval that is based on the Waze Route Mapping Service (drive time and distance) rather than just a calculated straight line distance.
 * Monitors the IOS App device_tracker and sensors to immediately capture zone enter, exit and location change notifications.
 * Sensor templates are created that can be used in automations, in scripts and on Lovelace cards. The sensors that are created can be customized to suit your needs.
@@ -34,7 +35,7 @@ iCloud3 is a Home Assistant device tracker custom component that greatly expands
 * Additional service call commands (setting intervals, pausing and resuming polling, zone assignment, etc.)
 * No other tracking program (other than the HA iOS app) are needed to handle device tracking and presence detection. You will not need Nmap, OwnTracks, router based tracking components.
 * New Configuration variables and Attributes let you customize how you want to use iCloud3.
-* The iCloud3 configuration file (config_ic3.yaml) can be used for most of the configuration parameters. Change the iCloud3 parameters, restart iCloud3 on the iCloud3 Event Log card and they take effect immediately, without restarting Home Assistant.
+* The iCloud3 configuration file (config_ic3.yaml) can be used for most of the configuration parameters. Change the iCloud3 parameters, restart iCloud3 on the iCloud3 Event Log card and they take effect immediately. Without restarting Home Assistant.
 * Extensive documentation on how to use iCloud3, how to set it up and how to customize it to meet your needs. It includes many sample automations and scripts that you can use to set your own device tracking and presence detection.
 
 And much more ...

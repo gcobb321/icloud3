@@ -17,15 +17,19 @@ When iCloud3 starts, you will get the standard Apple Login warning and the 6-dig
 
 #### The Find-my-Friends and Family Sharing tracking methods have been combined
 
-You no longer need to assign a tracking method to use iCloud Location Services. The Find-my-Friends (fmf) and the Family Sharing (famshr) have been combined into a single tracking method (icloud) and operates on a per device basis. When iCloud3 starts, all the devices in iCloud account are retrieved and matched with those in the configuration file. They are retrieved from the *FindMy People* list, the *FindMy Me* screen (your device), and the *Family Sharing List*. Each device will automatically select the appropriate tracking method based on how the parameter is configured in the following manner:
+You no longer need to assign a tracking method to use iCloud Location Services. The Find-my-Friends (fmf) and the Family Sharing (famshr) have been combined into a single tracking method (icloud) and operates on a per device basis. When iCloud3 starts, all the devices in iCloud account are retrieved and matched with those in the configuration file. They are retrieved from the *FindMy People* list, the *FindMy Me* screen (your device), and the *Family Sharing List*. Each phone will automatically select the appropriate tracking method based on how the phone's parameters are configured in the following manner:
 
-- If the email address is specified for the devices and all devices are in the *FindMy* list, the location of all the devices in the *FindMy* list are located with one request. 
-- If the email address is specified for the devices and one device is not in the *FindMy* list but all are in the *Family Sharing List*, the location of all of the devices in the *Family Sharing* list are located with one request. Actually, iCloud locates all devices in the list, whether-or-not the device is being tracked. If you have a large list, it will take a slightly longer for iCloud to locate all the devices than the above method.
-- If the email address is specified for the devices and one device is not in the *FindMy* list and another device is not in the *Family Sharing List*, then it will take two requests to locate all the devices being tracked.
+- If the email address is specified for the phones and all phones are in the *FindMy* list, the location of all the phones in the *FindMy* list are located with one request. 
+- If the email address is specified for the phones and one phone is not in the *FindMy* list but all are in the *Family Sharing List*, the location of all of the phones in the *Family Sharing* list are located with one request. Actually, iCloud locates all phones in the list, whether-or-not the phone is being tracked. If you have a large list, it will take a slightly longer for iCloud to locate all the phones than the above method.
+- If the email address is specified for the phones and one phone is not in the *FindMy* list and another phone is not in the *Family Sharing List*, then it will take two requests to locate all the phones being tracked.
 
 #### Enhancement to the method of configuring the devices to be tracked 
 
-The *track_devices* configuration parameter has been used to specify the devices to be tracked and used the format of 
+The *track_devices* configuration parameter has been depreciated and it is recommended that the *devices/device_name* parameter be used. Although ithe *track_devices* parameter can still be used to specify the devices, it will no longer be updated to support new parameters. 
+
+The following example shows how the track_devices is converted to the devices/device_name parameters.
+
+From:
 
 ```
 track_devices:
@@ -33,7 +37,7 @@ track_devices:
   - lillian_iphone > lillian678@email.com, lillian.jpg, noiosapp
 ```
 
-In addition to the *track_devices* parameter, iCloud3 now supports the standard HA method of specifying the devices to be tracked with new configuration parameters. They can be specified in the HA *configuration.yaml* file or the iCloud3 *config_ic3.yaml* file. 
+To:
 
 ```yaml
 devices:
@@ -46,17 +50,6 @@ devices:
     name: Lillian
     picture: lillian.jpg
     noiosapp: True
-```
-
-or you can use both methods.
-
-```yaml
-devices:
-  - device_name: gary_iphone
-    email: gary456@email.com
-    name: Gary
-    iosapp_suffix: -app
-  - device: lillian_iphone > lillian678@email.com, lillian.jpg, noiosapp
 ```
 
 Other parameters include:

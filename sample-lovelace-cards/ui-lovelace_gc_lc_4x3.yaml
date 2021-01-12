@@ -4,6 +4,7 @@ resources:
   - url: /local/custom_cards/icloud3-event-log-card.js?v=1.001
     type: js
 
+
 title: Home
 views:
   - title: Location (Gary)

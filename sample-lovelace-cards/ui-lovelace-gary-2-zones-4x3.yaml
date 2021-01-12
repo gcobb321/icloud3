@@ -1,6 +1,6 @@
 # yamllint disable rule:document-start
 
-# ---------------------------------------------- Gary (Home Zone)
+# -------------------------------------------- Gary (Home Zone)
 - title: Location (Gary)
   icon: mdi:cellphone-iphone
   cards:
@@ -64,7 +64,7 @@
               name: Info
               icon: mdi:information-outline
 
-    # ------------------------------------- Gary (Warehouse Zone)
+    # ---------------------------------------- Gary (Warehouse Zone)
     - type: vertical-stack
       cards:
         - type: glance
