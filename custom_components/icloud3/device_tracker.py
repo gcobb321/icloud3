@@ -24,6 +24,11 @@ Thanks to all
 
 VERSION = '2.3'
 
+'''
+1/13/2001 - Fixed problem with zone parameter in configuration file
+
+'''
+
 #Symbols = •▶¦▶ ●►◄ ▬ ▲▼◀▶ oPhone=►▶►
 
 import logging
@@ -140,6 +145,7 @@ CONF_TEST_PARAMETER             = 'test_parameter'
 CONF_DEVICENAME                 = 'device_name'
 CONF_DEVICE                     = 'device'
 CONF_ZONE                       = 'zone'
+CONF_TRACK_FROM_ZONE            = 'track_from_zone'
 CONF_IOSAPP_SUFFIX              = 'iosapp_suffix'
 CONF_IOSAPP_ENTITY              = 'iosapp_entity'
 CONF_NOIOSAPP                   = 'noiosapp'
@@ -690,7 +696,9 @@ DEVICE_STATUS_CODES = {
 DEVICE_STATUS_ONLINE = ['online', 'pending', 'unknown', 'Unknown', '']
 
 #-----►►Test configuration parameters ----------
-VALID_TRACK_DEVICE_ITEMS = [CONF_DEVICENAME, CONF_EMAIL, CONF_PICTURE, CONF_NAME, CONF_NOIOSAPP, CONF_ZONE, CONF_IOSAPP_SUFFIX, CONF_IOSAPP_ENTITY]
+VALID_TRACK_DEVICE_ITEMS = [CONF_DEVICENAME, CONF_EMAIL, CONF_PICTURE, CONF_NAME,
+                            CONF_NOIOSAPP, CONF_ZONE, CONF_TRACK_FROM_ZONE,
+                            CONF_IOSAPP_SUFFIX, CONF_IOSAPP_ENTITY]
 
 SERVICE_SCHEMA = vol.Schema({
     vol.Optional(CONF_GROUP):  cv.string,
@@ -706,6 +714,7 @@ DEVICES_SCHEMA = vol.Schema({
     vol.Optional(CONF_DEVICE): cv.string,
     vol.Optional(CONF_NAME): cv.string,
     vol.Optional(CONF_ZONE): cv.string,
+    vol.Optional(CONF_TRACK_FROM_ZONE): cv.string,
     vol.Optional(CONF_PICTURE): cv.string,
     vol.Optional(CONF_IOSAPP_ENTITY): cv.string,
     vol.Optional(CONF_IOSAPP_SUFFIX): cv.string,
@@ -1376,6 +1385,7 @@ class Icloud3:#(DeviceScanner):
 
             for devicename in self.tracked_devices:
                 event_msg = (f"Configuring Device > {self._format_fname_devicename(devicename)}")
+
 
                 if len(self.track_from_zone.get(devicename)) > 1:
                     w = str(self.track_from_zone.get(devicename))
@@ -7163,8 +7173,21 @@ class Icloud3:#(DeviceScanner):
                     wrning_msg = (f"The email address {email} is also assigned to {self.devicename_email.get(email)}")
                     email = ""
                 picture = device_fields.get(CONF_PICTURE, '')
-                zones = device_fields.get(CONF_ZONE, [])
-                zones.append(HOME)
+
+                #Reformat and verify zones in track_from_zone parameter
+                zones_str = device_fields.get(CONF_TRACK_FROM_ZONE, '')
+                zones_str = zones_str.replace(' ', '')
+                zones_str += (f",{HOME}")
+                zones_str_list = list(zones_str.split(","))
+                zones_str = ""
+                zones = []
+                for zone in zones_str_list:
+                    if zone:
+                        if zone in self.zones:
+                            zones_str += (f"{zone}, ")
+                            zones.append(zone)
+                        else:
+                            zones_str += (f"{zone} (InvalidZoneName), ")
 
                 iosapp_monitor_flag = True
                 iosapp_entity       = ''
@@ -7201,8 +7224,8 @@ class Icloud3:#(DeviceScanner):
                     event_msg += (f"email-{email}, ")
 
                 if self.track_from_zone.get(devicename) != [HOME]:
-                    zones_str = str(zones).replace("[", "").replace("]", "").replace("'", "")
-                    event_msg += (f"TrackFromZone-{zones_str}, ")
+                    #zones_str = str(zones).replace("[", "").replace("]", "").replace("'", "")
+                    event_msg += (f"TrackFromZones-{zones_str}, ")
                 if iosapp_info_event_msg:
                     event_msg += (f"{iosapp_info_event_msg}, ")
                 if self.device_type.get(devicename):
@@ -7242,7 +7265,7 @@ class Icloud3:#(DeviceScanner):
             email               = ""
             name                = ""
             device_type         = ""
-            zones               = []
+            zones               = ""
             dev_trk_entity_id   = ""
             iosapp_suffix       = ""
             dev_trk_device_id   = ""
@@ -7257,17 +7280,16 @@ class Icloud3:#(DeviceScanner):
             #overridden with the specified name later.
 
             name, device_type = self._extract_name_device_type(devicename)
-            device_fields[CONF_DEVICENAME] = devicename
-            device_fields[CONF_NAME]          = name
-            device_fields[CONF_DEVICE_TYPE]   = device_type
-            device_fields[CONF_SOURCE]        = track_devices_device
+            device_fields[CONF_DEVICENAME]  = devicename
+            device_fields[CONF_NAME]        = name
+            device_fields[CONF_DEVICE_TYPE] = device_type
+            device_fields[CONF_SOURCE]      = track_devices_device
 
             if instr(track_devices_device, '>'):
                 parameter_items = devicename_parameters[1].strip().split(',')
 
                 for item_value in parameter_items:
                     item = item_value.strip().replace(' ', '_').lower()
-
                     if item == '':
                         continue
                     elif instr(item, '@'):
@@ -7279,18 +7301,18 @@ class Icloud3:#(DeviceScanner):
                     elif item.startswith("_"):
                         device_fields[CONF_IOSAPP_SUFFIX] = item
                         device_fields.pop(CONF_IOSAPP_ENTITY, None)
+                    elif item in self.zones:
+                        zones += (f"{item},")
                     elif instr(item, "_"):
                         device_fields[CONF_IOSAPP_ENTITY] = item
                         device_fields.pop(CONF_IOSAPP_SUFFIX, None)
                     elif item == CONF_NOIOSAPP:
                         device_fields[CONF_NOIOSAPP] = True
-                    elif item in self.zones:
-                        zones.append(item)
                     else:
                         device_fields[CONF_NAME] = item_value.strip()
 
-            if zones != []:
-                device_fields[CONF_ZONE] = zones
+            if zones != "":
+                device_fields[CONF_TRACK_FROM_ZONE] = zones
 
         except Exception as err:
             _LOGGER.exception(err)
@@ -7339,6 +7361,8 @@ class Icloud3:#(DeviceScanner):
                             device_fields.pop(CONF_IOSAPP_SUFFIX, None)
                         elif key == CONF_NOIOSAPP and value:
                             device_fields[CONF_NOIOSAPP] = True
+                        elif key in [CONF_ZONE, CONF_TRACK_FROM_ZONE]:
+                            device_fields[CONF_TRACK_FROM_ZONE] = value
                         else:
                             device_fields[key] = value
 
@@ -8765,6 +8789,9 @@ class Icloud3:#(DeviceScanner):
 
                 #Building Device parameter, new non-device config parameter, save one just built
                 track_devices_flag = False
+                if parameter_name == CONF_ZONE:
+                    parameter_name = CONF_TRACK_FROM_ZONE
+
                 if config_device_flag:
                     if instr(devices_schema_str, parameter_name):
                         if (parameter_name == CONF_NOIOSAPP and parameter_value):
