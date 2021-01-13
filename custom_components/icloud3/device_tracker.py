@@ -25,7 +25,9 @@ Thanks to all
 VERSION = '2.3'
 
 '''
-1/13/2001 - Fixed problem with zone parameter in configuration file
+1/13/2001
+1. Fixed problem with zone parameter in configuration file
+2. Fixed problem displaying the zone's friendly name
 
 '''
 
@@ -1197,11 +1199,11 @@ class Icloud3:#(DeviceScanner):
             event_msg = (f"Stage 1 > Prepare iCloud3 for {self.username}")
             self._save_event_halog_info("*", event_msg)
 
-            self._display_info_status_msg("", "Loading Zones")
-            self._initialize_zone_tables()
-
             self._display_info_status_msg("", "Loading conf_ic3.yaml")
             self._load_config_ic3_yaml_parameter_file()
+
+            self._display_info_status_msg("", "Loading Zones")
+            self._initialize_zone_tables()
 
             for item in self.display_text_as:
                 if instr(item, '>'):
@@ -6318,7 +6320,7 @@ class Icloud3:#(DeviceScanner):
 
         zones = self.hass.states.entity_ids(ATTR_ZONE)
         zone_msg = ''
-
+        event_msg  = (f"Set up Zone table > DisplayZoneFormat-{self.display_zone_format}")
         for zone_entity in zones:
             try:
                 zone_data = self.hass.states.get(zone_entity).attributes
@@ -6326,7 +6328,6 @@ class Icloud3:#(DeviceScanner):
 
                 self.zones.append(zone.lower())
                 self._log_debug_msg("*",f"zone-{zone}, data-{zone_data}")
-
 
                 if ATTR_LATITUDE in zone_data:
                     self.zone_lat[zone]       = zone_data.get(ATTR_LATITUDE, 0)
@@ -6344,6 +6345,7 @@ class Icloud3:#(DeviceScanner):
                     ztitle_w = ztitle.replace(' ', '')
                     if ztitle_w not in self.state_to_zone:
                         self.state_to_zone[ztitle_w] = zone
+
 
                     if self.DISPLAY_ZNAME:
                         self.zone_to_display[zone] = zname
@@ -6366,11 +6368,10 @@ class Icloud3:#(DeviceScanner):
             except Exception as err:
                 _LOGGER.exception(err)
 
-            zone_msg = (f"{zone_msg}{zone}/{self.zone_to_display.get(zone)} "
-                        f"(r{self.zone_radius_m[zone]}m), ")
+            event_msg += (f"{CRLF_DOT}{zone} ({self.zone_radius_m[zone]}m) > Name-{zname}, "
+                          f"Fname-{zfname}, Title-{ztitle}")
 
-        log_msg = (f"Set up Zones > {zone_msg[:-2]}")
-        self._save_event_halog_info("*", log_msg)
+        self._save_event_halog_info("*", event_msg)
 
         self.zone_home_lat    = self.zone_lat.get(HOME)
         self.zone_home_long   = self.zone_long.get(HOME)
@@ -7180,11 +7181,13 @@ class Icloud3:#(DeviceScanner):
                 zones_str += (f",{HOME}")
                 zones_str_list = list(zones_str.split(","))
                 zones_str = ""
+                track_from_zone_msg = ""
                 zones = []
                 for zone in zones_str_list:
                     if zone:
                         if zone in self.zones:
                             zones_str += (f"{zone}, ")
+                            track_from_zone_msg += (f"{zone}/{self.zone_to_display.get(zone)}, ")
                             zones.append(zone)
                         else:
                             zones_str += (f"{zone} (InvalidZoneName), ")
@@ -7224,8 +7227,7 @@ class Icloud3:#(DeviceScanner):
                     event_msg += (f"email-{email}, ")
 
                 if self.track_from_zone.get(devicename) != [HOME]:
-                    #zones_str = str(zones).replace("[", "").replace("]", "").replace("'", "")
-                    event_msg += (f"TrackFromZones-{zones_str}, ")
+                    event_msg += (f"TrackFromZones-{track_from_zone_msg}")
                 if iosapp_info_event_msg:
                     event_msg += (f"{iosapp_info_event_msg}, ")
                 if self.device_type.get(devicename):
@@ -8907,6 +8909,7 @@ class Icloud3:#(DeviceScanner):
             elif parameter_name == CONF_DISPLAY_ZONE_FNAME:
                 self.display_zone_fname_flag = (parameter_value == 'true')
             elif parameter_name == CONF_DISPLAY_ZONE_FORMAT:
+                self.display_zone_format = parameter_value
                 self.DISPLAY_ZONE   = (parameter_value == CONF_ZONE)
                 self.DISPLAY_ZNAME  = (parameter_value == CONF_NAME)
                 self.DISPLAY_ZTITLE = (parameter_value == 'title')
