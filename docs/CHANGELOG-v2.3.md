@@ -25,7 +25,7 @@ You no longer need to assign a tracking method to use iCloud Location Services. 
 
 #### Enhancement to the method of configuring the devices to be tracked 
 
-The *track_devices* configuration parameter has been depreciated and it is recommended that the *devices/device_name* parameter be used. Although ithe *track_devices* parameter can still be used to specify the devices, it will no longer be updated to support new parameters. 
+The *track_devices* configuration parameter has been depreciated and it is recommended that the *devices/device_name* parameter be used. Although if the *track_devices* parameter can still be used to specify the devices, it will no longer be updated to support new parameters. 
 
 The following example shows how the track_devices is converted to the devices/device_name parameters.
 
