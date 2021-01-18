@@ -31,39 +31,3 @@
           closed
         {% endif %}
 
-# --- Garage Door Moving --------------------------------
-- platform: template
-  sensors:
-    garage_door_moving:
-      friendly_name: Garage Door Moving
-      value_template: false
-
-# --- Garage Door Motion State --------------------------
-- platform: template
-  sensors:
-    garage_door_motion:
-      friendly_name: Garage Door Motion
-      value_template: >
-        {% if is_state("sensor.garage_door_moving", "True") %}
-          {% if is_state("sensor.garage_door_state", "open") %}
-             closing
-          {% else %}
-             opening
-          {% endif %}
-        {% else %
-          {{states("sensor.garage_door_state")}}
-        {% endif %}
-
-# --- Garage Door Motion State --------------------------
-- platform: template
-  sensors:
-    garage_door_motion_test:
-      friendly_name: Garage Door Motion
-      value_template: >
-        {% if is_state("sensor.garage_door_moving", False) %}
-          T1
-        {% else %}
-            {% if is_state("sensor.garage_door_moving", 'False') %}
-              T2
-            {% endif %}
-        {% endif %}

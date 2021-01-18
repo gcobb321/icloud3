@@ -14,7 +14,7 @@
   id: gary_arrives_home
   trigger:
     - platform: state
-      entity_id: sensor.gary_iphone_zone_name1
+      entity_id: sensor.gary_iphone_zone_name
       to: 'Home'
 
     - platform: template
@@ -40,7 +40,7 @@
   id: gary_leaves_home
   trigger:
     - platform: state
-      entity_id: sensor.gary_iphone_zone_name1
+      entity_id: sensor.gary_iphone_zone_name
       to: 'Away'
 
   condition:
@@ -70,7 +70,7 @@
   id: gary_leaves_zone
   trigger:
     - platform: state
-      entity_id: sensor.gary_iphone_zone_name1
+      entity_id: sensor.gary_iphone_zone_name
       to: 'Away'
 
   condition:
@@ -138,7 +138,6 @@
   trigger:
     - platform: template
       value_template: '{{states("sensor.gary_iphone_zone_distance") | float > 5}}'
-      # value_template: '{{states.sensor.gary_iphone_zone_distance.state | float > 5}}'
 
   condition:
     - condition: state
@@ -160,7 +159,6 @@
   trigger:
     - platform: template
       value_template: '{{states("sensor.gary_iphone_zone_distance") | float <= 5}}'
-      # value_template: '{{states.sensor.gary_iphone_zone_distance.state | float <= 5}}'
 
   condition:
     - condition: state

@@ -13,8 +13,7 @@ gary_status:
       data_template:
         title: 'Gary Status'
         message: 'Zone={{states("sensor.gary_iphone_zone")}},
-                  Zone1={{states("sensor.gary_iphone_zone_name1")}},
-                  Zone2={{states("sensor.gary_iphone_zone_name2")}},
+                  Zone={{states("sensor.gary_iphone_zone_name")}},
                   Distance={{states("sensor.gary_iphone_zone_distance")}},
                   DriveFlag={{states("input_boolean.gary_driving_flag")}},
                   FarFlag={{states("input_boolean.gary_far_away_flag")}}'
