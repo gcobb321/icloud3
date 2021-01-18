@@ -1,6 +1,9 @@
 iCloud3 v2.3.1 Change Log
 =========================
 
+1/18/2021
+1. Rewrote the routine used to decode configuration parameters in the config_ic3.yaml file to eliminate redundant and complicated code, to make it easier to add new parameters and to make it more efficient.
+
 1/17/2021
 1. Fixed a problem caused by duplicate devicenames in the Family Sharing List. If an older device has the same name as the newer device, the location was being requested for the older device instead of the newer device. The older devicename probably does not exist anymore so no location information was returned for it.
 2. Fixed a problem where the Family Sharing tracking method was always selected for all devices if they were all in both the Family Sharing list and in the Frinds list on the FindMy App. In this situation, the Find-my-Friends tracking method should be assigned to each device.
