@@ -18,7 +18,7 @@ These modules and updates have been incorporated into the pyicloud_ic3.py versio
 used by iCloud3.
 """
 
-VERSION = '2.3'
+VERSION = '2.3.1'
 
 from six import PY2, string_types, text_type
 from uuid import uuid1
@@ -126,10 +126,9 @@ class PyiCloudSession(Session):
         if (response.status_code != 200 or not response.ok):#or True==True:
             self._log_debug_msg("RESPONSE CONTENT_TYPE", content_type)
             self._log_debug_msg("RESPONSE INVALID CONTENT TYPE", (content_type not in json_mimetypes))
-            self._log_debug_msg("RESPONSE DATA", data)
+            #self._log_debug_msg("RESPONSE DATA", data)
             self._log_debug_msg("RESPONSE HEADERS", response.headers)
-
-        #self._log_debug_msg("RESPONSE DATA", data)
+        self._log_debug_msg("RESPONSE DATA", data)
 
         for header in HEADER_DATA:
             if response.headers.get(header):

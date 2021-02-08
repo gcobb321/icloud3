@@ -12,19 +12,20 @@
 
 # --Track Devices Parameters-------------------------------
 #devices:
-#  - device_name: gary_iphone
+#  - device_name: Gary iPhone
 #    name: Gary
 #    email: gary_456@email.com
 #    picture: gary.png
-#  - device_name: lillian_iphone
+#  - device_name: Lillian iPhone
 #    name: Lillian
 #    email: lillian_789@email.com
 #    picture: lillian.png
 
-#    noiosapp: False
+# Other devices parameters not normally used
+#    noiosapp: false
 #    iosapp_suffix: _app
 #    iosapp_entity: gary_iphone_app
-#    zone: warehouse
+#    track_from_zone: warehouse
 
 #event_log_card_directory: 'www/custom_cards'
 
