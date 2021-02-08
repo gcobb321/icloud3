@@ -11,6 +11,7 @@ The following enhancements and changes have been made iCloud3:
 
 The following bugs have been fixed in iCloud2 v2.3.1.
 
+- The name specified in the *Settings App > General > About > Name field* (Gary-iPhone) can now be specified on the *device_name* configuration parameter. Previously, the value in the HA device_tracker entity id had to be specified (gary_iphone).
 - When specifying the zone parameter in configuration file for a device. It should be 'track_from_zone'.
 - When specifying how the zone displayed (display_zone_as: fname). It was always displaying the zone's name instead of the friendly name.
 - When the devicename was duplicated in the Family Sharing List. If an older device has the same name as the newer device, the location was being requested for the older device instead of the newer device. The older devicename probably does not exist anymore so no location information was returned for it.
