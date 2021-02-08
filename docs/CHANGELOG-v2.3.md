@@ -7,7 +7,21 @@ The following enhancements and changes have been made iCloud3:
 
 ------
 
-## Major enhancements
+## v2.3.1 Bug Fix Update
+
+The following bugs have been fixed in iCloud2 v2.3.1.
+
+- When specifying the zone parameter in configuration file for a device. It should be 'track_from_zone'.
+- When specifying how the zone displayed (display_zone_as: fname). It was always displaying the zone's name instead of the friendly name.
+- When the devicename was duplicated in the Family Sharing List. If an older device has the same name as the newer device, the location was being requested for the older device instead of the newer device. The older devicename probably does not exist anymore so no location information was returned for it.
+- When optimizing the device's tracking method. The Family Sharing tracking method was always selected for all devices if they were all in the Family Sharing list and in the Friends list on the FindMy App. In this situation, the Find-my-Friends tracking method should be assigned to each device.
+- When the unit_of_measurement parameter was specified in the config_ic3.yaml as 'km'. The unit_of_measurement ('mi' or 'km') would be displayed correctly but the value being displayed was always the miles value.
+- Cleaned up the iCloud3 code - Removed the old 2sa Authentication code, removed other obsolete code, cleaned up some messages, removed zone_name_1/2/3 and last_zone_1/2/3 sensors left in by mistake.
+- Updated the iCloud3 documentation.
+
+------
+
+## Major v2.3 enhancements
 
 #### iCloud3 now works with Apple ID Verification and supports iCloud 2-factor-authentication
 
