@@ -7,9 +7,15 @@ The following enhancements and changes have been made iCloud3:
 
 ------
 
-## v2.3.1 Bug Fix Update
+## v2.3.x Bug Fix Update
 
-The following bugs have been fixed in iCloud2 v2.3.1.
+The following bug was fixed in the iCloud3 v2.3.2 update:
+
+- The *Name* parameter was not being decoded correctly due to a bug introduced in iCloud3 v2.3.1.
+- Added a *device_type* parameter to override a value extracted from the *device_name* parameter.
+- Updated the iCloud3 version number which was not updated in the v2.3.1 release.
+
+The following bugs have been fixed in the iCloud3 v2.3.1 update:
 
 - The name specified in the *Settings App > General > About > Name field* (Gary-iPhone) can now be specified on the *device_name* configuration parameter. Previously, the value in the HA device_tracker entity id had to be specified (gary_iphone).
 - When specifying the zone parameter in configuration file for a device. It should be 'track_from_zone'.
