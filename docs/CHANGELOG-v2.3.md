@@ -11,7 +11,7 @@ The following enhancements and changes have been made iCloud3:
 
 ##### v2.3.3 Bug Fix Update (2/19/2021)
 
-- The *track_from_zone* parameter was generating an error and not being handled correctly. When used, it would generate a 'No devices to track' error message and iCloud3 would not track any devices.
+- The *track_from_zone* parameter is used to track devices from the home zone and an additional zone(s). It was not being accepted and creating an error, resulting in iCloud3 not tracking any devices.
 
 ##### v2.3.2 Bug Fix Update (2/10/2021)
 
