@@ -4856,7 +4856,8 @@ class Icloud3:#(DeviceScanner):
         formatted_list = str(arg_list)
         formatted_list = formatted_list.replace("[", "").replace("]", "")
         formatted_list = formatted_list.replace("{", "").replace("}", "")
-        formatted_list = formatted_list.replace("'", "").replace(",", "{CRLF_DOT}")
+        formatted_list = formatted_list.replace("'", "").replace(",", f"{CRLF_DOT}")
+
         return (f"{CRLF_DOT}{formatted_list}")
 #--------------------------------------------------------------------
     def _format_time_age(self, timestamp):
