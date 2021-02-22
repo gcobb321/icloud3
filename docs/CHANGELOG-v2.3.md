@@ -9,6 +9,17 @@ The following enhancements and changes have been made iCloud3:
 
 ## v2.3.x Bug Fix Update
 
+##### v2.3.4 Bug Fix Update (2/23/2021)
+
+- Corrected the 'selwf' spelling error.
+- Fixed a problem setting up the *rack_from_zone*parameter. The zone(s) specified are now verified. Also, the *rack_from_zone*zone name can now be either the zone name or the zone's friendly name.\- The *config_ic3.yaml* configuration parameters are now being validated. Errors are displayed in the Event Log and ignored.
+
+- Added a check for a mismatched quote (') in the config_ic3 parameter file. An error message is displayed in the Event Log showing the line number with the error.
+
+- Fixed a problem where the 'True/False' configuration parameters were not being handled correctly.
+
+- Removed all iCloud '2-factor-authentication' code.
+
 ##### v2.3.3 Bug Fix Update (2/19/2021)
 
 - The *track_from_zone* parameter is used to track devices from the home zone and an additional zone(s). It was not being accepted and creating an error, resulting in iCloud3 not tracking any devices.
