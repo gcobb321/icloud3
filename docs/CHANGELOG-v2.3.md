@@ -9,6 +9,13 @@ The following enhancements and changes have been made iCloud3:
 
 ## v2.3.x Bug Fix Updates
 
+
+
+##### v2.3.5 Bug Fix Update (2/25/2021)
+- Fixed a bug causing the zone's friendly name to be displayed incorrectly that was introduced in v2.3.4. 
+- Added debug logging to the zone table load function
+- Removed obsolete and unused 'IsOld' variables to prevent errors when location_data(IsOld) is not available.
+
 ##### v2.3.4 Bug Fix Update (2/23/2021)
 
 - Corrected the 'selwf' spelling error. 
