@@ -22,9 +22,14 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.3.4'
+VERSION = '2.3.5'
 
 '''
+v2.3.5 (2/23/2021)
+- Fixed a bug causing the zone's name/friendly namne/tile to be displayed incorrectly.
+- Added debug logging to the zone table load function
+- Removed obsolete and unused 'IsOld' variables to prevent errors when location_data(IsOld) is not available.
+
 v2.3.4 (2/21/2021)
 - Corrected the 'selwf' spelling error.
 - Fixed a problem setting up the track_from_zone parameter. The zone(s) specified are now verified. Also, the track_from_zone zone name can now be either the zone name or the zone's friendly name.
@@ -176,7 +181,7 @@ ATTR_ATTRIBUTES                 = 'attributes'
 ATTR_RADIUS                     = 'radius'
 ATTR_FRIENDLY_NAME              = 'friendly_name'
 ATTR_NAME                       = 'name'
-ATTR_ISOLD                      = 'isOld'
+#ATTR_ISOLD                      = 'isOld'
 ATTR_DEVICE_CLASS               = 'device_class'
 
 # entity attributes
@@ -272,10 +277,10 @@ INITIAL_LOCATION_DATA  = {
         ATTR_LATITUDE: 0.0,
         ATTR_LONGITUDE: 0.0,
         ATTR_ALTITUDE: 0.0,
-        ATTR_ISOLD: False,
         ATTR_GPS_ACCURACY: 0,
         ATTR_VERT_ACCURACY: 0,
         }
+        #ATTR_ISOLD: False,
 
 TRACE_ATTRS_BASE = {
         ATTR_NAME: '',
@@ -307,7 +312,6 @@ TRACE_ATTRS_BASE = {
 TRACE_ICLOUD_ATTRS_BASE = {
         CONF_NAME: '',
         ATTR_ICLOUD_DEVICE_STATUS: '',
-        ATTR_ISOLD: False,
         ATTR_LATITUDE: 0,
         ATTR_LONGITUDE: 0,
         ATTR_ICLOUD_TIMESTAMP: 0,
@@ -315,6 +319,7 @@ TRACE_ICLOUD_ATTRS_BASE = {
         ATTR_ICLOUD_VERTICAL_ACCURACY: 0,
         'positionType': 'Wifi',
         }
+        #ATTR_ISOLD: False,
 
 SENSOR_DEVICE_ATTRS = [
         'zone',
@@ -1093,10 +1098,6 @@ class Icloud3:#(DeviceScanner):
         self.inzone_interval_secs         = self._time_str_to_secs(inzone_interval_str)
         self.max_interval_secs            = self._time_str_to_secs(max_interval_str)
         self.display_zone_format          = display_zone_format
-        self.DISPLAY_ZONE                 = (display_zone_format == CONF_ZONE)
-        self.DISPLAY_ZNAME                = (display_zone_format == CONF_NAME)
-        self.DISPLAY_ZTITLE               = (display_zone_format == 'title')
-        self.DISPLAY_ZFNAME               = (display_zone_format == 'fname')
         self.center_in_zone_flag          = center_in_zone_flag
         self.gps_accuracy_threshold       = int(gps_accuracy_threshold)
         self.old_location_threshold       = self._time_str_to_secs(old_location_threshold_str)
@@ -1164,7 +1165,6 @@ class Icloud3:#(DeviceScanner):
             self._define_tracking_control_fields()
             self._define_sensor_fields(self.start_icloud3_initial_load_flag)
             self._setup_tracking_method(self.tracking_method_config)
-            self._initialize_um_formats(self.unit_of_measurement)
 
             event_msg = (f"^^^Initializing iCloud3 v{VERSION} > "
                          f"{dt_util.now().strftime('%A, %b %d')}")
@@ -1175,15 +1175,18 @@ class Icloud3:#(DeviceScanner):
             self._check_ic3_update_2sa_to_2fa()
             self._initialize_um_formats(self.unit_of_measurement)
 
-
+            #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
             event_msg = (f"Stage 1 > Prepare iCloud3 for {self.username}")
             self._save_event_halog_info("*", event_msg)
 
-            self._display_info_status_msg("", "Loading Zones")
-            self._initialize_zone_tables()
+            self._display_info_status_msg("", "Loading Zone Names")
+            self._initialize_zone_tables_step_1()
 
             self._display_info_status_msg("", "Loading conf_ic3.yaml")
             self._load_config_ic3_yaml_parameter_file()
+
+            self._display_info_status_msg("", "Loading Zone Tables")
+            self._initialize_zone_tables_step_2()
 
             for item in self.display_text_as:
                 if instr(item, '>'):
@@ -1206,6 +1209,8 @@ class Icloud3:#(DeviceScanner):
         try:
             self.startup_log_msgs_prefix = NEW_LINE
             self._update_sensor_ic3_event_log("")
+
+            #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
             event_msg = (f"Stage 2 > Set up tracked device parameters")
             self._save_event_halog_info("*", event_msg)
 
@@ -1249,10 +1254,12 @@ class Icloud3:#(DeviceScanner):
         try:
             self.startup_log_msgs_prefix = NEW_LINE
             self._update_sensor_ic3_event_log("")
+
+            #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
             event_msg = (f"Stage 3 > Identify iOS App entities, Verify tracked devices")
             self._save_event_halog_info("*", event_msg)
 
-            iosapp_entities    = self._get_entity_registry_entities('mobile_app')
+            iosapp_entities    = self._get_entity_registry_entities('mobile_app', 'device_tracker')
             if iosapp_entities == []:
                 event_msg = (f"iCloud3 Alert > No mobile_app device_tracker entities "
                             f"were found in the HA Entity Registry. The iOSApp "
@@ -1357,6 +1364,8 @@ class Icloud3:#(DeviceScanner):
 
             self.startup_log_msgs_prefix = NEW_LINE
             self._update_sensor_ic3_event_log("*")
+
+            #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
             event_msg = (f"Stage 4 > Configure tracked devices")
             self._save_event_halog_info("*", event_msg)
 
@@ -1432,6 +1441,7 @@ class Icloud3:#(DeviceScanner):
         self._save_event_halog_info("*", event_msg)
         self._display_info_status_msg(devicename, "Setup Complete, Locating Device")
         self._update_sensor_ic3_event_log("*")
+        #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
         self.start_icloud3_inprocess_flag = False
 
@@ -2217,7 +2227,7 @@ class Icloud3:#(DeviceScanner):
 
             self.location_data[devicename]     = location_data
 
-            location_isold_attr = False
+            #location_isold_attr = False
             poor_location_gps_flag = False
             self.poor_location_gps_cnt[devicename] = 0
             self.poor_location_gps_msg[devicename] = False
@@ -2758,7 +2768,7 @@ class Icloud3:#(DeviceScanner):
                     timestamp_secs      = location_data[ATTR_TIMESTAMP_SECS]
                     last_located_secs   = location_data[ATTR_TIMESTAMP_SECS]
                     location_time       = location_data[ATTR_TIMESTAMP_TIME]
-                    location_isold_attr = location_data[ATTR_ISOLD]
+                    #location_isold_attr = location_data[ATTR_ISOLD]
                     location_age        = self._secs_since(timestamp_secs)
                     battery             = location_data[ATTR_BATTERY_LEVEL]
                     battery_status      = location_data[ATTR_BATTERY_STATUS]
@@ -3293,7 +3303,7 @@ class Icloud3:#(DeviceScanner):
             location_data[ATTR_LATITUDE]       = location.get(ATTR_LATITUDE, 0)
             location_data[ATTR_LONGITUDE]      = location.get(ATTR_LONGITUDE, 0)
             location_data[ATTR_ALTITUDE]       = round(location.get(ATTR_ALTITUDE, 0), 1)
-            location_data[ATTR_ISOLD]          = location.get(ATTR_ISOLD, False)
+            #location_data[ATTR_ISOLD]          = location.get(ATTR_ISOLD, False)
             location_data[ATTR_GPS_ACCURACY]   = int(round(location.get(ATTR_ICLOUD_HORIZONTAL_ACCURACY, 0), 0))
             location_data[ATTR_VERT_ACCURACY]  = int(round(location.get(ATTR_ICLOUD_VERTICAL_ACCURACY, 0), 0))
 
@@ -4321,7 +4331,7 @@ class Icloud3:#(DeviceScanner):
             #poll
             if (dist_from_zone_moved_km> -.3 and dist_from_zone_moved_km< .3):
                 dist_from_zone_moved_km+= \
-                        self.dist_from_zone_km_small_move_total.get(devicename)
+                        self.dist_from_zone_km_small_move_total.get(devicename, 0)
                 self.dist_from_zone_km_small_move_total[devicename] = \
                         dist_from_zone_moved_km
             else:
@@ -5201,13 +5211,13 @@ class Icloud3:#(DeviceScanner):
         """
         Make zone_names 1, 2, & 3 out of the zone_name value for sensors
 
-        name1 = home --> Home
+        name  = home --> Home
                 not_home --> Away
                 gary_iphone_stationary --> Stationary
                 the_shores --> TheShores
-        name2 = gary_iphone_stationary --> Gary Iphone Stationary
+        title = gary_iphone_stationary --> Gary Iphone Stationary
                 office_bldg_1 --> Office Bldg 1
-        name3 = gary_iphone_stationary --> GaryIphoneStationary
+        fname = gary_iphone_stationary --> GaryIphoneStationary
                 office__bldg_1 --> Office Bldg1
         """
         if zone:
@@ -5223,6 +5233,7 @@ class Icloud3:#(DeviceScanner):
 
             ztitle = zone.title().replace('_', ' ')
             zfname = self.zone_fname.get(zone, zone.title())
+
         else:
             zname  = NOT_SET
             ztitle = 'Not Set'
@@ -6275,9 +6286,9 @@ class Icloud3:#(DeviceScanner):
         return attrs
 
 #--------------------------------------------------------------------
-    def _initialize_zone_tables(self):
+    def _initialize_zone_tables_step_1(self):
         '''
-        Get friendly name of all zones to set the device_tracker state
+        Get the zone names from HA, fill the zone tables
         '''
 
         try:
@@ -6289,8 +6300,16 @@ class Icloud3:#(DeviceScanner):
         log_msg = (f"Reloading Zone.yaml config file")
         self._log_debug_msg("*", log_msg)
 
-        zones = self.hass.states.entity_ids(ATTR_ZONE)
+        #zones = self._get_entity_registry_entities('zone', 'zone')
+        #zone_ha_config_name = {}
+        #for zone_entity in zones:
+        #    zone = zone_entity.get('entity_id').replace('zone.', '')
+        #    zone_ha_config_name[zone] = zone_entity.get('original_name')
+        #TRACE("6309 zone_config_name",zone_ha_config_name)
+
         zone_msg = ''
+        zones = self.hass.states.entity_ids(ATTR_ZONE)
+        self._log_debug_msg("*",f"ZONES - {zones}")
 
         for zone_entity in zones:
             try:
@@ -6298,19 +6317,22 @@ class Icloud3:#(DeviceScanner):
                 zone      = zone_entity.replace('zone.', '')      #zone_entity = 'zone.'+zone
 
                 self.zones.append(zone.lower())
-                self._log_debug_msg("*",f"zone-{zone}, data-{zone_data}")
-
+                self._log_debug_msg("*",f"ZONE.DATA - [zone.{zone}--{zone_data}]")
 
                 if ATTR_LATITUDE in zone_data:
                     zname, ztitle, zfname = self._get_zone_names(zone)
+
                     self.zone_lat[zone]       = zone_data.get(ATTR_LATITUDE, 0)
                     self.zone_long[zone]      = zone_data.get(ATTR_LONGITUDE, 0)
                     self.zone_passive[zone]   = zone_data.get('passive', True)
                     self.zone_radius_m[zone]  = int(zone_data.get(ATTR_RADIUS, 100))
                     self.zone_radius_km[zone] = round(self.zone_radius_m[zone]/1000, 4)
+                    zfname                    = zone_data.get(ATTR_FRIENDLY_NAME, zfname)
+
                     self.zone_fname[zone]     = zfname
                     self.zone_fname[zfname]   = zone
 
+                    self.zone_to_display[zone] = zname
                     self.state_to_zone[zfname] = zone
                     if ztitle not in self.state_to_zone:
                         self.state_to_zone[ztitle] = zone
@@ -6318,32 +6340,17 @@ class Icloud3:#(DeviceScanner):
                     if ztitle_w not in self.state_to_zone:
                         self.state_to_zone[ztitle_w] = zone
 
-                    if self.DISPLAY_ZNAME:
-                        self.zone_to_display[zone] = zname
-                    elif self.DISPLAY_ZTITLE:
-                        self.zone_to_display[zone] = ztitle
-                    elif self.DISPLAY_ZFNAME:
-                        self.zone_to_display[zone] = zfname
-                    elif self.DISPLAY_ZONE:
-                        self.zone_to_display[zone] = zone
-                    else:
-                        self.zone_to_display[zone] = ztitle
-
                 if instr(zone.lower(), STATIONARY):
                     self.zone_to_display[zone] = 'Stationary'
                     self.zone_fname[zone]      = 'Stationary'
+
+                    self.zone_home_lat    = self.zone_lat.get(HOME)
 
             except KeyError:
                 self.zone_passive[zone] = False
 
             except Exception as err:
                 _LOGGER.exception(err)
-
-            zone_msg = (f"{zone_msg}{zone}/{self.zone_to_display.get(zone)} "
-                        f"(r{self.zone_radius_m[zone]}m), ")
-
-        log_msg = (f"Set up Zones > {zone_msg[:-2]}")
-        self._save_event_halog_info("*", log_msg)
 
         self.zone_home_lat    = self.zone_lat.get(HOME)
         self.zone_home_long   = self.zone_long.get(HOME)
@@ -6355,6 +6362,40 @@ class Icloud3:#(DeviceScanner):
         self.base_zone_lat    = self.zone_lat.get(HOME)
         self.base_zone_long   = self.zone_long.get(HOME)
         self.base_zone_radius_km = float(self.zone_radius_km.get(HOME))
+
+#--------------------------------------------------------------------
+    def _initialize_zone_tables_step_2(self):
+        '''
+        Display the loaded tables in the Event Log.
+        Set up the zone value to be displayed based on the display_zone_format parameter
+        '''
+
+        zone_msg = ''
+        self.DISPLAY_ZONE   = (self.display_zone_format == CONF_ZONE)
+        self.DISPLAY_ZNAME  = (self.display_zone_format == CONF_NAME)
+        self.DISPLAY_ZTITLE = (self.display_zone_format == 'title')
+        self.DISPLAY_ZFNAME = (self.display_zone_format == 'fname')
+
+        for zone in self.zones:
+            zname, ztitle, zfname = self._get_zone_names(zone)
+
+            if self.DISPLAY_ZNAME:
+                self.zone_to_display[zone] = zname
+            elif self.DISPLAY_ZTITLE:
+                self.zone_to_display[zone] = ztitle
+            elif self.DISPLAY_ZFNAME:
+                self.zone_to_display[zone] = zfname
+            elif self.DISPLAY_ZONE:
+                self.zone_to_display[zone] = zone
+            else:
+                self.zone_to_display[zone] = zname
+
+            zone_msg = (f"{zone_msg}{zone}/{self.zone_to_display.get(zone)} "
+                        f"(r{self.zone_radius_m[zone]}m), ")
+
+        log_msg = (f"Set up Zones ({self.display_zone_format}) > {zone_msg[:-2]}")
+        self._save_event_halog_info("*", log_msg)
+
         return
 
 #--------------------------------------------------------------------
@@ -7423,7 +7464,7 @@ class Icloud3:#(DeviceScanner):
         return
 
 #--------------------------------------------------------------------
-    def _get_entity_registry_entities(self, platform):
+    def _get_entity_registry_entities(self, platform, entity_prefix):
         '''
         Read the /config/.storage/core.entity_registry file and return
         the entities for platform ('mobile_app', 'ios', etc)
@@ -7434,6 +7475,7 @@ class Icloud3:#(DeviceScanner):
                 self.entity_registry_file  = self.hass.config.path(
                         STORAGE_DIR, STORAGE_KEY_ENTITY_REGISTRY)
 
+            entity_prefix       += '.'
             entities            = []
             entity_reg_file     = open(self.entity_registry_file)
             entity_reg_str      = entity_reg_file.read()
@@ -7445,11 +7487,11 @@ class Icloud3:#(DeviceScanner):
             for entity in entity_reg_entities:
                 if (entity['platform'] == platform):
                     entities.append(entity)
-                    if entity['entity_id'].startswith("device_tracker."):
-                        entity_devicename_list += (f"{CRLF_DOT}{entity['entity_id'].replace('device_tracker.', '')} "
+                    if entity['entity_id'].startswith(entity_prefix):
+                        entity_devicename_list += (f"{CRLF_DOT}{entity['entity_id'].replace(entity_prefix, '')} "
                                                    f"({entity['original_name']})")
 
-            event_msg = (f"Entity Registry mobile_app device_tracker entities found >{entity_devicename_list}")
+            event_msg = (f"Entity Registry {platform} {entity_prefix} entities found >{entity_devicename_list}")
             self._save_event("*", event_msg)
 
         except Exception as err:
@@ -7887,13 +7929,13 @@ class Icloud3:#(DeviceScanner):
             f"●deviceClass-{status[ATTR_ICLOUD_DEVICE_CLASS]}, "
             f"●batteryLevel-{status[ATTR_ICLOUD_BATTERY_LEVEL]}, "
             f"●batteryStatus-{status[ATTR_ICLOUD_BATTERY_STATUS]}, "
-            f"●isOld-{location[ATTR_ISOLD]}, "
             f"●positionType-{location['positionType']}, "
             f"●latitude-{location[ATTR_LATITUDE]}, "
             f"●longitude-{location[ATTR_LONGITUDE]}, "
             f"●horizontalAccuracy-{location[ATTR_ICLOUD_HORIZONTAL_ACCURACY]}, "
             f"●timeStamp-{location[ATTR_ICLOUD_TIMESTAMP]}"
             f"({self._timestamp_to_time_utcsecs(location[ATTR_ICLOUD_TIMESTAMP])})")
+            #f"●isOld-{location[ATTR_ISOLD]}, "
         self._log_debug_msg('*', log_msg)
         return True
 
@@ -8770,10 +8812,7 @@ class Icloud3:#(DeviceScanner):
 
             elif parameter_name == CONF_DISPLAY_ZONE_FORMAT:
                 if self._valid_parameter(LIST, parameter_name, parameter_value, [CONF_ZONE, CONF_NAME, 'title', 'fname']):
-                    self.DISPLAY_ZONE   = (parameter_value == CONF_ZONE)
-                    self.DISPLAY_ZNAME  = (parameter_value == CONF_NAME)
-                    self.DISPLAY_ZTITLE = (parameter_value == 'title')
-                    self.DISPLAY_ZFNAME = (parameter_value == 'fname')
+                    self.display_zone_format = parameter_value
 
             elif parameter_name == CONF_CENTER_IN_ZONE:
                 if self._valid_parameter(TRUE_FALSE, parameter_name, parameter_value):
