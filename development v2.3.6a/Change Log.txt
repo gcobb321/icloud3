@@ -1,0 +1,4 @@
+v2.3.6a (2/28/2021)
+1. Revamped the way the configuration parameters are retrieved from HA, how they are processed and how iCloud3 is set up based on the parameters.
+2. Combined the processing of the parameters from configuration.yaml and config_ic3.yaml to use common routines. They are edited using common routines and invalid values are reset to the default value.
+3. The track_from_zone parameter can now accept multiple zones using the zone name or the friendly name.
