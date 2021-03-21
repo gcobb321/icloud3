@@ -8,7 +8,7 @@
 
    **inzone_intervals**
 
-   The interval between location updates when the device is in a zone for specific device types, for devices that are not using the iOS App and the default *inzone_interval* value. This parameter lets you set different inzone_intervals for different devices. You can, for example, have a 2-hour interval for iPhones and a 15-minute interval for watches and devices that are not using the iOS App. For devices not being monitored, a shorter interval will update the location more often and identify when the device has exited a zone sooner than the regular 2-hour inzone_interval would,
+   (Optional) The interval between location updates when the device is in a zone for specific device types, for devices that are not using the iOS App and the default *inzone_interval* value. This parameter lets you set different inzone_intervals for different devices. You can, for example, have a 2-hour interval for iPhones and a 15-minute interval for watches and devices that are not using the iOS App. For devices not being monitored, a shorter interval will update the location more often and identify when the device has exited a zone sooner than the regular 2-hour inzone_interval would,
 
    *Valid values:* inzone_interval, iphone, ipad, pod, watch, no_iosapp
 
@@ -28,17 +28,17 @@
 
    **iosapp_installed**  
 
-   Indicates if iCloud3 should monitor the iOS App. 
+   (Optional) Indicates if iCloud3 should monitor the iOS App. 
 
    *Valid values:* True, False,  *Default:* True
 
-   *Note:* This is the same as *noiosapp: True* but a little more meaningful. Both parameters work and do the same thing.
+   *Note:* This is the opposite of the depreciated *noiosapp* parameter but is a little more meaningful. *iosapp_installed: False* is the same as *noiosapp: True*. 
 
    **inzone_interval**   
 
-   The interval between location updates when the device is in a zone.  This can be in seconds, minutes or hours, e.g., 30 secs, 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).
+   (Optional) The interval between location updates when the device is in a zone.  This can be in seconds, minutes or hours, e.g., 30 secs, 1 hr, 45 min, or 30 (minutes are assumed if no time qualifier is specified).
 
-   *Notes:* If this value is not specified for the device, *inzone_intervals* parameter will be used to set the time. The interval will be set to the device_type's time, then the inzone_interval time and then the global *inzone_interval* time, in that order.
+   *Notes:* If this value is not specified for the device, the values in the *inzone_intervals* parameter is used to set the time. The interval is set to the device_type's time, then the inzone_interval time and then the global *inzone_interval* time, in that order.
    
      
    
@@ -78,7 +78,7 @@ In the above examples, the inzone_intervals are:
 
 #### Other Changes
 
-1. Fixed a problem where excessive old location errors would continue to add entries to the Event Log. Tracking will now be paused if there are more than 300 discarded location requests in one day or the phone has not been successfully located in over 26-hours. This may be caused by the phone being offline, is no longer associated with the iCloud account, is turned off, etc. Tracking can be restarted using the Event Log > Actions > Resume Polling option.
+1. Fixed a problem where excessive old location errors would continue to add entries to the Event Log. Tracking is now paused if there are more than 300 discarded location requests in one day or the phone has not been successfully located in over 26-hours. This may be caused by the phone being offline, is no longer associated with the iCloud account, is turned off, etc. Tracking can be restarted using the Event Log > Actions > Resume Polling option.
 
 ### v2.3.6b3 (3/14/2021)
 
