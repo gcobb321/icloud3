@@ -78,7 +78,7 @@ In the above examples, the inzone_intervals are:
 
 #### Other Changes
 
-1. Fixed a problem where excessive old location errors would continue to add entries to the Event Log. Tracking is now paused if there are more than 300 discarded location requests in one day or the phone has not been successfully located in over 26-hours. This may be caused by the phone being offline, is no longer associated with the iCloud account, is turned off, etc. Tracking can be restarted using the Event Log > Actions > Resume Polling option.
+1. Fixed a problem where excessive old location errors would continue to add entries to the Event Log. Tracking is now paused if there are more than 400 discarded location requests in one day or the phone has not been successfully located in over 26-hours. This may be caused by the phone being offline, is no longer associated with the iCloud account, is turned off, etc. Tracking can be restarted using the Event Log > Actions > Resume Polling option.
 
 ### v2.3.6b3 (3/14/2021)
 
