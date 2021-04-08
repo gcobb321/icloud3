@@ -12,7 +12,8 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  Version=2.3.0 (1/2/2021)
+//  Version=2.4.0 (4/8/2021)
+//
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -25,7 +26,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version   = "2.3.0"
+        const version   = "2.4.0"
         const cardTitle = "iCloud3 Event Log"
 
         const root = this.shadowRoot
@@ -235,12 +236,20 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionOptOC4)
 
         var btnActionOptOC5    = document.createElement("option")
-        var btnActionOptOC5Txt = document.createTextNode("Reset iCloud Interface")
-        btnActionOptOC5.setAttribute("value", "reset_session")
-        btnActionOptOC5.setAttribute("id", "optHalog")
+        var btnActionOptOC5Txt = document.createTextNode("Start Rasdata Logging")
+        btnActionOptOC5.setAttribute("value", "dev-log_level: rawdata")
+        btnActionOptOC5.setAttribute("id", "optRawdata")
         btnActionOptOC5.classList.add("btnActionOption")
         btnActionOptOC5.appendChild(btnActionOptOC5Txt)
         btnAction.appendChild(btnActionOptOC5)
+
+        var btnActionOptOC6    = document.createElement("option")
+        var btnActionOptOC6Txt = document.createTextNode("Reset iCloud Interface")
+        btnActionOptOC6.setAttribute("value", "reset_session")
+        btnActionOptOC6.setAttribute("id", "optResetPyicloud")
+        btnActionOptOC6.classList.add("btnActionOption")
+        btnActionOptOC6.appendChild(btnActionOptOC6Txt)
+        btnAction.appendChild(btnActionOptOC6)
         //-------------------------------------------------------------
 
         const btnHelp = document.createElement('A')
@@ -1006,7 +1015,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 var thisRecdTestChg = tStat + tZone + tIntv + tTrav + tDist
                 var nextRecdTestChg = nStat + nZone + nIntv + nTrav + nDist
 
-                var maxStatZoneLength = 10
+                var maxStatZoneLength = 12
                 if (iPhoneP) {
                     tText = tText.replace('/icloud3','... .../icloud3')
                     maxStatZoneLength = 9
@@ -1019,7 +1028,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     tStat = tStat.substr(0, maxStatZoneLength) + "<br>" + tStat.substr(maxStatZoneLength, tStat.length)
                     if (tStat.length > maxStatZoneLength*2) {tStat = tStat.substr(0, maxStatZoneLength*2 + 3) + "..."}
                 }
-                if (tZone.length > 8) {
+                if (tZone.length > maxStatZoneLength) {
                     tZone = tZone.substr(0, maxStatZoneLength) + "<br>" + tZone.substr(maxStatZoneLength, tZone.length)
                     if (tZone.length > maxStatZoneLength*2) {tZone = tZone.substr(0, maxStatZoneLength*2 + 3) + "..."}
                 }
@@ -1298,6 +1307,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const logLevelDebug  = hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
         const optEvlog       = root.getElementById("optEvlog")
         const optHalog       = root.getElementById("optHalog")
+        const optRawdata     = root.getElementById("optRawdata")
         const optStartuplog  = root.getElementById("optStartuplog")
 
         if (logLevelDebug.indexOf("evlog") >= 0) {
@@ -1310,6 +1320,12 @@ class iCloud3EventLogCard extends HTMLElement {
             infoTimeText = "Debug Log, "+updateTimeAttr
         } else {
             optHalog.text = "Start HA Debug Logging"
+        }
+        if (logLevelDebug.indexOf("rawdata") >= 0) {
+            optRawdata.text = "Stop Rawdata Logging"
+            infoTimeText = "Debug Log, "+updateTimeAttr
+        } else {
+            optRawdata.text = "Start Rawdata Logging"
         }
 
         if (alertErrorMsg != "") {

@@ -18,7 +18,7 @@ These modules and updates have been incorporated into the pyicloud_ic3.py versio
 used by iCloud3.
 """
 
-VERSION = '2.3.1'
+VERSION = '2.4'
 
 from six import PY2, string_types, text_type
 from uuid import uuid1
