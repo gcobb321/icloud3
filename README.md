@@ -1,12 +1,12 @@
-# Welcome to iCloud3 v2.3!
+# Welcome to iCloud3 v2.4!
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v2.4-blue.svg)](https://github.com/gcobb321/icloud3)
+[![CurrentVersion](https://img.shields.io/badge/Current_Version-v2.4.0-blue.svg)](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-April,_2021-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)
 [![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/gcobb321/icloud3)
 
-iCloud3 is a device_tracker custom_component for iPhones, iPads and iWatches. It is tightly integrated with the Home Assistant IOS App, uses the Waze Route Tracker for distance and time information, creates a Stationary Zone when you are stationary, lets you monitor distance and time information for the home zone and other zones (work, school, etc.), minimizes battery usage, and much more.
+iCloud3 is a device_tracker custom_component for iPhones, iPads and Apple Watches. It is tightly integrated with the Home Assistant IOS App, uses the Waze Route Tracker for distance and time information, creates a Stationary Zone when you are stationary, lets you monitor distance and time information for the home zone and other zones (work, school, etc.), minimizes battery usage, and much more.
 
 iCloud3 is a Home Assistant device tracker custom component that greatly expands the capabilities of the iCloud HA component. It exposes many new attributes, provides many new features, is based on enhanced route tracking methods, is much more accurate, and includes additional service calls
 

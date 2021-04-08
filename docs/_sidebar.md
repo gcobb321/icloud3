@@ -12,7 +12,7 @@
   <table style="padding:  0  10px  0 40px;">
     <tr>
       <td>
-        <a  class="sidebar-version-date">Version: 2.4,April, 2021</a>
+        <a  class="sidebar-version-date">Version: 2.4.0, April, 2021</a>
       </td>
     </tr>
   </table>
