@@ -22,7 +22,13 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.4'
+VERSION = '2.4.1'
+
+'''
+v2.4.1 (4/19/2021)
+1. Fixed a bug where the create_sensor was not creating any sensors and the exclude_sensor was not excluding the specified sensors.
+2. Fixed coding spelling error bugs related to iCloud 2fa reauthorization requests and determining if a beta version of the the Event Log needed updated when iCloud3 was starting.
+'''
 
 #Symbols = •▶¦▶ ●►◄ ▬ ▲▼◀▶ oPhone=►▶►
 
@@ -7510,14 +7516,14 @@ class Icloud3:#(DeviceScanner):
 
         if self.sensor_ids != []:
             self.sensors_custom_list = []
-            for sensor_id in self.sensor_ids:
+            for sensor_id in self.sensor_ids[0].split(','):
                 id = sensor_id.lower().strip()
                 if id in SENSOR_ID_NAME_LIST:
                     self.sensors_custom_list.append(SENSOR_ID_NAME_LIST.get(id))
 
         elif self.exclude_sensor_ids != []:
             self.sensors_custom_list.extend(SENSOR_DEVICE_ATTRS)
-            for sensor_id in self.exclude_sensor_ids:
+            for sensor_id in self.exclude_sensor_ids[0].split(','):
                 id = sensor_id.lower().strip()
                 if id in SENSOR_ID_NAME_LIST:
                     if SENSOR_ID_NAME_LIST.get(id) in self.sensors_custom_list:
@@ -8632,12 +8638,15 @@ class Icloud3:#(DeviceScanner):
 
                     #You can track from multiple zones, cycle through zones and check each one
                     elif pname == CONF_TRACK_FROM_ZONE:
-                        zones = pvalue.split(',')
+                        zones = pvalue.replace('zone.', '')
+                        zones = zones.split(',')
+                        db=f"8648 {self.zones=} {self.zone_fname=} {pvalue=} {zones=}"
+                        self._save_sysevent(db)
                         pvalue = ''
                         for zone in zones:
-                            zone = zone.rstrip().lstrip()
+                            zone = zone.strip()
+                            if zone == HOME: continue
                             zfname = zone.replace(' ', '_')
-
                             if zone in self.zones:
                                 pvalue += (f"{zone},")
                             elif zfname in self.zones:
@@ -8898,7 +8907,7 @@ class Icloud3:#(DeviceScanner):
                 www_version, www_beta_version, www_version_text = self._read_event_log_card_js_file(www_evlog_filename)
             else:
                 www_version      = 0
-                www.beta_version = 0
+                www_beta_version = 0
                 www_version_text = UNKNOWN
                 try:
                     os.mkdir(www_directory)
@@ -9541,6 +9550,7 @@ class Icloud3:#(DeviceScanner):
 #
 #########################################################
     def _icloud_2fa1_show_verification_code_entry_form(self, invalid_code_msg=""):
+
         """Return the verification code."""
 
         self._icloud3_update_service_handler(self.group, arg_command='pause')
@@ -9577,7 +9587,8 @@ class Icloud3:#(DeviceScanner):
             valid_code = self.api.validate_2fa_code(self.verification_code)
             if valid_code is False:
                 invalid_code_text = (f"The code {self.verification_code} in incorrect.\n\n")
-                self._icloud_2fa1_show_verification_code_entry_form(invalid_code_msg=invalid_code_text)
+                self._icloud_2fa1_show_verification_code_entry_form(
+                            invalid_code_msg=invalid_code_text)
                 return
 
             event_msg = "Apple/iCloud Account Verification Successful"
@@ -9585,17 +9596,19 @@ class Icloud3:#(DeviceScanner):
 
         except PyiCloudException as error:
             # Reset to the initial 2FA state to allow the user to retry
-            event_msg = (f"Failed to verify account > Error-{error}")
-            self._save_event_halog_error("*", event_msg)
+            invalid_code_msg = (f"Failed to verify account > Error-{error}")
+            self._save_event_halog_error("*", invalid_code_msg)
 
             # Trigger the code rentry step immediately
-            self._icloud_2fa1_show_trusted_device_request_form()
+            self._icloud_2fa1_show_verification_code_entry_form(
+                            invalid_code_msg=invalid_code_text)
             return
 
         if valid_code is False:
                 invalid_code_text = (f"The Verification Code {self.verification_code} in incorrect.\n\n")
 
-                self._icloud_2fa1_show_verification_code_entry_form(invalid_code_msg=invalid_code_text)
+                self._icloud_2fa1_show_verification_code_entry_form(
+                            invalid_code_msg=invalid_code_text)
                 return
 
         if self.username in self.hass_configurator_request_id:
@@ -9739,7 +9752,7 @@ class Icloud3:#(DeviceScanner):
             return
 
         elif arg_command_cmd == 'trusted_device':
-            self._icloud_2fa1_show_trusted_device_request_form()
+            self._icloud_2fa1_show_verification_code_entry_form()
             return
 
         elif arg_command_cmd == 'reset_session':
