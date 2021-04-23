@@ -7,6 +7,10 @@ The following enhancements and changes have been made iCloud3:
 
 ------
 
+### Bug Fix Updates (v2.4.2)
+
+- Added 'AU' to the list of valid Waze Regions.
+
 ### Bug Fix Updates (v2.4.1)
 
 - Fixed a bug where the create_sensor was not creating any sensors and the exclude_sensor was not excluding the specified sensors.

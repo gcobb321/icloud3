@@ -22,9 +22,12 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.4.1'
+VERSION = '2.4.2'
 
 '''
+v2.4.2 (4/20/2021)
+1. Added AU to the list of valid Waze regions.
+
 v2.4.1 (4/19/2021)
 1. Fixed a bug where the create_sensor was not creating any sensors and the exclude_sensor was not excluding the specified sensors.
 2. Fixed coding spelling error bugs related to iCloud 2fa reauthorization requests and determining if a beta version of the the Event Log needed updated when iCloud3 was starting.
@@ -802,7 +805,7 @@ VALIDATE_PARAMETER_LIST = {
     CONF_TIME_FORMAT: [12, 24],
     CONF_DISPLAY_ZONE_FORMAT: ['zone', 'name', 'fname', 'title'],
     CONF_DISTANCE_METHOD: ['waze', 'calc'],
-    CONF_WAZE_REGION: ['US', 'NA', 'EU', 'IS', 'us', 'na', 'eu', 'is'],
+    CONF_WAZE_REGION: ['US', 'NA', 'EU', 'IS', 'AU', 'us', 'na', 'eu', 'is', 'au'],
     CONF_DISPLAY_ZONE_FORMAT: ['zone', 'name', 'fname', 'title'],
 }
 VALIDATE_PARAMETER_TRUE_FALSE = [
