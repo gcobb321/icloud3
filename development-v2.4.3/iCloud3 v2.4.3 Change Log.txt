@@ -1,0 +1,2 @@
+V2.4.3 (7/30/2001)
+1. Added sensor '[devicename]_travel_time_min' -- This is the unformatted waze travel time in minutes. It can be included or excluded using the 'mtim' code.
