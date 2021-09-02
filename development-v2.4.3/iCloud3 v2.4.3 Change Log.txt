@@ -1,2 +1,5 @@
 V2.4.3 (7/30/2001)
 1. Added sensor '[devicename]_travel_time_min' -- This is the unformatted waze travel time in minutes. It can be included or excluded using the 'mtim' code.
+
+v2.4.3a (9/2/2021)
+1. An undefined variaable 'invalid_code_text' was displayed after entering an invalid iCloud account verification code or taking to long to enter it. This has been corrected.
