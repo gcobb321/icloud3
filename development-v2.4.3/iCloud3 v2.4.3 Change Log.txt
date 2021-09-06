@@ -3,3 +3,6 @@ V2.4.3 (7/30/2001)
 
 v2.4.3a (9/2/2021)
 1. An undefined variaable 'invalid_code_text' was displayed after entering an invalid iCloud account verification code or taking to long to enter it. This has been corrected.
+
+v2.4.3b (9/3/2021)
+1. Added Event Log items for each step of the iCloud Verification code notice, entry and authentication
