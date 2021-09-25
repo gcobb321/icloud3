@@ -22,11 +22,14 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.4.3b'
+VERSION = '2.4.4'
 
 '''
+v2.4.4 (9/25/2021)
+1. Coordindated update with pyicloud_ic3.py to support Apple iCloud url changes to access iCloud+ for location & device info for Find-my-Friends tracking method.
+
 v2.4.3a (9/2/2021)
-1. An undefined variaable 'invalid_code_text' was displayed after entering an invalid iCloud account verification code or taking to long to enter it. This has been corrected.
+1. An undefined variable 'invalid_code_text' was displayed after entering an invalid iCloud account verification code or taking to long to enter it. This has been corrected.
 
 V2.4.3 (7/30/2001)
 1. Added sensor '[devicename]_travel_time_min' -- This is the unformatted waze travel time in minutes. It can be included or excluded using the 'mtim' code.
@@ -147,6 +150,7 @@ CONF_LOG_LEVEL                  = 'log_level'
 CONF_CONFIG_IC3_FILE_NAME       = 'config_ic3_file_name'
 CONF_LEGACY_MODE                = 'legacy_mode'
 CONF_EVENT_LOG_CARD_DIRECTORY   = 'event_log_card_directory'
+CONF_EVENT_LOG_CARD_FILENAME    = 'event_log_card_filename'
 CONF_DISPLAY_TEXT_AS            = 'display_text_as'
 CONF_TEST_PARAMETER             = 'test_parameter'
 CONF_ZONE                       = 'zone'
@@ -744,6 +748,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_ENTITY_REGISTRY_FILE): cv.string,
     vol.Optional(CONF_CONFIG_IC3_FILE_NAME, default=''): cv.string,
     vol.Optional(CONF_EVENT_LOG_CARD_DIRECTORY, default='www/custom_cards'): cv.string,
+    vol.Optional(CONF_EVENT_LOG_CARD_FILENAME, default='icloud3-event-log-card.js'): cv.string,
     vol.Optional(CONF_LEGACY_MODE, default=False): cv.boolean,
     vol.Optional(CONF_DISPLAY_TEXT_AS, default=[]): vol.All(cv.ensure_list, [cv.string]),
 
@@ -809,6 +814,7 @@ DEFAULT_CONFIG_VALUES = {
 
     CONF_LOG_LEVEL: '',
     CONF_EVENT_LOG_CARD_DIRECTORY: 'www/custom_cards',
+    CONF_EVENT_LOG_CARD_FILENAME: 'icloud3-event-log-card.js',
     CONF_DISPLAY_TEXT_AS: [],
     }
 
@@ -937,6 +943,7 @@ def setup_scanner(hass, config: dict, see, discovery_info=None):
     config_parameter[CONF_ENTITY_REGISTRY_FILE]     = config.get(CONF_ENTITY_REGISTRY_FILE)
     config_parameter[CONF_CONFIG_IC3_FILE_NAME]     = config.get(CONF_CONFIG_IC3_FILE_NAME)
     config_parameter[CONF_EVENT_LOG_CARD_DIRECTORY] = config.get(CONF_EVENT_LOG_CARD_DIRECTORY)
+    config_parameter[CONF_EVENT_LOG_CARD_FILENAME]  = config.get(CONF_EVENT_LOG_CARD_FILENAME)
     config_parameter[CONF_TRACK_DEVICES]            = config.get(CONF_TRACK_DEVICES) or []
     config_parameter[CONF_DEVICES]                  = config.get(CONF_DEVICES) or []
     config_parameter[CONF_DISPLAY_TEXT_AS]          = config.get(CONF_DISPLAY_TEXT_AS)
@@ -8842,6 +8849,7 @@ class Icloud3:#(DeviceScanner):
         self.entity_registry_file         = self.config_parameter[CONF_ENTITY_REGISTRY_FILE]
         self.config_ic3_file_name         = self.config_parameter[CONF_CONFIG_IC3_FILE_NAME]
         self.event_log_card_directory     = self.config_parameter[CONF_EVENT_LOG_CARD_DIRECTORY]
+        self.event_log_card_filename      = self.config_parameter[CONF_EVENT_LOG_CARD_FILENAME]
         self.config_devices_schema        = self.config_parameter[CONF_DEVICES]
         self.config_track_devices_parm    = self.config_parameter[CONF_TRACK_DEVICES]
 
@@ -8907,13 +8915,16 @@ class Icloud3:#(DeviceScanner):
     def _check_ic3_event_log_file_version(self):
         try:
             ic3_directory = os.path.abspath(os.path.dirname(__file__))
-            ic3_evlog_filename = (f"{ic3_directory}/icloud3-event-log-card.js")
+            if instr(self.event_log_card_filename, '.js') is False:
+                self.event_log_card_filename += '.js'
+            ic3_evlog_filename = (f"{ic3_directory}/{self.event_log_card_filename}")
+
             if os.path.exists(ic3_evlog_filename) is False:
                 return
 
             www_directory      = (f"{ic3_evlog_filename.split('custom_components')[0]}"
                                   f"{self.event_log_card_directory}")
-            www_evlog_filename = (f"{www_directory}/icloud3-event-log-card.js")
+            www_evlog_filename = (f"{www_directory}/{self.event_log_card_filename}")
             www_evlog_file_exists_flag = os.path.exists(www_evlog_filename)
 
 
