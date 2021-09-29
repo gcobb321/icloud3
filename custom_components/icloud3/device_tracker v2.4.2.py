@@ -1224,7 +1224,7 @@ class Icloud3:#(DeviceScanner):
             self.track_devicename_list = ""
             for devicename in self.devicename_verified:
                 error_log_msg = None
-                self._display_info_status_msg(devicename, "Verifing Device")
+                self._display_info_status_msg(devicename, "Verifying Device")
                 #Devicename config parameter is OK, now check to make sure the
                 #entity for device name has been setup by iosapp correctly.
                 #If the devicename is valid, it will be tracked
