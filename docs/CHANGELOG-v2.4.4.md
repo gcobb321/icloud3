@@ -1,4 +1,4 @@
-# iCloud3 Version 2.4.1 Change Log
+# iCloud3 Version 2.4.4 Change Log
 
 The following enhancements and changes have been made iCloud3:
 
@@ -6,6 +6,20 @@ The following enhancements and changes have been made iCloud3:
 * You can also go to the iCloud3 releases page [here](https://github.com/gcobb321/icloud3/releases) to download the latest version and do a manual update.
 
 ------
+
+### Update to support iCloud+ change that broke Find-my-Friends tracking method (v2.4.4, 9/25/2021)
+
+1. Coordinated update with pyicloud_ic3.py to support Apple iCloud url changes to access iCloud+ for location & device info for Find-my-Friends tracking method.
+
+### Sensor Update (v2.4.3c)
+
+1. Added sensor '[devicename]_travel_time_min' -- This is the unformatted waze travel time in minutes. It can be included or excluded using the 'mtim' code.
+
+### Bug Fix Update (v2.4.3a, v2.4.3b,
+
+1. An undefined variable 'invalid_code_text' was displayed after entering an invalid iCloud account verification code or taking to long to enter it. This has been corrected.
+
+1. 2dded Event Log items for each step of the iCloud Verification code notice, entry and authentication 
 
 ### Bug Fix Updates (v2.4.2)
 
