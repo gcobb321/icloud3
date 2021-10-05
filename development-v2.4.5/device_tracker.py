@@ -83,7 +83,7 @@ HA_DEVICE_TRACKER_LEGACY_MODE = False
 
 #Vailidate that Waze is available and can be used
 try:
-    import WazeRouteCalculator
+    from .waze_route_calc_ic3 import WazeRouteCalculator, WRCError
     WAZE_IMPORT_SUCCESSFUL = True
 except ImportError:
     WAZE_IMPORT_SUCCESSFUL = False
@@ -1072,6 +1072,7 @@ class Icloud3:#(DeviceScanner):
         self.see                          = see
         self.polling_5_sec_loop_running   = False
         self.api                          = None
+        self.WazeRouteCalc                = None        # WazeRouteCalculator object
         self.base_zone                    = HOME
         self.verification_inprocess_flag  = False
         self.verification_code            = None
@@ -1243,7 +1244,7 @@ class Icloud3:#(DeviceScanner):
             self.track_devicename_list = ""
             for devicename in self.devicename_verified:
                 error_log_msg = None
-                self._display_info_status_msg(devicename, "Verifying Device")
+                self._display_info_status_msg(devicename, "Verifing Device")
                 #Devicename config parameter is OK, now check to make sure the
                 #entity for device name has been setup by iosapp correctly.
                 #If the devicename is valid, it will be tracked
@@ -6190,6 +6191,8 @@ class Icloud3:#(DeviceScanner):
         self.waze_region   = waze_region.upper()
         self.waze_realtime = waze_realtime
 
+        self.WazeRouteCalc = WazeRouteCalculator(self.waze_region, self.waze_realtime)
+
         min_dist_msg = (f"{waze_min_distance} {self.unit_of_measurement}")
         max_dist_msg = (f"{waze_max_distance} {self.unit_of_measurement}")
 
@@ -8223,7 +8226,8 @@ class Icloud3:#(DeviceScanner):
                             last_long, zone, last_dist_from_zone_km):
 
         try:
-            if not self.distance_method_waze_flag:
+            if (not self.distance_method_waze_flag
+                    or self.WazeRouteCalc is None):
                 return (WAZE_NOT_USED, 0, 0, 0)
             elif zone == self.base_zone:
                 return (WAZE_USED, 0, 0, 0)
@@ -8274,6 +8278,7 @@ class Icloud3:#(DeviceScanner):
                     waze_status = WAZE_OUT_OF_RANGE
 
             except Exception as err:
+                _LOGGER.exception(err)
                 log_msg = (f"►INTERNAL ERROR (ProcWazeData)-{err})")
                 self._log_error_msg(log_msg)
 
@@ -8296,6 +8301,7 @@ class Icloud3:#(DeviceScanner):
                     waze_dist_last_poll)
 
         except Exception as err:
+            _LOGGER.exception(err)
             self._set_waze_not_available_error(err)
 
             return (WAZE_NO_DATA, 0, 0, 0)
@@ -8322,11 +8328,9 @@ class Icloud3:#(DeviceScanner):
                 try:
                     self.count_waze_locates[devicename] += 1
                     waze_call_start_time = time.time()
-                    route = WazeRouteCalculator.WazeRouteCalculator(
-                            from_loc, to_loc, self.waze_region)
 
                     route_time, route_distance = \
-                        route.calc_route_info(self.waze_realtime)
+                            self.WazeRouteCalc.calc_route_info(from_lat, from_long, to_lat, to_long)
 
                     self.time_waze_calls[devicename] += (time.time() - waze_call_start_time)
 
@@ -8335,12 +8339,14 @@ class Icloud3:#(DeviceScanner):
 
                     return (WAZE_USED, route_distance, route_time)
 
-                except WazeRouteCalculator.WRCError as err:
+                # except WazeRouteCalculator.WRCError as err:
+                except WRCError as err:
                     retry_cnt += 1
                     log_msg = (f"Waze Server Error (#{retry_cnt}), Retrying, Type-{err}")
                     self._log_info_msg(log_msg)
 
         except Exception as err:
+            _LOGGER.exception(err)
             self._set_waze_not_available_error(err)
 
         return (WAZE_NO_DATA, 0, 0)
