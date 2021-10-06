@@ -1,4 +1,4 @@
-# iCloud3 Version 2.4.4 Change Log
+# iCloud3 Version 2.4 Change Log
 
 The following enhancements and changes have been made iCloud3:
 
@@ -6,6 +6,10 @@ The following enhancements and changes have been made iCloud3:
 * You can also go to the iCloud3 releases page [here](https://github.com/gcobb321/icloud3/releases) to download the latest version and do a manual update.
 
 ------
+
+### Fix to restore the WazeRouteCalculator function (v2.4.5, 10/6/2021)
+
+1. Fixed a problem where the Waze Route Calculator was being disabled and the distance method-calc was being used. The problem started when the WazeRouteCalculator module in the Home Assistant standard Python library was changed. This update uses a modified version of the WazeRouteCalculator that is part of the Python Standard library that was developed by Kovács Bálint, Budapest, Hungary. It has been customized to better support iCloud3.
 
 ### Update to support iCloud+ change that broke Find-my-Friends tracking method (v2.4.4, 9/25/2021)
 

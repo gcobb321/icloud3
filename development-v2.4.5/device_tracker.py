@@ -22,9 +22,12 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.4.4'
+VERSION = '2.4.5'
 
 '''
+v2.4.5 (10/5/2021)
+1. Fixed a problem where the Waze Route Calculator was being disabled and the distance method-calc was being used. I think the problem started when the WazeRouteCalculator module in the Home Assistant standard Python library was updated.
+
 v2.4.4 (9/25/2021)
 1. Coordindated update with pyicloud_ic3.py to support Apple iCloud url changes to access iCloud+ for location & device info for Find-my-Friends tracking method.
 
@@ -8320,9 +8323,6 @@ class Icloud3:#(DeviceScanner):
         """
 
         try:
-            from_loc = f"{from_lat},{from_long}"
-            to_loc   = f"{to_lat},{to_long}"
-
             retry_cnt = 0
             while retry_cnt < 3:
                 try:
