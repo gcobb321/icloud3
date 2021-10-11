@@ -40,7 +40,7 @@
 #distance_method: waze
 
 # --Display Parameters--------------------------------------
-#display_zone_fname: True
+#display_zone_format: name
 #unit_of_measurement: mi
 #time_format: 24
 #display_text_as:

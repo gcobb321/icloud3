@@ -832,7 +832,6 @@ VALIDATE_PARAMETER_LIST = {
     CONF_DISPLAY_ZONE_FORMAT: ['zone', 'name', 'fname', 'title'],
     CONF_DISTANCE_METHOD: ['waze', 'calc'],
     CONF_WAZE_REGION: ['US', 'NA', 'EU', 'IS', 'AU', 'us', 'na', 'eu', 'is', 'au'],
-    CONF_DISPLAY_ZONE_FORMAT: ['zone', 'name', 'fname', 'title'],
 }
 VALIDATE_PARAMETER_TRUE_FALSE = [
     CONF_CENTER_IN_ZONE,
