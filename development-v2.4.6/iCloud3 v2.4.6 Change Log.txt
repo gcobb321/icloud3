@@ -1,3 +1,8 @@
+
+v2.4.6 (10/11/2021)
+1. Changed the icon for zones from mdi:cellphone-iphone to mdi:cellphone because of Home Assistant mdi update.
+2. Changed the sensor state values for Travel Time, Distance, Next Update Time, etc. from an empty field to a value to address a Lovelace display change. The fields that were empty were not alligned with the field next to them. Travel Time will now display 0 min when in a zone. Other fields will display '___' when empty.
+
 v2.4.5 (10/5/2021)
 1. Fixed a problem where the Waze Route Calculator was being disabled and the distance method-calc was being used. I think the problem started when the WazeRouteCalculator module in the Home Assistant standard Python library was updated.
 
