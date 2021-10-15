@@ -1,6 +1,6 @@
 # Welcome to iCloud3 v2.4!
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v2.4.5-blue.svg)](https://github.com/gcobb321/icloud3)
+[![CurrentVersion](https://img.shields.io/badge/Current_Version-v2.4.6-blue.svg)](https://github.com/gcobb321/icloud3)
 [![Released](https://img.shields.io/badge/Released-October,_2021-blue.svg)](https://github.com/gcobb321/icloud3)
 [![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-red.svg)](https://github.com/gcobb321/icloud3)
 [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)

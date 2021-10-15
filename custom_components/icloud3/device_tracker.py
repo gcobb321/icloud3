@@ -832,6 +832,7 @@ VALIDATE_PARAMETER_LIST = {
     CONF_DISPLAY_ZONE_FORMAT: ['zone', 'name', 'fname', 'title'],
     CONF_DISTANCE_METHOD: ['waze', 'calc'],
     CONF_WAZE_REGION: ['US', 'NA', 'EU', 'IS', 'AU', 'us', 'na', 'eu', 'is', 'au'],
+    CONF_DISPLAY_ZONE_FORMAT: ['zone', 'name', 'fname', 'title'],
 }
 VALIDATE_PARAMETER_TRUE_FALSE = [
     CONF_CENTER_IN_ZONE,
@@ -1291,6 +1292,9 @@ class Icloud3:#(DeviceScanner):
                         event_msg = (f"iOS App location requests sent to > {self._format_fname_devicename(devicename)} > "
                                      f"{self._format_list(self.notify_iosapp_entity.get(devicename))}")
                         self._save_event_halog_info("*", event_msg)
+
+                        db=(f"1290 {devicename} {self.notify_iosapp_entity=}")
+                        self._save_event_halog_info("*", db)
 
                         #Send a message to all devices during startup
                         if self.broadcast_msg != '':
@@ -5509,7 +5513,7 @@ class Icloud3:#(DeviceScanner):
                             sensor_attrs[CONF_UNIT_OF_MEASUREMENT] = ''
                     elif format_type == '%':
                         sensor_attrs[CONF_UNIT_OF_MEASUREMENT] = '%'
-                    elif format_type == 'min':
+                    elif format_type == 'min' and instr(state_value, 'min') is False and instr(state_value, 'hr') is False:
                         sensor_attrs[CONF_UNIT_OF_MEASUREMENT] = 'min'
                     elif format_type == 'title':
                         state_value = state_value.title().replace('_', ' ')
@@ -7387,9 +7391,13 @@ class Icloud3:#(DeviceScanner):
         if dev_trk_entity_id:
             #Extract all notify entitity id's with this devicename in them from hass notify services notify list
             notify_devicename_list = []
+            db=(f"7379 {notify_devicenames=}")
+            self._save_event_halog_info("*", db)
             for notify_devicename in notify_devicenames:
                 if instr(notify_devicename, devicename):
                     notify_devicename_list.append(notify_devicename.replace("mobile_app_", ""))
+                db=(f"7382 {notify_devicename=} {notify_devicename_list=}")
+                self._save_event_halog_info("*", db)
 
             self.notify_iosapp_entity[devicename] = notify_devicename_list
             self.device_tracker_entity_iosapp[devicename] = (f"device_tracker.{dev_trk_entity_id}")
@@ -7398,6 +7406,10 @@ class Icloud3:#(DeviceScanner):
             self.device_tracker_entity_iosapp[devicename] = ''
             self.iosapp_monitor_dev_trk_flag[devicename] is False
 
+        db=(f"7390 {self.device_tracker_entity_iosapp=}")
+        self._save_event_halog_info("*", db)
+        db=(f"7390 {self.notify_iosapp_entity=}")
+        self._save_event_halog_info("*", db)
         return
 
 #--------------------------------------------------------------------
@@ -8338,7 +8350,7 @@ class Icloud3:#(DeviceScanner):
 
         try:
             retry_cnt = 0
-            while retry_cnt < 6:
+            while retry_cnt < 3:
                 try:
                     self.count_waze_locates[devicename] += 1
                     waze_call_start_time = time.time()
@@ -8686,7 +8698,8 @@ class Icloud3:#(DeviceScanner):
                     elif pname == CONF_TRACK_FROM_ZONE:
                         zones = pvalue.replace('zone.', '')
                         zones = zones.split(',')
-
+                        db=f"8648 {self.zones=} {self.zone_fname=} {pvalue=} {zones=}"
+                        self._save_sysevent(db)
                         pvalue = ''
                         for zone in zones:
                             zone = zone.strip()
