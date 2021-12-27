@@ -22,9 +22,12 @@ Thanks to all
 #pylint: disable=unused-argument, unused-variable
 #pylint: disable=too-many-instance-attributes, too-many-lines
 
-VERSION = '2.4.6'
+VERSION = '2.4.7'
 
 '''
+v2.4.7 (12/27/2011)
+1. Fixes a Waze Route Tracking issue where no information or an error was reported from Waze Servers. This was caused by a variable name change on the Waze side.
+
 v2.4.6 (10/11/2021)
 1. Changed the icon for zones from mdi:cellphone-iphone to mdi:cellphone because of Home Assistant mdi update.
 2. Changed the sensor state values for Travel Time, Distance, Next Update Time, etc. from an empty field to a value to address a Lovelace display change. The fields that were empty were not alligned with the field next to them. Travel Time will now display 0 min when in a zone. Other fields will display '___' when empty.
@@ -8011,6 +8014,9 @@ class Icloud3:#(DeviceScanner):
                 interval    = self.interval_str.get(devicename_zone, '').split("(")[0]
                 travel_time = self.last_tavel_time.get(devicename_zone, '')
                 distance    = self.last_distance_str.get(devicename_zone, '')
+
+            travel_time = travel_time.replace('0 min', '')
+            distance = distance.replace('0 mi', '').replace('0 km', '')
 
             if (instr(type(event_text), 'dict') or instr(type(event_text), 'list')):
                  event_text = str(event_text)

@@ -142,7 +142,7 @@ class WazeRouteCalculator(object):
 
         route = self.get_route(from_lat, from_long, to_lat, to_long)
 
-        route_time, route_distance = self._add_up_route(route['result'])
+        route_time, route_distance = self._add_up_route(route['results'])
 
         self.log.info(f"Location: From-({from_lat:0.5f}, {from_long:0.5f}), To-({to_lat:0.5f}, {to_long:0.5f}), Region-{self.region}")
         self.log.info(f"Results : Time-{route_time:0.2f}min, Distance-{route_distance:0.2f}km")

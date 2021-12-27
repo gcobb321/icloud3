@@ -12,14 +12,14 @@
   <table style="padding:  0  10px  0 40px;">
     <tr>
       <td>
-        <a  class="sidebar-version-date">Version: 2.4.6, October, 2021</a>
+        <a  class="sidebar-version-date">Version: 2.4.7, December, 2021</a>
       </td>
     </tr>
   </table>
 </nav>
 
 - What's New and What Changed
- - [Changes and new Features - v2.4.6](CHANGELOG-v2.4.md)
+ - [Changes and new Features - v2.4.7](CHANGELOG-v2.4.md)
 - Welcome to iCloud3
  - [1.0  Introduction](README.md)
  - [1.1  Quick Start Guide](chapters/1.1-quick-start-guide.md)

@@ -7,6 +7,10 @@ The following enhancements and changes have been made iCloud3:
 
 ------
 
+### v2.4.7 (12/27/2011) - Fix Waze Issue
+
+1. Fixes a Waze Route Tracking issue where no information or an error was reported from Waze Servers. This was caused by a variable name change on the Waze side.
+
 ### v2.4.6 (10/11/2021) - HA cellphone icon update, Lovelace Sensor Alignment, Increase Waze retry count
 
 1. Changed the icon for zones from mdi:cellphone-iphone to mdi:cellphone because of Home Assistant mdi update.
