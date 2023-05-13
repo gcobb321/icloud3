@@ -6856,13 +6856,13 @@ class Icloud3:#(DeviceScanner):
         #No devices to track error, display emails anyway
         if self.devicename_email == {}:
             for friend_email in friend_emails:
-                if (instr(friend_email, '@')
+                if ((instr(friend_email, '@') or  friend_email.startswith("+"))
                         and instr(friend_valid_emails_msg, friend_email) is False):
                      friend_valid_emails_msg += (f"{CRLF_DOT}{friend_email}")
             return devicename_friend_emails, friend_valid_emails_msg
 
         for parm_email in self.devicename_email:
-            if instr(parm_email, '@') is False:
+            if not parm_email.startswith("+") and not instr(parm_email, '@'):
                 continue
 
             #cycle thru the contacts emails
@@ -6870,7 +6870,7 @@ class Icloud3:#(DeviceScanner):
             devicename = self.devicename_email.get(parm_email, "")
 
             for friend_email in friend_emails:
-                if instr(friend_email, '@') is False:
+                if not friend_email.startswith("+") and not instr(friend_email, '@'):
                     continue
                 elif devicename in self.devicename_evlog_tracked_msg:
                     continue
