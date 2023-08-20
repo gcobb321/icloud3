@@ -190,7 +190,10 @@ def _get_dr_device_id_from_device_entry(hass, device, device_entry):
             Gb.dr_device_id_by_devicename[ICLOUD3] = device_entry.id
             Gb.dr_area_id_by_devicename[ICLOUD3]   = device_entry.area_id
             return
+    except:
+        pass
 
+    try:
         de_identifiers = list(device_entry.identifiers)
         de_identifiers = list(de_identifiers[0])
 
@@ -201,7 +204,7 @@ def _get_dr_device_id_from_device_entry(hass, device, device_entry):
         return
 
     except Exception as err:
-        log_exception(err)
+        #log_exception(err)
         pass
 
 #-------------------------------------------------------------------------------------------
