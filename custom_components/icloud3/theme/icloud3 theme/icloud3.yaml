@@ -1,0 +1,26 @@
+iCloud3 Theme:
+  modes:
+    light:
+      # Text field label, Select box label, hh.mm.ss label
+      mdc-text-field-label-ink-color: rgb(68, 115, 158)
+      # Field label text box, time text, boolean field text, option bullet text
+      mdc-theme-text-primary-on-background: rgb(0, 0, 0)
+      # Description text color
+      mdc-dialog-content-ink-color: rgb(68, 115, 158)
+      # Text entry heading, Dropdown box label, Description text
+      mdc-dialog-content-heading-ink-color: rgb(68, 115, 158)
+      # Select item heading
+      mdc-select-label-ink-color: rgb(68, 115, 158)
+
+ 
+    dark:
+      # Text field label, Select box label, hh.mm.ss label
+      mdc-text-field-label-ink-color: salmon
+      # Field label text box, time text, boolean field text, option bullet text
+      mdc-theme-text-primary-on-background: rgb(255, 255, 255)
+      # Description text color
+      mdc-dialog-content-ink-color: salmon
+      # Text entry heading, Dropdown box label, Description text
+      mdc-dialog-content-heading-ink-color: salmon
+      # Select item heading
+      mdc-select-label-ink-color: salmon

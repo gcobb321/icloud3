@@ -1,0 +1,464 @@
+{
+  "title": "iCloud3 v3: iDevice Tracker",
+  "config": {
+    "abort": {
+      "config_update_complete": "iCloud3 configuration updated successfully",
+      "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3. If you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
+      "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3. If you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
+      "login_error": "An error occurred logging into the iCloud account. Verify the username and password.",
+      "reauth_successful": "The reauthentication has been successfully completed",
+      "verification_code_accepted": "The Apple ID Verification Code was accepted. Reauthentication is complete",
+      "verification_code_cancelled": "The Apple ID Verification was cancelled",
+      "update_cancelled": "Update Cancelled",
+      "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3"
+    },
+    "error": {
+      "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
+      "verification_code_send_error": "Failed to send the Apple ID Verification Code",
+      "verification_code_requested2": "The Apple ID Verification Code was requested",
+      "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
+      "icloud_no_devices": "No devices were found in the iCloud 'Family Sharing' list",
+      "icloud_other_error": "An unknown error was encountered authenticating the iCloud account. Try again later"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "continue": "Select to continue iCloud3 installation (and parameter migration)",
+          "continue_restart_ha": "Select to continue iCloud3 installation. Then RESTART HOME ASSISTANT."
+        },
+        "description": "iCloud3 v3 Integration is being set up. Select SUBMIT, then select CONFIGURE to configure iCloud3. If you are running iCloud3 v2, the Configuration Parameters will be migrated from v2 to v3.",
+        "title": "iCloud3 v3 Integration Installer"
+      },
+      "reauth": {
+        "title": "Apple ID Verification Code (HA Notifications)",
+        "description": "Enter the 6-digit verification code you just received from Apple",
+        "data": {
+          "verification_code": "ICLOUD ACCOUNT VERIFICATION CODE",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "restart_ha": {
+        "title": "Confirm Restarting Home Assistant",
+        "description": "iCloud3 needs to restart Home Assistant to prevent device_tracker entity name conflicts",
+        "data": {
+          "action_items": ""
+        }
+      }
+    }
+  },
+  "options": {
+    "abort": {
+      "config_update_complete": "iCloud3 configuration updated successfully",
+      "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
+      "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
+      "ha_restarting": "Home Assistant is Restarting",
+      "ic3_reloading": "Reloading iCloud3 (Do a screen refresh)",
+      "reauth_successful": "The reauthentication has been successfully completed"
+    },
+    "error": {
+      "update_aborted": "Update aborted, an error was detected in one of the data fields",
+      "conf_updated": "iCloud3 Configuration Parameters were updated successfully",
+      "conf_reloaded": "iCloud3 Configuration File was Reloaded",
+
+      "icloud_acct_logging_into": "Logging into iCloud Account",
+      "icloud_acct_logged_into": "Successfully Logged into the iCloud Account",
+      "icloud_acct_already_logged_into": "Already Logged into the iCloud Account",
+      "icloud_acct_login_error": "iCloud Account Login Failed, Invalid Username or Password",
+      "icloud_acct_not_set_up": "The iCloud Account Username or Password needs to be entered",
+      "icloud_acct_no_data_source": "No Data Source has been selected",
+
+      "verification_code_requested": "The Apple ID Verification Code was requested, BROWSER REFRESH MAY BE NEEDED",
+      "verification_code_requested2": "The Apple ID Verification Code was requested",
+      "verification_code_needed": "The Apple ID Verification Code is needed",
+      "verification_code_accepted": "The Apple ID Verification Code was accepted",
+      "verification_code_invalid": "The Verification Code was not correct. Reenter or request a new code",
+      "verification_code_send_error": "Failed to send the Apple ID Verification Code",
+
+      "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
+      "inactive_all_devices": "✪ ✪ ALL DEVICES ARE INACTIVE. NO DEVICES WILL BE TRACKED ✪ ✪",
+      "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
+      "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
+      "inactive_few_devices": "A Few Devices are INACTIVE and will not be located or tracked",
+      "inactive_no_devices": "No Devices have been set up, nothing will be located or tracked",
+
+      "review_filledin_fields": "Review the 'Filled in' fields",
+      "not_numeric": "The value entered is not numeric",
+      "stat_zone_base_lat_range_error": "The value must be between -90 and 90",
+      "stat_zone_base_long_range_error": "The value must be between -180 and 180",
+      "waze_server_error_us": "The correct server for your location is: United States, Canada",
+      "waze_server_error_il": "The correct server for your location is: Israel",
+      "waze_server_error_row": "The correct server for your location is: Rest of the World",
+      "required_field": "This parameter must be specified",
+      "required_field_device": "A device providing location data must be selected from the Family Share, Find-my-Friends, or iOS App devices lists",
+      "no_device_selected": "A device providing location data must be selected",
+
+      "unknown_devicename": "The device that was previously selected can no longer be identified. It`s name may have been changed or it may have been deleted. Reselect the device to be tracked or monitored",
+      "unknown_value": "The value of this parameter in the iCloud3 configuration file is unknown or invalid. It must be selected again",
+      "unknown_famshr": "Check the FamShr parameter value (Not found or Invalid)",
+      "unknown_famshr_fmf": "Check the FamShr and FmF parameter values (Not found or Invalid)",
+      "unknown_famshr_fmf_iosapp": "Check the FamShr, FmF and iOS App parameter values (Not found or Invalid)",
+      "unknown_famshr_fmf_iosapp_picture": "Check the FamShr, FmF, iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_famshr_iosapp": "Check the FamShr and iOS App parameter values (Not found or Invalid)",
+      "unknown_famshr_iosapp_picture": "Check the FamShr, iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_famshr_picture": "Check the FamShr and Picture parameter values (Not found or Invalid)",
+      "unknown_fmf": "Check the FmF parameter value (Not found or Invalid)",
+      "unknown_fmf_iosapp": "Check the FmF and iOS App parameter values (Not found or Invalid)",
+      "unknown_fmf_iosapp_picture": "Check the FmF, iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_fmf_picture": "Check the FmFand Picture parameter values (Not found or Invalid)",
+      "unknown_iosapp": "Check the iOS App parameter value (Not found or Invalid)",
+      "unknown_iosapp_picture": "Check the iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_picture": "Check the Picture parameter value (Not found or Invalid)",
+
+      "tfz_selection_invalid": "The value must be a zone that is being tracked from",
+      "time_factor_invalid_range": "The 'travel_time_factor' must be between .1 and .9",
+      "display_text_as_no_gtsign": "The '>' between the ActualText and DisplayAsText is missing",
+      "display_text_as_no_actual": "The 'ActualText' is not specified",
+      "display_text_as_no_display_as": "The 'DisplayAsText' is not specified",
+      "not_found_directory": "The directory was not found",
+      "not_found_file": "The file was not found",
+      "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
+      "already_assigned": "This selection is already assigned to another device",
+      "iosapp_search_error": "WARNING: Search Failure - No iOS App device that starts with the iCloud3 or FamShr devicename was found. Select 'None' or the device to be used.",
+      "duplicate_other_devicename": "This name is already used in another integration or platform",
+      "action_completed": "Requested Action has been completed",
+      "action_cancelled": "Requested Action has been cancelled",
+      "restart_ha": "Home Assistant needs to be restarted to continue",
+      "excluded_sensors_ha_restart": "Excluded Sensors were Updated. An HA restart is required"
+
+    },
+    "step": {
+      "menu": {
+        "title": "iCloud3 Configure Settings",
+        "data": {
+          "menu_items": "",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "restart_icloud3": {
+        "title": "Confirm Restarting iCloud3",
+        "description": "Note: Changes to tracked devices require restarting iCloud3",
+        "data": {
+          "action_items": ""
+        }
+      },
+      "restart_ha_ic3": {
+        "title": "Restart Home Assistant or iCloud3",
+        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration",
+        "data": {
+          "action_items": ""
+        }
+      },
+      "restart_ha_ic3_load_error": {
+        "title": "iCloud3 Load Error",
+        "description": "iCloud3 did not load and initialize when HA started. Reload iCloud3 again or restart HA",
+        "data": {
+          "action_items": ""
+        }
+      },
+      "icloud_account": {
+        "title": "Data Sources - iCloud Account & iOS App",
+        "description": "",
+        "data": {
+          "data_source_icloud": "ICLOUD - Location data is provided by the Apple iCloud account",
+          "username": "APPPLE ID - The email address used to sign in to the iCloud Account",
+          "password": "PASSWORD - The iCloud Account Password",
+          "data_source_iosapp": "iOS APP - Location data is provided by the HA iOS App",
+          "icloud_server_endpoint_suffix": "ICLOUD SERVER LOCATION -  Countries having localized Apple iCloud Servers (Not Normally Used)s",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+        }
+      },
+      "reauth": {
+        "title": "Apple ID Verification Code",
+        "description": "Enter the 6-digit verification code you just received from Apple",
+        "data": {
+          "verification_code": "ICLOUD ACCOUNT VERIFICATION CODE",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "device_list": {
+        "title": "iCloud3 Device Tracker Entities",
+        "description": "All of the devices that are tracked or monitored by iCloud3 are listed on this screen. You can add new devices and update or delete existing devices.",
+        "data": {
+          "devices": "",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "add_device": {
+        "title": "Add Tracked iCloud3 Device",
+        "data": {
+          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
+          "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
+          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
+          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
+          "iosapp": "iOS APP INSTALLED - The HA iOS App is installed on this device  ",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+        }
+      },
+      "update_device": {
+        "title": "Update Tracked iCloud3 Device",
+        "description": "This screen lets you configure each of the devices that can be tracked or monitored using iCloud3",
+        "data": {
+          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
+          "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
+          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
+          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
+          "famshr_devicename": "FAMILY SHARING LIST DEVICE - Use location data from this iCloud Acct Family Sharing member",
+          "fmf_email": "FIND-MY-FRIENDS DEVICE - Use location data from this FindMy device sharing their info with you",
+          "iosapp_device": "IOS APP DEVICE_TRACKER ENTITY - Use this HA device location data & zone enter/exit triggers",
+          "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
+          "track_from_base_zone": "PRIMARY HOME ZONE - Use another zone if you are away from Home for an extended period",
+          "picture": "PICTURE - Photo image of the person normally using this device (40x40 pixels is best size)",
+          "inzone_interval": "INZONE INTERVAL",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+          "inzone_interval": "Time between location requests when in a zone",
+          "track_from_base_zone": "Normally, the Home zone is used as the base location for all tracking (travel time, distance, etc).  However, a different zone can be used as the base location if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.)"
+        }
+      },
+      "delete_device": {
+        "title": "Delete Device(s), Other Device Maintenance",
+        "data": {
+          "action_items": ""
+        }
+      },
+      "review_inactive_devices": {
+        "title": "Review Untracked (Inactive) Devices",
+        "description": "The 'Tracking Mode' of devices are set to 'Inactive' and will not be located or tracked.",
+        "data": {
+          "inactive_devices": "",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "change_device_order": {
+        "title": "Event Log Device Display Sequence",
+        "data": {
+          "device_desc": "DEVICES - The devices are displayed in the Event Log heading area and in various Event Log messages in this sequence",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "format_settings": {
+        "title": "Format Settings",
+        "description": "Tracking activity, results and information messages are displayed in the Event log, sensors and device_tracker entities for tracked and monitored devices. With this screen, you can specify the how these results should be displayed.",
+        "data": {
+          "log_level": "LOG LEVEL - The type of messages that are added to the HA log file by iCloud3",
+          "display_zone_format": "EVENT LOG ZONE DISPLAY NAME - How the Zone name is displayed in sensors and the Event Log",
+          "device_tracker_state_source": "DEVICE TRACKER STATE VALUE - How the device's device_tracker entity state value is determined",
+          "time_format": "TIME FORMAT - How time fields are displayed in sensors and in the Event Log",
+          "unit_of_measurement": "UNIT OF MEASUREMENT - How distance fieldsare displayed in sensors and in the Event Log",
+          "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
+          "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS Latitude/Longitude/Accuracy (22.32771, -76.33073/±35m) or only the GPS accuracy (/±35m) in the Event Log",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+          "device_tracker_state_source": "HA uses the device's gps coordinates to determine the zone. The gps accuracy is not considered so the zone may be exited when the gps wanders out of the zone. iCloud3 does consider the gps accuracy and will not exit the zone when this occurs. iCloud3 will display the Zone's Friendly Name or zone name displayed on the Event Log."
+        }
+      },
+      "display_text_as": {
+        "title": "Event Log 'Display Text As'",
+        "description": "There may be some text fields that are displayed on the Event Log screen that may be sensitive in nature. Some examples include email addresses or phone numbers. With this screen, you can select the Original Text and what should be displayed instead. For example, you can replace 'geekstergary@apple.com' with 'gary@email.com'",
+        "data": {
+          "display_text_as": "Text Replacement Fields",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "display_text_as_update": {
+        "title": "Update Event Log 'Display Text As' Value",
+        "data": {
+          "text_from": "ORIGINAL TEXT - Text to be replaced (example: gary_real_email@gmail.com)",
+          "text_to": "DISPLAYED TEXT- Text to be displayed (display:  gary@email.com)",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+        }
+      },
+      "actions": {
+        "title": "iCloud3 Action Commands",
+        "data": {
+          "action_items": ""
+        }
+      },
+      "tracking_parameters": {
+        "title": "Tracking & Other Parameters",
+        "description": "The parameters on this screen do not fall into any of the other general categories and are rarely changed.",
+        "data": {
+          "log_level": "LOG LEVEL - The type of messages that are added to the HA log file during iCloud3 operations",
+          "gps_accuracy_threshold": "GPS ACCURACY THRESHOLD",
+          "old_location_threshold": "OLD LOCATION THRESHOLD",
+          "old_location_adjustment": "OLD LOCATION ADJUSTMENT",
+          "distance_between_devices": "USE LOCATION RESULTS FROM A NEAR-BY DEVICE",
+          "max_interval": "MAXIMUM INTERVAL",
+          "exit_zone_interval": "EXIT ZONE INTERVAL",
+          "iosapp_alive_interval": "REQUEST IOSAPP LOCATION INTERVAL",
+          "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
+          "offline_interval": "DEVICE OFFLINE INTERVAL",
+          "travel_time_factor": "TRAVEL TIME INTERVAL MULTIPLIER",
+          "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
+          "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+          "old_location_threshold": "Locations older than this value will be discarded",
+          "old_location_adjustment": "Add this to the time that determines if a location is old",
+          "distance_between_devices": "See if there are any other devices that are near the device being updated. If there is, use that device's location results instead of going through the calculation process. This can speed up the update since Waze travel time and distance information does not have to be requested",
+          "gps_accuracy_threshold": "Locations with GPS Accuracy above this value will be discarded",
+          "tfz_tracking_max_distance": "Normally the Home zone's time and distance data is displayed on the Device's device_tracker and sensor entities. Display the Track-from-Zone instead when the Device is within this distance of the Track-from-Zone",
+          "max_interval": "The maximum time between location requests",
+          "exit_zone_interval": "The time to the first location request after exiting a zone",
+          "iosapp_alive_interval": "Send a location request to the iOS App if there has been no contact after this amount of time. This will check to see if the iOS App is responding to location requests or is asleep and not running.",
+          "offline_interval": "Location request interval when offline (Airplane mode, dead cell area, etc.)",
+          "travel_time_factor": "Next location time = Waze travel time to zone * this value",
+          "event_log_btnconfig_url": "Normally, this is blank and iCloud3 will determine the URL for it's Configure Settings screen. However, if there is a problem caused by running HA in a virtual environment, docker or on another device and the actual URL can not be detemined, a 404 not found error may be encountered. If that happens, select it the normal way (HA Devices & Services > Integration > iCloud3 > Configure Settings gear) and copy the URL from the browser into this field."
+        }
+      },
+      "inzone_intervals": {
+        "title": "inZone Parameters and Default Intervals",
+        "description": "An inZone interval is the time between location requests when the Device is in a zone. This screen sets the default values for different types of devices. This value is assigned to a device when it is added. You can then change it on the Update Device screen ",
+        "data": {
+          "iphone": "IPHONE & IPOD",
+          "ipad": "IPAD",
+          "watch": "APPLE WATCH",
+          "airpods": "AIRPODS",
+          "no_iosapp": "IOS APP IS NOT INSTALLED ",
+          "other": "OTHER DEVICE TYPE",
+          "discard_poor_gps_inzone": "Discard Location Updates with Poor GPS Accuracy when in a Zone",
+          "distance_between_devices": "Determine the distance between devices. Use a near by device's tracking results",
+          "center_in_zone": "Change Device's Location to the Zone's Center when in a Zone",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+          "no_iosapp": "Default interval if the iOS App is not used for location monitoring and zone enter/exit triggers",
+          "other": "Unspecified device type inzone interval"
+        }
+      },
+      "waze_main": {
+        "title": "Waze - Route Service Travel Time/Distance",
+        "data": {
+          "waze_used": "═══════════════════════════════════════════════════ WAZE ROUTE SERVICE",
+          "waze_region": "ROUTE SERVER LOCATION - Location of the Waze Route Server for your area",
+          "waze_realtime": "USE REAL TIME DATA - Waze should consider traffic delays when determining travel time",
+          "waze_min_distance": "WAZE MINIMUM DISTANCE",
+          "waze_max_distance": "WAZE MAXIMUM DISTANCE",
+          "waze_history_database_used": "═══════════════════════════════════════════════════ WAZE HISTORY DATABASE",
+          "waze_history_track_direction": "GENERAL TRAVEL DIRECTION - Used to display 'Map Trace Lines' between saved locations",
+          "waze_history_max_distance": "HISTORY MAX DISTANCE",
+          "action_items": "═════════════════════════════════════════════════════"
+        },
+        "data_description": {
+          "waze_min_distance": "Use the Waze Route Service when the zone distance is greater than this value",
+          "waze_max_distance": "Do not use the Waze Route Service when the zone distance is greater than than this value",
+          "waze_history_max_distance": "Do not save the Waze travel time & distance to the Waze History Database if the distance is greater than this value"
+        }
+      },
+      "special_zones": {
+        "title": "Special Zones - Enter Zone Delay, Stationary Zone, Primay Home Base Zone",
+        "data": {
+          "passthru_zone_header":   "═══════════════════════════════════════════════════ ENTER ZONE DELAY",
+          "passthru_zone_time": "ENTER ZONE DELAY TIME ",
+          "stat_zone_header":       "═══════════════════════════════════════════════════ STATIONARY ZONE",
+          "stat_zone_still_time": "NO MOVEMENT TIME ",
+          "stat_zone_inzone_interval": "INZONE INTERVAL ",
+          "stat_zone_fname": "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
+          "base_offset_header":     ".══════════════════════════════════════════ STATIONARY ZONE BASE LOCATION",
+          "stat_zone_base_latitude": "BASE LOCATION NORTH-SOUTH OFFSET",
+          "stat_zone_base_longitude": "BASE LOCATION EAST/WEST OFFSET",
+          "track_from_zone_header":  "═══════════════════════════════════════════════════ PRIMARY BASE ZONE = HOME",
+          "track_from_base_zone": "PRIMARY 'HOME' ZONE - Use another zone if you are away from Home for an extended period (Global Override)",
+          "track_from_home_zone": "ALSO TRACK FROM HOME ZONE - Continue to track from the Home zone when the Primary Home Zone is not Home",
+          "action_items":             "═══════════════════════════════════════════════════"
+        },
+        "data_description": {
+          "passthru_zone_time": "Delay processing an Enter Zone Trigger that you may be driving through and not actually entering",
+          "stat_zone_still_time": "Time at the same location before moving into a Stationary Zone",
+          "stat_zone_inzone_interval": "Time interval between location requests when in a Stationary Zone",
+          "stat_zone_fname": "Display this value in the Event Log, device_tracker, travel direction and zone entities when the device is in a Stationary Zone. iCloud3 assigns a number to the Stationary Zone. Use the wildcard character '#' to display this value in the Stationary Zone's name (StatZon1, StatZon2, etc). Note: A 7-letter name leaves room for the name and number to be displayed on iPhone screens without being truncated.",
+          "stat_zone_base_latitude": "Distance (±km) north-south of the Home Zone (or it's GPS Latitude)",
+          "stat_zone_base_longitude": "Distance (±km) east-west of the Home Zone (or it's GPS Longitude)"
+        }
+      },
+      "sensors": {
+        "title": "Device and Tracking Sensors created by iCloud3",
+        "description": "Many sensors are used to display tracking results and other information for a device. This screen is used to select the sensors that should be created.",
+        "data": {
+          "monitored_devices": "MONITORED DEVICE SENSORS - Select the type of sensors to create for a Monitored Device",
+          "device": "DEVICE SENSORS - Device status and information",
+          "tracking_update": "LOCATION UPDATE SENSORS - Device location update times",
+          "tracking_time": "TIME SENSORS - Device tracking timers",
+          "tracking_distance": "DISTANCE SENSORS - Device tracking distances",
+          "track_from_zones": "TRACK FROM MULTIPLE ZONE SENSORS - Used when tracking from more than one zone (not needed for tracking only from the Home zone)",
+          "tracking_other": "OTHER TRACKING SENSORS - Not normally used but available",
+          "zone": "ZONE SENSORS - Device zone status and information",
+          "other": "OTHER SENSORS - Sensors not in the above areas",
+          "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "exclude_sensors": {
+        "title": "Exclude Sensors",
+        "description": "Many sensors are created for the devices but there may be times when you want to not create a sensor for a specific device. For example, you may want to create a bettery sensor for all devices except one. This screen lets you specify the sensor entity name that should not be created.",
+        "data": {
+          "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
+          "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
+          "filtered_sensors": "ICLOUD3 SENSORS - A list of Sensors that are created when iCloud3 starts",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      }
+    }
+  },
+  "services": {
+    "action": {
+      "name": "Action",
+      "description": "This service will send operational commands to iCloud3",
+      "fields": {
+        "command": {
+          "name": "Command",
+          "description": "(Required) The operational command to send to iCloud3"
+          },
+        "device_name": {
+          "name": "Device Name",
+          "description": "(Optional) Apply all devices or only apply to the selected device"
+        }
+      }
+    },
+    "update": {
+      "name": "Update",
+      "description": "The Update service has been replaced by the Action service"
+    },
+    "restart": {
+      "name": "Restart",
+      "description": "This service will restart iCloud3"
+    },
+    "find_iphone_alert": {
+      "name": "Find iPhone Alert Tone",
+      "description": "This service will send an alert tone to the device that you want to find",
+      "fields": {
+        "device_name": {
+          "name": "Device Name",
+          "description": "Device the Find iPhone Alert and Message should be sent to"
+        }
+      }
+    },
+    "lost_device_alert": {
+      "name": "Send Lost Device Message",
+      "description": "This service will send a Message and Phone number to the lost iPhone",
+      "fields": {
+        "device_name": {
+          "name": "Device Name",
+          "description": "Device the Find iPhone Alert and Message should be sent to"
+        },
+        "number": {
+          "name": "Phone Number",
+          "description":  "The phone number to send the message to"
+        },
+        "message": {
+          "name": "Message",
+          "description": "The message to be sent"
+        }
+      }
+    }
+  }
+}
