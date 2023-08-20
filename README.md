@@ -2,7 +2,7 @@
 
 ------
 
-### Prerelease Version
+### Prerelease Version - v3.0-pr1 (8/20/2023)
 
 ------
 
@@ -43,8 +43,6 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 The screens below are an example of how the many tracking sensors can be displayed. The screen on the left shows the current tracking formation for Gary while the Event Log on the right shows a history of important tracking events.
 
 ![](./docs/images/track-evlog-gary-tfz-away-lillian-home.png)
-
-
 
 ### iCloud3 Documentation
 
