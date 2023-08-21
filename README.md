@@ -1,8 +1,8 @@
-# iCloud3 v3 Device Tracker Custom Component
+# iCloud3 v3 - An iDevice Tracker Custom Component
 
 ------
 
-### Prerelease Version - v3.0-pr1 (8/20/2023)
+### Prerelease Version - v3.0-pr1a (8/20/2023)
 
 ------
 
