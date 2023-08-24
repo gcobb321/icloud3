@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0pr1'
+VERSION                         = '3.0pr1.3'
 
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -360,8 +360,7 @@ BATTERY_STATUS_CODES = {
         'notcharging': 'not charging',
         'not charging': 'not charging',
         'not_charging': 'not charging',
-        'unknown': 'unknown',
-        '': 'unknown',
+        'unknown': '',
         }
 BATTERY_STATUS_FNAME = {
         # 'full, full': 'Full, Not Charging',

@@ -412,10 +412,12 @@ def secs_to_time_age_str(time_secs):
     if time_secs < 1 or time_secs == HIGH_INTEGER:
         return '00:00:00'
 
-    time_age_str = (f"{secs_to_time(time_secs)} "
-                    f"({secs_to_time_str(secs_since(time_secs))} ago)")
+    age_secs = secs_since(time_secs)
+    if age_secs >= 86400:
+        return f"{age_secs/86400:.1f} days ago"
 
-    return time_age_str
+    return (f"{secs_to_time(time_secs)} "
+            f"({secs_to_time_str(age_secs)} ago)")
 
 #--------------------------------------------------------------------
 def secs_to_age_str(time_secs):

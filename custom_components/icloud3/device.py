@@ -1613,7 +1613,8 @@ class iCloud3_Device(TrackerEntity):
             if STATE not in battery_level_attrs:
                 return False
 
-            battery_status = entity_io.get_state(self.iosapp_entity[BATTERY_STATUS])
+            #battery_status_old = entity_io.get_state(self.iosapp_entity[BATTERY_STATUS])
+            battery_status = 'charging' if instr(battery_level_attrs['icon'], 'charging') else 'not charging'
             battery_level  = int(battery_level_attrs[STATE])
             battery_update_secs = battery_level_attrs[LAST_CHANGED_SECS]
 
@@ -1648,23 +1649,29 @@ class iCloud3_Device(TrackerEntity):
         Update the dev_data_battery and iosapp_battery fields with the battery data if this
         data is newer
         '''
-        if (battery_level < 1 or battery_status == ''
-                or battery_update_secs <= self.dev_data_battery_update_secs):
+
+        if battery_level < 1 or battery_status == '':
+            return
+        elif battery_status != self.dev_data_battery_status:
+            pass
+        elif battery_update_secs <= self.dev_data_battery_update_secs:
             return
 
-        if battery_level == 100 and self.PyiCloud_RawData_famshr:
-            famshr_battery_status = self.PyiCloud_RawData_famshr.device_data[ICLOUD_BATTERY_STATUS]
-            battery_status = f"full, {famshr_battery_status}"
+        if battery_level == 100 and data_source == FAMSHR_FNAME and self.PyiCloud_RawData_famshr:
+            battery_status = self.PyiCloud_RawData_famshr.device_data[ICLOUD_BATTERY_STATUS]
+            #famshr_battery_status = self.PyiCloud_RawData_famshr.device_data[ICLOUD_BATTERY_STATUS]
+            #battery_status = f"full, {famshr_battery_status}"
 
         if (battery_update_secs > self.dev_data_battery_update_secs
                 or battery_status != self.dev_data_battery_status):
             self.dev_data_battery_source = data_source
             self.dev_data_battery_level  = self.iosapp_data_battery_level  = battery_level
-            self.dev_data_battery_status = self.iosapp_data_battery_status = battery_status if battery_status else UNKNOWN
+            if battery_status:
+                self.dev_data_battery_status = self.iosapp_data_battery_status = battery_status
             self.dev_data_battery_update_secs = self.iosapp_data_battery_update_secs = battery_update_secs
 
 #-------------------------------------------------------------------
-    def display_battery_info_msg(self, display_msg=False):
+    def display_battery_info_msg(self, force_display=False):
         '''
         Display the Battery info msg if the status (Charging, Not Charging) has changed or the
         battery level is divisible by 5 (80, 85, etc.)
@@ -1673,16 +1680,16 @@ class iCloud3_Device(TrackerEntity):
         if self.dev_data_battery_level < 1:
             return False
 
-        last_battery_msg_level_status = self.last_battery_msg.split(', ')
-        if (last_battery_msg_level_status[1] != self.format_battery_status
-                or display_msg):
+        last_battery_level, last_battery_status = self.last_battery_msg.split('%, ')
+
+        if last_battery_status != self.format_battery_status or force_display:
             pass
-        elif (last_battery_msg_level_status[0] == f"{self.dev_data_battery_level}%"
+        elif (last_battery_level == self.dev_data_battery_level
                 or (self.dev_data_battery_level % 5) != 0):
             return False
 
         battery_msg = f"{self.dev_data_battery_level}%, {self.format_battery_status}"
-        if battery_msg == self.last_battery_msg and display_msg is False:
+        if battery_msg == self.last_battery_msg and force_display is False:
             return False
 
         self.last_battery_msg = battery_msg

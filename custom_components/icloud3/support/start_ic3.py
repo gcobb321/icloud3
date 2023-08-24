@@ -725,11 +725,18 @@ def check_ic3_event_log_file_version():
                         f"{CRLF_DOT}File-{www_evlog_js_filename_msg}")
             post_event(event_msg)
 
+            if Gb.evlog_version != www_version_text:
+                Gb.evlog_version = Gb.conf_profile['event_log_version'] = www_version_text
+                config_file.write_storage_icloud3_configuration_file()
+
             return
 
         try:
             _copy_image_files_to_www_directory(www_evlog_js_directory)
             shutil.copy(ic3_evlog_js_filename, www_evlog_js_filename)
+
+            Gb.evlog_version = Gb.conf_profile['event_log_version'] = www_version_text
+            config_file.write_storage_icloud3_configuration_file()
 
             post_startup_alert('Event Log was updated. Browser refresh needed')
             event_msg =(f"{EVLOG_ALERT}"

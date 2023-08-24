@@ -22,7 +22,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version = "3.0.15"
+        const version = "3.0.16"
         const cardTitle = "iCloud3 v3 - Event Log"
 
         const root = this.shadowRoot
@@ -986,7 +986,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const versionSentFlag = root.getElementById("versionSentFlag")
 
         try {
-            const ic3DirEvlogVersion = hass.states['sensor.icloud3_event_log'].attributes['versionEvLog']
+            const ic3DirEvlogVersion = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
             const updateTime     = hass.states['sensor.icloud3_event_log'].attributes['update_time']
             const userMessage    = hass.states['sensor.icloud3_event_log'].attributes['user_message']
             const aboutVersion   = root.getElementById("aboutVersion")
@@ -1620,9 +1620,9 @@ class iCloud3EventLogCard extends HTMLElement {
             this._displayTimeMsgR(infoTimeText)
         }
 
-        if (versionSentFlag.innerText == 0) {
-            this._issue_evlog_version_svc_call()
-        }
+        // if (versionSentFlag.innerText == 0) {
+        //     this._issue_evlog_version_svc_call()
+        // }
     }
 
     //---------------------------------------------------------------------------

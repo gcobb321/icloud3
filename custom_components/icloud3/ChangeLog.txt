@@ -1,3 +1,12 @@
+patch pr1.2 - Prerelease 1.2- 8/23/2023
+...............................
+1. Battery - Fixed a problem where the battery level/status was not being updated immediately in the Event Log when it went from 'charging' to 'not charging' or 'not charging' to 'charging'.
+2. GPS - The 'Show GPS Coordinates' parameter is now applied when the event is displayed in the Event Log instead of when it is added to the Event Log. You can disable this parameter so they are not normally displayed. Later, if you need to review where a device has been, reenable the parameter and the location coordinates for previous events will be displayed.
+3. Event Log - Fixed a problem where the event time was not displayed if the 'Zone Display-as' parameter was set to display the zone entity_id.
+4. Event Log - Fixed a problem with the Event Log Card not detecting a version update.
+
+pr1.1 - Prerelease 1.2- 8/220/2023
+...............................
 rc2 - Release Candidate 3 - 8/14/2023
 ...............................
 1. Reverted the 'manifest.json' file to prevent iCloud3 from hanging on an HA startup if there is a problem starting some of the HA components.

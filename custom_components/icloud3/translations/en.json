@@ -91,6 +91,7 @@
       "required_field": "This parameter must be specified",
       "required_field_device": "A device providing location data must be selected from the Family Share, Find-my-Friends, or iOS App devices lists",
       "no_device_selected": "A device providing location data must be selected",
+      "no_add_entities_device_tracker_fct": "The HA component for adding devices is not available. HA MUST BE RESTARTED",
 
       "unknown_devicename": "The device that was previously selected can no longer be identified. It`s name may have been changed or it may have been deleted. Reselect the device to be tracked or monitored",
       "unknown_value": "The value of this parameter in the iCloud3 configuration file is unknown or invalid. It must be selected again",

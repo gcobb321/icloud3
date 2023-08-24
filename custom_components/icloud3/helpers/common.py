@@ -179,8 +179,8 @@ def format_gps(latitude, longitude, accuracy, latitude_to=None, longitude_to=Non
     if longitude is None or latitude is None:
         gps_text = UNKNOWN
 
-    elif Gb.display_gps_lat_long_flag is False:
-        gps_text     = f"/±{accuracy:.0f}m"
+    # elif Gb.display_gps_lat_long_flag is False:
+    #     gps_text     = f"/±{accuracy:.0f}m"
 
     else:
         accuracy_text = (f"/±{accuracy:.0f}m)") if accuracy > 0 else ")"

@@ -285,7 +285,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
     action_option = action_entry.replace(action, '').strip()
 
     # EvLog version sent from the EvLog program already set, ignore the svc call
-    if action == 'event_log_version' and Gb.evlog_version == action_option:
+    if action == 'event_log_version': # and Gb.evlog_version == action_option:
         return
 
     devicename_msg = devicename if devicename in Gb.Devices_by_devicename else None
@@ -408,10 +408,11 @@ def _handle_global_action(global_action, action_option):
         return
 
     elif global_action == 'event_log_version':
+        return
         # Gb.evlog_version = action_option
         # Gb.EvLog.evlog_attrs["version_evlog"] = action_option
-        Gb.conf_profile['event_log_version'] = action_option
-        config_file.write_storage_icloud3_configuration_file()
+        # Gb.conf_profile['event_log_version'] = action_option
+        # config_file.write_storage_icloud3_configuration_file()
 
 
 #--------------------------------------------------------------------

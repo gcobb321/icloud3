@@ -22,7 +22,7 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     CONF_EVLOG_BTNCONFIG_URL,
                                     )
 
-from ..helpers.common       import instr, circle_letter
+from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str
 from ..helpers.messaging    import log_exception, log_info_msg, log_warning_msg, _traceha, _trace
 from ..helpers.time_util    import time_to_12hrtime, datetime_now, time_now_secs
 
@@ -111,6 +111,7 @@ class EventLog(object):
         self.evlog_attrs                    = {}
         self.evlog_attrs["version_ic3"]     = Gb.version
         self.evlog_attrs["version_evlog"]   = Gb.version_evlog
+        self.evlog_attrs["versionEvLog"]    = Gb.version_evlog
         self.evlog_attrs["log_level_debug"] = ''
         self.evlog_attrs["run_mode"]        = 'Initialize'
         self.evlog_attrs["evlog_btn_urls"]  = self.evlog_btn_urls
@@ -174,6 +175,7 @@ class EventLog(object):
             self.evlog_btn_urls['btnConfig']   = Gb.evlog_btnconfig_url
             self.evlog_attrs["version_ic3"]    = Gb.version
             self.evlog_attrs["version_evlog"]  = Gb.version_evlog
+            self.evlog_attrs["versionEvLog"]   = Gb.version_evlog
             self.evlog_attrs["run_mode"]       = "Initialize"
             self.evlog_attrs["evlog_btn_urls"] = self.evlog_btn_urls
             self.evlog_attrs["update_time"]    = "setup"
@@ -230,7 +232,8 @@ class EventLog(object):
                 in_last_few_recds = [v for v in self.evlog_table[:8] \
                                         if (v[ELR_DEVICENAME] == devicename \
                                             and v[ELR_TEXT] == event_text \
-                                            and v[ELR_TEXT].startswith(EVLOG_TIME_RECD) is False)]
+                                            and v[ELR_TEXT].startswith(EVLOG_TIME_RECD) is False
+                                            and v[ELR_TEXT].startswith('Battery') is False)]
                 if in_last_few_recds != []:
                     return
 
@@ -268,8 +271,7 @@ class EventLog(object):
                 # If tracking from more than one zone and the tfz results are being displayed,
                 # display tfz zone name in the time field. Capitalize if going towards
                 if devicename.startswith('*') is False:
-                    Device = Gb.Devices_by_devicename.get(devicename)
-                    if Device:
+                    if Device := Gb.Devices_by_devicename.get(devicename):
                         Device.last_evlog_msg_secs = time_now_secs()
                         from_zone_display_as = Device.FromZone_BeingUpdated.from_zone_display_as
                         if event_text.startswith(EVLOG_TIME_RECD):
@@ -277,7 +279,8 @@ class EventLog(object):
                             if (Device.FromZone_BeingUpdated is Device.FromZone_TrackFrom
                                     and Device.FromZone_BeingUpdated is not Device.FromZone_Home):
                                 this_update_time = this_update_time.upper()
-                        elif from_zone_display_as != HOME_FNAME:
+
+                        elif Device.FromZone_BeingUpdated is not Device.FromZone_Home:
                             this_update_time = f"»{from_zone_display_as[:6]}"
 
         except Exception as err:
@@ -555,6 +558,7 @@ class EventLog(object):
 
         self.evlog_table.insert(0, event_recd)
 
+
 #------------------------------------------------------
     def _shrink_evlog_table(self, shrink_cnt):
         '''
@@ -641,6 +645,9 @@ class EventLog(object):
             devicename = self.devicename
         time_text_recds = self._extract_filtered_evlog_recds(devicename)
 
+        if Gb.display_gps_lat_long_flag is False:
+            time_text_recds = [self._apply_gps_filter(el_recd) for el_recd in time_text_recds]
+
         if max_recds < HIGH_INTEGER:
             recd_cnt = len(time_text_recds)
             time_text_recds = time_text_recds[0:max_recds]
@@ -678,7 +685,7 @@ class EventLog(object):
 
         if Device := Gb.Devices_by_devicename.get(devicename):
             filter_record = (Device.primary_data_source == IOSAPP) \
-                                or Device.is_monitored 
+                                or Device.is_monitored
         else:
             Device = None
             filter_record = False
@@ -710,6 +717,26 @@ class EventLog(object):
                     log_info_msg(f"{el_recd}")
 
         return []
+
+#--------------------------------------------------------------------
+    @staticmethod
+    def _apply_gps_filter(el_recd):
+        '''
+        Filter the gps coordinates out of the record based on the config parameter
+        Convert 'GPS-(27.72683, -80.39055/±33m)' to 'GPS-/±33m'
+        '''
+        el_time, el_text = el_recd
+        if el_text.find('GPS-(') == -1:
+            return [el_time, el_text]
+
+        check_for_gps_flag = True
+        while check_for_gps_flag:
+            gps_s_pos = el_text.find('GPS-(') + 4
+            gps_acc_pos = el_text.find('/±', gps_s_pos)
+            gps_e_pos = el_text.find(')', gps_s_pos)
+            el_text = el_text[:gps_s_pos] + el_text[gps_acc_pos:gps_e_pos] + el_text[gps_e_pos+1:]
+            check_for_gps_flag = el_text.find('GPS-(') >= 0
+        return [el_time, el_text.replace('GPS-, ', '')]
 
 #--------------------------------------------------------------------
     @staticmethod

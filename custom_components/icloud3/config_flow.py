@@ -2284,6 +2284,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self._prepare_device_selection_list()
         self.sensor_entity_attrs_changed = {}
 
+        if Gb.async_add_entities_device_tracker is None:
+            self.errors='no_add_entities_device_tracker_fct'
+
         self.step_id = 'device_list'
 
         return self.async_show_form(step_id=self.step_id,
@@ -2446,12 +2449,16 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.errors = errors or {}
         self.errors_user_input = {}
 
+        if Gb.async_add_entities_device_tracker is None:
+            return await self.async_step_device_list(errors='no_add_entities_device_tracker_fct')
+
         if user_input is None:
             return self.async_show_form(step_id=self.step_id,
                                         data_schema=self.form_schema(self.step_id),
                                         errors=self.errors)
 
         user_input, action_item = self._action_text_to_item(user_input)
+        user_input = self._strip_special_text_from_user_input(user_input, CONF_IC3_DEVICENAME)
         user_input = self._option_text_to_parm(user_input, CONF_TRACKING_MODE, TRACKING_MODE_ITEMS_KEY_TEXT)
         user_input = self._option_text_to_parm(user_input, CONF_DEVICE_TYPE, DEVICE_TYPE_FNAME)
         log_debug_msg(f"{self.step_id} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
