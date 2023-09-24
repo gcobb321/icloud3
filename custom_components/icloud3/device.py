@@ -165,7 +165,6 @@ class iCloud3_Device(TrackerEntity):
         self.device_being_updated_retry_cnt = 0
         self.got_exit_trigger_flag        = False
         self.outside_no_exit_trigger_flag = False
-        self.moved_since_last_update_km      = 0
 
         # Fields used in FmF and FamShr initialization
         self.verified_flag           = False    # Indicates this is a valid and trackable Device
@@ -175,6 +174,8 @@ class iCloud3_Device(TrackerEntity):
         self.PairedDevice            = None     # Device of the other Device paired to this one
 
         # StatZone fields
+        self.statzone_latitude       = 0.0
+        self.statzone_longitude      = 0.0
         self.statzone_timer          = 0
         self.statzone_dist_moved_km  = 0
         self.statzone_setup_secs     = 0     # Time the statzone was set up
@@ -1005,9 +1006,9 @@ class iCloud3_Device(TrackerEntity):
     def wasnot_in_statzone(self):
         return (is_statzone(self.sensors[ZONE]) is False)
 
-    # Return True if the timer has expired, False if not expired or not using Stat Zone
     @property
     def is_statzone_timer_reached(self):
+        ''' Return True if the timer has expired, False if not expired or not using Stat Zone '''
         return (self.is_statzone_timer_set and Gb.this_update_secs >= self.statzone_timer)
 
     @property
@@ -1024,9 +1025,9 @@ class iCloud3_Device(TrackerEntity):
             return self.statzone_inzone_interval_secs
         return Gb.max_interval_secs / 2
 
-    # Return the seconds left before the phone should be moved into a Stationary Zone
     @property
     def statzone_timer_left(self):
+        ''' Return the seconds left before the phone should be moved into a Stationary Zone '''
         if self.is_statzone_timer_set:
             return (self.statzone_timer - time_now_secs())
         else:
@@ -1034,22 +1035,20 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def statzone_reset_timer(self):
-        '''
-        Set the Stationary Zone timer expiration time
-        '''
+        ''' Set the Stationary Zone timer expiration time '''
         self.statzone_dist_moved_km = 0
-        self.statzone_timer         = Gb.this_update_secs + Gb.statzone_still_time_secs
+        self.statzone_timer     = Gb.this_update_secs + Gb.statzone_still_time_secs
+        self.statzone_latitude  = self.loc_data_latitude
+        self.statzone_longitude = self.loc_data_longitude
 
     @property
     def statzone_clear_timer(self):
-        '''
-        Clear the Stationary Zone timer
-        '''
-        self.statzone_dist_moved_km = 0
-        self.statzone_timer         = 0
+        ''' Clear the Stationary Zone timer '''
+        self.statzone_reset_timer
+        self.statzone_timer = 0
 
     def update_distance_moved(self, distance):
-        self.statzone_dist_moved_km += distance
+        self.statzone_dist_moved_km = self.distance_km(self.statzone_latitude, self.statzone_longitude)
 
         if Gb.evlog_trk_monitors_flag:
             log_msg =  (f"StatZone Movement > "
@@ -1064,9 +1063,7 @@ class iCloud3_Device(TrackerEntity):
 
 #--------------------------------------------------------------------
     def pause_tracking(self):
-        '''
-        Pause tracking the device
-        '''
+        ''' Pause tracking the device '''
         try:
             self.tracking_status = TRACKING_PAUSED
 
@@ -1094,9 +1091,7 @@ class iCloud3_Device(TrackerEntity):
 
 #--------------------------------------------------------------------
     def resume_tracking(self, delay_secs=0):
-        '''
-        Resume tracking
-        '''
+        ''' Resume tracking '''
         try:
             self.tracking_status             = TRACKING_RESUMED
             Gb.all_tracking_paused_flag      = False
@@ -1814,12 +1809,12 @@ class iCloud3_Device(TrackerEntity):
         if self.loc_data_time_gps == self.last_loc_data_time_gps:
             return
 
-        if self.isnot_inzone or self.moved_since_last_update_km > .015:
+        if self.isnot_inzone or self.loc_data_dist_moved_km > .015:
             event_msg =(f"Updated > {self.dev_data_source}-"
                         f"{self.last_loc_data_time_gps}"
                         f"{RARROW}{self.loc_data_time_gps} "
                         f"({secs_to_age_str(self.loc_data_secs)}), "
-                        f"Moved-{format_dist_km(self.moved_since_last_update_km)}")
+                        f"Moved-{format_dist_km(self.loc_data_dist_moved_km)}")
             post_event(self.devicename,event_msg)
 
         self.last_loc_data_time_gps = self.loc_data_time_gps

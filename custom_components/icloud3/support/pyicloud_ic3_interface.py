@@ -225,7 +225,7 @@ def display_authentication_msg(PyiCloud):
     if instr(authentication_method, 'Password') is False:
         event_msg += f" ({format_age(last_authenticated_age)})"
 
-    post_event(event_msg)
+    post_monitor_msg(event_msg)
 
 #--------------------------------------------------------------------
 def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
@@ -295,7 +295,7 @@ def new_2fa_authentication_code_requested(PyiCloud, initial_setup=False):
     try:
         if initial_setup is False:
             if PyiCloud is None:
-                event_msg =("{EVLOG_ALERT}iCloud Web Svcs Error, Interface has not been setup, "
+                event_msg =(f"{EVLOG_ALERT}iCloud Web Svcs Error, Interface has not been setup, "
                             "resetting iCloud")
                 post_error_msg(event_msg)
                 Gb.restart_icloud3_request_flag = True

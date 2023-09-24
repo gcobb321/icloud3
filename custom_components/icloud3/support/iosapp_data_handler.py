@@ -62,15 +62,6 @@ def check_iosapp_state_trigger_change(Device):
         iosapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = entity_io.get_last_changed_time(entity_id)
         iosapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = secs_to_time(iosapp_data_trigger_secs)
 
-        # If not a zone enter/exit trigger (periodic, Sig Location Change, Background refresh, etc)
-        if iosapp_data_trigger not in [ENTER_ZONE, EXIT_ZONE]:
-            # If the iosapp_state is a zone and the Device is not in a zone, change trigger to zone enter
-            if iosapp_data_state != NOT_HOME and Device.isnot_inzone:
-                iosapp_data_trigger = device_trkr_attrs["trigger"] = ENTER_ZONE
-            # If the iosapp_state is not a zone and the Device is in a zone, change trigger to zone exit
-            elif iosapp_data_state == NOT_HOME and Device.is_inzone:
-                iosapp_data_trigger = device_trkr_attrs["trigger"] = EXIT_ZONE
-
         # Get the latest of the state time or trigger time for the new data
         if iosapp_data_state_secs > iosapp_data_trigger_secs:
             iosapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = iosapp_data_trigger_secs
@@ -159,17 +150,12 @@ def check_iosapp_state_trigger_change(Device):
                 Device.iosapp_zone_enter_dist_m = -1
 
         iosapp_msg =(f"iOSApp Monitor > "
-                    f"Trigger-{iosapp_data_trigger}@{iosapp_data_trigger_time} (^trig_age), "
-                    f"State-{Device.iosapp_data_state}@{Device.iosapp_data_state_time} (^state_age), ")
+                    f"State-{Device.iosapp_data_state}@{Device.iosapp_data_state_time} (^state_age), "
+                    f"Trigger-{iosapp_data_trigger}@{iosapp_data_trigger_time} (^trig_age), ")
 
         if iosapp_data_state_not_set_flag:
-            Device.iosapp_data_change_reason = f"Initial Locate@{Gb.this_update_time}"
-            Device.iosapp_data_trigger       = f"Initial Locate@{Gb.this_update_time}"
-
-        elif (is_statzone(Device.iosapp_data_state)
-                and f'{Device.iosapp_data_latitude:.5f}'  == f'{Gb.statzone_base_latitude:.5f}'
-                and f'{Device.iosapp_data_longitude:.5f}' == f'{Gb.statzone_base_longitude:.5f}'):
-            Device.iosapp_data_reject_reason = "StatZone Base Location"
+            Device.iosapp_data_change_reason = \
+                Device.iosapp_data_trigger   = f"Initial Locate@{Gb.this_update_time}"
 
         # Reject State and trigger changes older than the current data
         elif (Device.iosapp_data_secs <= Device.last_update_loc_secs):
@@ -213,7 +199,7 @@ def check_iosapp_state_trigger_change(Device):
 
         # Discard if already in the zone
         elif (Device.iosapp_data_trigger == ENTER_ZONE
-                and Device.iosapp_data_state == Device.loc_data_zone):      #Device.last_update_loc_zone):
+                and Device.iosapp_data_state == Device.loc_data_zone):
             Device.iosapp_data_reject_reason = "Enter Zone and already in zone"
 
         if Device.is_passthru_zone_delay_active:
@@ -263,9 +249,16 @@ def check_iosapp_state_trigger_change(Device):
             Device.iosapp_data_reject_reason = "Failed Update Tests"
 
         # Display iOSApp Monitor info message if the state or trigger changed
-        if (iosapp_msg == Device.last_iosapp_msg):
-            return
+        if (Gb.this_update_time.endswith('00:00')
+                or iosapp_msg != Device.last_iosapp_msg):
+            _display_iosapp_msg(Device, iosapp_msg)
 
+    except Exception as err:
+            log_exception(err)
+
+#--------------------------------------------------------------------
+def _display_iosapp_msg(Device, iosapp_msg):
+    try:
         Device.last_iosapp_msg = iosapp_msg
         iosapp_msg += (f"LastTrigger-{Device.sensors[TRIGGER]}, "
                         f"iOSAppData-{Device.iosapp_data_time}")
@@ -293,11 +286,8 @@ def check_iosapp_state_trigger_change(Device):
         iosapp_msg += f", {Device.iosapp_zone_exit_trigger_info}"
         post_monitor_msg(Device.devicename, iosapp_msg)
 
-        return
-
     except Exception as err:
         log_exception(err)
-        return
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -440,3 +430,39 @@ def update_iosapp_data_from_entity_attrs(Device, device_trkr_attrs):
     if monitor_msg != Device.update_iosapp_data_monitor_msg:
         Device.update_iosapp_data_monitor_msg = monitor_msg
         post_monitor_msg(Device.devicename, monitor_msg)
+
+
+#--------------------------------------------------------------------
+def sync_iosapp_data_state_statzone(Device):
+    '''
+    Update the Device's iosapp_data_state value to sync it with the statzone
+    the device is in. If the iosapp state is a statzone but ic3 has it set to
+    not_home and the device is in a statzone, the iosapp state value may be
+    out of sync because the state value changed byt the actual location did not
+    change.
+
+    This is done at the befinning of the process_update function in icloud3_main
+    sot the iosapp state value will be correct when the Event Log is displayed
+
+    Return:
+        True - The iosapp_data_state was updated
+        False - The iosapp_data_state was not updated
+
+    '''
+    if (Device.iosapp_monitor_flag is False
+            or Gb.conf_data_source_IOSAPP is False
+            or Device.iosapp_entity.get(DEVICE_TRACKER) is None):
+        return False
+
+    iosapp_data_state = entity_io.get_state(Device.iosapp_entity[DEVICE_TRACKER])
+
+    if (is_statzone(iosapp_data_state)
+            and is_statzone(Device.loc_data_zone)
+            and Device.iosapp_data_state == NOT_HOME):
+        Device.iosapp_data_state      = iosapp_data_state
+        Device.iosapp_data_state_secs = Gb.this_update_secs
+        Device.iosapp_data_state_time = Gb.this_update_time
+
+        return True
+
+    return False

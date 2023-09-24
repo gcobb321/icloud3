@@ -117,6 +117,7 @@ class GlobalVariables(object):
     username                     = ''
     username_base                = ''
     password                     = ''
+    icloud_server_endpoint_suffix = ''
     encode_password_flag         = True
     all_famshr_devices           = True
     entity_registry_file         = ''

@@ -1,3 +1,13 @@
+pr1.4
+...............................
+1. Bug Fix - Fixes a "type object 'GlobalVariables' has no attribute 'this_update_tine'" error. it should be '_time', not '_tine'
+2. Fixed a problem adding the first device to a new iCloud3 installation that was generating a 'TypeError: 'NoneType' object is not callable -- Gb.async_add_entities_device_tracker(NewDeviceTrackers, True) error message.
+3. Stationary zones - Stationary zones are now removed from HA Zones instead of moving them back to their 'base' location when all of the devices have exited the zone. Monitored devices will no longer create a stationary zone since they are not actually tracked.
+4. Error handling - If a device goes offline for an extended period of time (in Airplane mode) the longest interval was changed from 2-hours to 1-hour. An iOS App Location Request will be made when the interval time changes to see if the device is now available for tracking.
+
+
+
+
 patch pr1.2 - Prerelease 1.2- 8/23/2023
 ...............................
 1. Battery - Fixed a problem where the battery level/status was not being updated immediately in the Event Log when it went from 'charging' to 'not charging' or 'not charging' to 'charging'.

@@ -83,8 +83,6 @@
 
       "review_filledin_fields": "Review the 'Filled in' fields",
       "not_numeric": "The value entered is not numeric",
-      "stat_zone_base_lat_range_error": "The value must be between -90 and 90",
-      "stat_zone_base_long_range_error": "The value must be between -180 and 180",
       "waze_server_error_us": "The correct server for your location is: United States, Canada",
       "waze_server_error_il": "The correct server for your location is: Israel",
       "waze_server_error_row": "The correct server for your location is: Rest of the World",
@@ -157,14 +155,14 @@
         }
       },
       "icloud_account": {
-        "title": "Data Sources - iCloud Account & iOS App",
+        "title": "iCloud Account & iOS App Data Sources",
         "description": "",
         "data": {
-          "data_source_icloud": "ICLOUD - Location data is provided by the Apple iCloud account",
-          "username": "APPPLE ID - The email address used to sign in to the iCloud Account",
+          "data_source_icloud": "ICLOUD ACCOUNT - Location data is provided by the Apple iCloud account",
+          "username": "APPLE ID (USERNAME) - The email address used to sign in to the iCloud Account",
           "password": "PASSWORD - The iCloud Account Password",
           "data_source_iosapp": "iOS APP - Location data is provided by the HA iOS App",
-          "icloud_server_endpoint_suffix": "ICLOUD SERVER LOCATION -  Countries having localized Apple iCloud Servers (Not Normally Used)s",
+          "icloud_server_endpoint_suffix": "ICLOUD SERVER LOCATION -  Countries having localized Apple iCloud Servers (Not Normally Used)",
           "action_items": "═════════════════════════════════════════════════════"
         },
         "data_description": {
@@ -364,9 +362,6 @@
           "stat_zone_still_time": "NO MOVEMENT TIME ",
           "stat_zone_inzone_interval": "INZONE INTERVAL ",
           "stat_zone_fname": "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
-          "base_offset_header":     ".══════════════════════════════════════════ STATIONARY ZONE BASE LOCATION",
-          "stat_zone_base_latitude": "BASE LOCATION NORTH-SOUTH OFFSET",
-          "stat_zone_base_longitude": "BASE LOCATION EAST/WEST OFFSET",
           "track_from_zone_header":  "═══════════════════════════════════════════════════ PRIMARY BASE ZONE = HOME",
           "track_from_base_zone": "PRIMARY 'HOME' ZONE - Use another zone if you are away from Home for an extended period (Global Override)",
           "track_from_home_zone": "ALSO TRACK FROM HOME ZONE - Continue to track from the Home zone when the Primary Home Zone is not Home",
@@ -376,9 +371,7 @@
           "passthru_zone_time": "Delay processing an Enter Zone Trigger that you may be driving through and not actually entering",
           "stat_zone_still_time": "Time at the same location before moving into a Stationary Zone",
           "stat_zone_inzone_interval": "Time interval between location requests when in a Stationary Zone",
-          "stat_zone_fname": "Display this value in the Event Log, device_tracker, travel direction and zone entities when the device is in a Stationary Zone. iCloud3 assigns a number to the Stationary Zone. Use the wildcard character '#' to display this value in the Stationary Zone's name (StatZon1, StatZon2, etc). Note: A 7-letter name leaves room for the name and number to be displayed on iPhone screens without being truncated.",
-          "stat_zone_base_latitude": "Distance (±km) north-south of the Home Zone (or it's GPS Latitude)",
-          "stat_zone_base_longitude": "Distance (±km) east-west of the Home Zone (or it's GPS Longitude)"
+          "stat_zone_fname": "Display this value in the Event Log, device_tracker, travel direction and zone entities when the device is in a Stationary Zone. iCloud3 assigns a number to the Stationary Zone. Use the wildcard character '#' to display this value in the Stationary Zone's name (StatZon1, StatZon2, etc). Note: A 7-letter name leaves room for the name and number to be displayed on iPhone screens without being truncated."
         }
       },
       "sensors": {

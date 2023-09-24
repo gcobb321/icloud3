@@ -71,11 +71,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     '''Set up iCloud3 sensors'''
 
     # Save the hass `add_entities` call object for use in config_flow for adding new sensors
+    Gb.hass = hass
     Gb.async_add_entities_sensor = async_add_entities
 
     try:
         if Gb.conf_file_data == {}:
-            Gb.hass = hass
             start_ic3.initialize_directory_filenames()
             start_ic3.load_storage_icloud3_configuration_file()
 

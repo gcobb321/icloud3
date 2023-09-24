@@ -160,9 +160,7 @@ class iCloud3_DeviceFmZone():
 
     @property
     def format_dir_of_travel_history(self):
-        '''
-        Format the dir_of_travel_history into groups.
-        '''
+        ''' Format the dir_of_travel_history into groups. '''
         if self.dir_of_travel_history == '':
             return
 
@@ -177,4 +175,4 @@ class iCloud3_DeviceFmZone():
                 cnt = 0
         if hist_disp.endswith(','): hist_disp = hist_disp[:-1]
 
-        return hist_disp.replace('i', '^')
+        return hist_disp.replace('i', 'Z')

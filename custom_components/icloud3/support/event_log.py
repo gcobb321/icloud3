@@ -825,7 +825,6 @@ class EventLog(object):
     @staticmethod
     def _replace_special_chars(event_text):
         event_text = event_text.replace('<', LT)
-        # event_text = event_text.replace('>', GT)
         event_text = event_text.replace('__', '')
         event_text = event_text.replace('"', '`')
         event_text = event_text.replace("'", "`")

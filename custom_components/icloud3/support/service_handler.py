@@ -111,14 +111,16 @@ from   homeassistant.util.location import distance
 def process_update_service_request(call):
     """ icloud3.update service call request """
 
-    action       = call.data.get('command').lower() or call.data.get('action').lower()
+    action = call.data.get('command') or call.data.get('action')
+    if action is None: return
+
+    action       = action.lower()
     action_fname = call.data.get('action_fname')
     devicename   = call.data.get(CONF_DEVICENAME)
 
     action, devicename = resolve_action_devicename_values(action, devicename)
 
-    if action is not None:
-        update_service_handler(action, action_fname, devicename)
+    update_service_handler(action, action_fname, devicename)
 
 #--------------------------------------------------------------------
 def process_restart_icloud3_service_request(call):

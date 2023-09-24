@@ -81,9 +81,11 @@ def format_km_to_mi(dist_km):
     if Gb.um == 'mi':
         mi = dist_km * Gb.um_km_mi_factor
 
-        if mi > 10:
+        if mi >= 100:
+            return f"{mi:.0f} mi"
+        if mi >= 10:
             return f"{mi:.1f} mi"
-        if mi > 1:
+        if mi >= 1:
             return f"{mi:.2f} mi"
         if round_to_zero(mi) == 0:
             return f"0 mi"
@@ -98,9 +100,11 @@ def format_dist_km(dist_km):
 
     dist: Distance in kilometers
     '''
-    if dist_km >= 10:       #25km/15mi
+    if dist_km >= 100:
+        return f"{dist_km:.0f}km"
+    if dist_km >= 10:
         return f"{dist_km:.1f}km"
-    if dist_km >= 1:        #1000m/.6mi
+    if dist_km >= 1:
         return f"{dist_km:.2f}km"
 
     return f"{dist_km*1000:.0f}m"
@@ -112,9 +116,11 @@ def format_dist_m(dist_m):
 
     dist: Distance in meters
     '''
-    if dist_m >= 10000:       #25km/15mi
+    if dist_m >= 1000000:     #100km
+        return f"{dist_m/1000:.0f}km"
+    if dist_m >= 10000:       #10km
         return f"{dist_m/1000:.1f}km"
-    if dist_m >= 1000:        #1000m/.6mi
+    if dist_m >= 1000:        #1km/1000m/.6mi
         return f"{dist_m/1000:.2f}km"
 
     return f"{dist_m:.0f}m"

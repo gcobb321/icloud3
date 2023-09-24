@@ -20,7 +20,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, HIGH_INTEGER,
-                                    CRLF, CHECK_MARK, CIRCLE_X, LTE, LT, PLUS_MINUS, RED_X,
+                                    CRLF, CHECK_MARK, CIRCLE_X, LTE, LT, PLUS_MINUS, RED_X, CIRCLE_STAR2,
                                     STATIONARY, STATIONARY_FNAME, WATCH, IOSAPP_FNAME,
                                     AWAY_FROM, TOWARDS, PAUSED, INZONE, NEAR, NEAR_HOME,
                                     ERROR, UNKNOWN,
@@ -44,6 +44,7 @@ from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, HIGH_INTEGER,
                                     )
 
 from ..support              import iosapp_interface
+from ..support              import stationary_zone as statzone
 from ..helpers.common       import (instr, round_to_zero, is_zone, is_statzone, isnot_zone,
                                     zone_display_as, )
 from ..helpers.messaging    import (post_event, post_error_msg,
@@ -358,11 +359,18 @@ def determine_interval(Device, FromZone):
         interval_secs, x  = divmod(interval_secs, 5)
         interval_secs     = interval_secs * 5
 
+        #  Use interval_secs if > StatZone interval unless the StatZone interval is the device's
+        # inzone interval
+        if Device.is_in_statzone:
+                #and Device.statzone_inzone_interval_secs >= interval_secs):
+            interval_method = "7.StatZone"
+            interval_secs   = Device.statzone_inzone_interval_secs
+
         #check for max interval_secs, override in zone times
-        if interval_secs > Gb.max_interval_secs:
+        elif interval_secs > Gb.max_interval_secs:
             if Device.is_in_statzone:
                 interval_method = f"7.inZoneMax"
-                interval_secs   = Device.in_statzone_interval_secs
+                interval_secs   = Device.statzone_inzone_interval_secs
             elif inzone_flag:
                 pass
                 # interval_method = f"7.inZoneMax"
@@ -370,13 +378,6 @@ def determine_interval(Device, FromZone):
             else:
                 interval_method = f"7.Max"
                 interval_secs   = Gb.max_interval_secs
-
-        #  Use interval_secs if > StatZone interval unless the StatZone interval is the device's
-        # inzone interval
-        elif (Device.is_in_statzone
-                and Device.statzone_inzone_interval_secs >= interval_secs):
-            interval_method = "7.StatZone"
-            interval_secs   = Device.in_statzone_interval_secs
 
         interval_str = secs_to_time_str(interval_secs)
 
@@ -433,7 +434,7 @@ def determine_interval(Device, FromZone):
         dist_from_zone_km      = FromZone.zone_dist
         dist_from_zone_m       = FromZone.zone_dist_m
         waze_dist_from_zone_km = FromZone.waze_dist
-        p_from_zone_km = FromZone.calc_dist
+        calc_dist_from_zone_km = FromZone.calc_dist
         waze_time_from_zone    = FromZone.waze_time
 
     else:
@@ -534,6 +535,8 @@ def post_results_message_to_event_log(Device, FromZone):
     if Gb.log_debug_flag and FromZone.interval_method and Device.is_tracked:
         event_msg +=    (f"Method-{FromZone.interval_method}, "
                         f"{'Went3km, ' if Device.went_3km else ''}")
+    if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
+        event_msg +=    "Waze-OverMaxDist, "
     post_event(Device.devicename, event_msg[:-2])
 
     if True is True: #Device.is_tracked:
@@ -563,12 +566,13 @@ def post_zone_time_dist_event_msg(Device, FromZone):
     Event Log
     '''
 
+    iosapp_state = '──'
     if Device.iosapp_monitor_flag:
         iosapp_state = zone_display_as(Device.iosapp_data_state)
-        if iosapp_state == NOT_SET:
-            iosapp_state = '──'
-    else:
-        iosapp_state = '──'
+        if (is_statzone(Device.iosapp_data_state)
+                and Device.iosapp_data_state != Device.loc_data_zone
+                and Device.iosapp_data_state not in statzone.ha_statzones()):
+            iosapp_state = f"🅧{iosapp_state}"
 
     ic3_zone = zone_display_as(Device.loc_data_zone)
 
@@ -708,7 +712,7 @@ def determine_interval_after_error(Device, counter=OLD_LOC_POOR_GPS_CNT):
                         f"{threshold_msg}")
             Device.icloud_update_reason = "Newer Data is Available"
 
-        if event_msg:
+        if event_msg and Device.old_loc_poor_gps_cnt > 2:
             post_event(devicename, event_msg)
             log_info_msg(Device.devicename, f"Old Location/Other Error-{event_msg}")
             # log_rawdata(f"{Device_devicename} - {from_zone}", FromZone.sensors)
@@ -957,12 +961,6 @@ def _get_distance_data(Device, FromZone):
                 or calc_dist_from_zone_km < Gb.Waze.waze_min_distance):
             Gb.Waze.waze_status = WAZE_OUT_OF_RANGE
             dist_from_zone_km = calc_dist_from_zone_km
-            if calc_dist_from_zone_km > 1:
-                waze_source_msg = f"Out of Range, Dist-{format_dist_km(calc_dist_from_zone_km)} "
-                if calc_dist_from_zone_km > Gb.Waze.waze_max_distance:
-                    waze_source_msg += f"(> {format_dist_km(Gb.Waze.waze_max_distance)})"
-                else:
-                    waze_source_msg += f"(< {format_dist_km(Gb.Waze.waze_min_distance)})"
 
     dist_from_zone_m = dist_from_zone_km * 1000
 
@@ -1046,9 +1044,9 @@ def _get_distance_data(Device, FromZone):
             Device.statzone_reset_timer
 
             event_msg =(f"StatZone Timer Reset > "
-                        f"MovedTooFar-{format_dist_km(Device.loc_data_dist_moved_km)}, "
-                        f"Limit-{format_dist_km(Gb.statzone_dist_move_limit_km)}, "
-                        f"NewTimer-{secs_to_time(Device.statzone_timer)}")
+                        f"NewTime-{secs_to_time(Device.statzone_timer)}, "
+                        f"Moved-{format_dist_km(Device.loc_data_dist_moved_km)}")
+                        # f"(>{format_dist_km(Gb.statzone_dist_move_limit_km)})")
             post_event(Device.devicename, event_msg)
 
     dist_from_zone_km      = round_to_zero(dist_from_zone_km)
@@ -1175,7 +1173,7 @@ def copy_near_device_results(Device, FromZone):
     FromZone.sensors.update(NearFromZone.sensors)
 
     if Device.is_in_statzone:
-        interval_secs = Device.in_statzone_interval_secs
+        interval_secs = Device.statzone_inzone_interval_secs
     elif Device.is_inzone:
         interval_secs = Device.inzone_interval_secs
     else:

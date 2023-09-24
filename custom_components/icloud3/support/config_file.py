@@ -291,7 +291,7 @@ def config_file_add_new_parameters():
             Gb.conf_tracking[CONF_DATA_SOURCE].replace(ICLOUD, FAMSHR)
         update_config_file_flag = True
 
-          # Remove profile.CONF_HA_CONFIG_IC3_URL that is used by EvLog to open Configuration Wizard (b20)
+    # Remove profile.CONF_HA_CONFIG_IC3_URL that is used by EvLog to open Configuration Wizard (b20)
     if 'ha_config_ic3_url' in Gb.conf_profile:
         Gb.conf_profile.pop('ha_config_ic3_url')
         update_config_file_flag = True

@@ -9,6 +9,7 @@ from ..const            import (DOT, ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR
                                 DATETIME_FORMAT, DATETIME_ZERO,
                                 NEXT_UPDATE_TIME, INTERVAL,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
+                                CONF_DEVICES,
                                 LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD,
                                 ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
                                 TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
@@ -252,10 +253,18 @@ def open_ic3_log_file(new_log_file=False):
         return
 
     write_ic3_log_recd(f"iCloud3 v{Gb.version}, "
-                            f"Log File: {dt_util.now().strftime(DATETIME_FORMAT)[0:19]}\n")
+                        f"Log File: {dt_util.now().strftime('%A')}, "
+                        f"{dt_util.now().strftime(DATETIME_FORMAT)[0:19]}\n")
 
     # Write the ic3 configuration (general & devices) to the Log file
     write_ic3_log_recd(f"Profile:\n{IC3_LOG_LINE_TABS}{Gb.conf_profile}")
+
+    conf_tracking_recd = Gb.conf_tracking.copy()
+    conf_tracking_recd[CONF_USERNAME] = obscure_field(conf_tracking_recd[CONF_USERNAME])
+    conf_tracking_recd[CONF_PASSWORD] = obscure_field(conf_tracking_recd[CONF_PASSWORD])
+    conf_tracking_recd[CONF_DEVICES]  = f"{len(Gb.conf_devices)}"
+    write_ic3_log_recd(f"Tracking:\n{IC3_LOG_LINE_TABS}{conf_tracking_recd}")
+
     write_ic3_log_recd(f"General Configuration:\n{IC3_LOG_LINE_TABS}{Gb.conf_general}")
     write_ic3_log_recd(f"{IC3_LOG_LINE_TABS}{Gb.ha_location_info}")
     write_ic3_log_recd("")

@@ -19,11 +19,12 @@ from .global_variables  import GlobalVariables as Gb
 from .const             import (HOME, NOT_HOME, STATIONARY, HIGH_INTEGER,
                                 ZONE, TITLE, FNAME, NAME, ID, FRIENDLY_NAME, ICON,
                                 LATITUDE, LONGITUDE, RADIUS, PASSIVE,
-                                STATZONE_BASE_RADIUS_M, ZONE, )
+                                STATZONE_RADIUS_1M, ZONE, )
 from .helpers.common    import (instr, is_statzone, format_gps, zone_display_as,)
 from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
                                 log_exception, log_rawdata,_trace, _traceha, )
-from .helpers.time_util import (time_now_secs, datetime_now, secs_to_time,   secs_to_datetime, format_time_age, )
+from .helpers.time_util import (time_now_secs, datetime_now, secs_to_time, secs_since,
+                                secs_to_datetime, format_time_age, )
 from .helpers.dist_util import (calc_distance_m, calc_distance_km, format_dist_km, format_dist_m, )
 
 
@@ -183,23 +184,36 @@ class iCloud3_StationaryZone(iCloud3_Zone):
         self.zone        = f"ic3_{STATIONARY}_{statzone_id}"
         self.statzone_id = statzone_id
 
+        self.removed_from_ha_secs = HIGH_INTEGER
+
         self.base_attrs = {}
         self.fname = f"StatZon{self.statzone_id}"
         self.display_as  = self.fname
         Gb.zone_display_as[self.zone] = self.fname
 
         #base_attrs is used to move the stationary zone back to it's base
-        self.base_attrs[NAME]          = self.zone
-        self.base_attrs[ICON]          = f"mdi:numeric-{statzone_id}-circle-outline"
-        self.base_attrs[RADIUS]        = STATZONE_BASE_RADIUS_M
-        self.base_attrs[PASSIVE]       = True
+        self.base_attrs[NAME]    = self.zone
+        self.base_attrs[RADIUS]  = STATZONE_RADIUS_1M
+        self.base_attrs[PASSIVE] = True
+
+        statzone_num = int(statzone_id)
+        if statzone_num < 10:
+            self.base_attrs[ICON] = f"mdi:numeric-{statzone_num}-circle-outline"
+        elif statzone_num < 20:
+            self.base_attrs[ICON] = f"mdi:numeric-{statzone_num-10}-box-outline"
+        elif statzone_num < 30:
+            self.base_attrs[ICON] = f"mdi:numeric-{statzone_num-20}-circle"
+        elif statzone_num < 40:
+            self.base_attrs[ICON] = f"mdi:numeric-{statzone_num-30}-box"
+        else:
+            self.base_attrs[ICON] = f"mdi:numeric-9-plus-circle-outline"
 
         self.initialize_updatable_items()
 
         statzone_data ={FRIENDLY_NAME: self.fname,
                         LATITUDE: self.base_latitude,
                         LONGITUDE: self.base_longitude,
-                        RADIUS: STATZONE_BASE_RADIUS_M, PASSIVE: True}
+                        RADIUS: STATZONE_RADIUS_1M, PASSIVE: True}
 
 
         # Initialize Zone with location
@@ -218,8 +232,8 @@ class iCloud3_StationaryZone(iCloud3_Zone):
         self.fname = Gb.statzone_fname.replace('#', self.statzone_id)
         Gb.zone_display_as[self.zone] = self.fname
 
-        self.base_latitude  = Gb.statzone_base_latitude
-        self.base_longitude = Gb.statzone_base_longitude
+        self.base_latitude  = 0 #Gb.statzone_base_latitude
+        self.base_longitude = 0 #Gb.statzone_base_longitude
 
         self.base_attrs[FRIENDLY_NAME] = self.fname
         self.base_attrs[LATITUDE]      = self.base_latitude
@@ -229,17 +243,15 @@ class iCloud3_StationaryZone(iCloud3_Zone):
     def __repr__(self):
         return (f"<StatZone: {self.zone}>")
 
-    #---------------------------------------------------------------------
+#---------------------------------------------------------------------
     # Return True if the device has not set up a Stationary Zone
     @property
     def is_at_base(self):
-        # return self.radius_m == STATZONE_BASE_RADIUS_M and self.passive
-        return  self.passive
+        return self.passive
 
     # Return True if the device has set up a Stat Zone
     @property
     def isnot_at_base(self):
-        # return self.radius_m != STATZONE_BASE_RADIUS_M and self.passive is False
         return self.passive is False
 
     @property
@@ -265,6 +277,23 @@ class iCloud3_StationaryZone(iCloud3_Zone):
             Gb.hass.states.async_set(f"zone.{self.zone}", 0, attrs, force_update=True)
 
         except Exception as err:
-            log_exception(err)
+            pass
+            # log_exception(err)
+
+#--------------------------------------------------------------------
+    def remove_ha_zone(self):
+        '''
+        Remove the zone entity from HA when there are no Devices in it
+        '''
+
+        try:
+            Gb.hass.states.async_remove(f"zone.{self.zone}")
+            # item = Gb.StatZones_by_zone.pop(self.zone, None)
+
+            post_monitor_msg(f"REMOVED StationaryZone > {self.fname} ({self.zone})")
+
+        except Exception as err:
+            pass
+            # log_exception(err)
 
 #--------------------------------------------------------------------

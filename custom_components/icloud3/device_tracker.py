@@ -61,11 +61,12 @@ async def async_setup_scanner(hass: HomeAssistant, config, see, discovery_info=N
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up iCloud3 device tracker component."""
     # Save the hass `add_entities` call object for use in config_flow for adding devices
+
+    Gb.hass = hass
     Gb.async_add_entities_device_tracker = async_add_entities
 
     try:
         if Gb.conf_file_data == {}:
-            Gb.hass = hass
             start_ic3.initialize_directory_filenames()
             config_file.load_storage_icloud3_configuration_file()
 

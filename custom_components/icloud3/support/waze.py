@@ -169,7 +169,7 @@ class Waze(object):
                                                         Device.loc_data_longitude,
                                                         route_time,
                                                         route_dist_km)
-                            wazehist_save_msg =f"(Saved)"
+                            wazehist_save_msg =f" (Saved)"
                     except:
                         pass
 

@@ -116,6 +116,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # hass_data["unsub_options_update_listener"] = unsub_options_update_listener
         # hass.data[DOMAIN][entry.entry_id] = hass_data
 
+
+
         Gb.hass           = hass
         Gb.config_entry   = entry
         Gb.entry_id       = entry.entry_id
@@ -145,7 +147,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
-            # _traceha(f"{Gb.hass.data.keys()=}")
 
             pass
 
@@ -253,7 +254,8 @@ async def async_get_ha_location_info(hass):
         }
 
         try:
-            Gb.country_code = Gb.ha_location_info.country_code.lower()
-            Gb.use_metric   = Gb.ha_location_info.use_metric
+            Gb.country_code = Gb.ha_location_info['country_code'].lower()
+            Gb.use_metric   = Gb.ha_location_info['use_metric']
         except Exception as err:
+            log_exception(err)
             pass

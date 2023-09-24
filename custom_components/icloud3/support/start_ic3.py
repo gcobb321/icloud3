@@ -394,6 +394,8 @@ def initialize_icloud_data_source():
     Gb.username_base                = Gb.username.split('@')[0]
     Gb.password                     = Gb.conf_tracking[CONF_PASSWORD]
     Gb.encode_password_flag         = Gb.conf_tracking[CONF_ENCODE_PASSWORD]
+    Gb.icloud_server_endpoint_suffix= Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX].lower()
+
     Gb.conf_data_source_FAMSHR     = instr(Gb.conf_tracking[CONF_DATA_SOURCE], FAMSHR)
     Gb.conf_data_source_FMF        = instr(Gb.conf_tracking[CONF_DATA_SOURCE], FMF)
     Gb.conf_data_source_IOSAPP     = instr(Gb.conf_tracking[CONF_DATA_SOURCE], IOSAPP)
@@ -614,8 +616,6 @@ def process_config_flow_parameter_updates():
         check_ic3_event_log_file_version()
         Gb.hass.loop.create_task(update_lovelace_resource_event_log_js_entry())
         Gb.EvLog.setup_event_log_trackable_device_info()
-        #if 'profile' in Gb.config_flow_updated_parms:
-        #    Gb.EvLog.display_user_message('The Browser may need to be refreshed')
 
     if 'reauth' in Gb.config_flow_updated_parms:
         Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
@@ -978,11 +978,9 @@ def create_Zones_object():
 
     if Gb.is_statzone_used:
         event_msg += (  f"{CRLF_DOT}Stationary Zone > "
-                        f"Radius-{Gb.HomeZone.radius_m * 2}m, "
+                        f"Radius-{Gb.HomeZone.radius_m}m, "
                         f"DistMoveLimit-{format_dist_km(Gb.statzone_dist_move_limit_km)}, "
-                        f"MinDistFromAnotherZone-{format_dist_km(Gb.statzone_min_dist_from_zone_km)}, "
-                        f"BaseDistFromHome-{format_dist_km(dist)}, "
-                        f"BaseLocation-{format_gps(Gb.statzone_base_latitude, Gb.statzone_base_longitude, 0)}")
+                        f"MinDistFromAnotherZone-{format_dist_km(Gb.statzone_min_dist_from_zone_km)}")
     else:
         event_msg += f"{CRLF_DOT}STATIONARY ZONES ARE NOT BEING USED"
 
