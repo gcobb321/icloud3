@@ -1117,7 +1117,7 @@ class Sensor_Battery(SensorBase):
     @property
     def extra_state_attributes(self):
         extra_attrs = self._get_extra_attributes(self.sensor)
-        extra_attrs.update({'device_class': 'battery', 'state_class': 'battery'})
+        extra_attrs.update({'device_class': 'battery', 'state_class': 'measurement'})
 
         return extra_attrs
 
