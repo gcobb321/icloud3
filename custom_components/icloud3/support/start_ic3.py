@@ -11,7 +11,7 @@ from ..const            import (ICLOUD3,
                                 CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, CRLF_SP5_DOT, CRLF_HDOT, CRLF_SP3_STAR, CRLF_INDENT,
                                 CRLF_RED_X, RED_X, CRLF_STAR,
                                 RARROW, NBSP4, NBSP6, CIRCLE_STAR, INFO_SEPARATOR, DASH_20, CHECK_MARK,
-                                ICLOUD, FMF, FAMSHR,
+                                ICLOUD, FMF, FAMSHR, APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE,
                                 DEVICE_TYPE_FNAME,
                                 IPHONE, IPAD, IPOD, WATCH, AIRPODS,
                                 IOSAPP, NO_IOSAPP, ICLOUD_DEVICE_STATUS, TIMESTAMP,
@@ -337,7 +337,6 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         config_event_msg += (   f"{CRLF_DOT}Set Default Tracking Method "
                                 f"({DATA_SOURCE_FNAME.get(Gb.primary_data_source, Gb.primary_data_source)})")
 
-        # log_level = 'debug' if Gb.conf_profile[CONF_VERSION] <= 0 else Gb.log_level
         set_log_level(Gb.log_level)
 
         config_event_msg += f"{CRLF_DOT}Initialize Debug Control ({Gb.log_level})"
@@ -394,7 +393,8 @@ def initialize_icloud_data_source():
     Gb.username_base                = Gb.username.split('@')[0]
     Gb.password                     = Gb.conf_tracking[CONF_PASSWORD]
     Gb.encode_password_flag         = Gb.conf_tracking[CONF_ENCODE_PASSWORD]
-    Gb.icloud_server_endpoint_suffix= Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX].lower()
+    Gb.icloud_server_endpoint_suffix= \
+        icloud_server_endpoint_suffix(Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX])
 
     Gb.conf_data_source_FAMSHR     = instr(Gb.conf_tracking[CONF_DATA_SOURCE], FAMSHR)
     Gb.conf_data_source_FMF        = instr(Gb.conf_tracking[CONF_DATA_SOURCE], FMF)
@@ -406,6 +406,28 @@ def initialize_icloud_data_source():
     Gb.force_icloud_update_flag     = False
 
     Gb.stage_4_no_devices_found_cnt = 0
+
+def icloud_server_endpoint_suffix(endpoint_suffix):
+    '''
+    Determine the suffix to be used based on the country_code and the value of the
+    configuration file field.
+    '''
+    if endpoint_suffix != '':
+        return endpoint_suffix.replace('.', '')
+
+    if Gb.country_code in APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE:
+        return Gb.country_code.lower()
+
+    return ''
+
+    # endpoint_msg = ''
+    # if endpoint_suffix.startswith('-'):
+    #     endpoint_msg = f"Overridden, Not Used ({endpoint_suffix}) "
+    #     endpoint_suffix = ''
+    # elif endpoint_suffix != '':
+    #     endpoint_suffix = endpoint_msg = f".{endpoint_suffix}"
+    # if endpoint_msg != '':
+    #     post_event(f"iCloud Web Server Country Suffix > {endpoint_msg}")
 
 #------------------------------------------------------------------------------
 # def initialize_PyiCloud():
@@ -1921,7 +1943,7 @@ def setup_trackable_devices():
             tracking_mode = ''
         else:
             Gb.reinitialize_icloud_devices_flag = (Gb.conf_famshr_device_cnt > 0)
-            tracking_mode = f"{CIRCLE_STAR} NOT "
+            tracking_mode = f"{RED_X} NOT "
 
         tracking_mode += 'Monitored' if Device.is_monitored else 'Tracked'
         event_msg =(f"{tracking_mode} Device > {devicename} ({Device.fname_devtype})")

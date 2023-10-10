@@ -72,7 +72,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     config_file.load_storage_icloud3_configuration_file()
 
                     if Gb.conf_profile[CONF_VERSION] == 1:
-                        _HA_LOGGER.info(f"Initializing iCloud3 {VERSION} - Remove Platform: iCloud3 statement")
+                        _HA_LOGGER.info(f"Initializing iCloud3 v{VERSION} - Remove Platform: iCloud3 statement")
 
     except Exception as err:
         log_exception(err)
@@ -91,9 +91,9 @@ async def start_icloud3(event=None):
     icloud3_started = await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3)
 
     if icloud3_started:
-        log_info_msg(f"iCloud3 {Gb.version} started")
+        log_info_msg(f"iCloud3 v{Gb.version} started")
     else:
-        log_error_msg(f"iCloud3 {Gb.version} Initialization Failed")
+        log_error_msg(f"iCloud3 v{Gb.version} Initialization Failed")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
 #
@@ -140,8 +140,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
         Gb.evlog_version       = Gb.conf_profile['event_log_version']
-        Gb.EvLog = event_log.EventLog(Gb.hass)
-        log_info_msg(f"Setting up iCloud3 {VERSION} - Using Integration method")
+        Gb.EvLog               = event_log.EventLog(Gb.hass)
+        log_info_msg(f"Setting up iCloud3 v{VERSION} - Using Integration method")
 
         Gb.start_icloud3_inprocess_flag = True
 
@@ -185,8 +185,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     #   SETUP PROCESS TO START ICLOUD3
     #
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    Gb.EvLog.display_user_message('iCloud3 is Starting')
-    Gb.EvLog.post_event(f"{EVLOG_IC3_STARTING}Initializing iCloud3 v{Gb.version} > "
+    Gb.EvLog.display_user_message(f"Starting iCloud3 v{Gb.version}")
+    Gb.EvLog.post_event(f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Starting, "
                         f"{dt_util.now().strftime('%A, %b %d')}")
 
     Gb.iCloud3  = iCloud3()
@@ -210,9 +210,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     icloud3_started = await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3)
 
     if icloud3_started:
-        log_info_msg(f"iCloud3 {Gb.version} started")
+        log_info_msg(f"iCloud3 v{Gb.version} started")
     else:
-        log_error_msg(f"iCloud3 {Gb.version} Initialization Failed")
+        log_error_msg(f"iCloud3 v{Gb.version} Initialization Failed")
 
     return True
 

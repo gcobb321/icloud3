@@ -138,6 +138,7 @@ class GlobalVariables(object):
     TrackedZones_by_zone              = {HOME, None}  # Tracked zones object by zone name set up with Devices.DeviceFmZones object
     ActiveZones                       = []  # Active Zones - Not passive, radius > 0
     StatZones                         = []  # Stationary Zone objects
+    StatZones_to_delete               = []  # Stationary Zone  to delete after the devices that we're in it have  been updated
     StatZones_by_zone                 = {}  # Stationary Zone objects by their id number (1-10 --> ic3_#_stationary)
     HomeZone                          = None # Home Zone object
 

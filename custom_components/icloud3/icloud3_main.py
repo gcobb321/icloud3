@@ -161,6 +161,7 @@ class iCloud3:
 
             start_ic3_control.stage_3_setup_configured_devices()
             stage_4_success = start_ic3_control.stage_4_setup_data_sources()
+
             if stage_4_success is False:
                 start_ic3_control.stage_4_setup_data_sources(retry=True)
 
@@ -307,7 +308,7 @@ class iCloud3:
         Gb.trace_prefix = 'WRAPUP > '
 
         #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
-        #   UPDATE DISPLAYED DEVICE INFO FIELD
+        #   POST UPDATE LOOP TASKS
         #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
         # Update the EvLog display if the displayed device was updated after
         # the last EvLog refresh
@@ -315,11 +316,7 @@ class iCloud3:
             if Device := Gb.Devices_by_devicename.get(Gb.EvLog.devicename):
                 if Device.last_evlog_msg_secs > Gb.EvLog.last_refresh_secs:
                     Gb.EvLog.update_event_log_display(devicename=Device.devicename)
-                                                    # show_one_screen=show_one_screen)
 
-        #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
-        #   UPDATE DISTANCE TO DEVICES SENSORS
-        #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
         # Update distance sensors (_zone/home.waze/calc_distace) to update the
         # distance to each device
         if Gb.dist_to_other_devices_update_sensor_list:
@@ -331,6 +328,14 @@ class iCloud3:
 
             Gb.dist_to_other_devices_update_sensor_list = set()
 
+        # Remove all StatZones from HA flagged for removal in StatZone module
+        # Removing them after all devices have been updated lets HA process the statzone 'leave'
+        # automation trigger associated with a device before the zone is deleted.
+        if Gb.StatZones_to_delete:
+            for StatZone in Gb.StatZones_to_delete:
+                StatZone.remove_ha_zone()
+            Gb.StatZones_to_delete = []
+
         Gb.trace_prefix = ''
 
 
@@ -339,7 +344,6 @@ class iCloud3:
 #   MAIN 5-SEC LOOP PROCESSING CONTROLLERS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
     def _main_5sec_loop_update_tracked_devices_iosapp(self, Device):
         '''
         Update the device based on iOS App data
@@ -364,11 +368,6 @@ class iCloud3:
                         "iOSApp monitoring stopped. iCloud monitoring will be used.")
             post_event(devicename, event_msg)
             return
-
-        # xxxxx
-        # if Device.isnot_set is False:
-        #     Device.moved_since_last_update_km = \
-        #                 Device.distance_km(Device.iosapp_data_latitude, Device.iosapp_data_longitude)
 
         # If the iOS App is the primary data source next_update time is reached, get the
         # old location threshold. Send a location request to the iosapp device if the
@@ -425,22 +424,12 @@ class iCloud3:
                     and is_statzone(Device.iosapp_zone_exit_zone)
                     and Device.StatZone
                     and Device.iosapp_zone_exit_dist_m < Device.StatZone.radius_m):
-                # Device.iosapp_data_change_reason = (f"Relocate StatZone ("
-                #                 f"{zone_display_as(Device.iosapp_zone_exit_zone)})")
-                # event_msg =(f"Trigger Changed > {Device.iosapp_data_change_reason}, "
-                #             f"Distance less than zone size")
-                xiosapp_data_change_reason = (f"XXXXX CANCELED Relocate StatZone ("
-                                f"{zone_display_as(Device.iosapp_zone_exit_zone)})")
+
                 event_msg =(f"{EVLOG_ALERT}Trigger Changed > {xiosapp_data_change_reason}, "
                             f"Distance less than zone size "
                             f"{Device.StatZone.display_as} {Device.iosapp_zone_exit_dist_m} < {Device.StatZone.radius_m}")
                 post_event(devicename, event_msg)
 
-
-                # statzone.move_statzone_to_device_location(Device,
-                #                 latitude=Device.loc_data_latitude,
-                #                 longitude=Device.loc_data_longitude)
-                # return
                 statzone.kill_and_recreate_unuseable_statzone(Device)
 
             else:
@@ -544,6 +533,9 @@ class iCloud3:
             Device.calculate_distance_moved()
             if Device.loc_data_dist_moved_km < .05:
                 return
+
+        if Device.loc_data_latitude == 0:
+            return
 
         Device.update_sensors_flag  = True
         Device.icloud_update_reason = 'Monitored Device Update'
@@ -1012,8 +1004,8 @@ class iCloud3:
             det_interval.determine_TrackFrom_zone(Device)
 
             # pr1.4
-            # If the location is old and an update it's being done (probably from an iosapp trigger),
-            # see if the error interval is greater than  this update interval. Is  it is, Reset the counter
+            # If the location is old and an update is being done (probably from an iosapp trigger),
+            # see if the error interval is greater than this update interval. Is it is, Reset the counter
             if Device.old_loc_poor_gps_cnt > 8:
                 error_interval_secs, error_cnt, max_error_cnt = det_interval.get_error_retry_interval(Device)
                 if error_interval_secs > Device.interval_secs:

@@ -2066,6 +2066,11 @@ class iCloud3_Device(TrackerEntity):
             # if self.dev_data_battery_level > 0:
             #     info_msg += f"Battery-{self.format_battery_level}, "
 
+            if (self.iosapp_monitor_flag
+                    and secs_since(self.iosapp_data_secs) > 3600):
+                info_msg += (f"iOSApp LastUpdate-"
+                            f"{secs_to_age_str(self.iosapp_data_secs)}, ")
+
             if self.is_gps_poor:
                 info_msg += (f"PoorGPS-±{self.loc_data_gps_accuracy}m "
                             f"#{self.old_loc_poor_gps_cnt}")
@@ -2082,7 +2087,7 @@ class iCloud3_Device(TrackerEntity):
         except Exception as err:
             log_exception(err)
 
-        self.info_msg = 'iCloud3 Started' if info_msg == '' else info_msg[:-2]
+        self.info_msg = f'iCloud3 v{Gb.version} > Started' if info_msg == '' else info_msg[:-2]
         return self.info_msg
 
 #-------------------------------------------------------------------

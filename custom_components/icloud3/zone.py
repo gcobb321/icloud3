@@ -188,8 +188,7 @@ class iCloud3_StationaryZone(iCloud3_Zone):
 
         self.base_attrs = {}
         self.fname = f"StatZon{self.statzone_id}"
-        self.display_as  = self.fname
-        Gb.zone_display_as[self.zone] = self.fname
+        self.fname_id = self.display_as = Gb.zone_display_as[self.zone] = self.fname
 
         #base_attrs is used to move the stationary zone back to it's base
         self.base_attrs[NAME]    = self.zone
@@ -230,7 +229,9 @@ class iCloud3_StationaryZone(iCloud3_Zone):
     def initialize_updatable_items(self):
         if Gb.statzone_fname == '': Gb.statzone_fname = 'StatZon#'
         self.fname = Gb.statzone_fname.replace('#', self.statzone_id)
-        Gb.zone_display_as[self.zone] = self.fname
+        self.fname_id = self.display_as = Gb.zone_display_as[self.zone] = self.fname
+        if instr(Gb.statzone_fname, '#') is False:
+            self.fname_id = f"{self.fname} (..._{self.statzone_id})"
 
         self.base_latitude  = 0 #Gb.statzone_base_latitude
         self.base_longitude = 0 #Gb.statzone_base_longitude
@@ -288,9 +289,8 @@ class iCloud3_StationaryZone(iCloud3_Zone):
 
         try:
             Gb.hass.states.async_remove(f"zone.{self.zone}")
-            # item = Gb.StatZones_by_zone.pop(self.zone, None)
 
-            post_monitor_msg(f"REMOVED StationaryZone > {self.fname} ({self.zone})")
+            post_event(f"Removed HA Zone > {self.fname_id}")
 
         except Exception as err:
             pass

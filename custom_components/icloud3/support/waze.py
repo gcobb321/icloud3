@@ -272,7 +272,7 @@ class Waze(object):
                     and route_time > 0
                     and route_dist_km > 0):
                 Gb.WazeHist.update_usage_cnt(location_id)
-                waze_source_msg = f"Using Route History Database, Recd-{location_id} "
+                waze_source_msg = f"Using Route History Database (#{location_id})"
 
             else:
                 # Zone's location changed in WazeHist or invalid data. Get from Waze later

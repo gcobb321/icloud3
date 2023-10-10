@@ -22,7 +22,7 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT,
                                 RARROW, CRLF_DOT, CIRCLE_STAR, EVLOG_NOTICE, EVLOG_ALERT,
                                 IPHONE_FNAME, IPHONE, IPAD, WATCH, AIRPODS, ICLOUD, FAMSHR, FMF, OTHER, HOME,
                                 DEVICE_TYPES, DEVICE_TYPE_FNAME, DEVICE_TRACKER_DOT,
-                                IOSAPP, NO_IOSAPP,
+                                IOSAPP, NO_IOSAPP, APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
                                 NAME,  FRIENDLY_NAME, FNAME, TITLE, BATTERY,
                                 ZONE, HOME_DISTANCE, WAZE_SERVERS_FNAME,
@@ -31,7 +31,7 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_VERIFICATION_CODE,
                                 CONF_TRACK_FROM_ZONES, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
-                                CONF_NO_IOSAPP,
+                                CONF_NO_IOSAPP, CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
                                 CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME, CONF_FAMSHR_DEVICE_ID,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
@@ -106,24 +106,24 @@ def dict_value_to_list(key_value_dict):
     return value_list
 #-----------------------------------------------------------------------------------------
 MENU_KEY_TEXT = {
-        'icloud_account':       'iCLOUD ACCOUNT & iOS APP > ⠤Location Data Source, ⠤iCloud Account Username/Password',
-        'device_list':          'ICLOUD3 DEVICES > ⠤Add, Change and Delete tracked and monitored devices',
-        'verification_code':    'ENTER/REQUEST AN APPLE ID VERIFICATION CODE > ⠤Enter (or Request) the 6-digit Apple ID Verification Code',
-        'change_device_order':  'CHANGE DEVICE ORDER > ⠤Change the tracking order of the Devices and their display sequence on the Event Log',
-        'sensors':              'SENSORS > ⠤Sensors created by iCloud3, ⠤Exclude Specific Sensors from being created',
-        'actions':              'ACTION COMMANDS > ⠤Restart/Pause/Resume Polling, ⠤Debug Logging, ⠤Export Event Log, ⠤Waze Utilities',
+        'icloud_account':       'iCLOUD ACCOUNT & iOS APP ᐳ –Set iCloud Account Username/Password, –Set Location Data Sources',
+        'device_list':          'ICLOUD3 DEVICES  ᐳ –Add, Change and Delete tracked and monitored devices',
+        'verification_code':    'ENTER/REQUEST AN APPLE ID VERIFICATION CODE ᐳ –Enter or Request the 6-digit Apple ID Verification Code',
+        'change_device_order':  'CHANGE DEVICE ORDER ᐳ –Change the tracking order of the Devices and their display sequence on the Event Log',
+        'sensors':              'SENSORS ᐳ –Set Sensors created by iCloud3, –Exclude Specific Sensors from being created',
+        'actions':              'ACTION COMMANDS ᐳ –Restart/Pause/Resume Polling, –Debug Logging, –Export Event Log, –Waze Utilities',
 
-        'format_settings':      'FORMAT SETTINGS > ⠤Log Level, ⠤Zones Display Format, ⠤DeviceTracker State, ⠤Unit of Measure, ⠤Time & Distance, ⠤Display GPS Coordinates',
-        'display_text_as':      'DISPLAY TEXT AS > ⠤Event Log Custom Card Text Replacement',
-        'waze':                 'WAZE ROUTE DISTANCE & TIME, WAZE HISTORY DATABASE > ⠤Route Server Location, ⠤Min/Max Intervals, ⠤Waze History Database Parameters and Controls',
-        'inzone_intervals':     'INZONE DEFAULT INTERVALS > ⠤Default inZone intervals for different device types, ⠤inZone Interval if the iOS App is not installed, ⠤Other inZone Controls ',
-        'special_zones':        'SPECIAL ZONES - ⠤Enter Zone Delay, ⠤Stationary Zone, ⠤Track From Zone',
-        'tracking_parameters':  'TRACKING & OTHER PARAMETERS > ⠤Use Nearby Device Info, ⠤Accuracy Thresholds, ⠤Maximum, Device Offline & Other Intervals, ⠤Event Log Custom Card Directory, etc.',
+        'format_settings':      'FORMAT SETTINGS ᐳ –Log Level, –Zones Display Format, –DeviceTracker State, –Unit of Measure, –Time & Distance, Display GPS Coordinates',
+        'display_text_as':      'DISPLAY TEXT AS ᐳ –Event Log Custom Card Text Replacement',
+        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY ᐳ –Set Route Server Location, Min/Max Intervals, etc. –Set Waze History Database Parameters and Controls',
+        'inzone_intervals':     'INZONE DEFAULT INTERVALS ᐳ –Default inZone intervals for different device types and the iOS App, –Other inZone Controls ',
+        'special_zones':        'SPECIAL ZONES ᐳ –Enter Zone Delay, –Stationary Zone, –Track From Zone',
+        'tracking_parameters':  'TRACKING & OTHER PARAMETERS ᐳ –Set Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals, –Set Event Log Custom Card Directory, etc.',
 
-        'select':               'SELECT > Select the parameter update form',
-        'next_page_0':          'PAGE 1 > DEVICES & SENSORS > ⠤iCloud Account Login Credentials, ⠤iCloud3 Devices, ⠤Enter/Request Verification Code, ⠤Change Device Order, ⠤Sensors, ⠤Action Commands',
-        'next_page_1':          'PAGE 2 > GENERAL PARAMETERS > ⠤Format Parameters, ⠤Display Text As, ⠤Waze Route Dist & Time, Waze History, ⠤inZone Intervals, ⠤Special Zones, ⠤ Other Parameters',
-        'exit':                 'EXIT AND RESTART ICLOUD3'
+        'select':               'SELECT ᐳ Select the parameter update form',
+        'next_page_0':          'PAGE 1, DEVICES & SENSORS ᐳ –iCloud Account & iOS App, –iCloud3 Devices, –Enter & Request Verification Code, –Change Device Order, –Sensors, –Action Commands',
+        'next_page_1':          'PAGE 2, GENERAL PARAMETERS ᐳ –Format Parameters, –Display Text As, –Waze Route Distance, Time & History, –inZone Intervals, –Special Zones, – Other Parameters',
+        'exit':                f'EXIT AND RESTART ICLOUD3 {".. "*22}(Version: {Gb.version})'
 }
 MENU_PAGE_0_INITIAL_ITEM = 1
 MENU_KEY_TEXT_PAGE_0 = [
@@ -150,52 +150,52 @@ MENU_ACTION_ITEMS = [
     ]
 
 ACTION_LIST_ITEMS_KEY_TEXT = {
-        'next_page_items':          'NEXT PAGE ITEMS > ^info_field^',
-        'next_page':                'NEXT PAGE > Save changes. Display the next page',
-        'next_page_device':         'NEXT PAGE > Friendly Name, Track-from-Zones, Other Setup Fields',
-        'next_page_waze':           'NEXT PAGE > Waze History Database parameters',
-        'select_form':              'SELECT > Select the parameter update form',
+        'next_page_items':          'NEXT PAGE ITEMS ᐳ ^info_field^',
+        'next_page':                'NEXT PAGE ᐳ Save changes. Display the next page',
+        'next_page_device':         'NEXT PAGE ᐳ Friendly Name, Track-from-Zones, Other Setup Fields',
+        'next_page_waze':           'NEXT PAGE ᐳ Waze History Database parameters',
+        'select_form':              'SELECT ᐳ Select the parameter update form',
 
-        'login_icloud_account':     'LOGIN > Log into the iCloud Account. Logged Into-Not Logged In',
-        'verification_code':        'ENTER/REQUEST AN APPLE ID VERIFICATION CODE > Enter (or Request) the 6-digit Apple ID Verification Code',
+        'login_icloud_account':     'LOGIN ᐳ Log into the iCloud Account. StatusMsg',
+        'verification_code':        'ENTER/REQUEST AN APPLE ID VERIFICATION CODE ᐳ Enter (or Request) the 6-digit Apple ID Verification Code',
 
-        'enter_verification_code':  'ENTER APPLE ID VERIFICATION CODE > Enter the 6-digit Apple ID Verification Code',
-        'send_verification_code':   'SEND THE VERIFICATION CODE TO APPLE ID > Send the 6-digit Apple ID Verification Code back to Apple to approve access to the iCloud account',
-        "request_verification_code":'REQUEST A NEW APPLE ID VERIFICATION CODE > Reset iCloud Interface and request a new Apple ID Verification Code',
-        'cancel_verification_entry':'CANCEL > Cancel the Verification Code Entry and Close this screen',
+        'enter_verification_code':  'ENTER APPLE ID VERIFICATION CODE ᐳ Enter the 6-digit Apple ID Verification Code',
+        'send_verification_code':   'SEND THE VERIFICATION CODE TO APPLE ID ᐳ Send the 6-digit Apple ID Verification Code back to Apple to approve access to the iCloud account',
+        "request_verification_code":'REQUEST A NEW APPLE ID VERIFICATION CODE ᐳ Reset iCloud Interface and request a new Apple ID Verification Code',
+        'cancel_verification_entry':'CANCEL ᐳ Cancel the Verification Code Entry and Close this screen',
 
-        'update_device':            'UPDATE DEVICE > Update the selected device',
-        'add_device':               'ADD DEVICE > Add a device to be tracked by iCloud3',
-        'delete_device':            'DELETE DEVICE(S), OTHER DEVICE MAINTENANCE > Delete the device(s) from the tracked device list, clear the FamShr/FmF/iOS App selection fields',
-        'change_device_order':      'CHANGE DEVICE ORDER > Change the tracking order of the Devices and their display sequence on the Event Log',
+        'update_device':            'UPDATE DEVICE ᐳ Update the selected device',
+        'add_device':               'ADD DEVICE ᐳ Add a device to be tracked by iCloud3',
+        'delete_device':            'DELETE DEVICE(S), OTHER DEVICE MAINTENANCE ᐳ Delete the device(s) from the tracked device list, clear the FamShr/FmF/iOS App selection fields',
+        'change_device_order':      'CHANGE DEVICE ORDER ᐳ Change the tracking order of the Devices and their display sequence on the Event Log',
 
-        'delete_this_device':       'DELETE THIS DEVICE > Delete this device from the iCloud3 tracked devices list',
-        'delete_all_devices':       'DELETE ALL DEVICES > Delete all devices from the iCloud3 tracked devices list',
-        'delete_icloud_iosapp_info':'CLEAR FAMSHR/FMF/IOSAPP INFO > Reset the FamShr/FmF/iOS App seletion fields on all devices',
-        'delete_device_cancel':     'CANCEL > Return to the Device List screen',
+        'delete_this_device':       'DELETE THIS DEVICE ᐳ Delete this device from the iCloud3 tracked devices list',
+        'delete_all_devices':       'DELETE ALL DEVICES ᐳ Delete all devices from the iCloud3 tracked devices list',
+        'delete_icloud_iosapp_info':'CLEAR FAMSHR/FMF/IOSAPP INFO ᐳ Reset the FamShr/FmF/iOS App seletion fields on all devices',
+        'delete_device_cancel':     'CANCEL ᐳ Return to the Device List screen',
 
-        'inactive_to_track':        'TRACK ALL OR SELECTED > Change the \'Tracking Mode\' of all of the devices (or the selected devices) from \'Inactive\' to \Tracked\'',
-        'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE > None of these devices should be \'Tracked\' and should remain \'Inactive\'',
+        'inactive_to_track':        'TRACK ALL OR SELECTED ᐳ Change the \'Tracking Mode\' of all of the devices (or the selected devices) from \'Inactive\' to \Tracked\'',
+        'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE ᐳ None of these devices should be \'Tracked\' and should remain \'Inactive\'',
 
-        'restart_ha':               'RESTART HOME ASSISTANT > Restart HA and reload iCloud3',
-        'restart_ic3_now':          'RESTART NOW > Restart iCloud3 now to load the updated configuration',
-        'restart_ic3_later':        'RESTART LATER > The configuration changes have been saved. Load the updated configuration the next time iCloud3 is started',
-        'reload_icloud3':           'RELOAD ICLOUD3 > Reload & Restart iCloud3 (EXPERIMENTAL: THIS MAY NOT WORK)',
-        'review_inactive_devices':  'REVIEW INACTIVE DEVICES > Some Devices are `Inactive` and will not be located or tracked',
+        'restart_ha':               'RESTART HOME ASSISTANT ᐳ Restart HA and reload iCloud3',
+        'restart_ic3_now':          'RESTART NOW ᐳ Restart iCloud3 now to load the updated configuration',
+        'restart_ic3_later':        'RESTART LATER ᐳ The configuration changes have been saved. Load the updated configuration the next time iCloud3 is started',
+        'reload_icloud3':           'RELOAD ICLOUD3 ᐳ Reload & Restart iCloud3 (EXPERIMENTAL: THIS MAY NOT WORK)',
+        'review_inactive_devices':  'REVIEW INACTIVE DEVICES ᐳ Some Devices are `Inactive` and will not be located or tracked',
 
-        'select_text_as':           'SELECT > Update selected \'Display Text As\' field',
-        'clear_text_as':            'CLEAR > Remove \'Display Test As\' entry',
+        'select_text_as':           'SELECT ᐳ Update selected \'Display Text As\' field',
+        'clear_text_as':            'CLEAR ᐳ Remove \'Display Test As\' entry',
 
-        'exclude_sensors':          'EXCLUDE SENSORS > Select specific Sensors that should not be created',
-        'filter_sensors':           'FILTER SENSORS > Select Sensors that should be displayed',
+        'exclude_sensors':          'EXCLUDE SENSORS ᐳ Select specific Sensors that should not be created',
+        'filter_sensors':           'FILTER SENSORS ᐳ Select Sensors that should be displayed',
 
-        'move_up':                  'MOVE UP > Move the Device up in the list',
-        'move_down':                'MOVE DOWN > Move the Device down in the list',
+        'move_up':                  'MOVE UP ᐳ Move the Device up in the list',
+        'move_down':                'MOVE DOWN ᐳ Move the Device down in the list',
 
-        'save':                     'SAVE > Update Configuration File, Return to the menu screen',
-        'cancel':                   'RETURN > Return to the previous screen. Cancel any changes that are not already saved',
-        'exit':                     'EXIT > Exit the iCloud3 Configurator',
-        'return':                   'RETURN > Return to the Main Menu',
+        'save':                     'SAVE ᐳ Update Configuration File, Return to the menu screen',
+        'cancel':                   'RETURN ᐳ Return to the previous screen. Cancel any changes that are not already saved',
+        'exit':                     'EXIT ᐳ Exit the iCloud3 Configurator',
+        'return':                   'RETURN ᐳ Return to the Main Menu',
 
         "divider1": "═══════════════════════════════════════",
         "divider2": "═══════════════════════════════════════",
@@ -274,9 +274,9 @@ ICLOUD_SERVER_ENDPOINT_SUFFIX_ITEMS_KEY_TEXT = {
         'none':     'Use normal Apple iCloud Servers',
         'cn':       'China - Use Apple iCloud Servers located in China'
         }
-IOSAPP_DEVICE_SEARCH_TEXT = 'Scan for mobile app device_tracker > '
+IOSAPP_DEVICE_SEARCH_TEXT = 'Scan for mobile app device_tracker ᐳ '
 IOSAPP_DEVICE_NONE_ITEMS_KEY_TEXT = {
-        'None':     'None > The iOS App is not installed on this device',
+        'None':     'None - The iOS App is not installed on this device',
         }
 TRACKING_MODE_ITEMS_KEY_TEXT = {
         'track':    'Track - Request Location and track the device',
@@ -327,80 +327,80 @@ WAZE_SERVER_ITEMS_KEY_TEXT = {
         }
 WAZE_HISTORY_TRACK_DIRECTION_ITEMS_KEY_TEXT = {
         'north_south':      'North-South - You generally travel in North-to-South direction',
-        'east_west':        'East-West- You generally travel in East-West direction'
+        'east_west':        'East-West - You generally travel in East-West direction'
         }
 
 CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT = {
-        'md_badge':         'badge > Badge sensor > A badge showing the Zone Name or distance from the Home zone. Attributes include location related information',
-        'md_battery':       'battery, battery_status > Create Battery (65%) and Battery Status (Charging, Low, etc) sensors',
-        'md_location_sensors': 'Location related sensors > Name, zone, distance, travel_time, etc. (_name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update)',
+        'md_badge':         '_badge ᐳ Badge sensor - A badge showing the Zone Name or distance from the Home zone. Attributes include location related information',
+        'md_battery':       '_battery, battery_status ᐳ Create Battery (65%) and Battery Status (Charging, Low, etc) sensors',
+        'md_location_sensors': 'Location related sensors ᐳ Name, zone, distance, travel_time, etc. (_name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update)',
         }
 CONF_SENSORS_DEVICE_KEY_TEXT = {
-        NAME:               'name > iCloud3 Device Name',
-        'badge':            'badge > A badge showing the Zone Name or distance from the Home zone',
-        BATTERY:            'battery, battery_status > Create Battery Level (65%) and Battery Status (Charging, Low, etc) sensors',
-        'info':             'info > An information message containing status, alerts and errors related to device location updates, data accuracy, etc',
+        NAME:               '_name ᐳ iCloud3 Device Name',
+        'badge':            '_badge ᐳ A badge showing the Zone Name or distance from the Home zone',
+        BATTERY:            '_battery, _battery_status ᐳ Create Battery Level (65%) and Battery Status (Charging, Low, etc) sensors',
+        'info':             '_info ᐳ An information message containing status, alerts and errors related to device location updates, data accuracy, etc',
         }
 CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT = {
-        'interval':         'interval > Time between location requests',
-        'last_update':      'last_update > Last time the location was updated',
-        'next_update':      'next_update > Next time the location will be updated',
-        'last_located':     'last_located > Last time the was located using iCloud or iOS APP location',
+        'interval':         '_interval ᐳ Time between location requests',
+        'last_update':      '_last_update ᐳ Last time the location was updated',
+        'next_update':      '_next_update ᐳ Next time the location will be updated',
+        'last_located':     '_last_located ᐳ Last time the was located using iCloud or iOS APP location',
         }
 CONF_SENSORS_TRACKING_TIME_KEY_TEXT = {
-        'travel_time':      'travel_time > Waze Travel time to Home or closest Track-from-Zone zone',
-        'travel_time_min':  'travel_time_min > Waze Travel time to Home or closest Track-from-Zone zone in minutes',
-        'travel_time_hhmm': 'travel_time_hhmm > Waze Travel time to a Zone in hours:minutes',
-        'arrival_time':     'arrival_time > Home Zone arrival time based on Waze Travel time',
+        'travel_time':      '_travel_time ᐳ Waze Travel time to Home or closest Track-from-Zone zone',
+        'travel_time_min':  '_travel_time_min ᐳ Waze Travel time to Home or closest Track-from-Zone zone in minutes',
+        'travel_time_hhmm': '_travel_time_hhmm ᐳ Waze Travel time to a Zone in hours:minutes',
+        'arrival_time':     '_arrival_time ᐳ Home Zone arrival time based on Waze Travel time',
         }
 CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT = {
-        'home_distance':    'home_distance > Distance to the Home zone',
-        'zone_distance':    'zone_distance > Distance to the Home or closest Track-from-Zone zone',
-        'dir_of_travel':    'dir_of_travel > Direction of Travel for the Home zone or closest Track-from-Zone zone (Towards, AwayFrom, inZone, etc)',
-        'moved_distance':   'moved_distance > Distance moved from the last location',
+        'home_distance':    '_home_distance ᐳ Distance to the Home zone',
+        'zone_distance':    '_zone_distance ᐳ Distance to the Home or closest Track-from-Zone zone',
+        'dir_of_travel':    '_dir_of_travel ᐳ Direction of Travel for the Home zone or closest Track-from-Zone zone (Towards, AwayFrom, inZone, etc)',
+        'moved_distance':   '_moved_distance ᐳ Distance moved from the last location',
         }
 CONF_SENSORS_TRACK_FROM_ZONES_KEY_TEXT = {
-        'general_sensors':  'Include General Sensors (zone_info)',
-        'time_sensors':     'Include Travel Time Sensors (travel_time, travel_time_mins, travel_time_hhmm, arrival_time',
-        'distance_sensors': 'Include Zone Distance Sensors (zone_distance, distance, dir_of_travel)',
+        'general_sensors':  'Include General Sensors (_zone_info)',
+        'time_sensors':     'Include Travel Time Sensors (_travel_time, _travel_time_mins, _travel_time_hhmm, _arrival_time',
+        'distance_sensors': 'Include Zone Distance Sensors (_zone_distance, _distance, _dir_of_travel)',
         }
 CONF_SENSORS_TRACK_FROM_ZONES_KEYS = ['general_sensors', 'time_sensors', 'distance_sensors']
 CONF_SENSORS_TRACKING_OTHER_KEY_TEXT = {
-        'trigger':          'trigger > Last action that triggered a location update',
-        'waze_distance':    'waze_distance > Waze distance from a TrackFrom zone',
-        'calc_distance':    'calc_distance > Calculated straight line distance from a TrackFrom zone',
+        'trigger':          '_trigger ᐳ Last action that triggered a location update',
+        'waze_distance':    '_waze_distance ᐳ Waze distance from a TrackFrom zone',
+        'calc_distance':    '_calc_distance ᐳ Calculated straight line distance from a TrackFrom zone',
         }
 CONF_SENSORS_ZONE_KEY_TEXT = {
-        'zone_fname':       'zone_fname > HA Zone entity Friendly Name (HA Config > Areas & Zones > Zones > Name)',
-        'zone':             'zone > HA Zone entity_id (`the_shores`)',
-        'zone_name':        'zone_name > Reformat the Zone entity_id, capitalize and remove `_`s (`the_shores` → `TheShores`)',
-        'zone_datetime':    'zone_datetime > The time the Device entered the Zone',
-        'last_zone':        'last_zone_[...] > Create the same sensors for the device`s last HA Zone',
+        'zone_fname':       '_zone_fname ᐳ HA Zone entity Friendly Name (HA Config > Areas & Zones > Zones > Name)',
+        'zone':             '_zone ᐳ HA Zone entity_id (`the_shores`)',
+        'zone_name':        '_zone_name ᐳ Reformat the Zone entity_id, capitalize and remove `_`s (`the_shores` → `TheShores`)',
+        'zone_datetime':    '_zone_datetime ᐳ The time the Device entered the Zone',
+        'last_zone':        '_last_zone_[...] ᐳ Create the same sensors for the device`s last HA Zone',
         }
 CONF_SENSORS_OTHER_KEY_TEXT = {
-        'gps_accuracy':     'gps_accuracy > GPS acuracy of the last location coordinates',
-        'vertical_accuracy':'vertical_accuracy > Vertical (Elevation) Accuracy',
-        'altitude':         'altitude > Altitude/Elevation',
+        'gps_accuracy':     '_gps_accuracy ᐳ GPS acuracy of the last location coordinates',
+        'vertical_accuracy':'_vertical_accuracy ᐳ Vertical (Elevation) Accuracy',
+        'altitude':         '_altitude ᐳ Altitude/Elevation',
         }
 
 ACTIONS_SCREEN_ITEMS_KEY_TEXT = {
         "divider1":         "═════════════ ICLOUD3 CONTROL ACTIONS ══════════════",
-        "restart":          "RESTART > Restart iCloud3",
-        "pause":            "PAUSE > Pause polling on all devices",
-        "resume":           "RESUME > Resume Polling on all devices, Refresh all locations",
+        "restart":          "RESTART ᐳ Restart iCloud3",
+        "pause":            "PAUSE ᐳ Pause polling on all devices",
+        "resume":           "RESUME ᐳ Resume Polling on all devices, Refresh all locations",
         "divider2":         "════════════════ DEBUG LOG ACTIONS ══════════════",
-        "debug_start":      "START DEBUG LOGGING > Start or stop debug logging",
-        "debug_stop":       "STOP DEBUG LOGGING > Start or stop debug logging",
-        "rawdata_start":    "START RAWDATA LOGGING > Start or stop debug rawdata logging",
-        "rawdata_stop":     "STOP RAWDATA LOGGING > Start or stop debug rawdata logging",
-        "commit":           "COMMIT DEBUG LOG RECORDS > Verify all debug log file records are written",
+        "debug_start":      "START DEBUG LOGGING ᐳ Start or stop debug logging",
+        "debug_stop":       "STOP DEBUG LOGGING ᐳ Start or stop debug logging",
+        "rawdata_start":    "START RAWDATA LOGGING ᐳ Start or stop debug rawdata logging",
+        "rawdata_stop":     "STOP RAWDATA LOGGING ᐳ Start or stop debug rawdata logging",
+        "commit":           "COMMIT DEBUG LOG RECORDS ᐳ Verify all debug log file records are written",
         "divider3":         "════════════════ OTHER COMMANDS ═══════════════",
-        "evlog_export":     "EXPORT EVENT LOG > Export Event Log data",
-        "wazehist_maint":   "WAZE HIST DATABASE > Recalc time/distance data at midnight",
-        "wazehist_track":   "WAZE HIST MAP TRACK > Load route locations for map display",
+        "evlog_export":     "EXPORT EVENT LOG ᐳ Export Event Log data",
+        "wazehist_maint":   "WAZE HIST DATABASE ᐳ Recalc time/distance data at midnight",
+        "wazehist_track":   "WAZE HIST MAP TRACK ᐳ Load route locations for map display",
         "divider4":         "═══════════════════════════════════════════════",
-        "restart_ha":       "RESTART HA, RELOAD ICLOUD3 > Restart HA or Reload iCloud3",
-        "return":           "MAIN MENU > Return to the Main Menu"
+        "restart_ha":       "RESTART HA, RELOAD ICLOUD3 ᐳ Restart HA or Reload iCloud3",
+        "return":           "MAIN MENU ᐳ Return to the Main Menu"
         }
 ACTIONS_SCREEN_ITEMS_TEXT  = [text for text in ACTIONS_SCREEN_ITEMS_KEY_TEXT.values()]
 ACTIONS_SCREEN_ITEMS_KEY_BY_TEXT = {text: key
@@ -710,7 +710,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
     '''Handles options flow for the component.'''
 
     def __init__(self, settings=False):
-        #_trace(f"dt {Gb.hass=} {self.hass=}. {hass=}")
         self.initialize_options_required_flag = True
         self.step_id        = ''       # step_id for the window displayed
         self.errors         = {}       # Errors en.json error key
@@ -824,6 +823,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.obscure_username         = ''
         self.obscure_password         = ''
         self.show_username_password   = False
+        self.endpoint_suffix          = Gb.icloud_server_endpoint_suffix or \
+                                        Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX]
 
     async def async_step_init(self, user_input=None):
         if self.initialize_options_required_flag:
@@ -955,10 +956,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 self.config_flow_updated_parms.remove('restart')
                 Gb.restart_icloud3_request_flag = True
                 if (self.PyiCloud is not None
-                    and (self.username != Gb.username or self.password != Gb.password)):
+                        and (self.username != Gb.username
+                        or self.password != Gb.password
+                        or self.endpoint_suffix != Gb.icloud_server_endpoint_suffix)):
                     Gb.PyiCloud = self.PyiCloud
                     Gb.username = self.username
                     Gb.password = self.password
+                    Gb.icloud_server_endpoint_suffix = self.endpoint_suffix
 
             elif action_item.startswith('restart_ha'):
                 #return await self.step_restart_ha()
@@ -1279,6 +1283,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if HOME_DISTANCE not in user_input[CONF_SENSORS_TRACKING_DISTANCE]:
             user_input[CONF_SENSORS_TRACKING_DISTANCE].append(HOME_DISTANCE)
 
+        # TfZ Sensors are not configured via config_flow but built in
+        # config_flow from the distance, time & zone sensors
         tfz_sensors_base = ['zone_info']
         tfz_sensors_base.extend(user_input[CONF_SENSORS_TRACKING_TIME])
         tfz_sensors_base.extend(user_input[CONF_SENSORS_TRACKING_DISTANCE])
@@ -1940,20 +1946,22 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             if self.errors == {}:
                 # Set the data_source so pyicloud will get all the devices
-                Gb.conf_data_source_FAMSHR  = instr(user_input[CONF_DATA_SOURCE], FAMSHR)
-                Gb.conf_data_source_FMF     = instr(user_input[CONF_DATA_SOURCE], FMF)
+                Gb.conf_data_source_FAMSHR    = instr(user_input[CONF_DATA_SOURCE], FAMSHR)
+                Gb.conf_data_source_FMF       = instr(user_input[CONF_DATA_SOURCE], FMF)
                 Gb.primary_data_source_ICLOUD = Gb.conf_data_source_FAMSHR or Gb.conf_data_source_FMF
 
+                user_input['endpoint_suffix'] = 'cn' if user_input['url_suffix_china'] is True else 'None'
+
                 # Action Login or Save will login into the account if the username changed
-                if (action_item in ['login_icloud_account', 'save']
-                        and (user_input[CONF_USERNAME] != Gb.conf_tracking[CONF_USERNAME]
-                            or user_input[CONF_PASSWORD] != Gb.conf_tracking[CONF_PASSWORD])):
+                if (action_item in ['login_icloud_account', 'save']):
+
                     await self._log_into_icloud_account(user_input, called_from_step_id='icloud_account')
 
                     if action_item == 'save' and self.PyiCloud != Gb.PyiCloud:
                         Gb.PyiCloud = Gb.PyiCloudInit = self.PyiCloud
                         Gb.username = self.username
                         Gb.password = self.password
+                        Gb.icloud_server_endpoint_suffix = self.endpoint_suffix
 
                     await self._build_device_form_selection_lists()
                     self._prepare_device_selection_list()
@@ -1967,6 +1975,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 # Save the login username/password
                 if (action_item == 'save'
                         and (self.errors == {} or self.errors.get('base', '') == 'icloud_acct_logged_into')):
+                    user_input[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX] = self.endpoint_suffix
                     self._update_configuration_file(user_input)
 
                     return self.async_show_form(step_id=self.called_from_step_id_2,
@@ -2120,16 +2129,19 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if CONF_USERNAME in user_input:
             self.username = user_input[CONF_USERNAME].lower()
             self.password = user_input[CONF_PASSWORD]
+            self.endpoint_suffix = user_input['endpoint_suffix']
             verify_password = self.username != Gb.conf_tracking[CONF_USERNAME]
         else:
             self.username = Gb.conf_tracking[CONF_USERNAME]
             self.password = Gb.conf_tracking[CONF_PASSWORD]
+            self.endpoint_suffix = Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX]
             verify_password = False
 
         # If using same username/password as primary PyiCloud, use the primary
         if (Gb.PyiCloud
                 and Gb.PyiCloud.username == self.username
-                and Gb.PyiCloud.password == self.password):
+                and Gb.PyiCloud.password == self.password
+                and Gb.PyiCloud.endpoint_suffix == self.endpoint_suffix):
             self.PyiCloud = Gb.PyiCloud
             return
 
@@ -2137,7 +2149,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if (self.PyiCloud
                 and request_verification_code is False
                 and self.username == self.PyiCloud.username
-                and self.password == self.PyiCloud.password):
+                and self.password == self.PyiCloud.password
+                and self.endpoint_suffix == self.PyiCloud.endpoint_suffix):
             return
 
         if request_verification_code:
@@ -2153,15 +2166,23 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                         pyicloud_ic3_interface.create_PyiCloudService_secondary,
                                         self.username,
                                         self.password,
+                                        self.endpoint_suffix,
                                         'config_flow',
                                         verify_password,
                                         request_verification_code)
 
 
         except (PyiCloudFailedLoginException) as err:
-            _CF_LOGGER.error(f"Error logging into iCloud service: {err}")
             self.PyiCloud = None
-            self.errors = {'base': 'icloud_acct_login_error'}
+            self.endpoint_suffix = Gb.icloud_server_endpoint_suffix = \
+                    Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX]
+            if called_from_step_id == 'icloud_account':
+                error_msg = 'icloud_acct_login_error'
+            else:
+                error_msg = 'icloud_acct_not_available'
+            self.errors = {'base': error_msg}
+
+            _CF_LOGGER.error(f"Error logging into iCloud service: {err}")
 
             return self.async_show_form(step_id=called_from_step_id,
                                         data_schema=self.form_schema(called_from_step_id),
@@ -2176,6 +2197,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             Gb.PyiCloud = Gb.PyiCloudInit = self.PyiCloud
             Gb.username = self.username
             Gb.password = self.password
+            Gb.icloud_server_endpoint_suffix = self.endpoint_suffix
 
         if self.PyiCloud.requires_2fa or request_verification_code:
             return
@@ -3852,16 +3874,25 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if self.username or self.password:
                 obscure_username = obscure_field(self.username) or 'None'
                 obscure_password = obscure_field(self.password) or 'None'
-                username_password = f"({obscure_username}/{obscure_password})"
+                username_password = f"{obscure_username}/{obscure_password}"
 
-                logged_into_msg = self.actions_list[LOG_IN_ICLOUD_ACCT_IDX].replace('Not Logged In', username_password)
-                self.actions_list[LOG_IN_ICLOUD_ACCT_IDX] = logged_into_msg
+                if self.PyiCloud or Gb.PyiCloud:
+                    status_msg = f"Logged Into > {username_password}"
+                elif self.username or self.password:
+                    status_msg  = ''
+                    if 'base' not in self.errors:
+                        self.errors = {'base': 'icloud_acct_not_logged_into'}
+
+                self.actions_list[LOG_IN_ICLOUD_ACCT_IDX] = \
+                    self.actions_list[LOG_IN_ICLOUD_ACCT_IDX].replace('StatusMsg', status_msg)
 
             data_source_icloud_list = []
             data_source_iosapp_list = []
             if instr(Gb.conf_tracking[CONF_DATA_SOURCE], FAMSHR): data_source_icloud_list.append(FAMSHR)
             if instr(Gb.conf_tracking[CONF_DATA_SOURCE], FMF):    data_source_icloud_list.append(FMF)
             if instr(Gb.conf_tracking[CONF_DATA_SOURCE], IOSAPP): data_source_iosapp_list.append(IOSAPP)
+
+            url_suffix_china = (Gb.icloud_server_endpoint_suffix == 'cn')
 
             return vol.Schema({
                 vol.Optional('data_source_icloud',
@@ -3873,14 +3904,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(CONF_PASSWORD,
                             default=self.password):
                             selector.TextSelector(selector.TextSelectorConfig(type='password')),
+                vol.Optional('url_suffix_china',
+                            default=url_suffix_china):
+                            selector.BooleanSelector(),
                 vol.Optional('data_source_iosapp',
                             default=data_source_iosapp_list):
                             cv.multi_select(DATA_SOURCE_IOSAPP_ITEMS_KEY_TEXT),
-                # vol.Required(CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
-                #             default=self._option_parm_to_text(CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX, ICLOUD_SERVER_ENDPOINT_SUFFIX_ITEMS_KEY_TEXT)):
-                #             selector.SelectSelector(
-                #                 selector.SelectSelectorConfig(
-                #                         options=dict_value_to_list(ICLOUD_SERVER_ENDPOINT_SUFFIX_ITEMS_KEY_TEXT), mode='dropdown')),
+
                 vol.Required('action_items',
                             default=self.action_default_text('save')):
                             selector.SelectSelector(selector.SelectSelectorConfig(
@@ -3984,7 +4014,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 except:
                     famshr_list_text_by_fname[famshr_devicename] = f"{famshr_devicename} > {SERVICE_NOT_STARTED_YET}"
             elif 'base' not in self.errors:
-                self.errors['base'] = 'icloud_acct_login_error'
+                self.errors['base'] = 'icloud_acct_not_available'
 
             # If conf_fmf_email is not in available fmf emails list, add it
             fmf_email = self.conf_device_selected[CONF_FMF_EMAIL]
@@ -4001,7 +4031,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 except:
                     fmf_list_text_by_email[fmf_email] = f"{fmf_email} > {SERVICE_NOT_STARTED_YET}"
             elif 'base' not in self.errors:
-                self.errors['base'] = 'icloud_acct_login_error'
+                self.errors['base'] = 'icloud_acct_not_available'
 
             # If conf_iosapp_device is not in available iosapp devices list, add it
             iosapp_device = self.conf_device_selected[CONF_IOSAPP_DEVICE]
@@ -4376,7 +4406,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             ptzh_default = [PASSTHRU_ZONE_HEADER] if pass_thru_zone_used else []
             szh_default  = [STAT_ZONE_HEADER] if stat_zone_used else []
-            # sbzh_default = [STAT_ZONE_BASE_HEADER] if stat_zone_used else []
             tfzh_default = [TRK_FROM_HOME_ZONE_HEADER] if track_from_zone_home else []
 
             return vol.Schema({

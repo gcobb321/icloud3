@@ -491,9 +491,20 @@ def _handle_action_device_locate(Device, action_option):
         _handle_action_device_location_iosapp(Device)
         return
 
-    if Gb.primary_data_source_ICLOUD is False or Device.is_data_source_ICLOUD is False:
+    if (Gb.primary_data_source_ICLOUD is False
+            or (Device.device_id_famshr is None and Device.device_id_fmf is None)
+            or Device.is_offline
+            or Device.is_data_source_ICLOUD is False):
         post_event(Device.devicename, "iCloud Location Tracking is not available")
         return
+
+    if Device.old_loc_poor_gps_cnt > 3:
+        post_event(Device.devicename, "Location request canceled. Old Location Retry is "
+                        "handling Location Updates")
+        ost_event(Device.devicename, "iCloud Location Tracking is not available")
+        Gb.force_icloud_update_flag = False
+        return
+
     try:
         interval_secs = time_str_to_secs(action_option)
         if interval_secs == 0:

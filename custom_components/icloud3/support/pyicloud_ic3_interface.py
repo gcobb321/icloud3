@@ -395,7 +395,8 @@ def delete_pyicloud_cookies_session_files(cookie_filename=None):
     post_monitor_msg(delete_msg)
 
 #--------------------------------------------------------------------
-def create_PyiCloudService_secondary(username, password, called_from,
+def create_PyiCloudService_secondary(username, password, 
+                                        endpoint_suffix, called_from,
                                         verify_password, request_verification_code=False):
     '''
     Create the PyiCloudService object without going through the error checking and
@@ -405,6 +406,7 @@ def create_PyiCloudService_secondary(username, password, called_from,
     return PyiCloudService( username, password,
                             cookie_directory=Gb.icloud_cookies_dir,
                             session_directory=(f"{Gb.icloud_cookies_dir}/session"),
+                            endpoint_suffix=endpoint_suffix,
                             called_from=called_from,
                             verify_password=verify_password,
                             request_verification_code=request_verification_code)

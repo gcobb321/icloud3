@@ -27,7 +27,7 @@ import homeassistant.util.dt as dt_util
 def stage_1_setup_variables():
 
     Gb.trace_prefix = 'STAGE 1 > '
-    stage_title = 'Stage 1 > Initial Preparations'
+    stage_title = f'Stage 1 > Initial Preparations'
 
     broadcast_info_msg(stage_title)
 
@@ -35,7 +35,7 @@ def stage_1_setup_variables():
     if Gb.start_icloud3_inprocess_flag:
         return
 
-    Gb.EvLog.display_user_message('iCloud3 > Initializiing')
+    Gb.EvLog.display_user_message(f'iCloud3 v{Gb.version} > Initializiing')
 
     try:
         Gb.this_update_secs             = time_now_secs()
@@ -49,7 +49,7 @@ def stage_1_setup_variables():
         Gb.reinitialize_icloud_devices_cnt  = 0
 
         if Gb.initial_icloud3_loading_flag is False:
-            post_event( f"{EVLOG_IC3_STARTING}Restarting iCloud3 v{Gb.version} > "
+            post_event( f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Restarting, "
                         f"{dt_util.now().strftime('%A, %b %d')}")
             # Gb.EvLog.update_event_log_display("")
             # start_ic3.reinitialize_config_parameters()
@@ -86,7 +86,7 @@ def stage_1_setup_variables():
 def stage_2_prepare_configuration():
 
     Gb.trace_prefix = 'STAGE 2 > '
-    stage_title = 'Stage 2 > Prepare Support Services'
+    stage_title = f'Stage 2 > Prepare Support Services'
 
     try:
         Gb.EvLog.display_user_message(stage_title)
@@ -140,7 +140,7 @@ def stage_2_prepare_configuration():
 def stage_3_setup_configured_devices():
 
     Gb.trace_prefix = 'STAGE 3 > '
-    stage_title = 'Stage 3 > Prepare Configured Devices'
+    stage_title = f'Stage 3 > Prepare Configured Devices'
 
     try:
         Gb.EvLog.display_user_message(stage_title)
@@ -170,7 +170,7 @@ def stage_3_setup_configured_devices():
 def stage_4_setup_data_sources(retry=False):
 
     Gb.trace_prefix = 'STAGE 4 > '
-    stage_title = 'Stage 4 > Setup iCloud & iOSApp Data Source'
+    stage_title = f'Stage 4 > Setup iCloud & iOSApp Data Source'
 
     # Missing username/password, PyiCloud can not be started
     if Gb.primary_data_source_ICLOUD:
@@ -215,7 +215,7 @@ def stage_4_setup_data_sources(retry=False):
             event_msg = 'iOS App > Not used as a data source'
             post_event(event_msg)
 
-        return_code = _list_unverified_devices(retry=retry)
+        return_code = _are_all_devices_verified(retry=retry)
 
     except Exception as err:
         log_exception(err)
@@ -227,7 +227,7 @@ def stage_4_setup_data_sources(retry=False):
     return return_code
 
 #------------------------------------------------------------------
-def _list_unverified_devices(retry=False):
+def _are_all_devices_verified(retry=False):
     '''
     See if all tracked devices are verified.
 
@@ -249,7 +249,6 @@ def _list_unverified_devices(retry=False):
                                         if (devicename in unverified_devices \
                                             and ((Device.device_id_famshr and Gb.conf_data_source_FAMSHR) \
                                             or (Device.device_id_fmf and Gb.conf_data_source_FMF)))]
-
     if unverified_devices == [] or not_tracked_devices == []:
         return True
 
@@ -264,7 +263,7 @@ def _list_unverified_devices(retry=False):
     else:
         event_msg = (f"{EVLOG_ALERT}ALERT > Some devices could not be verified. iCloud Location Services "
                         f"will be reinitialized")
-    event_msg += (f"{CRLF}{CRLF}Unverified Devices > {', '.join(unverified_devices)}")
+    event_msg += (f"{CRLF_DOT}Unverified Devices > {', '.join(unverified_devices)}")
     post_event(event_msg)
 
     return False
@@ -274,7 +273,7 @@ def _list_unverified_devices(retry=False):
 def stage_5_configure_tracked_devices():
 
     Gb.trace_prefix = 'STAGE 5 > '
-    stage_title = 'Stage 5 > Tracked Devices Configuration Summary'
+    stage_title = f'Stage 5 > Tracked Devices Configuration Summary'
 
     try:
         Gb.EvLog.display_user_message(stage_title)
@@ -298,7 +297,7 @@ def stage_5_configure_tracked_devices():
 def stage_6_initialization_complete():
 
     Gb.trace_prefix = 'STAGE 6 > '
-    stage_title = 'iCloud3 Initialization Complete'
+    stage_title = f'iCloud3 Initialization Complete'
 
     broadcast_info_msg(stage_title)
 
@@ -352,7 +351,7 @@ def stage_7_initial_locate():
 
     Gb.trace_prefix = 'INITLOC > '
     post_event("Requesting Initial Locate")
-    event_msg =(f"{EVLOG_IC3_STARTING}Initializing iCloud3 v{Gb.version} > Complete")
+    event_msg =(f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Start up Complete")
     post_event(event_msg)
 
     for Device in Gb.Devices:
@@ -397,34 +396,39 @@ def reinitialize_icloud_devices():
 
         alert_msg = f"{EVLOG_ALERT}"
         if Gb.conf_data_source_ICLOUD:
+            unverified_devices = [devicename for devicename, Device in Gb.Devices_by_devicename_tracked.items() \
+                                            if Device.verified_flag is False and Device.is_tracked]
             alert_msg +=(f"One or more devices was not verified. iCloud Location Svcs "
-                        f"may be down, slow to respond or the internet may be down")
+                        f"may be down, slow to respond or the internet may be down."
+                        f"{CRLF_DOT}Unverified Devices > {', '.join(unverified_devices)}")
+
         post_event(alert_msg)
 
-        event_msg =(f"{EVLOG_IC3_STARTING}Initializing iCloud3 > Restarting iCloud Location Services")
+        event_msg =(f"{EVLOG_IC3_STARTING}Restarting iCloud Location Services")
         post_event(event_msg)
 
         if Gb.PyiCloud and Gb.PyiCloud.FamilySharing:
             Gb.PyiCloud.FamilySharing.refresh_client()
 
-        if stage_4_setup_data_sources():
-            stage_4_setup_data_sources()
+        stage_4_success = stage_4_setup_data_sources(retry=None)
+        if stage_4_success is False:
+            stage_4_success = stage_4_setup_data_sources()
 
         stage_5_configure_tracked_devices()
         stage_6_initialization_complete()
-        # stage_7_initial_locate()
 
         Gb.all_tracking_paused_flag = False
 
-        alert_msg =(f"{EVLOG_ALERT}One or more devices was still not verified"
-                    f"{CRLF}This can be caused by:"
-                    f"{CRLF_DOT}iCloud3 Configuration Errors"
-                    f"{CRLF_DOT}iCloud Location Svcs may be down or slow"
-                    f"{CRLF_DOT}The internet may be down"
-                    f"{CRLF_DOT}The username/password is not set up or incorrect"
-                    f"{CRLF}{'-'*50}{CRLF}Check the Event Log error messages, "
-                    f"correct any problems and restart iCloud3")
-        post_event(alert_msg)
+        if stage_4_success is False:
+            alert_msg =(f"{EVLOG_ALERT}One or more devices was still not verified"
+                        f"{CRLF}This can be caused by:"
+                        f"{CRLF_DOT}iCloud3 Configuration Errors"
+                        f"{CRLF_DOT}iCloud Location Svcs may be down or slow"
+                        f"{CRLF_DOT}The internet may be down"
+                        f"{CRLF_DOT}The username/password is not set up or incorrect"
+                        f"{CRLF}{'-'*50}{CRLF}Check the Event Log error messages, "
+                        f"correct any problems and restart iCloud3")
+            post_event(alert_msg)
 
         return False
 

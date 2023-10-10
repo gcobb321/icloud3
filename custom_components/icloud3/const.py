@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0pr1.4'
+VERSION                         = '3.0.rc6'
 
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -102,7 +102,7 @@ OTHER                           = 'other'
 
 # Apple is using a country specific iCloud server based on the country code in pyicloud_ic3.
 # Add to the HOME_ENDPOINT & SETUP_ENDPOINT urls if the HA country code is one of these values.
-APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE = ['cn']
+APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE = ['cn', 'CN']
 
 DEVICE_TYPES = [
         IPHONE, IPAD, IPOD, WATCH, ICLOUD_FNAME, AIRPODS,
@@ -245,7 +245,7 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒❌⊘Ɵ⊗ⓧⓍ⛒🜔
-  — – ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●▐‖  ▹▻▷◁◅◃▶➤➜➔❰❰❱❱ ⠤
+  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●▐‖  ▹▻▷◁◅◃▶➤➜➔❰❰❱❱ ⠤
  ⣇⠈⠉⠋⠛⠟⠿⡿⣿       https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 '''
 NBSP              = '⠈' #'&nbsp;'
@@ -703,6 +703,8 @@ MOVED_DISTANCE                 = "moved_distance"
 MOVED_TIME_FROM                = 'moved_from'
 MOVED_TIME_TO                  = 'moved_to'
 
+# TfZ Sensors are not configured via config_flow but built in
+# config_flow from the distance, time & zone sensors
 CONF_SENSORS_TRACK_FROM_ZONES = 'track_from_zones'
 TFZ_ZONE_INFO                 = 'tfz_zone_info'
 TFZ_DISTANCE                  = 'tfz_distance'

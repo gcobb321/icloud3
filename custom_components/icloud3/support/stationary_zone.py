@@ -8,7 +8,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (ZONE, LATITUDE, LONGITUDE, STATZONE_RADIUS_1M, HIGH_INTEGER, 
+from ..const             import (ZONE, LATITUDE, LONGITUDE, STATZONE_RADIUS_1M, HIGH_INTEGER,
                                 ENTER_ZONE, EXIT_ZONE, NEXT_UPDATE, INTERVAL, RARROW, )
 from ..zone              import iCloud3_StationaryZone
 from ..support           import determine_interval as det_interval
@@ -49,16 +49,17 @@ def move_device_into_statzone(Device):
     _ha_statzones = ha_statzones()
 
     # Cycle thru existing ic3 StatZones looking for one that can be recreated at a
-    # new location. 
+    # new location.
     for StatZone in Gb.StatZones:
         if StatZone.passive and StatZone.zone not in _ha_statzones:
+            event_msg = f"Reusing Stationary Zone > {StatZone.fname_id}"
             break
 
     else:
         StatZone = create_StationaryZones_object()
 
-        event_msg = (f"Created StatZone > {StatZone.fname}, SetupBy-{Device.fname}")
-        post_event(event_msg)
+        event_msg = f"Created Stationary Zone > {StatZone.fname_id}, SetupBy-{Device.fname}"
+    post_event(event_msg)
 
     # Set location, it will be updated when Device's attributes are updated in main routine
     StatZone.latitude  = latitude
@@ -68,7 +69,7 @@ def move_device_into_statzone(Device):
 
     still_since_secs = Device.statzone_timer - Gb.statzone_still_time_secs
     _clear_statzone_timer_distance(Device, create_statzone_flag=True)
-    
+
 
     StatZone.away_attrs[LATITUDE]  = latitude
     StatZone.away_attrs[LONGITUDE] = longitude
@@ -81,10 +82,9 @@ def move_device_into_statzone(Device):
     Device.into_zone_datetime = datetime_now()
     Device.selected_zone_results = []
 
-    event_msg =(f"Setting Up Stationary Zone ({StatZone.display_as}) > "
-                f"StationarySince-{format_time_age(still_since_secs)}, "
-                f"GPS-{format_gps(latitude, longitude, 0)}")
-    post_event(Device.devicename, event_msg)
+    # event_msg =(f"Assigned Stationary Zone > {StatZone.display_as}, > "
+    #             f"StationarySince-{format_time_age(still_since_secs)}")
+    # post_event(Device.devicename, event_msg)
 
     iosapp_interface.request_location(Device)
     _trigger_monitored_device_update(StatZone, Device, ENTER_ZONE)
@@ -129,7 +129,7 @@ def exit_all_statzones():
 def exit_statzone(Device):
     '''
     Move a device out of this stat zone. Delete the stat zone  if there are no
-    other devces still in it. 
+    other devces still in it.
 
     Parameter:
         Device - The Device exiting the stat zone
@@ -138,29 +138,26 @@ def exit_statzone(Device):
     StatZone = Device.StatZone
     Device.StatZone = None
 
-    removed_msg = "Exited"
     # If only  monitored devices left in the StatZone, take them out of the StatZone
     # so the zone will be removed
     if tracked_devices_in_statzone_count(StatZone) == 0:
         if monitored_devices_in_statzone_count(StatZone) > 0:
             _trigger_monitored_device_update(StatZone, Device, EXIT_ZONE)
 
-        removed_msg += " & Removed"
         remove_statzone(StatZone, Device)
 
-    event_msg =(f"StatZone {removed_msg} ({StatZone.display_as}) > "
-                f"DevicesInStatZone-{devices_in_statzone_count(StatZone)}")
-
-    post_event(Device.devicename, event_msg)
+        event_msg =(f"Will Remove Stationary Zone > {StatZone.display_as}, "
+                    f"LastUsedBy-{Device.fname}")
+        post_event(Device.devicename, event_msg)
 
 #--------------------------------------------------------------------
 def kill_and_recreate_unuseable_statzone(Device):
     '''
-    There are times when the iOSapp will exit a StatZone when it is still in it. 
+    There are times when the iOSapp will exit a StatZone when it is still in it.
     It exits and  the Devices distance is less than 100m, the iOSapp will not
     put the device back in it and seems to stop monitoring it. When this happens,
     create a new StatZone, move any devices in this one to the new one and delete
-    it. 
+    it.
     '''
 
     StatZone = Device.StatZone
@@ -171,7 +168,7 @@ def kill_and_recreate_unuseable_statzone(Device):
     _StatZone = move_device_into_statzone(Device)
     for _Device in Devices_in_statzone:
         _Device.StatZone = _StatZone
-        event_msg =(f"Reassign StatZone > {StatZone.display_as}{RARROW}"
+        event_msg =(f"Reassigned Stationary Zone > {StatZone.display_as}{RARROW}"
                     f"{_StatZone.display_as}")
         post_event(_Device.devicename, event_msg)
 
@@ -212,12 +209,12 @@ def move_statzone_to_device_location(Device, latitude=None, longitude=None):
 
 #--------------------------------------------------------------------
 def remove_statzone(StatZone, Device=None):
-    ''' 
-    Delete the stationary zone.  It will be removed from HA but the StatZone 
+    '''
+    Delete the stationary zone.  It will be removed from HA but the StatZone
     object still exists in iCloud3 and will be recreated when a new one is
     needed. It is set to passive so it will not be selected.  It's remove
-    time is set so it will not reuse the same StatZone in the next 5-minutes. 
-    This gives the iOSapp time to remove it from its monitored zones. 
+    time is set so it will not reuse the same StatZone in the next 5-minutes.
+    This gives the iOSapp time to remove it from its monitored zones.
     '''
 
     if StatZone is None: return
@@ -225,19 +222,22 @@ def remove_statzone(StatZone, Device=None):
     StatZone.radius_m = STATZONE_RADIUS_1M
     StatZone.passive  = True
 
-    StatZone.remove_ha_zone()
+    #StatZone.remove_ha_zone()
+    if StatZone not in Gb.StatZones_to_delete:
+        Gb.StatZones_to_delete.append(StatZone)
 
     if Device:
         _clear_statzone_timer_distance(Device)
-        event_msg = f"Exited Stationary Zone ({StatZone.display_as})"
+        event_msg =(f"Exited Stationary Zone > {StatZone.display_as}, "
+                    f"DevicesRemaining-{devices_in_statzone_count(StatZone)}")
         post_event(Device.devicename, event_msg)
 
 #--------------------------------------------------------------------
 def ha_statzones():
-    ''' 
+    '''
     Return a list of StatZones in the yaml zone collection updated when
     iCloud3 Add our remove a StatZone
-    ''' 
+    '''
     Gb.hass.services.call(ZONE, "reload")
     return [zone.replace('zone.', '')   for zone in Gb.hass.data['zone_entity_ids']
                                         if zone.startswith('zone.ic3_stationary_')]
@@ -247,16 +247,15 @@ def _trigger_monitored_device_update(StatZone, Device, action):
     for _Device in Gb.Devices_by_devicename_monitored.values():
         if action == ENTER_ZONE:
             dist_m = _Device.distance_m(Device.loc_data_latitude, Device.loc_data_longitude)
-            event_msg = f"Trigger > StatZone Created ({StatZone.display_as}) {dist_m=}"
+            event_msg = f"Trigger > Create Stationary Zone > {StatZone.display_as}"
             post_event(_Device.devicename, event_msg)
 
         elif action == EXIT_ZONE and _Device.StatZone is StatZone:
-            # _Device.StatZone = None
-            event_msg = f"Trigger > StatZone Removed ({StatZone.display_as})"
+            event_msg = f"Trigger > Remove Stationary Zone > {StatZone.display_as}"
             post_event(_Device.devicename, event_msg)
 
         else:
-            continue 
+            continue
 
         Gb.force_icloud_update_flag = True
         det_interval.update_all_device_fm_zone_sensors_interval(_Device, 5)

@@ -34,7 +34,7 @@
         "description": "Enter the 6-digit verification code you just received from Apple",
         "data": {
           "verification_code": "ICLOUD ACCOUNT VERIFICATION CODE",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "restart_ha": {
@@ -59,11 +59,12 @@
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "iCloud3 Configuration Parameters were updated successfully",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
-
       "icloud_acct_logging_into": "Logging into iCloud Account",
       "icloud_acct_logged_into": "Successfully Logged into the iCloud Account",
       "icloud_acct_already_logged_into": "Already Logged into the iCloud Account",
-      "icloud_acct_login_error": "iCloud Account Login Failed, Invalid Username or Password",
+      "icloud_acct_login_error": "iCloud Account Login Failed - Review Username/Password (or China '.cn' suffix)",
+      "icloud_acct_not_available": "iCloud Account is not Available, Login Unsuccessful",
+      "icloud_acct_not_logged_into": "iCloud Account is not Logged Into",
       "icloud_acct_not_set_up": "The iCloud Account Username or Password needs to be entered",
       "icloud_acct_no_data_source": "No Data Source has been selected",
 
@@ -130,7 +131,7 @@
         "title": "iCloud3 Configure Settings",
         "data": {
           "menu_items": "",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "restart_icloud3": {
@@ -156,14 +157,14 @@
       },
       "icloud_account": {
         "title": "iCloud Account & iOS App Data Sources",
-        "description": "",
+        "description": "The data sources (iCloud Account Web Services and the iOS App) are selected on this screen. The Apple iCloud Account Username/Password must be specified here to access the iCloud Account. The HA Companion App (iOS App) must be installed on the iDevice to use is as a data source for that device. Each iDevice you are tracking is associated with the iCloud3 device on the Update Devices screen.",
         "data": {
-          "data_source_icloud": "ICLOUD ACCOUNT - Location data is provided by the Apple iCloud account",
+          "data_source_icloud": "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ICLOUD ACCOUNT - Location data is provided by the Apple iCloud account",
           "username": "APPLE ID (USERNAME) - The email address used to sign in to the iCloud Account",
           "password": "PASSWORD - The iCloud Account Password",
-          "data_source_iosapp": "iOS APP - Location data is provided by the HA iOS App",
-          "icloud_server_endpoint_suffix": "ICLOUD SERVER LOCATION -  Countries having localized Apple iCloud Servers (Not Normally Used)",
-          "action_items": "═════════════════════════════════════════════════════"
+          "url_suffix_china": "CHINA USERS - Add '.cn' to use the Apple iCloud Web Servers located in China",
+          "data_source_iosapp": "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ iOS APP - Location data is provided by the HA iOS App",
+          "action_items":       "═══════════════════════════════════════════════════"
         },
         "data_description": {
         }
@@ -173,7 +174,7 @@
         "description": "Enter the 6-digit verification code you just received from Apple",
         "data": {
           "verification_code": "ICLOUD ACCOUNT VERIFICATION CODE",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "device_list": {
@@ -181,7 +182,7 @@
         "description": "All of the devices that are tracked or monitored by iCloud3 are listed on this screen. You can add new devices and update or delete existing devices.",
         "data": {
           "devices": "",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "add_device": {
@@ -192,7 +193,7 @@
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "iosapp": "iOS APP INSTALLED - The HA iOS App is installed on this device  ",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
         }
@@ -212,7 +213,7 @@
           "track_from_base_zone": "PRIMARY HOME ZONE - Use another zone if you are away from Home for an extended period",
           "picture": "PICTURE - Photo image of the person normally using this device (40x40 pixels is best size)",
           "inzone_interval": "INZONE INTERVAL",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
           "inzone_interval": "Time between location requests when in a zone",
@@ -230,14 +231,14 @@
         "description": "The 'Tracking Mode' of devices are set to 'Inactive' and will not be located or tracked.",
         "data": {
           "inactive_devices": "",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "change_device_order": {
         "title": "Event Log Device Display Sequence",
         "data": {
           "device_desc": "DEVICES - The devices are displayed in the Event Log heading area and in various Event Log messages in this sequence",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "format_settings": {
@@ -251,7 +252,7 @@
           "unit_of_measurement": "UNIT OF MEASUREMENT - How distance fieldsare displayed in sensors and in the Event Log",
           "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
           "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS Latitude/Longitude/Accuracy (22.32771, -76.33073/±35m) or only the GPS accuracy (/±35m) in the Event Log",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
           "device_tracker_state_source": "HA uses the device's gps coordinates to determine the zone. The gps accuracy is not considered so the zone may be exited when the gps wanders out of the zone. iCloud3 does consider the gps accuracy and will not exit the zone when this occurs. iCloud3 will display the Zone's Friendly Name or zone name displayed on the Event Log."
@@ -262,7 +263,7 @@
         "description": "There may be some text fields that are displayed on the Event Log screen that may be sensitive in nature. Some examples include email addresses or phone numbers. With this screen, you can select the Original Text and what should be displayed instead. For example, you can replace 'geekstergary@apple.com' with 'gary@email.com'",
         "data": {
           "display_text_as": "Text Replacement Fields",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "display_text_as_update": {
@@ -270,7 +271,7 @@
         "data": {
           "text_from": "ORIGINAL TEXT - Text to be replaced (example: gary_real_email@gmail.com)",
           "text_to": "DISPLAYED TEXT- Text to be displayed (display:  gary@email.com)",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
         }
@@ -298,7 +299,7 @@
           "travel_time_factor": "TRAVEL TIME INTERVAL MULTIPLIER",
           "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
           "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
           "old_location_threshold": "Locations older than this value will be discarded",
@@ -327,7 +328,7 @@
           "discard_poor_gps_inzone": "Discard Location Updates with Poor GPS Accuracy when in a Zone",
           "distance_between_devices": "Determine the distance between devices. Use a near by device's tracking results",
           "center_in_zone": "Change Device's Location to the Zone's Center when in a Zone",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
           "no_iosapp": "Default interval if the iOS App is not used for location monitoring and zone enter/exit triggers",
@@ -337,15 +338,15 @@
       "waze_main": {
         "title": "Waze - Route Service Travel Time/Distance",
         "data": {
-          "waze_used": "═══════════════════════════════════════════════════ WAZE ROUTE SERVICE",
+          "waze_used": "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ WAZE ROUTE SERVICE",
           "waze_region": "ROUTE SERVER LOCATION - Location of the Waze Route Server for your area",
           "waze_realtime": "USE REAL TIME DATA - Waze should consider traffic delays when determining travel time",
           "waze_min_distance": "WAZE MINIMUM DISTANCE",
           "waze_max_distance": "WAZE MAXIMUM DISTANCE",
-          "waze_history_database_used": "═══════════════════════════════════════════════════ WAZE HISTORY DATABASE",
+          "waze_history_database_used": "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ WAZE HISTORY DATABASE",
           "waze_history_track_direction": "GENERAL TRAVEL DIRECTION - Used to display 'Map Trace Lines' between saved locations",
           "waze_history_max_distance": "HISTORY MAX DISTANCE",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         },
         "data_description": {
           "waze_min_distance": "Use the Waze Route Service when the zone distance is greater than this value",
@@ -356,16 +357,16 @@
       "special_zones": {
         "title": "Special Zones - Enter Zone Delay, Stationary Zone, Primay Home Base Zone",
         "data": {
-          "passthru_zone_header":   "═══════════════════════════════════════════════════ ENTER ZONE DELAY",
-          "passthru_zone_time": "ENTER ZONE DELAY TIME ",
-          "stat_zone_header":       "═══════════════════════════════════════════════════ STATIONARY ZONE",
+          "passthru_zone_header": "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ENTER ZONE DELAY",
+          "passthru_zone_time":   "ENTER ZONE DELAY TIME ",
+          "stat_zone_header":     "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ STATIONARY ZONE",
           "stat_zone_still_time": "NO MOVEMENT TIME ",
           "stat_zone_inzone_interval": "INZONE INTERVAL ",
-          "stat_zone_fname": "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
-          "track_from_zone_header":  "═══════════════════════════════════════════════════ PRIMARY BASE ZONE = HOME",
+          "stat_zone_fname":      "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
+          "track_from_zone_header": "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ PRIMARY BASE ZONE = HOME",
           "track_from_base_zone": "PRIMARY 'HOME' ZONE - Use another zone if you are away from Home for an extended period (Global Override)",
           "track_from_home_zone": "ALSO TRACK FROM HOME ZONE - Continue to track from the Home zone when the Primary Home Zone is not Home",
-          "action_items":             "═══════════════════════════════════════════════════"
+          "action_items":         "═══════════════════════════════════════════════════"
         },
         "data_description": {
           "passthru_zone_time": "Delay processing an Enter Zone Trigger that you may be driving through and not actually entering",
@@ -388,7 +389,7 @@
           "zone": "ZONE SENSORS - Device zone status and information",
           "other": "OTHER SENSORS - Sensors not in the above areas",
           "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       },
       "exclude_sensors": {
@@ -398,7 +399,7 @@
           "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
           "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
           "filtered_sensors": "ICLOUD3 SENSORS - A list of Sensors that are created when iCloud3 starts",
-          "action_items": "═════════════════════════════════════════════════════"
+          "action_items": "═══════════════════════════════════════════════════"
         }
       }
     }

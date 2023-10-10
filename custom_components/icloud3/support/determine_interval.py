@@ -323,12 +323,6 @@ def determine_interval(Device, FromZone):
         interval_method += '+>180s'
         interval_secs    = 180
 
-    #15-sec interval_secs (close to zone) and may be going into a stationary zone,
-    #increase the interval
-    # elif interval_secs == 15 and Gb.this_update_secs >= Device.statzone_timer+45:
-    #     interval_method += '+6.StatTimer+45'
-    #     interval_secs = 30
-
     #Turn off waze close to zone flag to use waze after leaving zone or getting more than 1km from it
     if Gb.Waze.waze_close_to_zone_pause_flag:
         if inzone_flag or calc_dist_from_zone_km >= 1:
@@ -362,7 +356,6 @@ def determine_interval(Device, FromZone):
         #  Use interval_secs if > StatZone interval unless the StatZone interval is the device's
         # inzone interval
         if Device.is_in_statzone:
-                #and Device.statzone_inzone_interval_secs >= interval_secs):
             interval_method = "7.StatZone"
             interval_secs   = Device.statzone_inzone_interval_secs
 
@@ -373,8 +366,7 @@ def determine_interval(Device, FromZone):
                 interval_secs   = Device.statzone_inzone_interval_secs
             elif inzone_flag:
                 pass
-                # interval_method = f"7.inZoneMax"
-                # interval_secs   = Gb.max_interval_secs / 2
+
             else:
                 interval_method = f"7.Max"
                 interval_secs   = Gb.max_interval_secs
@@ -395,13 +387,13 @@ def determine_interval(Device, FromZone):
                     if (_Device.FromZone_TrackFrom
                             and _Device.near_device_distance <= NEAR_DEVICE_DISTANCE
                             and next_update_secs < _Device.FromZone_TrackFrom.next_update_secs):
+
                         next_update_secs = _Device.FromZone_TrackFrom.next_update_secs
                         interval_secs    = _Device.FromZone_TrackFrom.interval_secs
                         interval_str     = _Device.FromZone_TrackFrom.interval_str
                         interval_method  = f"{_Device.fname}"
+
         except:
-            error_msg = f"User Monitor Results error > {_Device.devicename}, Zone-{_Device.FromZone_TrackFrom.from_zone}"
-            post_error_msg(error_msg)
             pass
 
         # Update all dates and other fields
@@ -424,7 +416,6 @@ def determine_interval(Device, FromZone):
 
     except Exception as err:
         sensor_msg = post_internal_error('Update FromZone Times', traceback.format_exc)
-
 
     #--------------------------------------------------------------------------------
     # if poor gps and moved less than 1km, redisplay last distances
@@ -452,6 +443,14 @@ def determine_interval(Device, FromZone):
             and interval_secs > 60
             and waze_dist_from_zone_km > FromZone.max_dist_km):
         FromZone.max_dist_km = waze_dist_from_zone_km
+
+    if Device.iosapp_monitor_flag:
+        # If monitored and the iosapp state is before the last update, reset it since
+        # the iosapp is not really used for monitored devices
+        if (Device.is_monitored
+                and Device.iosapp_data_state != Device.loc_data_zone
+                and Device.last_update_loc_secs > (Device.iosapp_data_state_secs + Device.old_loc_threshold_secs)):
+            Device.iosapp_data_state = NOT_SET
 
     #--------------------------------------------------------------------------------
     #Make sure the new 'last state' value is the internal value for
@@ -533,10 +532,15 @@ def post_results_message_to_event_log(Device, FromZone):
     if Device.is_monitored:
         event_msg +=     f"{Device.dev_data_source}, "
     if Gb.log_debug_flag and FromZone.interval_method and Device.is_tracked:
-        event_msg +=    (f"Method-{FromZone.interval_method}, "
+        event_msg += (  f"Method-{FromZone.interval_method}, "
                         f"{'Went3km, ' if Device.went_3km else ''}")
     if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
         event_msg +=    "Waze-OverMaxDist, "
+    if (Device.iosapp_monitor_flag
+            and secs_since(Device.iosapp_data_secs) > 3600):
+        event_msg += (  f"iOSAppLastUpdate-"
+                        f"{secs_to_age_str(Device.iosapp_data_secs)}, ")
+
     post_event(Device.devicename, event_msg[:-2])
 
     if True is True: #Device.is_tracked:
@@ -566,15 +570,8 @@ def post_zone_time_dist_event_msg(Device, FromZone):
     Event Log
     '''
 
-    iosapp_state = '──'
-    if Device.iosapp_monitor_flag:
-        iosapp_state = zone_display_as(Device.iosapp_data_state)
-        if (is_statzone(Device.iosapp_data_state)
-                and Device.iosapp_data_state != Device.loc_data_zone
-                and Device.iosapp_data_state not in statzone.ha_statzones()):
-            iosapp_state = f"🅧{iosapp_state}"
-
-    ic3_zone = zone_display_as(Device.loc_data_zone)
+    iosapp_state = zone_display_as(Device.iosapp_data_state)
+    ic3_zone     = zone_display_as(Device.loc_data_zone)
 
     if Device.loc_data_zone == NOT_SET:
         interval_str = travel_time = distance = 0
@@ -677,7 +674,7 @@ def determine_interval_after_error(Device, counter=OLD_LOC_POOR_GPS_CNT):
         # happens after a reauthentication. If so, do not display an error on the
         # first retry.
 
-        threshold_msg = ''  if interval_secs == Device.interval_secs \
+        threshold_msg = ''  if interval_secs == Device.FromZone_Home.interval_secs \
                             else f", OldThreshold-{secs_to_time_str(Device.old_loc_threshold_secs)}"
 
         next_update_secs = Gb.this_update_secs + interval_secs
