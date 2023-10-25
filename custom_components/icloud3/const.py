@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.rc6'
+VERSION                         = '3.0.rc8'
 
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -328,6 +328,7 @@ NON_ZONE_ITEM_LIST = {
         'Not_Home': 'Away',
         'not_set': '──',
         'Not_Set': '──',
+        '──': 'NotSet',
         # 'stationary': 'Stationary',
         # 'Stationary': 'Stationary',
         STATIONARY: STATIONARY_FNAME,

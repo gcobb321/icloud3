@@ -78,10 +78,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             area_reg = ar.async_get(hass)
             Gb.area_id_personal_device = area_reg.async_get_or_create('Personal Device').id
 
-            _get_dr_device_ids_from_device_registry(hass)
+            _get_ha_device_ids_from_device_registry(hass)
 
-            if (ICLOUD3 in Gb.dr_area_id_by_devicename
-                    and Gb.dr_area_id_by_devicename[ICLOUD3] in [None, 'unknown', '']):
+            if (ICLOUD3 in Gb.ha_area_id_by_devicename
+                    and Gb.ha_area_id_by_devicename[ICLOUD3] in [None, 'unknown', '']):
                 _update_icloud3_integration_area_id()
 
         except Exception as err:
@@ -111,11 +111,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
         if NewDeviceTrackers != []:
             async_add_entities(NewDeviceTrackers, True)
-            _get_dr_device_ids_from_device_registry(hass)
+            _get_ha_device_ids_from_device_registry(hass)
             _HA_LOGGER.info(f"iCloud3 Device Tracker entities: {Gb.device_trackers_cnt}")
 
         Devices_no_area = [Device   for Device in Gb.DeviceTrackers_by_devicename.values() \
-                                    if Device.dr_area_id in [None, 'unknown', '']]
+                                    if Device.ha_area_id in [None, 'unknown', '']]
 
         if Devices_no_area != []:
             for Device in Devices_no_area:
@@ -131,7 +131,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         log_error_msg(log_msg)
 
 #-------------------------------------------------------------------------------------------
-def _get_dr_device_ids_from_device_registry(hass):
+def _get_ha_device_ids_from_device_registry(hass):
     '''
     Cycle thru the ha device registry, extract the iCloud3 entries and associate the
     ha device_id with the ic3_devicename parameters
@@ -144,12 +144,12 @@ def _get_dr_device_ids_from_device_registry(hass):
         icloud3_dev_reg = {device: device_entry for device, device_entry in dev_reg.deleted_devices.items()
                                                 if _icloud3_dev_reg_item(device_entry)}
         for device, device_entry in icloud3_dev_reg.items():
-            _get_dr_device_id_from_device_entry(hass, device, device_entry)
+            _get_ha_device_id_from_device_entry(hass, device, device_entry)
 
         icloud3_dev_reg = {device: device_entry for device, device_entry in dev_reg.devices.items()
                                                 if _icloud3_dev_reg_item(device_entry)}
         for device, device_entry in icloud3_dev_reg.items():
-            _get_dr_device_id_from_device_entry(hass, device, device_entry)
+            _get_ha_device_id_from_device_entry(hass, device, device_entry)
 
     except Exception as err:
         log_exception(err)
@@ -167,7 +167,7 @@ def _icloud3_dev_reg_item(device_entry):
         return False
 
 #-------------------------------------------------------------------------------------------
-def _get_dr_device_id_from_device_entry(hass, device, device_entry):
+def _get_ha_device_id_from_device_entry(hass, device, device_entry):
     '''
     For each entry in the device registry, determine if it is an iCloud3 entry (iCloud3 is in
     the device_entry.identifiers field. If so, check the other items, determine if one is a
@@ -188,8 +188,8 @@ def _get_dr_device_id_from_device_entry(hass, device, device_entry):
     '''
     try:
         if device_entry.name in [DOMAIN, ICLOUD3, 'iCloud3 Integration']:
-            Gb.dr_device_id_by_devicename[ICLOUD3] = device_entry.id
-            Gb.dr_area_id_by_devicename[ICLOUD3]   = device_entry.area_id
+            Gb.ha_device_id_by_devicename[ICLOUD3] = device_entry.id
+            Gb.ha_area_id_by_devicename[ICLOUD3]   = device_entry.area_id
             return
     except:
         pass
@@ -200,8 +200,8 @@ def _get_dr_device_id_from_device_entry(hass, device, device_entry):
 
         for item in de_identifiers:
             if item in Gb.conf_devicenames:
-                Gb.dr_device_id_by_devicename[item] = device_entry.id
-                Gb.dr_area_id_by_devicename[item] = device_entry.area_id
+                Gb.ha_device_id_by_devicename[item] = device_entry.id
+                Gb.ha_area_id_by_devicename[item] = device_entry.area_id
         return
 
     except Exception as err:
@@ -214,11 +214,11 @@ def _update_icloud3_integration_area_id():
     try:
         kwargs = {}
         kwargs['area_id'] = Gb.area_id_personal_device
-        Gb.dr_area_id_by_devicename[ICLOUD3] = Gb.area_id_personal_device
+        Gb.ha_area_id_by_devicename[ICLOUD3] = Gb.area_id_personal_device
 
-        device_id = Gb.dr_device_id_by_devicename[ICLOUD3]
+        ha_device_id = Gb.ha_device_id_by_devicename[ICLOUD3]
         device_registry = dr.async_get(Gb.hass)
-        dr_entry = device_registry.async_update_device(device_id, **kwargs)
+        dr_entry = device_registry.async_update_device(ha_device_id, **kwargs)
 
         log_debug_msg(  "Device Tracker entity changed: device_tracker.icloud3, "
                     "iCloud3, Personal Device")
@@ -238,9 +238,9 @@ class iCloud3_DeviceTracker(TrackerEntity):
             self.devicename    = devicename
             self.Device        = None   # Filled in after Device object has been created in start_ic3
             self.entity_id     = f"device_tracker.{devicename}"
-            self.dr_device_id  = Gb.dr_device_id_by_devicename.get(self.devicename)
-            self.dr_area_id    = Gb.dr_area_id_by_devicename.get(self.devicename)
-            # if self.dr_area_id in ['unknown', '']: self_area_id = None
+            self.ha_device_id  = Gb.ha_device_id_by_devicename.get(self.devicename)
+            self.ha_area_id    = Gb.ha_area_id_by_devicename.get(self.devicename)
+            # if self.ha_area_id in ['unknown', '']: self_area_id = None
 
             self.device_fname  = conf_device[FNAME]
             self.device_type   = conf_device[CONF_DEVICE_TYPE]
@@ -298,8 +298,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
     @property
     def get_area_id(self):
         """Return the area_id of the device."""
-        # if self.dr_area_id is None:
-        #     self.dr_area_id = Gb.dr_area_id_by_devicename[self.devicename] = \
+        # if self.ha_area_id is None:
+        #     self.ha_area_id = Gb.ha_area_id_by_devicename[self.devicename] = \
         #         Gb.area_id_personal_device
         return self.area_id
 
@@ -479,22 +479,22 @@ class iCloud3_DeviceTracker(TrackerEntity):
     def update_entity_attribute(self, new_fname=None, area_id=None):
         """ Update entity definition attributes """
 
-        device_id = Gb.dr_device_id_by_devicename.get(self.devicename)
-        if device_id is None:
+        ha_device_id = Gb.ha_device_id_by_devicename.get(self.devicename)
+        if ha_device_id is None:
             return
 
         if new_fname is None and area_id is None:
             return
 
         try:
-            area_id   = area_id or self.dr_area_id or Gb.area_id_personal_device
+            area_id   = area_id or self.ha_area_id or Gb.area_id_personal_device
             area_reg  = ar.async_get(Gb.hass)
             area_name = area_reg.async_get_area(area_id).name
         except:
             area_id = area_name = None
 
         self.device_fname = new_fname or self.device_fname
-        self.dr_area_id   = Gb.dr_area_id_by_devicename[self.devicename] = \
+        self.ha_area_id   = Gb.ha_area_id_by_devicename[self.devicename] = \
                                 area_id
 
         log_debug_msg(f"Device Tracker entity changed: device_tracker.{self.devicename}, "
@@ -533,10 +533,10 @@ class iCloud3_DeviceTracker(TrackerEntity):
         kwargs = {}
         kwargs['name']         = f"{self.device_fname} ({self.devicename})"
         kwargs['name_by_user'] = ""
-        kwargs['area_id']      = self.dr_area_id
+        kwargs['area_id']      = self.ha_area_id
 
         device_registry = dr.async_get(Gb.hass)
-        dr_entry = device_registry.async_update_device(self.dr_device_id, **kwargs)
+        dr_entry = device_registry.async_update_device(self.ha_device_id, **kwargs)
 
 #-------------------------------------------------------------------------------------------
     def remove_device_tracker(self):

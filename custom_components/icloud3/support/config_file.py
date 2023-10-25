@@ -408,12 +408,15 @@ def write_storage_icloud3_configuration_file(filename_suffix=''):
             Gb.conf_file_data['profile']    = Gb.conf_profile
             Gb.conf_file_data['data']       = Gb.conf_data
 
-            decoded_password = Gb.conf_tracking[CONF_PASSWORD]
+            # The Gb.conf_tracking[CONF_PASSWORD] field contains the real password
+            # while iCloud3 is running. This makes it easier logging into PyiCloud
+            # and in config_flow. Save it, then put the encoded password in the file
+            # update the file and then restore the real password
             Gb.conf_tracking[CONF_PASSWORD] = encode_password(Gb.conf_tracking[CONF_PASSWORD])
 
             json.dump(Gb.conf_file_data, f, indent=4, ensure_ascii=False)
 
-            Gb.conf_tracking[CONF_PASSWORD] = decoded_password
+            Gb.conf_tracking[CONF_PASSWORD] = decode_password(Gb.conf_tracking[CONF_PASSWORD])
 
         close_reopen_ic3_log_file()
 
@@ -440,7 +443,7 @@ def encode_password(password):
 
     except Exception as err:
         log_exception(err)
-        password = password.replace('««', '').replace('»»', '')
+        password = password.replace('«', '').replace('»', '')
         return password
 
 def base64_encode(string):
@@ -450,9 +453,16 @@ def base64_encode(string):
     # encoded = base64.urlsafe_b64encode(string)
     # return encoded.rstrip("=")
 
-    string_bytes = string.encode('ascii')
-    base64_bytes = base64.b64encode(string_bytes)
-    return base64_bytes.decode('ascii')
+    try:
+        string_bytes = string.encode('ascii')
+        base64_bytes = base64.b64encode(string_bytes)
+        return base64_bytes.decode('ascii')
+
+    except Exception as err:
+        log_exception(err)
+        password = password.replace('«', '').replace('»', '')
+        return password
+
 
 #--------------------------------------------------------------------
 def decode_password(password):
@@ -463,13 +473,24 @@ def decode_password(password):
         Decoded password
     '''
     try:
+        # If the password in the configuration file is not encoded (no '««' or '»»')
+        # and it should be encoded, save the configuration file which will encode it
+        if (Gb.encode_password_flag
+                and password != ''
+                and (password.startswith('««') is False
+                    or password.endswith('»»') is False)):
+            password = password.replace('«', '').replace('»', '')
+            Gb.conf_tracking[CONF_PASSWORD] = password
+            write_storage_icloud3_configuration_file()
+
+        # Decode password if it is encoded and has the '««password»»' format
         if (password.startswith('««') or password.endswith('»»')):
-            password = password.replace('««', '').replace('»»', '')
+            password = password.replace('«', '').replace('»', '')
             return base64_decode(password)
 
     except Exception as err:
         log_exception(err)
-        password = password.replace('««', '').replace('»»', '')
+        password = password.replace('«', '').replace('»', '')
 
     return password
 

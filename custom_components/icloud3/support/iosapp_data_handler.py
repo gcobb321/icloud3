@@ -15,7 +15,7 @@ from ..helpers.common       import (instr, is_statzone, is_zone, zone_display_as
 from ..helpers.messaging    import (post_event, post_monitor_msg,
                                     log_debug_msg, log_exception, log_error_msg, log_rawdata,
                                     _trace, _traceha, )
-from ..helpers.time_util    import (secs_to_time, secs_since, format_time_age, format_age, )
+from ..helpers.time_util    import (secs_to_time, secs_since, format_time_age, format_age, format_age_hrs, )
 from ..helpers.dist_util    import (format_dist_km, format_dist_m, )
 from ..helpers              import entity_io
 from ..support              import iosapp_interface
@@ -63,12 +63,19 @@ def check_iosapp_state_trigger_change(Device):
         iosapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = secs_to_time(iosapp_data_trigger_secs)
 
         # Get the latest of the state time or trigger time for the new data
+        # if iosapp_data_state_secs > iosapp_data_trigger_secs:
+        #     iosapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = iosapp_data_trigger_secs
+        #     iosapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = iosapp_data_trigger_time
+        # else:
+        #     iosapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = iosapp_data_state_secs
+        #     iosapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = iosapp_data_state_time
+
         if iosapp_data_state_secs > iosapp_data_trigger_secs:
-            iosapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = iosapp_data_trigger_secs
-            iosapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = iosapp_data_trigger_time
-        else:
             iosapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = iosapp_data_state_secs
             iosapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = iosapp_data_state_time
+        else:
+            iosapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = iosapp_data_trigger_secs
+            iosapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = iosapp_data_trigger_time
 
         if Gb.log_rawdata_flag:
             change_msg = ''
@@ -247,6 +254,11 @@ def check_iosapp_state_trigger_change(Device):
 
         else:
             Device.iosapp_data_reject_reason = "Failed Update Tests"
+
+        # If data time is very old, change it to it's age
+        if secs_since(Device.iosapp_data_secs) >= 10800:
+            Device.iosapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = \
+                    format_age_hrs(Device.iosapp_data_secs)
 
         # Display iOSApp Monitor info message if the state or trigger changed
         if (Gb.this_update_time.endswith('00:00')

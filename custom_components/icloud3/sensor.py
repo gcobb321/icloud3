@@ -410,7 +410,7 @@ class SensorBase(SensorEntity):
 
             self.entity_name     = f"{devicename}_{self.sensor}"
             self.entity_id       = f"sensor.{self.entity_name}"
-            self.device_id       = Gb.dr_device_id_by_devicename.get(ICLOUD3)
+            self.device_id       = Gb.ha_device_id_by_devicename.get(ICLOUD3)
 
             self.Device          = Gb.Devices_by_devicename.get(devicename)
             if self.Device and from_zone:
@@ -1158,7 +1158,7 @@ class Support_SensorBase(SensorEntity):
         self.entity_id         = f"sensor.{self.entity_name}"
         self._unsub_dispatcher = None
         self._device           = DOMAIN
-        # self.ic3_device_id = Gb.ic3_device_id = Gb.dr_device_id_by_devicename.get(DOMAIN)
+        # self.ic3_device_id = Gb.ic3_device_id = Gb.ha_device_id_by_devicename.get(DOMAIN)
         self.current_state_value = ''
         self.history_exclude_flag = True
 

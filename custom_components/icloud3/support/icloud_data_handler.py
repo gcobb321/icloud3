@@ -78,7 +78,8 @@ def is_icloud_update_needed_timers(Device):
 
 #----------------------------------------------------------------------------
 def is_icloud_update_needed_general(Device):
-    if Gb.force_icloud_update_flag:
+    if Gb.icloud_force_update_flag:
+        Device.icloud_force_update_flag = True
         Device.icloud_update_reason = 'Immediate Update Requested'
 
     elif Device.is_tracking_resumed:
@@ -86,6 +87,7 @@ def is_icloud_update_needed_general(Device):
 
     elif Device.outside_no_exit_trigger_flag:
         Device.outside_no_exit_trigger_flag = False
+        Device.icloud_force_update_flag = True
         Device.icloud_update_reason = "Verify Location"
 
     elif (Device.loc_data_secs < Device.last_update_loc_secs
@@ -127,7 +129,7 @@ def request_icloud_data_update(Device):
     devicename = Device.devicename
 
     try:
-        if Device.icloud_update_reason:
+        if Device.icloud_update_reason or Device.icloud_force_update_flag:
             Device.display_info_msg("Requesting iCloud Location Update")
 
             Device.icloud_devdata_useable_flag = update_PyiCloud_RawData_data(Device)
@@ -425,8 +427,8 @@ def is_PyiCloud_RawData_data_useable(Device, results_msg_flag=True):
             fmf_secs, fmf_gps_accuracy, \
             fmf_time = _get_devdata_useable_status(Device, FMF)
 
-    if Gb.force_icloud_update_flag:
-        Gb.force_icloud_update_flag = False
+    if Gb.icloud_force_update_flag or Device.icloud_force_update_flag:
+        Gb.icloud_force_update_flag = False
         is_useable_flag = False
         useable_msg     = 'Update Required'
         return False
@@ -495,9 +497,10 @@ def _get_devdata_useable_status(Device, data_source):
     if device_id is None or RawData is None:
         return False, False, False, 0, 0, ''
 
+    # v3.0.rc7.1 Added icloud_force_update_flag check
     loc_secs     = RawData.location_secs
     loc_age_secs = secs_since(loc_secs)
-    loc_time_ok  = (loc_age_secs <= Device.old_loc_threshold_secs)
+    loc_time_ok  = ((loc_age_secs <= Device.old_loc_threshold_secs) and Device.icloud_force_update_flag is False)
 
     # If loc time is under threshold, check to see if the loc time is older than the interval
     # The interval may be < 15 secs if just trying to force a quick update with the current data. If so, do not check it

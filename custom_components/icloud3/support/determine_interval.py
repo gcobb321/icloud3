@@ -654,15 +654,15 @@ def determine_interval_after_error(Device, counter=OLD_LOC_POOR_GPS_CNT):
         interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
         # Pause tracking when the max count is exceeded, send paused msg when the cnt is reached
-        if error_cnt >= max_error_cnt:
+        if error_cnt >= max_error_cnt and Device.is_tracking_paused is False:
             Device.pause_tracking()
 
             if error_cnt == max_error_cnt:
                 message = {
                     "title": "iCloud3 Tracking Exception",
-                    "message": (f"Old Location or Poor GPS Accuracy Error "
-                                f"Count exceeded (#{error_cnt}). Event Log > Actions > "
-                                f"Resume to restart tracking."),
+                    "message": (f"Old Location Count exceeded (#{error_cnt}). "
+                                f"iCloud Web Services is Paused. "
+                                f"Event Log > Actions > Resume to restart tracking."),
                     "data": {"subtitle": "Tracking has been Paused"}}
                 iosapp_interface.send_message_to_device(Device, message)
 

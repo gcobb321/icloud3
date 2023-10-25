@@ -26,7 +26,7 @@ from ..const                import (AIRPODS_FNAME, NONE_FNAME,
                                     FMF, FAMSHR, FMF_FNAME, FAMSHR_FNAME, NAME, ID,
                                     APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE,
                                     ICLOUD_HORIZONTAL_ACCURACY,
-                                    LOCATION, TIMESTAMP, LOCATION_TIME, DATA_SOURCE, 
+                                    LOCATION, TIMESTAMP, LOCATION_TIME, DATA_SOURCE,
                                     ICLOUD_BATTERY_LEVEL,
                                     ICLOUD_BATTERY_STATUS, BATTERY_STATUS_CODES, ICLOUD_DEVICE_STATUS,
                                     CONF_PASSWORD, CONF_MODEL_DISPLAY_NAME, CONF_RAW_MODEL,
@@ -580,13 +580,13 @@ class PyiCloudService():
                         self.authenticate_method += ", Password"
                     else:
                         login_successful = False
-                        msg = "Login Error (Invalid username/password)/593"
+                        msg = f"Login Error (Invalid username/password)/593, err={self.response_code}"
                         raise PyiCloudFailedLoginException(msg)
 
 
                 except PyiCloudAPIResponseException as error:
                     login_successful = False
-                    msg = "Login Error (Invalid username/password)/599"
+                    msg = f"Login Error (Invalid username/password)/599, err={self.response_code}"
                     raise PyiCloudFailedLoginException(msg)
 
                 if self._authenticate_with_token():
@@ -595,7 +595,10 @@ class PyiCloudService():
 
         if login_successful == False:
             self.authenticate_method += ", ERROR-Invalid username/password"
-            msg = "Login Error (Invalid username/password)/609"
+            if self.response_code == 302:
+                msg = f"Login Error, iCloud Server Connection Error/606, err={self.response_code}"
+            else:
+                msg = f"Login Error, Invalid username/password)/609, err={self.response_code}"
             raise PyiCloudFailedLoginException(msg)
 
         self.requires_2fa = self.requires_2fa or self._check_2fa_needed
@@ -996,6 +999,10 @@ class PyiCloudService():
     def new_log_in_needed(self, username):
         return username != self.apple_id
 
+    @property
+    def response_code(self):
+        return self.Session.response_status_code
+
 #----------------------------------------------------------------------------
     def send_verification_code(self, device):
         '''Requests that a verification code is sent to the given device.'''
@@ -1035,7 +1042,6 @@ class PyiCloudService():
             log_exception(err)
             return False
 
-        # _trace(f"{len(req)=} {req=}")
         try:
             data = req.json()
         except ValueError:

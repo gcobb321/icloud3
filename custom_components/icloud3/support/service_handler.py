@@ -501,8 +501,8 @@ def _handle_action_device_locate(Device, action_option):
     if Device.old_loc_poor_gps_cnt > 3:
         post_event(Device.devicename, "Location request canceled. Old Location Retry is "
                         "handling Location Updates")
-        ost_event(Device.devicename, "iCloud Location Tracking is not available")
-        Gb.force_icloud_update_flag = False
+        post_event(Device.devicename, "iCloud Location Tracking is not available")
+        Gb.icloud_force_update_flag = False
         return
 
     try:
@@ -512,7 +512,8 @@ def _handle_action_device_locate(Device, action_option):
     except:
         interval_secs = 5
 
-    Gb.force_icloud_update_flag = True
+    Gb.icloud_force_update_flag = True
+    Device.icloud_force_update_flag = True
     det_interval.update_all_device_fm_zone_sensors_interval(Device, interval_secs)
     Device.icloud_update_reason = f"Location Requested@{time_now()}"
     post_event(Device.devicename, f"Location will be updated at {Device.sensors[NEXT_UPDATE_TIME]}")

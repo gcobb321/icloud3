@@ -73,6 +73,13 @@ def secs_to_time_str(secs):
     return time_str
 
 #--------------------------------------------------------------------
+def secs_to_hrs_str(secs):
+    if secs < 1:
+        return '0 hrs'
+    else:
+        return f"{secs/3600:.1f} hrs"
+
+#--------------------------------------------------------------------
 def mins_to_time_str(mins):
     """ Create the time string from seconds """
 
@@ -445,6 +452,10 @@ def format_age(secs):
         return 'Never'
 
     return f"{secs_to_time_str(secs)} ago"
+
+#--------------------------------------------------------------------
+def format_age_hrs(secs):
+    return f"{secs_to_hrs_str(secs_since(secs))} ago"
 
 #--------------------------------------------------------------------
 def format_age_ts(time_secs):

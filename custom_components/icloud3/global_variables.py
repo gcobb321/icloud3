@@ -147,8 +147,8 @@ class GlobalVariables(object):
     Sensors_by_devicename             = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
     Sensors_by_devicename_from_zone   = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
     Sensor_EventLog                   = None    # Event Log sensor object
-    dr_device_id_by_devicename        = {}  # HA device_registry device_id
-    dr_area_id_by_devicename          = {}  # HA device_registry area_id
+    ha_device_id_by_devicename        = {}  # HA device_registry device_id
+    ha_area_id_by_devicename          = {}  # HA device_registry area_id
 
     # Event Log operational fields
     evlog_card_directory              = ''
@@ -234,7 +234,7 @@ class GlobalVariables(object):
     device_trackers_cnt         = 0               # Number of device_trackers that will be creted (__init__.py)
     device_trackers_created_cnt = 0               # Number of device_trackers that have been set up (incremented in device_tracker.py)
     area_id_personal_device     = None
-    
+
     # restore_state file
     restore_state_file_data = {}
     restore_state_profile   = {}
@@ -312,6 +312,7 @@ class GlobalVariables(object):
     used_data_source_FAMSHR  = False
     used_data_source_FMF     = False
     used_data_source_IOSAPP  = False
+    iosapp_monitor_any_devices_false_flag = False
 
     # Primary data source being used that can be turned off if errors
     primary_data_source_ICLOUD = conf_data_source_ICLOUD

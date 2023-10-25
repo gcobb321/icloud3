@@ -1,3 +1,31 @@
+rc8 - 10/25/2023
+...............................
+1. Configure Settings - Made the following changes:
+    1. Minor text changes to field names and screens.
+    2. Improved the error messages when experiencing a problem logging into the iCloud Account.
+    3. Fixed a bug when selecting the Enter Verification Code screen before logging into the iCloud account.
+2. Old Location Error Notifications - Fixed a problem where Old Location notifications were constantly being sent to a phone when the maximum number of old location errors (20) had been encountered.
+3. iOSApp Location Time - If the location time is older than 3-hours, it's age is displayed (4.5 hrs ago) instead of the time (6:15:00p).
+
+rc7.1/rc7.1.1 - 10/15/2023
+...............................
+1. Zone-Device Count bug fix - Fixed a bug where the device counts were not being displayed correctly.
+2. Exit Zone for Devices without the iOSApp (Watch) - When a Device exits a zone, all other devices that were in the same zone that do not have the iOS App installed will be updated immediately. They were being updated when their next update timer was reached. Hopefully, this will make Watch zone exit updates to be done when they happen.
+3. Apple account password - When iCloud3 starts, the password is checked to see if it is encoded in the configuration parameter file. If it is not and it should be, it will be encoded and the configuration file will be updated. Previously, there were times when the file was not being updated.
+4. iCloud Account username/password changes - When the username/password is changed, the Apple account is logged into. If you select 'Save' the configuration file is updated. If you select 'Return', the updated username/password is not saved and the menu is displayed. This can lead to login problems the next time iCloud3 starts if you really wanted to save them but didn't. An additional Confirmation Screen is now displayed that lets you save them or not save them.
+
+
+rc7 - 10/15/2023
+...............................
+1. yaml Zones - Fixed a problem where zones configured using yaml were not being loaded when iCloud3 started.
+2. Stationary Zones - Minor changes to the handling of deleting a stationary zone when all devices had exited from it.
+3. Zone-Devices Count - New feature - The number of the devices within a zone is displayed with the tracking results on the Event Log. The counts are the numbers (x) after the zone name. For Example:
+        _Zone > Away (2) >  Home-2.45km,  IndRivShores-6.53km,  School-8.47km (1),  Publix-10.3km,  ThePoint-11.0km, Quail-12.0km,  Warehouse-16.5km (1), GPS-(/±47m)_
+
+    An item is also posted to the Event Log when another device changes it's zone:
+        _Zone-Device Counts > Home (4), School (1), Warehouse (1)_
+
+
 rc6 - Release Candidate 6 (10/7/2023)
 ...............................
 1. Bug Fix - Fixed the error causing the "AttributeError: 'iCloud3_Device' object has no attribute 'interval_secs' message at line 680, in determine_interval_after_error" error.

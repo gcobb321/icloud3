@@ -20,6 +20,7 @@ from .const             import (HOME, NOT_HOME, STATIONARY, HIGH_INTEGER,
                                 ZONE, TITLE, FNAME, NAME, ID, FRIENDLY_NAME, ICON,
                                 LATITUDE, LONGITUDE, RADIUS, PASSIVE,
                                 STATZONE_RADIUS_1M, ZONE, )
+from .support           import iosapp_interface
 from .helpers.common    import (instr, is_statzone, format_gps, zone_display_as,)
 from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
                                 log_exception, log_rawdata,_trace, _traceha, )
@@ -70,7 +71,7 @@ class iCloud3_Zone(object):
         self.passive    = zone_data.get(PASSIVE, True)
         self.is_real_zone    = (self.radius_m > 0)
         self.isnot_real_zone = not self.is_real_zone    # (Description only zones/Away, not_home, not_set, etc)
-        self.dist_time_history = []        #Entries are a list - [lat, long, distance, travel time]
+        self.dist_time_history = []                     # Entries are a list - [lat, long, distance, travel time]
 
         self.er_zone_id = zone_data.get(ID, zone.lower())     # HA entity_registry id
         self.entity_id  = self.er_zone_id[:6]
@@ -190,7 +191,7 @@ class iCloud3_StationaryZone(iCloud3_Zone):
         self.fname = f"StatZon{self.statzone_id}"
         self.fname_id = self.display_as = Gb.zone_display_as[self.zone] = self.fname
 
-        #base_attrs is used to move the stationary zone back to it's base
+        # base_attrs is used to move the stationary zone back to it's base
         self.base_attrs[NAME]    = self.zone
         self.base_attrs[RADIUS]  = STATZONE_RADIUS_1M
         self.base_attrs[PASSIVE] = True
@@ -220,7 +221,7 @@ class iCloud3_StationaryZone(iCloud3_Zone):
         self.write_ha_zone_state(self.base_attrs)
         self.name = self.title = self.display_as
 
-        #away_attrs is used to move the stationary zone back to it's base
+        # away_attrs is used to move the stationary zone back to it's base
         self.away_attrs = self.base_attrs.copy()
         self.away_attrs[RADIUS]        = Gb.statzone_radius_m
         self.away_attrs[PASSIVE]       = False
@@ -233,8 +234,8 @@ class iCloud3_StationaryZone(iCloud3_Zone):
         if instr(Gb.statzone_fname, '#') is False:
             self.fname_id = f"{self.fname} (..._{self.statzone_id})"
 
-        self.base_latitude  = 0 #Gb.statzone_base_latitude
-        self.base_longitude = 0 #Gb.statzone_base_longitude
+        self.base_latitude  = 0
+        self.base_longitude = 0
 
         self.base_attrs[FRIENDLY_NAME] = self.fname
         self.base_attrs[LATITUDE]      = self.base_latitude
@@ -289,11 +290,12 @@ class iCloud3_StationaryZone(iCloud3_Zone):
 
         try:
             Gb.hass.states.async_remove(f"zone.{self.zone}")
+            Gb.hass.services.call(ZONE, "reload")
 
             post_event(f"Removed HA Zone > {self.fname_id}")
 
         except Exception as err:
+            log_exception(err)
             pass
-            # log_exception(err)
 
 #--------------------------------------------------------------------

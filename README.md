@@ -2,7 +2,7 @@
 
 ------
 
-### Prerelease Version - v3.0-pr1.4 (9/22/2023)
+###Release Candidate 8 - v3.0.rc8 (10/25/2023)
 
 ------
 

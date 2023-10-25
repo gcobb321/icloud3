@@ -225,7 +225,11 @@ def display_authentication_msg(PyiCloud):
     if instr(authentication_method, 'Password') is False:
         event_msg += f" ({format_age(last_authenticated_age)})"
 
-    post_monitor_msg(event_msg)
+
+    if instr(authentication_method, 'Password'):
+        post_event(event_msg)
+    else:
+        post_monitor_msg(event_msg)
 
 #--------------------------------------------------------------------
 def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
@@ -395,7 +399,7 @@ def delete_pyicloud_cookies_session_files(cookie_filename=None):
     post_monitor_msg(delete_msg)
 
 #--------------------------------------------------------------------
-def create_PyiCloudService_secondary(username, password, 
+def create_PyiCloudService_secondary(username, password,
                                         endpoint_suffix, called_from,
                                         verify_password, request_verification_code=False):
     '''

@@ -79,15 +79,15 @@ class iCloud3_Device(TrackerEntity):
     def __init__(self, devicename, conf_device):
         self.conf_device           = conf_device
         self.devicename            = devicename
-        self.dr_device_id          = ''      # ha device_registry device_id
+        self.ha_device_id          = ''      # ha device_registry device_id
         self.fname                 = devicename.title()
 
         self.StatZone              = None    # The StatZone this Device is in or None if not in a StatZone
         #self.stationary_zonename   = (f"{self.devicename}_{STATIONARY}")
 
-        self.FromZones_by_zone = {}      # DeviceFmZones objects for the track_from_zones parameter for this Device
-        self.FromZone_Home      = None    # DeviceFmZone object for the Home zone
-        self.from_zone_names  = []      # List of the from_zones in the FromZones_by_zone dictionary
+        self.FromZones_by_zone    = {}      # DeviceFmZones objects for the track_from_zones parameter for this Device
+        self.FromZone_Home        = None    # DeviceFmZone object for the Home zone
+        self.from_zone_names      = []      # List of the from_zones in the FromZones_by_zone dictionary
         self.only_track_from_home  = True    # Track from only Home  (True) or also track from other zones (False)
         self.FromZone_BeingUpdated = None # DeviceFmZone object being updated in determine_interval for EvLog TfZ info
         self.FromZone_NextToUpdate = None # Set to the DeviceFmZone when it's next_update_time is reached
@@ -149,6 +149,8 @@ class iCloud3_Device(TrackerEntity):
 
         # Trigger & Update variables
         self.trigger                      = 'iCloud3'
+        self.interval_secs                = 0
+        self.interval_str                 = ''
         self.next_update_secs             = 0
         self.seen_this_device_flag        = False
         self.iosapp_zone_enter_secs       = 0
@@ -247,7 +249,7 @@ class iCloud3_Device(TrackerEntity):
         self.last_iosapp_trigger           = ''
 
         # iCloud data update control variables
-        # self.icloud_update_needed_flag     = False
+        self.icloud_force_update_flag      = False      # Bypass all update needed checks and force an iCloud update
         self.icloud_devdata_useable_flag   = False
         self.icloud_acct_error_flag        = False      # An error occured from the iCloud account update request
         self.icloud_update_reason          = 'Trigger > Initial Locate'
@@ -430,8 +432,8 @@ class iCloud3_Device(TrackerEntity):
             self.DeviceTracker = Gb.DeviceTrackers_by_devicename[self.devicename]
             self.DeviceTracker.Device = self
             try:
-                self.DeviceTracker.device_id = Gb.dr_device_id_by_devicename[self.devicename]
-                self.DeviceTracker.area_id   = Gb.dr_area_id_by_devicename[self.devicename]
+                self.DeviceTracker.device_id = Gb.ha_device_id_by_devicename[self.devicename]
+                self.DeviceTracker.area_id   = Gb.ha_area_id_by_devicename[self.devicename]
             except:
                 pass
 
@@ -1307,7 +1309,6 @@ class iCloud3_Device(TrackerEntity):
             self.loc_data_dist_moved_km = calc_distance_km(self.sensors[GPS], self.loc_data_gps)
         self.loc_data_time_moved_from = self.sensors[LAST_LOCATED_DATETIME]
         self.loc_data_time_moved_to   = self.loc_data_datetime
-
 
 #--------------------------------------------------------------------
     def distance_m(self, to_latitude, to_longitude):
