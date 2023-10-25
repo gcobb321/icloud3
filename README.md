@@ -2,7 +2,7 @@
 
 ------
 
-###Release Candidate 8 - v3.0.rc8 (10/25/2023)
+### Latest Release Candidate 8 - v3.0.rc8 (10/25/2023) 
 
 ------
 
