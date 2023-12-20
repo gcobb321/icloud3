@@ -1,0 +1,175 @@
+
+from .const             import (EVLOG_ALERT, EVLOG_NOTICE,
+                                CRLF, CRLF_CHK, CRLF_SP3_STAR, CRLF_INDENT,
+                                CRLF_DOT, CRLF_SP3_DOT, CRLF_SP5_DOT, CRLF_HDOT,
+                                CRLF_RED_X, RED_X, CRLF_STAR, CRLF_DASH_75,
+                                RARROW,NBSP3, NBSP4, NBSP6, CIRCLE_STAR, INFO_SEPARATOR,
+                                DASH_20, CHECK_MARK,
+                                SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,)
+
+more_info_text = {
+    'iosapp_error_not_found_msg': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. If the name of the device was changed on the Mobile App "
+        f"Integration > Devices screen, the iOS App Device Name parameter "
+        f"on the iCloud3 Configure Setting > Update Devices screen "
+        f"needs to be updated with the new device name."
+        f"{CRLF}2. Check the Mobile App Integration devices to see if it is listed."
+        f"{CRLF}3. Check the Mobile App Integration devices to see if it is enabled."
+        f"{CRLF}4. Check the iOSApp on the device that was not found to make "
+        f"sure it is operational and can communicate with HA. Refresh its location "
+        f"by pulling down  On the screen."
+        f"{CRLF}5. Check the iOSApp device_tracker entities on HA Settings > "
+        f"Developer Tools > States to verify are the devices using the iOS App are "
+        f"listed, enabled and that the data is current."),
+
+    'iosapp_error_search_msg': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Check the iOSApp Device Entity assigned to the iCloud3 device "
+        f"on the iCloud3 Configure Settings > Update Devices screen. Change the "
+        f"iOS App device_tracker entity from `Scan for mobile_app device_tracker` "
+        f"to a specific device_tracker entity."
+        f"{CRLF}2. Check the mobile_app devices in HA Settings > Devices & "
+        f"Services > Devices and delete or rename the devices starting with the "
+        f"iCloud3 devicename that should be selected."),
+
+    'iosapp_error_disabled_msg': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Go to HA Devices & Services > Integrations > Mobile App"
+        f"{CRLF}2. Select the disabled device. Then select the 3-dots in the upper "
+        f"right corner."
+        f"{CRLF}Select Enable device."),
+
+    'iosapp_error_multiple_devices_on_scan': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Check the iOSApp Device Entity assigned to the iCloud3 device "
+        f"on the iCloud3 Configure Settings > Update Devices screen. Change the "
+        f"iOS App device_tracker entity from `Scan for mobile_app device_tracker` "
+        f"to a specific device_tracker entity."
+        f"{CRLF}2. Check the mobile_app devices in HA Settings > Devices & "
+        f"Services > Devices and delete or rename the devices starting with the "
+        f"iCloud3 devicename that should not be selected."),
+
+    'iosapp_error_mobile_app_msg': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Verify that the Mobile App Integration has been added to HA. "
+        f"If not, add it. You may have to restart HA."
+        f"{CRLF}2. Verify that all of the devices that are using the iOS App are displayed. "
+        f"Review the HA Companion App docs to verify it is set up and can communicate with HA."
+        f"{CRLF}3. Under each device is a line reading `1 Device and ## Entities`. "
+        f"Select Entities and verify that the _battery_level and _last_update_trigger "
+        f"entities are listed and enabled. If disabled, select the Gear Icon and enable them. "
+        f"If necessary. Review the HA iOS App docs for more information."
+        f"{CRLF}4. Do this for each mobile_app device with a problem."
+        f"{CRLF}5. Restart iCloud3 after making any changes (Event Log > Action > Restart)."),
+
+    'famshr_device_not_available': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Check the Family Share devices in the FindMy app on your phone. "
+        f"See if any devices have been renamed, are missing or there is more than one "
+        f"device with the same name."
+        f"{CRLF}2. Have you change phones? The FamShr devicename in Configure Settings "
+        f"may be the old phone, not the new phone. The new one may have a different name."
+        f"{CRLF}3. Check the FamShr devices in Stage 4 above. It lists all the FamShr devices that "
+        f"have been returned from your Apple iCloud account. Sometimes, Apple does not return "
+        f"all of the devices if there is a delay locating it or it is asleep. iCloud3 will "
+        f"request the list 2-times. Open the missing device so it is available, then restart "
+        f"iCloud3 to see if it is found."
+        f"{CRLF}4. Check the FamShr Device assigned to the iCloud3 device "
+        f"on the iCloud3 `Configure Settings > Update Devices` screen. Open the FamShr Devices "
+        f"list and review the devicenames available. Make sure the devices are correct and "
+        f"there are no duplicates or additional/new devices with a different name."),
+
+    'famshr_dup_devices': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Review the Family Share devices in the list above and verify the last "
+        f"located device is the one iCloud3 should track or monitor."
+        f"{CRLF}2. Update the devices in your Family Sharing List and remove the old, unused "
+        f"devices or any devices you no longer have."
+        f"{CRLF}{NBSP3}1. Open the FindMy App. Select `Devices`."
+        f"{CRLF}{NBSP3}2. Select the device you want to remove. `Remove This Device` is displayed "
+        f"at the bottom of the screen if it is not connected to your account. This includes "
+        f"AirPods that are asleep and in their case. This is not displayed if the device is "
+        f"logged in and connected."
+        f"{CRLF}{NBSP3}3. Select `Remove This Device`, then `Yes`"
+        f"{CRLF}{NBSP3}4. If your current device has a name with a number suffix, like Gary-iPad(2), "
+        f"you can clean up your device names by renaming it. On the device itself, go to Settings "
+        f"App > General > About > Name. Remove the suffix so it reads something like Gary-iPad."
+        f"{CRLF}{NBSP3}5. Do this for all devices that need to be removed and renamed."
+        f"{CRLF}{NBSP3}6. Restart HA. The new device names will be identified by iCloud3 and your "
+        f"configuration will be updated with the new name."
+        f"{CRLF}{NBSP3}7. Go to the iCloud3 > Configure Settings > Update Devices screen for the "
+        f"devices you changed and verify the correct Family Sharing Device is selected from it's list."
+        f"Correct any that are wrong."
+        f"{CRLF}{NBSP3}8. Restart iCloud3 and verify that the devices are tracked correctly."
+        ),
+
+    'refresh_browser': (
+        f"{CRLF_DOT}Refresh your browser (Chrome, MacOS, Edge):"
+        f"{CRLF}{NBSP3}1. Press Ctrl+Shift+Del, Clear Data, Refresh"
+        f"{CRLF}{NBSP3}2. On Settings tab, check Clear Images and File, then Click Clear Data, Refresh"
+        f"{CRLF}{NBSP3}3. Select the Home Assistant tab, then Refresh the display"
+        f"{CRLF_DOT}Refresh the iOS App on iPhones, iPads, etc:"
+        f"{CRLF}{NBSP3}1. HA Sidebar, Configuration, Companion App"
+        f"{CRLF}{NBSP3}2. Debugging, Reset frontend cache, Settings, Done"
+        f"{CRLF}{NBSP3}3. Close Companion App, Redisplay iCloud3 screen"
+        f"{CRLF}{NBSP3}4. Refresh, Pull down from the top, Spinning wheel, Done"),
+
+    'unverified_device': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}This can be caused by:"
+        f"{CRLF}1. iCloud3 Device configuration error. Check the iCloud3 `Configure Settings > "
+        f"Update Devices` screen and verify the FamShr and iOS App Device selections are correct."
+        f"{CRLF}2. No iCloud or iOS App device have been selected. See #1 above."
+        f"{CRLF}3. This device is no longer in your iCloud Family Sharring device list. Review "
+        f"the devices in the FindMy app on your phone and on your iCloud account. Review the list of "
+        f"devices returned from your iCloud account when iCloud3 was starting up in the Event Log Stage 4."
+        f"{CRLF}4. iCloud or iOS App are not being used to locate devices. Verify that your iCloud "
+        f"access is set up on the `Configure Settings > iCloud Account` screen. Also verify that FamShr "
+        f"devices have been assigned to iCloud3 devices `Configure Settings Update Devices` screen."
+        f"{CRLF}5. iCloud is down. The network is down. iCloud is not responding to location requests."
+        f"{CRLF}6. An internal code error occurred. Check HA Settings > System > Logs for errors."
+        f"{CRLF_DASH_75}"
+        f"{CRLF}Restart iCloud3 (Event Log > Actions > Restart iCloud) and see if the problem reoccurs."),
+
+    'all_devices_inactive': (
+        f"Devices can be tracked, monitored or inactive on the iCloud3 `Configure Settings > Update "
+        f"Devices` screen. In this case, all of the devices are set to an Inactive status.  "
+        f"{CRLF}1. Change the `Tracking Mode` from INACTIVE to Track or Monitor."
+        f"{CRLF}2. Verify the Family Share (FamShr) Device assigned to the iCloud3 device."
+        f"{CRLF}3. Verify the iOS App Device assigned to the iCloud3 device."
+        f"{CRLF}4. Review the other parameters for the device while you are on this screen."
+        f"{CRLF}5. Do this for all of your devices."
+        f"{CRLF}6. Exit the iCloud3 `Configure Settings` screens and Restart iCloud3."),
+
+    'add_icloud3_integration': (
+        f"{CRLF}1. Select {SETTINGS_INTEGRATIONS_MSG}"
+        f"{CRLF}2. Select `+Add Integration` to add the iCloud3 integration if it is not dislayed. Then search "
+        f"for `iCloud3`, select it and complete the installation."
+        f"{CRLF}3. Select {INTEGRATIONS_IC3_CONFIG_MSG} to open iCloud3 Configure Settings screens."
+        f"{CRLF}4. Review and setup the `iCloud Account` and `Update Devices` configuration screens."
+        f"{CRLF}5. Exit the configurator and `Restart iCloud3`."),
+
+    'configure_icloud3': (
+        f"{CRLF}1. {SETTINGS_INTEGRATIONS_MSG} >"
+        f"{CRLF}2. {INTEGRATIONS_IC3_CONFIG_MSG}"
+        f"{CRLF}3. Then select Update Devices and review/update the devices in error."),
+
+    'unverified_devices_caused_by': (
+        f"{CRLF}This can be caused by:"
+        f"{CRLF_DOT}iCloud3 Configuration Errors."
+        f"{CRLF_DOT}iCloud Location Services may be down or slow."
+        f"{CRLF_DOT}The internet may be down."
+        f"{CRLF_DOT}The username/password is not set up or incorrect."
+        f"{CRLF_DASH_75}"
+        f"{CRLF}Check the Event Log error messages. Correct any problems and restart iCloud3."),
+
+    'invalid_msg_key': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}Information is not available for "),
+
+    'instructions_already_displayed': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}See the instructions that have already been displayed"
+        ),
+}
