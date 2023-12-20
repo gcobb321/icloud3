@@ -493,17 +493,26 @@ def _handle_action_device_locate(Device, action_option):
 
     if (Gb.primary_data_source_ICLOUD is False
             or (Device.device_id_famshr is None and Device.device_id_fmf is None)
-            or Device.is_offline
             or Device.is_data_source_ICLOUD is False):
         post_event(Device.devicename, "iCloud Location Tracking is not available")
         return
-
-    if Device.old_loc_poor_gps_cnt > 3:
-        post_event(Device.devicename, "Location request canceled. Old Location Retry is "
-                        "handling Location Updates")
-        post_event(Device.devicename, "iCloud Location Tracking is not available")
-        Gb.icloud_force_update_flag = False
+    elif Device.is_offline:
+        post_event(Device.devicename, "The device is offline, iCloud Location \
+                    Tracking is not available")
         return
+
+    # if Device.old_loc_cnt > 3:
+        # If older than 10-mins, resume tracking instead to initialize the device and reset
+        # all error s
+        # if Device.FromZone_Home.interval_secs >= 600:
+            # Device.resume_tracking()
+            # return
+
+        # post_event(Device.devicename, "Location request canceled. Old Location Retry is "
+        #         "handling Location Updates. Use `action resume` to reinitialize device")
+        # post_event(Device.devicename, "iCloud Location Tracking is not available")
+        # Gb.icloud_force_update_flag = False
+        # return
 
     try:
         interval_secs = time_str_to_secs(action_option)
@@ -514,9 +523,10 @@ def _handle_action_device_locate(Device, action_option):
 
     Gb.icloud_force_update_flag = True
     Device.icloud_force_update_flag = True
+    Device.reset_tracking_fields(interval_secs)
     det_interval.update_all_device_fm_zone_sensors_interval(Device, interval_secs)
     Device.icloud_update_reason = f"Location Requested@{time_now()}"
-    post_event(Device.devicename, f"Location will be updated at {Device.sensors[NEXT_UPDATE_TIME]}")
+    post_event(Device.devicename, f"Location will be updated at {Device.next_update_time}")
     Device.write_ha_sensors_state([NEXT_UPDATE, INTERVAL])
 
 #--------------------------------------------------------------------

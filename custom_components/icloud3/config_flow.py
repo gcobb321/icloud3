@@ -8,7 +8,8 @@ from homeassistant.config_entries   import ConfigEntry as config_entry
 from homeassistant.data_entry_flow  import FlowHandler, FlowResult
 from homeassistant.core             import callback, HomeAssistant
 from homeassistant.util             import slugify
-from homeassistant.helpers          import selector
+from homeassistant.helpers          import (selector, entity_registry as er, device_registry as dr,
+                                            area_registry as ar,)
 
 import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
@@ -30,8 +31,9 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT,
                                 CONF_EVLOG_BTNCONFIG_URL,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_VERIFICATION_CODE,
-                                CONF_TRACK_FROM_ZONES, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
-                                CONF_NO_IOSAPP, CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
+                                CONF_TRACK_FROM_ZONES,
+                                CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
+                                CONF_NO_IOSAPP, CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX, CONF_LOG_ZONES,
                                 CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME, CONF_FAMSHR_DEVICE_ID,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
@@ -50,7 +52,9 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT,
                                 CONF_STAT_ZONE_BASE_LATITUDE,
                                 CONF_STAT_ZONE_BASE_LONGITUDE, CONF_DISPLAY_TEXT_AS,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_IOSAPP_DEVICE, CONF_FMF_EMAIL,
-                                CONF_TRACKING_MODE, CONF_INZONE_INTERVAL,
+                                CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL,
+                                CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
+                                CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
                                 CONF_SENSORS_MONITORED_DEVICES,
                                 CONF_SENSORS_DEVICE,
                                 CONF_SENSORS_TRACKING_UPDATE, CONF_SENSORS_TRACKING_TIME, CONF_SENSORS_TRACKING_DISTANCE,
@@ -107,10 +111,9 @@ def dict_value_to_list(key_value_dict):
 #-----------------------------------------------------------------------------------------
 MENU_KEY_TEXT = {
         'icloud_account':       'iCLOUD ACCOUNT & iOS APP ᐳ •Set iCloud Account Username/Password, •Set Location Data Sources',
-        # 'icloud_account':       'iCLOUD ACCOUNT & iOS APP ᐳ •Set iCloud Account Username/Password, •Set Location Data Sources',
         'device_list':          'ICLOUD3 DEVICES  ᐳ •Add, Change and Delete tracked and monitored devices',
-        # 'device_list':          'ICLOUD3 DEVICES  ᐳ •Add, Change and Delete tracked and monitored devices',
         'verification_code':    'ENTER/REQUEST AN APPLE ID VERIFICATION CODE ᐳ •Enter or Request the 6-digit Apple ID Verification Code',
+        'away_time_zone':       'AWAY TIME ZONE ᐳ •Select the time zone used to display time based tracking events for a device when in another time zone',
         'change_device_order':  'CHANGE DEVICE ORDER ᐳ •Change the tracking order of the Devices and their display sequence on the Event Log',
         'sensors':              'SENSORS ᐳ •Set Sensors created by iCloud3, •Exclude Specific Sensors from being created',
         'actions':              'ACTION COMMANDS ᐳ •Restart/Pause/Resume Polling, •Debug Logging, •Export Event Log, •Waze Utilities',
@@ -119,7 +122,7 @@ MENU_KEY_TEXT = {
         'display_text_as':      'DISPLAY TEXT AS ᐳ •Event Log Custom Card Text Replacement',
         'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY ᐳ •Set Route Server Location, Min/Max Intervals, etc. •Set Waze History Database Parameters and Controls',
         'inzone_intervals':     'INZONE DEFAULT INTERVALS ᐳ •Default inZone intervals for different device types and the iOS App, •Other inZone Controls ',
-        'special_zones':        'SPECIAL ZONES ᐳ •Enter Zone Delay, •Stationary Zone, •Track From Zone',
+        'special_zones':        'SPECIAL ZONES ᐳ •Enter Zone Delay, •Stationary Zone, •Primary Track-from-Home Zone Override',
         'tracking_parameters':  'TRACKING & OTHER PARAMETERS ᐳ •Set Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals, •Set Event Log Custom Card Directory, etc.',
 
         'select':               'SELECT ᐳ Select the parameter update form',
@@ -132,7 +135,7 @@ MENU_KEY_TEXT_PAGE_0 = [
     MENU_KEY_TEXT['icloud_account'],
     MENU_KEY_TEXT['device_list'],
     MENU_KEY_TEXT['verification_code'],
-    MENU_KEY_TEXT['change_device_order'],
+    MENU_KEY_TEXT['away_time_zone'],
     MENU_KEY_TEXT['sensors'],
     MENU_KEY_TEXT['actions'],
     ]
@@ -158,11 +161,10 @@ ACTION_LIST_ITEMS_KEY_TEXT = {
         'next_page_waze':           'NEXT PAGE ᐳ Waze History Database parameters',
         'select_form':              'SELECT ᐳ Select the parameter update form',
 
-        'login_icloud_account':     'LOGIN ᐳ Log into the iCloud Account. StatusMsg',
+        'login_icloud_account':     'LOG INTO ANOTHER ICLOUD ACCOUNT ᐳ Log into an iCloud Account with a different username/password. Currently logged into > ^msg',
         'verification_code':        'ENTER/REQUEST AN APPLE ID VERIFICATION CODE ᐳ Enter (or Request) the 6-digit Apple ID Verification Code',
 
-        'enter_verification_code':  'ENTER APPLE ID VERIFICATION CODE ᐳ Enter the 6-digit Apple ID Verification Code',
-        'send_verification_code':   'SEND THE VERIFICATION CODE TO APPLE ID ᐳ Send the 6-digit Apple ID Verification Code back to Apple to approve access to the iCloud account',
+        'send_verification_code':   'SEND THE VERIFICATION CODE TO APPLE ᐳ Send the 6-digit Apple ID Verification Code back to Apple to approve access to iCloud account ^msg',
         "request_verification_code":'REQUEST A NEW APPLE ID VERIFICATION CODE ᐳ Reset iCloud Interface and request a new Apple ID Verification Code',
         'cancel_verification_entry':'CANCEL ᐳ Cancel the Verification Code Entry and Close this screen',
 
@@ -215,10 +217,10 @@ ACTION_LIST_ITEMS_BASE = [
 
 OPT_LIST_KEY_TEXT_NONE      = {'None': 'None'}
 OPT_PICTURE_TEXT            = ['None']
-UNKNOWN_DEVICE_TEXT         = ' >> ✪✪ VALUE NOT IN LIST, NEEDS REVIEW ✪✪'
+UNKNOWN_DEVICE_TEXT         = ' > ✪✪ UNKNOWN/NOT FOUND > NEEDS REVIEW ✪✪'
 SERVICE_NOT_AVAILABLE       = ' > This Data Source/Web Location Service is not available'
 SERVICE_NOT_STARTED_YET     = ' > This Data Source/Web Location Svc has not finished starting. Exit and Retry.'
-LOG_IN_ICLOUD_ACCT_IDX      = 0
+LOGGED_INTO_MSG_ACTION_LIST_IDX = 0     # Index number of the Action list item containing the username/password
 
 # Action List Items for all screens
 ICLOUD_ACCOUNT_ACTIONS = [
@@ -283,6 +285,13 @@ IOSAPP_DEVICE_SEARCH_TEXT = 'Scan for mobile app device_tracker ᐳ '
 IOSAPP_DEVICE_NONE_ITEMS_KEY_TEXT = {
         'None':     'None - The iOS App is not installed on this device',
         }
+LOG_ZONES_KEY_TEXT = {
+        '.fmf':             f"{'-'*10} File Name Formats {'-'*10}",
+        'name-zone':        ' → [year]-[zone].csv',
+        'name-device':      ' → [year]-[device].csv',
+        'name-device-zone': ' → [year]-[device]-[zone].csv',
+        'name-zone-device': ' → [year]-[zone]-[device]-[zone].csv',
+        }
 TRACKING_MODE_ITEMS_KEY_TEXT = {
         'track':    'Track - Request Location and track the device',
         'monitor':  'Monitor - Report location only when another tracked device is updated',
@@ -290,7 +299,7 @@ TRACKING_MODE_ITEMS_KEY_TEXT = {
         }
 DATA_SOURCE_ITEMS_KEY_TEXT = {
         'famshr':   'iCloud - Family Sharing List members from the iCloud Account (FamShr)',
-        'fmf':      'iCloud - Friends/Contacts who are sharing their location with you (FmF)',
+        # 'fmf':      'iCloud - Friends/Contacts who are sharing their location with you (FmF)',
         'iosapp':   'iOS App - HA iOS Companion App device_tracker and sensor entities are monitored (iosapp)'
         }
 UNIT_OF_MEASUREMENT_ITEMS_KEY_TEXT = {
@@ -434,7 +443,6 @@ ACTIONS_ACTION_ITEMS = {
         "return":           "MAIN MENU ᐳ Return to the Main Menu"
 }
 
-
 WAZE_USED_HEADER =         ("The Waze Route Service provides the travel time and distance information from your "
                             "current location to the Home or another tracked from zone. This information is used to determine "
                             "when the next location request should be made")
@@ -448,14 +456,12 @@ PASSTHRU_ZONE_HEADER =     ("You may be driving through a non-tracked zone but n
                             "trig[er that is immediately followed by an Exit Zone trigger.")
 STAT_ZONE_HEADER =         ("A Stationary Zone is automatically created if the device remains in the same location "
                             "(store, friends house, doctor`s office, etc.) for an extended period of time")
-# STAT_ZONE_BASE_HEADER =    ("The Stationary Zone is moved to it's 'Base Location' when it is not used by the device. "
-#                             "This prevents the iOS App from moving the device into the Stationary Zone when it shouldn`t "
-#                             "and helps prevent it from overlapping other zones")
-TRK_FROM_HOME_ZONE_HEADER =("Normally, the Home zone is used as the base location for all tracking (travel time, distance, "
-                            "etc).  However, a different zone can be used as the base location if you are away from Home for "
-                            "an extended period or the device is normally at another location (vacation house, second home, "
-                            "parent's house, etc.). This is a global setting that overrides the Base Zone assigned to an "
-                            "individual Device.")
+TRK_FROM_HOME_ZONE_HEADER =("Normally, the Home zone is used as the primary track-from-zone for the tracking results "
+                            "(travel time, distance, etc).  However, a different zone can be used as the base location "
+                            "if you are away from Home for an extended period or the device is normally at another "
+                            "location (vacation house, second home, parent's house, etc.). This is a global setting "
+                            "that overrides the Primary Track-from-Home Zone assigned to an individual Device on the Update "
+                            "Devices screen.")
 
 
 
@@ -528,7 +534,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
             return self.async_abort(reason="already_configured")
 
         # If Gb.hass is None, then the iCloud3 Integration is being added for the first itme and
-        # __init__ has not run yet. Do the preliminary initialization and v2-v3 migration chedk
+        # __init__ has not run yet. Do the preliminary initialization and v2-v3 migration check
         # and migrate the data if needed from config_ic3.yaml.
         if Gb.hass is None:
             Gb.hass = self.hass
@@ -541,6 +547,8 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         # state or has never been updated via config_flow using 'HA Integrations > iCloud3'
         if Gb.conf_profile[CONF_VERSION] == -1:
             self.migrate_v2_config_to_v3()
+
+        _CF_LOGGER.info(f"Config_Flow Added Integration-{Gb.ha_device_id_by_devicename=} {Gb.ha_area_id_by_devicename=}")
 
         if user_input is not None:
             _CF_LOGGER.info(f"Added iCloud3 Integration")
@@ -748,6 +756,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             Gb.hass.async_create_task(self.async_step_menu())
 
     def initialize_options(self):
+        self._set_initial_icloud3_device_tracker_area_id()
         self.initialize_options_required_flag = False
         self.v2v3_migrated_flag               = False  # Set to True when the conf_profile[VERSION] = -1 when first loaded
 
@@ -826,6 +835,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.cdo_new_order_idx = {}
         self.cdo_curr_idx      = 0
 
+        # away_time_zone_adjustment
+        self.away_time_zone_hours_key_text   = {}
+        self.away_time_zone_devices_key_text = {}
+
         # Variables used for the system_settings s update
         self.opt_www_directory_list = []
 
@@ -864,6 +877,27 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         return await self.async_step_menu()
 
+#-------------------------------------------------------------------------------------------
+    def _set_initial_icloud3_device_tracker_area_id(self):
+        '''
+        When the integration is first added, there are no devices (conf_devices == [] or all of the
+        devices are set to inactive. If this is the case, no Device objects have been created and
+        the ICLOUD3 Integration Device Tracker Entity has not been totaly initialized. Do it now.
+
+        - Add the 'Personal Device' area to the iCloud3 device tracker
+        '''
+        if (ICLOUD3 not in Gb.ha_device_id_by_devicename
+                or Gb.area_id_personal_device == None
+                or Gb.ha_area_id_by_devicename[ICLOUD3] not in [None, 'unknown', '']):
+            return
+
+        inactive_devices_cnt = len([Device for Device in Gb.Devices if Device.is_inactive])
+        if Gb.Devices == []:
+            pass
+        elif inactive_devices_cnt != len(Gb.Devices):
+            return
+
+        self.update_area_id_personal_device(ICLOUD3)
 
 #-------------------------------------------------------------------------------------------
     async def async_step_menu(self, user_input=None, errors=None):
@@ -933,6 +967,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_device_list()
         elif menu_item == 'change_device_order':
             return await self.async_step_change_device_order()
+        elif menu_item == 'away_time_zone':
+            return await self.async_step_away_time_zone()
         elif menu_item == 'format_settings':
             return await self.async_step_format_settings()
         elif menu_item == 'display_text_as':
@@ -974,14 +1010,16 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 return await self.async_step_menu()
 
             elif action_item == 'restart_ic3_later':
-                self.config_flow_updated_parms.remove('restart')
+                if 'restart' in self.config_flow_updated_parms:
+                    self.config_flow_updated_parms.remove('restart')
                 Gb.config_flow_updated_parms = self.config_flow_updated_parms
 
             # If the polling loop has been set up, set the restart flag to trigger a restart when
             # no devices are being updated. Otherwise, there were probably no devices to track
             # when first loaded and a direct restart must be done.
             elif action_item == 'restart_ic3_now':
-                self.config_flow_updated_parms.remove('restart')
+                if 'restart' in self.config_flow_updated_parms:
+                    self.config_flow_updated_parms.remove('restart')
                 Gb.restart_icloud3_request_flag = True
                 if (self.PyiCloud is not None
                         and (self.username != Gb.username
@@ -1087,6 +1125,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             user_input = self._get_conf_device_selected(user_input)
         elif self.step_id == 'format_settings':
             user_input = self._validate_format_settings(user_input)
+        elif self.step_id == 'away_time_zone':
+            user_input = self._validate_away_time_zone(user_input)
         elif self.step_id == "display_text_as":
             pass
         elif self.step_id == 'tracking_parameters':
@@ -1162,6 +1202,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 new_conf_devices.append(Gb.conf_devices[idx])
 
             Gb.conf_devices = new_conf_devices
+            config_file.set_conf_devices_index_by_devicename()
             config_file.write_storage_icloud3_configuration_file()
             self.config_flow_updated_parms.update(['restart', 'profile'])
             self.errors['base'] = 'conf_updated'
@@ -1195,6 +1236,70 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(step_id=self.step_id,
                             data_schema=self.form_schema(self.step_id),
                             errors=self.errors)
+
+#-------------------------------------------------------------------------------------------
+    async def async_step_away_time_zone(self, user_input=None, errors=None):
+        self.step_id = 'away_time_zone'
+        user_input, action_item = self._action_text_to_item(user_input)
+
+        if self.common_form_handler(user_input, action_item, errors):
+            return await self.async_step_menu()
+
+        if self._any_errors():
+                self.errors['action_items'] = 'update_aborted'
+
+        if self.away_time_zone_hours_key_text == {}:
+            self._build_away_time_zone_hours_list()
+
+        self._build_away_time_zone_devices_list()
+
+        return self.async_show_form(step_id=self.step_id,
+                            data_schema=self.form_schema(self.step_id),
+                            errors=self.errors)
+
+#-------------------------------------------------------------------------------------------
+    def _build_away_time_zone_hours_list(self):
+        if self.away_time_zone_hours_key_text != {}:
+            return
+
+        ha_time = int(Gb.this_update_time[0:2])
+        for hh in range(ha_time-12, ha_time+13):
+            away_hh = hh + 24 if hh < 0 else hh
+
+            if   away_hh == 0: ap_hh = 12; ap = 'a'
+            elif away_hh < 12:  ap_hh = away_hh; ap = 'a'
+            elif away_hh == 12: ap_hh = 12; ap = 'p'
+            else: ap_hh = away_hh - 12; ap = 'p'
+
+            if away_hh >= 24:
+                away_hh -= 24
+                if   ap_hh == 12: ap = 'a'
+                elif ap_hh >= 13: ap_hh -= 12; ap = 'a'
+
+            if Gb.time_format_12_hour:
+                time_str = f"{ap_hh:}{Gb.this_update_time[2:]}{ap}"
+            else:
+                time_str = f"{away_hh:02}{Gb.this_update_time[2:]}"
+
+            if away_hh == ha_time:
+                time_str = " "  #+= f" (Home Time Zone)"
+            elif hh < ha_time:
+                time_str += f" (-{abs(hh-ha_time):} hours)"
+            else:
+                time_str += f" (+{abs(ha_time-hh):} hours)"
+            self.away_time_zone_hours_key_text[hh-ha_time] = time_str
+
+#-------------------------------------------------------------------------------------------
+    def _build_away_time_zone_devices_list(self):
+
+        self.away_time_zone_devices_key_text = {'none': 'Home time zone is used for all devices'}
+        for devicename, Device in Gb.Devices_by_devicename.items():
+            self.away_time_zone_devices_key_text[devicename] = Device.fname
+
+        dummy_key = ''
+        for i in range(6 - len(self.away_time_zone_devices_key_text)):
+            dummy_key += '.'
+            self.away_time_zone_devices_key_text[dummy_key] = '.'
 
 #-------------------------------------------------------------------------------------------
     async def async_step_confirm_action(self, user_input=None, action_items=None,
@@ -1722,8 +1827,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     Gb.conf_general[pname] = pvalue
                     updated_parms.update(['general'])
                     if 'special_zones' in self.step_id:
-                        updated_parms.update(['general', 'zone_formats'])
-
+                        updated_parms.update(['zone_formats'])
+                    if 'away_time_zone' in self.step_id:
+                        updated_parms.update(['restart'])
                     if 'waze' in self.step_id:
                         updated_parms.update(['waze'])
 
@@ -1767,11 +1873,46 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         user_input = self._strip_special_text_from_user_input(user_input)
 
         if (Gb.display_zone_format != user_input[CONF_DISPLAY_ZONE_FORMAT]):
-                # or Gb.device_tracker_state_source != user_input[CONF_DEVICE_TRACKER_STATE_SOURCE]):
             self.config_flow_updated_parms.update(['zone_formats'])
 
         return user_input
 
+#-------------------------------------------------------------------------------------------
+    def _validate_away_time_zone(self, user_input):
+        '''
+        Validate and reinitialize the local zone parameters
+        '''
+        user_input = self._option_text_to_parm(user_input, CONF_AWAY_TIME_ZONE_1_OFFSET, self.away_time_zone_hours_key_text)
+        user_input = self._option_text_to_parm(user_input, CONF_AWAY_TIME_ZONE_2_OFFSET, self.away_time_zone_hours_key_text)
+
+        if (('none' in user_input[CONF_AWAY_TIME_ZONE_1_DEVICES] and 'none' not in Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES])
+                or user_input[CONF_AWAY_TIME_ZONE_1_DEVICES] == []
+                or user_input[CONF_AWAY_TIME_ZONE_1_OFFSET] == 0):
+            user_input[CONF_AWAY_TIME_ZONE_1_DEVICES] = ['none']
+            user_input[CONF_AWAY_TIME_ZONE_1_OFFSET] = 0
+        elif 'none' in user_input[CONF_AWAY_TIME_ZONE_1_DEVICES] and len(user_input[CONF_AWAY_TIME_ZONE_1_DEVICES]) > 1:
+            if 'none' in user_input[CONF_AWAY_TIME_ZONE_1_DEVICES]:
+                user_input[CONF_AWAY_TIME_ZONE_1_DEVICES].remove('none')
+
+        if (('none' in user_input[CONF_AWAY_TIME_ZONE_2_DEVICES] and 'none' not in Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES])
+                or user_input[CONF_AWAY_TIME_ZONE_2_DEVICES] == []
+                or user_input[CONF_AWAY_TIME_ZONE_2_OFFSET] == 0):
+            user_input[CONF_AWAY_TIME_ZONE_2_DEVICES] = ['none']
+            user_input[CONF_AWAY_TIME_ZONE_2_OFFSET] = 0
+        elif 'none' in user_input[CONF_AWAY_TIME_ZONE_2_DEVICES] and len(user_input[CONF_AWAY_TIME_ZONE_2_DEVICES]) > 1:
+            if 'none' in user_input[CONF_AWAY_TIME_ZONE_2_DEVICES]:
+                user_input[CONF_AWAY_TIME_ZONE_2_DEVICES].remove('none')
+
+        dup_devices = [devicename   for devicename in user_input[CONF_AWAY_TIME_ZONE_1_DEVICES]
+                                    if devicename in user_input[CONF_AWAY_TIME_ZONE_2_DEVICES] and devicename != 'none']
+        if dup_devices != [] : self.errors[CONF_AWAY_TIME_ZONE_1_DEVICES] = 'away_time_zone_dup_devices_1'
+        dup_devices = [devicename   for devicename in user_input[CONF_AWAY_TIME_ZONE_2_DEVICES]
+                                    if devicename in user_input[CONF_AWAY_TIME_ZONE_1_DEVICES] and devicename != 'none']
+        if dup_devices != [] : self.errors[CONF_AWAY_TIME_ZONE_2_DEVICES] = 'away_time_zone_dup_devices_2'
+
+
+
+        return user_input
 #-------------------------------------------------------------------------------------------
     def _validate_tracking_parameters(self, user_input):
         '''
@@ -1803,10 +1944,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         config_inzone_interval = Gb.conf_general[CONF_INZONE_INTERVALS].copy()
 
         for pname, pvalue in user_input_copy.items():
-            if (pname not in self.errors
-                    and pname in config_inzone_interval):
+            if (pname not in self.errors and pname in config_inzone_interval):
                 config_inzone_interval[pname] = pvalue
-
                 user_input.pop(pname)
 
         user_input[CONF_INZONE_INTERVALS] = config_inzone_interval
@@ -1846,6 +1985,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input = self._validate_numeric_field(user_input)
         user_input = self._option_text_to_parm(user_input, CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)
+        user_input[CONF_TRACK_FROM_BASE_ZONE_USED] = (user_input[CONF_TRACK_FROM_BASE_ZONE_USED] != [])
 
         if 'passthru_zone_header' in user_input:
             if user_input['passthru_zone_header'] == []:
@@ -1854,11 +1994,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     and user_input[CONF_PASSTHRU_ZONE_TIME] == 0):
                 user_input[CONF_PASSTHRU_ZONE_TIME] = DEFAULT_GENERAL_CONF[CONF_PASSTHRU_ZONE_TIME]
 
-        if 'track_from_zone_header' in user_input:
-            if (user_input[CONF_TRACK_FROM_BASE_ZONE] == Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE]
-                    and user_input['track_from_zone_header']):
-                user_input[CONF_TRACK_FROM_BASE_ZONE] = HOME
-                user_input[CONF_TRACK_FROM_HOME_ZONE] = True
+        if (user_input[CONF_TRACK_FROM_BASE_ZONE_USED] != Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
+                or user_input[CONF_TRACK_FROM_BASE_ZONE] != Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE]
+                or user_input[CONF_TRACK_FROM_HOME_ZONE] != Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
+            self.config_flow_updated_parms.update(['restart'])
 
         if 'stat_zone_header' in user_input:
             if user_input['stat_zone_header'] == []:
@@ -2309,6 +2448,29 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                         data_schema=self.form_schema(called_from_step_id),
                         errors=self.errors)
 
+#-------------------------------------------------------------------------------------------
+    def _set_action_list_item_username_password(self):
+        '''
+        Insert the username/password of the iCloud account currently logged into
+        into the Action Item selection list item
+        '''
+
+        if self.username or self.password:
+            obscure_username = obscure_field(self.username) or 'NoUsername'
+            obscure_password = obscure_field(self.password) or 'NoPassword'
+            username_password = f"{obscure_username}/{obscure_password}"
+
+            if self.PyiCloud or Gb.PyiCloud:
+                logged_into_msg = f"{username_password}"
+
+        else:
+            logged_into_msg = 'None'
+            if 'base' not in self.errors:
+                self.errors = {'base': 'icloud_acct_not_logged_into'}
+
+        self.actions_list[LOGGED_INTO_MSG_ACTION_LIST_IDX] = \
+                self.actions_list[LOGGED_INTO_MSG_ACTION_LIST_IDX].replace('^msg', logged_into_msg)
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #            TRACKED DEVICE MENU - DEVICE LIST, DEVICE UPDATE FORMS
@@ -2633,7 +2795,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input, action_item = self._action_text_to_item(user_input)
         user_input = self._option_text_to_parm(user_input, CONF_FAMSHR_DEVICENAME, self.famshr_list_text_by_fname)
-        user_input = self._option_text_to_parm(user_input, CONF_FMF_EMAIL, self.fmf_list_text_by_email)
+        # user_input = self._option_text_to_parm(user_input, CONF_FMF_EMAIL, self.fmf_list_text_by_email)
+        user_input[CONF_FMF_EMAIL] = 'None'
         user_input = self._option_text_to_parm(user_input, CONF_IOSAPP_DEVICE, self.iosapp_list_text_by_entity_id)
         user_input = self._option_text_to_parm(user_input, CONF_PICTURE, self.picture_by_filename)
         user_input = self._option_text_to_parm(user_input, CONF_DEVICE_TYPE, DEVICE_TYPE_FNAME)
@@ -2731,7 +2894,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         other_ic3_devicename_list = self.form_devices_list_devicename.copy()
         if other_ic3_devicename_list:
             current_ic3_devicename = Gb.conf_devices[self.conf_device_selected_idx][CONF_IC3_DEVICENAME]
-            if self.add_device_flag is False:
+            if self.add_device_flag is False and current_ic3_devicename in other_ic3_devicename_list:
                 other_ic3_devicename_list.remove(current_ic3_devicename)
 
         # Already used if the new ic3_devicename is in the devicename list
@@ -2785,8 +2948,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input[CONF_FAMSHR_DEVICENAME].strip() == '':
             user_input[CONF_FAMSHR_DEVICENAME] = 'None'
 
-        if user_input[CONF_FMF_EMAIL].strip() == '':
-            user_input[CONF_FMF_EMAIL] = 'None'
+        # if user_input[CONF_FMF_EMAIL].strip() == '':
+        user_input[CONF_FMF_EMAIL] = 'None'
 
         if user_input[CONF_IOSAPP_DEVICE].strip() == '':
             user_input[CONF_IOSAPP_DEVICE] = 'None'
@@ -2810,9 +2973,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         if self.PyiCloud:
             _FamShr = self.PyiCloud.FamilySharing
-            conf_famshr_device_fname = user_input[CONF_FAMSHR_DEVICENAME]
-            if conf_famshr_device_fname in _FamShr.device_model_info_by_fname:
-                raw_model, model, model_display_name = _FamShr.device_model_info_by_fname[conf_famshr_device_fname]
+            conf_famshr_fname = user_input[CONF_FAMSHR_DEVICENAME]
+            if conf_famshr_fname in _FamShr.device_model_info_by_fname:
+                raw_model, model, model_display_name = _FamShr.device_model_info_by_fname[conf_famshr_fname]
                 if (user_input.get(CONF_RAW_MODEL) != raw_model
                             or user_input[CONF_MODEL] != model
                             or user_input[CONF_MODEL_DISPLAY_NAME] != model_display_name):
@@ -2820,17 +2983,27 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     user_input[CONF_MODEL] = model
                     user_input[CONF_MODEL_DISPLAY_NAME] = model_display_name
 
-        # Handle track_from_zone changes
-        track_from_zones = []
+        # Build 'log_zones' list
+        if ('none' in user_input[CONF_LOG_ZONES]
+                and 'none' not in self.conf_device_selected[CONF_LOG_ZONES]):
+            log_zones = []
+        else:
+            log_zones = [zone   for zone in self.zone_name_key_text.keys()
+                                if zone in user_input[CONF_LOG_ZONES] and zone != '.' ]
+        if log_zones == []:
+            log_zones = ['none']
+        else:
+            user_input[CONF_LOG_ZONES].append('name-zone')
+            log_zones.append([item  for item in user_input[CONF_LOG_ZONES]
+                                    if item.startswith('name')][0])
+        user_input[CONF_LOG_ZONES] = log_zones
 
-        for zone, zone_name in self.zone_name_key_text.items():
-            if zone in user_input[CONF_TRACK_FROM_ZONES] and zone != '.':
-                track_from_zones.append(zone)
-
-        # Put 'home' at the end of the list
-        if 'home' in track_from_zones:
-            track_from_zones.remove('home')
-        track_from_zones.append('home')
+        # Build 'track_from_zones' list
+        track_from_zones = [zone    for zone in self.zone_name_key_text.keys()
+                                    if (zone in user_input[CONF_TRACK_FROM_ZONES]
+                                        and zone not in ['.',
+                                            self.conf_device_selected[CONF_TRACK_FROM_BASE_ZONE]])]
+        track_from_zones.append(self.conf_device_selected[CONF_TRACK_FROM_BASE_ZONE])
         user_input[CONF_TRACK_FROM_ZONES] = track_from_zones
 
         return user_input
@@ -2958,7 +3131,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if _FamShr := self.PyiCloud.FamilySharing:
             self._check_finish_v2v3conversion_for_famshr_fname()
 
-            self.famshr_list_text_by_fname_base.update(_FamShr.device_info_by_device_fname)
+            self.famshr_list_text_by_fname_base.update(_FamShr.device_info_by_famshr_fname)
             self.famshr_list_text_by_fname = self.famshr_list_text_by_fname_base.copy()
 
 #----------------------------------------------------------------------
@@ -3006,7 +3179,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             conf_device[CONF_MODEL] = model
             conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
             conf_device[CONF_RAW_MODEL] = raw_model
-            conf_device[CONF_FAMSHR_DEVICE_ID] = _FamShr.device_id_by_device_fname[famshr_fname]
+            conf_device[CONF_FAMSHR_DEVICE_ID] = _FamShr.device_id_by_famshr_fname[famshr_fname]
             update_conf_file_flag = True
 
         if update_conf_file_flag:
@@ -3089,7 +3262,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # Add `Devices` options
         self.iosapp_list_text_by_entity_id.update(
                             {entity_io._base_entity_id(dev_trkr_entity): (
-                                f"{entity_attrs['original_name']} ("
+                                f"{self._iosapp_fname(entity_attrs)} ("
                                 f"{DEVICE_TRACKER_DOT}{entity_io._base_entity_id(dev_trkr_entity)} "
                                 f"({entity_attrs[CONF_RAW_MODEL]})")
                             for dev_trkr_entity, entity_attrs in iosapp_entity_data.items()})
@@ -3097,14 +3270,19 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # Add `Search` options
         try:
             self.iosapp_list_text_by_entity_id.update(
-                            {f"Search: {slugify(entity_attrs['original_name'])}":
-                                f"{IOSAPP_DEVICE_SEARCH_TEXT}{entity_attrs['original_name']} "
-                                f"({slugify(entity_attrs['original_name'])})"
+                            {f"Search: {slugify(self._iosapp_fname(entity_attrs))}":
+                                f"{IOSAPP_DEVICE_SEARCH_TEXT}{self._iosapp_fname(entity_attrs)} "
+                                f"({slugify(self._iosapp_fname(entity_attrs))})"
                             for dev_trkr_entity, entity_attrs in iosapp_entity_data.items()})
         except:
             pass
 
         return
+
+#-------------------------------------------------------------------------------------------
+    @staticmethod
+    def _iosapp_fname(entity_attrs):
+        return entity_attrs['name'] or entity_attrs['original_name']
 
 #-------------------------------------------------------------------------------------------
     def _prepare_device_selection_list(self):
@@ -3264,6 +3442,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
         else:
             DeviceTracker = ic3_device_tracker.iCloud3_DeviceTracker(devicename, conf_device)
+            self.update_area_id_personal_device(devicename)
 
         if DeviceTracker is None:
             return
@@ -3503,6 +3682,25 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         return sensors_list
 
+#-------------------------------------------------------------------------------------------
+    def update_area_id_personal_device(self, devicename):
+        '''
+        Change the device's area to Personal Device
+        '''
+
+        try:
+            kwargs = {}
+            kwargs['area_id'] = Gb.area_id_personal_device
+            Gb.ha_area_id_by_devicename[devicename] = Gb.area_id_personal_device
+
+            ha_device_id = Gb.ha_device_id_by_devicename[devicename]
+            device_registry = dr.async_get(Gb.hass)
+            dr_entry = device_registry.async_update_device(ha_device_id, **kwargs)
+
+            log_debug_msg(  "Device Tracker entity changed: device_tracker.icloud3, "
+                        "iCloud3, Personal Device")
+        except:
+            pass
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -3580,7 +3778,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 action_text_len = 25 if len(action_text) > 25 else len(action_text)
                 action_item = [k    for k, v in ACTION_LIST_ITEMS_KEY_TEXT.items()
                                     if v.startswith(action_text[:action_text_len])][0]
-            if 'actions_items' in user_input:
+            if 'action_items' in user_input:
                 user_input.pop('action_items')
 
         else:
@@ -3633,15 +3831,18 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         '''
         Get the default value from the various dictionaries to display on the input form
         '''
+        try:
+            parm_displayed = self.errors_user_input.get(pname) \
+                                or self.user_input_multi_form.get(pname) \
+                                or self.conf_device_selected.get(pname) \
+                                or suggested_value
 
-        parm_displayed = self.errors_user_input.get(pname) \
-                            or self.user_input_multi_form.get(pname) \
-                            or self.conf_device_selected.get(pname) \
-                            or suggested_value
+            if pname == 'device_type':
+                parm_displayed = DEVICE_TYPE_FNAME.get(parm_displayed, IPHONE_FNAME)
+            parm_displayed = ' ' if parm_displayed == '' else parm_displayed
 
-        if pname == 'device_type':
-            parm_displayed = DEVICE_TYPE_FNAME.get(parm_displayed, IPHONE_FNAME)
-        parm_displayed = ' ' if parm_displayed == '' else parm_displayed
+        except Exception as err:
+            log_exception(err)
 
         return parm_displayed
 
@@ -3987,27 +4188,15 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         elif step_id == 'icloud_account':
             self.actions_list = ICLOUD_ACCOUNT_ACTIONS.copy()
             self.actions_list.extend(ACTION_LIST_ITEMS_BASE)
-
-            if self.username or self.password:
-                obscure_username = obscure_field(self.username) or 'None'
-                obscure_password = obscure_field(self.password) or 'None'
-                username_password = f"{obscure_username}/{obscure_password}"
-
-                if self.PyiCloud or Gb.PyiCloud:
-                    status_msg = f"Logged Into > {username_password}"
-                elif self.username or self.password:
-                    status_msg  = ''
-                    if 'base' not in self.errors:
-                        self.errors = {'base': 'icloud_acct_not_logged_into'}
-
-                self.actions_list[LOG_IN_ICLOUD_ACCT_IDX] = \
-                    self.actions_list[LOG_IN_ICLOUD_ACCT_IDX].replace('StatusMsg', status_msg)
+            self._set_action_list_item_username_password()
 
             data_source_icloud_list = []
             data_source_iosapp_list = []
             if instr(Gb.conf_tracking[CONF_DATA_SOURCE], FAMSHR): data_source_icloud_list.append(FAMSHR)
             if instr(Gb.conf_tracking[CONF_DATA_SOURCE], FMF):    data_source_icloud_list.append(FMF)
             if instr(Gb.conf_tracking[CONF_DATA_SOURCE], IOSAPP): data_source_iosapp_list.append(IOSAPP)
+            if start_ic3.verify_mobile_app_integration_installed() is False:
+                self.errors['data_source_iosapp'] = 'mobile_app_error'
 
             url_suffix_china = (Gb.icloud_server_endpoint_suffix == 'cn')
 
@@ -4037,6 +4226,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         #------------------------------------------------------------------------
         elif step_id == 'reauth':
             self.actions_list = REAUTH_ACTIONS.copy()
+            self._set_action_list_item_username_password()
 
             return vol.Schema({
                 vol.Optional(CONF_VERIFICATION_CODE):
@@ -4170,6 +4360,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if self.conf_device_selected[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
                 self.errors[CONF_TRACKING_MODE] = 'inactive_device'
 
+            log_zones_key_text = {'none': 'None'}
+            log_zones_key_text.update(self.zone_name_key_text)
+            log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
+
             return vol.Schema({
                 vol.Required(CONF_IC3_DEVICENAME,
                             default=self._parm_or_device(CONF_IC3_DEVICENAME)):
@@ -4189,10 +4383,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             default=self._option_parm_to_text(CONF_FAMSHR_DEVICENAME, famshr_list_text_by_fname)):
                             selector.SelectSelector(selector.SelectSelectorConfig(
                                 options=dict_value_to_list(famshr_list_text_by_fname), mode='dropdown')),
-                vol.Required(CONF_FMF_EMAIL,
-                            default=self._option_parm_to_text(CONF_FMF_EMAIL, fmf_list_text_by_email)):
-                            selector.SelectSelector(selector.SelectSelectorConfig(
-                                options=dict_value_to_list(fmf_list_text_by_email), mode='dropdown')),
+                # vol.Required(CONF_FMF_EMAIL,
+                #             default=self._option_parm_to_text(CONF_FMF_EMAIL, fmf_list_text_by_email)):
+                #             selector.SelectSelector(selector.SelectSelectorConfig(
+                #                 options=dict_value_to_list(fmf_list_text_by_email), mode='dropdown')),
                 vol.Required(CONF_IOSAPP_DEVICE,
                             default=self._option_parm_to_text(CONF_IOSAPP_DEVICE, iosapp_list_text_by_entity_id)):
                             selector.SelectSelector(selector.SelectSelectorConfig(
@@ -4202,14 +4396,22 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             selector.SelectSelector(selector.SelectSelectorConfig(
                                 options=dict_value_to_list(picture_by_filename), mode='dropdown')),
 
+                vol.Optional(CONF_LOG_ZONES,
+                            default=self._parm_or_device(CONF_LOG_ZONES)):
+                            cv.multi_select(log_zones_key_text),
                 vol.Required(CONF_TRACK_FROM_ZONES,
                             default=self._parm_or_device(CONF_TRACK_FROM_ZONES)):
                             cv.multi_select(self.zone_name_key_text),
 
                 vol.Required(CONF_INZONE_INTERVAL,
-                            default=self._parm_or_device(CONF_INZONE_INTERVAL, CONF_DEVICES)):
+                            default=self.conf_device_selected[CONF_INZONE_INTERVAL]):
+                            # default=self._parm_or_device(CONF_INZONE_INTERVAL)):
                             selector.NumberSelector(selector.NumberSelectorConfig(
                                 min=1, max=300, step=1, unit_of_measurement='minutes')),
+                vol.Required(CONF_FIXED_INTERVAL,
+                            default=self.conf_device_selected[CONF_FIXED_INTERVAL]):
+                            selector.NumberSelector(selector.NumberSelectorConfig(
+                                min=0, max=300, step=1, unit_of_measurement='minutes')),
                 vol.Required(CONF_TRACK_FROM_BASE_ZONE,
                             default=self._option_parm_to_text(CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text, conf_device=True)):
                             selector.SelectSelector(selector.SelectSelectorConfig(
@@ -4316,6 +4518,34 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                 options=self.cdo_devicenames, mode='list')),
                 vol.Required('action_items',
                             default=self.action_default_text(self.actions_list_default)):
+                            selector.SelectSelector(selector.SelectSelectorConfig(
+                                options=self.actions_list, mode='list')),
+                })
+
+        #------------------------------------------------------------------------
+        elif step_id == 'away_time_zone':
+            self.actions_list = []
+            self.actions_list.extend(ACTION_LIST_ITEMS_BASE)
+
+            return vol.Schema({
+                vol.Required(CONF_AWAY_TIME_ZONE_1_DEVICES,
+                            default=Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]):
+                            cv.multi_select(self.away_time_zone_devices_key_text),
+                vol.Required(CONF_AWAY_TIME_ZONE_1_OFFSET,
+                            default=self.away_time_zone_hours_key_text[Gb.conf_general[CONF_AWAY_TIME_ZONE_1_OFFSET]]):
+                            selector.SelectSelector(selector.SelectSelectorConfig(
+                                options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
+
+                vol.Required(CONF_AWAY_TIME_ZONE_2_DEVICES,
+                            default=Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES]):
+                            cv.multi_select(self.away_time_zone_devices_key_text),
+                vol.Required(CONF_AWAY_TIME_ZONE_2_OFFSET,
+                            default=self.away_time_zone_hours_key_text[Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET]]):
+                            selector.SelectSelector(selector.SelectSelectorConfig(
+                                options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
+
+                vol.Required('action_items',
+                            default=self.action_default_text('save')):
                             selector.SelectSelector(selector.SelectSelectorConfig(
                                 options=self.actions_list, mode='list')),
                 })
@@ -4526,11 +4756,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 self._build_zone_list()
             stat_zone_used       = (Gb.conf_general[CONF_STAT_ZONE_STILL_TIME] > 0)
             pass_thru_zone_used  = (Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] > 0)
-            track_from_zone_home = (Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE] == HOME)
+            track_from_base_zone_used = Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
 
             ptzh_default = [PASSTHRU_ZONE_HEADER] if pass_thru_zone_used else []
             szh_default  = [STAT_ZONE_HEADER] if stat_zone_used else []
-            tfzh_default = [TRK_FROM_HOME_ZONE_HEADER] if track_from_zone_home else []
+            tfzh_default = [TRK_FROM_HOME_ZONE_HEADER] if track_from_base_zone_used else []
 
             return vol.Schema({
                 vol.Optional('passthru_zone_header',
@@ -4555,7 +4785,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             default=Gb.conf_general[CONF_STAT_ZONE_INZONE_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
                                 min=5, max=60, unit_of_measurement='minutes')),
-                vol.Optional('track_from_zone_header',
+
+                vol.Optional(CONF_TRACK_FROM_BASE_ZONE_USED,
                             default=tfzh_default):
                             cv.multi_select([TRK_FROM_HOME_ZONE_HEADER]),
                 vol.Required(CONF_TRACK_FROM_BASE_ZONE,
@@ -4564,8 +4795,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                 options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
                 vol.Optional(CONF_TRACK_FROM_HOME_ZONE,
                             default=Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
-                            cv.boolean,
-                            # selector.BooleanSelector(),
+                            # cv.boolean,
+                            selector.BooleanSelector(),
 
                 vol.Required('action_items',
                             default=self.action_default_text('save')):

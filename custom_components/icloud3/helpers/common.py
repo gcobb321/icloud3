@@ -40,6 +40,18 @@ def list_to_str(list_value, separator=None):
         return list_str
 
 #--------------------------------------------------------------------
+def list_add(list_value, add_value):
+    if add_value not in list_value:
+        list_value.append(add_value)
+    return list_value
+
+#--------------------------------------------------------------------
+def list_del(list_value, del_value):
+    if del_value in list_value:
+        list_value.remove(del_value)
+    return list_value
+
+#--------------------------------------------------------------------
 def str_to_list(str_value):
     '''
     Create a list of a comma separated strings
@@ -51,6 +63,13 @@ def str_to_list(str_value):
         str_value = str_value.replace( ', ', ',')
 
     return str_value.split(',')
+
+#--------------------------------------------------------------------
+def delete_from_list(list_value, item):
+    if item in list_value:
+        list_value.remove(item)
+
+    return list_value
 
 #--------------------------------------------------------------------
 def instr(string, substring):
@@ -103,6 +122,22 @@ def inlist(string, list_items):
 def round_to_zero(value):
     if abs(value) < .0001: value = 0
     return round(value, 8)
+#-------------------------------------------------------------------------------------------
+def set_precision(value, um=None):
+    '''
+    Return the distance value as an integer or float value
+    '''
+    try:
+        um = um if um else Gb.um
+        precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
+        value = round(float(value), precision)
+        if value == int(value):
+            return int(value)
+
+    except Exception as err:
+        pass
+
+    return value
 
 #--------------------------------------------------------------------
 def is_zone(zone):

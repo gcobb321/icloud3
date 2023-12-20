@@ -68,7 +68,8 @@
       "icloud_acct_not_available": "Login Error, iCloud Account is not Available",
       "icloud_acct_not_logged_into": "iCloud Account is not Logged Into",
       "icloud_acct_not_set_up": "iCloud Account Username or Password needs to be entered",
-      "icloud_acct_no_data_source": "No Data Source has been selected",
+      "icloud_acct_no_data_source": "No Data Source (iCloud or iOS App) has been selected",
+      "mobile_app_error": "The Mobile App Integration is not installed. The iOS App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
 
       "verification_code_requested": "The Apple ID Verification Code was requested, BROWSER REFRESH MAY BE NEEDED",
       "verification_code_requested2": "The Apple ID Verification Code was requested",
@@ -78,11 +79,14 @@
       "verification_code_send_error": "Failed to send the Apple ID Verification Code",
 
       "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-      "inactive_all_devices": "✪ ✪ ALL DEVICES ARE INACTIVE. NO DEVICES WILL BE TRACKED ✪ ✪",
+      "inactive_all_devices": "✪✪ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ✪✪",
       "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
       "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
       "inactive_few_devices": "A Few Devices are INACTIVE and will not be located or tracked",
-      "inactive_no_devices": "No Devices have been set up, nothing will be located or tracked",
+      "inactive_no_devices": "No Devices have been set up. Select `Add Device` and Submit",
+
+      "away_time_zone_dup_devices_1": "One of these devices is also selected in the Other Device List",
+      "away_time_zone_dup_devices_2": "One of these devices is also selected in the Otner Device List",
 
       "review_filledin_fields": "Review the 'Filled in' fields",
       "not_numeric": "The value entered is not numeric",
@@ -96,20 +100,21 @@
 
       "unknown_devicename": "The device that was previously selected can no longer be identified. It`s name may have been changed or it may have been deleted. Reselect the device to be tracked or monitored",
       "unknown_value": "The value of this parameter in the iCloud3 configuration file is unknown or invalid. It must be selected again",
-      "unknown_famshr": "Check the FamShr parameter value (Not found or Invalid)",
+      "unknown_famshr": "The FamShr device was not returned from iCloud when iCloud3 started. Check FindMy devices list & Family Share list. See Event Log Startup Stage 4 for more info and a list of the devices returned from the iCloud account",
+      "unknown_fmf": "The FmF device was not returned from iCloud when iCloud3 started. Check FindMy app devices Sharing location info. See Event Log Startup Stage 4 for more info and a list of the devices returned from the iCloud account",
+      "unknown_iosapp": "The mobile_app device_tracker entity was not found during HA Device Registry scan. Check mobile_app device list in HA Settings > Devices & Services > Devices. See Event Log Startup Stage 4 for more info and a list of mobile_app devices found in the HA Device Registry",
+      "unknown_picture": "The Picture filename was not found in the HA config/www directory. Reselect the filename or check to see if it has been deleted",
+
       "unknown_famshr_fmf": "Check the FamShr and FmF parameter values (Not found or Invalid)",
       "unknown_famshr_fmf_iosapp": "Check the FamShr, FmF and iOS App parameter values (Not found or Invalid)",
       "unknown_famshr_fmf_iosapp_picture": "Check the FamShr, FmF, iOS App and Picture parameter values (Not found or Invalid)",
       "unknown_famshr_iosapp": "Check the FamShr and iOS App parameter values (Not found or Invalid)",
       "unknown_famshr_iosapp_picture": "Check the FamShr, iOS App and Picture parameter values (Not found or Invalid)",
       "unknown_famshr_picture": "Check the FamShr and Picture parameter values (Not found or Invalid)",
-      "unknown_fmf": "Check the FmF parameter value (Not found or Invalid)",
       "unknown_fmf_iosapp": "Check the FmF and iOS App parameter values (Not found or Invalid)",
       "unknown_fmf_iosapp_picture": "Check the FmF, iOS App and Picture parameter values (Not found or Invalid)",
       "unknown_fmf_picture": "Check the FmFand Picture parameter values (Not found or Invalid)",
-      "unknown_iosapp": "Check the iOS App parameter value (Not found or Invalid)",
       "unknown_iosapp_picture": "Check the iOS App and Picture parameter values (Not found or Invalid)",
-      "unknown_picture": "Check the Picture parameter value (Not found or Invalid)",
 
       "tfz_selection_invalid": "The value must be a zone that is being tracked from",
       "time_factor_invalid_range": "The 'travel_time_factor' must be between .1 and .9",
@@ -170,7 +175,7 @@
           "data_source_icloud": "═════════════════════════════════════════════════════ ICLOUD ACCOUNT - Location data is provided by the Apple iCloud account",
           "username": "APPLE ID (USERNAME) - The email address used to sign in to the iCloud Account",
           "password": "PASSWORD - The iCloud Account Password",
-          "url_suffix_china": "CHINA USERS - Add '.cn' to use the Apple iCloud Web Servers located in China",
+          "url_suffix_china": "CHINA USERS - Use Apple iCloud Web Servers located in China (.cn URL suffix)",
           "data_source_iosapp": "═════════════════════════════════════════════════════ iOS APP - Location data is provided by the HA iOS App",
           "action_items":       "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
@@ -217,15 +222,18 @@
           "famshr_devicename": "FAMILY SHARING LIST DEVICE - Use location data from this iCloud Acct Family Sharing member",
           "fmf_email": "FIND-MY-FRIENDS DEVICE - Use location data from this FindMy device sharing their info with you",
           "iosapp_device": "IOS APP DEVICE_TRACKER ENTITY - Use this HA device location data & zone enter/exit triggers",
+          "log_zones": "LOG ACTIVITY FOR ZONES - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
           "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-          "track_from_base_zone": "PRIMARY HOME ZONE - Use another zone if you are away from Home for an extended period",
+          "track_from_base_zone": "TRACK FROM ZONE - Use this zone instead of the Home for tracking results",
           "picture": "PICTURE - Photo image of the person normally using this device (40x40 pixels is best size)",
           "inzone_interval": "INZONE INTERVAL",
+          "fixed_interval": "FIXED INTERVAL",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {
           "inzone_interval": "Time between location requests when in a zone",
-          "track_from_base_zone": "Normally, the Home zone is used as the base location for all tracking (travel time, distance, etc).  However, a different zone can be used as the base location if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.)"
+          "fixed_interval": "A fixed time between location requests when not in a zone. If set (>0), this value is used instead of the  calculating the interval using the distance from home.",
+          "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
         }
       },
       "delete_device": {
@@ -250,6 +258,21 @@
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         }
       },
+      "away_time_zone": {
+        "title": "Display Location Time Zone when Away",
+        "description": "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location. This screen lets you display time events using your current location's time zone.",
+        "data": {
+          "away_time_zone_1_devices": "Devices that will display time events based on this location time",
+          "away_time_zone_1_offset": "Current Location Time",
+          "away_time_zone_2_devices": "Devices that will display time events based on this location time",
+          "away_time_zone_2_offset": "Current Location Time",
+          "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
+        },
+        "data_description": {
+          "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
+          "time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
+        }
+      },
       "format_settings": {
         "title": "Format Settings",
         "description": "Tracking activity, results and information messages are displayed in the Event log, sensors and device_tracker entities for tracked and monitored devices. With this screen, you can specify the how these results should be displayed.",
@@ -259,8 +282,8 @@
           "device_tracker_state_source": "DEVICE TRACKER STATE VALUE - How the device's device_tracker entity state value is determined",
           "time_format": "TIME FORMAT - How time fields are displayed in sensors and in the Event Log",
           "unit_of_measurement": "UNIT OF MEASUREMENT - How distance fieldsare displayed in sensors and in the Event Log",
-          "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
-          "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS Latitude/Longitude/Accuracy (22.32771, -76.33073/±35m) or only the GPS accuracy (/±35m) in the Event Log",
+          "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
+          "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display GPS-(22.32771, -76.33073/±35m) instead of GPS-/±35m in the Event Log",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {
@@ -367,7 +390,7 @@
         }
       },
       "special_zones": {
-        "title": "Special Zones - Enter Zone Delay, Stationary Zone, Primay Home Base Zone",
+        "title": "Special Zones - Enter Zone Delay, Stat Zone, Track-from-Home Zone Override",
         "description": "This screen lets you configure an enter zone delay time, stationary zones and set up a temporary 'home' zone at another location",
         "data": {
           "passthru_zone_header": "═════════════════════════════════════════════════════ ENTER ZONE DELAY",
@@ -376,9 +399,9 @@
           "stat_zone_still_time": "NO MOVEMENT TIME ",
           "stat_zone_inzone_interval": "INZONE INTERVAL ",
           "stat_zone_fname":      "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
-          "track_from_zone_header": "═════════════════════════════════════════════════════ PRIMARY BASE ZONE = HOME",
-          "track_from_base_zone": "PRIMARY 'HOME' ZONE - Use another zone if you are away from Home for an extended period (Global Override)",
-          "track_from_home_zone": "ALSO TRACK FROM HOME ZONE - Continue to track from the Home zone when the Primary Home Zone is not Home",
+          "track_from_base_zone_used": "═════════════════════════════════════════════════════ PRIMARY TRACK-FROM-HOME ZONE OVERRIDE",
+          "track_from_base_zone": "TRACK FROM ZONE - Use this zone instead of Home for tracking results for all devices. Global setting",
+          "track_from_home_zone": "TRACK FROM HOME ZONE - Keep tracking from the Home zone when the Primary Track From Zone is not Home",
           "action_items":         "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {

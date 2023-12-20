@@ -40,8 +40,11 @@ from .const          import (DEVICENAME_IOSAPP, VERSION, NOT_SET, HOME_FNAME, HO
                             CONF_STAT_ZONE_BASE_LATITUDE, CONF_STAT_ZONE_BASE_LONGITUDE,
                             CONF_STAT_ZONE_INZONE_INTERVAL, CONF_LOG_LEVEL,
                             CONF_IOSAPP_REQUEST_LOC_MAX_CNT, CONF_DISTANCE_BETWEEN_DEVICES,
-                            CONF_PASSTHRU_ZONE_TIME, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
+                            CONF_PASSTHRU_ZONE_TIME,
+                            CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                             CONF_TFZ_TRACKING_MAX_DISTANCE,
+                            CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
+                            CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
 
                             CONF_STAT_ZONE_STILL_TIME,
                             CONF_STAT_ZONE_INZONE_INTERVAL,
@@ -72,8 +75,6 @@ class GlobalVariables(object):
     async_executor_call_parameters = None
 
     ha_location_info= {'country_code': 'us', 'use_metric': False}
-    # ha_country_code = 'us'
-    # ha_use_metric   = False
     country_code = 'us'
     use_metric   = False
 
@@ -81,6 +82,9 @@ class GlobalVariables(object):
     OptionsFlowHandler  = None   # config_flow OptionsFlowHandler
     ActionsFlow         = None
     ActionsOptionsFlow  = None
+    MobileApp_data      = {}     # mobile_app Integration data dict from hass.data['mobile_app']
+    MobileApp_devices   = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
+
 
     EvLog           = None
     EvLogSensor     = None
@@ -164,12 +168,13 @@ class GlobalVariables(object):
     restart_ha_flag                 = False     # HA needs to be restarted
     any_device_was_updated_reason   = ''
     startup_alerts                  = []
+    startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
+    debug_log                       = {}  # Log variable and dictionsry field/values to icloud3-0.log file
 
     stage_4_no_devices_found_cnt    = 0         # Retry count to connect to iCloud and retrieve FamShr devices
     reinitialize_icloud_devices_flag= False         # Set when no devices are tracked and iC3 needs to automatically restart
     reinitialize_icloud_devices_cnt = 0
     initial_icloud3_loading_flag    = False
-
 
     # Debug and trace flags
     log_debug_flag               = False
@@ -194,13 +199,16 @@ class GlobalVariables(object):
     startup_log_msgs_prefix   = ''
     iosapp_entities           = ''
     iosapp_notify_devicenames = ''
-
+    started_secs              = 0
 
     # Configuration parameters that can be changed in config_ic3.yaml
     um                     = DEFAULT_GENERAL_CONF[CONF_UNIT_OF_MEASUREMENT]
     time_format_12_hour    = True
     time_format_24_hour    = not time_format_12_hour
+    um_MI                  = True
+    um_KM                  = False
     um_km_mi_factor        = .62137
+    um_m_ft_factor         = 3.28084
     um_m_ft                = 'ft'
     um_kph_mph             = 'mph'
     um_time_strfmt         = '%I:%M:%S'
@@ -210,6 +218,12 @@ class GlobalVariables(object):
     # Time conversion variables used in global_utilities
     time_zone_offset_seconds    = 0
     timestamp_local_offset_secs = 0
+
+    # Away time zone offset used for displaying a devices time tracking sensors in the local time zone
+    away_time_zone_1_offset         = 0
+    away_time_zone_1_devices        = ['none']
+    away_time_zone_2_offset         = 0
+    away_time_zone_2_devices        = ['none']
 
     # Configuration parameters
     config_parm                     = {}        # Config parms from HA config.yaml and config_ic3.yaml
@@ -225,6 +239,7 @@ class GlobalVariables(object):
     conf_sensors      = {}
     conf_devicenames  = []
     conf_famshr_devicenames = []
+    conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter
     conf_famshr_device_cnt  = 0                   # Number of devices with FamShr tracking set up
     conf_fmf_device_cnt     = 0                   # Number of devices with FmF tracking set up
     conf_iosapp_device_cnt  = 0                   # Number of devices with iOS App  tracking set up
@@ -254,6 +269,7 @@ class GlobalVariables(object):
     old_location_adjustment         = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_ADJUSTMENT] * 60
     passthru_zone_interval_secs     = DEFAULT_GENERAL_CONF[CONF_PASSTHRU_ZONE_TIME] * 60
     is_passthru_zone_used           = (14400 > passthru_zone_interval_secs > 0)  # time > 0 and < 4 hrs
+    is_track_from_base_zone_used    = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_BASE_ZONE_USED]
     track_from_base_zone            = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_BASE_ZONE]
     track_from_home_zone            = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_HOME_ZONE]
     gps_accuracy_threshold          = DEFAULT_GENERAL_CONF[CONF_GPS_ACCURACY_THRESHOLD]

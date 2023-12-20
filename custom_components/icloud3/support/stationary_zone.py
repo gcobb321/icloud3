@@ -17,6 +17,7 @@ from ..helpers.common    import (isbetween, is_statzone, format_gps, )
 from ..helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
                                 log_debug_msg, log_exception, log_rawdata, _trace, _traceha, )
 from ..helpers.time_util import (secs_to_time, datetime_now, format_time_age, secs_since, )
+from ..helpers.dist_util import (format_dist_m, )
 from ..helpers           import entity_io
 
 
@@ -25,9 +26,14 @@ def move_device_into_statzone(Device):
     '''
     The timer has expired, move the statzone to the device's location and move the device
     into it
+
+    Return:
+        True  - StatZone was set up and Device moved into it
+        False - A new StatZone was not set up. The Device was close to another zone
+                or another error occurred.
     '''
-    if Device.old_loc_poor_gps_cnt > 0 or Gb.is_statzone_used is False:
-        return
+    if Device.old_loc_cnt > 0 or Gb.is_statzone_used is False:
+        return False
 
     latitude  = Device.loc_data_latitude
     longitude = Device.loc_data_longitude
@@ -41,9 +47,9 @@ def move_device_into_statzone(Device):
 
     if available_zones != []:
         _clear_statzone_timer_distance(Device)
-        return
+        return False
 
-    if _is_too_close_to_another_zone(Device): return
+    if _is_too_close_to_another_zone(Device): return False
     # ''' End of commented out code to test of moving device into a statzone while home
 
     # Cycle thru existing ic3 StatZones looking for one that can be recreated at a
@@ -149,18 +155,24 @@ def exit_statzone(Device):
 def kill_and_recreate_unuseable_statzone(Device):
     '''
     There are times when the iOSapp will exit a StatZone when it is still in it.
-    It exits and  the Devices distance is less than 100m, the iOSapp will not
+    It exits and the Devices distance is less than 100m, the iOSapp will not
     put the device back in it and seems to stop monitoring it. When this happens,
     create a new StatZone, move any devices in this one to the new one and delete
     it.
     '''
 
     StatZone = Device.StatZone
+    if StatZone is None: return
+
     exit_statzone(Device)
+    move_device_into_statzone(Device)
+
+    _StatZone = Device.StatZone
+    if _StatZone is None: return
+
     Devices_in_statzone = [_Device  for _Device in Gb.Devices
                                     if _Device.StatZone is StatZone]
 
-    _StatZone = move_device_into_statzone(Device)
     for _Device in Devices_in_statzone:
         _Device.StatZone = _StatZone
         event_msg =(f"Reassigned Stationary Zone > {StatZone.display_as}{RARROW}"
@@ -300,13 +312,17 @@ def _is_too_close_to_another_zone(Device):
                                     (Zone.radius_m + Gb.statzone_radius_m + 25 + \
                                     Device.loc_data_gps_accuracy))]
 
-    if CloseZones == []: return
+    if CloseZones == []: return False
 
-    if is_statzone(CloseZones[0].zone):
-        log_msg = f"{Device.devicename} > StatZone not created, too close to {CloseZones[0].display_as}"
+    CloseZone = CloseZones[0]
+    if is_statzone(CloseZone.zone):
+        log_msg = ( f"{Device.devicename} > StatZone not created, too close to "
+                    f"{CloseZone.display_as} "
+                    f"({format_dist_m(CloseZone.distance_m(Device.loc_data_latitude, Device.loc_data_longitude))})")
+        post_event(Device.devicename, log_msg)
         log_debug_msg(log_msg)
 
-        return True
+    return True
 #--------------------------------------------------------------------
 def _clear_statzone_timer_distance(Device, create_statzone_flag=False):
     Device.statzone_timer      = 0

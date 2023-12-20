@@ -12,7 +12,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, HOME_FNAME, TOWARDS,
-                                    HHMMSS_ZERO, HIGH_INTEGER, NONE, IOSAPP, DOT2,
+                                    HHMMSS_ZERO, HIGH_INTEGER, NONE, IOSAPP, DOT2, RED_X,
                                     EVLOG_TABLE_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVLOG_TABLE_MAX_CNT_ZONE, EVLOG_BTN_URLS,
                                     EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR,
@@ -24,7 +24,8 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
 
 from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str
 from ..helpers.messaging    import log_exception, log_info_msg, log_warning_msg, _traceha, _trace
-from ..helpers.time_util    import time_to_12hrtime, datetime_now, time_now_secs
+from ..helpers.time_util    import (time_to_12hrtime, datetime_now, time_now_secs,
+                                    adjust_time_hour_value, adjust_time_hour_values, )
 
 
 import time
@@ -74,7 +75,7 @@ class EventLog(object):
 
         self.devicename              = ''
         self.fname_selected          = ''
-        self.devicename_by_fnames    = {}
+        self.fnames_by_devicename    = {}
         self.clear_secs              = HIGH_INTEGER
         self.trk_monitors_flag       = False
         self.log_debug_flag          = False
@@ -83,7 +84,7 @@ class EventLog(object):
         self.last_refresh_devicename = ''
         self.user_message            = ''       # Display a message in the name0 button
         self.user_message_alert_flag = False    # Do not clear the message if this is True
-        self.alert_message           = ''
+        self.alert_message           = ''       # Message to display in green bar at the top of the  evl
         self.evlog_btn_urls          = EVLOG_BTN_URLS.copy()
 
         v2_v3_browser_refresh_msg ={"Browser Refresh Required":
@@ -129,7 +130,7 @@ class EventLog(object):
         self.devicename_cnts = {}
 
     def __repr__(self):
-        return (f"<EventLog: {self.devicename_by_fnames}>")
+        return (f"<EventLog: {self.fnames_by_devicename}>")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -145,28 +146,28 @@ class EventLog(object):
         try:
             self.devicename = ''
             self.fname_selected = ''
-            self.devicename_by_fnames = {}
+            self.fnames_by_devicename = {}
             self.evlog_table_max_cnt  = EVLOG_TABLE_MAX_CNT_BASE
 
-            self.devicename_by_fnames.update({devicename: Device.fname
+            self.fnames_by_devicename.update({devicename: self._format_evlog_device_fname(Device)
                             for devicename, Device in Gb.Devices_by_devicename_tracked.items()
                             if devicename != ''})
-            self.devicename_by_fnames.update({devicename: f"{Device.fname} {circle_letter('m')}"
+            self.fnames_by_devicename.update({devicename: self._format_evlog_device_fname(Device)
                             for devicename, Device in Gb.Devices_by_devicename_monitored.items()
                             if devicename != ''})
 
             tfz_cnt = sum([len(Device.FromZones_by_zone) for Device in Gb.Devices])
             self.evlog_table_max_cnt = EVLOG_TABLE_MAX_CNT_ZONE*tfz_cnt
 
-            if self.devicename_by_fnames == {}:
+            if self.fnames_by_devicename == {}:
                 self.user_message_alert_flag = True
                 self.evlog_attrs["user_message"] = 'No Devices have been configured'
-                self.devicename_by_fnames["nodevices"] = 'No Devices have been configured'
+                self.fnames_by_devicename["nodevices"] = 'No Devices have been configured'
                 self.fname_selected = "NoDevices"
 
             elif self.devicename == '':
-                self.devicename = next(iter(self.devicename_by_fnames))
-                self.fname_selected = self.devicename_by_fnames[self.devicename]
+                self.devicename = next(iter(self.fnames_by_devicename))
+                self.fname_selected = self.fnames_by_devicename[self.devicename]
 
             if Gb.evlog_version.startswith('3'):
                 self.evlog_attrs["name"] = ''
@@ -181,7 +182,7 @@ class EventLog(object):
             self.evlog_attrs["update_time"]    = "setup"
             self.evlog_attrs["devicename"]     = self.devicename
             self.evlog_attrs["fname"]          = self.fname_selected
-            self.evlog_attrs["fnames"]         = self.devicename_by_fnames
+            self.evlog_attrs["fnames"]         = self.fnames_by_devicename
             self.evlog_attrs["filtername"]     = 'Initialize'
 
             Gb.EvLogSensor.async_update_sensor()
@@ -190,6 +191,13 @@ class EventLog(object):
             log_exception(err)
 
         return
+
+#------------------------------------------------------
+    def _format_evlog_device_fname(self, Device):
+        # verified = Gb.evlog_alert_by_devicename.get(Device.devicename, '')
+        # verified = f"{RED_X} " if Device.verified_flag is False else ''
+        tracked  = '' if Device.is_tracked else f" {circle_letter('m')}"
+        return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}"
 
 #------------------------------------------------------
     def post_event(self, devicename, event_text='+'):
@@ -302,6 +310,11 @@ class EventLog(object):
             for from_text in self.display_text_as:
                 event_text = event_text.replace(from_text, self.display_text_as[from_text])
 
+            # if instr(event_text, ':'):
+            #     time_fields = extract_time_fields(event_text)
+            #     if time_fields != []:
+            #         event_text += f" -[{list_to_str(time_fields)}]"
+
             #Keep track of special colors so it will continue on the
             #next text chunk
             color_symbol = ''
@@ -402,9 +415,10 @@ class EventLog(object):
             else:
                 self.evlog_attrs['run_mode']   = 'Display'
                 self.evlog_attrs['devicename'] = self.devicename = devicename
-                self.evlog_attrs['fname']      = self.fname_selected = self.devicename_by_fnames[devicename]
+                self.evlog_attrs['fname']      = self.fname_selected = self.fnames_by_devicename[devicename]
 
             self.evlog_sensor_state_value = devicename
+
             self.evlog_attrs['logs'] = self._filtered_evlog_recds(devicename, max_recds)
 
             self.update_evlog_sensor()
@@ -587,13 +601,13 @@ class EventLog(object):
             # Go from end of table to front
             for x in range(evlog_table_recd_cnt-2, 2, -1):
                 elr_recd     = self.evlog_table[x]
-                el_recd_text = elr_recd[ELR_TEXT]
+                elr_text = elr_recd[ELR_TEXT]
 
                 # Delete monitor recds or 20% of regular device at end of tble
-                if (el_recd_text.startswith(EVLOG_MONITOR)
+                if (elr_text.startswith(EVLOG_MONITOR)
                         or delete_cnt < delete_device_recd_cnt):
                     delete_cnt += 1
-                    if el_recd_text.startswith(EVLOG_MONITOR):
+                    if elr_text.startswith(EVLOG_MONITOR):
                         delete_mon_cnt += 1
                     else:
                         delete_reg_cnt += 1
@@ -692,20 +706,10 @@ class EventLog(object):
 
         # Select devicename recds, keep time & test elements, drop devicename
         try:
-            devicename_recds = [el_recd for el_recd in self.evlog_table
-                                        if (el_recd[ELR_DEVICENAME] in el_devicename_check
-                                                and len(el_recd) == 3)]
-
-            if Gb.evlog_trk_monitors_flag:
-                return [el_recd[1:3] for el_recd in devicename_recds]
-
-            elif filter_record:
-                return [el_recd[1:3] for el_recd in devicename_recds
-                                                if (el_recd[ELR_TEXT].startswith(EVLOG_MONITOR) is False
-                                                    and self._filter_record(Device, el_recd[ELR_TEXT]))]
-            else:
-                return [el_recd[1:3] for el_recd in devicename_recds
-                                                if (el_recd[ELR_TEXT].startswith(EVLOG_MONITOR) is False)]
+            el_recds = [self._master_reformat_text(el_recd, Device)
+                                            for el_recd in self.evlog_table
+                                            if self._master_filter_recd(el_recd, devicename)]
+            return el_recds
 
         except IndexError:
             for el_recd in self.evlog_table:
@@ -719,56 +723,101 @@ class EventLog(object):
         return []
 
 #--------------------------------------------------------------------
-    @staticmethod
-    def _apply_gps_filter(el_recd):
-        '''
-        Filter the gps coordinates out of the record based on the config parameter
-        Convert 'GPS-(27.72683, -80.39055/±33m)' to 'GPS-/±33m'
-        '''
-        el_time, el_text = el_recd
-        if el_text.find('GPS-(') == -1:
-            return [el_time, el_text]
+    def _master_filter_recd(self, el_recd, devicename):
 
-        check_for_gps_flag = True
-        while check_for_gps_flag:
-            gps_s_pos = el_text.find('GPS-(') + 4
-            gps_acc_pos = el_text.find('/±', gps_s_pos)
-            gps_e_pos = el_text.find(')', gps_s_pos)
-            el_text = el_text[:gps_s_pos] + el_text[gps_acc_pos:gps_e_pos] + el_text[gps_e_pos+1:]
-            check_for_gps_flag = el_text.find('GPS-(') >= 0
-        return [el_time, el_text.replace('GPS-, ', '')]
+        # Drop recd if not startup or selected device or the recd has an error
 
-#--------------------------------------------------------------------
-    @staticmethod
-    def _filter_record(Device, el_recd_text):
-        '''
-        Filter icloud account records from events for a device when its primary
-        data source it's the ios app
+        if (el_recd[ELR_DEVICENAME] not in ['*', '**', 'nodevices', devicename]
+                or len(el_recd) != 3):
+            return False
 
-        Return True if the record should be displayed
-        '''
+        Device = Gb.Devices_by_devicename.get(devicename)
+        elr_devicename, elr_time, elr_text = el_recd
 
-        if el_recd_text.startswith('iCloud Acct'):
+        # Return all of the time/text items if 'Show Tracking Monitors' was selected in the EvLog
+        if Gb.evlog_trk_monitors_flag:
+            return True
+
+        # Drop Tracking Monitor recds or iCloud Authentication recds
+        if elr_text.startswith(EVLOG_MONITOR):
+            return False
+
+        if (elr_text.startswith('iCloud Acct')
+                and Device
+                and (Device.is_monitored or Device.primary_data_source == IOSAPP)):
             return False
 
         return True
 
 #--------------------------------------------------------------------
-    def _export_ic3_event_log_reformat_recds(self, devicename, el_records):
+    def _master_reformat_text(self, el_recd, Device):
+        '''
+        Reformat the text in the current recd if needed:
+            - Keep/Remove gps
+            - Keep/Reformat the time fields from the Home time zone to the Away time zone
+        '''
+        elr_time_text = el_recd[1:3]
+
+        if Gb.display_gps_lat_long_flag is False:
+            elr_time_text = self._apply_gps_filter(elr_time_text)
+        if Device:
+            elr_time_text = self._apply_home_to_away_time_zone_update(elr_time_text, Device.away_time_zone_offset)
+        return elr_time_text
+
+#--------------------------------------------------------------------
+    @staticmethod
+    def _apply_gps_filter(elr_time_text):
+        '''
+        Filter the gps coordinates out of the record based on the config parameter
+        Convert 'GPS-(27.72683, -80.39055/±33m)' to 'GPS-/±33m'
+        '''
+        elr_time, elr_text = elr_time_text
+        if elr_text.find('GPS-(') == -1:  return elr_time_text
+
+        check_for_gps_flag = True
+        while check_for_gps_flag:
+            gps_s_pos = elr_text.find('GPS-(') + 4
+            gps_acc_pos = elr_text.find('/±', gps_s_pos)
+            gps_e_pos = elr_text.find(')', gps_s_pos)
+            elr_text = elr_text[:gps_s_pos] + elr_text[gps_acc_pos:gps_e_pos] + elr_text[gps_e_pos+1:]
+            check_for_gps_flag = elr_text.find('GPS-(') >= 0
+
+        return [elr_time, elr_text.replace('GPS-, ', '')]
+
+#--------------------------------------------------------------------
+    @staticmethod
+    def _apply_home_to_away_time_zone_update(elr_time_text, away_time_zone_offset):
+        '''
+        Change the Home zone time in the elr_text to the Away Zone time if needed
+
+        Return [elr_time, elr_text]
+        '''
+
+        if away_time_zone_offset == 0: return elr_time_text
+
+        elr_time, elr_text = elr_time_text
+        elr_time = adjust_time_hour_value(elr_time, away_time_zone_offset)
+        if instr(elr_text, (':')):
+            elr_text = adjust_time_hour_values(elr_text, away_time_zone_offset)
+
+        return [elr_time, elr_text]
+
+#--------------------------------------------------------------------
+    def _export_ic3_event_log_reformat_recds(self, devicename, el_recds):
 
         try:
-            if el_records is None:
+            if el_recds is None:
                 return ''
 
             record_str = ''
             inside_home_det_interval_flag = False
-            el_records.reverse()
-            for record in el_records:
+            el_recds.reverse()
+            for record in el_recds:
                 devicename = record[ELR_DEVICENAME]
                 time       = record[ELR_TIME] if record[ELR_TIME] not in ['Debug', 'Rawdata'] else ''
                 text       = record[ELR_TEXT]
 
-                # Time-record = {iosapp_state},{ic3_zone},{interval},{travel_time},{distance
+                # Time-record = {iosapp_state},{ic3_zone},{interval},{travelr_time},{distance
                 if text.startswith(EVLOG_UPDATE_START):
                     block_char = '\t\t\t┌─ '
                     inside_home_det_interval_flag = True

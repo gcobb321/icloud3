@@ -271,7 +271,7 @@ def check_all_devices_online_status():
             if Device.offline_secs == 0:
                 Device.offline_secs = Gb.this_update_secs
             event_msg = (   f"Device Offline and not available > "
-                            f"OfflineSince-{secs_to_time_age_str(Device.offlineg_secs)}")
+                            f"OfflineSince-{secs_to_time_age_str(Device.offline_secs)}")
             post_event(Device.devicename, event_msg)
 
         elif Device.is_pending:

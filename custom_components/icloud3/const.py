@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.rc8'
+VERSION                         = '3.0.rc9'
 
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -192,10 +192,14 @@ WAZE_NO_DATA      = 4
 # Interval range table used for setting the interval based on a retry count
 # The key is starting retry count range, the value is the interval (in minutes)
 # poor_location_gps cnt, icloud_authentication cnt (default)
-OLD_LOC_POOR_GPS_CNT   = 1.1
+OLD_LOCATION_CNT       = 1.1
 AUTH_ERROR_CNT         = 1.2
-RETRY_INTERVAL_RANGE_1 = {0:.25, 4:1, 8:5, 12:30, 16:60, 20:60}
-# RETRY_INTERVAL_RANGE_1 = {0:.25, 4:1, 8:5, 12:30, 16:60, 20:120, 22:240, 24:240}
+# RETRY_INTERVAL_RANGE_1 = 15s*4=1m, 4*1m=4m=5m, 4*5m=20m=25m, 4*30m=2h=2.5h, 4*1h=4h=6.5h
+
+# RETRY_INTERVAL_RANGE_1 = 30s*4=2m, 4*1.5m=6m=8m, 4*15m=1h=1h8m, 4*30m=2h=3h8m, 4*1h=4h=6.5h
+# RETRY_INTERVAL_RANGE_1 = {0:.25, 4:1, 8:5, 12:30, 16:60, 20:60}
+# RETRY_INTERVAL_RANGE_1 = 15s*5=1.25m, 5*1m=5m=6m, 5*5m=25m=30m, 5*30m=2.5h=3, 4*1h=4h=6h25h
+RETRY_INTERVAL_RANGE_1 = {0:.25, 5:1, 10:5, 15:15, 20:30, 25:60}
 IOSAPP_REQUEST_LOC_CNT = 2.1
 RETRY_INTERVAL_RANGE_2 = {0:.5, 4:2, 8:30, 12:60, 16:60}
 # RETRY_INTERVAL_RANGE_2 = {0:.5, 4:2, 8:30, 12:60, 14:120, 16:180, 18:240, 20:240}
@@ -244,7 +248,8 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 '''
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
-Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒❌⊘Ɵ⊗ⓧⓍ⛒🜔
+Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒⊘Ɵ⊗ⓧⓍ⛒🜔
+Important = ❗❌⚠️❓🛑⛔⚡⭐⭕
   — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●▐‖  ▹▻▷◁◅◃▶➤➜➔❰❰❱❱ ⠤
  ⣇⠈⠉⠋⠛⠟⠿⡿⣿       https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 '''
@@ -257,6 +262,7 @@ NBSP6             = '⠿' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 CRLF              = '⣇' #'<br>'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
+YELLOW_ALERT      = '⚠️'
 SMALL_X           = '× '
 CIRCLE_STAR       = '✪ '
 CIRCLE_STAR2      = '✪'
@@ -286,6 +292,7 @@ CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
 CRLF_SP3_HDOT     = f'{CRLF}{NBSP3}◦{NBSP}'
 CRLF_SP3_STAR     = f'{CRLF}{NBSP3}✪{NBSP}'
 CRLF_INDENT       = f'{CRLF}{NBSP6}{NBSP6}'
+CRLF_DASH_75      = f'{CRLF}{"-"*75}'
 
 NEAR_DEVICE_USEABLE_SYM = '✓'
 BLANK_SENSOR_FIELD = '———'
@@ -496,6 +503,8 @@ AGE                        = 'age'
 BATTERY_SOURCE             = 'battery_data_source'
 BATTERY_LEVEL              = 'battery_level'
 BATTERY_UPDATE_TIME        = 'battery_level_updated'
+BATTERY_FAMSHR             = 'battery_last_famshr_data'
+BATTERY_IOSAPP             = 'battery_last_iosapp_data'
 WAZE_METHOD                = 'waze_method'
 MAX_DISTANCE               = 'max_distance'
 
@@ -656,11 +665,14 @@ CONF_IOSAPP_DEVICE              = 'iosapp_device'
 CONF_IOSAPP_DEVICE2             = 'iosapp_device2'
 CONF_PICTURE                    = 'picture'
 CONF_TRACKING_MODE              = 'tracking_mode'
-CONF_TRACK_FROM_BASE_ZONE       = 'track_from_base_zone'          # Primary Zone a device is tracking from, normally Home
+CONF_TRACK_FROM_BASE_ZONE_USED  = 'track_from_base_zone_used'   # Primary Zone a device is tracking from, normally Home
+CONF_TRACK_FROM_BASE_ZONE       = 'track_from_base_zone'        # Primary Zone a device is tracking from, normally Home
 CONF_TRACK_FROM_HOME_ZONE       = 'track_from_home_zone'
 CONF_TRACK_FROM_ZONES           = 'track_from_zones'            # All zones the device is tracking from
+CONF_LOG_ZONES                  = 'log_zones'                   # Log zone activity to 'icloud3-zone-log_[year]_[device]_[zone].csv' file
 CONF_DEVICE_TYPE                = 'device_type'
 CONF_INZONE_INTERVAL            = 'inzone_interval'
+CONF_FIXED_INTERVAL             = 'fixed_interval'
 CONF_UNIQUE_ID                  = 'unique_id'
 CONF_EVLOG_DISPLAY_ORDER        = 'evlog_display_order'
 CONF_STAT_ZONE_FNAME            = 'stat_zone_fname'
@@ -670,6 +682,12 @@ CONF_COMMAND                    = 'command'
 CONF_NAME                       = 'name'
 CONF_IOSAPP_REQUEST_LOC_MAX_CNT = 'iosapp_request_loc_max_cnt'
 CONF_INTERVAL                   = 'interval'
+
+# Local Time Zone
+CONF_AWAY_TIME_ZONE_1_OFFSET    = 'away_time_zone_1_offset'
+CONF_AWAY_TIME_ZONE_1_DEVICES   = 'away_time_zone_1_devices'
+CONF_AWAY_TIME_ZONE_2_OFFSET    = 'away_time_zone_2_offset'
+CONF_AWAY_TIME_ZONE_2_DEVICES   = 'away_time_zone_2_devices'
 
 CONF_SENSORS_MONITORED_DEVICES = 'monitored_devices'
 
@@ -780,6 +798,7 @@ DEFAULT_DEVICE_CONF = {
         CONF_UNIQUE_ID: '',
         CONF_DEVICE_TYPE: 'iPhone',
         CONF_INZONE_INTERVAL: 120,
+        CONF_FIXED_INTERVAL: 0,
         CONF_TRACKING_MODE: TRACK_DEVICE,
         CONF_FAMSHR_DEVICENAME: 'None',
         CONF_FAMSHR_DEVICE_ID: '',
@@ -791,10 +810,12 @@ DEFAULT_DEVICE_CONF = {
         CONF_IOSAPP_DEVICE: 'None',
         CONF_TRACK_FROM_BASE_ZONE: HOME,
         CONF_TRACK_FROM_ZONES: [HOME],
+        CONF_LOG_ZONES: ['none'],
 }
 
 RANGE_DEVICE_CONF = {
         CONF_INZONE_INTERVAL: [5, 240],
+        CONF_FIXED_INTERVAL: [0, 240],
 }
 
 # Used in conf_flow to reinialize the Configuration Devices
@@ -826,6 +847,7 @@ DEFAULT_GENERAL_CONF = {
         CONF_TRAVEL_TIME_FACTOR: .6,
         CONF_TFZ_TRACKING_MAX_DISTANCE: 8,
         CONF_PASSTHRU_ZONE_TIME: .5,
+        CONF_TRACK_FROM_BASE_ZONE_USED: True,
         CONF_TRACK_FROM_BASE_ZONE: HOME,
         CONF_TRACK_FROM_HOME_ZONE: True,
 
@@ -860,6 +882,11 @@ DEFAULT_GENERAL_CONF = {
         CONF_STAT_ZONE_BASE_LONGITUDE: 0,
 
         CONF_DISPLAY_TEXT_AS: ['#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#10'],
+
+        CONF_AWAY_TIME_ZONE_1_OFFSET: 0,
+        CONF_AWAY_TIME_ZONE_1_DEVICES: ['none'],
+        CONF_AWAY_TIME_ZONE_2_OFFSET: 0,
+        CONF_AWAY_TIME_ZONE_2_DEVICES: ['none'],
 }
 
 RANGE_GENERAL_CONF = {
@@ -959,6 +986,7 @@ CF_DEFAULT_IC3_CONF_FILE = {
 
 CONF_PARAMETER_TIME_STR = [
         CONF_INZONE_INTERVAL,
+        CONF_FIXED_INTERVAL,
         CONF_MAX_INTERVAL,
         CONF_OFFLINE_INTERVAL,
         CONF_EXIT_ZONE_INTERVAL,

@@ -1,3 +1,44 @@
+rc9
+..............................
+1. Stationary Zone
+    - Fixed a bug restarting iCloud3 when reinitializing the zones and a Stationary Zone already existed. Some of the zones were not reloaded and the Stage 2 Zone setup process would end.
+    - All Stationary Zone information persists over iCloud3 restarts and devices that were in the Stationary Zones will be moved back into it.
+    - Unused Stationary Zones will be  checked and deleted every hour
+    - A nearby device results will not be used if the device's stationary zone timer has expired
+2. The iOSApp Location Time was not being saved correctly when it processed an update handling the Initial Location  triggers when starting iCloud3.
+3. Bug fix - Devices that were paired with a Watch that was not being tracked were displaying a message in the Event Log that they were paired with themselves.
+4. Battery - Fixed a problem so the battery sensor would only be updated when the battery level or status changed. It was updating when the information hadn't changed which was causing excessive and unnecessary HA battery sensor state changes.
+5. Near zone (home) old location update retries - When approaching Home, the location request time was small (15-secs) and old location info was being returned from iCloud, the old location threshold was set to 15-secs to try to get a good location.  This sometimes resulted in the location always being old even when it was good enough to be used. Now, the small interval will only be used for 4 Location requests.  The old location threshold of 2-3 minutes will  then be used.
+6. Waze History Database - Removed some maintenance activities being done when iCloud3 starts that was delaying the startup process by almost 2-minutes for a database with 10,000+ entries. This is now done at midnight.
+7: Event Log - The Event Log items are displayed a lot faster after selecting a different device or refreshing the screen.
+8. HA Area - iCloud3 was assigning or reassigning the tracked and monitored devices to the 'Personal Device' area when starting. This will now only be done when the devices is added or changed from Inactive to Tracked. You can now change or delete the device's HA Area and it will not be reassigned.
+9. Battery Attributes - Add the last battery data for famshr and iosapp to the sensor.battery attribute list (45@11:10:55a, not charging).
+10. Family Sharing Device list analysis during iCloud3 startup
+    1. The configuration FamShr device name will be updated if it's name was updated on the device Settings > General > About screen on the device.
+    2. If a device's name is followed by a suffix (Gary-iPhone(2)), it usually means that the device has been upgraded and the old device was not removed from the Family Sharing list or the FindMy > Devices list. This can lead to confusion where an old device is being tracked if the iCloud3 configuration was not updated. If there is more than one device with the same 'base name' (Gary-iPad), an Alert message is displayed in the Event Log showing all devices with that name and the last time that device was located. The configuration is changed to the device most recently located and an alert symbol is displayed by the device's name on the Event Log. It will continue to be displayed until the duplicate devices have been removed from the FindMy > Devices and Family Sharing List.
+11. Bug Fix - The 'moved_since_last_update_km' variable was removed in error in rc4 and may cause a device to not be tracked properly.
+12. Old Location Error Handling - Changed the handling of old location errors from being controlled by the number of errors to using the location's age.
+    1. Interval will go from 15-sec to 30-sec, 1-min, 5-min, 10-min, and 15-min for 4-times at each interval. Before, the max interval was 1-hour. If the device came back online and the iOSApp was not used, it would not be tracked since it was paused.
+    2. When the device's location reaches 2-hours, the device tracking control data is reset and it will start over at 15-sec. Before, the device would be paused and a message was sent to the device.
+13. iOS App Disabled device_tracker and sensor entities - Disabled entities are not identified during startup and the appropriate warning message are displayed in the Event Log and as HA Errors. A Warning symbol is displayed next to the device's name in the Event Log.
+
+NEW FEATURE
+1. DISPLAYING TIMES WHEN IN ANOTHER TIME ZONE (AWAY FROM ZONE) - "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location. This feature lets you display time events on the Event Log, Sensors, Sensor Attributes and the Device_Tracker Attribures using your Away location's time zone.
+
+This is useful if you are away for a holiday or business trip to a location in another time zone. For example, you may create a temporary zone for a house you rented, set that zone up as a 'track from' zone on the device's update screen and then all time based tracking events (arrival time, location time, etc) will show your local time instead of your Home time zone time.
+
+The Away Time Zone screen has been added to the Configure Settings, Menu Page 1. On this screen, you can configure the devices that should display the time based entities in the Away Time Zone and the Away Time Zone's time. Two configuration fields are provided if you have several devices that are away and they are in different time zones.
+
+2. ZONE ACTIVITY LOG - When a device exits a zone, the zone information (Enter Time, Exit Time, Time in the Zone (minutes & hours), zone name and device_name) can be written to a spreadsheet .csv file. This file can be imported into a spreadsheet (Excel, etc) and used for travel expense reporting, monitoring when a device entered and exited a zone, who entered a zone, etc. The zones and file name format is specified for each device you want to monitor. You can monitor multiple zones for one or more devices.
+
+The file name format is:
+    - 'zone_log-[year]-[zone]' to store the data by a specific zone for multiple devices. For example, you can keep records for Gary and Lillian in the Warehouse zone file.
+    - 'zone_log-[year]-[device]' to store the data for a specific device for multiple zones. For example, you can keep records for Gary when he goes to the Warehouse and Storage Facility zones.
+    - 'zone_log-[year]-[zone]-[device]' and 'zone_log-[year]-[device]-[zone]' to store the data for more than one device and more than one zone in the same file.  For example, you can keep records for Gary when he goes to the Warehouse zone in one file and Storage Facility zone in aqnother file. The two filename formats allow you to sort the spreadsheet file by device or by zone.
+
+3. FIXED INTERVAL - A device can now be set to used a fixed interval between location requests instead of calculating the interval using the distance from Home. The device will still go into Stationary Zones if it has not moved for a while and will then use the Stationary Zone Interval. This is set up on the Configure Settings > Update Devices screen for each device.
+
+
 rc8 - 10/25/2023
 ...............................
 1. Configure Settings - Made the following changes:
@@ -10,7 +51,7 @@ rc8 - 10/25/2023
 rc7.1/rc7.1.1 - 10/15/2023
 ...............................
 1. Zone-Device Count bug fix - Fixed a bug where the device counts were not being displayed correctly.
-2. Exit Zone for Devices without the iOSApp (Watch) - When a Device exits a zone, all other devices that were in the same zone that do not have the iOS App installed will be updated immediately. They were being updated when their next update timer was reached. Hopefully, this will make Watch zone exit updates to be done when they happen.
+2. Exit Zone for Devices without the iOSApp (Watch) - When a Device exits a zone, all other devices that were in the same zone that do not have the iOS App installed will be updated immediately. They were being updated when their next update tim. Previously, it would update er was reached. Hopefully, this will make Watch zone exit updates to be done when they happen.
 3. Apple account password - When iCloud3 starts, the password is checked to see if it is encoded in the configuration parameter file. If it is not and it should be, it will be encoded and the configuration file will be updated. Previously, there were times when the file was not being updated.
 4. iCloud Account username/password changes - When the username/password is changed, the Apple account is logged into. If you select 'Save' the configuration file is updated. If you select 'Return', the updated username/password is not saved and the menu is displayed. This can lead to login problems the next time iCloud3 starts if you really wanted to save them but didn't. An additional Confirmation Screen is now displayed that lets you save them or not save them.
 

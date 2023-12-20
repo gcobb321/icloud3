@@ -1,10 +1,8 @@
 
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (NOTIFY,
-                                    EVLOG_NOTICE,
-                                    CRLF_DOT,
-                                    )
+from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE,
+                                    CRLF_DOT, CRLF, NBSP6,RED_X, YELLOW_ALERT, )
 from ..helpers.common       import (instr, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_alert,
                                     log_info_msg, log_exception, log_rawdata, _trace, _traceha, )
@@ -52,12 +50,6 @@ def get_entity_registry_mobile_app_devices():
                                         if x['platform'] == 'mobile_app']
             dev_trkr_entities = [x for x in mobile_app_entities
                                     if x['entity_id'].startswith('device_tracker')]
-            last_updt_trigger_sensors = [x for x in mobile_app_entities
-                                    if x['unique_id'].endswith('_last_update_trigger')]
-            battery_level_sensors = [x for x in mobile_app_entities
-                                    if x['unique_id'].endswith('_battery_level')]
-            battery_state_sensors = [x for x in mobile_app_entities
-                                    if x['unique_id'].endswith('_battery_state')]
 
             for dev_trkr_entity in dev_trkr_entities:
                 if 'device_id' not in dev_trkr_entity: continue
@@ -90,7 +82,9 @@ def get_entity_registry_mobile_app_devices():
                     log_exception(err)
                     pass
 
-                disisabled_prefix = '' if dev_trkr_entity['disabled_by'] is None else 'DISABLED'
+                disisabled_prefix = ''  if dev_trkr_entity['disabled_by'] is None \
+                                        else f"{RED_X}DISABLED{CRLF}{NBSP6}{NBSP6}{NBSP6}"
+
                 iosapp_id_by_iosapp_devicename[iosapp_devicename]            = f"{disisabled_prefix}{dev_trkr_entity['device_id']}"
                 iosapp_devicename_by_iosapp_id[dev_trkr_entity['device_id']] = iosapp_devicename
 
@@ -98,17 +92,25 @@ def get_entity_registry_mobile_app_devices():
                 device_info_by_iosapp_devicename[iosapp_devicename]       = f"{iosapp_fname} ({raw_model})"
                 device_model_info_by_iosapp_devicename[iosapp_devicename] = [raw_model,'','']    # iPhone15,2;iPhone;iPhone 14 Pro
 
-            for sensor in last_updt_trigger_sensors:
-                if iosapp_devicename := iosapp_devicename_by_iosapp_id.get(sensor['device_id']):
-                    last_updt_trig_by_iosapp_devicename[iosapp_devicename] = sensor['entity_id'].replace('sensor.', '')
+        last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities, '_last_update_trigger')
+        battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_level')
+        battery_state_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_state')
 
-            for sensor in battery_level_sensors:
-                if iosapp_devicename := iosapp_devicename_by_iosapp_id.get(sensor['device_id']):
-                    battery_level_sensors_by_iosapp_devicename[iosapp_devicename] = sensor['entity_id'].replace('sensor.', '')
+        last_updt_trig_by_iosapp_devicename = _extract_sensor_entities(
+                                    iosapp_devicename_by_iosapp_id, last_updt_trigger_sensors)
+        battery_level_sensors_by_iosapp_devicename = _extract_sensor_entities(
+                                    iosapp_devicename_by_iosapp_id, battery_level_sensors)
+        battery_state_sensors_by_iosapp_devicename = _extract_sensor_entities(
+                                    iosapp_devicename_by_iosapp_id, battery_state_sensors)
 
-            for sensor in battery_state_sensors:
-                if iosapp_devicename := iosapp_devicename_by_iosapp_id.get(sensor['device_id']):
-                    battery_state_sensors_by_iosapp_devicename[iosapp_devicename] = sensor['entity_id'].replace('sensor.', '')
+        # Gb.debug_log['_.last_updt_trigger_sensors'] = last_updt_trigger_sensors
+        # Gb.debug_log['_.battery_level_sensors'] = battery_level_sensors
+
+        Gb.debug_log['_.iosapp_id_by_iosapp_devicename'] = iosapp_id_by_iosapp_devicename
+        Gb.debug_log['_.iosapp_devicename_by_iosapp_id'] = iosapp_devicename_by_iosapp_id
+        Gb.debug_log['_.last_updt_trig_by_iosapp_devicename'] = last_updt_trig_by_iosapp_devicename
+        Gb.debug_log['_.battery_level_sensors_by_iosapp_devicename'] = battery_level_sensors_by_iosapp_devicename
+        Gb.debug_log['_.battery_state_sensors_by_iosapp_devicename'] = battery_state_sensors_by_iosapp_devicename
 
     except Exception as err:
         log_exception(err)
@@ -121,6 +123,42 @@ def get_entity_registry_mobile_app_devices():
             mobile_app_notify_devicename,
             battery_level_sensors_by_iosapp_devicename,
             battery_state_sensors_by_iosapp_devicename]
+
+#-----------------------------------------------------------------------------------------------------
+def _extract_mobile_app_entities(mobile_app_entities, entity_name):
+    '''
+    Extract mobile_app entities fields (dictionary) for the specific type
+    of entity (_last_update_trigger, _battery_state
+
+    Return - A list of the mobile_app entities
+    '''
+    return [x   for x in mobile_app_entities
+                if instr(x['unique_id'], entity_name)]
+
+#-----------------------------------------------------------------------------------------------------
+def _extract_sensor_entities(iosapp_devicename_by_iosapp_id, sensor_entities):
+    '''
+    Match the mobile_app sensors entities with the devices they belong to.
+    Example: {'gary_iphone_app': 'gary_iphone_app_last_update_trigger',
+                'gary_ipad_2': 'gary_ipad_last_update_trigger'}}
+
+    Return - A dictionary of the sensor entity for the specific iosapp device
+
+    Return - A list of the mobile_app entities
+    '''
+    return  {iosapp_devicename_by_iosapp_id[sensor['device_id']]: _entity_name_disabled_by(sensor)
+                                                    for sensor in sensor_entities
+                                                    if sensor['device_id'] in iosapp_devicename_by_iosapp_id}
+
+#-----------------------------------------------------------------------------------------------------
+def _entity_name(entity_id):
+    return entity_id.replace('sensor.', '')
+
+def _entity_name_disabled_by(sensor):
+    disisabled_prefix = ''   if sensor['disabled_by'] is None \
+                             else f"{RED_X}DISABLED SENSOR{CRLF}{NBSP6}{NBSP6}{NBSP6}"
+
+    return f"{disisabled_prefix}{sensor['entity_id'].replace('sensor.', '')}"
 
 #-----------------------------------------------------------------------------------------------------
 def get_mobile_app_notify_devicenames():
@@ -164,7 +202,7 @@ def send_message_to_device(Device, service_data):
                 "Trigger was not received"}}
     '''
     try:
-        if Device.iosapp_entity[NOTIFY] == '':
+        if Device.iosapp[NOTIFY] == '':
             return
 
 
@@ -173,14 +211,14 @@ def send_message_to_device(Device, service_data):
                         f"Message-{service_data.get('message')}")
             post_event(Device.devicename, evlog_msg)
 
-        Gb.hass.services.call("notify", Device.iosapp_entity[NOTIFY], service_data)
+        Gb.hass.services.call("notify", Device.iosapp[NOTIFY], service_data)
 
         return True
 
     except Exception as err:
         log_exception(err)
         event_msg =(f"iCloud3 Error > An error occurred sending a message to device "
-                    f"{Device.iosapp_entity[NOTIFY]} via the Notify service. "
+                    f"{Device.iosapp[NOTIFY]} via the Notify service. "
                     f"{CRLF_DOT}Message-{str(service_data)}")
         if instr(err, "notify/none"):
             event_msg += (f"{CRLF_DOT}The devicename can not be found")
@@ -230,18 +268,16 @@ def request_location(Device, is_alive_check=False, force_request=False):
                         f"LastContact-{secs_to_time_age_str(Device.iosapp_data_secs)}")
 
             if Device.iosapp_request_loc_last_secs > 0:
-                event_msg +=  f", LastRequest-{secs_to_time(Device.iosapp_request_loc_last_secs)}"
+                event_msg +=  f", LastRequest-{secs_to_time_age_str(Device.iosapp_request_loc_last_secs)}"
         else:
             event_msg =(f"iOSApp Location Requested > "
                         f"LastLocated-{secs_to_time_age_str(Device.iosapp_data_secs)}")
-            if Device.old_loc_poor_gps_cnt > 2:
+            if Device.old_loc_cnt > 2:
                 event_msg += f", OldThreshold-{secs_to_time_str(Device.old_loc_threshold_secs)}"
         post_event(devicename, event_msg)
 
         if Device.iosapp_request_loc_first_secs == 0:
             Device.iosapp_request_loc_first_secs = Gb.this_update_secs
-        Device.iosapp_request_loc_last_secs = Gb.this_update_secs
-        Device.iosapp_request_loc_sent_secs = Gb.this_update_secs
         message = {"message": "request_location_update"}
         return_code = send_message_to_device(Device, message)
 
@@ -249,8 +285,13 @@ def request_location(Device, is_alive_check=False, force_request=False):
         #    Gb.hass.services.async_call('notify',  entity_id, service_data))
 
         if return_code:
+            Device.iosapp_request_loc_last_secs = Gb.this_update_secs
+            Device.iosapp_request_loc_sent_secs = Gb.this_update_secs
+            Device.write_ha_sensor_state(NEXT_UPDATE, 'LOC RQSTD')
             Device.display_info_msg(event_msg)
         else:
+            Device.iosapp_request_loc_last_secs = 0
+            Device.iosapp_request_loc_sent_secs = 0
             event_msg = f"{EVLOG_NOTICE}{event_msg} > Failed to send message"
             post_event(devicename, event_msg)
 

@@ -99,13 +99,42 @@ def get_last_changed_time(entity_id):
     """
 
     try:
-        changed_time  = Gb.hass.states.get(entity_id).last_changed
+        if entity_id == '':
+            return 0
 
-        timestamp_utc = str(changed_time).split(".")[0]
-        time_secs     = datetime_to_secs(timestamp_utc, UTC_TIME)
+        States = Gb.hass.states.get(entity_id)
+        if States is None:
+            return 0
+
+        # try:
+        #     if entity_id.endswith('trigger'):
+        #         trig_states = {k:v for k,v in States.__dict__.items()
+        #             if k in ['state','attributes','last_changed','last_updated']}
+
+        #         _traceha(f"{trig_states}")
+        # except:
+        #     pass
+
+        last_changed  = States.last_changed
+        last_updated  = States.last_updated
+
+        timestamp_utc = str(last_changed).split(".")[0]
+        time_secs_old = datetime_to_secs(timestamp_utc, UTC_TIME)
+
+        if lc := last_changed.timestamp():
+            time_secs = int(lc)
+        elif lu := last_updated.timestamp():
+            time_secs = int(lu)
+        else:
+            time_secs = 0
+
+        if time_secs != time_secs_old:
+            _trace(f"{time_secs=} {time_secs_old=}")
 
     except Exception as err:
-        time_secs = HIGH_INTEGER
+        log_exception(err)
+        time_secs = 0
+
 
     return time_secs
 

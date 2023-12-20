@@ -17,7 +17,7 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     post_event, post_error_msg, log_error_msg, post_startup_alert,
                                     post_monitor_msg, post_internal_error,
                                     log_debug_msg, log_info_msg, log_exception, log_rawdata,
-                                    _trace, _traceha, )
+                                    _trace, _traceha, more_info, write_debug_log,  write_config_file_to_ic3_log, )
 from ..helpers.time_util    import (time_now_secs, calculate_time_zone_offset, )
 
 import homeassistant.util.dt as dt_util
@@ -54,6 +54,7 @@ def stage_1_setup_variables():
             # Gb.EvLog.update_event_log_display("")
             # start_ic3.reinitialize_config_parameters()
             config_file.load_storage_icloud3_configuration_file()
+            write_config_file_to_ic3_log()
             start_ic3.initialize_global_variables()
             start_ic3.set_global_variables_from_conf_parameters()
             start_ic3.set_zone_display_as()
@@ -122,12 +123,7 @@ def stage_2_prepare_configuration():
         if configuration_needed_msg:
             post_startup_alert('iCloud3 Integration not set up')
             event_msg =(f"{EVLOG_ALERT}CONFIGURATION ALERT > {configuration_needed_msg}{CRLF}"
-                        f"{CRLF}1. Select {SETTINGS_INTEGRATIONS_MSG}"
-                        f"{CRLF}2. Select `+Add Integration` to add the iCloud3 integration if it is not dislayed. Then search "
-                        f"for `iCloud3`, select it and complete the installation."
-                        f"{CRLF}3. Select {INTEGRATIONS_IC3_CONFIG_MSG} to open the iCloud3 Configuration Wizard"
-                        f"{CRLF}4. Review and setup the `iCloud Account` and `iCloud3 Devices` configuration windows "
-                        f"{CRLF}5. Exit the configurator and `Restart iCloud3`")
+                        f"{more_info('add_icloud3_integration')}")
             post_event(event_msg)
 
             Gb.EvLog.update_event_log_display("")
@@ -135,6 +131,7 @@ def stage_2_prepare_configuration():
     except Exception as err:
         log_exception(err)
 
+    write_debug_log(stage_title)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def stage_3_setup_configured_devices():
@@ -162,6 +159,8 @@ def stage_3_setup_configured_devices():
 
     except Exception as err:
         log_exception(err)
+
+    write_debug_log(stage_title)
 
     post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.update_event_log_display("")
@@ -221,6 +220,8 @@ def stage_4_setup_data_sources(retry=False):
         log_exception(err)
         return_code = False
 
+    write_debug_log(stage_title)
+
     post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}{retry_msg}")
     Gb.EvLog.update_event_log_display("")
 
@@ -241,25 +242,19 @@ def _are_all_devices_verified(retry=False):
     '''
 
     # Get a list of all tracked devices that have not been set p by icloud or the ios app
-    unverified_devices = [devicename for devicename, Device in Gb.Devices_by_devicename_tracked.items() \
-                                        if Device.verified_flag is False and Device.is_tracked]
+    unverified_devices = [devicename
+                            for devicename, Device in Gb.Devices_by_devicename.items()
+                            if Device.verified_flag is False]
 
-    # Remove the unverified devices that have a famshr/fmf id but that data source is not being used
-    not_tracked_devices = [devicename for devicename, Device in Gb.Devices_by_devicename_tracked.items() \
-                                        if (devicename in unverified_devices \
-                                            and ((Device.device_id_famshr and Gb.conf_data_source_FAMSHR) \
-                                            or (Device.device_id_fmf and Gb.conf_data_source_FMF)))]
-    if unverified_devices == [] or not_tracked_devices == []:
+    if unverified_devices == []:
         return True
 
     if retry:
         post_startup_alert('Some devices could not be verified. Restart iCloud3')
         event_msg = (f"{EVLOG_ALERT}Some devices could not be verified. iCloud3 needs to be "
                         f"restarted to see if the unverified devices are available for "
-                        f"tracking. If not, check the device parameters in the iCloud3 Configuration Wizard:"
-                        f"{CRLF}1. {SETTINGS_INTEGRATIONS_MSG} >"
-                        f"{CRLF}2. {INTEGRATIONS_IC3_CONFIG_MSG}"
-                        f"{CRLF}3. iCloud3 Devices")
+                        f"tracking. If not, check the device parameters in the iCloud3 Configure Settings:"
+                        f"{more_info('configure_icloud3')}")
     else:
         event_msg = (f"{EVLOG_ALERT}ALERT > Some devices could not be verified. iCloud Location Services "
                         f"will be reinitialized")
@@ -290,6 +285,8 @@ def stage_5_configure_tracked_devices():
     except Exception as err:
         log_exception(err)
 
+    write_debug_log(stage_title)
+
     post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message('')
 
@@ -314,15 +311,16 @@ def stage_6_initialization_complete():
     try:
         start_ic3.display_object_lists()
 
+        item_no = 1
         if Gb.startup_alerts != []:
             Gb.EvLog.alert_message = 'Problems occured during startup up that should be reviewed'
             alert_msg = (f"{EVLOG_ALERT}The following issues were detected when starting iCloud3. "
                         f"Scroll through the Startup Log for more information:")
 
-            alert_msg+= list_to_str(Gb.startup_alerts, CRLF_DOT)
+            for alert in Gb.startup_alerts:
+                alert_msg += f"{CRLF}{item_no}. {alert}"
+                item_no += 1
             post_event(alert_msg)
-
-            # Gb.startup_alerts = []
 
     except Exception as err:
         log_exception(err)
@@ -350,6 +348,9 @@ def stage_7_initial_locate():
         return_code = reinitialize_icloud_devices()
 
     Gb.trace_prefix = 'INITLOC > '
+
+    Gb.this_update_secs = time_now_secs()
+    Gb.this_update_time = dt_util.now().strftime('%H:%M:%S')
     post_event("Requesting Initial Locate")
     event_msg =(f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Start up Complete")
     post_event(event_msg)
@@ -396,9 +397,9 @@ def reinitialize_icloud_devices():
 
         alert_msg = f"{EVLOG_ALERT}"
         if Gb.conf_data_source_ICLOUD:
-            unverified_devices = [devicename for devicename, Device in Gb.Devices_by_devicename_tracked.items() \
-                                            if Device.verified_flag is False and Device.is_tracked]
-            alert_msg +=(f"One or more devices was not verified. iCloud Location Svcs "
+            unverified_devices = [devicename for devicename, Device in Gb.Devices_by_devicename.items() \
+                                            if Device.verified_flag is False]
+            alert_msg +=(f"UNVERIFIED DEVICES > One or more devices was not verified. iCloud Location Svcs "
                         f"may be down, slow to respond or the internet may be down."
                         f"{CRLF_DOT}Unverified Devices > {', '.join(unverified_devices)}")
 
@@ -420,14 +421,9 @@ def reinitialize_icloud_devices():
         Gb.all_tracking_paused_flag = False
 
         if stage_4_success is False:
-            alert_msg =(f"{EVLOG_ALERT}One or more devices was still not verified"
-                        f"{CRLF}This can be caused by:"
-                        f"{CRLF_DOT}iCloud3 Configuration Errors"
-                        f"{CRLF_DOT}iCloud Location Svcs may be down or slow"
-                        f"{CRLF_DOT}The internet may be down"
-                        f"{CRLF_DOT}The username/password is not set up or incorrect"
-                        f"{CRLF}{'-'*50}{CRLF}Check the Event Log error messages, "
-                        f"correct any problems and restart iCloud3")
+            alert_msg =(f"{EVLOG_ALERT}UNVERIFIED DEVICES > One or more devices was still "
+                        f"not verified"
+                        f"{more_info('unverified_devices_caused_by')}")
             post_event(alert_msg)
 
         return False

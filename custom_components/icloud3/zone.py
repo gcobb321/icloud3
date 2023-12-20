@@ -295,7 +295,7 @@ class iCloud3_StationaryZone(iCloud3_Zone):
             post_event(f"Removed HA Zone > {self.fname_id}")
 
         except Exception as err:
-            log_exception(err)
+            # log_exception(err)
             pass
 
 #--------------------------------------------------------------------

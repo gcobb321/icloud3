@@ -12,40 +12,22 @@ from .messaging         import (_trace, _traceha, )
 #   Distance conversion and formatting functions
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def km_to_mi(distance):
-    """
-    convert km to miles
-    """
-    #try:
-    return distance * Gb.um_km_mi_factor
+def km_to_mi(dist_km):
+    return float(dist_km) * Gb.um_km_mi_factor
 
-    #     mi = distance * Gb.um_km_mi_factor
+def mi_to_km(dist_mi):
+    return round(float(dist_mi) / Gb.um_km_mi_factor, 2)
 
-    #     if mi == 0:
-    #         mi = 0
-    #     elif mi < 1:
-    #         mi = float(f"{mi:.2f}")
-    #     elif mi < 20:
-    #         mi = float(f"{mi:.1f}")
-    #     else:
-    #         mi = round(mi)
+def km_to_mi_str(dist_km):
+    return f"{km_to_mi(dist_km)} {Gb.um}"
 
-    # except:
-    #     mi = 0
-
-    # return mi
-
-def mi_to_km(distance):
-    return round(float(distance) / Gb.um_km_mi_factor, 2)
-
-def km_to_mi_str(distance):
-    return f"{km_to_mi(distance)} {Gb.um}"
 #--------------------------------------------------------------------
-def m_to_ft(distance):
-    return km_to_mi(distance)
+def m_to_ft(dist_m):
+   return float(dist_m) * Gb.um_m_ft_factor
 
-def m_to_ft_str(distance):
-    return f"{m_to_ft(distance)} {Gb.um_m_ft}"
+def m_to_ft_str(dist_m):
+    return f"{m_to_ft(dist_m)} {Gb.um_m_ft}"
+
 #--------------------------------------------------------------------
 def calc_distance_km(from_gps, to_gps):
 
@@ -78,7 +60,7 @@ def format_km_to_mi(dist_km):
     dist: Distance in kilometers
     '''
 
-    if Gb.um == 'mi':
+    if Gb.um_MI:
         mi = dist_km * Gb.um_km_mi_factor
 
         if mi >= 100:

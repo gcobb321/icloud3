@@ -5,11 +5,12 @@ import asyncio
 # from homeassistant.const import CONF_DOMAINS, CONF_ENTITIES, CONF_EXCLUDE, CONF_INCLUDE
 
 
-from homeassistant.config_entries   import ConfigEntry
-from homeassistant.const            import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core             import HomeAssistant
-from homeassistant.helpers.typing   import ConfigType
+from homeassistant.config_entries         import ConfigEntry
+from homeassistant.const                  import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
+from homeassistant.core                   import HomeAssistant
+from homeassistant.helpers.typing         import ConfigType
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers                import (area_registry as ar, )
 import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 import homeassistant.util.location  as ha_location_info
@@ -30,6 +31,7 @@ from .global_variables              import GlobalVariables as Gb
 from .helpers.messaging             import (_trace, _traceha, open_ic3_log_file,
                                             post_alert, post_startup_alert,
                                             log_info_msg, log_debug_msg, log_error_msg, log_exception)
+from .helpers.time_util             import (time_now_secs, secs_to_time_age_str, )
 from .support.v2v3_config_migration import iCloud3_v2v3ConfigMigration
 from .support                       import start_ic3
 from .support                       import config_file
@@ -87,7 +89,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def start_icloud3(event=None):
     Gb.initial_icloud3_loading_flag = True
-    log_debug_msg('START iCloud3 Initial Load Executor Job (iCloud3.start_icloud3)')
+    log_debug_msg(f'START iCloud3 Initial Load Executor Job (iCloud3.start_icloud3)')
     icloud3_started = await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3)
 
     if icloud3_started:
@@ -147,6 +149,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
+            if 'mobile_app' in Gb.hass.data:
+                Gb.MobileApp_data = Gb.hass.data['mobile_app']
+                Gb.MobileApp_devices = Gb.MobileApp_data.get('devices', {})
 
             pass
 
@@ -157,7 +162,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         start_ic3.initialize_icloud_data_source()
         restore_state.load_storage_icloud3_restore_state_file()
 
-        # Create  device_tracker entities
+        # Get Personal Devices area id
+        # area_reg = ar.async_get(hass)
+        # if Gb.conf_devices == []:
+        #     area_data = area_reg.async_get_or_create('Personal Device')
+        # else:
+        #     area_data = area_reg.async_get_area_by_name('Personal Device')
+        # Gb.area_id_personal_device = area_data.id if area_data else None
+
+        # Create device_tracker entities
         if Gb.conf_devices != []:
             await hass.config_entries.async_forward_entry_setups(entry, ['device_tracker'])
 
