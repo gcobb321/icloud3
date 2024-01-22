@@ -68,8 +68,8 @@
       "icloud_acct_not_available": "Login Error, iCloud Account is not Available",
       "icloud_acct_not_logged_into": "iCloud Account is not Logged Into",
       "icloud_acct_not_set_up": "iCloud Account Username or Password needs to be entered",
-      "icloud_acct_no_data_source": "No Data Source (iCloud or iOS App) has been selected",
-      "mobile_app_error": "The Mobile App Integration is not installed. The iOS App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
+      "icloud_acct_no_data_source": "No Data Source (iCloud or Mobile App) has been selected",
+      "mobile_app_error": "The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
 
       "verification_code_requested": "The Apple ID Verification Code was requested, BROWSER REFRESH MAY BE NEEDED",
       "verification_code_requested2": "The Apple ID Verification Code was requested",
@@ -94,7 +94,7 @@
       "waze_server_error_il": "The correct server for your location is: Israel",
       "waze_server_error_row": "The correct server for your location is: Rest of the World",
       "required_field": "This parameter must be specified",
-      "required_field_device": "A device providing location data must be selected from the Family Share, Find-my-Friends, or iOS App devices lists",
+      "required_field_device": "A device providing location data must be selected from the Family Share, Find-my-Friends, or Mobile App devices lists",
       "no_device_selected": "A device providing location data must be selected",
       "no_add_entities_device_tracker_fct": "The HA component for adding devices is not available. HA MUST BE RESTARTED",
 
@@ -102,19 +102,19 @@
       "unknown_value": "The value of this parameter in the iCloud3 configuration file is unknown or invalid. It must be selected again",
       "unknown_famshr": "The FamShr device was not returned from iCloud when iCloud3 started. Check FindMy devices list & Family Share list. See Event Log Startup Stage 4 for more info and a list of the devices returned from the iCloud account",
       "unknown_fmf": "The FmF device was not returned from iCloud when iCloud3 started. Check FindMy app devices Sharing location info. See Event Log Startup Stage 4 for more info and a list of the devices returned from the iCloud account",
-      "unknown_iosapp": "The mobile_app device_tracker entity was not found during HA Device Registry scan. Check mobile_app device list in HA Settings > Devices & Services > Devices. See Event Log Startup Stage 4 for more info and a list of mobile_app devices found in the HA Device Registry",
+      "unknown_mobapp": "The mobile_app device_tracker entity was not found during HA Device Registry scan. Check Mobile App device list in HA Settings > Devices & Services > Devices. See Event Log Startup Stage 4 for more info and a list of mobile_app devices found in the HA Device Registry",
       "unknown_picture": "The Picture filename was not found in the HA config/www directory. Reselect the filename or check to see if it has been deleted",
 
       "unknown_famshr_fmf": "Check the FamShr and FmF parameter values (Not found or Invalid)",
-      "unknown_famshr_fmf_iosapp": "Check the FamShr, FmF and iOS App parameter values (Not found or Invalid)",
-      "unknown_famshr_fmf_iosapp_picture": "Check the FamShr, FmF, iOS App and Picture parameter values (Not found or Invalid)",
-      "unknown_famshr_iosapp": "Check the FamShr and iOS App parameter values (Not found or Invalid)",
-      "unknown_famshr_iosapp_picture": "Check the FamShr, iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_famshr_fmf_mobapp": "Check the FamShr, FmF and Mobile App parameter values (Not found or Invalid)",
+      "unknown_famshr_fmf_mobapp_picture": "Check the FamShr, FmF, Mobile App and Picture parameter values (Not found or Invalid)",
+      "unknown_famshr_mobapp": "Check the FamShr and Mobile App parameter values (Not found or Invalid)",
+      "unknown_famshr_mobapp_picture": "Check the FamShr, Mobile App and Picture parameter values (Not found or Invalid)",
       "unknown_famshr_picture": "Check the FamShr and Picture parameter values (Not found or Invalid)",
-      "unknown_fmf_iosapp": "Check the FmF and iOS App parameter values (Not found or Invalid)",
-      "unknown_fmf_iosapp_picture": "Check the FmF, iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_fmf_mobapp": "Check the FmF and Mobile App parameter values (Not found or Invalid)",
+      "unknown_fmf_mobapp_picture": "Check the FmF, Mobile App and Picture parameter values (Not found or Invalid)",
       "unknown_fmf_picture": "Check the FmFand Picture parameter values (Not found or Invalid)",
-      "unknown_iosapp_picture": "Check the iOS App and Picture parameter values (Not found or Invalid)",
+      "unknown_mobapp_picture": "Check the Mobile App and Picture parameter values (Not found or Invalid)",
 
       "tfz_selection_invalid": "The value must be a zone that is being tracked from",
       "time_factor_invalid_range": "The 'travel_time_factor' must be between .1 and .9",
@@ -125,7 +125,7 @@
       "not_found_file": "The file was not found",
       "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
       "already_assigned": "This selection is already assigned to another device",
-      "iosapp_search_error": "WARNING: Search Failure - No iOS App device that starts with the iCloud3 or FamShr devicename was found. Select 'None' or the device to be used.",
+      "mobapp_search_error": "WARNING: Search Failure - No Mobile App device that starts with the iCloud3 or FamShr devicename was found. Select 'None' or the device to be used.",
       "duplicate_other_devicename": "This name is already used in another integration or platform",
       "action_completed": "Requested Action has been completed",
       "action_cancelled": "Requested Action has been cancelled",
@@ -136,6 +136,20 @@
     "step": {
       "menu": {
         "title": "iCloud3 Configure Settings",
+        "data": {
+          "menu_items": "",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "menu_0": {
+        "title": "Configure Devices and Sensors Menu",
+        "data": {
+          "menu_items": "",
+          "action_items": "═════════════════════════════════════════════════════"
+        }
+      },
+      "menu_1": {
+        "title": "Configure Parameters Menu",
         "data": {
           "menu_items": "",
           "action_items": "═════════════════════════════════════════════════════"
@@ -169,14 +183,14 @@
         }
       },
       "icloud_account": {
-        "title": "iCloud Account & iOS App Data Sources",
-        "description": "The data sources (iCloud Account Web Services and the iOS App) are selected on this screen. The Apple iCloud Account Username/Password must be specified here to access the iCloud Account. The HA Companion App (iOS App) must be installed on the iDevice to use is as a data source for that device. Each iDevice you are tracking is associated with the iCloud3 device on the Update Devices screen.",
+        "title": "iCloud Account & Mobile App Data Sources",
+        "description": "The data sources (iCloud Account Web Services and the Mobile App) are selected on this screen. The Apple iCloud Account Username/Password must be specified here to access the iCloud Account. The HA Mobile App must be installed on the iDevice to use is as a data source for that device. Each iDevice you are tracking is associated with the iCloud3 device on the Update Devices screen.",
         "data": {
           "data_source_icloud": "═════════════════════════════════════════════════════ ICLOUD ACCOUNT - Location data is provided by the Apple iCloud account",
           "username": "APPLE ID (USERNAME) - The email address used to sign in to the iCloud Account",
           "password": "PASSWORD - The iCloud Account Password",
           "url_suffix_china": "CHINA USERS - Use Apple iCloud Web Servers located in China (.cn URL suffix)",
-          "data_source_iosapp": "═════════════════════════════════════════════════════ iOS APP - Location data is provided by the HA iOS App",
+          "data_source_mobapp": "═════════════════════════════════════════════════════ MOBILE APP - Location data is provided by the HA Mobile App",
           "action_items":       "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {
@@ -191,28 +205,29 @@
         }
       },
       "device_list": {
-        "title": "iCloud3 Device Tracker Entities",
+        "title": "iCloud3 Devices",
         "description": "All of the devices that are tracked or monitored by iCloud3 are listed on this screen. You can add new devices and update or delete existing devices.",
         "data": {
-          "devices": "═════════════════════════════════════════════════════ ICLOUD3 DEVICES",
+          "xdevices": "═════════════════════════════════════════════════════ ICLOUD3 DEVICES",
+          "devices": "═════════════════════════════════════════════════════",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         }
       },
       "add_device": {
-        "title": "Add Tracked iCloud3 Device",
+        "title": "Add iCloud3 Device",
         "data": {
           "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
           "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-          "iosapp": "iOS APP INSTALLED - The HA iOS App is installed on this device  ",
+          "mobapp": "MOBILE APP INSTALLED - The HA Mobile App is installed on this device  ",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {
         }
       },
       "update_device": {
-        "title": "Update Tracked iCloud3 Device",
+        "title": "Update iCloud3 Device",
         "description": "This screen lets you configure each of the devices that can be tracked or monitored using iCloud3",
         "data": {
           "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
@@ -221,10 +236,10 @@
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "famshr_devicename": "FAMILY SHARING LIST DEVICE - Use location data from this iCloud Acct Family Sharing member",
           "fmf_email": "FIND-MY-FRIENDS DEVICE - Use location data from this FindMy device sharing their info with you",
-          "iosapp_device": "IOS APP DEVICE_TRACKER ENTITY - Use this HA device location data & zone enter/exit triggers",
+          "mobile_app_device": "MOBILE APP DEVICE_TRACKER ENTITY - Use this HA device location data & zone enter/exit triggers",
           "log_zones": "LOG ACTIVITY FOR ZONES - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
           "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-          "track_from_base_zone": "TRACK FROM ZONE - Use this zone instead of the Home for tracking results",
+          "track_from_base_zone": "PRIMARY TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
           "picture": "PICTURE - Photo image of the person normally using this device (40x40 pixels is best size)",
           "inzone_interval": "INZONE INTERVAL",
           "fixed_interval": "FIXED INTERVAL",
@@ -237,7 +252,7 @@
         }
       },
       "delete_device": {
-        "title": "Delete Device(s), Other Device Maintenance",
+        "title": "Delete iCloud3 Device",
         "data": {
           "action_items": "═════════════════════════════════════════════════════ DELETE OPTIONS"
         }
@@ -328,10 +343,12 @@
           "distance_between_devices": "USE LOCATION RESULTS FROM A NEAR-BY DEVICE",
           "max_interval": "MAXIMUM INTERVAL",
           "exit_zone_interval": "EXIT ZONE INTERVAL",
-          "iosapp_alive_interval": "REQUEST IOSAPP LOCATION INTERVAL",
+          "mobapp_alive_interval": "REQUEST MOBILE APP LOCATION INTERVAL",
           "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
           "offline_interval": "DEVICE OFFLINE INTERVAL",
           "travel_time_factor": "TRAVEL TIME INTERVAL MULTIPLIER",
+          "discard_poor_gps_inzone": "DISCARD POOR RESULTS - Discard Location Updates with Poor GPS Accuracy when in a Zone",
+          "center_in_zone": "MOVE DEVICE TO ZONE CENTER - Change Device's Location to the Zone's Center when in a Zone",
           "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
           "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
@@ -344,7 +361,7 @@
           "tfz_tracking_max_distance": "Normally the Home zone's time and distance data is displayed on the Device's device_tracker and sensor entities. Display the Track-from-Zone instead when the Device is within this distance of the Track-from-Zone",
           "max_interval": "The maximum time between location requests",
           "exit_zone_interval": "The time to the first location request after exiting a zone",
-          "iosapp_alive_interval": "Send a location request to the iOS App if there has been no contact after this amount of time. This will check to see if the iOS App is responding to location requests or is asleep and not running.",
+          "mobapp_alive_interval": "Send a location request to the Mobile App if there has been no contact after this amount of time. This will check to see if the Mobile App is responding to location requests or is asleep and not running.",
           "offline_interval": "Location request interval when offline (Airplane mode, dead cell area, etc.)",
           "travel_time_factor": "Next location time = Waze travel time to zone * this value",
           "event_log_btnconfig_url": "Normally, this is blank and iCloud3 will determine the URL for it's Configure Settings screen. However, if there is a problem caused by running HA in a virtual environment, docker or on another device and the actual URL can not be detemined, a 404 not found error may be encountered. If that happens, select it the normal way (HA Devices & Services > Integration > iCloud3 > Configure Settings gear) and copy the URL from the browser into this field."
@@ -358,15 +375,13 @@
           "ipad": "IPAD",
           "watch": "APPLE WATCH",
           "airpods": "AIRPODS",
-          "no_iosapp": "IOS APP IS NOT INSTALLED ",
+          "no_mobapp": "MOBILE APP IS NOT INSTALLED ",
           "other": "OTHER DEVICE TYPE",
-          "discard_poor_gps_inzone": "Discard Location Updates with Poor GPS Accuracy when in a Zone",
           "distance_between_devices": "Determine the distance between devices. Use a near by device's tracking results",
-          "center_in_zone": "Change Device's Location to the Zone's Center when in a Zone",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {
-          "no_iosapp": "Default interval if the iOS App is not used for location monitoring and zone enter/exit triggers",
+          "no_mobapp": "Default interval if the Mobile App is not used for location monitoring and zone enter/exit triggers",
           "other": "Unspecified device type inzone interval"
         }
       },
@@ -412,7 +427,7 @@
         }
       },
       "sensors": {
-        "title": "Device and Tracking Sensors created by iCloud3",
+        "title": "Sensors",
         "description": "Many sensors are used to display tracking results and other information for a device. This screen is used to select the sensors that should be created.",
         "data": {
           "monitored_devices": "═════════════════════════════════════════════════════ MONITORED DEVICE SENSORS - Select the type of sensors to create for a Monitored Device",

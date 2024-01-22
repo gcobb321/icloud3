@@ -17,7 +17,8 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     post_event, post_error_msg, log_error_msg, post_startup_alert,
                                     post_monitor_msg, post_internal_error,
                                     log_debug_msg, log_info_msg, log_exception, log_rawdata,
-                                    _trace, _traceha, more_info, write_debug_log,  write_config_file_to_ic3_log, )
+                                    _trace, _traceha, more_info, format_filename,
+                                    write_debug_log,  write_config_file_to_ic3_log, )
 from ..helpers.time_util    import (time_now_secs, calculate_time_zone_offset, )
 
 import homeassistant.util.dt as dt_util
@@ -49,24 +50,24 @@ def stage_1_setup_variables():
         Gb.reinitialize_icloud_devices_cnt  = 0
 
         if Gb.initial_icloud3_loading_flag is False:
+            Gb.EvLog.startup_event_recds = []
+            Gb.EvLog.startup_event_save_recd_flag = True
             post_event( f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Restarting, "
                         f"{dt_util.now().strftime('%A, %b %d')}")
-            # Gb.EvLog.update_event_log_display("")
-            # start_ic3.reinitialize_config_parameters()
             config_file.load_storage_icloud3_configuration_file()
             write_config_file_to_ic3_log()
             start_ic3.initialize_global_variables()
             start_ic3.set_global_variables_from_conf_parameters()
-            start_ic3.set_zone_display_as()
-
 
         start_ic3.define_tracking_control_fields()
 
+        if Gb.ha_config_directory != '/config':
+            post_event(f"Base Config Directory > {Gb.ha_config_directory}")
         post_event(f"iCloud3 Directory > {Gb.icloud3_directory}")
         if Gb.conf_profile[CONF_VERSION] == 0:
-            post_event(f"iCloud3 Configuration File > {Gb.config_ic3_yaml_filename}")
+            post_event(f"iCloud3 Configuration File > {format_filename(Gb.config_ic3_yaml_filename)}")
         else:
-            post_event(f"iCloud3 Configuration File > {Gb.icloud3_config_filename}")
+            post_event(f"iCloud3 Configuration File > {format_filename(Gb.icloud3_config_filename)}")
 
         start_ic3.display_platform_operating_mode_msg()
         Gb.hass.loop.create_task(start_ic3.update_lovelace_resource_event_log_js_entry())
@@ -75,7 +76,7 @@ def stage_1_setup_variables():
         post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
 
         calculate_time_zone_offset()
-        start_ic3.set_evlog_table_max_cnt()
+        start_ic3.set_event_recds_max_cnt()
 
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.update_event_log_display("")
@@ -96,8 +97,9 @@ def stage_2_prepare_configuration():
         if Gb.initial_icloud3_loading_flag is False:
             Gb.PyiCloud = None
 
+        # start_ic3.initialize_global_variables()
+        # start_ic3.set_global_variables_from_conf_parameters()
         start_ic3.create_Zones_object()
-        # start_ic3.reset_StationaryZones_object()
         start_ic3.create_Waze_object()
 
         Gb.WazeHist.load_track_from_zone_table()
@@ -169,7 +171,7 @@ def stage_3_setup_configured_devices():
 def stage_4_setup_data_sources(retry=False):
 
     Gb.trace_prefix = 'STAGE 4 > '
-    stage_title = f'Stage 4 > Setup iCloud & iOSApp Data Source'
+    stage_title = f'Stage 4 > Setup iCloud & MobApp Data Source'
 
     # Missing username/password, PyiCloud can not be started
     if Gb.primary_data_source_ICLOUD:
@@ -208,10 +210,10 @@ def stage_4_setup_data_sources(retry=False):
                 event_msg = 'iCloud Location Services > Not used as a data source'
                 post_event(event_msg)
 
-        if Gb.conf_data_source_IOSAPP:
-            start_ic3.setup_tracked_devices_for_iosapp()
+        if Gb.conf_data_source_MOBAPP:
+            start_ic3.setup_tracked_devices_for_mobapp()
         else:
-            event_msg = 'iOS App > Not used as a data source'
+            event_msg = 'Mobile App > Not used as a data source'
             post_event(event_msg)
 
         return_code = _are_all_devices_verified(retry=retry)
@@ -241,7 +243,7 @@ def _are_all_devices_verified(retry=False):
         False - Some were not verified
     '''
 
-    # Get a list of all tracked devices that have not been set p by icloud or the ios app
+    # Get a list of all tracked devices that have not been set p by icloud or the Mobile App
     unverified_devices = [devicename
                             for devicename, Device in Gb.Devices_by_devicename.items()
                             if Device.verified_flag is False]

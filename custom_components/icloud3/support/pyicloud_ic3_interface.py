@@ -57,7 +57,7 @@ def create_PyiCloudService(PyiCloud, called_from='unknown'):
 
     else:
         event_msg =(f"iCLOUD3 ERROR > Apple ID Verification is needed or "
-                    f"another error occurred. The iOSApp tracking method will be "
+                    f"another error occurred. The MobApp tracking method will be "
                     f"used until the Apple ID Verification code has been entered. See the "
                     f"HA Notification area to continue. iCloud3 will then restart.")
         post_error_msg(event_msg)
@@ -241,8 +241,8 @@ def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
         return False
     elif PyiCloud.requires_2fa:
         pass
-    # elif Gb.data_source_IOSAPP is False:  (beta 17)
-    elif Gb.conf_data_source_IOSAPP is False:
+    # elif Gb.data_source_MOBAPP is False:  (beta 17)
+    elif Gb.conf_data_source_MOBAPP is False:
         return False
     elif initial_setup:
         pass

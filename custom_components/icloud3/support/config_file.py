@@ -3,16 +3,20 @@ from ..global_variables     import GlobalVariables as Gb
 from ..const                import (
                                     ICLOUD3, APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE,
                                     RARROW, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE_DEVICE,
-                                    ICLOUD, FAMSHR, FMF,
+                                    ICLOUD, FAMSHR, FMF, NO_MOBAPP, NO_IOSAPP, HOME,
                                     CONF_PARAMETER_TIME_STR,
-                                    CONF_INZONE_INTERVALS, CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
-                                    CONF_IOSAPP_ALIVE_INTERVAL,
+                                    CONF_INZONE_INTERVALS,
+                                    CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
+                                    CONF_MOBAPP_ALIVE_INTERVAL, CONF_IOSAPP_ALIVE_INTERVAL,
                                     CONF_IC3_VERSION, VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM,
                                     CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE, CONF_PASSWORD, CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
                                     CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                     CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL,
                                     CONF_DATA_SOURCE, CONF_DISPLAY_GPS_LAT_LONG, CONF_LOG_ZONES,
-                                    CONF_FAMSHR_DEVICENAME, CONF_FMF_EMAIL, CONF_IOSAPP_DEVICE, CONF_TRACKING_MODE,
+                                    CONF_FAMSHR_DEVICENAME, CONF_FMF_EMAIL,
+                                    CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
+                                    CONF_TRACKING_MODE,
+                                    CONF_PICTURE, CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES,
                                     CONF_STAT_ZONE_FNAME, CONF_DEVICE_TRACKER_STATE_SOURCE,
                                     CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                     CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
@@ -90,6 +94,7 @@ def load_storage_icloud3_configuration_file():
 
     config_file_check_new_ic3_version()
     config_file_check_range_values()
+    config_file_check_devices()
     count_device_tracking_methods_configured()
 
     if CONF_LOG_LEVEL in Gb.conf_general:
@@ -148,7 +153,7 @@ def read_storage_icloud3_configuration_file(filename_suffix=''):
 def count_device_tracking_methods_configured():
     '''
     Count the number of devices that have been configured for the famshr,
-    fmf and ios app tracking methods. This will be compared to the actual
+    fmf and Mobile App tracking methods. This will be compared to the actual
     number of devices returned from iCloud during setup in PyiCloud. Sometmes,
     iCloud does not return all devices in the FamShr list and a refresh/retry
     is needed.
@@ -156,7 +161,7 @@ def count_device_tracking_methods_configured():
     try:
         Gb.conf_famshr_device_cnt = 0
         Gb.conf_fmf_device_cnt    = 0
-        Gb.conf_iosapp_device_cnt = 0
+        Gb.conf_mobapp_device_cnt = 0
 
         for conf_device in Gb.conf_devices:
             if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
@@ -168,8 +173,8 @@ def count_device_tracking_methods_configured():
             if conf_device[CONF_FMF_EMAIL].startswith(NONE_FNAME) is False:
                 Gb.conf_fmf_device_cnt += 1
 
-            if conf_device[CONF_IOSAPP_DEVICE].startswith(NONE_FNAME) is False:
-                Gb.conf_iosapp_device_cnt += 1
+            if conf_device[CONF_MOBILE_APP_DEVICE].startswith(NONE_FNAME) is False:
+                Gb.conf_mobapp_device_cnt += 1
 
     except Exception as err:
         log_exception(err)
@@ -342,6 +347,25 @@ def config_file_add_new_parameters():
         _add_config_file_parameter(Gb.conf_general, CONF_AWAY_TIME_ZONE_2_DEVICES, ['none'])
         update_config_file_flag = True
 
+    # Convert iosapp to mobapp in various parameters (rc10)
+    if CONF_IOSAPP_ALIVE_INTERVAL in Gb.conf_general:
+        if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'ios'):
+            Gb.conf_tracking[CONF_DATA_SOURCE] = \
+                Gb.conf_tracking[CONF_DATA_SOURCE].replace('ios', 'mob')
+
+        Gb.conf_general[CONF_INZONE_INTERVALS][NO_MOBAPP] = \
+            Gb.conf_general[CONF_INZONE_INTERVALS][NO_IOSAPP]
+        del Gb.conf_general[CONF_INZONE_INTERVALS][NO_IOSAPP]
+
+        Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL] = \
+            Gb.conf_general[CONF_IOSAPP_ALIVE_INTERVAL]
+        del Gb.conf_general[CONF_IOSAPP_ALIVE_INTERVAL]
+
+        for conf_device in Gb.conf_devices:
+            conf_device[CONF_MOBILE_APP_DEVICE] = conf_device[CONF_IOSAPP_DEVICE]
+            del conf_device[CONF_IOSAPP_DEVICE]
+        update_config_file_flag = True
+
     if update_config_file_flag:
         write_storage_icloud3_configuration_file()
 
@@ -369,6 +393,30 @@ def config_file_check_range_values():
 
     except Exception as err:
         log_exception(err)
+
+#--------------------------------------------------------------------
+def config_file_check_devices():
+    '''
+    Cycle thru the conf_devices and verify that the settings are valid
+    '''
+    update_configuration_flag = False
+
+    for conf_device in Gb.conf_devices:
+        if conf_device[CONF_PICTURE] == '':
+            conf_device[CONF_PICTURE] = 'None'
+            update_configuration_flag = True
+        if conf_device[CONF_INZONE_INTERVAL] < 1:
+            conf_device[CONF_INZONE_INTERVAL] = 120
+            update_configuration_flag = True
+        if conf_device[CONF_LOG_ZONES]== []:
+            conf_device[CONF_LOG_ZONES] = ['none']
+            update_configuration_flag = True
+        if conf_device[CONF_TRACK_FROM_ZONES] == []:
+            conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
+            update_configuration_flag = True
+
+        if update_configuration_flag:
+            write_storage_icloud3_configuration_file()
 
 #--------------------------------------------------------------------
 def _convert_hhmmss_to_minutes(conf_group):

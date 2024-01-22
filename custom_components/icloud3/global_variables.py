@@ -23,15 +23,15 @@
 #           Gb.Zones_by_zone
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-from .const          import (DEVICENAME_IOSAPP, VERSION, NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
-                            FAMSHR, FMF, FAMSHR_FMF, ICLOUD, IOSAPP, FNAME, HIGH_INTEGER,
+from .const          import (DEVICENAME_MOBAPP, VERSION, NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
+                            FAMSHR, FMF, FAMSHR_FMF, ICLOUD, MOBAPP, FNAME, HIGH_INTEGER,
                             DEFAULT_GENERAL_CONF,
                             CONF_UNIT_OF_MEASUREMENT,
                             CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
                             CONF_CENTER_IN_ZONE, CONF_DISPLAY_GPS_LAT_LONG,
                             CONF_TRAVEL_TIME_FACTOR, CONF_GPS_ACCURACY_THRESHOLD,
                             CONF_DISCARD_POOR_GPS_INZONE, CONF_OLD_LOCATION_THRESHOLD, CONF_OLD_LOCATION_ADJUSTMENT,
-                            CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_IOSAPP_ALIVE_INTERVAL,
+                            CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_MOBAPP_ALIVE_INTERVAL,
                             CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
                             CONF_WAZE_REALTIME,
                             CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE ,
@@ -39,7 +39,7 @@ from .const          import (DEVICENAME_IOSAPP, VERSION, NOT_SET, HOME_FNAME, HO
                             CONF_STAT_ZONE_FNAME,
                             CONF_STAT_ZONE_BASE_LATITUDE, CONF_STAT_ZONE_BASE_LONGITUDE,
                             CONF_STAT_ZONE_INZONE_INTERVAL, CONF_LOG_LEVEL,
-                            CONF_IOSAPP_REQUEST_LOC_MAX_CNT, CONF_DISTANCE_BETWEEN_DEVICES,
+                            CONF_MOBAPP_REQUEST_LOC_MAX_CNT, CONF_DISTANCE_BETWEEN_DEVICES,
                             CONF_PASSTHRU_ZONE_TIME,
                             CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                             CONF_TFZ_TRACKING_MAX_DISTANCE,
@@ -84,6 +84,7 @@ class GlobalVariables(object):
     ActionsOptionsFlow  = None
     MobileApp_data      = {}     # mobile_app Integration data dict from hass.data['mobile_app']
     MobileApp_devices   = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
+    mobile_app_device_fnames = [] # fname = name_by_user or name in mobile_app device entry
 
 
     EvLog           = None
@@ -105,7 +106,7 @@ class GlobalVariables(object):
     add_entities = None
 
     # iCloud3 Directory & File Names
-    ha_config_directory       = ''
+    ha_config_directory       = ''      # '/config', '/home/homeassistant/.homeassistant'
     ha_storage_directory      = ''      # 'config/.storage' directory
     ha_storage_icloud3        = ''      # 'config/.storage/icloud3'
     icloud3_config_filename   = ''      # 'config/.storage/icloud3.configuration' - iC3 Configuration File
@@ -134,13 +135,16 @@ class GlobalVariables(object):
     Devices_by_devicename_tracked     = {}  # All monitored Devices by devicename
     Devices_by_icloud_device_id       = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_ha_device_id           = {}  # Device by the device_id in the entity/device registry
-    Devices_by_iosapp_devicename      = {}  # All Devices by the iosapp device_tracker.iosapp_devicename
+    Devices_by_mobapp_devicename      = {}  # All Devices by the mobapp device_tracker.mobapp_devicename
     PairedDevices_by_paired_with_id   = {}  # Paired Devices by the paired_with_id (famshr prsID) id=[Dev1, Dev2]
     Zones                             = []  # Zones object list
-    Zones_by_zone                     = {}  # Zone object by zone name
+    Zones_by_zone                     = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
+    HAZones                           = []  # Zones object list for only valid HA Zones
+    HAZones_by_zone                   = {}  # Zone object by zone name for only valid HA Zones
+    HAZones_by_zone_deleted           = {}  # Zone object by zone name for Zones deleted from HA 
+    ha_zone_settings_check_secs       = 0   # Last time the ha.states Zone config was checked for changes
     zone_display_as                   = {}   # Zone display_as by zone distionary to ease displaying zone fname
     TrackedZones_by_zone              = {HOME, None}  # Tracked zones object by zone name set up with Devices.DeviceFmZones object
-    ActiveZones                       = []  # Active Zones - Not passive, radius > 0
     StatZones                         = []  # Stationary Zone objects
     StatZones_to_delete               = []  # Stationary Zone  to delete after the devices that we're in it have  been updated
     StatZones_by_zone                 = {}  # Stationary Zone objects by their id number (1-10 --> ic3_#_stationary)
@@ -197,16 +201,16 @@ class GlobalVariables(object):
     # Startup variables
     startup_log_msgs          = ''
     startup_log_msgs_prefix   = ''
-    iosapp_entities           = ''
-    iosapp_notify_devicenames = ''
+    mobapp_entities           = ''
+    mobapp_notify_devicenames = ''
     started_secs              = 0
 
     # Configuration parameters that can be changed in config_ic3.yaml
     um                     = DEFAULT_GENERAL_CONF[CONF_UNIT_OF_MEASUREMENT]
-    time_format_12_hour    = True
-    time_format_24_hour    = not time_format_12_hour
     um_MI                  = True
     um_KM                  = False
+    time_format_12_hour    = True
+    time_format_24_hour    = not time_format_12_hour
     um_km_mi_factor        = .62137
     um_m_ft_factor         = 3.28084
     um_m_ft                = 'ft'
@@ -242,7 +246,7 @@ class GlobalVariables(object):
     conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter
     conf_famshr_device_cnt  = 0                   # Number of devices with FamShr tracking set up
     conf_fmf_device_cnt     = 0                   # Number of devices with FmF tracking set up
-    conf_iosapp_device_cnt  = 0                   # Number of devices with iOS App  tracking set up
+    conf_mobapp_device_cnt  = 0                   # Number of devices with Mobile App  tracking set up
 
     sensors_cnt                 = 0               # Number of sensors that will be creted (__init__.py)
     sensors_created_cnt         = 0               # Number of sensors that have been set up (incremented in sensor.py)
@@ -264,7 +268,7 @@ class GlobalVariables(object):
     max_interval_secs               = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     offline_interval_secs           = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     exit_zone_interval_secs         = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
-    iosapp_alive_interval_secs      = DEFAULT_GENERAL_CONF[CONF_IOSAPP_ALIVE_INTERVAL] * 3600
+    mobapp_alive_interval_secs      = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
     old_location_threshold          = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_THRESHOLD] * 60
     old_location_adjustment         = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_ADJUSTMENT] * 60
     passthru_zone_interval_secs     = DEFAULT_GENERAL_CONF[CONF_PASSTHRU_ZONE_TIME] * 60
@@ -321,18 +325,18 @@ class GlobalVariables(object):
     # Specifed in configuration file (set in config_flow icloud credentials screen)
     conf_data_source_FAMSHR   = True
     conf_data_source_FMF      = False
-    conf_data_source_IOSAPP   = True
+    conf_data_source_MOBAPP   = True
     conf_data_source_ICLOUD   = conf_data_source_FAMSHR or conf_data_source_FMF
 
     # A trackable device uses this data source (set in start_ic3.set trackable_devices)
     used_data_source_FAMSHR  = False
     used_data_source_FMF     = False
-    used_data_source_IOSAPP  = False
-    iosapp_monitor_any_devices_false_flag = False
+    used_data_source_MOBAPP  = False
+    mobapp_monitor_any_devices_false_flag = False
 
     # Primary data source being used that can be turned off if errors
     primary_data_source_ICLOUD = conf_data_source_ICLOUD
-    primary_data_source        = ICLOUD if primary_data_source_ICLOUD else IOSAPP
+    primary_data_source        = ICLOUD if primary_data_source_ICLOUD else MOBAPP
 
     # iCloud account authorization variables
     icloud_acct_error_cnt         = 0
@@ -355,7 +359,7 @@ class GlobalVariables(object):
     icloud_cookies_file          = ''
     fmf_device_verified_cnt      = 0
     famshr_device_verified_cnt   = 0
-    iosapp_device_verified_cnt   = 0
+    mobapp_device_verified_cnt   = 0
     authentication_alert_displayed_flag = False
 
     unverified_Devices           = []               # Devices that have not been verified in start_ic3.check_unverified_devices
@@ -370,16 +374,16 @@ class GlobalVariables(object):
     wazehist_recalculate_time_dist_flag = False     # Set in config_flow > Actions to schedule a db rebuild at midnight
 
     # Variables to be moved to Device object when available
-    # iosapp entity data
-    last_iosapp_state                = {}
-    last_iosapp_state_changed_time   = {}
-    last_iosapp_state_changed_secs   = {}
-    last_iosapp_trigger              = {}
-    last_iosapp_trigger_changed_time = {}
-    last_iosapp_trigger_changed_secs = {}
-    iosapp_monitor_error_cnt         = {}
+    # mobapp entity data
+    last_mobapp_state                = {}
+    last_mobapp_state_changed_time   = {}
+    last_mobapp_state_changed_secs   = {}
+    last_mobapp_trigger              = {}
+    last_mobapp_trigger_changed_time = {}
+    last_mobapp_trigger_changed_secs = {}
+    mobapp_monitor_error_cnt         = {}
 
-    # Device state, zone data from icloud and iosapp
+    # Device state, zone data from icloud and mobapp
     state_to_zone     = {}
     this_update_secs  = 0
     this_update_time  = ''
@@ -398,7 +402,7 @@ class GlobalVariables(object):
     got_exit_trigger_flag          = {}
     device_being_updated_flag      = {}
     device_being_updated_retry_cnt = {}
-    iosapp_update_flag             = {}
+    mobapp_update_flag             = {}
     attr_tracking_msg              = '' # tracking msg on attributes
     all_tracking_paused_flag       = False
     dist_to_other_devices_update_sensor_list = set()    # Contains a list of devicenames that need their distance sensors updated

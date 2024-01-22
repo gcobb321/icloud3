@@ -17,7 +17,7 @@ action:
             - "Pause Tracking"
             - "Resume Tracking"
             - "Locate Device(s) using iCloud FamShr"
-            - "Send Locate Request to iOS App"
+            - "Send Locate Request to Mobile App"
     device_name:
       name: "Device Name"
       description: "(Optional) Apply all devices or only apply to the selected device"
@@ -50,7 +50,7 @@ lost_device_alert:
             integration: icloud3
     number:
       name: "Phone Number"
-      description:  "The phone number to send the message to"
+      description: "The phone number to send the message to"
       example: "123-456-7890"
       required: true
       selector:

@@ -31,8 +31,11 @@ def list_to_str(list_value, separator=None):
     list_valt - list to be converted
     separator - Strig valut that separates each item (default = ', ')
     '''
+    if list_value == []: return ''
     separator_str = separator if separator else ', '
-    list_str = separator_str.join(list_value)
+    if None in list_value:
+        list_value = [lv for lv in list_value if lv is not None]
+    list_str = separator_str.join(list_value) if list_value else 'None'
 
     if separator_str.startswith(CRLF):
         return f"{separator_str}{list_str}"
@@ -55,8 +58,8 @@ def list_del(list_value, del_value):
 def str_to_list(str_value):
     '''
     Create a list of a comma separated strings
-    str_value   - ('icloud,iosapp')
-    Return      - ['icloud','iosapp']
+    str_value   - ('icloud,mobapp')
+    Return      - ['icloud','mobapp']
     '''
 
     while instr(str_value,', '):
@@ -200,6 +203,20 @@ def obscure_field(field):
 
     obscure_field = (f"{field[0:2]}{'.'*(len(field)-2)}")
     return obscure_field
+
+#--------------------------------------------------------------------
+def zone_dname(zone):
+    try:
+        return Gb.zone_display_as[zone]
+    except:
+        if zone in Gb.Zones_by_zone:
+            Zone = Gb.Zones_by_zone[zone]
+            Gb.zone_display_as[zone] = Zone.dname
+        elif is_statzone(zone):
+            Gb.zone_display_as[zone] = f"StatZone{zone[-1]}"
+        else:
+            Gb.zone_display_as[zone] = zone.title()
+        return Gb.zone_display_as[zone]
 
 #--------------------------------------------------------------------
 def zone_display_as(zone):

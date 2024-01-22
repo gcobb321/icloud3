@@ -30,7 +30,7 @@ from .const             import (DOMAIN, VERSION, ICLOUD3,RARROW,
                                 DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 CONF_TRACK_FROM_ZONES,
                                 CONF_IC3_DEVICENAME, CONF_MODEL, CONF_RAW_MODEL, CONF_FNAME,
-                                CONF_FAMSHR_DEVICENAME, CONF_IOSAPP_DEVICE,
+                                CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                 CONF_TRACKING_MODE,
                                 )
 from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS,
@@ -184,7 +184,7 @@ def _create_device_sensors(devicename, conf_device, sensors_list):
             continue
         if (instr(sensor, BATTERY)
                 and conf_device[CONF_FAMSHR_DEVICENAME] == NONE_FNAME
-                and conf_device[CONF_IOSAPP_DEVICE] == NONE_FNAME):
+                and conf_device[CONF_MOBILE_APP_DEVICE] == NONE_FNAME):
             continue
 
         devicename_sensor = f"{devicename}_{sensor}"
@@ -219,6 +219,8 @@ def _create_track_from_zone_sensors(devicename, conf_device, sensors_list):
         return []
 
     ha_zones, zone_entity_data   = entity_io.get_entity_registry_data(platform=ZONE)
+    # zone_entity_ids              = entity_io.ha_zone_entity_ids()
+    # ha_zones = [zone_entity_id.replace('zone.', '') for zone_entity_id in zone_entity_ids]
     devicename_from_zone_sensors = Gb.Sensors_by_devicename_from_zone.get(devicename, {})
     excluded_sensors_list        = _excluded_sensors_list()
 
@@ -1074,17 +1076,17 @@ class Sensor_Distance(SensorBase):
     def _format_zone_distance_extra_attrs(self):
         '''
         Get the distance to each zone and build the extra_attributes Zone distance items
-
         '''
 
         dist_attrs = OrderedDict()
-        zone_dist_km = {f" - {Zone.display_as}": set_precision(self.Device.Distance_km(Zone), 'km')
-                                for Zone in Gb.ActiveZones}
+        zone_dist_km = {f" - {Zone.dname}": set_precision(self.Device.Distance_km(Zone), 'km')
+                                for Zone in Gb.HAZones}
         zone_dist_mi = {zone_da: set_precision(km_to_mi(dist_km), 'mi')
                                 for zone_da, dist_km in zone_dist_km.items()}
 
-        zone_dist_m  = {f" - {Zone.display_as}.": set_precision(self.Device.Distance_m(Zone), 'm')
-                                for Zone in Gb.ActiveZones
+        # zone_dist_m  = {f" - {Zone.dname}.": set_precision(self.Device.Distance_m(Zone), 'm')
+        zone_dist_m  = {f" - {Zone.dname}²": set_precision(self.Device.Distance_m(Zone), 'm')
+                                for Zone in Gb.HAZones
                                 if self.Device.Distance_m(Zone) < 500}
         zone_dist_ft = {zone_da: self._set_precision(m_to_ft(dist_m), 'ft')
                                 for zone_da, dist_m in zone_dist_m.items()}
@@ -1118,7 +1120,8 @@ class Sensor_Distance(SensorBase):
         device_dist_ft = {device_fn: self._set_precision(m_to_ft(dist_m), 'ft')
                                 for device_fn, dist_m in device_dist_m.items()}
 
-        device_dist_km  = {f" - {self._fname(devicename)}.": set_precision(dist_to_other_devices[0]/1000, 'km')
+        # device_dist_km  = {f" - {self._fname(devicename)}.": set_precision(dist_to_other_devices[0]/1000, 'km')
+        device_dist_km  = {f" - {self._fname(devicename)}²": set_precision(dist_to_other_devices[0]/1000, 'km')
                                 # for devicename, dist_to_other_devices in self.Device.sensors[DISTANCE_TO_OTHER_DEVICES].items()
                                 for devicename, dist_to_other_devices in self.Device.dist_to_other_devices.items()
                                 if dist_to_other_devices[0] >= 500}
@@ -1217,7 +1220,9 @@ class Support_SensorBase(SensorEntity):
         self._device           = DOMAIN
         # self.ic3_device_id = Gb.ic3_device_id = Gb.ha_device_id_by_devicename.get(DOMAIN)
         self.current_state_value = ''
-        self.history_exclude_flag = True
+        self.history_exclude_flag = False \
+            if self.entity_name == SENSOR_WAZEHIST_TRACK_NAME \
+            else True
 
         Gb.sensors_created_cnt += 1
         log_debug_msg(f'Sensor entity created: {self.entity_id}, #{Gb.sensors_created_cnt}')
@@ -1355,6 +1360,8 @@ class Sensor_WazeHistTrack(Support_SensorBase):
             return None
 
         return {'integration': ICLOUD3,
+                'records': Gb.WazeHist.track_recd_cnt,
+                'updated': datetime_now(),
                 'latitude': Gb.WazeHist.track_latitude,
                 'longitude': Gb.WazeHist.track_longitude,
                 'friendly_name': 'WazeHist'}

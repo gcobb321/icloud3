@@ -133,7 +133,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         Gb.PyiCloud = None
 
-        recorder_prefilter.add_filter(hass, [SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME])
+        recorder_prefilter.add_filter(hass, [SENSOR_EVENT_LOG_NAME])
+        #recorder_prefilter.add_filter(hass, [SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME])
         start_ic3.initialize_directory_filenames()
         config_file.load_storage_icloud3_configuration_file()
         start_ic3.set_log_level(Gb.log_level)
@@ -149,9 +150,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
-            if 'mobile_app' in Gb.hass.data:
-                Gb.MobileApp_data = Gb.hass.data['mobile_app']
-                Gb.MobileApp_devices = Gb.MobileApp_data.get('devices', {})
+
 
             pass
 

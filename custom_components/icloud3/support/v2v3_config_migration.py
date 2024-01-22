@@ -6,7 +6,7 @@ from ..const            import (
                                 IPHONE, IPAD,
                                 WATCH,  AIRPODS,
                                 DEVICE_TYPES,
-                                NO_IOSAPP,
+                                NO_MOBAPP,
                                 NAME,
                                 NAME, BADGE,
                                 TRIGGER, INACTIVE_DEVICE,
@@ -24,9 +24,8 @@ from ..const            import (
                                 CONF_CONFIG_IC3_FILE_NAME,
                                 CONF_VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES,
-                                CONF_DEVICENAME, CONF_TRACK_FROM_ZONES, CONF_TRACKING_MODE,
-                                CONF_IOSAPP_SUFFIX, CONF_IOSAPP_ENTITY, CONF_NO_IOSAPP, CONF_IOSAPP_INSTALLED,
-                                CONF_PICTURE, CONF_EMAIL, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
+                                CONF_TRACK_FROM_ZONES, CONF_TRACKING_MODE,
+                                CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL,
                                 CONF_GPS_ACCURACY_THRESHOLD, CONF_OLD_LOCATION_THRESHOLD,
                                 CONF_TRAVEL_TIME_FACTOR,
@@ -38,7 +37,7 @@ from ..const            import (
                                 CONF_STAT_ZONE_BASE_LATITUDE,
                                 CONF_STAT_ZONE_BASE_LONGITUDE, CONF_DISPLAY_TEXT_AS,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
-                                CONF_IOSAPP_DEVICE, CONF_PICTURE, CONF_FMF_EMAIL,
+                                CONF_MOBILE_APP_DEVICE, CONF_PICTURE, CONF_FMF_EMAIL,
                                 CONF_TRACK_FROM_ZONES, CONF_DEVICE_TYPE, CONF_INZONE_INTERVAL,
                                 CONF_NAME,
                                 NAME, BADGE, BATTERY, BATTERY_STATUS, INFO,
@@ -50,6 +49,7 @@ from ..const            import (
 
 CONF_DEVICENAME       = 'device_name'
 CONF_NO_IOSAPP        = 'no_iosapp'
+CONF_NOIOSAPP         = 'noiosapp'
 CONF_IOSAPP_INSTALLED = 'iosapp_installed'
 CONF_IOSAPP_SUFFIX    = 'iosapp_suffix'
 CONF_IOSAPP_ENTITY    = 'iosapp_entity'
@@ -61,7 +61,7 @@ CONF_TRACKING_METHOD  = 'tracking_method'
 VALID_CONF_DEVICES_ITEMS = [CONF_DEVICENAME, CONF_EMAIL, CONF_PICTURE, CONF_NAME,
                             CONF_INZONE_INTERVAL, 'track_from_zone', CONF_IOSAPP_SUFFIX,
                             CONF_IOSAPP_ENTITY, CONF_IOSAPP_INSTALLED,
-                            CONF_NO_IOSAPP, CONF_TRACKING_METHOD, ]
+                            CONF_NO_IOSAPP, CONF_NOIOSAPP, CONF_TRACKING_METHOD, ]
 
 TIME_PARAMETER_ITEMS = [    CONF_MAX_INTERVAL, CONF_OLD_LOCATION_THRESHOLD,
                             CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
@@ -304,7 +304,7 @@ class iCloud3_v2v3ConfigMigration(object):
                 continue
             self.devicename_list.append(devicename)
             conf_device = DEFAULT_DEVICE_CONF.copy()
-            conf_device[CONF_IOSAPP_DEVICE] = f"Search: {devicename}"
+            conf_device[CONF_MOBILE_APP_DEVICE] = f"Search: {devicename}"
             conf_device[CONF_TRACKING_MODE]= INACTIVE_DEVICE
 
             self.write_migration_log_msg(f"Extracted device: {devicename}")
@@ -338,16 +338,16 @@ class iCloud3_v2v3ConfigMigration(object):
                     elif pname == CONF_IOSAPP_SUFFIX:
                         if pvalue.startswith('_') is False:
                             pvalue = f"_{pvalue}"
-                        conf_device[CONF_IOSAPP_DEVICE] = f"{devicename}{pvalue}"
+                        conf_device[CONF_MOBILE_APP_DEVICE] = f"{devicename}{pvalue}"
 
                     elif pname == CONF_IOSAPP_ENTITY:
-                            conf_device[CONF_IOSAPP_DEVICE] = pvalue
+                            conf_device[CONF_MOBILE_APP_DEVICE] = pvalue
 
                     elif pname == CONF_NO_IOSAPP and pvalue:
-                        conf_device[CONF_IOSAPP_DEVICE] = 'None'
+                        conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
 
                     elif pname == CONF_IOSAPP_INSTALLED and pvalue is False:
-                        conf_device[CONF_IOSAPP_DEVICE] = 'None'
+                        conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
 
                     elif pname == CONF_TRACKING_METHOD:
                         if pvalue == 'fmf':
@@ -411,7 +411,7 @@ class iCloud3_v2v3ConfigMigration(object):
                 inzone_intervals[IPAD]      = iztype_iztime.get(IPAD, 240)
                 inzone_intervals[WATCH]     = iztype_iztime.get(WATCH, 15)
                 inzone_intervals[AIRPODS]   = iztype_iztime.get(AIRPODS, 15)
-                inzone_intervals[NO_IOSAPP] = iztype_iztime.get(NO_IOSAPP, 15)
+                inzone_intervals[NO_MOBAPP] = iztype_iztime.get(NO_IOSAPP, 15)
                 self.conf_parm_general[CONF_INZONE_INTERVALS] = inzone_intervals.copy()
 
             elif pname == 'stationary_zone_offset':

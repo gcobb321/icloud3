@@ -48,7 +48,7 @@ class iCloud3_DeviceFmZone():
             self.FromZone             = Gb.Zones_by_zone[from_zone]
             self.from_zone            = from_zone
             self.devicename_zone      = (f"{self.devicename}:{from_zone}")
-            self.from_zone_display_as = self.FromZone.display_as
+            self.from_zone_dname      = self.FromZone.dname
             self.from_zone_radius_m   = self.FromZone.radius_m
 
             self.initialize()
@@ -139,8 +139,8 @@ class iCloud3_DeviceFmZone():
         return calc_distance_km(self.Device.loc_data_gps, self.FromZone.gps)
 
     @property
-    def distance_km_iosapp(self):
-        return calc_distance_km(self.Device.iosapp_data_gps, self.FromZone.gps)
+    def distance_km_mobapp(self):
+        return calc_distance_km(self.Device.mobapp_data_gps, self.FromZone.gps)
 
     @property
     def is_going_towards(self):

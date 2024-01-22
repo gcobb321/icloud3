@@ -5,7 +5,7 @@ from ..const            import (DOT, ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR
                                 EVLOG_TIME_RECD, EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
                                 EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING,EVLOG_IC3_STAGE_HDR,
                                 IC3_LOG_FILENAME, EVLOG_TIME_RECD,
-                                CRLF, CRLF_DOT, NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6,
+                                CRLF, CRLF_DOT, NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CRLF_INDENT,
                                 DATETIME_FORMAT, DATETIME_ZERO,
                                 NEXT_UPDATE_TIME, INTERVAL,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
@@ -118,7 +118,13 @@ def post_event(devicename, event_msg='+'):
 
     Gb.EvLog.post_event(devicename, event_msg)
 
-    if (Gb.log_debug_flag and event_msg.startswith(EVLOG_TIME_RECD) is False):
+    alert_msg_flag = event_msg[0:2] in [EVLOG_ALERT, EVLOG_ERROR, EVLOG_WARNING]
+    if (Gb.log_debug_flag is False
+            and (event_msg.startswith('^') is False or alert_msg_flag)):
+        event_msg = (f"{devicename} > {str(event_msg)}")
+        write_ic3_log_recd(event_msg)
+
+    elif (Gb.log_debug_flag and event_msg.startswith(EVLOG_TIME_RECD) is False):
         event_msg = (f"{devicename} > {str(event_msg)}")
         write_ic3_log_recd(event_msg)
 
@@ -225,6 +231,13 @@ def ha_notification(msg_line1, msg_line2=None) -> None:
     )
 
 #--------------------------------------------------------------------
+def format_filename(path):
+    if path.startswith('/config') or len(path) < 50:
+        return path
+    else:
+        return (f"{Gb.ha_config_directory}...{CRLF_INDENT}"
+                f"{path.replace(Gb.ha_config_directory, '')}")
+#--------------------------------------------------------------------
 def more_info(key):
 
     Gb.HALogger.info(f"{Gb.startup_stage_status_controls=} {key}")
@@ -233,7 +246,6 @@ def more_info(key):
 
     elif key in more_info_text:
         Gb.startup_stage_status_controls.append(key)
-        Gb.HALogger.info(f"{Gb.startup_stage_status_controls=} {key}")
         return more_info_text[key]
 
 
@@ -702,19 +714,22 @@ def post_internal_error(err_text, traceback_format_exec_obj='+'):
     err_error_msg = err_code = err_file_line_module = ""
     err_lines.reverse()
 
+
     for err_line in err_lines:
-        err_line = err_line.strip(' ')
-        if err_line == "":
+        err_line = err_line.strip()
+        if (err_line == "" or err_line.find('~') >= 0 or err_line.find('^^') >= 0
+                or err_line.startswith('^')):
             continue
+
         elif err_error_msg == "":
             err_error_msg = err_line
-        elif err_line.find('~') >= 0 or err_line.find('^^') >= 0:
-            continue
+
         elif err_code == "":
             err_code = err_line
 
-        elif err_line.startswith('File'):
+        elif err_line.startswith('File') and err_file_line_module == '':
             err_file_line_module = err_line.replace(Gb.icloud3_directory, '')
+
 
     try:
         err_msg =  (f"{CRLF_DOT}File... > {err_file_line_module})"

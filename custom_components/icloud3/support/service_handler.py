@@ -19,12 +19,13 @@ from ..const                import (DOMAIN,
                                     )
 
 from ..support              import config_file
-from ..support              import iosapp_interface
+from ..support              import mobapp_interface
 from ..support              import start_ic3
 from ..support              import determine_interval as det_interval
 from ..helpers.common       import (instr, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg,
                                     write_ic3_log_recd, post_alert, clear_alert,
+                                    more_info,
                                     log_info_msg, log_debug_msg, log_exception,
                                     open_ic3_log_file, close_ic3_log_file,
                                     close_reopen_ic3_log_file, delete_open_log_file,
@@ -89,7 +90,9 @@ ACTION_FNAME_TO_ACTION = {
                     'Pause Tracking': 'pause',
                     'Resume Tracking': 'resume',
                     'Locate Device(s) using iCloud FamShr': 'locate',
-                    'Send Locate Request to iOS App': 'locate iosapp'
+                    'Send Locate Request to iOS App': 'locate iosapp',
+                    'Send Locate Request to Mobile App': 'locate mobapp',
+                    'Send Locate Request to Mobile App': 'locate mobileapp'
 }
 
 SERVICE_SCHEMA = vol.Schema({
@@ -191,6 +194,9 @@ def resolve_action_devicename_values(action, devicename):
     # is coming in from the Developer Tools/Services screen
     if action in ACTION_FNAME_TO_ACTION:
         action = ACTION_FNAME_TO_ACTION[action]
+    if devicename == 'startup_log':
+         return action, devicename
+
     if devicename in Gb.Devices_by_ha_device_id:
         devicename = Gb.Devices_by_ha_device_id[devicename].devicename
     if devicename not in Gb.Devices_by_devicename:
@@ -254,9 +260,11 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
                             calculations
     - pause-resume      - same as above but toggles between pause and resume
     - reset             - reset everything and rescans all of the devices
-    - location          - request location update from ios app
+    - location          - request location update from mobile app
     - locate x mins     - locate in x minutes from FamShr or FmF
     - locate iosapp     - request location update from ios app
+    - locate mobapp     - request location update from mobile app
+    - locate mobile     - request location update from mobile app
     - config_flow       - Display the Configure screens handled by the config_flow module
     """
     # Ignore Action requests during startup. They are caused by the devicename changes
@@ -331,7 +339,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
         elif action == CMD_REQUEST_LOCATION:
             for Device in Devices:
-                _handle_action_device_location_iosapp(Device)
+                _handle_action_device_location_mobapp(Device)
 
         elif action == 'delete_log':
             delete_open_log_file()
@@ -403,19 +411,11 @@ def _handle_global_action(global_action, action_option):
             post_event(event_msg)
 
     elif global_action == CMD_WAZEHIST_TRACK:
-        event_msg = ("Waze History > Update Location Map Display Points "
-                    "Scheduled for Midnight")
-        post_event(event_msg)
         Gb.WazeHist.wazehist_update_track_sensor()
         return
 
     elif global_action == 'event_log_version':
         return
-        # Gb.evlog_version = action_option
-        # Gb.EvLog.evlog_attrs["version_evlog"] = action_option
-        # Gb.conf_profile['event_log_version'] = action_option
-        # config_file.write_storage_icloud3_configuration_file()
-
 
 #--------------------------------------------------------------------
 def handle_action_log_level(action_option, change_conf_log_level=True):
@@ -468,51 +468,43 @@ def _handle_action_config_flow_settings():
         log_exception(err)
 
 #--------------------------------------------------------------------
-def _handle_action_device_location_iosapp(Device):
+def _handle_action_device_location_mobapp(Device):
     '''
-    Request ios app location from the EvLog > Actions
+    Request Mobile App location from the EvLog > Actions
     '''
+    if Device.is_data_source_MOBAPP is False:
+       return _handle_action_device_locate(Device, 'mobapp')
 
     Device.display_info_msg('Updating Location')
 
-    if Device.iosapp_monitor_flag:
-        Device.iosapp_data_change_reason = f"Location Requested@{time_now()}"
-        iosapp_interface.request_location(Device, force_request=True)
-
-    # Device.resume_tracking()
-    # Device.write_ha_sensor_state(NEXT_UPDATE, 'Locating')
+    if Device.mobapp_monitor_flag:
+        Device.mobapp_data_change_reason = f"Location Requested@{time_now()}"
+        mobapp_interface.request_location(Device, force_request=True)
 
 #--------------------------------------------------------------------
 def _handle_action_device_locate(Device, action_option):
     '''
     Set the next update time & interval from the Action > locate service call
     '''
-    if action_option == 'iosapp':
-        _handle_action_device_location_iosapp(Device)
-        return
+    if action_option in ['mobapp', 'iosapp', 'mobileapp']:
+        if Device.is_data_source_MOBAPP:
+            _handle_action_device_location_mobapp(Device)
+            return
+        else:
+            post_event(Device.devicename,
+                        "Mobile App Location Tracking is not available")
 
     if (Gb.primary_data_source_ICLOUD is False
             or (Device.device_id_famshr is None and Device.device_id_fmf is None)
             or Device.is_data_source_ICLOUD is False):
-        post_event(Device.devicename, "iCloud Location Tracking is not available")
+        post_event(Device.devicename,
+                    "iCloud Location Tracking is not available")
         return
+
     elif Device.is_offline:
-        post_event(Device.devicename, "The device is offline, iCloud Location \
-                    Tracking is not available")
+        post_event(Device.devicename,
+                    "The device is offline, iCloud Location Tracking is not available")
         return
-
-    # if Device.old_loc_cnt > 3:
-        # If older than 10-mins, resume tracking instead to initialize the device and reset
-        # all error s
-        # if Device.FromZone_Home.interval_secs >= 600:
-            # Device.resume_tracking()
-            # return
-
-        # post_event(Device.devicename, "Location request canceled. Old Location Retry is "
-        #         "handling Location Updates. Use `action resume` to reinitialize device")
-        # post_event(Device.devicename, "iCloud Location Tracking is not available")
-        # Gb.icloud_force_update_flag = False
-        # return
 
     try:
         interval_secs = time_str_to_secs(action_option)
@@ -556,7 +548,7 @@ def issue_ha_notification():
 def find_iphone_alert_service_handler(devicename):
     """
     Call the lost iPhone function if using th e FamShr tracking method.
-    Otherwise, send a notification to the iOS App
+    Otherwise, send a notification to the Mobile App
     """
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_FAMSHR:
@@ -567,8 +559,14 @@ def find_iphone_alert_service_handler(devicename):
             post_event(devicename, "iCloud Find My iPhone Alert sent")
             return
 
-    event_msg =("iCloud Device not available, the alert will be sent to the iOS App")
-    post_event(devicename, event_msg)
+    if Device.conf_famshr_device_id and Device.verified is False:
+        alert_msg =(f"{EVLOG_ALERT}ALERT CAN NOT BE SENT - The FamShr device has been specified "
+                    f"but it was not verified during startup and is not available."
+                    f"{more_info('famshr_find_my_phone_alert_error')}")
+    else:
+        alert_msg =("The iCloud FamShr Device was not specified or is not available. "
+                    "The alert will be sent using the Mobile App")
+    post_event(devicename, alert_msg)
 
     message =   {"message": "Find My iPhone Alert",
                     "data": {
@@ -581,13 +579,13 @@ def find_iphone_alert_service_handler(devicename):
                         }
                     }
                 }
-    iosapp_interface.send_message_to_device(Device, message)
+    mobapp_interface.send_message_to_device(Device, message)
 
 #--------------------------------------------------------------------
 def lost_device_alert_service_handler(devicename, number, message=None):
     """
-    Call the lost iPhone function if using th e FamShr tracking method.
-    Otherwise, send a notification to the iOS App
+    Call the lost iPhone function if using the FamShr tracking method.
+    Otherwise, send a notification to the Mobile App
     """
     if message is None:
         message = 'This Phone has been lost. Please call this number to report it found.'

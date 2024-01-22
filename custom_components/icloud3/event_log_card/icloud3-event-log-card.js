@@ -22,12 +22,11 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version = "3.0.16"
+        const version = "3.0.17"
         const cardTitle = "iCloud3 v3 - Event Log"
 
         const root = this.shadowRoot
         const hass = this._hass
-
 
         // Create card elements
         const card = document.createElement('ha-card')
@@ -135,96 +134,103 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.classList.add("btnBaseFormat")
         btnAction.classList.add("btnAction")
 
-        var btnActionOptA = document.createElement("option")
-        var btnActionOptATxt = document.createTextNode("Actions")
-        btnActionOptA.setAttribute("value", "action")
-        btnActionOptA.setAttribute("id", "optAction")
-        btnActionOptA.classList.add("btnActionOptionTransparent")
-        btnActionOptA.appendChild(btnActionOptATxt)
-        btnAction.appendChild(btnActionOptA)
+        var btnActionGenActions = document.createElement("option")
+        var btnActionGenActionsTxt = document.createTextNode("Actions")
+        btnActionGenActions.setAttribute("value", "action")
+        btnActionGenActions.setAttribute("id", "optAction")
+        btnActionGenActions.classList.add("btnActionOptionTransparent")
+        btnActionGenActions.appendChild(btnActionGenActionsTxt)
+        btnAction.appendChild(btnActionGenActions)
 
-        var btnActionOptG = document.createElement("optGroup")
-        btnActionOptG.setAttribute("label", "Global Actions")
-        btnActionOptG.classList.add("btnActionOptionGroup")
-        btnAction.appendChild(btnActionOptG)
+        var btnActionGrpGen = document.createElement("optGroup")
+        btnActionGrpGen.setAttribute("label", "Global Actions")
+        btnActionGrpGen.classList.add("btnActionOptionGroup")
+        btnAction.appendChild(btnActionGrpGen)
 
-        var btnActionOptG1 = document.createElement("option")
-        var btnActionOptG1Txt = document.createTextNode("Restart iCloud3")
-        btnActionOptG1.setAttribute("value", "restart")
-        btnActionOptG1.setAttribute("text-align", "left")
-        btnActionOptG1.classList.add("btnActionOption")
-        btnActionOptG1.appendChild(btnActionOptG1Txt)
-        btnAction.appendChild(btnActionOptG1)
+        var btnActionGenRestart = document.createElement("option")
+        var btnActionGenRestartTxt = document.createTextNode("Restart iCloud3")
+        btnActionGenRestart.setAttribute("value", "restart")
+        btnActionGenRestart.setAttribute("text-align", "left")
+        btnActionGenRestart.classList.add("btnActionOption")
+        btnActionGenRestart.appendChild(btnActionGenRestartTxt)
+        btnAction.appendChild(btnActionGenRestart)
 
-        var btnActionOptG2 = document.createElement("option")
-        var btnActionOptG2Txt = document.createTextNode("Pause All Tracking")
-        btnActionOptG2.setAttribute("value", "pause")
-        btnActionOptG2.classList.add("btnActionOption")
-        btnActionOptG2.appendChild(btnActionOptG2Txt)
-        btnAction.appendChild(btnActionOptG2)
+        var btnActionGenPause = document.createElement("option")
+        var btnActionGenPauseTxt = document.createTextNode("Pause All Tracking")
+        btnActionGenPause.setAttribute("value", "pause")
+        btnActionGenPause.classList.add("btnActionOption")
+        btnActionGenPause.appendChild(btnActionGenPauseTxt)
+        btnAction.appendChild(btnActionGenPause)
 
-        var btnActionOptG3 = document.createElement("option")
-        var btnActionOptG3Txt = document.createTextNode("Resume All Tracking")
-        btnActionOptG3.setAttribute("value", "resume")
-        btnActionOptG3.classList.add("btnActionOption")
-        btnActionOptG3.appendChild(btnActionOptG3Txt)
-        btnAction.appendChild(btnActionOptG3)
+        var btnActionGenResume = document.createElement("option")
+        var btnActionGenResumeTxt = document.createTextNode("Resume All Tracking")
+        btnActionGenResume.setAttribute("value", "resume")
+        btnActionGenResume.classList.add("btnActionOption")
+        btnActionGenResume.appendChild(btnActionGenResumeTxt)
+        btnAction.appendChild(btnActionGenResume)
 
-        var btnActionOptG7 = document.createElement("option")
-        var btnActionOptG7Txt = document.createTextNode("Locate All Devices (FamShr, FmF)")
-        btnActionOptG7.setAttribute("value", "locate")
-        btnActionOptG7.classList.add("btnActionOption")
-        btnActionOptG7.appendChild(btnActionOptG7Txt)
-        btnAction.appendChild(btnActionOptG7)
+        var btnActionGenLoc = document.createElement("option")
+        var btnActionGenLocTxt = document.createTextNode("Locate All Devices with iCloud FamShr")
+        btnActionGenLoc.setAttribute("value", "locate")
+        btnActionGenLoc.classList.add("btnActionOption")
+        btnActionGenLoc.appendChild(btnActionGenLocTxt)
+        btnAction.appendChild(btnActionGenLoc)
 
-        var btnActionOptG8 = document.createElement("option")
-        var btnActionOptG8Txt = document.createTextNode("Send Locate Request to iOS App")
-        btnActionOptG8.setAttribute("value", "location")
-        btnActionOptG8.classList.add("btnActionOption")
-        btnActionOptG8.appendChild(btnActionOptG8Txt)
-        btnAction.appendChild(btnActionOptG8)
+        var btnActionGenMobRqst = document.createElement("option")
+        var btnActionGenMobRqstTxt = document.createTextNode("Send Locate Request to Mobile App")
+        btnActionGenMobRqst.setAttribute("value", "location")
+        btnActionGenMobRqst.classList.add("btnActionOption")
+        btnActionGenMobRqst.appendChild(btnActionGenMobRqstTxt)
+        btnAction.appendChild(btnActionGenMobRqst)
 
 
         //---------------------------------------------------------
-        var btnActionOptD = document.createElement("optGroup")
-        btnActionOptD.setAttribute("label", "Selected Device")
-        btnActionOptD.classList.add("btnActionOptionGroup")
-        btnAction.appendChild(btnActionOptD)
+        var btnActionDevGrp = document.createElement("optGroup")
+        btnActionDevGrp.setAttribute("label", "Selected Device")
+        btnActionDevGrp.classList.add("btnActionOptionGroup")
+        btnAction.appendChild(btnActionDevGrp)
 
-        var btnActionOptD1 = document.createElement("option")
-        var btnActionOptD1Txt = document.createTextNode("Pause Tracking This Device")
-        btnActionOptD1.setAttribute("value", "dev-pause")
-        btnActionOptD1.classList.add("btnActionOption")
-        btnActionOptD1.appendChild(btnActionOptD1Txt)
-        btnAction.appendChild(btnActionOptD1)
+        var btnActionDevPause = document.createElement("option")
+        var btnActionDevPauseTxt = document.createTextNode("Pause Tracking This Device")
+        btnActionDevPause.setAttribute("value", "dev-pause")
+        btnActionDevPause.classList.add("btnActionOption")
+        btnActionDevPause.appendChild(btnActionDevPauseTxt)
+        btnAction.appendChild(btnActionDevPause)
 
-        var btnActionOptD2 = document.createElement("option")
-        var btnActionOptD2Txt = document.createTextNode("Resume Tracking This Device")
-        btnActionOptD2.setAttribute("value", "dev-resume")
-        btnActionOptD2.classList.add("btnActionOption")
-        btnActionOptD2.appendChild(btnActionOptD2Txt)
-        btnAction.appendChild(btnActionOptD2)
+        var btnActionDevResume = document.createElement("option")
+        var btnActionDevResumeTxt = document.createTextNode("Resume Tracking This Device")
+        btnActionDevResume.setAttribute("value", "dev-resume")
+        btnActionDevResume.classList.add("btnActionOption")
+        btnActionDevResume.appendChild(btnActionDevResumeTxt)
+        btnAction.appendChild(btnActionDevResume)
 
-        var btnActionOptD7 = document.createElement("option")
-        var btnActionOptD7Txt = document.createTextNode("Locate This Device (FamShr, FmF)")
-        btnActionOptD7.setAttribute("value", "dev-locate")
-        btnActionOptD7.classList.add("btnActionOption")
-        btnActionOptD7.appendChild(btnActionOptD7Txt)
-        btnAction.appendChild(btnActionOptD7)
+        var btnActionDevLoc = document.createElement("option")
+        var btnActionDevLocTxt = document.createTextNode("Locate This Device with iCloud FamShr")
+        btnActionDevLoc.setAttribute("value", "dev-locate")
+        btnActionDevLoc.classList.add("btnActionOption")
+        btnActionDevLoc.appendChild(btnActionDevLocTxt)
+        btnAction.appendChild(btnActionDevLoc)
 
-        var btnActionOptD8 = document.createElement("option")
-        var btnActionOptD8Txt = document.createTextNode("Send Locate Request to iOS App")
-        btnActionOptD8.setAttribute("value", "dev-location")
-        btnActionOptD8.classList.add("btnActionOption")
-        btnActionOptD8.appendChild(btnActionOptD8Txt)
-        btnAction.appendChild(btnActionOptD8)
+        var btnActionDevMobRqst = document.createElement("option")
+        var btnActionDevMobRqstTxt = document.createTextNode("Send Locate Request to Mobile App")
+        btnActionDevMobRqst.setAttribute("value", "dev-location")
+        btnActionDevMobRqst.classList.add("btnActionOption")
+        btnActionDevMobRqst.appendChild(btnActionDevMobRqstTxt)
+        btnAction.appendChild(btnActionDevMobRqst)
 
-        var btnActionOptD9 = document.createElement("option")
-        var btnActionOptD9Txt = document.createTextNode("Send Find My iPhone Alert (FamShr)")
-        btnActionOptD9.setAttribute("value", "dev-find-iphone-alert")
-        btnActionOptD9.classList.add("btnActionOption")
-        btnActionOptD9.appendChild(btnActionOptD9Txt)
-        btnAction.appendChild(btnActionOptD9)
+        var btnActionDevFind = document.createElement("option")
+        var btnActionDevFindTxt = document.createTextNode("Send Find-My-iPhone Alert (FamShr)")
+        btnActionDevFind.setAttribute("value", "dev-find-iphone-alert")
+        btnActionDevFind.classList.add("btnActionOption")
+        btnActionDevFind.appendChild(btnActionDevFindTxt)
+        btnAction.appendChild(btnActionDevFind)
+
+        // var btnActionDevLostLost = document.createElement("option")
+        // var btnActionDevLostLostTxt = document.createTextNode("Send Lost-Device Alert (FamShr)")
+        // btnActionDevLostLost.setAttribute("value", "dev-lost-device-alert")
+        // btnActionDevLostLost.classList.add("btnActionOption")
+        // btnActionDevLostLost.appendChild(btnActionDevLostLostTxt)
+        // btnAction.appendChild(btnActionDevLostLost)
 
         var btnActionOptOC = document.createElement("optGroup")
         btnActionOptOC.setAttribute("label", "Other Commands")
@@ -247,7 +253,7 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionOptOC2)
 
         var btnActionOptOC3 = document.createElement("option")
-        var btnActionOptOC3Txt = document.createTextNode("Show Startup Log, Errors & Alerts")
+        var btnActionOptOC3Txt = document.createTextNode("Show Startup Log, Errors and Alerts")
         btnActionOptOC3.setAttribute("value", "dev-refresh_event_log")
         btnActionOptOC3.setAttribute("id", "optStartuplog")
         btnActionOptOC3.classList.add("btnActionOption")
@@ -294,11 +300,32 @@ class iCloud3EventLogCard extends HTMLElement {
         btnActionOptOC6.appendChild(btnActionOptOC6Txt)
         btnAction.appendChild(btnActionOptOC6)
 
-        var btnActionOptAbout = document.createElement("option")
-        var btnActionOptAboutTxt = document.createTextNode("iCloud3 Event Log v" + version)
-        var btnActionOptAboutVersion = document.createTextNode(version)
-        btnActionOptAbout.appendChild(btnActionOptAboutTxt)
-        btnAction.appendChild(btnActionOptAbout)
+        var btnActionOptVer = document.createElement("optGroup")
+        btnActionOptVer.setAttribute("label", "Version Information")
+        btnActionOptVer.classList.add("btnActionOptionGroup")
+        btnAction.appendChild(btnActionOptVer)
+
+        var btnActioniC3Version = document.createElement("option")
+        var btnActioniC3VersionTxt = document.createTextNode(" • iCloud3 v?.? (Installed & Running)")
+        btnActioniC3Version.classList.add("btnActionOption")
+        btnActioniC3Version.setAttribute("id", "optiC3Version")
+        btnActioniC3Version.appendChild(btnActioniC3VersionTxt)
+        btnAction.appendChild(btnActioniC3Version)
+
+        var btnActionEvLogLatest = document.createElement("option")
+        var btnActionEvLogLatestTxt = document.createTextNode(" • EvLog... v?.??.?? (Latest-iC3/EvLog dir)")
+        btnActionEvLogLatest.classList.add("btnActionOption")
+        btnActionEvLogLatest.setAttribute("id", "optEvLogLatest")
+        btnActionEvLogLatest.appendChild(btnActionEvLogLatestTxt)
+        btnAction.appendChild(btnActionEvLogLatest)
+
+        var btnActionEvLogRunning = document.createElement("option")
+        var btnActionEvLogRunningTxt = document.createTextNode(" • EvLog... v" + version + " (Running-HA/www dir)")
+        btnActionEvLogRunning.classList.add("btnActionOption")
+        btnActionEvLogRunning.setAttribute("id", "optEvLogRunning")
+        btnActionEvLogRunning.appendChild(btnActionEvLogRunningTxt)
+        btnAction.appendChild(btnActionEvLogRunning)
+
 
         //-------------------------------------------------------------
         // SVG Icons source -- https://heroicons.com/
@@ -445,7 +472,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .redbox             {border: 1px solid var(--label-badge-red);
                                 border-collapse: collapse;}
 
-            .iosappRecd         {color: teal;}
+            .mobappRecd         {color: teal;}
             /* .errorMsg           {color: var(--label-badge-red);
                                     border-left: 2px solid var(--label-badge-red);}*/
             .errorMsg           {color: MediumVioletRed;
@@ -982,15 +1009,21 @@ class iCloud3EventLogCard extends HTMLElement {
         const statusMsgPopup = root.getElementById("statusMsgPopup")
         const tblEvlog       = root.getElementById("tblEvlog")
         const devType        = root.getElementById("devType")
+        const optiC3Version  = root.getElementById("optiC3Version")
+        const optEvLogLatest = root.getElementById("optEvLogLatest")
         const displayUserMsgFlag = root.getElementById("displayUserMsgFlag")
         const versionSentFlag = root.getElementById("versionSentFlag")
 
         try {
-            const ic3DirEvlogVersion = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
-            const updateTime     = hass.states['sensor.icloud3_event_log'].attributes['update_time']
-            const userMessage    = hass.states['sensor.icloud3_event_log'].attributes['user_message']
-            const aboutVersion   = root.getElementById("aboutVersion")
-            const btnName0       = root.getElementById("btnName0")
+            const EvLogLatestVersion  = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
+            const iC3Version   = hass.states['sensor.icloud3_event_log'].attributes['version_ic3']
+            const updateTime   = hass.states['sensor.icloud3_event_log'].attributes['update_time']
+            const userMessage  = hass.states['sensor.icloud3_event_log'].attributes['user_message']
+            const aboutVersion = root.getElementById("aboutVersion")
+            const btnName0     = root.getElementById("btnName0")
+
+            optiC3Version.text  = " • iCloud3 v" + iC3Version + " (Installed & Running)"
+            optEvLogLatest.text = " • EvLog... v" + EvLogLatestVersion + " (Latest-iC3/EvLog dir)"
 
             if (thisButtonId.innerText == "setup") {
                 displayUserMsgFlag.innerText = 'true'
@@ -1014,15 +1047,15 @@ class iCloud3EventLogCard extends HTMLElement {
 
             if (statusMsgPopup.innerHTML == 'cancelMsgDisplay') {
                 'pass'
-            } else if (ic3DirEvlogVersion != '' && ic3DirEvlogVersion > aboutVersion.innerText) {
+            } else if (EvLogLatestVersion != '' && EvLogLatestVersion > aboutVersion.innerText) {
                 if (devType.innerText.startsWith("phn") || devType.innerText.startsWith("pad")) {
                     statusMsgPopup.innerHTML = '<p>The `Event Log Program` has been updated. You need to refresh \
-                    the iOS App to load the new version.\
+                    the Mobile App to load the new version.\
                     <br>...You are running: v'+ aboutVersion.innerText +
-                    '<br>...Updated Version: v'+ ic3DirEvlogVersion +
+                    '<br>...Updated Version: v'+ EvLogLatestVersion +
                     '<br><br>\
-                    Refreshing the iOS App:<br>\
-                    1. Open the iOS App on the iPhone or iPad.<br>\
+                    Refreshing the Mobile App:<br>\
+                    1. Open the Mobile App on the iPhone or iPad.<br>\
                     2. Select `Settings > Companion App`.<br>\
                     3. Select `Debugging`, then select `Reset frontend cache`.<br>\
                     4. Select `Settings` at the top, then select `Done` to go back to the Settings screen.<br>\
@@ -1034,7 +1067,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     statusMsgPopup.innerHTML = '<p>The `Event Log Program` has been updated. You need to refresh \
                     your browser to load the new version.\
                     <br>...You are running: v'+ aboutVersion.innerText +
-                    '<br>...Updated Version: v'+ ic3DirEvlogVersion +
+                    '<br>...Updated Version: v'+ EvLogLatestVersion +
                     '<br><br>\
                     Refreshing Chrome, Safari, Edge:<br>\
                     1. Display the Event Log, then press Ctrl+Shift+De.l<br>\
@@ -1248,7 +1281,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
         var cellWidth = hdrCellWidth.innerText.split(',')
         var thTime = "Time"
-        var thStat = "iOS App"
+        var thStat = "MobileApp"
         var thZone = "iC3 Zone"
         var thIntv = "Interval"
         var thTrav = "Travel"
@@ -1297,7 +1330,7 @@ class iCloud3EventLogCard extends HTMLElement {
         var cancelEdgeBarFlag = false
         var dropRecdFlag = false
         var initializationRecdFound = false
-        var iosappUpdateCompleteFlag = false
+        var mobappUpdateCompleteFlag = false
         var icloudUpdateCompleteFlag = false
 
         for (var i = 0; i < logEntries.length - 1; i++) {
@@ -1423,8 +1456,8 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 // ^c^ - update completed text, start edge block
                 } else if (tText.startsWith("^c^")) {
-                    if (tText.indexOf("iOS App") >= 0) {
-                        iosappUpdateCompleteFlag = true
+                    if (tText.indexOf("Mobile App") >= 0) {
+                        mobappUpdateCompleteFlag = true
                     } else {
                         icloudUpdateCompleteFlag = true
                     }
@@ -1854,12 +1887,16 @@ class iCloud3EventLogCard extends HTMLElement {
             actionDevicename = "startup_log"
         }
 
+        // alert('1/'+actionValue+'/'+actionDevicename+'/'+btnAction.options[actionIndex].innerText+'/')
         //Device Actions
         if (actionValue.startsWith("dev-")) {
             actionValue = actionValue.slice(4)
 
             if (actionValue == "find-iphone-alert") {
                 this._hass.callService("icloud3", "find_iphone_alert",
+                    { device_name: actionDevicename })
+            } else if (actionValue == "lost-device-alert") {
+                this._hass.callService("icloud3", "lost_device_alert",
                     { device_name: actionDevicename })
             } else {
                 this._hass.callService("icloud3", "action",
@@ -1896,14 +1933,14 @@ class iCloud3EventLogCard extends HTMLElement {
         */
         const root = this.shadowRoot
         const hass = this._hass
-        var versionEvLog   = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
+        var EvLogLatestVersion   = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
         const aboutVersion = root.getElementById("aboutVersion")
         const versionSentFlag = root.getElementById("versionSentFlag")
 
         if (versionSentFlag.innerText == 1) {
             return
         }
-        if (aboutVersion == versionEvLog) {
+        if (aboutVersion == EvLogLatestVersion) {
             versionSentFlag.innerText = 1
             return
         } else {
@@ -2003,8 +2040,8 @@ class iCloud3EventLogCard extends HTMLElement {
 
         const hass    = this._hass
         const root    = this.shadowRoot
-        var versionIc3   = hass.states['sensor.icloud3_event_log'].attributes['version_ic3']
-        var versionEvLog = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
+        var iC3Version   = hass.states['sensor.icloud3_event_log'].attributes['version_ic3']
+        var EvLogLatestVersion = hass.states['sensor.icloud3_event_log'].attributes['version_evlog']
         const aboutVersion    = root.getElementById("aboutVersion")
         // const button  = root.getElementById(buttonId)
         // const devType = root.getElementById("devType")
@@ -2028,18 +2065,17 @@ class iCloud3EventLogCard extends HTMLElement {
 
         } else if (buttonId == "btnAction") {
             var versionMsg = ""
-            if (versionIc3   == null) {versionIc3 = '?.?' }
-            if (versionEvLog == null) {versionEvLog = '?.?'}
-            if (versionEvLog == aboutVersion.innerText) {
-                var versionThisEvlog = ''
-            } else {
-                var versionThisEvlog = "/v" + aboutVersion.innerText
+            // if (iC3Version   == null) {iC3Version = '?.?' }
+            // versionMsg += "iCloud3 v" + iC3Version +", "
+
+            if (EvLogLatestVersion == null) {EvLogLatestVersion = '?.?'}
+            versionMsg += "EventLog Latest v" + EvLogLatestVersion
+            if (EvLogLatestVersion != aboutVersion.innerText) {
+                versionMsg +=  ", Running v" + aboutVersion.innerText
             }
-            versionMsg += "iCloud3 v" + versionIc3 +", "
-            versionMsg += "EventLog v" + versionEvLog + versionThisEvlog
+
             this._displayInfoText(versionMsg)
         }
-
     }
 
     //---------------------------------------------------------------------------

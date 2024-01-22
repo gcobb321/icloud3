@@ -4,7 +4,7 @@ from ..const                import (HOME, NOT_SET, HHMMSS_ZERO,
                                     EVLOG_ALERT,
                                     CRLF, CRLF_DOT, RARROW,
                                     FMF, FAMSHR,
-                                    FMF_FNAME, FAMSHR_FNAME, IOSAPP,
+                                    FMF_FNAME, FAMSHR_FNAME, MOBAPP,
                                     LATITUDE, LONGITUDE,
                                     LOCATION,
                                     )
@@ -38,10 +38,10 @@ def no_icloud_update_needed_tracking(Device):
         Device.icloud_no_update_reason = 'inZone & Next Update Time not Reached'
 
     elif Gb.primary_data_source_ICLOUD is False:
-        Device.icloud_no_update_reason = 'Global iOS App Data Source'
+        Device.icloud_no_update_reason = 'Global Mobile App Data Source'
 
     elif Device.is_data_source_ICLOUD is False:
-        Device.icloud_no_update_reason = 'Device data from iOS App'
+        Device.icloud_no_update_reason = 'Device data from Mobile App'
 
     return (Device.icloud_no_update_reason != '')
 
@@ -73,7 +73,7 @@ def is_icloud_update_needed_timers(Device):
             Device.icloud_update_reason = ( f"Next Update & Stat Zone Time Reached@"
                                         f"{secs_to_time(Device.statzone_timer)}")
         elif Device.isnot_inzone and Device.FromZone_NextToUpdate.from_zone != HOME:
-            Device.icloud_update_reason += f" ({Device.FromZone_NextToUpdate.from_zone_display_as})"
+            Device.icloud_update_reason += f" ({Device.FromZone_NextToUpdate.from_zone_dname})"
 
     elif Device.is_next_update_overdue:
         Device.icloud_update_reason = 'Next Update Time Overdue'
@@ -274,7 +274,7 @@ def update_all_devices_wih_latest_raw_data(Device):
 
 def update_device_with_latest_raw_data(Device, all_devices=False):
     '''
-    Update a Device's location data with the latest data from FamSshr, FmF or the iOSApp
+    Update a Device's location data with the latest data from FamSshr, FmF or the MobApp
     if is is better or newer than the old data. Optionally, cycle thru all PyiCloud
     Devices and update the data for every device being tracked or monitored when
     new data is requested for a device since iCloud gives us data for all devices.
@@ -283,7 +283,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
     and the one selecetd.
     '''
     try:
-        save_trace_prefix, Gb.trace_prefix = Gb.trace_prefix, "LOCDATA > "
+        save_trace_prefix, Gb.trace_prefix = Gb.trace_prefix, "LOCATE > "
         if all_devices:
             Update_Devices = Gb.Devices
             # log_start_finish_update_banner('start', Device.devicename, 'Update All Devices from RawData', '')
@@ -341,13 +341,13 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                             post_event(_Device.devicename, event_msg)
 
             if (_RawData is None
-                    or (_RawData.location_secs == 0 and _Device.iosapp_data_secs == 0)
+                    or (_RawData.location_secs == 0 and _Device.mobapp_data_secs == 0)
                     or _RawData.gps_accuracy > Gb.gps_accuracy_threshold):
                 pass
 
-            # Move the newest data from PyiCloud_RawData or the iOSApp data to the _Device's data fields
+            # Move the newest data from PyiCloud_RawData or the MobApp data to the _Device's data fields
             # But, if there is a location error, select iCloud data so it will do another request
-            elif (_RawData.location_secs >= _Device.iosapp_data_secs
+            elif (_RawData.location_secs >= _Device.mobapp_data_secs
                     or _Device.old_loc_cnt > 0):
                 if _RawData.location_secs != _Device.loc_data_secs:
                     _Device.moved_since_last_update_km = \
@@ -358,14 +358,14 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                     _Device.update_dev_loc_data_from_raw_data_FAMSHR_FMF(_RawData,
                                                     requesting_device_flag=requesting_device_flag)
 
-            elif _Device.iosapp_data_secs > 0:
-                if _Device.iosapp_data_secs != _Device.loc_data_secs:
+            elif _Device.mobapp_data_secs > 0:
+                if _Device.mobapp_data_secs != _Device.loc_data_secs:
                     _Device.moved_since_last_update_km = \
-                                _Device.distance_km(_Device.iosapp_data_latitude,
-                                                    _Device.iosapp_data_longitude)
+                                _Device.distance_km(_Device.mobapp_data_latitude,
+                                                    _Device.mobapp_data_longitude)
 
-                    # Move data from iOS App
-                    _Device.update_dev_loc_data_from_raw_data_IOSAPP()
+                    # Move data from Mobile App
+                    _Device.update_dev_loc_data_from_raw_data_MOBAPP()
 
             # The update data msg is only displayed when the requesting Device is updated so the msg
             # for the Device being updated was never displayed even though the data was updated
@@ -385,12 +385,12 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                 if other_times != "": other_times += ", "
                 other_times += f"FmF-{fmf_time}"
 
-            if _Device.iosapp_monitor_flag and _Device.dev_data_source != 'iOSApp':
+            if _Device.mobapp_monitor_flag and _Device.dev_data_source != 'MobApp':
                 if other_times != "": other_times += ", "
-                if _Device.iosapp_data_gps_accuracy > Gb.gps_accuracy_threshold:
-                    other_times += f"iOSApp-{_Device.iosapp_data_time_gps}"
+                if _Device.mobapp_data_gps_accuracy > Gb.gps_accuracy_threshold:
+                    other_times += f"MobApp-{_Device.mobapp_data_time_gps}"
                 else:
-                    other_times += f"iOSApp-{_Device.iosapp_data_time}"
+                    other_times += f"MobApp-{_Device.mobapp_data_time}"
 
             # Display appropriate message for the Device being updated or a monitor msg for all other Devices
             # rc9 Check if new data is old. Can not use is_location_old since that checks
@@ -576,7 +576,7 @@ def get_famshr_fmf_PyiCloud_RawData_to_use(_Device):
 
         elif _RawData_famshr is None and _RawData_famshr is None:
             _RawData = None
-            _Device.data_source = IOSAPP
+            _Device.data_source = MOBAPP
             return
 
         # Is famshr raw data newer than fmf raw data
@@ -601,8 +601,8 @@ def get_famshr_fmf_PyiCloud_RawData_to_use(_Device):
 
         else:
             _RawData = None
-            _Device.data_source = IOSAPP
-            # start_ic3.set_primary_data_source(IOSAPP)
+            _Device.data_source = MOBAPP
+            # start_ic3.set_primary_data_source(MOBAPP)
 
             error_msg = (f"{EVLOG_ALERT}Data Exception > {_Device.devicename} > No iCloud FamShr  "
                         f"or FmF Device Id was assigned to this device. This can be caused by "
@@ -610,7 +610,7 @@ def get_famshr_fmf_PyiCloud_RawData_to_use(_Device):
                         f"{CRLF}Actions > Restart iCloud3. If the error continues, check the Event Log "
                         f"(iCloud3 Initialization Stage 2) and verify that the device is valid and a "
                         f"tracking method has been assigned. "
-                        f"The device will be tracked by the iOS App.")
+                        f"The device will be tracked by the Mobile App.")
             post_event(error_msg)
 
         error_msg = ''

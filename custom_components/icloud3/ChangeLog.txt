@@ -1,4 +1,18 @@
-rc9
+rc10
+...............................
+1. NEARBY DEVICES - Changed the distance to another device routine so it would not calculate the distance to 'itself', which is always 0.
+2. WAZE HISTORY MAP - Fixed a problem displaying the Waze History gps locations on a map.
+3. MOBILE APP INTEGRATION - A check for the Mobile App Integration installation will now be done when setting up the iOS App devices and, if the Mobile App setup had not be completed, again after HA had finished starting up.
+4. HA ZONE ADD/DELETE/UPDATE - When a zone is added, deleted or updated on the HA Settings > Area & Zones screen, iCloud3 had to be restarted to load the new zone settings. This is not longer needed. iCloud3 will now update the zone settings when they are made or on the next location update.
+5. IOS APP --> MOBILE APP - All references to 'iOS App' have been changed to 'Mobile App' for consistancy with HA.
+6. CONFIGURE SETTINGS - Fixed a problem loading the Device Picture and Event Log www directory selection lists when HA was installed on system in a directory other than /config.
+7. WAZE HISTORY - Fixed a problem where refreshing the HA Map Waze History Locations could be started aagain when it was already running.
+8. WATCH & OTHER NO-MOBILE APP DEVICES - When an iPhone leaves a zone, devices without the Mobile App (Watch) are updated immediately to see if they are still in the zone or have exited too. If the last locate time for these devices is still valid, the update was not done and they remained in the zone. Now, if the location time is within the last 3-4 minutes, a location request will be made until the location time is after the first device left the zone.
+9. EVENT LOG - Some updates were made to the Event Log (v3.0.17). They will be installed and a browser refresh on all devices will be needed.
+
+
+
+rc9 - 12/20/2023
 ..............................
 1. Stationary Zone
     - Fixed a bug restarting iCloud3 when reinitializing the zones and a Stationary Zone already existed. Some of the zones were not reloaded and the Stage 2 Zone setup process would end.

@@ -28,7 +28,7 @@ EVENT_ENTER = "enter"
 EVENT_LEAVE = "leave"
 EVENT_DESCRIPTION = {EVENT_ENTER: "entering", EVENT_LEAVE: "leaving"}
 
-from .helpers.common    import (instr, isnumber, is_statzone, zone_display_as)
+from .helpers.common    import (instr, isnumber, is_statzone, zone_dname)
 from .helpers.messaging import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 _trace, _traceha, )
@@ -374,7 +374,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
                 if self.Device.track_from_zones != [HOME]:
                     extra_attrs['track_from_zones'] = ', '.join(self.Device.track_from_zones)
                 if self.Device.track_from_base_zone != HOME:
-                    extra_attrs['primary_home_zone'] = zone_display_as(self.Device.track_from_base_zone)
+                    extra_attrs['primary_home_zone'] = zone_dname(self.Device.track_from_base_zone)
                 if self.Device.away_time_zone_offset != 0:
                     plus_minus = '+' if self.Device.away_time_zone_offset > 0 else ''
                     extra_attrs['away_time_zone_offset'] = \

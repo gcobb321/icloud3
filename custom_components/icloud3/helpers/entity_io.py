@@ -1,7 +1,7 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import ( HIGH_INTEGER, NOT_SET,
-                                HOME, UTC_TIME, IOS_TRIGGER_ABBREVIATIONS,
+                                HOME, ZONE, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
                                 TRACE_ICLOUD_ATTRS_BASE, TRACE_ATTRS_BASE,
                                 BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME, STATE,
@@ -41,8 +41,8 @@ def get_state(entity_id):
 
         entity_state = entity_data.state
 
-        if entity_state in IOS_TRIGGER_ABBREVIATIONS:
-            state = IOS_TRIGGER_ABBREVIATIONS[entity_state]
+        if entity_state in MOBAPP_TRIGGER_ABBREVIATIONS:
+            state = MOBAPP_TRIGGER_ABBREVIATIONS[entity_state]
         else:
             state = Gb.state_to_zone.get(entity_state, entity_state.lower())
 
@@ -52,10 +52,10 @@ def get_state(entity_id):
         if instr(entity_id, BATTERY_LEVEL) and state == 'not_set':
             state = 0
 
-    # When starting iCloud3, the device_tracker for the iosapp might
+    # When starting iCloud3, the device_tracker for the mobapp might
     # not have been set up yet. Catch the entity_id error here.
     except Exception as err:
-        #log_exception(err)
+        log_exception(err)
         state = NOT_SET
 
     return state
@@ -85,7 +85,7 @@ def get_attributes(entity_id):
         entity_attrs = {}
 
     except Exception as err:
-        #log_exception(err)
+        log_exception(err)
         entity_attrs = {}
         entity_attrs[TRIGGER] = (f"Error {err}")
 
@@ -106,15 +106,6 @@ def get_last_changed_time(entity_id):
         if States is None:
             return 0
 
-        # try:
-        #     if entity_id.endswith('trigger'):
-        #         trig_states = {k:v for k,v in States.__dict__.items()
-        #             if k in ['state','attributes','last_changed','last_updated']}
-
-        #         _traceha(f"{trig_states}")
-        # except:
-        #     pass
-
         last_changed  = States.last_changed
         last_updated  = States.last_updated
 
@@ -127,9 +118,6 @@ def get_last_changed_time(entity_id):
             time_secs = int(lu)
         else:
             time_secs = 0
-
-        if time_secs != time_secs_old:
-            _trace(f"{time_secs=} {time_secs_old=}")
 
     except Exception as err:
         log_exception(err)
@@ -274,7 +262,57 @@ def _registry_data_str_to_dict(key, text, platform, domain):
 
     return items_dict
 
-#--------------------------------------------------------------------
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#    ZONE - Entity State and Attributes functions
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def ha_zone_entity_ids():
+    return Gb.hass.states.entity_ids(ZONE)
+
+def ha_zone_attrs_id(zone):
+    zone_entity_id = zone if zone.startswith('zone.') else f"zone.{zone}"
+    try:
+        return id(Gb.hass.states.get(zone_entity_id).attributes)
+    except:
+        return 0
+
+def ha_zone_attrs(zone):
+    zone_entity_id = zone if zone.startswith('zone.') else f"zone.{zone}"
+    try:
+        ha_zone_attrs = Gb.hass.states.get(zone_entity_id).attributes
+        return ha_zone_attrs
+
+    except Exception as err:
+        # log_exception(err)
+        return None
+
+def ha_zone_entities():
+    '''
+    Entities zone item:
+    'zone.the_point': RegistryEntry(entity_id='zone.the_point', unique_id='thepoint',
+    platform='zone', aliases=set(), area_id=None, capabilities=None, config_entry_id=None,
+    device_class=None, device_id=None, disabled_by=None, entity_category=None,
+    hidden_by=None, icon=None, id='bf4bf5bfa8d70ce5f705f62618def820', has_entity_name=False,
+    name='The Point', options={}, original_device_class=None, original_icon='mdi:map-marker',
+    original_name='The.Point', supported_features=0, translation_key=None, unit_of_measurement=None)
+    '''
+    entity_reg = entity_registry.async_get(Gb.hass)
+    ha_zone_entities = {zone_entity_id: RegEntry
+                        for zone_entity_id, RegEntry in entity_reg.entities.items()
+                        if zone_entity_id.startswith('zone')}
+
+    ha_zone_entity_ids = [zone_entity_id.replace('zone.', '')
+                        for zone_entity_id in ha_zone_entities.keys()]
+    ha_zone_entity_ids.append(HOME)
+
+    return ha_zone_entity_ids
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#    OTHER SUPPORT FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def set_state_attributes(entity_id, state_value, attrs_value):
     """
     Update the state and attributes of an entity_id

@@ -8,60 +8,85 @@ from .const             import (EVLOG_ALERT, EVLOG_NOTICE,
                                 SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,)
 
 more_info_text = {
-    'iosapp_error_not_found_msg': (
+    'mobapp_error_not_found_msg': (
         f"{CRLF_DASH_75}"
         f"{CRLF}1. If the name of the device was changed on the Mobile App "
-        f"Integration > Devices screen, the iOS App Device Name parameter "
+        f"Integration > Devices screen, the Mobile App Device Name parameter "
         f"on the iCloud3 Configure Setting > Update Devices screen "
         f"needs to be updated with the new device name."
         f"{CRLF}2. Check the Mobile App Integration devices to see if it is listed."
         f"{CRLF}3. Check the Mobile App Integration devices to see if it is enabled."
-        f"{CRLF}4. Check the iOSApp on the device that was not found to make "
+        f"{CRLF}4. Check the MobApp on the device that was not found to make "
         f"sure it is operational and can communicate with HA. Refresh its location "
         f"by pulling down  On the screen."
-        f"{CRLF}5. Check the iOSApp device_tracker entities on HA Settings > "
-        f"Developer Tools > States to verify are the devices using the iOS App are "
+        f"{CRLF}5. Check the MobApp device_tracker entities on HA Settings > "
+        f"Developer Tools > States to verify are the devices using the Mobile App are "
         f"listed, enabled and that the data is current."),
 
-    'iosapp_error_search_msg': (
+    'mobapp_error_search_msg': (
         f"{CRLF_DASH_75}"
-        f"{CRLF}1. Check the iOSApp Device Entity assigned to the iCloud3 device "
+        f"{CRLF}1. Check the MobApp Device Entity assigned to the iCloud3 device "
         f"on the iCloud3 Configure Settings > Update Devices screen. Change the "
-        f"iOS App device_tracker entity from `Scan for mobile_app device_tracker` "
+        f"Mobile App device_tracker entity from `Scan for mobile_app device_tracker` "
         f"to a specific device_tracker entity."
         f"{CRLF}2. Check the mobile_app devices in HA Settings > Devices & "
         f"Services > Devices and delete or rename the devices starting with the "
         f"iCloud3 devicename that should be selected."),
 
-    'iosapp_error_disabled_msg': (
+    'mobapp_error_disabled_msg': (
         f"{CRLF_DASH_75}"
         f"{CRLF}1. Go to HA Devices & Services > Integrations > Mobile App"
         f"{CRLF}2. Select the disabled device. Then select the 3-dots in the upper "
         f"right corner."
         f"{CRLF}Select Enable device."),
 
-    'iosapp_error_multiple_devices_on_scan': (
+    'mobapp_error_multiple_devices_on_scan': (
         f"{CRLF_DASH_75}"
-        f"{CRLF}1. Check the iOSApp Device Entity assigned to the iCloud3 device "
+        f"{CRLF}1. Check the MobApp Device Entity assigned to the iCloud3 device "
         f"on the iCloud3 Configure Settings > Update Devices screen. Change the "
-        f"iOS App device_tracker entity from `Scan for mobile_app device_tracker` "
+        f"Mobile App device_tracker entity from `Scan for mobile_app device_tracker` "
         f"to a specific device_tracker entity."
         f"{CRLF}2. Check the mobile_app devices in HA Settings > Devices & "
         f"Services > Devices and delete or rename the devices starting with the "
         f"iCloud3 devicename that should not be selected."),
 
-    'iosapp_error_mobile_app_msg': (
+    'mobapp_error_mobile_app_msg': (
         f"{CRLF_DASH_75}"
         f"{CRLF}1. Verify that the Mobile App Integration has been added to HA. "
         f"If not, add it. You may have to restart HA."
-        f"{CRLF}2. Verify that all of the devices that are using the iOS App are displayed. "
+        f"{CRLF}2. Verify that all of the devices that are using the Mobile App are displayed. "
         f"Review the HA Companion App docs to verify it is set up and can communicate with HA."
         f"{CRLF}3. Under each device is a line reading `1 Device and ## Entities`. "
         f"Select Entities and verify that the _battery_level and _last_update_trigger "
         f"entities are listed and enabled. If disabled, select the Gear Icon and enable them. "
-        f"If necessary. Review the HA iOS App docs for more information."
+        f"If necessary. Review the HA Mobile App docs for more information."
         f"{CRLF}4. Do this for each mobile_app device with a problem."
         f"{CRLF}5. Restart iCloud3 after making any changes (Event Log > Action > Restart)."),
+
+    'mobapp_device_unavailable': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Verify that the Mobile App Integration has been added to HA. "
+        f"If not, add it. You may have to restart HA."
+        f"{CRLF}2. Verify the Mobile App Integration operational status (HA Settings > Devices "
+        f"and Services > Integrations). Check to see if a `Failed to set up` error message is "
+        f"displayed in general or for a specific device. If so, that issue must be corrected "
+        f"before the Mobile App can be used for this device."
+        f"{CRLF_DASH_75}"
+        f"{CRLF}The FamShr tracking method will continue to be used for this device."),
+
+    'mobapp_device_no_location': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Verify the Mobile App Integration operational status (HA Settings > Devices "
+        f"and Services > Integrations). Check to see if an error message is displayed in general "
+        f"or for a specific device. If so, that issue should be corrected."
+        f"{CRLF}2. Check the device_tracker entity state and attribute values (HA Developer Tools > "
+        f"States). Verify the device is on-line and location data is being updated by the Mobile App. "
+        f"{CRLF}3. Check the Mobile App on the device."
+        f"{CRLF}{NBSP3}1. Verify it is online and can connect to HA. "
+        f"{CRLF}{NBSP3}2. Verify that the device can be located."
+        f"{CRLF}{NBSP3}3. Verify that location services are enabled and the MobApp settings are correct."
+        f"{CRLF}{NBSP3}4. Go to the Mobile App > Location screen, scroll to the bottom and select "
+        f"Update Location. Then see if any errors are displayed in the Event Log."),
 
     'famshr_device_not_available': (
         f"{CRLF_DASH_75}"
@@ -104,12 +129,24 @@ more_info_text = {
         f"{CRLF}{NBSP3}8. Restart iCloud3 and verify that the devices are tracked correctly."
         ),
 
+    'famshr_find_my_phone_alert_error': (
+        f"{CRLF_DASH_75}"
+        f"{CRLF}1. Review the Event Log Stages 3 & 4 for this device and make sure the FamShr "
+        f"device you selected is correct and has been verified."
+        f"{CRLF}2. Review the Configure Settings > Update Devices screen for this device and "
+        f"verify it has been assigned correctly, is not still assigned to an old device and "
+        f"there are no error messages."
+        f"{CRLF}3. Review the FindMy App devices screen and verify the device can be located."
+        f"{CRLF}4. Review the Event Log for this device and make sure it is being tracked with the "
+        f"FamShr tracking method."
+        ),
+
     'refresh_browser': (
         f"{CRLF_DOT}Refresh your browser (Chrome, MacOS, Edge):"
         f"{CRLF}{NBSP3}1. Press Ctrl+Shift+Del, Clear Data, Refresh"
         f"{CRLF}{NBSP3}2. On Settings tab, check Clear Images and File, then Click Clear Data, Refresh"
         f"{CRLF}{NBSP3}3. Select the Home Assistant tab, then Refresh the display"
-        f"{CRLF_DOT}Refresh the iOS App on iPhones, iPads, etc:"
+        f"{CRLF_DOT}Refresh the Mobile App on iPhones, iPads, etc:"
         f"{CRLF}{NBSP3}1. HA Sidebar, Configuration, Companion App"
         f"{CRLF}{NBSP3}2. Debugging, Reset frontend cache, Settings, Done"
         f"{CRLF}{NBSP3}3. Close Companion App, Redisplay iCloud3 screen"
@@ -119,12 +156,12 @@ more_info_text = {
         f"{CRLF_DASH_75}"
         f"{CRLF}This can be caused by:"
         f"{CRLF}1. iCloud3 Device configuration error. Check the iCloud3 `Configure Settings > "
-        f"Update Devices` screen and verify the FamShr and iOS App Device selections are correct."
-        f"{CRLF}2. No iCloud or iOS App device have been selected. See #1 above."
+        f"Update Devices` screen and verify the FamShr and Mobile App Device selections are correct."
+        f"{CRLF}2. No iCloud or Mobile App device have been selected. See #1 above."
         f"{CRLF}3. This device is no longer in your iCloud Family Sharring device list. Review "
         f"the devices in the FindMy app on your phone and on your iCloud account. Review the list of "
         f"devices returned from your iCloud account when iCloud3 was starting up in the Event Log Stage 4."
-        f"{CRLF}4. iCloud or iOS App are not being used to locate devices. Verify that your iCloud "
+        f"{CRLF}4. iCloud or Mobile App are not being used to locate devices. Verify that your iCloud "
         f"access is set up on the `Configure Settings > iCloud Account` screen. Also verify that FamShr "
         f"devices have been assigned to iCloud3 devices `Configure Settings Update Devices` screen."
         f"{CRLF}5. iCloud is down. The network is down. iCloud is not responding to location requests."
@@ -137,7 +174,7 @@ more_info_text = {
         f"Devices` screen. In this case, all of the devices are set to an Inactive status.  "
         f"{CRLF}1. Change the `Tracking Mode` from INACTIVE to Track or Monitor."
         f"{CRLF}2. Verify the Family Share (FamShr) Device assigned to the iCloud3 device."
-        f"{CRLF}3. Verify the iOS App Device assigned to the iCloud3 device."
+        f"{CRLF}3. Verify the Mobile App Device assigned to the iCloud3 device."
         f"{CRLF}4. Review the other parameters for the device while you are on this screen."
         f"{CRLF}5. Do this for all of your devices."
         f"{CRLF}6. Exit the iCloud3 `Configure Settings` screens and Restart iCloud3."),
