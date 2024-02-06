@@ -29,7 +29,7 @@ from .const             import (HOME, NOT_SET,
                                 LAST_UPDATE, LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
                                 NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
                                 )
-from .helpers.dist_util import (km_to_mi, calc_distance_km, format_km_to_mi,)
+from .helpers.dist_util import (calc_distance_km, km_to_um,)
 from .helpers.time_util import (datetime_to_12hrtime, )
 from .helpers.messaging import (log_exception, post_internal_error, _trace, _traceha, )
 
@@ -83,7 +83,8 @@ class iCloud3_DeviceFmZone():
             self.max_dist_km             = 0
 
             self.sensor_prefix       = (f"sensor.{self.devicename}_") \
-                                            if self.from_zone== HOME else (f"sensor.{self.devicename}_{self.from_zone}_")
+                                            if self.from_zone== HOME \
+                                            else (f"sensor.{self.devicename}_{self.from_zone}_")
             self.sensor_prefix_zone  = '' if self.from_zone== HOME else (f"{self.from_zone}_")
             self.info_status_msg     = (f"From-({self.from_zone})")
 
@@ -122,7 +123,7 @@ class iCloud3_DeviceFmZone():
         self.sensors[ZONE_INFO]            = ''
 
         Sensors_from_zone      = Gb.Sensors_by_devicename_from_zone.get(self.devicename, {})
-        from_this_zone_sensors = {k:v for k, v in Sensors_from_zone.items()
+        from_this_zone_sensors = {k:v   for k, v in Sensors_from_zone.items()
                                         if v.from_zone == self.from_zone}
         for sensor, Sensor in from_this_zone_sensors.items():
             Sensor.FromZone = self
@@ -132,7 +133,7 @@ class iCloud3_DeviceFmZone():
 
     @property
     def zone_distance_str(self):
-        return ('' if self.zone_dist == 0 else (f"{format_km_to_mi(self.zone_dist)}"))
+        return ('' if self.zone_dist == 0 else (f"{km_to_um(self.zone_dist)}"))
 
     @property
     def distance_km(self):

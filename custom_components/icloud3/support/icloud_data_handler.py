@@ -33,8 +33,8 @@ def no_icloud_update_needed_tracking(Device):
         Device.icloud_no_update_reason = 'Paused'
 
     elif (Device.is_next_update_time_reached is False
-            and Device.is_inzone
-            and Device.isnot_in_statzone):
+            and Device.isin_zone
+            and Device.isnotin_statzone):
         Device.icloud_no_update_reason = 'inZone & Next Update Time not Reached'
 
     elif Gb.primary_data_source_ICLOUD is False:
@@ -72,7 +72,7 @@ def is_icloud_update_needed_timers(Device):
         if Device.is_statzone_timer_reached:
             Device.icloud_update_reason = ( f"Next Update & Stat Zone Time Reached@"
                                         f"{secs_to_time(Device.statzone_timer)}")
-        elif Device.isnot_inzone and Device.FromZone_NextToUpdate.from_zone != HOME:
+        elif Device.isnotin_zone and Device.FromZone_NextToUpdate.from_zone != HOME:
             Device.icloud_update_reason += f" ({Device.FromZone_NextToUpdate.from_zone_dname})"
 
     elif Device.is_next_update_overdue:
@@ -259,7 +259,7 @@ def update_PyiCloud_RawData_data(Device, results_msg_flag=True):
                 event_msg+=(f"{CRLF_DOT}Error-{err}"
                             f"{CRLF_DOT}iCloud may be down or there is a network connection or other issue."
                             f"{CRLF}iCloud3 will try again later.")
-            post_event(Device.devicename, event_msg)
+            post_event(Device, event_msg)
             post_error_msg(event_msg)
 
         except Exception as err:
@@ -377,6 +377,18 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
             if Device.is_location_old_or_gps_poor:
                 continue
 
+            # This fct may be run a second time to recheck loc times for different data
+            # sources. Don't redisplay it it's nothing changed.
+            if Device.loc_msg_famshr_mobapp_time == \
+                        (f"{_Device.dev_data_source}-"
+                        f"{_Device.loc_data_time_gps}-"
+                        f"{_Device.mobapp_data_time_gps}"):
+                continue
+            Device.loc_msg_famshr_mobapp_time = \
+                (f"{_Device.dev_data_source}-"
+                f"{_Device.loc_data_time_gps}-"
+                f"{_Device.mobapp_data_time_gps}")
+
             other_times = ""
             if famshr_secs > 0 and Gb.used_data_source_FAMSHR and _Device.dev_data_source != 'FamShr':
                 other_times += f"FamShr-{famshr_time}"
@@ -478,7 +490,7 @@ def is_PyiCloud_RawData_data_useable(Device, results_msg_flag=True):
         event_msg += "Requesting New Location"
 
     if results_msg_flag:
-        post_event(Device.devicename, event_msg)
+        post_event(Device, event_msg)
     else:
         post_monitor_msg(Device.devicename, event_msg)
     return is_useable_flag
@@ -537,7 +549,7 @@ def _get_devdata_useable_status(Device, data_source):
             else:
                 event_msg+=(f"Age-{secs_to_time_str(loc_age_secs)} "
                             f"(> {secs_to_time_str(Device.FromZone_BeingUpdated.interval_secs)})")
-            post_event(Device.devicename, event_msg)
+            post_event(Device, event_msg)
 
     gps_accuracy_ok = RawData.is_gps_good
     gps_accuracy    = round(RawData.gps_accuracy)

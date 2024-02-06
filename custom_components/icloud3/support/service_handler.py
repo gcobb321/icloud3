@@ -473,7 +473,7 @@ def _handle_action_device_location_mobapp(Device):
     Request Mobile App location from the EvLog > Actions
     '''
     if Device.is_data_source_MOBAPP is False:
-       return _handle_action_device_locate(Device, 'mobapp')
+        return _handle_action_device_locate(Device, 'mobapp')
 
     Device.display_info_msg('Updating Location')
 
@@ -491,18 +491,18 @@ def _handle_action_device_locate(Device, action_option):
             _handle_action_device_location_mobapp(Device)
             return
         else:
-            post_event(Device.devicename,
+            post_event(Device,
                         "Mobile App Location Tracking is not available")
 
     if (Gb.primary_data_source_ICLOUD is False
             or (Device.device_id_famshr is None and Device.device_id_fmf is None)
             or Device.is_data_source_ICLOUD is False):
-        post_event(Device.devicename,
+        post_event(Device,
                     "iCloud Location Tracking is not available")
         return
 
     elif Device.is_offline:
-        post_event(Device.devicename,
+        post_event(Device,
                     "The device is offline, iCloud Location Tracking is not available")
         return
 
@@ -518,7 +518,7 @@ def _handle_action_device_locate(Device, action_option):
     Device.reset_tracking_fields(interval_secs)
     det_interval.update_all_device_fm_zone_sensors_interval(Device, interval_secs)
     Device.icloud_update_reason = f"Location Requested@{time_now()}"
-    post_event(Device.devicename, f"Location will be updated at {Device.next_update_time}")
+    post_event(Device, f"Location will be updated at {Device.next_update_time}")
     Device.write_ha_sensors_state([NEXT_UPDATE, INTERVAL])
 
 #--------------------------------------------------------------------

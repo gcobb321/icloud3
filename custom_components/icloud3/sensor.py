@@ -16,32 +16,31 @@
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (DOMAIN, VERSION, ICLOUD3,RARROW,
+from .const             import (DOMAIN, VERSION, ICLOUD3, RARROW,
                                 SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
                                 HOME, HOME_FNAME, NOT_SET, NOT_SET_FNAME, NONE_FNAME,
                                 DATETIME_ZERO, HHMMSS_ZERO,
                                 BLANK_SENSOR_FIELD, DOT, HDOT, HDOT2, UM_FNAME, NBSP,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
-                                DISTANCE_TO_OTHER_DEVICES,
                                 NAME, FNAME, BADGE, FROM_ZONE,
-                                ZONE, ZONE_INFO, LAST_ZONE,
-                                ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
-                                BATTERY, BATTERY_STATUS, BATTERY_SOURCE,
-                                DISTANCE_TO_OTHER_DEVICES_DATETIME,
+                                ZONE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
+                                BATTERY, BATTERY_STATUS,
                                 CONF_TRACK_FROM_ZONES,
                                 CONF_IC3_DEVICENAME, CONF_MODEL, CONF_RAW_MODEL, CONF_FNAME,
                                 CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                 CONF_TRACKING_MODE,
                                 )
-from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS,
+from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
-                                SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_DISTANCE, )
+                                SENSOR_ATTRS, SENSOR_DEFAULT, )
 
 from .helpers.common    import (instr,  round_to_zero, is_statzone, set_precision, )
 from .helpers.messaging import (log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 _trace, _traceha, )
-from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, secs_to_time_str, mins_to_time_str,
-                                time_now_secs, datetime_now, adjust_time_hour_value, adjust_time_hour_values)
+from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, secs_to_time_str,
+                                mins_to_time_str, time_now_secs, datetime_now,
+                                secs_to_datetime, adjust_time_hour_values,
+                                adjust_time_hour_value)
 from .helpers.dist_util import (km_to_mi, m_to_ft, )
 from .helpers.format    import (icon_circle, icon_box, )
 from collections        import OrderedDict
@@ -50,10 +49,8 @@ from .support           import start_ic3
 from .support           import recorder_prefilter
 
 from homeassistant.components.sensor    import SensorEntity
-from homeassistant.helpers.entityfilter import convert_include_exclude_filter
 from homeassistant.config_entries       import ConfigEntry
 from homeassistant.helpers.entity       import DeviceInfo
-from homeassistant.helpers.device_registry import DeviceEntryType
 
 from homeassistant.core                 import HomeAssistant
 from homeassistant.helpers.icon         import icon_for_battery_level
@@ -219,8 +216,6 @@ def _create_track_from_zone_sensors(devicename, conf_device, sensors_list):
         return []
 
     ha_zones, zone_entity_data   = entity_io.get_entity_registry_data(platform=ZONE)
-    # zone_entity_ids              = entity_io.ha_zone_entity_ids()
-    # ha_zones = [zone_entity_id.replace('zone.', '') for zone_entity_id in zone_entity_ids]
     devicename_from_zone_sensors = Gb.Sensors_by_devicename_from_zone.get(devicename, {})
     excluded_sensors_list        = _excluded_sensors_list()
 
@@ -505,7 +500,7 @@ class SensorBase(SensorEntity):
             _sensor_attr_name = _sensor.replace('_date/time', '')
             _sensor_value = self._get_sensor_value(_sensor)
             try:
-                _sensor_value = self._set_precision(_sensor_value)
+                _sensor_value = set_precision(_sensor_value)
             except:
                 pass
 
@@ -513,10 +508,10 @@ class SensorBase(SensorEntity):
                 extra_attrs[_sensor_attr_name] = _sensor_value
 
                 if Gb.um_MI:
+                    zone_dist_m = self._get_sensor_value(ZONE_DISTANCE_M)
+                    sensor_value_mi = zone_dist_m*Gb.um_km_mi_factor/1000
+                    extra_attrs['distance_(miles)'] = set_precision(sensor_value_mi)
                     extra_attrs['distance_units_(attributes)'] = 'mi'
-                    if self._get_sensor_value(ZONE_DISTANCE_M):
-                        sensor_value_mi = self._get_sensor_value(ZONE_DISTANCE_M)*Gb.um_km_mi_factor/1000
-                        extra_attrs['miles_distance'] = self._set_precision(sensor_value_mi)
 
             if self.Device and self.Device.away_time_zone_offset != 0:
                 _sensor_value = adjust_time_hour_values(_sensor_value, self.Device.away_time_zone_offset)
@@ -568,23 +563,6 @@ class SensorBase(SensorEntity):
             return self._get_tfz_sensor_value(sensor)
         else:
             return self._get_device_sensor_value(sensor)
-
-#-------------------------------------------------------------------------------------------
-    def _set_precision(self, sensor_value, um=None):
-        '''
-        Return the distance value as an integer or float value
-        '''
-        try:
-            um = um if um else Gb.um
-            precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
-            sensor_value = round(float(sensor_value), precision)
-            if sensor_value == int(sensor_value):
-                return int(sensor_value)
-
-        except Exception as err:
-            pass
-
-        return sensor_value
 
 #-------------------------------------------------------------------------------------------
     def _get_device_sensor_value(self, sensor):
@@ -1084,21 +1062,20 @@ class Sensor_Distance(SensorBase):
         zone_dist_mi = {zone_da: set_precision(km_to_mi(dist_km), 'mi')
                                 for zone_da, dist_km in zone_dist_km.items()}
 
-        # zone_dist_m  = {f" - {Zone.dname}.": set_precision(self.Device.Distance_m(Zone), 'm')
-        zone_dist_m  = {f" - {Zone.dname}²": set_precision(self.Device.Distance_m(Zone), 'm')
+        zone_dist_m  = {f" - {Zone.dname}*": set_precision(self.Device.Distance_m(Zone), 'm')
                                 for Zone in Gb.HAZones
                                 if self.Device.Distance_m(Zone) < 500}
-        zone_dist_ft = {zone_da: self._set_precision(m_to_ft(dist_m), 'ft')
+        zone_dist_ft = {zone_da: set_precision(m_to_ft(dist_m), 'ft')
                                 for zone_da, dist_m in zone_dist_m.items()}
 
-        dist_attrs[f"zone_distance"] =  f"({Gb.um}) @{datetime_now()}"
+        dist_attrs[f"zone_distance"] = f"({Gb.um}) @{datetime_now()}"
         if Gb.um_KM:
             dist_attrs.update(zone_dist_km)
         else:
             dist_attrs.update(zone_dist_mi)
 
         if zone_dist_m or zone_dist_ft:
-            dist_attrs[f"zone_distance (< 500m)"] = f"({Gb.um_m_ft}) @{datetime_now()}"
+            dist_attrs[f"zone_distance* (< 500m)"] = f"({Gb.um_m_ft}) @{datetime_now()}"
             if Gb.um_KM:
                 dist_attrs.update(zone_dist_m)
             else:
@@ -1114,29 +1091,28 @@ class Sensor_Distance(SensorBase):
         '''
         dist_attrs = OrderedDict()
         device_dist_m   = {f" - {self._fname(devicename)}": set_precision(dist_to_other_devices[0], 'm')
-                                # for devicename, dist_to_other_devices in self.Device.sensors[DISTANCE_TO_OTHER_DEVICES].items()
                                 for devicename, dist_to_other_devices in self.Device.dist_to_other_devices.items()
                                 if dist_to_other_devices[0] > .001 and dist_to_other_devices[0] < 500}
-        device_dist_ft = {device_fn: self._set_precision(m_to_ft(dist_m), 'ft')
+        device_dist_ft = {device_fn: set_precision(m_to_ft(dist_m), 'ft')
                                 for device_fn, dist_m in device_dist_m.items()}
 
-        # device_dist_km  = {f" - {self._fname(devicename)}.": set_precision(dist_to_other_devices[0]/1000, 'km')
-        device_dist_km  = {f" - {self._fname(devicename)}²": set_precision(dist_to_other_devices[0]/1000, 'km')
-                                # for devicename, dist_to_other_devices in self.Device.sensors[DISTANCE_TO_OTHER_DEVICES].items()
+        device_dist_km  = {f" - {self._fname(devicename)}*": set_precision(dist_to_other_devices[0]/1000, 'km')
                                 for devicename, dist_to_other_devices in self.Device.dist_to_other_devices.items()
                                 if dist_to_other_devices[0] >= 500}
         device_dist_mi = {device_fn: set_precision(km_to_mi(dist_km), 'mi')
                                 for device_fn, dist_km in device_dist_km.items()}
 
         if device_dist_m or device_dist_ft:
-            dist_attrs["device_distance (< 500m)"] = f"({Gb.um_m_ft}) @{self.Device.dist_to_other_devices_datetime}"
+            dist_attrs["device_distance (< 500m)"] = (f"({Gb.um_m_ft}) "
+                                f"@{secs_to_datetime(self.Device.dist_to_other_devices_secs)}")
             if Gb.um_KM:
                 dist_attrs.update(device_dist_m)
             else:
                 dist_attrs.update(device_dist_ft)
 
         if device_dist_km or device_dist_mi:
-            dist_attrs["device_distance"] = f"({Gb.um}) @{self.Device.dist_to_other_devices_datetime}"
+            dist_attrs["device_distance"] = (f"({Gb.um}) "
+                                f"@{secs_to_datetime(self.Device.dist_to_other_devices_secs)}")
             if Gb.um_KM:
                 dist_attrs.update(device_dist_km)
             else:
@@ -1218,7 +1194,6 @@ class Support_SensorBase(SensorEntity):
         self.entity_id         = f"sensor.{self.entity_name}"
         self._unsub_dispatcher = None
         self._device           = DOMAIN
-        # self.ic3_device_id = Gb.ic3_device_id = Gb.ha_device_id_by_devicename.get(DOMAIN)
         self.current_state_value = ''
         self.history_exclude_flag = False \
             if self.entity_name == SENSOR_WAZEHIST_TRACK_NAME \
@@ -1316,11 +1291,6 @@ class Sensor_EventLog(Support_SensorBase):
     @property
     def extra_state_attributes(self):
         '''Return default attributes for the iCloud device entity.'''
-        # log_update_time = ( f"{dt_util.now().strftime('%a, %m/%d')}, "
-        #                     f"{dt_util.now().strftime(Gb.um_time_strfmt)}")
-        # log_update_time = (f"{dt_util.now().strftime('%a, %m/%d')}, "
-        #                     f"{dt_util.now().strftime(Gb.um_time_strfmt)}."
-        #                     f"{dt_util.now().strftime('%f')}")
         Gb.EvLog.evlog_attrs['update_time'] =\
                             (f"{dt_util.now().strftime('%a, %m/%d')}, "
                             f"{dt_util.now().strftime(Gb.um_time_strfmt)}."

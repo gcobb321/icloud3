@@ -116,7 +116,7 @@ MENU_PAGE_TITLE = [
     'Menu > Configure Parameters Menu'
     ]
 MENU_KEY_TEXT = {
-        'icloud_account':       'iCLOUD ACCOUNT & Mobile App ᐳ •Set iCloud Account Username/Password, •Set Location Data Sources',
+        'icloud_account':       'iCLOUD ACCOUNT & MOBILE APP ᐳ •Set iCloud Account Username/Password, •Set Location Data Sources',
         'device_list':          'ICLOUD3 DEVICES  ᐳ •Add, Change and Delete tracked and monitored devices',
         'verification_code':    'ENTER/REQUEST AN APPLE ID VERIFICATION CODE ᐳ •Enter or Request the 6-digit Apple ID Verification Code',
         'away_time_zone':       'AWAY TIME ZONE ᐳ •Select the time zone used to display time based tracking events for a device when in another time zone',
@@ -134,7 +134,7 @@ MENU_KEY_TEXT = {
         'select':               'SELECT ᐳ Select the parameter update form',
         'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} ᐳ •iCloud Account & Mobile App, •iCloud3 Devices, •Enter & Request Verification Code, •Change Device Order, •Sensors, •Action Commands',
         'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} ᐳ •Format Parameters, •Display Text As, •Waze Route Distance, Time & History, •inZone Intervals, •Special Zones, • Other Parameters',
-        'exit':                f'EXIT AND RESTART ICLOUD3 {".. "*22}(Version: {Gb.version})'
+        'exit':                 f'EXIT AND RESTART ICLOUD3 v{Gb.version}'
 }
 
 MENU_KEY_TEXT_PAGE_0 = [
@@ -298,7 +298,7 @@ LOG_ZONES_KEY_TEXT = {
         'name-zone':        ' → [year]-[zone].csv',
         'name-device':      ' → [year]-[device].csv',
         'name-device-zone': ' → [year]-[device]-[zone].csv',
-        'name-zone-device': ' → [year]-[zone]-[device]-[zone].csv',
+        'name-zone-device': ' → [year]-[zone]-[device].csv',
         }
 TRACKING_MODE_ITEMS_KEY_TEXT = {
         'track':    'Track - Request Location and track the device',
@@ -4453,11 +4453,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             default=self.conf_device_selected[CONF_INZONE_INTERVAL]):
                             # default=self._parm_or_device(CONF_INZONE_INTERVAL)):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Required(CONF_FIXED_INTERVAL,
                             default=self.conf_device_selected[CONF_FIXED_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=0, max=300, step=1, unit_of_measurement='minutes')),
+                                min=0, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Required(CONF_TRACK_FROM_BASE_ZONE,
                             default=self._option_parm_to_text(CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text, conf_device=True)):
                             selector.SelectSelector(selector.SelectSelectorConfig(
@@ -4664,7 +4664,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(CONF_GPS_ACCURACY_THRESHOLD,
                             default=Gb.conf_general[CONF_GPS_ACCURACY_THRESHOLD]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=5, max=250, step=5, unit_of_measurement='m')),
+                                min=5, max=300, step=5, unit_of_measurement='m')),
                 vol.Required(CONF_OLD_LOCATION_THRESHOLD,
                             default=Gb.conf_general[CONF_OLD_LOCATION_THRESHOLD]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
@@ -4676,7 +4676,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(CONF_MAX_INTERVAL,
                             default=Gb.conf_general[CONF_MAX_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=15, max=240, step=1, unit_of_measurement='minutes')),
+                                min=15, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Required(CONF_EXIT_ZONE_INTERVAL,
                             default=Gb.conf_general[CONF_EXIT_ZONE_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
@@ -4684,11 +4684,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(CONF_MOBAPP_ALIVE_INTERVAL,
                             default=Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=15, max=240, step=15, unit_of_measurement='minutes')),
+                                min=15, max=240, step=5, unit_of_measurement='minutes')),
                 vol.Required(CONF_OFFLINE_INTERVAL,
                             default=Gb.conf_general[CONF_OFFLINE_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=240, step=5, unit_of_measurement='minutes')),
                 vol.Required(CONF_TFZ_TRACKING_MAX_DISTANCE,
                             default=Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
@@ -4723,27 +4723,27 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(IPHONE,
                             default=Gb.conf_general[CONF_INZONE_INTERVALS][IPHONE]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Optional(IPAD,
                             default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Optional(WATCH,
                             default=Gb.conf_general[CONF_INZONE_INTERVALS][WATCH]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Optional(AIRPODS,
                             default=Gb.conf_general[CONF_INZONE_INTERVALS][AIRPODS]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Optional(NO_MOBAPP,
                             default=Gb.conf_general[CONF_INZONE_INTERVALS][NO_MOBAPP]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
                 vol.Optional(OTHER,
                             default=Gb.conf_general[CONF_INZONE_INTERVALS][OTHER]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=1, max=300, step=1, unit_of_measurement='minutes')),
+                                min=5, max=480, step=5, unit_of_measurement='minutes')),
 
                 vol.Optional('action_items',
                             default=self.action_default_text('save')):
@@ -4826,11 +4826,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(CONF_STAT_ZONE_STILL_TIME,
                             default=Gb.conf_general[CONF_STAT_ZONE_STILL_TIME]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=0, max=60, unit_of_measurement='minutes')),
+                                min=5, max=60, unit_of_measurement='minutes')),
                 vol.Required(CONF_STAT_ZONE_INZONE_INTERVAL,
                             default=Gb.conf_general[CONF_STAT_ZONE_INZONE_INTERVAL]):
                             selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=5, max=60, unit_of_measurement='minutes')),
+                                min=5, max=60, srep=5, unit_of_measurement='minutes')),
 
                 vol.Optional(CONF_TRACK_FROM_BASE_ZONE_USED,
                             default=tfzh_default):

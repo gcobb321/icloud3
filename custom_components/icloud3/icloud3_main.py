@@ -35,17 +35,17 @@ from homeassistant import config_entries
 
 from .global_variables  import GlobalVariables as Gb
 from .const             import (VERSION,
-                                HOME, NOT_HOME, NOT_SET, NOT_SET_FNAME, HIGH_INTEGER, RARROW,
-                                STATIONARY, TOWARDS, AWAY_FROM, EVLOG_IC3_STAGE_HDR,
+                                HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, LT,
+                                TOWARDS, EVLOG_IC3_STAGE_HDR,
                                 ICLOUD, ICLOUD_FNAME, TRACKING_NORMAL,
                                 CMD_RESET_PYICLOUD_SESSION, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 OLD_LOCATION_CNT, AUTH_ERROR_CNT,
-                                MOBAPP_UPDATE, ICLOUD_UPDATE, ARRIVAL_TIME, HOME_DISTANCE,
+                                MOBAPP_UPDATE, ICLOUD_UPDATE, ARRIVAL_TIME,
                                 EVLOG_UPDATE_START, EVLOG_UPDATE_END, EVLOG_ALERT, EVLOG_NOTICE,
                                 FMF, FAMSHR, MOBAPP, MOBAPP_FNAME,
-                                ENTER_ZONE, EXIT_ZONE, GPS, INTERVAL, NEXT_UPDATE, NEXT_UPDATE_TIME,
-                                ZONE, CONF_LOG_LEVEL, STATZONE_RADIUS_1M,
+                                ENTER_ZONE, EXIT_ZONE, INTERVAL, NEXT_UPDATE,
+                                CONF_LOG_LEVEL, STATZONE_RADIUS_1M,
                                 )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
 from .support           import start_ic3
@@ -56,29 +56,21 @@ from .support           import mobapp_interface
 from .support           import pyicloud_ic3_interface
 from .support           import icloud_data_handler
 from .support           import service_handler
+from .support           import zone_handler
 from .support           import determine_interval as det_interval
-from .helpers           import entity_io
-from .helpers.common    import (instr, is_zone, is_statzone, isnot_statzone, isnot_zone, zone_dname,
-                                list_to_str,)
+from .helpers.common    import (instr, is_zone, is_statzone, isnot_statzone, list_to_str,)
 from .helpers.messaging import (broadcast_info_msg,
                                 post_event, post_error_msg, post_monitor_msg, post_internal_error,
-                                open_ic3_log_file, post_alert, clear_alert,
+                                post_alert, clear_alert,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
                                 log_debug_msg, close_reopen_ic3_log_file, archive_log_file,
                                 _trace, _traceha, )
 from .helpers.time_util import (time_now_secs, secs_to_time,  secs_to, secs_since, time_now,
-                                secs_to_time, secs_to_time_str, secs_to_age_str,
-                                datetime_now,  calculate_time_zone_offset, secs_to_24hr_time,
-                                secs_to_time_age_str, secs_to_datetime, )
-from .helpers.dist_util import (m_to_ft_str, calc_distance_km, format_dist_km, format_dist_m, )
+                                secs_to_time, secs_to_time_str, secs_to_age_str, secs_to_time_hhmm,
+                                secs_to_datetime, calculate_time_zone_offset,
+                                secs_to_time_age_str, )
+from .helpers.dist_util import (km_to_um, m_to_um_ft, )
 
-# zone_data constants - Used in the select_zone function
-ZD_DIST_M     = 0
-ZD_ZONE       = 1
-ZD_NAME       = 2
-ZD_RADIUS     = 3
-ZD_DISPLAY_AS = 4
-ZD_CNT        = 5
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class iCloud3:
@@ -338,7 +330,8 @@ class iCloud3:
             for devicename in Gb.dist_to_other_devices_update_sensor_list:
                 Device = Gb.Devices_by_devicename[devicename]
                 Device.sensors[DISTANCE_TO_OTHER_DEVICES] = Device.dist_to_other_devices.copy()
-                Device.sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = Device.dist_to_other_devices_datetime
+                Device.sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = \
+                            secs_to_datetime(Device.dist_to_other_devices_secs)
                 Device.write_ha_sensors_state(SENSOR_LIST_DISTANCE)
 
             Gb.dist_to_other_devices_update_sensor_list = set()
@@ -399,7 +392,7 @@ class iCloud3:
 
         # The Device is in a StatZone but the mobapp is not home. Send a location request to try to
         # sync them. Do this every 10-mins if the time since the last request is older than 10-min ago
-        elif (Device.is_in_statzone
+        elif (Device.isin_statzone
                 and Device.mobapp_data_state == NOT_HOME
                 and (secs_since(Device.mobapp_request_loc_sent_secs) > 36000
                     or Device.mobapp_request_loc_sent_secs == 0)
@@ -416,9 +409,6 @@ class iCloud3:
             event_msg = f"Trigger > {Device.mobapp_data_change_reason}"
             post_event(devicename, event_msg)
 
-            # If using the passthru zone delay:
-            #    If entering a zone, set it if it is not set
-            #    If exiting, reset it
             if Gb.is_passthru_zone_used:
                 if instr(Device.mobapp_data_change_reason, ENTER_ZONE):
                     if Device.set_passthru_zone_delay(MOBAPP,
@@ -498,7 +488,8 @@ class iCloud3:
         # See if the Stat Zone timer has expired or if the Device has moved a lot. Do this
         # even if the sensors are not updated to make sure the Stat Zone is set up and be
         # seleted for the Device
-        self._move_into_statzone_if_timer_reached(Device)
+        statzone.move_into_statzone_if_timer_reached(Device)
+        # self._move_into_statzone_if_timer_reached(Device)
 
         # If entering a zone, set the passthru expire time (if needed)
         if self._started_passthru_zone_delay(Device):
@@ -553,8 +544,7 @@ class iCloud3:
         Device.icloud_initial_locate_done = True
         Device.icloud_update_reason = 'Monitored Device Update'
 
-        event_msg =(f"Trigger > Moved {format_dist_km(Device.loc_data_dist_moved_km)}") #{Gb.any_device_was_updated_reason}")
-        post_event(Device.devicename, event_msg)
+        event_msg =(f"Trigger > Moved {km_to_um(Device.loc_data_dist_moved_km)}")
 
         self.process_updated_location_data(Device, '')
         Device.update_sensor_values_from_data_fields()
@@ -630,9 +620,11 @@ class iCloud3:
 
             for devicename, Device in Gb.Devices_by_devicename.items():
                 if Device.dist_apart_msg:
-                    event_msg =(f"Nearby Devices > (<{NEAR_DEVICE_DISTANCE}m), "
-                                f"{Device.dist_apart_msg}, "
-                                f"Checked-{secs_to_time(Device.near_device_checked_secs)}")
+                    device_time = secs_to_time_hhmm(Device.dist_to_other_devices_secs)
+                    event_msg =(f"Nearby Devices "
+                                f"({LT}{m_to_um_ft(NEAR_DEVICE_DISTANCE, as_integer=True)}) > "
+                                f"@{device_time}, "
+                                f"{Device.dist_apart_msg.replace(f' ({device_time})', '')}")
                     if event_msg != Device.last_near_devices_msg:
                         Device.last_near_devices_msg = event_msg
                         post_event(devicename, event_msg)
@@ -682,7 +674,7 @@ class iCloud3:
         # Check to see if the location is outside the zone without an exit trigger
         for from_zone, FromZone in Device.FromZones_by_zone.items():
             if is_zone(from_zone):
-                info_msg = self._is_outside_zone_no_exit( Device, from_zone, '',
+                info_msg = zone_handler.is_outside_zone_no_exit( Device, from_zone, '',
                                         Device.mobapp_data_latitude,
                                         Device.mobapp_data_longitude)
 
@@ -703,7 +695,7 @@ class iCloud3:
                     and Device.is_next_update_time_reached
                     and Device.FromZone_NextToUpdate.zone_dist < 1
                     and Device.FromZone_NextToUpdate.dir_of_travel == TOWARDS
-                    and Device.isnot_inzone):
+                    and Device.isnotin_zone):
 
                 mobapp_interface.request_location(Device)
 
@@ -776,7 +768,7 @@ class iCloud3:
 
             else:
                 Device.update_sensors_error_msg = \
-                            self._is_outside_zone_no_exit(Device, zone, '', latitude, longitude)
+                            zone_handler.is_outside_zone_no_exit(Device, zone, '', latitude, longitude)
 
             # if Device.is_offline or Device.is_pending:
             if Device.is_offline:
@@ -784,7 +776,7 @@ class iCloud3:
                                 f"{Device.device_status_msg}")
                 if instr(Device.update_sensors_error_msg, 'Offline') is False:
                     log_info_msg(Device.devicename, offline_msg)
-                    post_event(Device.devicename, offline_msg)
+                    post_event(Device, offline_msg)
 
             # 'Verify Location' update reason overrides all other checks and forces an iCloud update
             # if Device.icloud_update_reason == 'Verify Location':
@@ -802,7 +794,7 @@ class iCloud3:
             # let normal next time update check process
             elif (Device.is_gps_poor
                     and Gb.discard_poor_gps_inzone_flag
-                    and Device.is_inzone
+                    and Device.isin_zone
                     and Device.outside_no_exit_trigger_flag is False):
 
                 Device.old_loc_cnt -= 1
@@ -833,7 +825,7 @@ class iCloud3:
                     event_msg = (f"Location Old > Using Anyway, "
                                 f"{Device.last_update_loc_time}{RARROW}"
                                 f"{Device.loc_data_time}")
-                    post_event(Device.devicename, event_msg)
+                    post_event(Device, event_msg)
                     Device.old_loc_cnt = 0
                     Device.old_loc_msg = ''
                     Device.last_update_loc_secs = Device.loc_data_secs
@@ -858,7 +850,8 @@ class iCloud3:
             # See if the Stat Zone timer has expired or if the Device has moved a lot. Do this
             # again (after the initial update needed check) since the data has been updated
             # and the gps might be good now where it was bad earlier.
-            if self._move_into_statzone_if_timer_reached(Device):
+            # if self._move_into_statzone_if_timer_reached(Device):
+            if statzone.move_into_statzone_if_timer_reached(Device):
                 Device.icloud_update_reason = "Stationary Zone Time Reached"
                 Device.update_sensors_flag = True
                 Device.selected_zone_result = []
@@ -905,7 +898,7 @@ class iCloud3:
             Device.write_ha_sensors_state()
             Device.write_ha_device_from_zone_sensors_state()
             Device.write_ha_device_tracker_state()
-            self._log_zone_enter_exit_activity(Device)
+            zone_handler.log_zone_enter_exit_activity(Device)
 
             # Refresh the EvLog if this is an initial locate or the devicename is displayed
             if (devicename == Gb.EvLog.evlog_attrs["devicename"]
@@ -934,7 +927,7 @@ class iCloud3:
         # Get in-zone name or away, will be used in process_updated_location_data routine
         # when results are calculted. We need to get it now to see if the passthru is
         # needed or still active
-        Device.selected_zone_results = self._select_zone(Device)
+        Device.selected_zone_results = zone_handler.select_zone(Device)
         ZoneSelected, zone_selected, zone_selected_dist_m, zones_distance_list = \
             Device.selected_zone_results
 
@@ -1027,7 +1020,7 @@ class iCloud3:
             else:
                 Device.trigger = (f"{Device.dev_data_source}@{Device.loc_data_datetime[11:19]}")
 
-            self._update_current_zone(Device)
+            zone_handler.update_current_zone(Device)
 
         except Exception as err:
             post_internal_error('Update Stat Zone', traceback.format_exc)
@@ -1062,399 +1055,13 @@ class iCloud3:
                                 f"OldLocRetryUpdate-{secs_to_age_str(error_interval_secs)}")
                     Device.old_loc_cnt = 0
 
-            log_start_finish_update_banner('finish', devicename, Device.dev_data_source, from_zone)
+            log_start_finish_update_banner('finish', devicename, Device.dev_data_source, '')
 
         except Exception as err:
             log_exception(err)
             post_internal_error('Det IntervalLoop', traceback.format_exc)
 
         return True
-
-#------------------------------------------------------------------------------
-    def _request_update_devices_no_mobapp_same_zone_on_exit(self, Device):
-        '''
-        The Device is exiting a zone. Check all other Devices that were in the same
-        zone that do not have the mobapp installed and set the next update time to
-        5-seconds to see if that device also exited instead of waiting for the other
-        devices inZone interval time to be reached.
-
-        Check the next update time to make sure it has not already been updated when
-        the device without the Mobile App is with several devices that left the zone.
-        '''
-        devices_to_update = [_Device
-                        for _Device in Gb.Devices_by_devicename_tracked.values()
-                        if (Device is not _Device
-                            and _Device.is_data_source_MOBAPP is False
-                            and _Device.loc_data_zone == Device.loc_data_zone
-                            and secs_to(_Device.FromZone_Home.next_update_secs) > 60)]
-
-        if devices_to_update == []:
-            return
-
-        for _Device in devices_to_update:
-            _Device.icloud_force_update_flag = True
-            _Device.trigger = 'Check Zone Exit'
-            _Device.check_zone_exit_secs = time_now_secs()
-            det_interval.update_all_device_fm_zone_sensors_interval(_Device, 15)
-            event_msg = f"Trigger > Check Zone Exit, GeneratedBy-{Device.fname}"
-            post_event(_Device.devicename, event_msg)
-
-#------------------------------------------------------------------------------
-    def _log_zone_enter_exit_activity(self, Device):
-        '''
-        An entry can be written to the 'zone-log-[year]-[device-[zone].csv' file.
-        This file shows when a device entered & exited a zone, the time the device was in
-        the zone, the distance to Home, etc. It can be imported into a spreadsheet and used
-        at year end for expense calculations.
-        '''
-        # Uncomment the following for testing
-        # if Gb.this_update_time.endswith('0:00') or Gb.this_update_time.endswith('5:00'):
-        #     Device.mobapp_zone_exit_secs = time_now_secs()
-        #     Device.mobapp_zone_exit_time = time_now()
-        #     Device.last_zone = HOME
-        #     pass
-        # elif 'none' in Device.log_zones:
-
-        if ('none' in Device.log_zones
-                or Device.log_zone == Device.loc_data_zone
-                or (Device.log_zone == '' and Device.loc_data_zone not in Device.log_zones)):
-            return
-
-        if Device.log_zone == '':
-            Device.log_zone = Device.loc_data_zone
-            Device.log_zone_enter_secs = Gb.this_update_secs
-            event_msg = f"Log Zone Activity > Logging Started-{zone_dname(Device.log_zone)}"
-            post_event(Device.devicename, event_msg)
-            return
-
-        # Must be in the zone for at least 4-minutes
-        inzone_secs = secs_since(Device.log_zone_enter_secs)
-        inzone_hrs  = inzone_secs/3600
-        if inzone_secs < 240: return
-
-        filename = (f"zone-log-{dt_util.now().strftime('%Y')}-"
-                    f"{Device.log_zones_filename}.csv")
-
-        with open(filename, 'a', encoding='utf8') as f:
-            if os.path.getsize(filename) == 0:
-                recd = "Date,Zone Enter Time,Zone Exit Time,Time (Mins),Time (Hrs),Distance (Home),Zone,Device\n"
-                f.write(recd)
-
-            recd = (f"{datetime_now()[:10]},"
-                    f"{secs_to_datetime(Device.log_zone_enter_secs)},"
-                    f"{secs_to_datetime(Gb.this_update_secs)},"
-                    f"{inzone_secs/60:.0f},"
-                    f"{inzone_hrs:.2f},"
-                    f"{Device.sensors[HOME_DISTANCE]:.2f},"
-                    f"{Device.log_zone},"
-                    f"{Device.devicename}"
-                    "\n")
-            f.write(recd)
-            event_msg = f"Log Zone Activity > Logging Ended-{zone_dname(Device.log_zone)}"
-            post_event(Device.devicename, event_msg)
-
-        if Device.loc_data_zone in Device.log_zones:
-            Device.log_zone = Device.loc_data_zone
-            Device.log_zone_enter_secs = Gb.this_update_secs
-        else:
-            Device.log_zone = ''
-            Device.log_zone_enter_secs = 0
-
-#------------------------------------------------------------------------------
-#
-#   DETERMINE THE ZONE THE DEVICE IS CURRENTLY IN
-#
-#------------------------------------------------------------------------------
-    def _update_current_zone(self, Device, display_zone_msg=True):
-
-        '''
-        Get current zone of the device based on the location
-
-        Parameters:
-            selected_zone_results - The zone may have already been selected. If so, this list
-                            is the results from a previous _select_zone
-            display_zone_msg - True if the msg should be posted to the Event Log
-
-        Returns:
-            Zone    Zone object
-            zone    zone name or not_home if not in a zone
-
-        NOTE: This is the same code as (active_zone/async_active_zone) in zone.py
-        but inserted here to use zone table loaded at startup rather than
-        calling hass on all polls
-        '''
-
-        # Zone selected may have been done when determing if the device just entered a zone
-        # during the passthru check. If so, use it and then reset it
-        if Device.selected_zone_results == []:
-            ZoneSelected, zone_selected, zone_selected_dist_m, zones_distance_list = \
-                self._select_zone(Device)
-        else:
-            ZoneSelected, zone_selected, zone_selected_dist_m, zones_distance_list = \
-                Device.selected_zone_results
-            Device.selected_zone_results = []
-
-        if zone_selected == 'unknown':
-            return ZoneSelected, zone_selected
-
-        if ZoneSelected is None:
-            ZoneSelected         = Gb.Zones_by_zone[NOT_HOME]
-            zone_selected        = NOT_HOME
-            zone_selected_dist_m = 0
-
-        # In a zone but if not in a track from zone and was in a Stationary Zone,
-        # reset the stationary zone
-        elif Device.is_in_statzone and isnot_statzone(zone_selected):
-            statzone.exit_statzone(Device)
-
-
-        # Get distance between zone selected and current zone to see if they overlap.
-        # If so, keep the current zone
-        if (zone_selected != NOT_HOME
-                and self._is_overlapping_zone(Device.loc_data_zone, zone_selected)):
-            zone_selected = Device.loc_data_zone
-            ZoneSelected  = Gb.Zones_by_zone[Device.loc_data_zone]
-
-        # The zone changed
-        elif Device.loc_data_zone != zone_selected:
-            # See if any device without the mobapp was in this zone. If so, request a
-            # location update since it was running on the inzone timer instead of
-            # exit triggers from the Mobile App
-            if (Gb.mobapp_monitor_any_devices_false_flag
-                    and zone_selected == NOT_HOME
-                    and Device.loc_data_zone != NOT_HOME):
-                self._request_update_devices_no_mobapp_same_zone_on_exit(Device)
-
-            Device.loc_data_zone        = zone_selected
-            Device.zone_change_secs     = time_now_secs()
-            Device.zone_change_datetime = datetime_now()
-
-            # The zone changed, update the enter/exit zone times if the
-            # Device does not use the Mobile App
-            if zone_selected == NOT_HOME:
-                if (Device.mobapp_monitor_flag is False
-                        or Device.mobapp_zone_exit_secs == 0):
-                    Device.mobapp_zone_exit_secs = time_now_secs()
-                    Device.mobapp_zone_exit_time = time_now()
-
-            else:
-                if (Device.mobapp_monitor_flag is False
-                        or Device.mobapp_zone_enter_secs == 0):
-                    Device.mobapp_zone_enter_secs = time_now_secs()
-                    Device.mobapp_zone_enter_time = time_now()
-
-        if display_zone_msg:
-            self._post_zone_selected_msg(Device, ZoneSelected, zone_selected,
-                                            zone_selected_dist_m, zones_distance_list)
-
-        return ZoneSelected, zone_selected
-
-#--------------------------------------------------------------------
-    def _select_zone(self, Device, latitude=None, longitude=None):
-        '''
-        Cycle thru the zones and see if the Device is in a zone (or it's stationary zone).
-
-        Parameters:
-            latitude, longitude - Override the normally used Device.loc_data_lat/long when
-                            calculating the zone distance from the current location
-        Return:
-            ZoneSelected - Zone selected object or None
-            zone_selected - zone entity name
-            zone_selected_distance_m - distance to the zone (meters)
-            zones_distance_list - list of zone info [distance_m|zoneName-distance]
-        '''
-
-        if latitude is None:
-            latitude  = Device.loc_data_latitude
-            longitude = Device.loc_data_longitude
-            gps_accuracy_adj = int(Device.loc_data_gps_accuracy / 2)
-
-        # [distance from zone, Zone, zone_name, redius, display_as]
-        zone_data_selected = [HIGH_INTEGER, None, '', HIGH_INTEGER, '', 1]
-
-        # Exit if no location data is available
-        if Device.no_location_data:
-            ZoneSelected         = Gb.Zones_by_zone['unknown']
-            zone_selected        = 'unknown'
-            zone_selected_dist_m = 0
-            zones_msg            = f"Zone > Unknown, GPS-{Device.loc_data_fgps}"
-            post_event(Device.devicename, zones_msg)
-            return ZoneSelected, zone_selected, 0, []
-
-        # Verify that the statzone was not left without an exit trigger. If so, move this device out of it.
-        if (Device.is_in_statzone
-                and Device.StatZone.distance_m(latitude, longitude) > Device.StatZone.radius_m):
-            statzone.exit_statzone(Device)
-
-        zones_data = [[Zone.distance_m(latitude, longitude), Zone, Zone.zone,
-                        Zone.radius_m, Zone.dname]
-                                for Zone in Gb.HAZones
-                                if (Zone.passive is False)]
-
-        # Do not select a new zone for the Device if it just left a zone. Set to Away and next_update will be soon
-        # if Device.was_inzone is False or secs_since(Device.mobapp_zone_exit_secs) >= Gb.exit_zone_interval_secs/2:
-        # Select all the zones the device is in
-        inzone_zones = [zone_data   for zone_data in zones_data
-                                    if zone_data[ZD_DIST_M] <= zone_data[ZD_RADIUS] + gps_accuracy_adj]
-
-        for zone_data in inzone_zones:
-            if zone_data[ZD_RADIUS] <= zone_data_selected[ZD_RADIUS]:
-                zone_data_selected = zone_data
-
-        ZoneSelected  = zone_data_selected[ZD_ZONE]
-        zone_selected = zone_data_selected[ZD_NAME]
-        zone_selected_dist_m = zone_data_selected[ZD_DIST_M]
-
-        # Selected a statzone
-        if zone_selected in Gb.StatZones_by_zone:
-            Device.StatZone = Gb.StatZones_by_zone[zone_selected]
-
-        # In a zone and the mobapp enter zone info was not set, set it now
-        if (zone_selected != Device.mobapp_zone_enter_zone
-                and is_zone(zone_selected) and isnot_zone(Device.mobapp_zone_enter_zone)):
-            Device.mobapp_zone_enter_secs = Gb.this_update_secs
-            Device.mobapp_zone_enter_time = Gb.this_update_time
-            Device.mobapp_zone_enter_zone = zone_selected
-
-        # Build an item for each zone (dist-from-zone|zone_name|display_name-##km)
-        zones_distance_list = \
-            [(f"{int(zone_data[ZD_DIST_M]):08}|{zone_data[ZD_NAME]}|{zone_data[ZD_DIST_M]}")
-                    for zone_data in zones_data if zone_data[ZD_NAME] != zone_selected]
-
-        return ZoneSelected, zone_selected, zone_selected_dist_m, zones_distance_list
-
-#--------------------------------------------------------------------
-    @staticmethod
-    def _post_zone_selected_msg(Device, ZoneSelected, zone_selected,
-                                    zone_selected_dist_m, zones_distance_list):
-
-        device_zones      = [_Device.loc_data_zone for _Device in Gb.Devices]
-        zones_cnt_by_zone = {_zone:device_zones.count(_zone) for _zone in set(device_zones)}
-
-        # Format the Zone Selected Msg (ZoneName (#))
-        zone_selected_msg = zone_dname(zone_selected)
-        if zone_selected in zones_cnt_by_zone:
-            zone_selected_msg += f"({zones_cnt_by_zone[zone_selected]})"
-        if ZoneSelected.radius_m > 0:
-            zone_selected_msg += f"-{format_dist_m(zone_selected_dist_m)}"
-
-        # Format distance msg
-        zones_dist_msg = ''
-        zones_displayed = [zone_selected]
-        zones_distance_list.sort()
-        for zone_distance_list in zones_distance_list:
-            zdl_items  = zone_distance_list.split('|')
-            _zone      = zdl_items[1]
-            _zone_dist = float(zdl_items[2])
-
-            zones_dist_msg += ( f"{zone_dname(_zone)}"
-                                f"-{format_dist_m(_zone_dist)}")
-            # zones_dist_msg += f"-r{int(Gb.Zones_by_zone[_zone].radius_m)}m"
-            zones_dist_msg += ", "
-
-        gps_accuracy_msg = ''
-        if zone_selected_dist_m > ZoneSelected.radius_m:
-            gps_accuracy_msg = (f"AccuracyAdjustment-"
-                                f"{int(Device.loc_data_gps_accuracy / 2)}m, ")
-
-        # Format distance and count msg
-        zones_cnt_msg = ''
-        for _zone, cnt in zones_cnt_by_zone.items():
-            if zone_dname(_zone) in zones_dist_msg:
-                zones_dist_msg = zones_dist_msg.replace(
-                        zone_dname(_zone), f"{zone_dname(_zone)}({cnt})")
-            elif _zone != zone_selected:
-                zones_dist_msg += f"{zone_dname(_zone)}({cnt}), "
-                zones_cnt_msg  += f"{zone_dname(_zone)}({cnt}), "
-
-        zones_dist_msg = zones_dist_msg.replace('──', 'NotSet')
-        zones_cnt_msg  = zones_cnt_msg.replace('──', 'NotSet')
-
-        if is_zone(zone_selected) and isnot_statzone(zone_selected):
-            post_monitor_msg(Device.devicename, f"Zone Distance > {zones_dist_msg}")
-            zones_dist_msg = ''
-        else:
-            zones_cnt_msg = ''
-
-        zones_msg =(f"Zone > "
-                    f"{zone_selected_msg} > "
-                    f"{zones_dist_msg}"
-                    f"{zones_cnt_msg}"
-                    f"{gps_accuracy_msg}"
-                    f"GPS-{Device.loc_data_fgps}")
-
-        if zone_selected == Device.log_zone:
-            zones_msg += ' (Logged)'
-
-        post_event(Device.devicename, zones_msg)
-
-        if (zones_cnt_msg
-            and Device.loc_data_zone != Device.sensors[ZONE]
-            and NOT_SET not in zones_cnt_by_zone):
-                for _Device in Gb.Devices:
-                    if Device is not _Device:
-                        event_msg = f"Zone-Device Counts > {zones_cnt_msg}"
-                        post_event(_Device.devicename, event_msg)
-
-#--------------------------------------------------------------------
-    def _move_into_statzone_if_timer_reached(self, Device):
-        '''
-        Check the Device's Stationary Zone expired timer and distance moved:
-            Update the Device's Stat Zone distance moved
-            Reset the timer if the Device has moved further than the distance limit
-            Move Device into the Stat Zone if it has not moved further than the limit
-        '''
-        if Gb.is_statzone_used is False:
-            return False
-
-        calc_dist_last_poll_moved_km = calc_distance_km(Device.sensors[GPS], Device.loc_data_gps)
-        Device.update_distance_moved(calc_dist_last_poll_moved_km)
-
-        # See if moved less than the stationary zone movement limit
-        # If updating via the Mobile App and the current state is stationary,
-        # make sure it is kept in the stationary zone
-        if Device.is_statzone_timer_reached is False or Device.is_location_old_or_gps_poor:
-            return False
-
-        if Device.is_statzone_move_limit_exceeded:
-            Device.statzone_reset_timer
-
-        # Monitored devices can move into a tracked zone but can not create on for itself
-        elif Device.is_monitored: #beta 4/13b16
-            pass
-
-        elif (Device.isnot_in_statzone
-                or (is_statzone(Device.mobapp_data_state) and Device.loc_data_zone == NOT_SET)):
-            statzone.move_device_into_statzone(Device)
-
-        return True
-
-#--------------------------------------------------------------------
-    def _is_overlapping_zone(self, current_zone, new_zone):
-        '''
-        Check to see if two zones overlap each other. The current_zone and
-        new_zone overlap if their distance between centers is less than 2m.
-
-        Return:
-            True    They overlap
-            False   They do not oerlap, ic3 is starting
-        '''
-        try:
-            if current_zone == NOT_SET:
-                return False
-            elif current_zone == new_zone:
-                return True
-
-            if current_zone == "": current_zone = HOME
-            CurrentZone = Gb.Zones_by_zone[current_zone]
-            NewZone     = Gb.Zones_by_zone[new_zone]
-
-            zone_dist = CurrentZone.distance_m(NewZone.latitude, NewZone.longitude)
-
-            return (zone_dist <= 2)
-
-        except:
-            return False
 
 #--------------------------------------------------------------------
     def _get_icloud_data_prefetch_device(self):
@@ -1548,26 +1155,6 @@ class iCloud3:
             return ''
 
 #--------------------------------------------------------------------
-    def _is_overlapping_zone(self, zone1, zone2):
-        '''
-        zone1 and zone2 overlap if their distance between centers is less than 2m
-        '''
-        try:
-            if zone1 == zone2:
-                return True
-
-            if zone1 == "": zone1 = HOME
-            Zone1 = Gb.Zones_by_zone[zone1]
-            Zone2 = Gb.Zones_by_zone[zone2]
-
-            zone_dist = Zone1.distance(Zone2.latitude, Zone2.longitude)
-
-            return (zone_dist <= 2)
-
-        except:
-            return False
-
-#--------------------------------------------------------------------
     def _wait_if_update_in_process(self, Device=None):
         # An update is in process, must wait until done
 
@@ -1620,10 +1207,9 @@ class iCloud3:
                 start_ic3.set_log_level('info')
                 start_ic3.update_conf_file_log_level('info')
 
-        for devicename, Device in Gb.Devices_by_devicename.items():
-            Gb.pyicloud_authentication_cnt  = 0
-            Gb.pyicloud_location_update_cnt = 0
-            Gb.pyicloud_calls_time          = 0.0
+        Gb.pyicloud_authentication_cnt  = 0
+        Gb.pyicloud_location_update_cnt = 0
+        Gb.pyicloud_calls_time          = 0.0
 
         if Gb.WazeHist:
             Gb.WazeHist.wazehist_delete_invalid_records()
@@ -1684,59 +1270,6 @@ class iCloud3:
             log_exception(err)
             Device.old_loc_cnt = 0
             Device.old_loc_msg = ''
-
-#--------------------------------------------------------------------
-    def _is_outside_zone_no_exit(self, Device, zone, trigger, latitude, longitude):
-        '''
-        If the device is outside of the zone and less than the zone radius + gps_acuracy_threshold
-        and no Geographic Zone Exit trigger was received, it has probably wandered due to
-        GPS errors. If so, discard the poll and try again later
-
-        Updates:    Set the Device.outside_no_exit_trigger_flag
-                    Increase the old_location_poor_gps count when this innitially occurs
-        Return:     Reason message
-        '''
-        if Device.mobapp_monitor_flag is False:
-            return ''
-
-        trigger = Device.trigger if trigger == '' else trigger
-        if (instr(trigger, ENTER_ZONE)
-                or Device.sensor_zone == NOT_SET
-                or zone not in Gb.HAZones_by_zone
-                or Device.icloud_initial_locate_done is False):
-            Device.outside_no_exit_trigger_flag = False
-            return ''
-
-        Zone           = Gb.Zones_by_zone[zone]
-        dist_fm_zone_m = Zone.distance_m(latitude, longitude)
-        zone_radius_m  = Zone.radius_m
-        zone_radius_accuracy_m = zone_radius_m + Gb.gps_accuracy_threshold
-
-        info_msg = ''
-        if (dist_fm_zone_m > zone_radius_m
-                and Device.got_exit_trigger_flag is False
-                and Zone.is_statzone is False):
-            if (dist_fm_zone_m < zone_radius_accuracy_m
-                    and Device.outside_no_exit_trigger_flag == False):
-                Device.outside_no_exit_trigger_flag = True
-                Device.old_loc_cnt += 1
-
-                info_msg = ("Outside of Zone without MobApp `Exit Zone` Trigger, "
-                            f"Keeping in Zone-{Zone.dname} > ")
-            else:
-                Device.got_exit_trigger_flag = True
-                info_msg = ("Outside of Zone without MobApp `Exit Zone` Trigger "
-                            f"but outside threshold, Exiting Zone-{Zone.dname} > ")
-
-            info_msg += (f"Distance-{format_dist_m(dist_fm_zone_m)}, "
-                        f"KeepInZoneThreshold-{format_dist_m(zone_radius_m)} "
-                        f"to {format_dist_m(zone_radius_accuracy_m)}, "
-                        f"Located-{Device.loc_data_time_age}")
-
-        if Device.got_exit_trigger_flag:
-            Device.outside_no_exit_trigger_flag = False
-
-        return info_msg
 
 #--------------------------------------------------------------------
     def _display_secs_to_next_update_info_msg(self, Device):

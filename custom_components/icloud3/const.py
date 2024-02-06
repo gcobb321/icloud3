@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.rc10'
+VERSION                         = '3.0.rc10.2'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -49,17 +49,17 @@ HOME                            = 'home'
 HOME_FNAME                      = 'Home'
 NOT_HOME                        = 'not_home'
 NOT_HOME_FNAME                  = 'NotHome'
+AWAY                            = 'Away'
 NEAR_HOME                       = 'NearHome'
 NOT_SET                         = 'not_set'
 NOT_SET_FNAME                   = 'NotSet'
 UNKNOWN                         = 'Unknown'
-#STATIONARY                      = 'statzone'
-#STATIONARY_FNAME                = 'StatZone'
 STATIONARY                      = 'stationary'
 STATIONARY_FNAME                = 'Stationary'
+NOT_HOME_ZONES                  = [NOT_HOME, AWAY, NOT_SET]
+
 AWAY_FROM                       = 'AwayFrom'
 AWAY_FROM_HOME                  = 'AwayFromHome'
-AWAY                            = 'Away'
 NEAR                            = 'Near'
 TOWARDS                         = 'Towards'
 TOWARDS_HOME                    = 'TowardsHome'
@@ -250,7 +250,7 @@ lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ 
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒⊘Ɵ⊗ⓧⓍ⛒🜔
 Important = ❗❌⚠️❓🛑⛔⚡⭐⭕
-  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●▐‖  ▹▻▷◁◅◃▶➤➜➔❰❰❱❱ ⠤
+  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●▐‖  ▹▻▷◁◅◃▶➤➜➔❰❰❱❱ ⠤ ²
  ⣇⠈⠉⠋⠛⠟⠿⡿⣿       https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 '''
 NBSP              = '⠈' #'&nbsp;'
@@ -289,8 +289,10 @@ CRLF_RED_X        = f'{CRLF}❌'
 CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}ⓧ{NBSP}'
 CRLF_SP3_DOT      = f'{CRLF}{NBSP3}•{NBSP}'
 CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
+CRLF_SP8_DOT      = f'{CRLF}{NBSP4}{NBSP4}•{NBSP}'
 CRLF_SP3_HDOT     = f'{CRLF}{NBSP3}◦{NBSP}'
 CRLF_SP3_STAR     = f'{CRLF}{NBSP3}✪{NBSP}'
+CRLF_TAB          = f'{CRLF}{NBSP6}'
 CRLF_INDENT       = f'{CRLF}{NBSP6}{NBSP6}'
 CRLF_DASH_75      = f'{CRLF}{"-"*75}'
 
@@ -301,7 +303,7 @@ RARROW2           = '→'         #U+27F6 (Long Arrow Right)  ⟹ ⟾
 LARROW            = ' <-- '     #U+27F5 (Long Arrow Left) ⟸ ⟽
 LARROW2           = '<--'       #U+27F5 (Long Arrow Left) ⟸ ⟽
 INFO_SEPARATOR    = '/' #'∻'
-DASH_20           = '━'*20
+DASH_20           = '━'*2
 OPT_NONE          = 0
 
 #tracking_method config parameter being used
@@ -325,6 +327,11 @@ DATA_SOURCE_FNAME = {FMF: FMF_FNAME, FAMSHR: FAMSHR_FNAME, FAMSHR_FMF: FAMSHR_FM
 TRACK_DEVICE      = 'track'
 MONITOR_DEVICE    = 'monitor'
 INACTIVE_DEVICE   = 'inactive'
+TRACKING_MODE_FNAME = {
+        TRACK_DEVICE: 'Tracked',
+        MONITOR_DEVICE: 'Monitored',
+        INACTIVE_DEVICE: 'INACTIVE',
+}
 
 # Zone field names
 NAME              = 'name'
@@ -509,6 +516,7 @@ BATTERY_FAMSHR             = 'battery_last_famshr_data'
 BATTERY_MOBAPP             = 'battery_last_mobapp_data'
 WAZE_METHOD                = 'waze_method'
 MAX_DISTANCE               = 'max_distance'
+WENT_3KM                   = 'went_3km'
 
 DEVICE_STATUS              = 'device_status'
 LOW_POWER_MODE             = 'low_power_mode'
@@ -716,8 +724,8 @@ ARRIVAL_TIME                   = "arrival_time"
 
 
 CONF_SENSORS_TRACKING_DISTANCE = 'tracking_distance'
-ZONE_DISTANCE_M                = 'meters_distance'
-ZONE_DISTANCE_M_EDGE           = 'meters_distance_to_zone_edge'
+ZONE_DISTANCE_M                = 'distance_(meters)'
+ZONE_DISTANCE_M_EDGE           = 'distance_to_zone_edge_(meters)'
 ZONE_DISTANCE                  = "zone_distance"
 HOME_DISTANCE                  = "home_distance"
 DISTANCE_HOME                  = "distance_home"
@@ -750,12 +758,12 @@ DISTANCE           = 'distance'
 CONF_SENSORS_ZONE  = 'zone'
 ZONE_INFO          = 'zone_info'
 ZONE               = "zone"
-ZONE_DISPLAY_AS    = "zone_display_as"
+ZONE_DNAME         = "zone_dname"
 ZONE_FNAME         = "zone_fname"
 ZONE_NAME          = "zone_name"
 ZONE_DATETIME      = "zone_changed"
 LAST_ZONE          = "last_zone"
-LAST_ZONE_DISPLAY_AS= "last_zone_display_as"
+LAST_ZONE_DNAME    = "last_zone_dname"
 LAST_ZONE_FNAME    = "last_zone_fname"
 LAST_ZONE_NAME     = "last_zone_name"
 LAST_ZONE_DATETIME = "last_zone_changed"
@@ -818,8 +826,8 @@ DEFAULT_DEVICE_CONF = {
 }
 
 RANGE_DEVICE_CONF = {
-        CONF_INZONE_INTERVAL: [5, 240],
-        CONF_FIXED_INTERVAL: [0, 240],
+        CONF_INZONE_INTERVAL: [5, 480],
+        CONF_FIXED_INTERVAL: [0, 480],
 }
 
 # Used in conf_flow to reinialize the Configuration Devices
@@ -898,22 +906,22 @@ RANGE_GENERAL_CONF = {
         CONF_GPS_ACCURACY_THRESHOLD: [5, 250, 5, 'm'],
         CONF_OLD_LOCATION_THRESHOLD: [1, 60],
         CONF_OLD_LOCATION_ADJUSTMENT: [0, 60],
-        CONF_MAX_INTERVAL: [15, 240],
+        CONF_MAX_INTERVAL: [15, 480],
         CONF_EXIT_ZONE_INTERVAL: [.5, 10, .5],
-        CONF_MOBAPP_ALIVE_INTERVAL: [15, 240],
-        CONF_OFFLINE_INTERVAL: [1, 240],
+        CONF_MOBAPP_ALIVE_INTERVAL: [15, 480],
+        CONF_OFFLINE_INTERVAL: [5, 480],
         CONF_TFZ_TRACKING_MAX_DISTANCE: [1, 100, 1, 'km'],
         CONF_TRAVEL_TIME_FACTOR: [.1, 1, .1, ''],
         CONF_PASSTHRU_ZONE_TIME: [0, 5],
 
         # inZone Configuration Parameters
         # CONF_INZONE_INTERVALS: {
-        #         IPHONE: [5, 240],
-        #         IPAD: [5, 240],
-        #         WATCH: [5, 240],
-        #         AIRPODS: [5, 240],
-        #         NO_MOBAPP: [5, 240],
-        #         OTHER: [5, 240],
+        #         IPHONE: [5, 480],
+        #         IPAD: [5, 480],
+        #         WATCH: [5, 480],
+        #         AIRPODS: [5, 480],
+        #         NO_MOBAPP: [5, 480],
+        #         OTHER: [5, 480],
         #         },
 
         # Waze Configuration Parameters

@@ -405,14 +405,17 @@ def config_file_check_devices():
         if conf_device[CONF_PICTURE] == '':
             conf_device[CONF_PICTURE] = 'None'
             update_configuration_flag = True
-        if conf_device[CONF_INZONE_INTERVAL] < 1:
-            conf_device[CONF_INZONE_INTERVAL] = 120
+        if conf_device[CONF_INZONE_INTERVAL] < 5:
+            conf_device[CONF_INZONE_INTERVAL] = 5
             update_configuration_flag = True
         if conf_device[CONF_LOG_ZONES]== []:
             conf_device[CONF_LOG_ZONES] = ['none']
             update_configuration_flag = True
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
+            update_configuration_flag = True
+        if conf_device[CONF_FIXED_INTERVAL] > 0 and conf_device[CONF_FIXED_INTERVAL] < 5:
+            conf_device[CONF_FIXED_INTERVAL] = 5
             update_configuration_flag = True
 
         if update_configuration_flag:

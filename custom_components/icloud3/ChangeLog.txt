@@ -1,4 +1,23 @@
-rc10
+rc10.2
+...............................
+1. Outside of Zone with no Exit Trigger message - Changed the way the Exit Trigger was being logged so this wouldn't be issued when the trigger was actually issued.
+2. Passive Zones and the Mobile App - The Mobile App does not issue an Enter Zone Trigger for passive zones (which is correct), but it will issue an Exit Trigger for them (which it should not do). This was creating problems by issuing an Exit Zone Trigger when leaving the real zone and then issuing another Exit Trigger when leaving a zone it had never entered (Passive or otherwise). This Mobile App error is now identified and changed into a Verify Location trigger.
+3. Nearby devices - Nearby device info will not be used if the device being updated is in a non-Stationary zone.
+4. Configure Settings - inZone Interval, Fixed Interval, Max Interval, etc. - Changed the minimum value to 5-minutes to prevent conflicts with old location threshold and reusing a location when it should be requested again. 
+5. Other code cleanup.
+
+
+
+rc10.1 1/27/2024
+...............................
+1. BUG FIXES:
+    - Fixed an AttributeError: 'NoneType' object has no attribute 'next_update_secs' error message
+    - Fixed an 'UnboundLocalError: cannot access local variable 'from_zone' error message
+2. All distances in the Event Log are now displayed in miles/feet or kilometers/meters based on the parameter settings.
+3. Code cleanup
+
+
+rc10 1/21/2024
 ...............................
 1. NEARBY DEVICES - Changed the distance to another device routine so it would not calculate the distance to 'itself', which is always 0.
 2. WAZE HISTORY MAP - Fixed a problem displaying the Waze History gps locations on a map.

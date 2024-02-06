@@ -272,14 +272,14 @@ def check_all_devices_online_status():
                 Device.offline_secs = Gb.this_update_secs
             event_msg = (   f"Device Offline and not available > "
                             f"OfflineSince-{secs_to_time_age_str(Device.offline_secs)}")
-            post_event(Device.devicename, event_msg)
+            post_event(Device, event_msg)
 
         elif Device.is_pending:
             if Device.pending_secs == 0:
                 Device.pending_secs = Gb.this_update_secs
             event_msg = (   f"Device status is Pending/Unknown > "
                             f"PendingSince-{secs_to_time_age_str(Device.pending_secs)}")
-            post_event(Device.devicename, event_msg)
+            post_event(Device, event_msg)
 
     if any_device_online_flag == False:
         event_msg = (   f"All Devices are offline or have a pending status. "

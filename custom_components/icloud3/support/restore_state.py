@@ -4,8 +4,8 @@ from ..global_variables     import GlobalVariables as Gb
 from ..const                import (RESTORE_STATE_FILE,
                                     DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                     HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME,
-                                    ZONE, ZONE_DISPLAY_AS, ZONE_FNAME, ZONE_NAME, ZONE_INFO,
-                                    LAST_ZONE, LAST_ZONE_DISPLAY_AS, LAST_ZONE_FNAME, LAST_ZONE_NAME,
+                                    ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_INFO,
+                                    LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
                                     DIR_OF_TRAVEL, )
 
 from ..helpers.common       import (instr, )
@@ -150,11 +150,11 @@ def _reset_statzone_values_to_away(sensors):
     statzone_fname = Gb.statzone_fname.replace('#', '')
 
     _reset_sensor_value(sensors, ZONE, "ic3_stationary_", NOT_HOME)
-    _reset_sensor_value(sensors, ZONE_DISPLAY_AS, statzone_fname, AWAY)
+    _reset_sensor_value(sensors, ZONE_DNAME, statzone_fname, AWAY)
     _reset_sensor_value(sensors, ZONE_FNAME, statzone_fname, AWAY)
     _reset_sensor_value(sensors, ZONE_NAME, "Ic3Stationary", AWAY)
     _reset_sensor_value(sensors, LAST_ZONE, "ic3_stationary_", NOT_SET)
-    _reset_sensor_value(sensors, LAST_ZONE_DISPLAY_AS, statzone_fname, NOT_SET)
+    _reset_sensor_value(sensors, LAST_ZONE_DNAME, statzone_fname, NOT_SET)
     _reset_sensor_value(sensors, LAST_ZONE_FNAME, statzone_fname, NOT_SET)
     _reset_sensor_value(sensors, LAST_ZONE_NAME, "Ic3Stationary", NOT_SET)
     _reset_sensor_value(sensors, DIR_OF_TRAVEL, f"@{statzone_fname}", AWAY)

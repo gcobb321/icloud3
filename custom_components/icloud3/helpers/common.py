@@ -96,7 +96,7 @@ def is_statzone(zone):
 
 #--------------------------------------------------------------------
 def isnot_statzone(zone):
-    return instr(zone, STATIONARY) is False
+    return (instr(zone, STATIONARY) is False)
 
 #--------------------------------------------------------------------
 def isnumber(string):
@@ -131,6 +131,9 @@ def set_precision(value, um=None):
     Return the distance value as an integer or float value
     '''
     try:
+        if type(value) not in ['float', 'int']:
+            return value
+
         um = um if um else Gb.um
         precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
         value = round(float(value), precision)
@@ -207,22 +210,22 @@ def obscure_field(field):
 #--------------------------------------------------------------------
 def zone_dname(zone):
     try:
-        return Gb.zone_display_as[zone]
+        return Gb.zones_dname[zone]
     except:
         if zone in Gb.Zones_by_zone:
             Zone = Gb.Zones_by_zone[zone]
-            Gb.zone_display_as[zone] = Zone.dname
+            Gb.zones_dname[zone] = Zone.dname
         elif is_statzone(zone):
-            Gb.zone_display_as[zone] = f"StatZone{zone[-1]}"
+            Gb.zones_dname[zone] = f"StatZone{zone[-1]}"
         else:
-            Gb.zone_display_as[zone] = zone.title()
-        return Gb.zone_display_as[zone]
+            Gb.zones_dname[zone] = zone.title()
+        return Gb.zones_dname[zone]
 
 #--------------------------------------------------------------------
 def zone_display_as(zone):
-    if is_statzone(zone) and zone not in Gb.zone_display_as:
+    if is_statzone(zone) and zone not in Gb.zones_dname:
         return 'StatZone'
-    return Gb.zone_display_as.get(zone, zone.title())
+    return Gb.zones_dname.get(zone, zone.title())
 
 #--------------------------------------------------------------------
 def format_gps(latitude, longitude, accuracy, latitude_to=None, longitude_to=None):

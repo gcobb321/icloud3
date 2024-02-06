@@ -203,7 +203,7 @@ class EventLog(object):
         return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}"
 
 #------------------------------------------------------
-    def post_event(self, devicename, event_text='+'):
+    def post_event(self, devicename_or_Device, event_text='+'):
         '''
         Add records to the Event Log table the device. If the device="*",
         the event_text is added to all deviceFNAMEs table.
@@ -216,9 +216,9 @@ class EventLog(object):
         '''
 
         if event_text == '+':
-            event_text = devicename
+            event_text = devicename_or_Device
             devicename = "*" if Gb.start_icloud3_inprocess_flag else '**'
-        elif devicename is None or devicename in ['', '*']:
+        elif devicename_or_Device is None or devicename_or_Device in ['', '*']:
             devicename = "*" if Gb.start_icloud3_inprocess_flag else '**'
 
         if (instr(event_text, "▼") or instr(event_text, "▲")
@@ -226,9 +226,17 @@ class EventLog(object):
                 or instr(event_text, "event_log")):
             return
 
+        if devicename_or_Device in Gb.Devices:
+            Device = devicename_or_Device
+            devicename = Device.devicename
+        elif devicename_or_Device in Gb.Devices_by_devicename:
+            devicename = devicename_or_Device
+            Device = Gb.Devices_by_devicename[devicename]
+        else:
+            Device = None
+
         # If monitored device and the event msg is a status msg for other devices,
         # do not display it on a monitoed device screen
-        Device = Gb.Devices_by_devicename.get(devicename)
         if Device and Device.is_monitored:
             start_pos = 2 if event_text.startswith('^') else 0
             for filter_text in MONITORED_DEVICE_EVENT_FILTERS:

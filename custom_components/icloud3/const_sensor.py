@@ -8,15 +8,15 @@ from .const     import (DISTANCE_TO_DEVICES,
                         BADGE,
                         TRIGGER,
                         FROM_ZONE, ZONE_INFO, NEAR_DEVICE_USED,
-                        ZONE, ZONE_DISPLAY_AS, ZONE_NAME, ZONE_FNAME, ZONE_DATETIME,
-                        LAST_ZONE, LAST_ZONE_DISPLAY_AS, LAST_ZONE_NAME, LAST_ZONE_FNAME, LAST_ZONE_DATETIME,
+                        ZONE, ZONE_DNAME, ZONE_NAME, ZONE_FNAME, ZONE_DATETIME,
+                        LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_NAME, LAST_ZONE_FNAME, LAST_ZONE_DATETIME,
                         INTERVAL,
                         BATTERY_SOURCE, BATTERY, BATTERY_STATUS, BATTERY_UPDATE_TIME,
                         BATTERY_FAMSHR, BATTERY_MOBAPP,
                         DISTANCE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE, HOME_DISTANCE,
                         MAX_DISTANCE,CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD,
                         TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME, DIR_OF_TRAVEL,
-                        MOVED_DISTANCE, MOVED_TIME_FROM, MOVED_TIME_TO,
+                        MOVED_DISTANCE, MOVED_TIME_FROM, MOVED_TIME_TO, WENT_3KM,
                         DEVICE_STATUS,
                         LAST_UPDATE, LAST_UPDATE_DATETIME,
                         NEXT_UPDATE, NEXT_UPDATE_DATETIME,
@@ -53,12 +53,13 @@ SENSOR_LIST_LOC_UPDATE =[TRIGGER, INTERVAL,
                         NEXT_UPDATE, LAST_UPDATE, LAST_LOCATED,
                         TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME,
                         ]
-SENSOR_LIST_ZONE_NAME =[ZONE, ZONE_DISPLAY_AS, ZONE_FNAME, ZONE_NAME, ZONE_NAME, ZONE_FNAME,
-                        LAST_ZONE_NAME, LAST_ZONE_DISPLAY_AS, LAST_ZONE_FNAME, LAST_ZONE,
+SENSOR_LIST_ZONE_NAME =[ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_NAME, ZONE_FNAME,
+                        LAST_ZONE_NAME, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE,
                         LAST_ZONE_FNAME, LAST_ZONE_NAME,
                         ]
 SENSOR_LIST_DISTANCE =  [DISTANCE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE, HOME_DISTANCE,
                         ]
+
 SENSOR_GROUPS = {
         'battery':      [BATTERY, BATTERY_STATUS],
         'md_badge':     [BADGE],
@@ -119,7 +120,7 @@ The Sensor Definition dictionary defines all sensors created by iCloud3.
                 - *_last_update
                 - *_next_update
                 - *_last_zone
-                - *_last-zone_display_as
+                - *_last_zone_dname
                 - *_last_zone_name
                 - *_last_zone_fname
                 - *_last_zone_datetime
@@ -151,11 +152,11 @@ SENSOR_DEFINITION = {
                 'Badge',
                 'badge',
                 'mdi:shield-account',
-                [NAME, BATTERY, ZONE, ZONE_FNAME, ZONE_NAME,
-                        HOME_DISTANCE, DISTANCE_TO_DEVICES,
+                [NAME, BATTERY, ZONE, ZONE_FNAME,
+                        HOME_DISTANCE,
                         MAX_DISTANCE, TRAVEL_TIME, DIR_OF_TRAVEL, INTERVAL,
-                        ZONE_DATETIME,
-                        LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME,
+                        DISTANCE_TO_DEVICES,
+                        ZONE_DATETIME, LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME,
                         DEVICE_STATUS, ],
                 BLANK_SENSOR_FIELD],
         BATTERY: [
@@ -363,23 +364,23 @@ SENSOR_DEFINITION = {
                 'mdi:crosshairs-gps',
                 [ZONE, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
-        ZONE_DISPLAY_AS: [
+        ZONE_DNAME: [
                 'Zone',
                 'zone',
                 'mdi:crosshairs-gps',
-                [ZONE, ZONE_DISPLAY_AS, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
+                [ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         ZONE_FNAME: [
                 'ZoneFname',
                 'zone',
                 'mdi:crosshairs-gps',
-                [ZONE, ZONE_DISPLAY_AS, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
+                [ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         ZONE_NAME: [
                 'ZoneName',
                 'zone',
                 'mdi:crosshairs-gps',
-                [ZONE, ZONE_DISPLAY_AS, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
+                [ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         ZONE_DATETIME: [
                 'ZoneChanged',
@@ -391,25 +392,25 @@ SENSOR_DEFINITION = {
                 'LastZone',
                 'zone',    #, ha_history_exclude',
                 'mdi:crosshairs-gps',
-                [LAST_ZONE, LAST_ZONE_DISPLAY_AS, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
+                [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
-        LAST_ZONE_DISPLAY_AS: [
+        LAST_ZONE_DNAME: [
                 'LastZone',
                 'zone',    #, ha_history_exclude',
                 'mdi:crosshairs-gps',
-                [LAST_ZONE, LAST_ZONE_DISPLAY_AS, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
+                [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_FNAME: [
                 'LastZone',
                 'zone',    #, ha_history_exclude',
                 'mdi:crosshairs-gps',
-                [LAST_ZONE, LAST_ZONE_DISPLAY_AS, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
+                [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_NAME: [
                 'LastZone',
                 'zone',    #, ha_history_exclude',
                 'mdi:crosshairs-gps',
-                [LAST_ZONE, LAST_ZONE_DISPLAY_AS, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
+                [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_DATETIME: [
                 'ZoneChanged',

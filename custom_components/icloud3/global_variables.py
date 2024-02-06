@@ -135,15 +135,16 @@ class GlobalVariables(object):
     Devices_by_devicename_tracked     = {}  # All monitored Devices by devicename
     Devices_by_icloud_device_id       = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_ha_device_id           = {}  # Device by the device_id in the entity/device registry
-    Devices_by_mobapp_devicename      = {}  # All Devices by the mobapp device_tracker.mobapp_devicename
+    Devices_by_mobapp_devicename      = {}  # All verified Devices by the  conf_mobapp_devicename
+    devicenames_x_mobapp_devicename   = {}  # All devicenames by conf_mobapp_devicename from conf_devices (both ways)
     PairedDevices_by_paired_with_id   = {}  # Paired Devices by the paired_with_id (famshr prsID) id=[Dev1, Dev2]
     Zones                             = []  # Zones object list
     Zones_by_zone                     = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
     HAZones                           = []  # Zones object list for only valid HA Zones
     HAZones_by_zone                   = {}  # Zone object by zone name for only valid HA Zones
-    HAZones_by_zone_deleted           = {}  # Zone object by zone name for Zones deleted from HA 
+    HAZones_by_zone_deleted           = {}  # Zone object by zone name for Zones deleted from HA
     ha_zone_settings_check_secs       = 0   # Last time the ha.states Zone config was checked for changes
-    zone_display_as                   = {}   # Zone display_as by zone distionary to ease displaying zone fname
+    zones_dname                       = {}   # Zone display_as by zone distionary to ease displaying zone fname
     TrackedZones_by_zone              = {HOME, None}  # Tracked zones object by zone name set up with Devices.DeviceFmZones object
     StatZones                         = []  # Stationary Zone objects
     StatZones_to_delete               = []  # Stationary Zone  to delete after the devices that we're in it have  been updated

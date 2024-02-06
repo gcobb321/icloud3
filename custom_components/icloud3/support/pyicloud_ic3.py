@@ -1143,6 +1143,9 @@ class PyiCloudService():
         try:
             if self.FamilySharing is not None:
                 return
+            if Gb.PyiCloud and Gb.PyiCloud.FamilySharing is not None:
+                self.PyiCloud = Gb.PyiCloud
+                return
 
             self.FamilySharing = PyiCloud_FamilySharing(self,
                                                         self._get_webservice_url("findme"),

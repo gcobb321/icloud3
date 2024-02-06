@@ -368,7 +368,7 @@ def stage_7_initial_locate():
         else:
             continue
 
-        post_event(Device.devicename, 'Trigger > Initial Locate')
+        post_event(Device, 'Trigger > Initial Locate')
 
         Device.update_sensors_flag = True
 

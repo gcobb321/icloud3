@@ -208,7 +208,7 @@ def send_message_to_device(Device, service_data):
         if service_data.get('message') != "request_location_update":
             evlog_msg = (f"{EVLOG_NOTICE}Sending Message to Device > "
                         f"Message-{service_data.get('message')}")
-            post_event(Device.devicename, evlog_msg)
+            post_event(Device, evlog_msg)
 
         Gb.hass.services.call("notify", Device.mobapp[NOTIFY], service_data)
 
