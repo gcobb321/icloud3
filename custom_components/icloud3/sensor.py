@@ -34,7 +34,7 @@ from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
                                 SENSOR_ATTRS, SENSOR_DEFAULT, )
 
-from .helpers.common    import (instr,  round_to_zero, is_statzone, set_precision, )
+from .helpers.common    import (instr,  round_to_zero, isnumber, set_precision, )
 from .helpers.messaging import (log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 _trace, _traceha, )
 from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, secs_to_time_str,
@@ -509,9 +509,10 @@ class SensorBase(SensorEntity):
 
                 if Gb.um_MI:
                     zone_dist_m = self._get_sensor_value(ZONE_DISTANCE_M)
-                    sensor_value_mi = zone_dist_m*Gb.um_km_mi_factor/1000
-                    extra_attrs['distance_(miles)'] = set_precision(sensor_value_mi)
-                    extra_attrs['distance_units_(attributes)'] = 'mi'
+                    if isnumber(zone_dist_m):
+                        sensor_value_mi = zone_dist_m*Gb.um_km_mi_factor/1000
+                        extra_attrs['distance_(miles)'] = set_precision(sensor_value_mi)
+                        extra_attrs['distance_units_(attributes)'] = 'mi'
 
             if self.Device and self.Device.away_time_zone_offset != 0:
                 _sensor_value = adjust_time_hour_values(_sensor_value, self.Device.away_time_zone_offset)

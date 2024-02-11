@@ -241,8 +241,8 @@ SENSOR_DEFINITION = {
                 'ZoneDistance',
                 'distance, km-mi',
                 'mdi:map-marker-distance',
-                [FROM_ZONE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
-                        MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD, NEAR_DEVICE_USED],
+                [FROM_ZONE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE, MAX_DISTANCE,
+                        CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD,NEAR_DEVICE_USED],
                 0],
         DISTANCE: [
                 'Distance',
@@ -255,8 +255,8 @@ SENSOR_DEFINITION = {
                 'HomeDistance',
                 'distance, km-mi',
                 'mdi:map-marker-distance',
-                [FROM_ZONE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
-                        MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD, NEAR_DEVICE_USED],
+                [FROM_ZONE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,MAX_DISTANCE, WENT_3KM,
+                        CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD, NEAR_DEVICE_USED],
                 0],
         DIR_OF_TRAVEL: [
                 'Direction',

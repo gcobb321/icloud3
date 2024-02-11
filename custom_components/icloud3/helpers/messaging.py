@@ -6,6 +6,7 @@ from ..const            import (DOT, ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR
                                 EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING,EVLOG_IC3_STAGE_HDR,
                                 IC3_LOG_FILENAME, EVLOG_TIME_RECD,
                                 CRLF, CRLF_DOT, NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CRLF_INDENT,
+                                DASH_50, DASH_DOTTED_50, TAB_11,
                                 DATETIME_FORMAT, DATETIME_ZERO,
                                 NEXT_UPDATE_TIME, INTERVAL,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
@@ -24,7 +25,7 @@ from ..const            import (DOT, ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR
                                 BADGE,
                                 )
 from ..const_more_info  import more_info_text
-from .common import obscure_field
+from .common import (obscure_field, instr, )
 
 import homeassistant.util.dt   as dt_util
 from homeassistant.components  import persistent_notification
@@ -99,14 +100,14 @@ def broadcast_info_msg(info_msg):
 #   EVENT LOG POST ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def post_event(devicename, event_msg='+'):
+def post_event(devicename_or_Device, event_msg='+'):
     '''
     Add records to the Event Log table. This does not change
     the info displayed on the Event Log screen. Use the
     '_update_event_log_display' function to display the changes.
     '''
 
-    devicename, event_msg = resolve_system_event_msg(devicename, event_msg)
+    devicename, event_msg = resolve_system_event_msg(devicename_or_Device, event_msg)
 
     try:
         if event_msg.endswith(', '):
@@ -123,6 +124,9 @@ def post_event(devicename, event_msg='+'):
             and (event_msg.startswith('^') is False or alert_msg_flag)):
         event_msg = (f"{devicename} > {str(event_msg)}")
         write_ic3_log_recd(event_msg)
+
+    elif instr(event_msg, EVLOG_IC3_STAGE_HDR):
+        pass
 
     elif (Gb.log_debug_flag and event_msg.startswith(EVLOG_TIME_RECD) is False):
         event_msg = (f"{devicename} > {str(event_msg)}")
@@ -141,11 +145,11 @@ def post_event(devicename, event_msg='+'):
             Gb.startup_log_msgs += f"\n{event_msg}"
 
 #--------------------------------------------------------------------
-def post_error_msg(devicename, event_msg="+"):
+def post_error_msg(devicename_or_Device, event_msg="+"):
     '''
     Always display log_msg in Event Log; always add to HA log
     '''
-    devicename, event_msg = resolve_system_event_msg(devicename, event_msg)
+    devicename, event_msg = resolve_system_event_msg(devicename_or_Device, event_msg)
     if event_msg.find("iCloud3 Error") >= 0:
         for Device in Gb.Devices_by_devicename.values():
             Device.display_info_msg(ICLOUD3_ERROR_MSG)
@@ -162,13 +166,13 @@ def post_error_msg(devicename, event_msg="+"):
     log_error_msg(log_msg)
 
 #--------------------------------------------------------------------
-def post_monitor_msg(devicename, event_msg='+'):
+def post_monitor_msg(devicename_or_Device, event_msg='+'):
     '''
     Post the event message and display it in Event Log and HA log
     when the config parameter "log_level: eventlog" is specified or
     the Show Tracking Monitors was selected in Event Log > Actions
     '''
-    devicename, event_msg = resolve_system_event_msg(devicename, event_msg)
+    devicename, event_msg = resolve_system_event_msg(devicename_or_Device, event_msg)
     post_event(devicename, f"{EVLOG_MONITOR}{event_msg}")
 
     # write_ic3_log_recd(f"{devicename} > {event_msg}")
@@ -195,11 +199,14 @@ def clear_alert():
     Gb.EvLog.display_user_message('')
 
 #-------------------------------------------------------------------------------------------
-def resolve_system_event_msg(devicename, event_msg):
+def resolve_system_event_msg(devicename_or_Device, event_msg):
     if event_msg == '+':
-        return ("*", devicename)
-    else:
-        return (devicename, event_msg)
+        return ("*", devicename_or_Device)
+    if devicename_or_Device in Gb.Devices:
+        return devicename_or_Device.devicename, event_msg
+    if devicename_or_Device in Gb.Devices_by_devicename:
+        return devicename_or_Device, event_msg
+    return ('*', event_msg)
 
 #--------------------------------------------------------------------
 def resolve_log_msg_module_name(module_name, log_msg):
@@ -326,7 +333,13 @@ def write_ic3_log_recd(recd, force_write=False):
     if Gb.iC3_LogFile is None:
         open_ic3_log_file()
 
-    date_time_now = dt_util.now().strftime(DATETIME_FORMAT)[0:19]
+    date_time_now = dt_util.now().strftime(DATETIME_FORMAT)[5:19]
+
+    if ((recd.startswith('* > ')
+            and recd[4:7] in [  EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
+                                EVLOG_UPDATE_START, EVLOG_UPDATE_END])):
+        recd = _recd_box(recd)
+
     recd = _debug_recd_filter(recd)
 
     try:
@@ -336,6 +349,24 @@ def write_ic3_log_recd(recd, force_write=False):
 
     Gb.ic3_log_file_last_write_secs = int(time.time())
     Gb.ic3_log_file_update_flag = True
+
+#--------------------------------------------------------------------
+def _recd_box(recd, start_finish=None):
+    start_pos = recd.find('^')
+    if start_pos == -1: start_pos = 0
+
+    top_char = bot_char = DASH_50
+    if start_finish == 'start':
+        bot_char = DASH_DOTTED_50
+    elif start_finish == 'finish':
+        top_char = DASH_DOTTED_50
+
+    return (f"+{top_char}\n"
+            f"{TAB_11}| {recd[start_pos:]}\n"
+            f"{TAB_11}+{bot_char}")
+    # return (f"\n\t+{top_char}\n"
+    #         f"{TAB_11}   | {recd[start_pos:]}\n"
+    #         f"{TAB_11}   +{bot_char}")
 
 #--------------------------------------------------------------------
 def delete_open_log_file():
@@ -382,7 +413,7 @@ def write_config_file_to_ic3_log():
 
     write_ic3_log_recd(f"iCloud3 v{Gb.version}, "
                         f"Log File: {dt_util.now().strftime('%A')}, "
-                        f"{dt_util.now().strftime(DATETIME_FORMAT)[0:19]}\n")
+                        f"{dt_util.now().strftime(DATETIME_FORMAT)[:19]}\n")
 
     # Write the ic3 configuration (general & devices) to the Log file
     write_ic3_log_recd(f"Profile:\n{IC3_LOG_LINE_TABS}{Gb.conf_profile}")
@@ -460,7 +491,6 @@ def log_info_msg(module_name, log_msg='+'):
 
     if type(log_msg) is str and log_msg.startswith('^'): log_msg = log_msg[3:]
 
-    # Gb.HALogger.info(log_filter(log_msg))
     write_ic3_log_recd(log_filter(log_msg))
 
 #--------------------------------------------------------------------
@@ -483,18 +513,18 @@ def log_exception(err):
     write_ic3_log_recd(traceback.format_exc())
 
 #--------------------------------------------------------------------
-def log_debug_msg(devicename, log_msg="+"):
+def log_debug_msg(devicename_or_Device, log_msg="+"):
     if Gb.log_debug_flag is False:
         return
 
-    devicename, log_msg = resolve_system_event_msg(devicename, log_msg)
+    devicename, log_msg = resolve_system_event_msg(devicename_or_Device, log_msg)
     dn_str = '' if devicename == '*' else f"{devicename} > "
     log_msg = f"{dn_str}{str(log_msg).replace(CRLF, ', ')}"
 
     write_ic3_log_recd(log_filter(log_msg))
 
 #--------------------------------------------------------------------
-def log_start_finish_update_banner(start_finish_char, devicename,
+def log_start_finish_update_banner(start_finish, devicename,
             method, update_reason):
     '''
     Display a banner in the log file at the start and finish of a
@@ -504,26 +534,28 @@ def log_start_finish_update_banner(start_finish_char, devicename,
     if Gb.log_debug_flag is False and Gb.log_rawdata_flag is False:
         return
 
-    start_finish_char = '▼─▽─▼' if start_finish_char.startswith('s') else '▲─△─▲'
-    start_finish_chars = (f"────{start_finish_char}────")
     Device = Gb.Devices_by_devicename[devicename]
-    log_msg =   (f"{start_finish_chars} ▷▷ {method} ◁◁ {devicename}, "
-                f"CurrZone-{Device.sensor_zone}, {update_reason} "
-                f"{start_finish_chars}").upper()
+    text  = (f"{devicename}, {method}, "
+            f"CurrZone-{Device.sensor_zone}, {update_reason} ")
+    log_msg = _recd_box(text, start_finish)
 
-    log_debug_msg(devicename, log_msg)
+    log_debug_msg(log_msg)
 
 #--------------------------------------------------------------------
 def write_debug_log(debug_log_title=None):
     '''
-    Cycle thru the debuf_log and write all items to the icloud2-0.log file
+    Cycle thru the debug_log and write all items to the icloud2-0.log file
     '''
     if Gb.log_debug_flag is False or Gb.debug_log  == {}:  return
 
-    log_debug_msg(f"{'-'*25} {debug_log_title.upper() } {'-'*25}")
+    if debug_log_title:
+        log_debug_msg(f"{_recd_box(debug_log_title)}")
+
     for field, values in Gb.debug_log.items():
         log_debug_msg(f"{field}={values}")
-    log_debug_msg(f"{'-'*25} {debug_log_title.upper() } {'-'*25}")
+
+    if debug_log_title:
+        log_debug_msg(f"{_recd_box(debug_log_title)}")
 
     Gb.debug_log = {}
 
@@ -757,11 +789,11 @@ def dummy_trace():
     _traceha(None, None)
 
 #--------------------------------------------------------------------
-def _trace(devicename, log_text='+'):
+def _trace(devicename_or_Device, log_text='+'):
     '''
     Display a message or variable in the Event Log
     '''
-    devicename, log_text = resolve_system_event_msg(devicename, log_text)
+    devicename, log_text = resolve_system_event_msg(devicename_or_Device, log_text)
 
     if (type(log_text) is str) is False:
         log_text = f"{log_text}"
@@ -825,4 +857,4 @@ def _called_from():
     caller_filename = f"{caller_path.split('/')[-1]}........"
     caller_lineno = caller.lineno
 
-    return f"[{caller_filename[:12]}:{caller_lineno:04}] "
+    return f"[{caller_filename[:12]}:{caller_lineno:04}]"

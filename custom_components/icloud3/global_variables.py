@@ -84,7 +84,6 @@ class GlobalVariables(object):
     ActionsOptionsFlow  = None
     MobileApp_data      = {}     # mobile_app Integration data dict from hass.data['mobile_app']
     MobileApp_devices   = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
-    mobile_app_device_fnames = [] # fname = name_by_user or name in mobile_app device entry
 
 
     EvLog           = None
@@ -136,7 +135,11 @@ class GlobalVariables(object):
     Devices_by_icloud_device_id       = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_ha_device_id           = {}  # Device by the device_id in the entity/device registry
     Devices_by_mobapp_devicename      = {}  # All verified Devices by the  conf_mobapp_devicename
-    devicenames_x_mobapp_devicename   = {}  # All devicenames by conf_mobapp_devicename from conf_devices (both ways)
+    devicenames_x_famshr_devices      = {}  # All ic3_devicenames by conf_famshr_devices (both ways)
+    devicenames_x_mobapp_devicenames  = {}  # All ic3_devicenames by conf_mobapp_devicename (both ways)
+    mobapp_fnames_x_mobapp_id         = {}  # All mobapp_fnames by mobapp_deviceid from HA hass.data MobApp entry (both ways)
+    mobapp_fnames_disabled            = []
+    mobile_app_device_fnames          = []  # fname = name_by_user or name in mobile_app device entry
     PairedDevices_by_paired_with_id   = {}  # Paired Devices by the paired_with_id (famshr prsID) id=[Dev1, Dev2]
     Zones                             = []  # Zones object list
     Zones_by_zone                     = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones

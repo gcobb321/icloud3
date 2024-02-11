@@ -44,6 +44,8 @@ def list_to_str(list_value, separator=None):
 
 #--------------------------------------------------------------------
 def list_add(list_value, add_value):
+    if add_value is None:
+        return list_value
     if add_value not in list_value:
         list_value.append(add_value)
     return list_value

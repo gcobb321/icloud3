@@ -184,8 +184,8 @@ ACTION_LIST_ITEMS_KEY_TEXT = {
         'delete_icloud_mobapp_info':'CLEAR FAMSHR/MOBAPP INFO ᐳ Reset the FamShr/Mobile App seletion fields on all devices',
         'delete_device_cancel':     'CANCEL ᐳ Return to the Device List screen',
 
-        'inactive_to_track':        'TRACK ALL OR SELECTED ᐳ Change the \'Tracking Mode\' of all of the devices (or the selected devices) from \'Inactive\' to \Tracked\'',
-        'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE ᐳ None of these devices should be \'Tracked\' and should remain \'Inactive\'',
+        'inactive_to_track':        'TRACK ALL OR SELECTED ᐳ Change the `Tracking Mode‘ of all of the devices (or the selected devices) from `Inactive‘ to `Tracked‘',
+        'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE ᐳ None of these devices should be `Tracked‘ and should remain `Inactive‘',
 
         'restart_ha':               'RESTART HOME ASSISTANT ᐳ Restart HA and reload iCloud3',
         'restart_ic3_now':          'RESTART NOW ᐳ Restart iCloud3 now to load the updated configuration',
@@ -193,8 +193,8 @@ ACTION_LIST_ITEMS_KEY_TEXT = {
         'reload_icloud3':           'RELOAD ICLOUD3 ᐳ Reload & Restart iCloud3 (EXPERIMENTAL: THIS MAY NOT WORK)',
         'review_inactive_devices':  'REVIEW INACTIVE DEVICES ᐳ Some Devices are `Inactive` and will not be located or tracked',
 
-        'select_text_as':           'SELECT ᐳ Update selected \'Display Text As\' field',
-        'clear_text_as':            'CLEAR ᐳ Remove \'Display Test As\' entry',
+        'select_text_as':           'SELECT ᐳ Update selected `Display Text As‘ field',
+        'clear_text_as':            'CLEAR ᐳ Remove `Display Text As‘ entry',
 
         'exclude_sensors':          'EXCLUDE SENSORS ᐳ Select specific Sensors that should not be created',
         'filter_sensors':           'FILTER SENSORS ᐳ Select Sensors that should be displayed',
@@ -2208,8 +2208,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
                 # Action Login or Save will login into the account if the username changed
                 if (action_item in ['login_icloud_account', 'save']):
-
-                    await self._log_into_icloud_account(user_input, called_from_step_id='icloud_account')
+                    # if already logged in and no changes, do not login again
+                    if (self.PyiCloud
+                            and self.PyiCloud.username == self.username
+                            and self.PyiCloud.password == self.password):
+                        pass
+                    else:
+                        await self._log_into_icloud_account(user_input, called_from_step_id='icloud_account')
 
                     if action_item == 'save' and self.PyiCloud != Gb.PyiCloud:
                         Gb.PyiCloud = Gb.PyiCloudInit = self.PyiCloud
@@ -2230,6 +2235,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 if (action_item == 'save'
                         and (self.errors == {} or self.errors.get('base', '') == 'icloud_acct_logged_into')):
                     user_input[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX] = self.endpoint_suffix
+
                     self._update_configuration_file(user_input)
 
                     return self.async_show_form(step_id=self.called_from_step_id_2,
@@ -2482,16 +2488,16 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         into the Action Item selection list item
         '''
 
-        if self.username or self.password:
-            obscure_username = obscure_field(self.username) or 'NoUsername'
-            obscure_password = obscure_field(self.password) or 'NoPassword'
-            username_password = f"{obscure_username}/{obscure_password}"
+        #if self.username or self.password:
+        obscure_username = obscure_field(self.username) or 'NoUsername'
+        obscure_password = obscure_field(self.password) or 'NoPassword'
+        username_password = f"{obscure_username}/{obscure_password}"
 
-            if self.PyiCloud or Gb.PyiCloud:
-                logged_into_msg = f"{username_password}"
+        if self.PyiCloud or Gb.PyiCloud:
+            logged_into_msg = f"{username_password}"
 
         else:
-            logged_into_msg = 'None'
+            logged_into_msg = f"None ({username_password})"
             if 'base' not in self.errors:
                 self.errors = {'base': 'icloud_acct_not_logged_into'}
 
@@ -4798,57 +4804,61 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         #------------------------------------------------------------------------
         elif step_id == 'special_zones':
-            if self.zone_name_key_text == {}:
-                self._build_zone_list()
-            stat_zone_used       = (Gb.conf_general[CONF_STAT_ZONE_STILL_TIME] > 0)
-            pass_thru_zone_used  = (Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] > 0)
-            track_from_base_zone_used = Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
+            try:
+                if self.zone_name_key_text == {}:
+                    self._build_zone_list()
 
-            ptzh_default = [PASSTHRU_ZONE_HEADER] if pass_thru_zone_used else []
-            szh_default  = [STAT_ZONE_HEADER] if stat_zone_used else []
-            tfzh_default = [TRK_FROM_HOME_ZONE_HEADER] if track_from_base_zone_used else []
+                pass_thru_zone_used  = (Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] > 0)
+                stat_zone_used       = (Gb.conf_general[CONF_STAT_ZONE_STILL_TIME] > 0)
+                track_from_base_zone_used = Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
 
-            return vol.Schema({
-                vol.Optional('passthru_zone_header',
-                            default=ptzh_default):
-                            cv.multi_select([PASSTHRU_ZONE_HEADER]),
-                vol.Required(CONF_PASSTHRU_ZONE_TIME,
-                            default=Gb.conf_general[CONF_PASSTHRU_ZONE_TIME]):
-                            selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=0, max=5, step=.5, unit_of_measurement='minutes')),
+                ptzh_default = [PASSTHRU_ZONE_HEADER] if pass_thru_zone_used else []
+                szh_default  = [STAT_ZONE_HEADER] if stat_zone_used else []
+                tfzh_default = [TRK_FROM_HOME_ZONE_HEADER] if track_from_base_zone_used else []
 
-                vol.Required('stat_zone_header',
-                            default=szh_default):
-                            cv.multi_select([STAT_ZONE_HEADER]),
-                vol.Required(CONF_STAT_ZONE_FNAME,
-                            default=self._parm_or_error_msg(CONF_STAT_ZONE_FNAME)):
-                            selector.TextSelector(),
-                vol.Required(CONF_STAT_ZONE_STILL_TIME,
-                            default=Gb.conf_general[CONF_STAT_ZONE_STILL_TIME]):
-                            selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=5, max=60, unit_of_measurement='minutes')),
-                vol.Required(CONF_STAT_ZONE_INZONE_INTERVAL,
-                            default=Gb.conf_general[CONF_STAT_ZONE_INZONE_INTERVAL]):
-                            selector.NumberSelector(selector.NumberSelectorConfig(
-                                min=5, max=60, srep=5, unit_of_measurement='minutes')),
+                return vol.Schema({
+                    vol.Optional('passthru_zone_header',
+                                default=ptzh_default):
+                                cv.multi_select([PASSTHRU_ZONE_HEADER]),
+                    vol.Required(CONF_PASSTHRU_ZONE_TIME,
+                                default=Gb.conf_general[CONF_PASSTHRU_ZONE_TIME]):
+                                selector.NumberSelector(selector.NumberSelectorConfig(
+                                    min=0, max=5, step=.5, unit_of_measurement='minutes')),
 
-                vol.Optional(CONF_TRACK_FROM_BASE_ZONE_USED,
-                            default=tfzh_default):
-                            cv.multi_select([TRK_FROM_HOME_ZONE_HEADER]),
-                vol.Required(CONF_TRACK_FROM_BASE_ZONE,
-                            default=self._option_parm_to_text(CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)):
-                            selector.SelectSelector(selector.SelectSelectorConfig(
-                                options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
-                vol.Optional(CONF_TRACK_FROM_HOME_ZONE,
-                            default=Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
-                            # cv.boolean,
-                            selector.BooleanSelector(),
+                    vol.Required('stat_zone_header',
+                                default=szh_default):
+                                cv.multi_select([STAT_ZONE_HEADER]),
+                    vol.Required(CONF_STAT_ZONE_FNAME,
+                                default=self._parm_or_error_msg(CONF_STAT_ZONE_FNAME)):
+                                selector.TextSelector(),
+                    vol.Required(CONF_STAT_ZONE_STILL_TIME,
+                                default=Gb.conf_general[CONF_STAT_ZONE_STILL_TIME]):
+                                selector.NumberSelector(selector.NumberSelectorConfig(
+                                    min=0, max=60, unit_of_measurement='minutes')),
+                    vol.Required(CONF_STAT_ZONE_INZONE_INTERVAL,
+                                default=Gb.conf_general[CONF_STAT_ZONE_INZONE_INTERVAL]):
+                                selector.NumberSelector(selector.NumberSelectorConfig(
+                                    min=5, max=60, step=5, unit_of_measurement='minutes')),
 
-                vol.Required('action_items',
-                            default=self.action_default_text('save')):
-                            selector.SelectSelector(selector.SelectSelectorConfig(
-                                options=self.actions_list, mode='list')),
-                })
+                    vol.Optional(CONF_TRACK_FROM_BASE_ZONE_USED,
+                                default=tfzh_default):
+                                cv.multi_select([TRK_FROM_HOME_ZONE_HEADER]),
+                    vol.Required(CONF_TRACK_FROM_BASE_ZONE,
+                                default=self._option_parm_to_text(CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)):
+                                selector.SelectSelector(selector.SelectSelectorConfig(
+                                    options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
+                    vol.Optional(CONF_TRACK_FROM_HOME_ZONE,
+                                default=Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
+                                # cv.boolean,
+                                selector.BooleanSelector(),
+
+                    vol.Required('action_items',
+                                default=self.action_default_text('save')):
+                                selector.SelectSelector(selector.SelectSelectorConfig(
+                                    options=self.actions_list, mode='list')),
+                    })
+            except Exception as err:
+                log_exception(err)
 
         #------------------------------------------------------------------------
         elif step_id == 'sensors':

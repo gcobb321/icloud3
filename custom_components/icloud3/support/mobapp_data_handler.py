@@ -192,6 +192,7 @@ def check_mobapp_state_trigger_change(Device):
         # Exiting a zone when we are in a zone
         elif (Device.mobapp_data_trigger == EXIT_ZONE
                 and Device.isin_zone):
+                # and Device.isnotin_zone):
             Device.got_exit_trigger_flag = True
             Device.mobapp_zone_exit_secs = mobapp_data_secs
             Device.mobapp_zone_exit_time = mobapp_data_state_time
@@ -240,9 +241,18 @@ def check_mobapp_state_trigger_change(Device):
 
         # Exit a zone and not in a zone, nothing to do
         elif (Device.mobapp_data_trigger == EXIT_ZONE
-                and Device.isnotin_zone):
-            if Device.mobapp_data_secs > Device.located_secs_plus_5:
-                Device.mobapp_data_trigger = "Verify Location (Exit Unknown Zone)"
+                and Device.isnotin_zone
+                # and Device.isin_zone
+                and Device.got_exit_trigger_flag is False):
+            if mobapp_data_secs > Device.located_secs_plus_5:
+                Device.got_exit_trigger_flag = True
+                Device.mobapp_zone_exit_secs = mobapp_data_secs
+                Device.mobapp_zone_exit_time = mobapp_data_state_time
+                exit_zone_name = Device.StatZone.dname if Device.StatZone else 'Unknown'
+                Device.mobapp_data_trigger = (  f"Verify Exit {exit_zone_name}@"
+                                                f"{mobapp_data_state_time}")
+                Device.mobapp_data_change_reason = Device.mobapp_data_trigger
+
             else:
                 Device.mobapp_data_reject_reason = "Exit when not in zone"
 
@@ -468,8 +478,8 @@ def get_mobapp_device_trkr_entity_attrs(Device):
             Device.mobapp_data_invalid_error_cnt += 1
             if Device.mobapp_data_invalid_error_cnt == 4:
                 alert_msg =(f"{EVLOG_ALERT}The Mobile App has not reported the gps "
-                            f"location after 4 requests. It may be asleepp, offline "
-                            f"or not available and hould be reviewed."
+                            f"location after 4 requests. It may be asleep, offline "
+                            f"or not available and should be reviewed."
                             f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
                             f"{more_info('mobapp_device_no_location')}")
                 post_event(alert_msg)

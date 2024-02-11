@@ -12,14 +12,17 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, HOME_FNAME, TOWARDS,
-                                    HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP, DOT2, RED_X,
+                                    HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP, DOT2,
+                                    RED_X, YELLOW_ALERT,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_BTN_URLS,
                                     EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR,
                                     EVLOG_ERROR, EVLOG_ALERT, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
-                                    EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
-                                    CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT,
+                                    NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6,
+                                    CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT, DASH_50,
                                     CONF_EVLOG_BTNCONFIG_URL,
+                                    EVLOG_ERROR, EVLOG_ALERT, EVLOG_WARNING, EVLOG_INIT_HDR,
+                                    EVLOG_HIGHLIGHT,EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     )
 
 from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str
@@ -442,58 +445,6 @@ class EventLog(object):
         except Exception as err:
             log_exception(err)
 
-#------------------------------------------------------
-    def export_event_log(self):
-        '''
-        Export Event Log to 'config/icloud_event_log-[time].log'.
-        '''
-
-        try:
-            log_update_time =   (f"{dt_util.now().strftime('%a, %m/%d')}, "
-                                f"{dt_util.now().strftime(Gb.um_time_strfmt)}")
-            hdr_recd    = (f"Time\t\t   Event\n{'-'*120}\n")
-            export_recd = (f"iCloud3 Event Log v{Gb.version}\n\n"
-                            f"Log Update Time: {log_update_time}\n"
-                            f"Tracked Devices:\n")
-
-            export_recd += f"\nGeneral Configuration:\n"
-            export_recd += f"\t{Gb.conf_general}\n"
-
-            for devicename, Device in Gb.Devices_by_devicename.items():
-                export_recd += (f"\t{DOT}{Device.fname_devicename} >\n"
-                                f"\t\t\t{Device.conf_device}\n")
-
-            # Prepare Global '*' records. Reverse the list elements using [::-1] and make a string of the results
-            export_recd += f"\n\n{'_'*120}\n"
-            export_recd += (f"System Events:\n\n")
-            export_recd += hdr_recd
-            el_recds     = [el_recd for el_recd in self.event_recds if el_recd[ELR_DEVICENAME].startswith("*")]
-            export_recd += self._export_ic3_event_log_reformat_recds('*', el_recds)
-
-            # Prepare recds for each device. Each record is [devicename, time, text]
-            for devicename, Device in Gb.Devices_by_devicename.items():
-                export_recd += f"{'_'*120}\n"
-                export_recd += (f"{Device.fname_devicename}:\n\n")
-                export_recd += hdr_recd
-
-                valid_recds  = [el_recd for el_recd in self.event_recds if len(el_recd) == 3]
-                el_recds     = [el_recd for el_recd in valid_recds \
-                                if (el_recd[ELR_DEVICENAME] == devicename and el_recd[ELR_TEXT] != "Device.Cnts")]
-                export_recd += self._export_ic3_event_log_reformat_recds(devicename, el_recds)
-
-            datetime = datetime_now().replace('-', '.').replace(':', '.').replace(' ', '-')
-            export_filename = (f"icloud3-event-log_{datetime}.log")
-            export_directory = (f"{Gb.ha_config_directory}/{export_filename}")
-            export_directory = export_directory.replace("//", "/")
-
-            export_file = open(export_directory, "w")
-            export_file.write(export_recd)
-            export_file.close()
-
-            self.post_event(f"iCloud3 Event Log Exported > {export_directory}")
-
-        except Exception as err:
-            log_exception(err)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -816,8 +767,88 @@ class EventLog(object):
 
         return [elr_time, elr_text]
 
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   EXPORT EVENT LOG
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def export_event_log(self):
+        '''
+        Export Event Log to 'config/icloud_event_log-[time].log'.
+        '''
+
+        try:
+            log_update_time =   (f"{dt_util.now().strftime('%a, %m/%d')}, "
+                                f"{dt_util.now().strftime(Gb.um_time_strfmt)}")
+            hdr_recd    = (f"Time\t\t   Event\n{'-'*120}\n")
+            export_recd = (f"iCloud3 Event Log v{Gb.version}\n\n"
+                            f"Log Update Time: {log_update_time}\n"
+                            f"Tracked Devices:\n")
+
+            export_recd += f"\nGeneral Configuration:\n"
+            export_recd += f"\t{Gb.conf_general}\n"
+
+            for devicename, Device in Gb.Devices_by_devicename.items():
+                export_recd += (f"\t{DOT}{Device.fname_devicename} >\n"
+                                f"\t\t\t{Device.conf_device}\n")
+
+            #--------------------------------
+            # # Prepare Global '*' records. Reverse the list elements using [::-1] and make a string of the results
+            export_recd += f"\n\n{'_'*120}\n"
+            export_recd += (f"Startup Events:\n\n")
+            export_recd += hdr_recd
+
+            el_nondevice_recds = [el_recd for el_recd in self.event_recds
+                                    if el_recd[ELR_DEVICENAME].startswith("*")]
+
+            export_recd += self._export_ic3_event_log_reformat_recds('startup', el_nondevice_recds)
+
+
+            #--------------------------------
+            # # Prepare recds for each device. Each record is [devicename, time, text]
+            for devicename, Device in Gb.Devices_by_devicename.items():
+                export_recd += f"{'_'*120}\n"
+                export_recd += (f"{Device.fname_devicename}:\n\n")
+                export_recd += hdr_recd
+
+                # valid_recds  = [el_recd for el_recd in self.event_recds if len(el_recd) == 3]
+                # el_recds     = [el_recd for el_recd in valid_recds \
+                #                         if (el_recd[ELR_DEVICENAME] == devicename
+                #                             and el_recd[ELR_TEXT] != "Device.Cnts")]
+
+                el_recds = [el_recd for el_recd in self.event_recds
+                                    if (len(el_recd) == 3
+                                        and el_recd[ELR_DEVICENAME] == devicename)]
+
+                export_recd += self._export_ic3_event_log_reformat_recds(devicename, el_recds)
+
+            #--------------------------------
+            # # Prepare Global '*' records. Reverse the list elements using [::-1] and make a string of the results
+            export_recd += f"\n\n{'_'*120}\n"
+            export_recd += (f"Other/Locate Events:\n\n")
+            export_recd += hdr_recd
+
+            export_recd += self._export_ic3_event_log_reformat_recds('other', el_nondevice_recds)
+
+
+            #--------------------------------
+            datetime = datetime_now().replace('-', '.').replace(':', '.').replace(' ', '-')
+            export_filename = (f"icloud3-event-log_{datetime}.log")
+            export_directory = (f"{Gb.ha_config_directory}/{export_filename}")
+            export_directory = export_directory.replace("//", "/")
+
+            export_file = open(export_directory, "w", encoding="utf-8")
+            export_file.write(export_recd)
+            export_file.close()
+
+            self.post_event(f"iCloud3 Event Log Exported > {export_directory}")
+
+        except Exception as err:
+            log_exception(err)
+
 #--------------------------------------------------------------------
-    def _export_ic3_event_log_reformat_recds(self, devicename, el_recds):
+    def _export_ic3_event_log_reformat_recds(self, log_section, el_recds):
 
         try:
             if el_recds is None:
@@ -825,78 +856,155 @@ class EventLog(object):
 
             record_str = ''
             inside_home_det_interval_flag = False
+            startup_recds_flag = False
             el_recds.reverse()
             for record in el_recds:
                 devicename = record[ELR_DEVICENAME]
                 time       = record[ELR_TIME] if record[ELR_TIME] not in ['Debug', 'Rawdata'] else ''
                 text       = record[ELR_TEXT]
 
-                # Time-record = {mobapp_state},{ic3_zone},{interval},{travelr_time},{distance
-                if text.startswith(EVLOG_UPDATE_START):
-                    block_char = '\t\t\t┌─ '
-                    inside_home_det_interval_flag = True
-                elif text.startswith(EVLOG_UPDATE_END):
-                    block_char = '\t\t\t└─ '
-                    inside_home_det_interval_flag = False
-                elif text.startswith('Results:'):
-                    if time.startswith('»') and time.startswith('»Home') is False:
-                        block_char = '\t\t├─ '
+                if log_section == 'startup':
+                    if text.startswith(EVLOG_IC3_STARTING):
+                        startup_recds_flag = not startup_recds_flag
+                    if startup_recds_flag or text.startswith(EVLOG_IC3_STARTING):
+                        text = self._reformat_startup_recd(text)
+                    elif text[0:2] in [EVLOG_ERROR, EVLOG_ALERT, EVLOG_WARNING]:
+                        text = self._reformat_other_recd(text)
                     else:
-                        block_char = '\t├─ '
-                elif inside_home_det_interval_flag and time.startswith('»'):
-                    block_char = '\t\t│  '
-                elif inside_home_det_interval_flag:
-                    block_char = '\t│  '
+                        text = ''
+
+                elif log_section == 'other':
+                    if text.startswith(EVLOG_IC3_STARTING):
+                        startup_recds_flag = not startup_recds_flag
+                    if startup_recds_flag is False and text.startswith(EVLOG_IC3_STARTING) is False:
+                        text = self._reformat_other_recd(text)
+                    else:
+                        text = ''
+
                 else:
-                    block_char = '\t   '
+                    text, inside_home_det_interval_flag = \
+                                self._reformat_device_recd(time, text, inside_home_det_interval_flag)
 
-                if text.startswith(EVLOG_TIME_RECD):
-                    text = text[3:]
-                    item = text.split(',')
-                    text = (f"MobAppState-{item[0]}, "
-                            f"iCloud3Zone-{item[1]}, "
-                            f"Interval-{item[2]}, "
-                            f"TravelTime-{item[3]}, "
-                            f"Distance-{item[4]}")
-
-                text = text.replace("'", "").replace('&nbsp;', ' ').replace('<br>', ', ')
-                text = text.replace(",  ", ",").replace('  ', ' ')
-                if text.startswith('^'):
-                        text = text[3:]
-
-                chunk_len = 100
-                start_pos=0
-                end_pos = chunk_len + 5
-                while start_pos < len(text):
-                    if start_pos == 0:
-                        chunk = (f"{time}{block_char}{text[start_pos:end_pos]}\n")
-                    elif inside_home_det_interval_flag:
-                        chunk = (f"\t\t\t│\t\t{text[start_pos:end_pos]}\n")
-                    else:
-                        chunk= (f"\t\t\t\t\t{text[start_pos:end_pos]}\n")
-                    record_str += chunk
-                    start_pos += end_pos
-                    end_pos += chunk_len
+                if text != '':
+                    record_str += f"{time}{text}\n"
 
             record_str += '\n\n'
             return record_str
 
         except Exception as err:
             log_exception(err)
+            return ''
+
+#--------------------------------------------------------------------
+    def _reformat_startup_recd(self, text):
+        '''
+        EVLOG_ERROR, EVLOG_ALERT, EVLOG_WARNING, EVLOG_INIT_HDR,
+        EVLOG_HIGHLIGHT,EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
+        '''
+
+        text = self._replace_space_chars(text)
+
+        # if (text.startswith(EVLOG_IC3_STAGE_HDR)
+        #         or text.startswith(EVLOG_IC3_STARTING)):
+        if text[0:2] in [EVLOG_IC3_STAGE_HDR, EVLOG_IC3_STARTING]:
+            text = (f"\t\t+--{DASH_50}\n"
+                    f"\t\t\t|  {text[3:]}\n"
+                    f"\t\t\t+--{DSAH_50}")
+
+        if text.startswith('^'): text = text[3:]
+
+        return f"\t{text}"
+#--------------------------------------------------------------------
+    def _reformat_other_recd(self, text):
+        '''
+        EVLOG_ERROR, EVLOG_ALERT, EVLOG_WARNING, EVLOG_INIT_HDR,
+        EVLOG_HIGHLIGHT,EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
+        '''
+
+        text = self._replace_space_chars(text)
+
+        if text.startswith('^'): text = text[3:]
+
+        return f"\t{text}"
+
+#--------------------------------------------------------------------
+    def _reformat_device_recd(self, time, text, inside_home_det_interval_flag):
+
+        # Time-record = {mobapp_state},{ic3_zone},{interval},{travelr_time},{distance
+        if text.startswith(EVLOG_UPDATE_START):
+            block_char = '\t\t\t+--'
+            inside_home_det_interval_flag = True
+        elif text.startswith(EVLOG_UPDATE_END):
+            block_char = ''
+            inside_home_det_interval_flag = False
+        elif text.startswith('Results:'):
+            if time.startswith('»') and time.startswith('»Home') is False:
+                block_char = '\t\t+--'
+            else:
+                block_char = '\t+--'
+
+        elif inside_home_det_interval_flag and time.startswith('»'):
+            block_char = '\t\t|  '
+        elif inside_home_det_interval_flag:
+            block_char = '\t|  '
+        else:
+            block_char = '\t   '
+
+        if text.startswith(EVLOG_TIME_RECD):
+            text = text[3:]
+            item = text.split(',')
+            text = (f"MobApp-{item[0]}, "
+                    f"iCloud3-{item[1]}, "
+                    f"Interval-{item[2]}, "
+                    f"TravTime-{item[3]}, "
+                    f"Dist-{item[4]}")
+
+        text = self._replace_space_chars(text)
+
+        text = text.replace(EVLOG_UPDATE_START, f"{'-'*50}")
+        if text.startswith(EVLOG_UPDATE_END):
+            text = (f"\t\t\t+--{'-'*50}\n"
+                    f"\t\t\t|  {text[3:]}\n"
+                    f"\t\t\t+--{'-'*50}")
+        if text.startswith('^'): text = text[3:]
+
+        return f"{block_char}{text}", inside_home_det_interval_flag
 
 #--------------------------------------------------------------------
     @staticmethod
-    def _replace_special_chars(event_text):
-        event_text = event_text.replace('<', LT)
-        event_text = event_text.replace('__', '')
-        event_text = event_text.replace('"', '`')
-        event_text = event_text.replace("'", "`")
-        event_text = event_text.replace('~','--')
-        event_text = event_text.replace('Background','Bkgnd')
-        event_text = event_text.replace('Geographic','Geo')
-        event_text = event_text.replace('Significant','Sig')
+    def _replace_special_chars(text):
+        text = text.replace('<', LT)
+        text = text.replace('%lt', LT)
+        text = text.replace('__', '')
+        text = text.replace('"', '`')
+        text = text.replace("'", "`")
+        text = text.replace('~','--')
+        text = text.replace('Background','Bkgnd')
+        text = text.replace('Geographic','Geo')
+        text = text.replace('Significant','Sig')
+        return text
 
-        return event_text
+#--------------------------------------------------------------------
+    @staticmethod
+    def _replace_space_chars(text):
+        text = text.replace("'", "")
+        text = text.replace('&nbsp;', ' ')
+        text = text.replace('<br>', ', ')
+        text = text.replace(",  ", ",")
+        text = text.replace('  ', ' ')
+
+        text = text.replace(RED_X, '🅧')
+        text = text.replace(YELLOW_ALERT, '🅨')
+        text = text.replace(CRLF, '\n')
+        text = text.replace(NBSP, ' ')
+        text = text.replace(NBSP2, ' ')
+        text = text.replace(NBSP3, '\t\t\t\t')
+        text = text.replace(NBSP4, '\t\t\t\t ')
+        text = text.replace(NBSP5, '\t\t\t\t ')
+        text = text.replace(NBSP6, '\t\t\t\t ')
+        text = text.replace('»', '>')
+
+        return text
 #--------------------------------------------------------------------
     @staticmethod
     def uncompress_evlog_recd_special_characters(recd):

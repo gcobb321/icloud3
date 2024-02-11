@@ -3,7 +3,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE,
                                     CRLF_DOT, CRLF, NBSP6,RED_X, YELLOW_ALERT, )
-from ..helpers.common       import (instr, )
+from ..helpers.common       import (instr, list_add, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_alert,
                                     log_info_msg, log_exception, log_rawdata, _trace, _traceha, )
 from ..helpers.time_util    import (secs_to_time, secs_since, secs_to_time, secs_to_time_age_str,
@@ -82,10 +82,7 @@ def get_entity_registry_mobile_app_devices():
                     log_exception(err)
                     pass
 
-                disisabled_prefix = ''  if dev_trkr_entity['disabled_by'] is None \
-                                        else f"{RED_X}DISABLED{CRLF}{NBSP6}{NBSP6}{NBSP6}"
-
-                mobapp_id_by_mobapp_devicename[mobapp_devicename]            = f"{disisabled_prefix}{dev_trkr_entity['device_id']}"
+                mobapp_id_by_mobapp_devicename[mobapp_devicename]            = dev_trkr_entity['device_id']
                 mobapp_devicename_by_mobapp_id[dev_trkr_entity['device_id']] = mobapp_devicename
 
                 mobapp_fname = dev_trkr_entity['name'] or dev_trkr_entity['original_name']
@@ -102,9 +99,6 @@ def get_entity_registry_mobile_app_devices():
                                     mobapp_devicename_by_mobapp_id, battery_level_sensors)
         battery_state_sensors_by_mobapp_devicename = _extract_sensor_entities(
                                     mobapp_devicename_by_mobapp_id, battery_state_sensors)
-
-        # Gb.debug_log['_.last_updt_trigger_sensors'] = last_updt_trigger_sensors
-        # Gb.debug_log['_.battery_level_sensors'] = battery_level_sensors
 
         Gb.debug_log['_.mobapp_id_by_mobapp_devicename'] = mobapp_id_by_mobapp_devicename
         Gb.debug_log['_.mobapp_devicename_by_mobapp_id'] = mobapp_devicename_by_mobapp_id
@@ -136,7 +130,7 @@ def _extract_mobile_app_entities(mobile_app_entities, entity_name):
                 if instr(x['unique_id'], entity_name)]
 
 #-----------------------------------------------------------------------------------------------------
-def _extract_sensor_entities(mobapp_devicename_by_mobapp_id, sensor_entities):
+def _extract_sensor_entities(mobapp_id_by_mobapp_devicename, sensor_entities):
     '''
     Match the mobile_app sensors entities with the devices they belong to.
     Example: {'gary_iphone_app': 'gary_iphone_app_last_update_trigger',
@@ -146,19 +140,25 @@ def _extract_sensor_entities(mobapp_devicename_by_mobapp_id, sensor_entities):
 
     Return - A list of the mobile_app entities
     '''
-    return  {mobapp_devicename_by_mobapp_id[sensor['device_id']]: _entity_name_disabled_by(sensor)
+    return  {mobapp_id_by_mobapp_devicename[sensor['device_id']]: _entity_name_disabled_by(sensor)
                                                     for sensor in sensor_entities
-                                                    if sensor['device_id'] in mobapp_devicename_by_mobapp_id}
+                                                    if sensor['device_id'] in mobapp_id_by_mobapp_devicename}
 
 #-----------------------------------------------------------------------------------------------------
 def _entity_name(entity_id):
     return entity_id.replace('sensor.', '')
 
-def _entity_name_disabled_by(sensor):
-    disisabled_prefix = ''   if sensor['disabled_by'] is None \
+def x_entity_name_disabled_by(sensor):
+    disabled_prefix = ''   if sensor['disabled_by'] is None \
                              else f"{RED_X}DISABLED SENSOR{CRLF}{NBSP6}{NBSP6}{NBSP6}"
 
-    return f"{disisabled_prefix}{sensor['entity_id'].replace('sensor.', '')}"
+    return f"{disabled_prefix}{sensor['entity_id'].replace('sensor.', '')}"
+
+def _entity_name_disabled_by(sensor):
+    if sensor['disabled_by']:
+        Gb.mobapp_fnames_disabled = list_add(Gb.mobapp_fnames_disabled, sensor['device_id'])
+
+    return sensor['entity_id'].replace('sensor.', '')
 
 #-----------------------------------------------------------------------------------------------------
 def get_mobile_app_notify_devicenames():

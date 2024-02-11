@@ -181,6 +181,7 @@ def determine_interval(Device, FromZone):
     #--------------------------------------------------------------------------------
     #if more than 3km(1.8mi) then assume driving
     if FromZone is Device.FromZone_Home:
+        # if dist_from_zone_km >= .0030:
         if dist_from_zone_km >= 3:
             Device.went_3km = True
 

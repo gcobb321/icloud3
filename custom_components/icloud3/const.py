@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.rc10.2'
+VERSION                         = '3.0.rc10.3'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -303,7 +303,11 @@ RARROW2           = '→'         #U+27F6 (Long Arrow Right)  ⟹ ⟾
 LARROW            = ' <-- '     #U+27F5 (Long Arrow Left) ⟸ ⟽
 LARROW2           = '<--'       #U+27F5 (Long Arrow Left) ⟸ ⟽
 INFO_SEPARATOR    = '/' #'∻'
-DASH_20           = '━'*2
+DASH_20           = '━'*20
+DASH_50           = '━'*50
+DASH_DOTTED_50    = '- '*25
+TAB_11            = '\t'*11
+
 OPT_NONE          = 0
 
 #tracking_method config parameter being used

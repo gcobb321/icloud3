@@ -1,10 +1,20 @@
+rc10.3
+...............................
+1. MobApp Device Verification - Fixed a problem where a device that had an iCloud FamShr setup error would not be tracked at all even though it could still be tracked with the Mobile App.
+2. Exit Zone when not in a zone - When this happened, the device would get into a 20-30 secs update loop. This has been fixed to only do this one time.
+3. FamShr and Mobile App Devices that are not Tracked - Changed the message in the Event Log to indicate the device is not used by iCloud3.
+4. Configure Settigs - Fixed an '\T' error starting with HA 2024.2.
+5. Export Event Log, icloud3-0.log - Improved the readability of log file records.
+
+
 rc10.2
 ...............................
 1. Outside of Zone with no Exit Trigger message - Changed the way the Exit Trigger was being logged so this wouldn't be issued when the trigger was actually issued.
 2. Passive Zones and the Mobile App - The Mobile App does not issue an Enter Zone Trigger for passive zones (which is correct), but it will issue an Exit Trigger for them (which it should not do). This was creating problems by issuing an Exit Zone Trigger when leaving the real zone and then issuing another Exit Trigger when leaving a zone it had never entered (Passive or otherwise). This Mobile App error is now identified and changed into a Verify Location trigger.
 3. Nearby devices - Nearby device info will not be used if the device being updated is in a non-Stationary zone.
-4. Configure Settings - inZone Interval, Fixed Interval, Max Interval, etc. - Changed the minimum value to 5-minutes to prevent conflicts with old location threshold and reusing a location when it should be requested again. 
+4. Configure Settings - inZone Interval, Fixed Interval, Max Interval, etc. - Changed the minimum value to 5-minutes to prevent conflicts with old location threshold and reusing a location when it should be requested again.
 5. Other code cleanup.
+6. More iCloud3 Documentation updates.
 
 
 

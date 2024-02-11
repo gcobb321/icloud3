@@ -211,6 +211,10 @@ class iCloud3_Device(TrackerEntity):
         self.is_data_source_ICLOUD   = True
         self.is_data_source_FAMSHR_FMF = True
         self.is_data_source_MOBAPP   = True
+        self.verified_ICLOUD         = False
+        self.verified_FAMSHR         = False
+        self.verified_FMF            = False
+        self.verified_MOBAPP         = False
 
         # Device location & gps fields
         self.old_loc_cnt             = 0

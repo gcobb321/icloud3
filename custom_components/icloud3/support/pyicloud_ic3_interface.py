@@ -1,7 +1,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HIGH_INTEGER,
-                                    EVLOG_ALERT, EVLOG_IC3_STARTING, EVLOG_NOTICE,
+                                    EVLOG_ALERT, EVLOG_NOTICE,
                                     CRLF, CRLF_DOT, DASH_20,
                                     ICLOUD, FAMSHR,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
@@ -44,9 +44,6 @@ def create_PyiCloudService(PyiCloud, called_from='unknown'):
     Gb.pyicloud_calls_time          = 0.0
 
     if Gb.username == '' or Gb.password == '':
-        # event_msg =(f"{EVLOG_ALERT}CONFIGURATION ALERT > The iCloud username or password has not been "
-        #             f"configured. iCloud will not be used for location tracking")
-        # post_event(event_msg)
         return
 
     authenticate_icloud_account(PyiCloud, called_from=called_from, initial_setup=True)
@@ -83,9 +80,6 @@ def verify_pyicloud_setup_status():
         the PyiCloud session data requests must be run in the event loop.
 
     '''
-    # if Gb.PyiCloudInit is None and Gb.PyiCloud:
-    #     Gb.PyiCloudInit = Gb.PyiCloud
-
     init_step_needed   = list_to_str(Gb.PyiCloudInit.init_step_needed)
     init_step_complete = list_to_str(Gb.PyiCloudInit.init_step_complete)
 
@@ -115,14 +109,11 @@ def verify_pyicloud_setup_status():
                             f"{CRLF_DOT}Inprocess: {Gb.PyiCloudInit.init_step_inprocess}"
                             f"{CRLF_DOT}Needed: {init_step_needed}")
 
-        # else:
-        #     event_msg += (  f"{CRLF_DOT}Completed: {init_step_complete}"
-        #                     f"{CRLF_DOT}Inprocess: {Gb.PyiCloudInit.init_step_inprocess}"
-        #                     f"{CRLF_DOT}Needed: Restarting the interface now")
-
         post_event(event_msg)
 
         create_PyiCloudService(Gb.PyiCloud, called_from='stage4')
+
+    post_event(event_msg)
 
 #--------------------------------------------------------------------
 def authenticate_icloud_account(PyiCloud, called_from='unknown', initial_setup=False):

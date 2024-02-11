@@ -515,24 +515,37 @@ def check_mobile_app_integration(ha_started_check=None):
     via_device_id=None, is_new=False),
     '''
     try:
-        if (Gb.conf_mobapp_device_cnt == 0
-                or Gb.conf_data_source_MOBAPP is False
-                or Gb.mobile_app_device_fnames):
+        if Gb.conf_data_source_MOBAPP is False:
             return True
 
         if 'mobile_app' in Gb.hass.data:
             Gb.MobileApp_data  = Gb.hass.data['mobile_app']
             mobile_app_devices = Gb.MobileApp_data.get('devices', {})
 
-            Gb.mobile_app_device_fnames = [device_entry.name_by_user or device_entry.name \
-                    for device_id, device_entry in mobile_app_devices.items()
-                    if device_entry.disabled_by is None]
+            Gb.mobile_app_device_fnames  = []
+            Gb.mobapp_fnames_x_mobapp_id = {}
+            Gb.mobapp_fnames_disabled    = []
+            for device_id, device_entry in mobile_app_devices.items():
+                if device_entry.disabled_by is None:
+                    Gb.mobile_app_device_fnames = list_add(Gb.mobile_app_device_fnames, device_entry.name_by_user)
+                    Gb.mobile_app_device_fnames = list_add(Gb.mobile_app_device_fnames, device_entry.name)
+                    Gb.mobapp_fnames_x_mobapp_id[device_entry.id] = device_entry.name_by_user or device_entry.name
+                    Gb.mobapp_fnames_x_mobapp_id[device_entry.name] = device_entry.id
+                    Gb.mobapp_fnames_x_mobapp_id[device_entry.name_by_user] = device_entry.id
+                else:
+                    Gb.mobapp_fnames_disabled = list_add(Gb.mobapp_fnames_disabled, device_entry.id)
+                    Gb.mobapp_fnames_disabled = list_add(Gb.mobapp_fnames_disabled, device_entry.name)
+                    Gb.mobapp_fnames_disabled = list_add(Gb.mobapp_fnames_disabled, device_entry.name_by_user)
 
-        if Gb.mobile_app_device_fnames:
-            ha_started_check = True
-            event_msg =(f"Checking Mobile App Integration > Loaded, "
-                        f"Devices-{list_to_str(Gb.mobile_app_device_fnames)}")
-            post_event(event_msg)
+            if Gb.mobile_app_device_fnames:
+                ha_started_check = True
+                event_msg =(f"Checking Mobile App Integration > Loaded, "
+                            f"Devices-{list_to_str(Gb.mobile_app_device_fnames)}")
+                post_event(event_msg)
+
+        Gb.debug_log['Gb.mobile_app_device_fnames']  = Gb.mobile_app_device_fnames
+        Gb.debug_log['Gb.mobapp_fnames_x_mobapp_id'] = Gb.mobapp_fnames_x_mobapp_id
+        Gb.debug_log['Gb.mobapp_fnames_disabled']    = Gb.mobapp_fnames_disabled
 
         if len(Gb.mobile_app_device_fnames) == Gb.conf_mobapp_device_cnt:
             return True
@@ -1310,6 +1323,7 @@ def setup_tracked_devices_for_famshr(PyiCloud=None):
                     or the one created in config_flow if the username was changed.
     '''
     broadcast_info_msg(f"Stage 3 > Set up Family Share Devices")
+
     if PyiCloud is None:
         PyiCloud = Gb.PyiCloud
     if PyiCloud is None:
@@ -1436,7 +1450,8 @@ def _display_devices_verification_status(PyiCloud, _FamShr):
                     f"{Gb.conf_famshr_device_cnt} of "
                     f"{len(_FamShr.device_id_by_famshr_fname)} FamShr Devices Configured")
 
-        Gb.famshr_device_verified_cnt = 0
+        Gb.famshr_device_verified_cnt   = 0
+        Gb.devicenames_x_famshr_devices = {}
         sorted_device_id_by_famshr_fname = OrderedDict(sorted(_FamShr.device_id_by_famshr_fname.items()))
         for famshr_fname, device_id in sorted_device_id_by_famshr_fname.items():
 
@@ -1455,7 +1470,10 @@ def _display_devices_verification_status(PyiCloud, _FamShr):
 
             conf_device = _verify_conf_device(famshr_fname, device_id, _FamShr)
 
-            devicename = conf_device.get(CONF_IC3_DEVICENAME)
+            devicename  = conf_device.get(CONF_IC3_DEVICENAME)
+            famshr_name = conf_device.get(CONF_FAMSHR_DEVICENAME)
+            Gb.devicenames_x_famshr_devices[devicename]  = famshr_name
+            Gb.devicenames_x_famshr_devices[famshr_name] = devicename
 
             exception_msg = ''
             if devicename is None:
@@ -1512,7 +1530,8 @@ def _display_devices_verification_status(PyiCloud, _FamShr):
 
             # rc9 Set verify status to a valid device_id exists instead of always True
             # This will pick up devices in the configuration file that no longer exist
-            Device.verified_flag = device_id in PyiCloud.RawData_by_device_id
+            #Device.verified_flag = device_id in PyiCloud.RawData_by_device_id
+            Device.verified_FAMSHR = device_id in PyiCloud.RawData_by_device_id
 
             # link paired devices (iPhone <--> Watch)
             Device.paired_with_id = _RawData.device_data['prsId']
@@ -1559,8 +1578,8 @@ def _verify_conf_device(famshr_fname, device_id, _FamShr):
     # Cycle through the config tracked devices and find the matching device.
     update_conf_file_flag = False
     try:
-        conf_device = [cd_item  for cd_item in Gb.conf_devices
-                                if famshr_fname == cd_item[CONF_FAMSHR_DEVICENAME]][0]
+        conf_device = [conf_device  for conf_device in Gb.conf_devices
+                                    if famshr_fname == conf_device[CONF_FAMSHR_DEVICENAME]][0]
     except:
         return {}
 
@@ -1821,7 +1840,8 @@ def setup_tracked_devices_for_fmf(PyiCloud=None):
                 Device               = Gb.Devices_by_devicename[devicename]
                 device_fname_by_device_id[device_id] = Device.fname
                 device_type          = Device.device_type
-                Device.verified_flag = True
+                #Device.verified_flag = True
+                Device.verified_FMF = True
                 Device.device_id_fmf = device_id
                 Gb.Devices_by_icloud_device_id[device_id] = Device
                 Gb.fmf_device_verified_cnt += 1
@@ -1893,16 +1913,16 @@ def get_fmf_devices_pyicloud(PyiCloud):
 
 
 #--------------------------------------------------------------------
-def set_device_data_source_mobapp():
-    '''
-    The Global tracking method is mobapp so set all Device's tracking method
-    to mobapp
-    '''
-    if Gb.conf_data_source_MOBAPP is False:
-        return
+# def set_device_data_source_mobapp():
+#     '''
+#     The Global tracking method is mobapp so set all Device's tracking method
+#     to mobapp
+#     '''
+#     if Gb.conf_data_source_MOBAPP is False:
+#         returnYou
 
-    for Device in Gb.Devices:
-        Device.data_source = 'mobapp'
+#     for Device in Gb.Devices:
+#         Device.data_source = 'mobapp'
 
 #--------------------------------------------------------------------
 def set_device_data_source_famshr_fmf(PyiCloud=None):
@@ -1954,7 +1974,8 @@ def set_device_data_source_famshr_fmf(PyiCloud=None):
                             f"FmF-({Device.device_id8_fmf})")
                 post_monitor_msg(info_msg)
 
-            Device.data_source = data_source
+            #Device.data_source = data_source
+            Device.primary_data_source = data_source
 
         info_msg = (f"PyiCloud Devices > ")
         for _device_id, _RawData in PyiCloud.RawData_by_device_id.items():
@@ -2014,12 +2035,14 @@ def tune_device_data_source_famshr_fmf():
             pass
         elif cnt_famshr >= cnt_fmf:
             for Device in Devices_fmf_to_famshr:
-                Device.data_source = FAMSHR
+                #Device.data_source = FAMSHR
+                Device.primary_data_source = FAMSHR
                 Gb.Devices_by_icloud_device_id.pop(Device.device_id_fmf)
                 Gb.Devices_by_icloud_device_id[Device.device_id_famshr] = Device
         else:
             for Device in Devices_famshr_to_fmf:
-                Device.data_source = FMF
+                #Device.data_source = FMF
+                Device.primary_data_source = FMF
                 Gb.Devices_by_icloud_device_id.pop(Device.device_id_famshr)
                 Gb.Devices_by_icloud_device_id[Device.device_id_fmf] = Device
     except:
@@ -2031,6 +2054,8 @@ def setup_tracked_devices_for_mobapp():
     Get the MobApp device_tracker entities from the entity registry. Then cycle through the
     Devices being tracked and match them up. Anything left over at the end is not matched and not monitored.
     '''
+    check_mobile_app_integration()
+
     devices_desc = mobapp_interface.get_entity_registry_mobile_app_devices()
     mobapp_id_by_mobapp_devicename             = devices_desc[0]
     mobapp_devicename_by_mobapp_id             = devices_desc[1]
@@ -2052,12 +2077,12 @@ def setup_tracked_devices_for_mobapp():
 
     tracked_msg = f"Mobile App Devices > {Gb.conf_mobapp_device_cnt} of {len(Gb.conf_devices)} iCloud3 Devices Configured"
 
-    Gb.devicenames_x_mobapp_devicename = {}
+    Gb.devicenames_x_mobapp_devicenames = {}
     for devicename, Device in Gb.Devices_by_devicename.items():
         broadcast_info_msg(f"Set up Mobile App Devices > {devicename}")
 
         conf_mobapp_device = Device.mobapp[DEVICE_TRACKER].replace(DEVICE_TRACKER_DOT, '')
-        Gb.devicenames_x_mobapp_devicename[devicename] = None
+        Gb.devicenames_x_mobapp_devicenames[devicename] = None
 
         # Set mobapp devicename to icloud devicename if nothing is specified. Set to not monitored
         # if no icloud famshr name
@@ -2066,37 +2091,45 @@ def setup_tracked_devices_for_mobapp():
             continue
 
         # Check if the specified mobapp device tracker is valid and in the entity registry
-        if conf_mobapp_device.startswith('Search: '):
-            _mobapp_devicename = _search_for_mobapp_device( devicename, Device,
-                                                            mobapp_id_by_mobapp_devicename,
-                                                            conf_mobapp_device)
-            if _mobapp_devicename is None:
-                Device.set_fname_alert(YELLOW_ALERT)
-                mobapp_error_search_msg += (f"{CRLF_X}{conf_mobapp_device}_??? > "
-                                            f"Assigned to {Device.fname_devicename}")
-                continue
-
-            mobapp_devicename = _mobapp_devicename
-            Gb.devicenames_x_mobapp_devicename[devicename]        = mobapp_devicename
-            Gb.devicenames_x_mobapp_devicename[mobapp_devicename] = devicename
-        else:
+        if conf_mobapp_device.startswith('Search: ') is False:
             if conf_mobapp_device in mobapp_id_by_mobapp_devicename:
                 mobapp_devicename = conf_mobapp_device
-                Gb.devicenames_x_mobapp_devicename[devicename]        = mobapp_devicename
-                Gb.devicenames_x_mobapp_devicename[mobapp_devicename] = devicename
+                Gb.devicenames_x_mobapp_devicenames[devicename]        = mobapp_devicename
+                Gb.devicenames_x_mobapp_devicenames[mobapp_devicename] = devicename
 
             else:
                 Device.set_fname_alert(YELLOW_ALERT)
                 mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_device} > "
                                                 f"Assigned to {Device.fname_devicename}")
-                continue
+        else:
+            mobapp_devicename = _search_for_mobapp_device( devicename, Device,
+                                                            mobapp_id_by_mobapp_devicename,
+                                                            conf_mobapp_device)
+            if mobapp_devicename:
+                Gb.devicenames_x_mobapp_devicenames[devicename]        = mobapp_devicename
+                Gb.devicenames_x_mobapp_devicenames[mobapp_devicename] = devicename
+            else:
+                Device.set_fname_alert(YELLOW_ALERT)
+                mobapp_error_search_msg += (f"{CRLF_X}{conf_mobapp_device}_??? > "
+                                            f"Assigned to {Device.fname_devicename}")
 
     for devicename, Device in Gb.Devices_by_devicename.items():
-        mobapp_devicename = Gb.devicenames_x_mobapp_devicename[devicename]
-        if mobapp_devicename is None: continue
+        mobapp_devicename = Gb.devicenames_x_mobapp_devicenames[devicename]
+        if mobapp_devicename is None:
+            continue
+
+        mobapp_id  = mobapp_id_by_mobapp_devicename[mobapp_devicename]
+
+        try:
+            mobapp_fname = Gb.mobapp_fnames_x_mobapp_id[mobapp_id]
+        except Exception as err:
+            # log_exception(err)
+            mobapp_fname = f"{mobapp_devicename.replace('_', ' ').title()}(?)"
+
+        Gb.devicenames_x_mobapp_devicenames[mobapp_fname] = devicename
 
         # device_tracker entity is disabled
-        if instr(mobapp_id_by_mobapp_devicename[mobapp_devicename], 'DISABLED'):
+        if mobapp_id in Gb.mobapp_fnames_disabled:
             Device.set_fname_alert(YELLOW_ALERT)
             Device.mobapp_device_unavailable_flag = True
             mobapp_error_disabled_msg += (  f"{CRLF_DOT}{mobapp_devicename} > "
@@ -2112,26 +2145,12 @@ def setup_tracked_devices_for_mobapp():
             mobapp_error_mobile_app_msg += (f"{CRLF_DOT}{mobapp_devicename} > "
                                             f"Assigned to {Device.fname_devicename}")
 
-        try:
-            mobapp_fname = device_info_by_mobapp_devicename[mobapp_devicename].rsplit('(')[0]
-        except:
-            mobapp_fname = f"{mobapp_devicename.replace('_', ' ').title()}(?)"
-        mobapp_fname = mobapp_fname.strip()
-
         verified_mobapp_fnames.append(mobapp_fname)
         Device.conf_mobapp_fname = mobapp_fname
         Device.mobapp_monitor_flag = True
         Gb.mobapp_device_verified_cnt += 1
+        Device.verified_MOBAPP = True
 
-        # rc9 If the data source is FamShr and the device is not verified, set the
-        # data source to MobApp but leave it unverified. Otherwise, the data source
-        # is the Mobile App and it is verified
-        if Device.is_data_source_FAMSHR_FMF:
-            if Device.verified_flag is False:
-                Device.data_source = MOBAPP
-        else:
-            Device.verified_flag = True
-            Device.data_source = MOBAPP
 
         # Set raw_model that will get picked up by device_tracker and set in the device registry if it is still
         # at it's default value. Normally, raw_model is set when setting up FamShr if that is available, FmF does not
@@ -2162,40 +2181,42 @@ def setup_tracked_devices_for_mobapp():
                                         f"sensor.{battery_state_sensors_by_mobapp_devicename.get(mobapp_devicename, '')}"
 
         tracked_msg += (f"{CRLF_CHK}{mobapp_fname}, {mobapp_devicename} ({Device.raw_model}) >"
-                        f"{CRLF_SP8_DOT}{devicename}, {Device.fname}"
+                        f"{CRLF_SP8_DOT}{devicename}, {Device.fname} "
                         f"{Device.tracking_mode_fname}")
 
         # Remove the mobapp device from the list since we know it is tracked
         if mobapp_devicename in unmatched_mobapp_devices:
             unmatched_mobapp_devices.pop(mobapp_devicename)
 
-    check_mobile_app_integration()
     setup_notify_service_name_for_mobapp_devices()
 
     # Devices in the list were not matched with an iCloud3 device or are disabled
     for mobapp_devicename, mobapp_id in unmatched_mobapp_devices.items():
-        devicename = Gb.devicenames_x_mobapp_devicename.get(mobapp_devicename, 'unknown')
+        devicename = Gb.devicenames_x_mobapp_devicenames.get(mobapp_devicename, 'unknown')
         Device     = Gb.Devices_by_devicename.get(devicename)
 
         try:
+            mobapp_fname = Gb.mobapp_fnames_x_mobapp_id[mobapp_id]
             mobapp_dev_info = device_info_by_mobapp_devicename[mobapp_devicename]
             fname_dev_type  = mobapp_dev_info.rsplit('(')
-            mobapp_fname    = fname_dev_type[0]
             mobapp_dev_type = f"({fname_dev_type[1]}"
-        except:
+
+        except Exception as err:
+            # log_exception(err)
             mobapp_info     = f"{mobapp_devicename.replace('_', ' ').title()}(?)"
             mobapp_fname    = mobapp_info
             mobapp_dev_type = ''
 
         duplicate_msg = ' (DUPLICATE NAME)' if mobapp_fname in verified_mobapp_fnames else ''
         crlf_sym = CRLF_X
-        if instr(mobapp_id_by_mobapp_devicename[mobapp_devicename], 'DISABLED'):
-            device_msg = "DISABLED IN MOBILE APP INTEGRATION"
-            crlf_sym   = CRLF_RED_X
-        elif Device:
-            device_msg = "Not Monitored"
-        else:
-            device_msg = "Not Assigned to an iCloud3 Device"
+        device_msg = "Not Monitored" if Device else "Not Assigned to an iCloud3 Device"
+
+        if mobapp_id in Gb.mobapp_fnames_disabled:
+            if Device:
+                device_msg  = "DISABLED IN MOBILE APP INTEGRATION"
+                crlf_sym    = CRLF_RED_X
+            else:
+                device_msg += ' (Disabled)'
 
         tracked_msg += (f"{crlf_sym}{mobapp_fname}, {mobapp_devicename} {mobapp_dev_type} >")
         if Device:
@@ -2378,37 +2399,56 @@ def log_debug_stage_4_results():
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-def remove_unverified_untrackable_devices(PyiCloud=None):
+# def remove_unverified_untrackable_devices(PyiCloud=None):
 
-    if PyiCloud is None: PyiCloud = Gb.PyiCloud
-    if PyiCloud is None:
-        return
-    if PyiCloud.FamilySharing is None and PyiCloud.FindMyFriends is None:
-        return
+#     if PyiCloud is None: PyiCloud = Gb.PyiCloud
+#     if PyiCloud is None:
+#         return
+#     if PyiCloud.FamilySharing is None and PyiCloud.FindMyFriends is None:
+#         return
 
-    _Devices_by_devicename = Gb.Devices_by_devicename.copy()
-    device_removed_flag = False
-    alert_msg =(f"{EVLOG_ALERT}UNTRACKABLE DEVICES ALERT > Devices are not being tracked:")
-    for devicename, Device in _Devices_by_devicename.items():
-        Device.display_info_msg("Verifing Devices")
+#     _Devices_by_devicename = Gb.Devices_by_devicename.copy()
+#     device_removed_flag = False
+#     alert_msg =(f"{EVLOG_ALERT}UNTRACKABLE DEVICES ALERT > Devices are not being tracked:")
+#     for devicename, Device in _Devices_by_devicename.items():
+#         Device.display_info_msg("Verifing Devices")
 
-        # Device not verified as valid FmF, FamShr or MobApp device. Remove from devices list
-        if Device.data_source is None or Device.verified_flag is False:
-            device_removed_flag = True
-            alert_msg +=(f"{CRLF_DOT}{devicename} ({Device.fname_devtype})")
+#         # Device not verified as valid FmF, FamShr or MobApp device. Remove from devices list
+#         if Device.data_source is None or Device.verified_flag is False:
+#             device_removed_flag = True
+#             alert_msg +=(f"{CRLF_DOT}{devicename} ({Device.fname_devtype})")
 
-            devicename = Device.devicename
-            if Device.device_id_famshr:
-                Gb.Devices_by_icloud_device_id.pop(Device.device_id_famshr)
-            if Device.device_id_fmf:
-                Gb.Devices_by_icloud_device_id.pop(Device.device_id_fmf)
+#             devicename = Device.devicename
+#             if Device.device_id_famshr:
+#                 Gb.Devices_by_icloud_device_id.pop(Device.device_id_famshr)
+#             if Device.device_id_fmf:
+#                 Gb.Devices_by_icloud_device_id.pop(Device.device_id_fmf)
 
-            Gb.Devices_by_devicename.pop(devicename)
+#             Gb.Devices_by_devicename.pop(devicename)
 
-    if device_removed_flag:
-        alert_msg +=f"{more_info('unverified_device')}"
-        post_event(alert_msg)
-        post_startup_alert('Some devices are not being tracked')
+#     if device_removed_flag:
+#         alert_msg +=f"{more_info('unverified_device')}"
+#         post_event(alert_msg)
+#         post_startup_alert('Some devices are not being tracked')
+
+#------------------------------------------------------------------------------
+def set_devices_verified_status():
+    '''
+    Cycle thru the Devices and set verified status based on data sources
+    '''
+    for devicename, Device in Gb.Devices_by_devicename.items():
+        Device.verified_flag = (Device.verified_FAMSHR
+                            or  Device.verified_FMF
+                            or  Device.verified_MOBAPP)
+
+        # If the data source is FamShr and the device is not verified, set the
+        # data source to MobApp
+        if (Device.verified_flag
+                and Device.is_data_source_FAMSHR_FMF
+                and Device.verified_FAMSHR is False
+                and Device.verified_FMF is False
+                and Device.verified_MOBAPP):
+            Device.primary_data_source = MOBAPP
 
 #------------------------------------------------------------------------------
 def identify_tracked_monitored_devices():
@@ -2432,7 +2472,7 @@ def setup_trackable_devices():
     Display a list of all the devices that are tracked and their tracking information
     '''
 
-    # Cycle thru any paired devices and associate them with each otherthem with each other
+    # Cycle thru any paired devices and associate them with each other
     # Gb.PairedDevices_by_paired_with_id={'NDM0NTU2NzE3': [<Device: lillian_watch>, <Device: lillian_iphone>]}
     for PairedDevices in Gb.PairedDevices_by_paired_with_id.values():
         if len(PairedDevices) != 2 or PairedDevices[0] is PairedDevices[1]:
@@ -2444,6 +2484,22 @@ def setup_trackable_devices():
             pass
 
     for devicename, Device in Gb.Devices_by_devicename.items():
+        # Device.verified_flag = (Device.verified_FAMSHR
+        #                     or  Device.verified_FMF
+        #                     or  Device.verified_MOBAPP)
+
+        # # rc9 If the data source is FamShr and the device is not verified, set the
+        # # data source to MobApp but leave it unverified. Otherwise, the data source
+        # # is the Mobile App and it is verified
+        # if (Device.verified_flag
+        #         and Device.is_data_source_FAMSHR_FMF
+        #         and Device.verified_FAMSHR is False
+        #         and Device.verified_FMF is False
+        #         and Device.verified_MOBAPP):
+        #     Device.primary_data_source = MOBAPP
+        # #elif Device.verified_MOBAPP:
+        # #    Device.data_source = MOBAPP
+
         Device.display_info_msg(f"Set Trackable Devices > {devicename}")
         if Device.verified_flag:
             tracking_mode = ''
