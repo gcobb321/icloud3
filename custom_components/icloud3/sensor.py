@@ -508,7 +508,7 @@ class SensorBase(SensorEntity):
                 extra_attrs[_sensor_attr_name] = _sensor_value
 
                 if Gb.um_MI:
-                    zone_dist_m = self._get_sensor_value(ZONE_DISTANCE_M)
+                    zone_dist_m = float(self._get_sensor_value(ZONE_DISTANCE_M))
                     sensor_value_mi = zone_dist_m*Gb.um_km_mi_factor/1000
                     extra_attrs['distance_(miles)'] = set_precision(sensor_value_mi)
                     extra_attrs['distance_units_(attributes)'] = 'mi'
