@@ -41,7 +41,7 @@ from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, secs_to_tim
                                 mins_to_time_str, time_now_secs, datetime_now,
                                 secs_to_datetime, adjust_time_hour_values,
                                 adjust_time_hour_value)
-from .helpers.dist_util import (km_to_mi, m_to_ft, )
+from .helpers.dist_util import (km_to_mi, m_to_ft, m_to_um, )
 from .helpers.format    import (icon_circle, icon_box, )
 from collections        import OrderedDict
 from .helpers           import entity_io
@@ -511,8 +511,8 @@ class SensorBase(SensorEntity):
                     zone_dist_m = self._get_sensor_value(ZONE_DISTANCE_M)
                     if isnumber(zone_dist_m):
                         sensor_value_mi = zone_dist_m*Gb.um_km_mi_factor/1000
-                        extra_attrs['distance_(miles)'] = set_precision(sensor_value_mi)
-                        extra_attrs['distance_units_(attributes)'] = 'mi'
+                        extra_attrs['distance (miles)'] = set_precision(sensor_value_mi)
+                        extra_attrs['distance_units (attributes)'] = 'mi'
 
             if self.Device and self.Device.away_time_zone_offset != 0:
                 _sensor_value = adjust_time_hour_values(_sensor_value, self.Device.away_time_zone_offset)
@@ -1013,7 +1013,7 @@ class Sensor_Distance(SensorBase):
 
         if self._attr_native_unit_of_measurement == 'km':
             if round_to_zero(sensor_value) == 0:
-                sensor_value = 0
+                sensor_value = 0.0
             elif sensor_value > 20:
                 sensor_value = round(sensor_value, 0)
             elif sensor_value >= 1:
@@ -1026,7 +1026,7 @@ class Sensor_Distance(SensorBase):
 
         elif self._attr_native_unit_of_measurement == 'mi':
             if round_to_zero(sensor_value) == 0:
-                sensor_value = 0
+                sensor_value = 0.0
             elif sensor_value > 20:
                 sensor_value = round(sensor_value, 1)
             elif sensor_value > .1:
@@ -1039,11 +1039,15 @@ class Sensor_Distance(SensorBase):
 
         return sensor_value
 
+#---------------------------------------------------------------
     @property
     def extra_state_attributes(self):
         extra_attrs = self._get_extra_attributes(self.sensor)
 
-        if self.Device is None:
+        if (self.Device is None
+                or instr(self.sensor, 'moved')
+                or instr(self.sensor, 'waze')
+                or instr(self.sensor, 'calc')):
             return extra_attrs
 
         if self.sensor.endswith('distance'):
@@ -1052,23 +1056,24 @@ class Sensor_Distance(SensorBase):
 
         return extra_attrs
 
+#---------------------------------------------------------------
     def _format_zone_distance_extra_attrs(self):
         '''
         Get the distance to each zone and build the extra_attributes Zone distance items
         '''
 
-        dist_attrs = OrderedDict()
-        zone_dist_km = {f" - {Zone.dname}": set_precision(self.Device.Distance_km(Zone), 'km')
+        zone_dist_km = {f"--{Zone.dname}": set_precision(self.Device.Distance_km(Zone), 'km')
                                 for Zone in Gb.HAZones}
         zone_dist_mi = {zone_da: set_precision(km_to_mi(dist_km), 'mi')
                                 for zone_da, dist_km in zone_dist_km.items()}
 
-        zone_dist_m  = {f" - {Zone.dname}*": set_precision(self.Device.Distance_m(Zone), 'm')
+        zone_dist_m  = {f"={Zone.dname}": set_precision(self.Device.Distance_m(Zone), 'm')
                                 for Zone in Gb.HAZones
                                 if self.Device.Distance_m(Zone) < 500}
         zone_dist_ft = {zone_da: set_precision(m_to_ft(dist_m), 'ft')
                                 for zone_da, dist_m in zone_dist_m.items()}
 
+        dist_attrs = {}#OrderedDict()
         dist_attrs[f"zone_distance"] = f"({Gb.um}) @{datetime_now()}"
         if Gb.um_KM:
             dist_attrs.update(zone_dist_km)
@@ -1076,7 +1081,7 @@ class Sensor_Distance(SensorBase):
             dist_attrs.update(zone_dist_mi)
 
         if zone_dist_m or zone_dist_ft:
-            dist_attrs[f"zone_distance* (< 500m)"] = f"({Gb.um_m_ft}) @{datetime_now()}"
+            dist_attrs[f"zone_distance (< 500m)"] = f"({Gb.um_m_ft}) @{datetime_now()}"
             if Gb.um_KM:
                 dist_attrs.update(zone_dist_m)
             else:
@@ -1084,48 +1089,57 @@ class Sensor_Distance(SensorBase):
 
         return dist_attrs
 
+#---------------------------------------------------------------
     def _format_devices_distance_extra_attrs(self):
         '''
         Get the distance to each zone and build the extra_attributes Zone distance items.
         Use distance apart from this device for the distance data.
         {devicename: [distance_m, gps_accuracy_factor, display_text]}
         '''
-        dist_attrs = OrderedDict()
-        device_dist_m   = {f" - {self._fname(devicename)}": set_precision(dist_to_other_devices[0], 'm')
-                                for devicename, dist_to_other_devices in self.Device.dist_to_other_devices.items()
-                                if dist_to_other_devices[0] > .001 and dist_to_other_devices[0] < 500}
-        device_dist_ft = {device_fn: set_precision(m_to_ft(dist_m), 'ft')
-                                for device_fn, dist_m in device_dist_m.items()}
+        test_dn_dist={'gary_iphone': 0, 'lillian_iphone': 9639.12345, 'lillian_watch': 1208.5623, 'gary_ipad': 3.738}
 
-        device_dist_km  = {f" - {self._fname(devicename)}*": set_precision(dist_to_other_devices[0]/1000, 'km')
-                                for devicename, dist_to_other_devices in self.Device.dist_to_other_devices.items()
-                                if dist_to_other_devices[0] >= 500}
-        device_dist_mi = {device_fn: set_precision(km_to_mi(dist_km), 'mi')
-                                for device_fn, dist_km in device_dist_km.items()}
+        fname_dist = {}
+        try:
+            fname_dist["device_distance"] = f"@{secs_to_datetime(self.Device.dist_to_other_devices_secs)}"
+            # for devicename, dist_m in test_dn_dist.items():
+            for devicename, dist_to_other_devices in self.Device.dist_to_other_devices.items():
+                dist_m = dist_to_other_devices[0]
+                fname = self._fname(devicename)
+                fname_dist[f"--{fname}"] = m_to_um(dist_m)
+                fname_dist[f"={fname}"]  = set_precision(km_to_mi(dist_m/1000))
+        except Exception as err:
+            # log_exception(err)
+            pass
 
-        if device_dist_m or device_dist_ft:
-            dist_attrs["device_distance (< 500m)"] = (f"({Gb.um_m_ft}) "
-                                f"@{secs_to_datetime(self.Device.dist_to_other_devices_secs)}")
-            if Gb.um_KM:
-                dist_attrs.update(device_dist_m)
-            else:
-                dist_attrs.update(device_dist_ft)
+        return fname_dist
 
-        if device_dist_km or device_dist_mi:
-            dist_attrs["device_distance"] = (f"({Gb.um}) "
-                                f"@{secs_to_datetime(self.Device.dist_to_other_devices_secs)}")
-            if Gb.um_KM:
-                dist_attrs.update(device_dist_km)
-            else:
-                dist_attrs.update(device_dist_mi)
-
-        return dist_attrs
-
+#---------------------------------------------------------------
     def _fname(self, devicename):
         if Device := Gb.Devices_by_devicename.get(devicename):
             return Device.fname_devtype
         else:
             return devicename
+
+#-------------------------------------------------------------------------------------------
+    # def _set_precision(self, number, um=None):
+    #     '''
+    #     Return the distance value as an integer or float value
+    #     '''
+    #     try:
+    #         if isnumber(number) is False:
+    #             _trace(f"zz {self.sensor} {number=} {um=}")
+    #             return number
+
+    #         um = um if um else Gb.um
+    #         precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
+    #         _trace(f"aa {self.sensor} {number=} {um=} {precision=}")
+    #         number = round(float(number), precision)
+    #         _trace(f"bb {self.sensor} {number=} {um=} {precision=}")
+
+    #     except Exception as err:
+    #         pass
+
+    #     return number
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Sensor_Battery(SensorBase):

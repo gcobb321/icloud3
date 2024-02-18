@@ -15,7 +15,8 @@ from .messaging         import (_trace, _traceha, )
 def calc_distance_km(from_gps, to_gps):
 
     dist_m = calc_distance_m(from_gps, to_gps)
-    return round_to_zero(dist_m/1000)
+    return round(dist_m/1000, 8)
+    #return round_to_zero(dist_m/1000)
 
 #--------------------------------------------------------------------
 def calc_distance_m(from_gps, to_gps):
@@ -24,24 +25,25 @@ def calc_distance_m(from_gps, to_gps):
 
     if (from_lat is None or from_long is None or to_lat is None or to_long is None
             or from_lat == 0  or from_long == 0 or to_lat == 0 or to_long == 0):
-        return 0
+        return 0.0
 
     dist_m = distance(from_lat, from_long, to_lat, to_long)
-    dist_m = round_to_zero(dist_m)
-    dist_m = 0 if dist_m < .002 else dist_m
-    return dist_m
+    #dist_m = round_to_zero(dist_m)
+    #dist_m = 0 if dist_m < .002 else dist_m
+    return round(dist_m, 8)
 
 #--------------------------------------------------------------------
 def km_to_mi(dist_km):
-    return float(dist_km) * Gb.um_km_mi_factor
+    return round(float(dist_km) * Gb.um_km_mi_factor, 8)
 
 #--------------------------------------
 def mi_to_km(dist_mi):
-    return round(float(dist_mi) / Gb.um_km_mi_factor, 2)
+    return round(float(dist_mi) / Gb.um_km_mi_factor, 8)
+    #return round(float(dist_mi) / Gb.um_km_mi_factor, 2)
 
 #--------------------------------------
 def m_to_ft(dist_m):
-   return float(dist_m) * Gb.um_m_ft_factor
+   return round(float(dist_m) * Gb.um_m_ft_factor, 8)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -96,5 +98,6 @@ def format_dist_mi(dist_mi):
     if round_to_zero(dist_mi) == 0: return f"0mi"
 
     dist_ft = dist_mi * 5280
-    if dist_ft > 1:        return f"{int(dist_ft)}ft"
+    if dist_ft > 1:        return f"{dist_ft:.1f}ft"
+    # if dist_ft > 1:        return f"{int(dist_ft)}ft"
     return f"{dist_ft:.2f}ft"

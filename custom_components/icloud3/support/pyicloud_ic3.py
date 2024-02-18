@@ -1429,36 +1429,33 @@ class PyiCloud_FamilySharing():
                 _RawData = self.PyiCloud.RawData_by_device_id[device_id]
                 _RawData.save_new_device_data(device_info)
 
-                requested_by_prefix = ''
-                if requested_by_devicename == _Device.devicename:
-                    _RawData.last_requested_loc_time_gps = _RawData.loc_time_gps
-                    requested_by_prefix = f'{CRLF_CHK}'
-
                 if _RawData.last_loc_time_gps == _RawData.loc_time_gps:
-                    last_loc_time_gps_msg = ''
+                    last_loc_time_gps_msg = last_loc_time_msg = ''
                 else:
                     last_loc_time_gps_msg = f"{_RawData.last_loc_time_gps}{RARROW}"
+                    last_loc_time_msg     = f"{_RawData.last_loc_time}{RARROW}"
                     _Device.loc_time_updates_famshr.append(_RawData.location_time)
+
+                rawdata_battery_level = round(_RawData.device_data.get(ICLOUD_BATTERY_LEVEL, 0) * 100)
+
+                event_msg =(f"NewData > FamShr-"
+                                    f"{last_loc_time_msg}"
+                                    f"{_RawData.location_time}, ")
+                if rawdata_battery_level != _Device.dev_data_battery_level:
+                    event_msg += f"{_Device.dev_data_battery_level}%{RARROW}"
+                event_msg += f"{rawdata_battery_level}%"
+
+                if requested_by_devicename == _Device.devicename:
+                    _RawData.last_requested_loc_time_gps = _RawData.loc_time_gps
+                    if last_loc_time_msg:
+                        post_event(_Device.devicename, event_msg)
+                elif _Device.isin_zone:
+                    post_monitor_msg(_Device.devicename, event_msg)
+                else:
+                    post_event(_Device.devicename, event_msg)
 
                 log_rawdata(f"FamShr Data - <{device_data_name}/{_Device.devicename}>",
                             _RawData.device_data)
-                            # {'raw': _RawData.device_data})
-
-                if requested_by_prefix == '': requested_by_prefix = CRLF_DOT
-                try:
-                    rawdata_battery_level = round(_RawData.device_data[ICLOUD_BATTERY_LEVEL] * 100)
-                except:
-                    rawdata_battery_level = 0
-
-                monitor_msg += (f"{requested_by_prefix}"
-                                f"{_Device.devicename}, "
-                                f"{last_loc_time_gps_msg}"
-                                f"{_RawData.loc_time_gps} "
-                                f", {rawdata_battery_level}%")
-                if rawdata_battery_level != _Device.dev_data_battery_level:
-                    monitor_msg += f"/{_Device.dev_data_battery_level}%"
-
-            post_monitor_msg(monitor_msg)
 
         except Exception as err:
             log_exception(err)
@@ -2065,8 +2062,9 @@ class PyiCloud_RawData():
         self.location_secs   = 0
         self.location_time   = HHMMSS_ZERO
         self.last_used_location_secs = 0
-        self.last_used_location_time = HHMMSS_ZERO
+        self.last_loc_time           = ''               # location_time_gps_acc from last general update
         self.last_loc_time_gps       = ''               # location_time_gps_acc from last general update
+        self.last_used_location_time = HHMMSS_ZERO
         self.last_requested_loc_time_gps = ''           # location_time_gps_acc from last time requested
 
         self.sound_url   = sound_url
@@ -2216,6 +2214,7 @@ class PyiCloud_RawData():
     def save_new_device_data(self, device_data):
         '''Update the device data.'''
         try:
+            self.last_loc_time     = self.location_time
             self.last_loc_time_gps = f"{self.location_time}/±{self.gps_accuracy}m"
         except:
             self.last_loc_time_gps = ''

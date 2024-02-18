@@ -537,7 +537,7 @@ class iCloud3:
             Device.calculate_distance_moved()
             if Device.loc_data_dist_moved_km < .05:
                 return
-        elif Device.loc_data_latitude == 0:
+        elif Device.loc_data_latitude == 0.0:
             return
 
         Device.update_sensors_flag  = True
@@ -663,8 +663,8 @@ class iCloud3:
         Device.FromZone_BeingUpdated = Device.FromZone_Home
 
         if (Device.is_tracking_paused
-                or Device.mobapp_data_latitude == 0
-                or Device.mobapp_data_longitude == 0):
+                or Device.mobapp_data_latitude == 0.0
+                or Device.mobapp_data_longitude == 0.0):
             return
 
         if Gb.any_device_was_updated_reason == '':
@@ -1050,7 +1050,9 @@ class iCloud3:
             # Determine zone to be tracked from now that all of the zone distances have been determined
             det_interval.determine_TrackFrom_zone(Device)
 
-            # pr1.4
+            # Save the source/time summary of the update for the next update msg
+            Device.last_loc_data_time_gps = f"{Device.dev_data_source}-{Device.loc_data_time_gps} "
+
             # If the location is old and an update is being done (probably from an mobapp trigger),
             # see if the error interval is greater than this update interval. Is it is, Reset the counter
             if Device.old_loc_cnt > 8:

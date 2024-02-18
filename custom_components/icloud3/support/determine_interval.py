@@ -171,7 +171,7 @@ def determine_interval(Device, FromZone):
         Device.got_exit_trigger_flag = False
         Device.statzone_clear_timer
 
-    waze_time_msg = '0 min'
+    waze_time_msg = 'NotUsed'
     calc_interval_secs = round(km_to_mi(dist_from_zone_km) / 1.5) * 60
     if Gb.Waze.is_status_USED:
         waze_interval_secs = round(waze_time_from_zone * 60 * Gb.travel_time_factor , 0)
@@ -181,7 +181,7 @@ def determine_interval(Device, FromZone):
     #--------------------------------------------------------------------------------
     #if more than 3km(1.8mi) then assume driving
     if FromZone is Device.FromZone_Home:
-        # if dist_from_zone_km >= .0030:
+        # if dist_from_zone_km >= .0030:   # Force True when testing and at Home
         if dist_from_zone_km >= 3:
             Device.went_3km = True
 
@@ -195,7 +195,7 @@ def determine_interval(Device, FromZone):
         if isin_zone:
             #inzone & old location
             if Device.is_location_old_or_gps_poor and battery10_flag is False:
-                interval_method = '1.OldLocPoorGPS'
+                interval_method = '1.OldLoc/GPS'
                 interval_secs   = _get_interval_for_error_retry_cnt(Device, OLD_LOCATION_CNT)
 
             elif Device.isnotin_statzone:
@@ -218,22 +218,18 @@ def determine_interval(Device, FromZone):
             interval_secs   = Gb.exit_zone_interval_secs
 
             if Device.loc_data_zone == HOME:
-                FromZone.max_dist_km = 0
+                FromZone.max_dist_km = 0.0
                 Device.went_3km = False
 
-        elif Device.fixed_interval_secs > 0:
-            interval_method = "1.Fixed"
-            interval_secs   = Device.fixed_interval_secs
-
         else:
-            interval_method = "2.ZoneChanged"
+            interval_method = "2.ZoneChng"
             interval_secs   = 240
 
     # Exit_Zone trigger & away & exited less than 1 min ago
     elif (instr(Device.trigger, EXIT_ZONE)
             and isnotin_zone
             and secs_since(Device.mobapp_zone_exit_secs) < 60):
-        interval_method = '3.ExitTrigger'
+        interval_method = '3.ExitTrig'
         interval_secs   = Gb.exit_zone_interval_secs
 
     #inzone & poor gps & check gps accuracy when inzone
@@ -248,19 +244,15 @@ def determine_interval(Device, FromZone):
         interval_secs   = _get_interval_for_error_retry_cnt(Device, OLD_LOCATION_CNT)
 
     elif Device.is_location_old_or_gps_poor:
-        interval_method = '3.OldLocPoorGPS'
+        interval_method = '3.OldLoc/GPS'
         interval_secs   = _get_interval_for_error_retry_cnt(Device, OLD_LOCATION_CNT)
-
-    # elif Device.isin_statzone:
-    #    interval_method = "3.StatZone"
-    #    interval_secs   = Device.statzone_inzone_interval_secs
 
     elif battery10_flag and dist_from_zone_km > 1:
         interval_method = "3.Battery10%"
         interval_secs   = Device.statzone_inzone_interval_secs
 
     elif isin_zone_home or (dist_from_zone_km < .05 and dir_of_travel == TOWARDS):
-        interval_method = '3.InHomeZone'
+        interval_method = '3.AtHome'
         interval_secs   = Device.inzone_interval_secs
 
     #in another zone and inzone time > travel time
@@ -272,24 +264,20 @@ def determine_interval(Device, FromZone):
         interval_method = '3.NeedInfo'
         interval_secs   = 150
 
-    elif Device.fixed_interval_secs > 0:
-        interval_method = "3.Fixed"
-        interval_secs   = Device.fixed_interval_secs
-
     elif dist_from_zone_km < 2 and dir_of_travel == AWAY_FROM:
-        interval_method = '<2km.Away'
+        interval_method = '3.<2km+AwayFm'
         interval_secs   = Device.old_loc_threshold_secs  #1.5 mi & going Away
 
     elif dist_from_zone_km < 2 and Device.went_3km:
-        interval_method = '<2km'
+        interval_method = '3.<2km'
         interval_secs   = 15          #1.5 mi = real close and driving
 
     elif dist_from_zone_km < 2:       #1.5 mi=1 min
-        interval_method = '<3km'
+        interval_method = '3.<3km'
         interval_secs   = 60
 
     elif dist_from_zone_km < 3.5:      #2 mi=1.5 min
-        interval_method = '<3.5km'
+        interval_method = '3.<3.5km'
         interval_secs   = 90
 
     elif waze_time_from_zone > 5 and waze_interval_secs > 0:
@@ -297,46 +285,56 @@ def determine_interval(Device, FromZone):
         interval_secs   = waze_interval_secs
 
     elif dist_from_zone_km < 5:        #3 mi=2 min
-        interval_method = '<5km'
+        interval_method = '3.<5km'
         interval_secs   = 120
 
     elif dist_from_zone_km < 8:        #5 mi=3 min
-        interval_method = '<8km'
+        interval_method = '3.<8km'
         interval_secs   = 180
 
     elif dist_from_zone_km < 12:       #7.5 mi=5 min
-        interval_method = '<12km'
+        interval_method = '3.<12km'
         interval_secs   = 300
 
     elif dist_from_zone_km < 20:       #12 mi=10 min
-        interval_method = '<20km'
+        interval_method = '3.<20km'
         interval_secs   = 600
 
     elif dist_from_zone_km < 40:       #25 mi=15 min
-        interval_method = '<40km'
+        interval_method = '3.<40km'
         interval_secs   = 900
 
     elif dist_from_zone_km > 150:      #90 mi=1 hr
-        interval_method = '>150km'
+        interval_method = '3.>150km'
         interval_secs   = 3600
 
     else:
-        interval_method = '3.Calculated'
+        interval_method = '3.Calc'
         interval_secs   = calc_interval_secs
 
     if (dir_of_travel in ('', ' ', '___', AWAY_FROM)
             and interval_secs < 180
             and interval_secs > 30):
-        interval_method += '+6.Away(<3min)'
+        interval_method += '+6.AwayFm+<3min'
         interval_secs = 180
 
-    elif dir_of_travel == AWAY_FROM and not Gb.Waze.distance_method_waze_flag:
-        interval_method += '+6.Away(Calc)'
+    elif (dir_of_travel == AWAY_FROM
+            and not Gb.Waze.distance_method_waze_flag
+            and Device.fixed_interval_secs == 0):
+        interval_method += '+6.AwayFm+Calc'
         interval_multiplier = 2    #calc-increase timer
 
     elif dir_of_travel == NOT_SET and interval_secs > 180:
-        interval_method += '+>180s'
+        interval_method += '+6.>180s'
         interval_secs    = 180
+
+    # Use fixed_interval_secs if > 0 and > new interval
+    if (Device.fixed_interval_secs > 0
+            and interval_secs > Device.fixed_interval_secs
+            and Device.isnotin_zone_or_statzone
+            and Device.is_location_good
+            and Device.is_passthru_timer_set is False):
+        interval_secs   = Device.fixed_interval_secs
 
     #Turn off waze close to zone flag to use waze after leaving zone or getting more than 1km from it
     if Gb.Waze.waze_close_to_zone_pause_flag:
@@ -347,7 +345,7 @@ def determine_interval(Device, FromZone):
     if (Device.mobapp_update_flag
             and interval_secs < 180
             and interval_secs > 30):
-        interval_method += '+7.MobAppTrigger'
+        interval_method += '+8.MobAppTrig'
         interval_secs    = 180
 
     #if changed zones on this poll reset multiplier
@@ -371,19 +369,19 @@ def determine_interval(Device, FromZone):
         #  Use interval_secs if > StatZone interval unless the StatZone interval is the device's
         # inzone interval
         if Device.isin_statzone:
-            interval_method = "7.StatZone"
+            interval_method = "9.StatZone"
             interval_secs   = Device.statzone_inzone_interval_secs
 
         #check for max interval_secs, override in zone times
         elif interval_secs > Gb.max_interval_secs:
             if Device.isin_statzone:
-                interval_method = f"7.inZoneMax"
+                interval_method = f"9.inZoneMax"
                 interval_secs   = Device.statzone_inzone_interval_secs
             elif isin_zone:
                 pass
 
             else:
-                interval_method = f"7.Max"
+                interval_method = f"9.Max"
                 interval_secs   = Gb.max_interval_secs
 
         interval_str = secs_to_time_str(interval_secs)
@@ -406,7 +404,7 @@ def determine_interval(Device, FromZone):
                         next_update_secs = _Device.FromZone_TrackFrom.next_update_secs
                         interval_secs    = _Device.FromZone_TrackFrom.interval_secs
                         interval_str     = _Device.FromZone_TrackFrom.interval_str
-                        interval_method  = f"{_Device.fname}"
+                        interval_method  = _Device.fname
 
         except:
             pass
@@ -508,7 +506,8 @@ def determine_interval(Device, FromZone):
     if type(waze_time_msg) != str: waze_time_msg = ''
     FromZone.last_travel_time  = waze_time_msg
     FromZone.last_distance_km  = dist_from_zone_km
-    FromZone.last_distance_str = (f"{km_to_um(dist_from_zone_km)}")
+    FromZone.last_distance_str = km_to_um(dist_from_zone_km)
+    #FromZone.last_distance_str = (f"{km_to_um(dist_from_zone_km)}")
     Device.loc_time_updates_famshr = [Device.loc_data_time]
 
     if Device.is_location_gps_good:
@@ -560,7 +559,7 @@ def post_results_message_to_event_log(Device, FromZone):
     if Gb.log_debug_flag and FromZone.interval_method and Device.is_tracked:
         event_msg +=    f"Method-{FromZone.interval_method}, "
     if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
-        event_msg +=    "Waze-OverMaxDist, "
+        event_msg +=    f"WazeMsg-{Gb.Waze.range_msg(FromZone.zone_dist)}, "
     if (Device.mobapp_monitor_flag
             and secs_since(Device.mobapp_data_secs) > 3600):
         event_msg += (  f"MobAppLocated-"
@@ -604,7 +603,8 @@ def post_zone_time_dist_event_msg(Device, FromZone):
     ic3_zone     = zone_dname(Device.loc_data_zone)
 
     if Device.loc_data_zone == NOT_SET:
-        interval_str = travel_time = distance = 0
+        interval_str = travel_time = 0
+        distance = 0.0
     else:
         interval_str = FromZone.interval_str.split("(")[0]
         travel_time  = '' if FromZone.last_travel_time == '0 min' else FromZone.last_travel_time
@@ -948,9 +948,9 @@ def _get_distance_data(Device, FromZone):
         Gb.Waze.waze_status = WAZE_PAUSED
         Gb.Waze.waze_close_to_zone_pause_flag = True
         distance_data = [VALID_DATA,
-                        0,                          # dist_from_zone_km,
+                        0.0,                        # dist_from_zone_km,
                         dist_from_zone_m,           # dist_from_zone_m,
-                        0,                          # waze_dist_from_zone_km,
+                        0.0,                        # waze_dist_from_zone_km,
                         calc_dist_from_zone_km,     # calc_dist_from_zone_km,
                         0,                          # waze_time_from_zone,
                         dist_moved_km,              # dist moved
@@ -1006,15 +1006,15 @@ def _get_distance_data(Device, FromZone):
         dist_from_zone_m = dist_from_zone_km * 1000
         Device.display_info_msg( f"Finalizing-{FromZone.info_status_msg}")
         if Device.loc_data_zone == from_zone:
-            dist_from_zone_km = 0
-            dist_moved_km     = 0
+            dist_from_zone_km = 0.0
+            dist_moved_km     = 0.0
 
         elif Gb.Waze.is_status_USED:
             dist_from_zone_km = waze_dist_from_zone_km
             dist_from_zone_m  = waze_dist_from_zone_km * 1000
             dist_moved_km     = waze_dist_moved_km
     else:
-        waze_dist_from_zone_km = 0
+        waze_dist_from_zone_km = 0.0
 
     if waze_source_msg:
         event_msg = f"Waze Route Info > {waze_source_msg}"
@@ -1022,8 +1022,8 @@ def _get_distance_data(Device, FromZone):
 
     #--------------------------------------------------------------------------------
     dir_of_travel = '___'
-    time_change_secs = 0 if waze_time_from_zone == 0 else \
-        int(waze_time_from_zone * 60) - int(FromZone.waze_time * 60)
+    time_change_secs = 0    if waze_time_from_zone == 0 \
+                            else int(waze_time_from_zone * 60) - int(FromZone.waze_time * 60)
     dist_moved_m = int(dist_from_zone_m - FromZone.zone_dist_m)
 
     if FromZone.dir_of_travel in [INZONE, STATIONARY_FNAME]:
@@ -1039,7 +1039,7 @@ def _get_distance_data(Device, FromZone):
         dir_of_travel = Device.sensors[DIR_OF_TRAVEL]
 
     # Use last direction if did not move
-    elif time_change_secs == 0 or dist_moved_m == 0:
+    elif time_change_secs == 0 or dist_moved_m < 0.0001:
         if FromZone.dir_of_travel == UNKNOWN:
             dir_of_travel = STATIONARY_FNAME
         else:
@@ -1079,10 +1079,10 @@ def _get_distance_data(Device, FromZone):
                         # f"(>{format_dist_km(Gb.statzone_dist_move_limit_km)})")
             post_event(Device, event_msg)
 
-    dist_from_zone_km      = round_to_zero(dist_from_zone_km)
-    dist_moved_km          = round_to_zero(dist_moved_km)
-    waze_dist_from_zone_km = round_to_zero(waze_dist_from_zone_km)
-    waze_dist_moved_km     = round_to_zero(waze_dist_moved_km)
+    #dist_from_zone_km      = round_to_zero(dist_from_zone_km)
+    #dist_moved_km          = round_to_zero(dist_moved_km)
+    #waze_dist_from_zone_km = round_to_zero(waze_dist_from_zone_km)
+    #waze_dist_moved_km     = round_to_zero(waze_dist_moved_km)
 
     distance_data = [VALID_DATA,
                     dist_from_zone_km,
@@ -1151,7 +1151,8 @@ def used_near_device_results(Device, FromZone):
     if (Device.NearDevice is None
             or Device.isin_nonstatzone
             or Device.NearDevice.NearDevice is Device
-            or FromZone.from_zone not in Device.NearDevice.FromZones_by_zone):
+            or FromZone.from_zone not in Device.NearDevice.FromZones_by_zone
+            or Device.fixed_interval_secs != Device.NearDevice.fixed_interval_secs):
         Device.near_device_used = ''
         return False
 
@@ -1240,7 +1241,7 @@ def update_near_device_info(Device):
     closest_device_distance     = HIGH_INTEGER
     Device.dist_apart_msg       = ''
     Device.NearDevice           = None
-    Device.near_device_distance = 0
+    Device.near_device_distance = 0.0
     Device.near_device_checked_secs = time_now_secs()
     device_time = secs_to_time_hhmm(Device.dist_to_other_devices_secs)
 

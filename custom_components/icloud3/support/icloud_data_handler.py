@@ -399,16 +399,13 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
 
             if _Device.mobapp_monitor_flag and _Device.dev_data_source != 'MobApp':
                 if other_times != "": other_times += ", "
-                if _Device.mobapp_data_gps_accuracy > Gb.gps_accuracy_threshold:
-                    other_times += f"MobApp-{_Device.mobapp_data_time_gps}"
-                else:
-                    other_times += f"MobApp-{_Device.mobapp_data_time}"
+                other_times += f"MobApp-{_Device.mobapp_data_time_gps}"
 
             # Display appropriate message for the Device being updated or a monitor msg for all other Devices
             # rc9 Check if new data is old. Can not use is_location_old since that checks
             # icloud_devdata_useable_flag is True from the data update results
             if secs_since(_Device.loc_data_secs) <= _Device.old_loc_threshold_secs + 5:
-                event_msg =(f"Located > "
+                event_msg =(f"LocTimes > "
                             f"{_Device.dev_data_source}-"
                             f"{_Device.loc_data_time_gps} "
                             f"({secs_to_age_str(_Device.loc_data_secs)}), "

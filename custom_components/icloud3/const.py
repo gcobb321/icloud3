@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.rc10.3'
+VERSION                         = '3.0.rc10.4'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -728,8 +728,8 @@ ARRIVAL_TIME                   = "arrival_time"
 
 
 CONF_SENSORS_TRACKING_DISTANCE = 'tracking_distance'
-ZONE_DISTANCE_M                = 'distance_(meters)'
-ZONE_DISTANCE_M_EDGE           = 'distance_to_zone_edge_(meters)'
+ZONE_DISTANCE_M                = 'distance (meters)'
+ZONE_DISTANCE_M_EDGE           = 'distance_to_zone_edge (meters)'
 ZONE_DISTANCE                  = "zone_distance"
 HOME_DISTANCE                  = "home_distance"
 DISTANCE_HOME                  = "distance_home"
@@ -860,7 +860,7 @@ DEFAULT_GENERAL_CONF = {
         CONF_OLD_LOCATION_ADJUSTMENT: 0,
         CONF_GPS_ACCURACY_THRESHOLD: 100,
         CONF_DISPLAY_GPS_LAT_LONG: True,
-        CONF_TRAVEL_TIME_FACTOR: .6,
+        CONF_TRAVEL_TIME_FACTOR: .5,
         CONF_TFZ_TRACKING_MAX_DISTANCE: 8,
         CONF_PASSTHRU_ZONE_TIME: .5,
         CONF_TRACK_FROM_BASE_ZONE_USED: True,

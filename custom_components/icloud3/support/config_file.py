@@ -8,7 +8,7 @@ from ..const                import (
                                     CONF_INZONE_INTERVALS,
                                     CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
                                     CONF_MOBAPP_ALIVE_INTERVAL, CONF_IOSAPP_ALIVE_INTERVAL,
-                                    CONF_IC3_VERSION, VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM,
+                                    CONF_IC3_VERSION, VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
                                     CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE, CONF_PASSWORD, CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
                                     CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                     CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL,
@@ -379,16 +379,38 @@ def config_file_check_range_values():
     '''
     try:
         range_errors = {}
-        range_errors.update({pname: range[MIN]   for pname, range in RANGE_GENERAL_CONF.items()
-                                                        if Gb.conf_general[pname] < range[MIN]})
-        range_errors.update({pname: range[MAX]   for pname, range in RANGE_GENERAL_CONF.items()
-                                                        if Gb.conf_general[pname] > range[MAX]})
+        update_configuration_flag = False
+
+        range_errors.update({pname: DEFAULT_GENERAL_CONF.get(pname, range[MIN])  
+                            for pname, range in RANGE_GENERAL_CONF.items()
+                            if Gb.conf_general[pname] < range[MIN]})
+        range_errors.update({pname: DEFAULT_GENERAL_CONF.get(pname, range[MAX])  
+                            for pname, range in RANGE_GENERAL_CONF.items()
+                            if Gb.conf_general[pname] > range[MAX]})
+        update_configuration_flag = (range_errors != {})
+
         for pname, pvalue in range_errors.items():
             log_info_msg(   f"iCloud3 Config Parameter out of range, resetting to valid value, "
                             f"Parameter-{pname}, From-{Gb.conf_general[pname]}, To-{pvalue}")
             Gb.conf_general[pname] = pvalue
 
-        if range_errors != {}:
+        trav_time_factor = Gb.conf_general[CONF_TRAVEL_TIME_FACTOR]
+        if Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] in [.25, .33, .5, .66, .75]:
+            pass
+        elif Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] < .3:
+            Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] = .25
+        elif Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] < .4:
+            Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] = .33
+        elif Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] < .6:
+            Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] = .5
+        elif Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] < .7:
+            Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] = .66
+        else:
+            Gb.conf_general[CONF_TRAVEL_TIME_FACTOR] = .75
+        if trav_time_factor != Gb.conf_general[CONF_TRAVEL_TIME_FACTOR]:
+            update_configuration_flag = True
+
+        if update_configuration_flag:
             write_storage_icloud3_configuration_file()
 
     except Exception as err:
@@ -413,9 +435,6 @@ def config_file_check_devices():
             update_configuration_flag = True
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
-            update_configuration_flag = True
-        if conf_device[CONF_FIXED_INTERVAL] > 0 and conf_device[CONF_FIXED_INTERVAL] < 5:
-            conf_device[CONF_FIXED_INTERVAL] = 5
             update_configuration_flag = True
 
         if update_configuration_flag:

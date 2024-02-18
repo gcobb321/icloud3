@@ -1,10 +1,24 @@
+
+1. FIXED INTERVAL -
+    1. Normally, when a device is getting close to Home, the location interval changes to 15-secs to be able to update the Home distance very quickly. This lets automations fire when approaching Home in addition to when entering the Home zone. When a Fixed Interval was being used, that value was overriding the short interval time iCloud3 calculated based on distance from Home so iCloud/FamShr locates were never being done.  Additionally, a locate request would not be done if the Old Location Threshold was greater or the  same as the Fixed Interval value and old locations were being accepted.
+
+    Now, iCloud3 will calculate the interval using the distance from Home and only use the Fixed Interval when it is greater.
+    2. Fixed a problem where the results from one device with a Fixed Interval was being used for another nearby device that was not using a Fixed Interval.
+    3. The minumum interval was changed to 5-minutes in rc10.3. This has been changed back to 1-minute or 0 if it is not used.
+2. TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER - (Configure Settings > Tracking Parameters screen) - This value (.1 to .8) is used to determine the Interval and when the Next Location Update should be made using the travel time to Home. For example, if the travel time is 8-mins and the multiplier is .5, the next update will be done in 4-mins. This has been changed from entering a decimal value (.1 to .8) to a drop down list that goes from Shortest Inteval Time, to Shorter Inteval Time, to Average, Longer and Longest. It defaults to Average (.5*TravelTime) and you will probably never change it.
+3. HOME_DISTANCE & ZONE_DISTANCE SENSOR - Changed the way the zone and devices distances are displayed to provide better accuracy and make it easier to display them on a dashboard screen entity card. The iCloud3 docomentation > Sensor Attribute chapter was updated to provide screenshots and example code that will help explain how to do this.
+4. OTHER STUFF - Fixed a few other bugs. Cleaned up so code.
+
+
 rc10.3
 ...............................
 1. MobApp Device Verification - Fixed a problem where a device that had an iCloud FamShr setup error would not be tracked at all even though it could still be tracked with the Mobile App.
 2. Exit Zone when not in a zone - When this happened, the device would get into a 20-30 secs update loop. This has been fixed to only do this one time.
-3. FamShr and Mobile App Devices that are not Tracked - Changed the message in the Event Log to indicate the device is not used by iCloud3.
-4. Configure Settigs - Fixed an '\T' error starting with HA 2024.2.
-5. Export Event Log, icloud3-0.log - Improved the readability of log file records.
+3. iCloud Account username/password change - Fixed a problem caused by changing the username or password and then trying to Restart iCloud3.
+4. FamShr and Mobile App Devices that are not Tracked - Changed the message in the Event Log to indicate the device is not used by iCloud3.
+5. Configure Settings - Fixed an '\T' error starting with HA 2024.2.
+6. Export Event Log, icloud3-0.log - Improved the readability of log file records.
+7. Configure Settings > Special Zones screen - Fixed the 'srep' vs 'step' type in the code that prevented access to the screen.
 
 
 rc10.2

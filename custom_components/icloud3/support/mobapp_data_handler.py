@@ -53,12 +53,14 @@ def check_mobapp_state_trigger_change(Device):
         if device_trkr_attrs is None:
             return
 
-        # if Device.devicename not in Gb.MobileApp_devices:
-        #    return
-
         mobapp_data_state      = device_trkr_attrs[DEVICE_TRACKER]
         mobapp_data_state_secs = device_trkr_attrs[f"state_{TIMESTAMP_SECS}"]
         mobapp_data_state_time = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
+
+        if Device.mobapp_data_state != mobapp_data_state:
+            event_msg =(f"MobApp State Changed > "
+                        f"{zone_dname(Device.mobapp_data_state)}{RARROW}{zone_dname(mobapp_data_state)}")
+            post_event(Device, event_msg)
 
         # Get the trigger data
         entity_id = Device.mobapp[TRIGGER]
@@ -70,7 +72,6 @@ def check_mobapp_state_trigger_change(Device):
             mobapp_data_trigger      = device_trkr_attrs["trigger"]                   = 'None'
             mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = 0
             mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = HHMMSS_ZERO
-
 
         # Get the latest of the state time or trigger time for the new data (rc9)
         if (mobapp_data_state_not_set_flag
@@ -115,7 +116,6 @@ def check_mobapp_state_trigger_change(Device):
 
         # Update Device mobapp_data with the state & trigger location data
         # rc3 - Always try update, will check time in update_data fct
-        # if mobapp_data_change_flag:
         update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs)
 
         Device.mobapp_data_trigger = mobapp_data_trigger
@@ -125,52 +125,6 @@ def check_mobapp_state_trigger_change(Device):
                 or mobapp_data_state_not_set_flag):
             Device.mobapp_data_trigger_secs = mobapp_data_trigger_secs
             Device.mobapp_data_trigger_time = mobapp_data_trigger_time
-
-
-
-        # ---------------------------------------------
-        # If Exit Zone and was not in a zone
-
-        # When exiting the zone, the current enter time should be after the current exit time.
-        # If it is still before the current exit time, that means there was never an enter trigger
-        # and we do not know what zone we are really in. Get the closest zone to our current
-        # location and use that zone if the distance is less than 300m.
-        # if (Device.mobapp_data_trigger == EXIT_ZONE
-        #         and Device.isnotin_zone):
-            #     and Device.mobapp_zone_enter_secs < Device.mobapp_zone_exit_secs):
-
-            # Device.got_exit_trigger_flag = True
-            # Device.mobapp_zone_exit_secs = mobapp_data_secs
-            # Device.mobapp_zone_exit_time = mobapp_data_state_time
-
-            # # Set Enter Zone fields so this Exit Zone test will not be processed again
-            # Device.mobapp_zone_enter_secs = mobapp_data_secs
-            # Device.mobapp_zone_enter_time = mobapp_data_state_time
-            # Device.mobapp_zone_enter_zone = Zone.zone
-            # Device.mobapp_zone_enter_dist_m = zone_dist_m
-
-            # # Get closest zone
-            # Zone, zone, zone_dname, zone_dist_m = \
-            #         zone_handler.closest_zone(  Device.mobapp_data_latitude,
-            #                                     Device.mobapp_data_longitude)
-
-            # event_msg =(f"Exit Zone trigger without Enter Zone trigger > "
-            #             f"Zone-{zone_dname}, "
-            #             f"Dist-{m_to_um(zone_dist_m)}, ")
-            # if Zone and zone_dist_m < 300:
-            #     if Zone.passive:
-            #         Device.mobapp_data_trigger += " (Passive)"
-            #         Device.mobapp_data_reject_reason = "Exited Passive Zone"
-            #         event_msg += f"Rejected, Passive Zone"
-            #     Device.mobapp_zone_exit_zone   = zone
-            #     Device.mobapp_zone_exit_dist_m = zone_dist_m
-            # else:
-            #     Device.mobapp_data_trigger    += f" (Unknown)"
-            #     Device.mobapp_zone_exit_zone   = "unknown"
-            #     Device.mobapp_zone_exit_dist_m = 0
-            #     Device.mobapp_data_reject_reason = "Exited Unknown Zone"
-            #     event_msg += "Rejected, Unknown or too far away"
-            # post_event(Device, event_msg)
 
         # ---------------------------------------------
         # Entering a zone and this state time > last zone enter time
@@ -326,7 +280,8 @@ def check_mobapp_state_trigger_change(Device):
 
         # Prevent duplicate update if State & Trigger changed at the same time
         # and state change was handled on last cycle
-        elif (Device.mobapp_data_secs == Device.mobapp_data_secs
+        # elif (Device.mobapp_data_secs == Device.mobapp_data_secs
+        elif (Device.mobapp_data_state_secs == Device.mobapp_data_trigger_secs
                 or Device.mobapp_data_secs <= Device.located_secs_plus_5):
             Device.mobapp_data_reject_reason = "Already Processed"
 
@@ -339,12 +294,6 @@ def check_mobapp_state_trigger_change(Device):
 
         else:
             Device.mobapp_data_reject_reason = "Failed Update Tests"
-
-        # ---------------------------------------------
-        # If data time is very old, change it to it's age
-        if secs_since(Device.mobapp_data_secs) >= 10800:
-            Device.mobapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = \
-                    format_age_hrs(Device.mobapp_data_secs)
 
         # ---------------------------------------------
         # Display MobApp Monitor info message if the state or trigger changed

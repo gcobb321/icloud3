@@ -20,11 +20,15 @@ from ..helpers.dist_util    import (km_to_um, )
 import traceback
 import time
 
-WAZE_STATUS_FNAME ={WAZE_USED: 'Waze-Used',
-                    WAZE_NOT_USED: 'Waze-Not Used',
-                    WAZE_PAUSED: 'Waze-Paused',
-                    WAZE_OUT_OF_RANGE: 'Waze-Out of Range',
-                    WAZE_NO_DATA: 'Waze-No Data'}
+Waze_UNDER_MIN = 'under_min'
+Waze_OVER_MAX  = 'over_max'
+WAZE_STATUS_FNAME ={WAZE_USED: 'Used',
+                    WAZE_NOT_USED: '×NotUsed',
+                    WAZE_PAUSED: '×Paused',
+                    WAZE_OUT_OF_RANGE: '×OutOfRange',
+                    WAZE_NO_DATA: '×NoData',
+                    Waze_UNDER_MIN: '×Under1km',
+                    Waze_OVER_MAX: '×Over100km'}
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Waze(object):
@@ -37,6 +41,9 @@ class Waze(object):
         self.waze_region                = waze_region.upper()
         self.waze_min_distance          = waze_min_distance
         self.waze_max_distance          = waze_max_distance
+        WAZE_STATUS_FNAME[Waze_UNDER_MIN] = f"×Under{waze_min_distance}km"
+        WAZE_STATUS_FNAME[Waze_OVER_MAX] = f"×Over{waze_max_distance}km"
+
         self.connection_error_displayed = False
 
         self.waze_manual_pause_flag        = False  #If Paused via iCloud command
@@ -89,6 +96,15 @@ class Waze(object):
     @property
     def is_status_OUT_OF_RANGE(self):
         return self.waze_status == WAZE_OUT_OF_RANGE
+
+    def range_msg(self, dist_km):
+        if dist_km > self.waze_max_distance:
+            return WAZE_STATUS_FNAME[Waze_OVER_MAX]
+        elif dist_km < self.waze_min_distance:
+            return WAZE_STATUS_FNAME[Waze_UNDER_MIN]
+        else:
+            return 'inRange'
+
 
     @property
     def waze_status_fname(self):
@@ -198,9 +214,8 @@ class Waze(object):
                 return (WAZE_NO_DATA, 0, 0, 0)
 
             try:
-
-                if ((route_dist_km > self.waze_max_distance)
-                        or (route_dist_km < self.waze_min_distance)):
+                if (route_dist_km > self.waze_max_distance
+                        or route_dist_km < self.waze_min_distance):
                     waze_status = WAZE_OUT_OF_RANGE
 
             except Exception as err:
@@ -256,7 +271,9 @@ class Waze(object):
                             FromZone.waze_results
 
             location_id = -2
-            waze_source_msg = "Using Previous Waze Location Info "
+            #waze_source_msg = "Using Previous Waze Location Info "
+            waze_source_msg = ( f"Moved-{km_to_um(Device.loc_data_dist_moved_km)}, "
+                                f"Using previous results")
 
         elif check_hist_db is False or self.is_historydb_USED is False:
             location_id = 0

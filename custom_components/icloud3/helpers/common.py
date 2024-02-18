@@ -124,28 +124,35 @@ def inlist(string, list_items):
     return False
 
 #--------------------------------------------------------------------
-def round_to_zero(value):
-    if abs(value) < .0001: value = 0
-    return round(value, 8)
+def round_to_zero(number):
+    if isnumber(number) is False:
+        return number
+
+    int_number = int(number*100000000)
+    if int(int_number) == 0:
+        return 0.0
+
+    return int_number/100000000
+    # if abs(value) < .00001: value = 0.0
+    # return round(value, 8)
+
 #-------------------------------------------------------------------------------------------
-def set_precision(value, um=None):
+def set_precision(number, um=None):
     '''
     Return the distance value as an integer or float value
     '''
     try:
-        if type(value) not in ['float', 'int']:
-            return value
+        if isnumber(number) is False:
+            return number
 
         um = um if um else Gb.um
         precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
-        value = round(float(value), precision)
-        if value == int(value):
-            return int(value)
+        number = round(float(number), precision)
 
     except Exception as err:
         pass
 
-    return value
+    return number
 
 #--------------------------------------------------------------------
 def is_zone(zone):
