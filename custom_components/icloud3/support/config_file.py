@@ -35,7 +35,7 @@ from ..const                import (
 
 from ..support              import start_ic3
 from ..support              import waze
-from ..helpers.common       import (instr, ordereddict_to_dict, )
+from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, )
 from ..helpers.messaging    import (log_exception, _trace, _traceha, log_info_msg,
                                     close_reopen_ic3_log_file, )
 from ..helpers.time_util    import (datetime_now, )
@@ -381,10 +381,10 @@ def config_file_check_range_values():
         range_errors = {}
         update_configuration_flag = False
 
-        range_errors.update({pname: DEFAULT_GENERAL_CONF.get(pname, range[MIN])  
+        range_errors.update({pname: DEFAULT_GENERAL_CONF.get(pname, range[MIN])
                             for pname, range in RANGE_GENERAL_CONF.items()
                             if Gb.conf_general[pname] < range[MIN]})
-        range_errors.update({pname: DEFAULT_GENERAL_CONF.get(pname, range[MAX])  
+        range_errors.update({pname: DEFAULT_GENERAL_CONF.get(pname, range[MAX])
                             for pname, range in RANGE_GENERAL_CONF.items()
                             if Gb.conf_general[pname] > range[MAX]})
         update_configuration_flag = (range_errors != {})
@@ -435,6 +435,9 @@ def config_file_check_devices():
             update_configuration_flag = True
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
+            update_configuration_flag = True
+        if isbetween(conf_device[CONF_FIXED_INTERVAL], 0, 5):
+            conf_device[CONF_FIXED_INTERVAL] = 5.0
             update_configuration_flag = True
 
         if update_configuration_flag:

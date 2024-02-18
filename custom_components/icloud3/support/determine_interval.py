@@ -328,14 +328,6 @@ def determine_interval(Device, FromZone):
         interval_method += '+6.>180s'
         interval_secs    = 180
 
-    # Use fixed_interval_secs if > 0 and > new interval
-    if (Device.fixed_interval_secs > 0
-            and interval_secs > Device.fixed_interval_secs
-            and Device.isnotin_zone_or_statzone
-            and Device.is_location_good
-            and Device.is_passthru_timer_set is False):
-        interval_secs   = Device.fixed_interval_secs
-
     #Turn off waze close to zone flag to use waze after leaving zone or getting more than 1km from it
     if Gb.Waze.waze_close_to_zone_pause_flag:
         if isin_zone or calc_dist_from_zone_km >= 1:
@@ -372,16 +364,28 @@ def determine_interval(Device, FromZone):
             interval_method = "9.StatZone"
             interval_secs   = Device.statzone_inzone_interval_secs
 
+        # Use fixed_interval_secs if > 5m, not in a zone etc.
+        elif (Device.fixed_interval_secs >= 300
+                and interval_secs > 300
+                and Device.isnotin_zone_or_statzone
+                and Device.is_location_good
+                and Device.is_offline is False
+                and Device.is_passthru_timer_set is False):
+            interval_secs = Device.fixed_interval_secs
+            interval_method = "9.Fixed"
+
         #check for max interval_secs, override in zone times
         elif interval_secs > Gb.max_interval_secs:
             if Device.isin_statzone:
-                interval_method = f"9.inZoneMax"
+                interval_method = "9.inZoneMax"
                 interval_secs   = Device.statzone_inzone_interval_secs
             elif isin_zone:
                 pass
 
-            else:
-                interval_method = f"9.Max"
+            elif (Device.is_location_good
+                    and Device.is_offline is False
+                    and Device.is_passthru_timer_set is False):
+                interval_method = "9.Max"
                 interval_secs   = Gb.max_interval_secs
 
         interval_str = secs_to_time_str(interval_secs)

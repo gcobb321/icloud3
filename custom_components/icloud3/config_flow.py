@@ -1,7 +1,5 @@
 import os
 import time
-# import asyncio
-from collections                    import OrderedDict
 
 from homeassistant                  import config_entries, data_entry_flow
 from homeassistant.config_entries   import ConfigEntry as config_entry
@@ -67,7 +65,7 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT,
                                 )
 from .const_sensor      import (SENSOR_GROUPS )
 from .helpers.common    import (instr, isnumber, obscure_field, list_to_str, str_to_list,
-                                is_statzone, zone_dname, )
+                                is_statzone, zone_dname, isbetween, )
 from .helpers.messaging import (log_exception, log_debug_msg, _traceha, _trace,
                                 post_event, post_monitor_msg,
                                 open_ic3_log_file, close_reopen_ic3_log_file, )
@@ -3002,7 +3000,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.errors['base'] = 'required_field_device'
             self.errors[CONF_FAMSHR_DEVICENAME] = 'no_device_selected'
             self.errors[CONF_FMF_EMAIL]         = 'no_device_selected'
-            self.errors[CONF_MOBILE_APP_DEVICE]     = 'no_device_selected'
+            self.errors[CONF_MOBILE_APP_DEVICE] = 'no_device_selected'
 
         if (user_input[CONF_FAMSHR_DEVICENAME] in self.devicename_by_famshr_fmf
                 and self.devicename_by_famshr_fmf[user_input[CONF_FAMSHR_DEVICENAME]] not in ui_old_devicename):
@@ -3046,6 +3044,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                             self.conf_device_selected[CONF_TRACK_FROM_BASE_ZONE]])]
         track_from_zones.append(self.conf_device_selected[CONF_TRACK_FROM_BASE_ZONE])
         user_input[CONF_TRACK_FROM_ZONES] = track_from_zones
+
+        if isbetween(user_input[CONF_FIXED_INTERVAL], 0, 5):
+            user_input[CONF_FIXED_INTERVAL] = 5
+            self.errors[CONF_FIXED_INTERVAL] = 'fixed_interval_invalid_range'
 
         return user_input
 

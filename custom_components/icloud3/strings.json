@@ -117,7 +117,8 @@
       "unknown_mobapp_picture": "Check the Mobile App and Picture parameter values (Not found or Invalid)",
 
       "tfz_selection_invalid": "The value must be a zone that is being tracked from",
-      "time_factor_invalid_range": "The 'travel_time_factor' must be between .1 and .9",
+      "time_factor_invalid_range": "The 'Travel Time Multiplier' must be between .1 and .9",
+      "fixed_interval_invalid_range": "The 'Fixed Interval' must be 0 (not used) or > 5",
       "display_text_as_no_gtsign": "The '>' between the ActualText and DisplayAsText is missing",
       "display_text_as_no_actual": "The 'ActualText' is not specified",
       "display_text_as_no_display_as": "The 'DisplayAsText' is not specified",
@@ -247,7 +248,7 @@
         },
         "data_description": {
           "inzone_interval": "Time between location requests when in a zone",
-          "fixed_interval": "A fixed time between location requests when not in a zone. If set (>0), this value is used instead of the  calculating the interval using the distance from home.",
+          "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less tnan 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
           "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
         }
       },
@@ -346,7 +347,7 @@
           "mobapp_alive_interval": "REQUEST MOBILE APP LOCATION INTERVAL",
           "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
           "offline_interval": "DEVICE OFFLINE INTERVAL",
-          "travel_time_factor": "TRAVEL TIME INTERVAL MULTIPLIER",
+          "travel_time_factor": "TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER",
           "discard_poor_gps_inzone": "DISCARD POOR RESULTS - Discard Location Updates with Poor GPS Accuracy when in a Zone",
           "center_in_zone": "MOVE DEVICE TO ZONE CENTER - Change Device's Location to the Zone's Center when in a Zone",
           "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
@@ -363,7 +364,7 @@
           "exit_zone_interval": "The time to the first location request after exiting a zone",
           "mobapp_alive_interval": "Send a location request to the Mobile App if there has been no contact after this amount of time. This will check to see if the Mobile App is responding to location requests or is asleep and not running.",
           "offline_interval": "Location request interval when offline (Airplane mode, dead cell area, etc.)",
-          "travel_time_factor": "Next location time = Waze travel time to zone * this value",
+          "travel_time_factor": "This is used to calculate the Interval and Next Location Time when going towards Home. A smaller value will reduce the interval time and increase the location requests, a larger value will increase the interval and reduce the location requests.",
           "event_log_btnconfig_url": "Normally, this is blank and iCloud3 will determine the URL for it's Configure Settings screen. However, if there is a problem caused by running HA in a virtual environment, docker or on another device and the actual URL can not be detemined, a 404 not found error may be encountered. If that happens, select it the normal way (HA Devices & Services > Integration > iCloud3 > Configure Settings gear) and copy the URL from the browser into this field."
         }
       },
