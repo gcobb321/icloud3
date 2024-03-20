@@ -7,8 +7,8 @@ from ..helpers.messaging    import (broadcast_info_msg, format_filename,
                                     post_event, post_internal_error, post_monitor_msg, post_startup_alert,
                                     post_alert, refresh_event_log, log_info_msg, log_error_msg, log_exception,
                                     _trace, _traceha, )
-from ..helpers.time_util    import (datetime_now, secs_to_time_str, mins_to_time_str, )
-from ..helpers.dist_util    import (mi_to_km, calc_distance_km, format_dist_km,)
+from ..helpers.time_util    import (datetime_now, format_timer, )
+from ..helpers.dist_util    import (mi_to_km, gps_distance_km, format_dist_km,)
 from ..support.waze_route_calc_ic3 import WRCError
 
 import homeassistant.util.dt as dt_util
@@ -556,7 +556,7 @@ class WazeRouteHistory(object):
                 # If the zone location was changed by more than 100m, all waze distances/times
                 # need to be updated to the new location during the midnight maintenance check
                 zone_recd_gps = (zone_recd[ZON_LAT], zone_recd[ZON_LONG])
-                zone_distance_check = calc_distance_km(Zone.gps, zone_recd_gps)
+                zone_distance_check = gps_distance_km(Zone.gps, zone_recd_gps)
                 if zone_distance_check > .100:
                     Gb.wazehist_zone_id[from_zone] = zone_recd[ZON_ID] * -1
                     evlog_alert_msg = f"Waze History > {Zone.dname} Zone has moved and will not be used"
@@ -664,7 +664,7 @@ class WazeRouteHistory(object):
         self.compress_wazehist_database()
 
         running_time = time.perf_counter() - start_time
-        event_msg = (f"Waze History Completed > Total Time-{secs_to_time_str(running_time)}")
+        event_msg = (f"Waze History Completed > Total Time-{format_timer(running_time)}")
         post_event(event_msg)
 
         self.wazehist_recalculate_time_dist_running_flag = False
@@ -741,7 +741,7 @@ class WazeRouteHistory(object):
                                 f"Zone-{zone_dname}, "
                                 f"Recd-{recd_cnt} of {self.total_recd_cnt}, "
                                 f"Updated-{update_cnt}, "
-                                f"ElapsedTime-{secs_to_time_str(running_time)}")
+                                f"ElapsedTime-{format_timer(running_time)}")
                     post_event(log_msg)
 
                 if (recd_cnt % 10) == 0:
@@ -750,7 +750,7 @@ class WazeRouteHistory(object):
                                 # f"Recd-{recd_cnt}/{self.total_recd_cnt}, "
                                 f"Checked-{(recd_cnt/self.total_recd_cnt*100):.0f}% "
                                 f"Updated-{update_cnt} "
-                                f"({secs_to_time_str(running_time)})"   #.replace('mins', 'm').replace(' hrs', 'h')})"
+                                f"({format_timer(running_time)})"   #.replace('mins', 'm').replace(' hrs', 'h')})"
                                 f"{CRLF}Select Action > WazeHist Recalculate... again to cancel")
                     post_alert(alert_message)
                     refresh_event_log()
@@ -773,7 +773,7 @@ class WazeRouteHistory(object):
                     f"Zone-{zone_dname}, "
                     f"Checked-{recd_cnt} of {self.total_recd_cnt}, "
                     f"Updated-{update_cnt}, "
-                    f"Time-{secs_to_time_str(running_time)}")
+                    f"Time-{format_timer(running_time)}")
         post_event(log_msg)
         post_alert('')
         refresh_event_log()
@@ -857,7 +857,7 @@ class WazeRouteHistory(object):
                 zone_recd = self._get_record('zones', criteria)
                 Zone = Gb.Zones_by_zone[zone_name]
                 zone_recd_gps = (zone_recd[ZON_LAT], zone_recd[ZON_LONG])
-                zone_distance_check = calc_distance_km(Zone.gps, zone_recd_gps)
+                zone_distance_check = gps_distance_km(Zone.gps, zone_recd_gps)
                 Gb.wazehist_zone_id[zone_name] = zone_id if zone_distance_check <= 5 else HIGH_INTEGER
 
             except Exception as err:

@@ -18,7 +18,7 @@ from .const             import (DOMAIN, ICLOUD3, CONF_VERSION,
                                 DEVICE_STATUS,
                                 LAST_UPDATE, LAST_UPDATE_DATETIME, WENT_3KM,
                                 NEXT_UPDATE, NEXT_UPDATE_DATETIME,
-                                LAST_LOCATED, LAST_LOCATED_DATETIME,
+                                LOCATED, LAST_LOCATED, LAST_LOCATED_SECS, LAST_LOCATED_DATETIME,
                                 GPS_ACCURACY, ALTITUDE, VERT_ACCURACY,
                                 CONF_DEVICE_TYPE, CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME,
                                 CONF_TRACKING_MODE,
@@ -32,8 +32,9 @@ EVENT_DESCRIPTION = {EVENT_ENTER: "entering", EVENT_LEAVE: "leaving"}
 from .helpers.common    import (instr, isnumber, is_statzone, zone_dname)
 from .helpers.messaging import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
+                                log_exception_HA, log_info_msg_HA,
                                 _trace, _traceha, )
-from .helpers.time_util import (adjust_time_hour_values)
+from .helpers.time_util import (adjust_time_hour_values, secs_to_datetime)
 from .support           import start_ic3
 from .support           import config_file
 
@@ -46,9 +47,6 @@ from homeassistant.helpers              import (entity_registry as er, device_re
 from homeassistant.const                import (CONF_DEVICE_ID, CONF_DOMAIN, CONF_ENTITY_ID, CONF_EVENT,
                                                 CONF_PLATFORM, CONF_TYPE, CONF_ZONE, )
 
-import logging
-_HA_LOGGER = logging.getLogger(__name__)
-# _LOGGER = logging.getLogger(f"icloud3")
 
 #-------------------------------------------------------------------------------------------
 async def async_setup_scanner(hass: HomeAssistant, config, see, discovery_info=None):
@@ -106,7 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         if NewDeviceTrackers != []:
             async_add_entities(NewDeviceTrackers, True)
             _get_ha_device_ids_from_device_registry(hass)
-            _HA_LOGGER.info(f"iCloud3 Device Tracker entities: {Gb.device_trackers_cnt}")
+            log_info_msg_HA(f"iCloud3 Device Tracker entities: {Gb.device_trackers_cnt}")
 
         Devices_no_area = [Device   for Device in Gb.DeviceTrackers_by_devicename.values() \
                                     if Device.ha_area_id in [None, 'unknown', '']]
@@ -120,7 +118,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                     pass
 
     except Exception as err:
-        _HA_LOGGER.exception(err)
         log_exception(err)
         log_msg = f"►INTERNAL ERROR (Create device_tracker loop-{err})"
         log_error_msg(log_msg)
@@ -365,7 +362,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs = {}
 
             extra_attrs[GPS]            = f"({self.latitude}, {self.longitude})"
-            extra_attrs[f"{'-'*24}"]    = f"{'-'*25}"
+            extra_attrs[LOCATED]        = self._get_sensor_value(LAST_LOCATED_DATETIME)
+            extra_attrs[f"{'-'*40}"]    = f"{'-'*35}"
             extra_attrs['integration']  = ICLOUD3
             extra_attrs[NAME]           = self._get_sensor_value(NAME)
             extra_attrs[PICTURE]        = self._get_sensor_value(PICTURE)
@@ -374,7 +372,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs['primary_home_zone']     = self.extra_attrs_primary_home_zone
             extra_attrs['away_time_zone_offset'] = self.extra_attrs_away_time_zone_offset
 
-            extra_attrs[f"{'-'*25}"]    = f"{'-'*25}"
+            extra_attrs[f"{'-'*41}"]    = f"{'-'*35}"
             extra_attrs['data_source']  = f"{self._get_sensor_value(LOCATION_SOURCE)}"
             extra_attrs[DEVICE_STATUS]  = self._get_sensor_value(DEVICE_STATUS)
             extra_attrs[TRIGGER]        = self._get_sensor_value(TRIGGER)
@@ -388,11 +386,11 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs[WAZE_DISTANCE]  = self._get_sensor_value(WAZE_DISTANCE)
             extra_attrs[DISTANCE_TO_DEVICES] = self._get_sensor_value(DISTANCE_TO_DEVICES)
             extra_attrs[ZONE_DATETIME]  = self._get_sensor_value(ZONE_DATETIME)
-            extra_attrs[LAST_LOCATED]   = self._get_sensor_value(LAST_LOCATED_DATETIME)
             extra_attrs[LAST_UPDATE]    = self._get_sensor_value(LAST_UPDATE_DATETIME)
             extra_attrs[NEXT_UPDATE]    = self._get_sensor_value(NEXT_UPDATE_DATETIME)
+            extra_attrs['last_timestamp']= f"{self._get_sensor_value(LAST_LOCATED_SECS)}"
 
-            extra_attrs[f"{'-'*26}"]         = f"{'-'*25}"
+            extra_attrs[f"{'-'*42}"]         = f"{'-'*35}"
             extra_attrs['icloud3_devices']   = ', '.join(Gb.Devices_by_devicename.keys())
             extra_attrs['icloud3_version']   = f"v{Gb.version}"
             extra_attrs['event_log_version'] = f"v{Gb.version_evlog}"
@@ -611,7 +609,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             log_exception(err)
             self._data = None
 
-        self.async_write_ha_state()
+        # self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):

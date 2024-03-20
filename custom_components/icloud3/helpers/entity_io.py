@@ -9,7 +9,7 @@ from ..const            import ( HIGH_INTEGER, NOT_SET,
 from .common            import (instr,  )
 from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
                                 _trace, _traceha, )
-from .time_util         import (datetime_to_secs, secs_to_time)
+from .time_util         import (secs_to_time)
 
 from homeassistant.helpers import entity_registry, device_registry
 from datetime import datetime
@@ -110,7 +110,7 @@ def get_last_changed_time(entity_id):
         last_updated  = States.last_updated
 
         timestamp_utc = str(last_changed).split(".")[0]
-        time_secs_old = datetime_to_secs(timestamp_utc, UTC_TIME)
+        # time_secs_old = datetime_to_secs(timestamp_utc, UTC_TIME)
 
         if lc := last_changed.timestamp():
             time_secs = int(lc)

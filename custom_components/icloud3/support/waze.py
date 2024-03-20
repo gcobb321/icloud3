@@ -14,7 +14,7 @@ from ..support.waze_route_calc_ic3  import WazeRouteCalculator, WRCError
 
 from ..helpers.common       import (instr, format_gps, )
 from ..helpers.messaging    import (post_event, post_internal_error, log_info_msg, _trace, _traceha, )
-from ..helpers.time_util    import (time_now_secs, datetime_now, secs_since, secs_to_time_str, mins_to_time_str, )
+from ..helpers.time_util    import (time_now_secs, datetime_now, secs_since, format_timer,  )
 from ..helpers.dist_util    import (km_to_um, )
 
 import traceback
@@ -227,13 +227,9 @@ class Waze(object):
 
             event_msg =(f"Waze Route Info > {waze_source_msg}")
             if waze_source_msg == "":
-                # event_msg += (  f"TravTime-{self.waze_mins_to_time_str(route_time)}, "
-                event_msg += (  f"TravTime-{secs_to_time_str(route_time * 60)}, "
+                event_msg += (  f"TravTime-{format_timer(route_time * 60)}, "
                                 f"Dist-{km_to_um(route_dist_km)}, "
-                                #f"Dist-{format_dist_km(route_dist_km)}, "
                                 f"Moved-{km_to_um(dist_moved_km)}"
-                                #f"Moved-{format_dist_km(dist_moved_km)}"
-                                #f"CalcMoved-{format_dist_km(Device.loc_data_dist_moved_km)}, "
                                 f"{wazehist_save_msg}")
             post_event(Device, event_msg)
 
@@ -378,26 +374,5 @@ class Waze(object):
         post_event(log_msg)
 
 #--------------------------------------------------------------------
-    # def waze_mins_to_time_str(self, waze_time_from_zone):
-    #     '''
-    #     Return the message displayed in the waze time field ►►
-    #     '''
-
-    #     #Display time to the nearest minute if more than 3 min away
-    #     if self.waze_status == WAZE_USED:
-    #         t = waze_time_from_zone * 60
-    #         r = 0
-    #         if t > -1:   #180:
-    #             t, r = divmod(t, 60)
-    #             t = t + 1 if r > 30 else t
-    #             t = t * 60
-
-    #         waze_time_msg = secs_to_time_str(t)
-
-    #     else:
-    #         waze_time_msg = ''
-
-    #     return waze_time_msg
-
     def __repr__(self):
         return (f"<Waze>")

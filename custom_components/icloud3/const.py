@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.rc10.4'
+VERSION                         = '3.0.1'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -27,8 +27,8 @@ EVLOG_BTNCONFIG_DEFAULT_URL     = '/config/integrations/integration/icloud3'
 HA_CONFIG_IC3_URL               = '/config/integrations/integration/icloud3'
 WAZE_LOCATION_HISTORY_DATABASE  = 'icloud3.waze_location_history.db'
 SENSOR_WAZEHIST_TRACK_NAME      = 'icloud3_wazehist_track'
-IC3LOGGER_FILENAME              = 'icloud3-0.log'
 IC3_LOG_FILENAME                = 'icloud3-0.log'
+PICTURE_WWW_STANDARD_DIRS       = 'www/icloud3, www/community, www/images, www/custom_cards'
 
 DEVICE_TRACKER                  = 'device_tracker'
 DEVICE_TRACKER_DOT              = 'device_tracker.'
@@ -63,9 +63,12 @@ AWAY_FROM_HOME                  = 'AwayFromHome'
 NEAR                            = 'Near'
 TOWARDS                         = 'Towards'
 TOWARDS_HOME                    = 'TowardsHome'
+FAR_AWAY                        = 'FarAway'
 INZONE                          = 'inZone'
 INZONE_HOME                     = 'inHomeZone'
-INZONE_STATIONARY               = 'inStatZone'
+INZONE_STATZONE                 = 'inStatZone'
+INZONE_CODES                    = {INZONE: 'Z', INZONE_HOME: 'H', INZONE_STATZONE: 'S'}
+STATZONE                        = 'StatZone'
 PAUSED                          = 'PAUSED'
 PAUSED_CAPS                     = 'PAUSED'
 RESUMING                        = 'RESUMING'
@@ -249,8 +252,9 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒⊘Ɵ⊗ⓧⓍ⛒🜔
-Important = ❗❌⚠️❓🛑⛔⚡⭐⭕
-  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●▐‖  ▹▻▷◁◅◃▶➤➜➔❰❰❱❱ ⠤ ²
+Important = ❗❌⚠️❓🛑⛔⚡⭐⭕ⓘ• ⍰ ‶″“”‘’‶″
+  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●
+  ▐‖  ▹▻▷◁◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ ²
  ⣇⠈⠉⠋⠛⠟⠿⡿⣿       https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 '''
 NBSP              = '⠈' #'&nbsp;'
@@ -263,6 +267,9 @@ CRLF              = '⣇' #'<br>'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
 YELLOW_ALERT      = '⚠️'
+RED_ALERT         = '⛔'
+RED_STOP          = '🛑'
+RED_CIRCLE        = '⭕'
 SMALL_X           = '× '
 CIRCLE_STAR       = '✪ '
 CIRCLE_STAR2      = '✪'
@@ -290,6 +297,7 @@ CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}ⓧ{NBSP}'
 CRLF_SP3_DOT      = f'{CRLF}{NBSP3}•{NBSP}'
 CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
 CRLF_SP8_DOT      = f'{CRLF}{NBSP4}{NBSP4}•{NBSP}'
+CRLF_SP8_HDOT     = f'{CRLF}{NBSP4}{NBSP4}◦{NBSP}'
 CRLF_SP3_HDOT     = f'{CRLF}{NBSP3}◦{NBSP}'
 CRLF_SP3_STAR     = f'{CRLF}{NBSP3}✪{NBSP}'
 CRLF_TAB          = f'{CRLF}{NBSP6}'
@@ -307,6 +315,8 @@ DASH_20           = '━'*20
 DASH_50           = '━'*50
 DASH_DOTTED_50    = '- '*25
 TAB_11            = '\t'*11
+DATA_ENTRY_ALERT_CHAR = '⛔'
+DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 OPT_NONE          = 0
 
@@ -346,11 +356,10 @@ RADIUS            = 'radius'
 NON_ZONE_ITEM_LIST = {
         'not_home': 'Away',
         'Not_Home': 'Away',
-        'not_set': '──',
-        'Not_Set': '──',
+        'not_set': 'NotSet',   #'──',
+        'Not_Set': 'NotSet',   #'──',
         '──': 'NotSet',
-        # 'stationary': 'Stationary',
-        # 'Stationary': 'Stationary',
+        'NotSet': 'NotSet',   #'──',
         STATIONARY: STATIONARY_FNAME,
         STATIONARY_FNAME: STATIONARY_FNAME,
         'unknown': 'Unknown'}
@@ -532,6 +541,7 @@ LAST_UPDATE_TIME           = 'last_update_time'
 LAST_UPDATE_DATETIME       = 'last_updated_date/time'
 NEXT_UPDATE_TIME           = 'next_update_time'
 NEXT_UPDATE_DATETIME       = 'next_update_date/time'
+LAST_LOCATED_SECS          = 'last_located_secs'
 LAST_LOCATED_TIME          = 'last_located_time'
 LAST_LOCATED_DATETIME      = 'last_located_date/time'
 
@@ -590,7 +600,9 @@ CONF_UPDATE_DATE                = 'config_update_date'
 CONF_EVLOG_BTNCONFIG_URL        = 'event_log_btnconfig_url'
 CONF_EVLOG_CARD_DIRECTORY       = 'event_log_card_directory'
 CONF_EVLOG_CARD_PROGRAM         = 'event_log_card_program'
+CONF_EVLOG_VERSION              = 'event_log_version'
 CONF_EVLOG_VERSION_RUNNING      = 'event_log_version_running'
+CONF_PICTURE_WWW_DIRS           = 'picture_www_dirs'
 
 # Account, Devices, Tracking Parameters
 CONF_USERNAME                   = 'username'
@@ -716,6 +728,7 @@ INFO                           = "info"
 
 CONF_SENSORS_TRACKING_UPDATE   = 'tracking_update'
 INTERVAL                       = "interval"
+LOCATED                        = "located"
 LAST_LOCATED                   = "last_located"
 LAST_UPDATE                    = "last_update"
 NEXT_UPDATE                    = "next_update"
@@ -752,6 +765,8 @@ TFZ_DIR_OF_TRAVEL             = 'tfz_dir_of_travel'
 
 CONF_SENSORS_TRACKING_OTHER   = 'tracking_other'
 TRIGGER                       = "trigger"
+WAZE_DISTANCE_ATTR            = "waze_route_distance"
+CALC_DISTANCE_ATTR            = "calculated_distance"
 WAZE_DISTANCE                 = "waze_distance"
 CALC_DISTANCE                 = "calc_distance"
 
@@ -790,10 +805,12 @@ DEFAULT_PROFILE_CONF = {
         CONF_IC3_VERSION: VERSION,
         CONF_VERSION_INSTALL_DATE: DATETIME_ZERO,
         CONF_UPDATE_DATE: DATETIME_ZERO,
+        CONF_EVLOG_VERSION: '',
+        CONF_EVLOG_VERSION_RUNNING: '',
         CONF_EVLOG_CARD_DIRECTORY: EVLOG_CARD_WWW_DIRECTORY,
         CONF_EVLOG_CARD_PROGRAM: EVLOG_CARD_WWW_JS_PROG,
         CONF_EVLOG_BTNCONFIG_URL: '',
-        CONF_EVLOG_VERSION_RUNNING: ''
+        CONF_PICTURE_WWW_DIRS: []
 }
 
 DEFAULT_TRACKING_CONF = {
@@ -986,13 +1003,7 @@ DEFAULT_DATA_CONF =  {
 }
 
 CF_DEFAULT_IC3_CONF_FILE = {
-        CF_PROFILE: {
-                CONF_VERSION: -1,
-                CONF_VERSION_INSTALL_DATE: DATETIME_ZERO,
-                CONF_UPDATE_DATE: DATETIME_ZERO,
-                CONF_EVLOG_CARD_DIRECTORY: EVLOG_CARD_WWW_DIRECTORY,
-                CONF_EVLOG_CARD_PROGRAM: EVLOG_CARD_WWW_JS_PROG,
-        },
+        CF_PROFILE: DEFAULT_PROFILE_CONF,
         CF_DATA: {
                 CF_DATA_TRACKING: DEFAULT_TRACKING_CONF,
                 CF_DATA_GENERAL: DEFAULT_GENERAL_CONF,

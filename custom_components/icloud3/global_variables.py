@@ -51,8 +51,8 @@ from .const          import (DEVICENAME_MOBAPP, VERSION, NOT_SET, HOME_FNAME, HO
                             )
 
 
-import logging
-_LOGGER = logging.getLogger("icloud3_cf")
+#import logging
+#_LOGGER = logging.getLogger("icloud3_cf")
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 class GlobalVariables(object):
@@ -89,7 +89,10 @@ class GlobalVariables(object):
     EvLog           = None
     EvLogSensor     = None
     HALogger        = None
-    iC3_LogFile     = None
+    iC3Logger       = None
+    iC3Logger_last_check_exist_secs = 0
+    # iC3Logger_last_recd = None
+    #iC3_LogFile     = None
     Sensors         = None
     iC3EntityPlatform = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
     PyiCloud        = None      # iCloud Account service
@@ -105,17 +108,18 @@ class GlobalVariables(object):
     add_entities = None
 
     # iCloud3 Directory & File Names
-    ha_config_directory       = ''      # '/config', '/home/homeassistant/.homeassistant'
-    ha_storage_directory      = ''      # 'config/.storage' directory
-    ha_storage_icloud3        = ''      # 'config/.storage/icloud3'
-    icloud3_config_filename   = ''      # 'config/.storage/icloud3.configuration' - iC3 Configuration File
+    ha_config_directory         = ''      # '/config', '/home/homeassistant/.homeassistant'
+    ha_storage_directory        = ''      # 'config/.storage' directory
+    ha_storage_icloud3          = ''      # 'config/.storage/icloud3'
+    icloud3_config_filename     = ''      # 'config/.storage/icloud3.configuration' - iC3 Configuration File
     icloud3_restore_state_filename = '' # 'config/.storage/icloud3.restore_state'
-    config_ic3_yaml_filename  = ''      # 'config/config_ic3.yaml' (v2 config file name)
-    icloud3_directory         = ''
-    ha_config_www_directory   = ''
-    www_evlog_js_directory    = ''
-    www_evlog_js_filename     = ''
-    wazehist_database_filename= ''      # Waze Location History sql database (.storage/icloud3.waze_route_history.db)
+    config_ic3_yaml_filename    = ''      # 'config/config_ic3.yaml' (v2 config file name)
+    icloud3_directory           = ''
+    ha_config_www_directory     = ''
+    www_evlog_js_directory      = ''
+    www_evlog_js_filename       = ''
+    wazehist_database_filename  = ''      # Waze Location History sql database (.storage/icloud3.waze_route_history.db)
+    picture_www_dirs            = []
 
     # Platform and iCloud account parameters
     username                     = ''
@@ -180,7 +184,7 @@ class GlobalVariables(object):
     debug_log                       = {}  # Log variable and dictionsry field/values to icloud3-0.log file
 
     stage_4_no_devices_found_cnt    = 0         # Retry count to connect to iCloud and retrieve FamShr devices
-    reinitialize_icloud_devices_flag= False         # Set when no devices are tracked and iC3 needs to automatically restart
+    reinitialize_icloud_devices_flag= False     # Set when no devices are tracked and iC3 needs to automatically restart
     reinitialize_icloud_devices_cnt = 0
     initial_icloud3_loading_flag    = False
 
@@ -191,12 +195,10 @@ class GlobalVariables(object):
     log_debug_flag_restart       = None
     log_rawdata_flag_restart     = None
     evlog_trk_monitors_flag      = False
-    ic3_log_file_update_flag     = False
-    ic3_log_file_create_secs     = 0
-    ic3_log_file_last_write_secs = 0
     info_notification            = ''
     ha_notification              = {}
     trace_prefix                 = ''
+    trace_group                  = False
     trace_text_change_1          = ''
     trace_text_change_2          = ''
     debug_flag                   = False
@@ -222,10 +224,12 @@ class GlobalVariables(object):
     um_time_strfmt         = '%I:%M:%S'
     um_time_strfmt_ampm    = '%I:%M:%S%P'
     um_date_time_strfmt    = '%Y-%m-%d %H:%M:%S'
+    um_day_date_time_strfmt = '%a, %b %-d, %l:%M:%S %p'   #Tue, Feb 20, 3:23:45 AM
 
     # Time conversion variables used in global_utilities
-    time_zone_offset_seconds    = 0
-    timestamp_local_offset_secs = 0
+    time_zone_offset_secs = 0
+    time_zone_offset_str  = '+00:00'
+    # timestamp_local_offset_secs = 0
 
     # Away time zone offset used for displaying a devices time tracking sensors in the local time zone
     away_time_zone_1_offset         = 0

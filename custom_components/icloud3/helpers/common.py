@@ -136,24 +136,6 @@ def round_to_zero(number):
     # if abs(value) < .00001: value = 0.0
     # return round(value, 8)
 
-#-------------------------------------------------------------------------------------------
-def set_precision(number, um=None):
-    '''
-    Return the distance value as an integer or float value
-    '''
-    try:
-        if isnumber(number) is False:
-            return number
-
-        um = um if um else Gb.um
-        precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
-        number = round(float(number), precision)
-
-    except Exception as err:
-        pass
-
-    return number
-
 #--------------------------------------------------------------------
 def is_zone(zone):
     return (zone != NOT_HOME)

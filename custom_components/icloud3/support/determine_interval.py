@@ -21,8 +21,8 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONES, HIGH_INTEGER,
                                     CRLF, CHECK_MARK, CIRCLE_X, LTE, LT, PLUS_MINUS, RED_X, CIRCLE_STAR2, CRLF_DOT,
-                                    STATIONARY, STATIONARY_FNAME, WATCH, MOBAPP_FNAME,
-                                    AWAY_FROM, TOWARDS, PAUSED, INZONE, NEAR, NEAR_HOME,
+                                    STATIONARY, STATIONARY_FNAME, STATZONE, WATCH, MOBAPP_FNAME,
+                                    AWAY_FROM, FAR_AWAY, TOWARDS, PAUSED, INZONE, INZONE_STATZONE, INZONE_HOME,
                                     ERROR, UNKNOWN,
                                     VALID_DATA,
                                     WAZE,
@@ -47,10 +47,10 @@ from ..helpers.common       import (instr, round_to_zero, is_zone, is_statzone, 
                                     zone_dname, )
 from ..helpers.messaging    import (post_event, post_error_msg,
                                     post_internal_error, post_monitor_msg, log_debug_msg, log_rawdata,
-                                    log_info_msg, log_error_msg, log_exception, _trace, _traceha, )
-from ..helpers.time_util    import (secs_to_time, secs_to_time_str, secs_to_time_age_str, waze_mins_to_time_str,
-                                    secs_since, time_to_12hrtime, secs_to_datetime, secs_to, secs_to_age_str,
-                                    datetime_now, time_now, time_now_secs, secs_to_time_hhmm, secs_to_hhmm, )
+                                    log_info_msg, log_info_msg_HA, log_exception, _trace, _traceha, )
+from ..helpers.time_util    import (secs_to_time, format_timer, format_time_age,
+                                    secs_since, time_to_12hrtime, secs_to_datetime, secs_to, format_age,
+                                    datetime_now, time_now, time_now_secs, secs_to_hhmm, secs_to_hhmm, )
 from ..helpers.dist_util    import (km_to_mi, km_to_um, format_dist_km,  format_dist_m,
                                     km_to_um, m_to_um_ft, )
 
@@ -114,9 +114,9 @@ def determine_interval(Device, FromZone):
     if FromZone.from_zone == Device.loc_data_zone:
         Device.FromZone_LastIn = FromZone
 
-    if Device.offline_secs > 0:
+    if Device.offline_secs > 0 and Device.is_online:
         event_msg =(f"{EVLOG_ALERT}Device back Online > "
-                    f"WentOfflineAt-{secs_to_time_age_str(Device.offline_secs)}, "
+                    f"WentOfflineAt-{format_time_age(Device.offline_secs)}, "
                     f"DeviceStatus-{Device.device_status}")
         post_event(devicename, event_msg)
         Device.offline_secs = 0
@@ -235,7 +235,7 @@ def determine_interval(Device, FromZone):
     #inzone & poor gps & check gps accuracy when inzone
     elif (Device.is_gps_poor
             and isin_zone
-            and Gb.discard_poor_gps_isin_zone is False):
+            and Gb.discard_poor_gps_inzone_flag is False):
         interval_method = '3.PoorGPSinZone'
         interval_secs   = _get_interval_for_error_retry_cnt(Device, OLD_LOCATION_CNT)
 
@@ -388,7 +388,7 @@ def determine_interval(Device, FromZone):
                 interval_method = "9.Max"
                 interval_secs   = Gb.max_interval_secs
 
-        interval_str = secs_to_time_str(interval_secs)
+        interval_str = format_timer(interval_secs)
 
         if interval_multiplier > 1:
             interval_method += (f"x{interval_multiplier}")
@@ -421,15 +421,12 @@ def determine_interval(Device, FromZone):
         FromZone.next_update_time = secs_to_time(next_update_secs)
         FromZone.last_update_secs = Gb.this_update_secs
         FromZone.last_update_time = time_to_12hrtime(Gb.this_update_time)
-
         FromZone.interval_method  = interval_method
-        FromZone.dir_of_travel    = dir_of_travel
-        if FromZone.zone_dist < 100:
-            FromZone.dir_of_travel_history += dir_of_travel[0:1]
-            monitor_msg = (f"DirHist-{FromZone.format_dir_of_travel_history}")
-            post_monitor_msg(devicename, monitor_msg)
 
-        if isin_zone_home: FromZone.dir_of_travel_history = ''
+        FromZone.dir_of_travel    = dir_of_travel
+        FromZone.update_dir_of_travel_history(dir_of_travel)
+        monitor_msg = (f"DirHist-{FromZone.dir_of_travel_history}")
+        post_monitor_msg(devicename, monitor_msg)
 
     except Exception as err:
         sensor_msg = post_internal_error('Update FromZone Times', traceback.format_exc)
@@ -453,8 +450,7 @@ def determine_interval(Device, FromZone):
         FromZone.waze_time   = waze_time_from_zone
         FromZone.calc_dist   = calc_dist_from_zone_km
 
-    # waze_time_msg = Gb.Waze.waze_mins_to_time_str(waze_time_from_zone)
-    waze_time_msg = secs_to_time_str(waze_time_from_zone * 60)
+    waze_time_msg = format_timer(waze_time_from_zone * 60)
 
     if (Device.is_location_gps_good
             and interval_secs > 60
@@ -479,16 +475,16 @@ def determine_interval(Device, FromZone):
 
     sensors.update(_update_next_update_fields_and_sensors(None, interval_secs))
 
-    sensors[TRAVEL_TIME]          = secs_to_time_str(waze_time_from_zone * 60)
+    sensors[TRAVEL_TIME]          = format_timer(waze_time_from_zone * 60)
     sensors[TRAVEL_TIME_MIN]      = f"{waze_time_from_zone:.0f} min"
     sensors[TRAVEL_TIME_HHMM]     = secs_to_hhmm(waze_time_from_zone * 60)
 
     if (Device.isin_zone
             and Device.loc_data_zone == FromZone.from_zone
             and is_statzone(Device.loc_data_zone) is False):
-        sensors[ARRIVAL_TIME]     =f"@{secs_to_time_hhmm(Device.zone_change_secs)}"
+        sensors[ARRIVAL_TIME]     =f"@{secs_to_hhmm(Device.zone_change_secs)}"
     else:
-        sensors[ARRIVAL_TIME]     = secs_to_time_hhmm(waze_time_from_zone * 60 + time_now_secs())
+        sensors[ARRIVAL_TIME]     = secs_to_hhmm(waze_time_from_zone * 60 + time_now_secs())
 
     sensors[DIR_OF_TRAVEL]        = dir_of_travel
     sensors[DISTANCE]             = km_to_mi(dist_from_zone_km)
@@ -503,15 +499,18 @@ def determine_interval(Device, FromZone):
 
     if Device.isin_zone:
         sensors[ZONE_INFO] = f"@{Device.loc_data_zone_fname}"
+        if Device.wasnotin_zone:
+            log_info_msg_HA(f"{Device.fname} Entered Zone: {zone_dname(Device.loc_data_zone)}")
     else:
         sensors[ZONE_INFO] = km_to_um(dist_from_zone_km)
+        if Device.wasin_zone:
+            log_info_msg_HA(f"{Device.fname} Exited Zone: {zone_dname(Device.sensors[ZONE])}")
 
     #save for event log
     if type(waze_time_msg) != str: waze_time_msg = ''
     FromZone.last_travel_time  = waze_time_msg
     FromZone.last_distance_km  = dist_from_zone_km
     FromZone.last_distance_str = km_to_um(dist_from_zone_km)
-    #FromZone.last_distance_str = (f"{km_to_um(dist_from_zone_km)}")
     Device.loc_time_updates_famshr = [Device.loc_data_time]
 
     if Device.is_location_gps_good:
@@ -531,43 +530,53 @@ def post_results_message_to_event_log(Device, FromZone):
     Post the final tracking results to the Event Log and HA log file
     '''
     Device.last_update_msg_secs = time_now_secs()
+
     if Device.only_track_from_home:
-        event_msg = (f"Results > ")
+        event_msg = f"Results > "
     else:
-        event_msg = (f"Results: From-{FromZone.from_zone_dname} > ")
+        event_msg = f"Results: From-{FromZone.from_zone_dname} > "
 
     if (Device.isin_zone and FromZone.from_zone != Device.loc_data_zone
             or Device.isnotin_zone):
         event_msg += f"Arrive-{FromZone.sensors[ARRIVAL_TIME]}, "
 
-    event_msg += (  f"NextUpdate-{FromZone.next_update_time},  ")
-    #               f"Interval-{FromZone.interval_str}, ")
+    event_msg += f"NextUpdate-{FromZone.next_update_time}, "
+
+    if Device.loc_data_dist_moved_km > 0:
+        event_msg += (f"Moved-{km_to_um(Device.loc_data_dist_moved_km)} "
+                        f"({FromZone.dir_of_travel}), ")
+
+    if Device.is_statzone_timer_set and Device.is_tracked and Gb.is_statzone_used:
+        event_msg += f"IntoStatZone-{secs_to_time(Device.statzone_timer)}, "
+
+    if Device.dev_data_battery_level > 0 and FromZone is Device.FromZone_Home:
+        event_msg += f"Battery-{Device.dev_data_battery_level}%, "
+
+    event_msg += f"{'✓' if Device.went_3km else '×'}Went3km, "
+
+    if Gb.log_debug_flag and FromZone.interval_method and Device.is_tracked:
+        event_msg += f"Method-{FromZone.interval_method}, "
+
+    if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
+        event_msg += f"WazeMsg-{Gb.Waze.range_msg(FromZone.zone_dist)}, "
+
+    if (Device.mobapp_monitor_flag
+            and secs_since(Device.mobapp_data_secs) > 3600):
+        event_msg += f"MobAppLocated-{format_age(Device.mobapp_data_secs)}, "
+
     # if FromZone.zone_dist > 0:
     #     event_msg += (  f"TravTime-{FromZone.last_travel_time}, "
     #                     f"Distance-{km_to_um(FromZone.zone_dist)}, ")
-    if FromZone.dir_of_travel == STATIONARY_FNAME:
-        event_msg +=    STATIONARY_FNAME + ", "
-    elif FromZone.dir_of_travel not in [INZONE, '_', '___', ' ', '']:
-        event_msg +=    f"Direction-{FromZone.dir_of_travel}, "
-    if Device.is_statzone_timer_set and Device.is_tracked and Gb.is_statzone_used:
-        event_msg +=    f"IntoStatZone-{secs_to_time(Device.statzone_timer)}, "
+    # if FromZone.dir_of_travel == STATIONARY_FNAME:
+    #     event_msg +=    STATIONARY_FNAME + ", "
+    # if FromZone.dir_of_travel not in [INZONE, '_', '___', ' ', '']:
+    #     event_msg +=    f"Direction-{FromZone.dir_of_travel}, "
+
     # if Device.statzone_dist_moved_km > 0:
     #     event_msg +=    f"Moved-{km_to_um(Device.statzone_dist_moved_km)}, "
-    if Device.loc_data_dist_moved_km > 0:
-        event_msg +=    f"Moved-{km_to_um(Device.loc_data_dist_moved_km)}, "
-    if Device.dev_data_battery_level > 0 and FromZone is Device.FromZone_Home:
-        event_msg +=    f"Battery-{Device.dev_data_battery_level}%, "
+
     #if Device.is_monitored:
     #    event_msg +=     f"Source-{Device.dev_data_source}, "
-    event_msg += f"{'✓' if Device.went_3km else '×'}Went3km, "
-    if Gb.log_debug_flag and FromZone.interval_method and Device.is_tracked:
-        event_msg +=    f"Method-{FromZone.interval_method}, "
-    if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
-        event_msg +=    f"WazeMsg-{Gb.Waze.range_msg(FromZone.zone_dist)}, "
-    if (Device.mobapp_monitor_flag
-            and secs_since(Device.mobapp_data_secs) > 3600):
-        event_msg += (  f"MobAppLocated-"
-                        f"{secs_to_age_str(Device.mobapp_data_secs)}, ")
 
     post_event(Device, event_msg[:-2])
 
@@ -585,8 +594,8 @@ def post_results_message_to_event_log(Device, FromZone):
                 f"Battery-{Device.dev_data_battery_level}%, "
                 f"LastDataUpdate-{secs_to_time(Device.last_data_update_secs)}, "
                 f"GPSAccuracy-{Device.loc_data_gps_accuracy}m, "
-                f"LocAge-{secs_to_age_str(Device.loc_data_secs)}, "
-                f"OldThreshold-{secs_to_time_str(Device.old_loc_threshold_secs)}, "
+                f"LocAge-{format_age(Device.loc_data_secs)}, "
+                f"OldThreshold-{format_timer(Device.old_loc_threshold_secs)}, "
                 f"LastEvLogMsg-{secs_to_time(Device.last_evlog_msg_secs)}, "
                 f"Method-{FromZone.interval_method}")
     log_info_msg(Device.devicename, log_msg)
@@ -651,7 +660,7 @@ def determine_interval_monitored_device_offline(Device):
     update_all_device_fm_zone_sensors_interval(Device, interval_secs)
 
     event_msg =(f"{RED_X}Offline > "
-                f"Since-{secs_to_time_age_str(Device.loc_data_secs)}, "
+                f"Since-{format_time_age(Device.loc_data_secs)}, "
                 f"CheckNext-{Device.sensors[NEXT_UPDATE_TIME]}")
     post_event(Device, event_msg)
 
@@ -694,7 +703,7 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
             interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
             event_msg = (f"{EVLOG_ALERT}Location Old > Tracking Reinitialized, "
-                        f"LastLocated-{secs_to_time_age_str(Device.loc_data_secs)}, "
+                        f"LastLocated-{format_time_age(Device.loc_data_secs)}, "
                         f"RetryAt-{Device.FromZone_Home.next_update_time}")
             post_event(Device, event_msg)
             return
@@ -717,10 +726,11 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
 
         event_msg = ''
         if (Device.is_data_source_FAMSHR and Device.is_offline):
-            event_msg =(f"{EVLOG_ALERT}Device is Offline > "
-                        f"WentOfflineAt-{secs_to_time_age_str(Device.offline_secs)}, "
-                        f"RetryAt-{next_update_time}, "
-                        f"DeviceStatus-{Device.device_status}")
+            event_msg =(f"{EVLOG_ALERT}Device > Offline, "
+                        f"WentOfflineAt-{format_time_age(Device.offline_secs)}, "
+                        f"RetryAt-{next_update_time} "
+                        f"({format_timer(interval_secs)})")
+                        # f"DeviceStatus-{Device.device_status}")
 
         elif ((Device.old_loc_cnt > 0
                 and secs_since(Device.FromZone_Home.next_update_secs) < \
@@ -739,7 +749,7 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
                         f"({Device.FromZone_Home.interval_str})")
             if (interval_secs != Device.FromZone_Home.interval_secs
                     or error_cnt > max_error_cnt and (interval_secs % 4 == 0)):
-                event_msg += f", OldThreshold-{secs_to_time_str(Device.old_loc_threshold_secs)}"
+                event_msg += f", OldThreshold-{format_timer(Device.old_loc_threshold_secs)}"
             Device.icloud_update_reason = "Newer Data is Available"
 
         if event_msg and Device.old_loc_cnt > 2:
@@ -764,12 +774,6 @@ def get_error_retry_interval(Device, counter=OLD_LOCATION_CNT):
 
     '''
     try:
-        if Device.is_offline:
-            if Device.sensor_zone == NOT_SET:
-                return 120, 0, 20
-            else:
-                return Gb.offline_interval_secs, 0, 20
-
         interval_secs = 0
 
         if counter == OLD_LOCATION_CNT:
@@ -860,7 +864,7 @@ def _update_next_update_fields_and_sensors(Device_or_FromZone, interval_secs):
     else:
         data_source_ICLOUD = Gb.primary_data_source_ICLOUD
 
-    sensors[INTERVAL]             = secs_to_time_str(interval_secs)
+    sensors[INTERVAL]             = format_timer(interval_secs)
     sensors[NEXT_UPDATE_DATETIME] = secs_to_datetime(next_update_secs)
     sensors[NEXT_UPDATE_TIME]     = next_update_time
     sensors[NEXT_UPDATE]          = next_update_time
@@ -873,7 +877,7 @@ def _update_next_update_fields_and_sensors(Device_or_FromZone, interval_secs):
         return sensors
 
     Device_or_FromZone.interval_secs    = interval_secs
-    Device_or_FromZone.interval_str     = secs_to_time_str(interval_secs)
+    Device_or_FromZone.interval_str     = format_timer(interval_secs)
     Device_or_FromZone.next_update_secs = next_update_secs
     Device_or_FromZone.next_update_time = next_update_time
     Device_or_FromZone.last_update_secs = Gb.this_update_secs
@@ -948,6 +952,9 @@ def _get_distance_data(Device, FromZone):
 
     # Device is in the from_zone so nothing to do
     if Device.loc_data_zone == from_zone:
+        dir_of_travel = INZONE_HOME if Device.loc_data_zone == HOME else \
+                        INZONE_STATZONE if Device.isin_statzone else \
+                        INZONE
         Device.statzone_reset_timer
         Gb.Waze.waze_status = WAZE_PAUSED
         Gb.Waze.waze_close_to_zone_pause_flag = True
@@ -958,7 +965,7 @@ def _get_distance_data(Device, FromZone):
                         calc_dist_from_zone_km,     # calc_dist_from_zone_km,
                         0,                          # waze_time_from_zone,
                         dist_moved_km,              # dist moved
-                        INZONE]                     # direction
+                        dir_of_travel]                     # direction
 
         return distance_data
 
@@ -1028,39 +1035,34 @@ def _get_distance_data(Device, FromZone):
     dir_of_travel = '___'
     time_change_secs = 0    if waze_time_from_zone == 0 \
                             else int(waze_time_from_zone * 60) - int(FromZone.waze_time * 60)
-    dist_moved_m = int(dist_from_zone_m - FromZone.zone_dist_m)
+    dist_from_zone_moved_m = int(dist_from_zone_m - FromZone.zone_dist_m)
 
-    if FromZone.dir_of_travel in [INZONE, STATIONARY_FNAME]:
-        FromZone.dir_of_travel = STATIONARY_FNAME
-
-    if Device.isin_statzone:
-        dir_of_travel = STATIONARY_FNAME
-
-    elif Device.isin_zone:
-        dir_of_travel = INZONE
+    if Device.isin_zone:
+        dir_of_travel = INZONE_HOME if Device.loc_data_zone == HOME else \
+                        INZONE_STATZONE if Device.isin_statzone else \
+                        INZONE
 
     elif Device.sensors[ZONE] == NOT_SET or FromZone.dir_of_travel == NOT_SET:
-        dir_of_travel = Device.sensors[DIR_OF_TRAVEL]
+        dir_of_travel = UNKNOWN
 
     # Use last direction if did not move
-    elif time_change_secs == 0 or dist_moved_m < 0.0001:
-        if FromZone.dir_of_travel == UNKNOWN:
-            dir_of_travel = STATIONARY_FNAME
-        else:
-            dir_of_travel = FromZone.dir_of_travel
+    elif time_change_secs == 0 and dist_from_zone_moved_m == 0:
+        dir_of_travel = Device.sensors[DIR_OF_TRAVEL]
+
+    # Far Away if dist > 400km/250mi
+    elif (calc_dist_from_zone_km > 400):
+        dir_of_travel = FAR_AWAY
 
     # Towards if the last zone distance > than this zone distance
-    elif time_change_secs < 0 or dist_moved_m < 1:
+    elif time_change_secs < 0 or dist_from_zone_moved_m < 0:
         dir_of_travel = TOWARDS
 
-    elif time_change_secs > 1 or dist_moved_m > 1:
+    elif time_change_secs > 0 or dist_from_zone_moved_m > 0:
         dir_of_travel = AWAY_FROM
 
     else:
         #didn't move far enough to tell current direction
-        dir_of_travel = FromZone.dir_of_travel
-
-    if dir_of_travel.startswith('@'): dir_of_travel = INZONE
+        dir_of_travel = Device.sensors[DIR_OF_TRAVEL]
 
     if Device.loc_data_zone == NOT_HOME:
         if Gb.is_statzone_used is False:
@@ -1080,13 +1082,7 @@ def _get_distance_data(Device, FromZone):
             event_msg =(f"StatZone Timer Reset > "
                         f"NewTime-{secs_to_time(Device.statzone_timer)}, "
                         f"Moved-{km_to_um(Device.loc_data_dist_moved_km)}")
-                        # f"(>{format_dist_km(Gb.statzone_dist_move_limit_km)})")
             post_event(Device, event_msg)
-
-    #dist_from_zone_km      = round_to_zero(dist_from_zone_km)
-    #dist_moved_km          = round_to_zero(dist_moved_km)
-    #waze_dist_from_zone_km = round_to_zero(waze_dist_from_zone_km)
-    #waze_dist_moved_km     = round_to_zero(waze_dist_moved_km)
 
     distance_data = [VALID_DATA,
                     dist_from_zone_km,
@@ -1201,11 +1197,11 @@ def copy_near_device_results(Device, FromZone):
     FromZone.last_travel_time  = NearFromZone.last_travel_time
     FromZone.last_distance_km  = NearFromZone.last_distance_km
     FromZone.last_distance_str = NearFromZone.last_distance_str
-    FromZone.dir_of_travel     = NearFromZone.dir_of_travel
-    if NearFromZone.zone_dist < 100:
-        FromZone.dir_of_travel_history += NearFromZone.dir_of_travel[0:1]
-        monitor_msg = (f"DirHist-{FromZone.format_dir_of_travel_history}")
-        post_monitor_msg(Device.devicename, monitor_msg)
+
+    FromZone.dir_of_travel     = dir_of_travel = NearFromZone.dir_of_travel
+    FromZone.update_dir_of_travel_history(NearFromZone.dir_of_travel)
+    monitor_msg = (f"DirHist-{FromZone.dir_of_travel_history}")
+    post_monitor_msg(Device.devicename, monitor_msg)
 
     FromZone.sensors.update(NearFromZone.sensors)
 
@@ -1247,7 +1243,7 @@ def update_near_device_info(Device):
     Device.NearDevice           = None
     Device.near_device_distance = 0.0
     Device.near_device_checked_secs = time_now_secs()
-    device_time = secs_to_time_hhmm(Device.dist_to_other_devices_secs)
+    device_time = secs_to_hhmm(Device.dist_to_other_devices_secs)
 
     for devicename, dist_apart_data in Device.dist_to_other_devices.items():
         _Device = Gb.Devices_by_devicename[devicename]

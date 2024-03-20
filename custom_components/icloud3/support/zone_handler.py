@@ -32,7 +32,7 @@ from ..helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
                                 _trace, _traceha, )
 from ..helpers.time_util import (time_now_secs, secs_to_time,  secs_to, secs_since, time_now,
                                 datetime_now, secs_to_datetime, )
-from ..helpers.dist_util import (calc_distance_km, format_dist_km, format_dist_m,
+from ..helpers.dist_util import (gps_distance_km, format_dist_km, format_dist_m,
                                 km_to_um, m_to_um, )
 
 # zone_data constants - Used in the select_zone function

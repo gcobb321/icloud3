@@ -15,8 +15,8 @@ from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname, )
 from ..helpers.messaging    import (post_event, post_monitor_msg, more_info,
                                     log_debug_msg, log_exception, log_error_msg, log_rawdata,
                                     _trace, _traceha, )
-from ..helpers.time_util    import (secs_to_time, secs_since, format_time_age, format_age, format_age_hrs, )
-from ..helpers.dist_util    import (format_dist_km, format_dist_m, m_to_um, )
+from ..helpers.time_util    import (secs_to_time, secs_since, format_time_age, format_age,  )
+from ..helpers.dist_util    import (format_dist_km, format_dist_m, )
 from ..helpers              import entity_io
 from ..support              import mobapp_interface
 from ..support              import stationary_zone as statzone
@@ -182,7 +182,7 @@ def check_mobapp_state_trigger_change(Device):
         # ---------------------------------------------
         if mobapp_data_state_not_set_flag:
             Device.mobapp_data_change_reason = \
-                Device.mobapp_data_trigger = f"Initial MobApp Locate@{mobapp_data_time}"
+                Device.mobapp_data_trigger = f"Initial Locate@{mobapp_data_time}"
 
         # Reject State and trigger changes older than the current data
         elif (Device.mobapp_data_secs <= Device.last_update_loc_secs):
@@ -328,8 +328,8 @@ def _display_mobapp_msg(Device, mobapp_msg):
         mobapp_msg += (f", Located-{Device.loc_data_time} ({Device.dev_data_source}), "
                         f"GPS-{Device.mobapp_data_fgps}")
 
-        mobapp_msg = mobapp_msg.replace("^trig_age", format_age(secs_since(Device.mobapp_data_trigger_secs)))
-        mobapp_msg = mobapp_msg.replace("^state_age", format_age(secs_since(Device.mobapp_data_state_secs)))
+        mobapp_msg = mobapp_msg.replace("^trig_age", format_age(Device.mobapp_data_trigger_secs))
+        mobapp_msg = mobapp_msg.replace("^state_age", format_age(Device.mobapp_data_state_secs))
         mobapp_msg += f", {Device.mobapp_zone_enter_trigger_info}"
         mobapp_msg += f", {Device.mobapp_zone_exit_trigger_info}"
         post_monitor_msg(Device.devicename, mobapp_msg)

@@ -6,7 +6,6 @@ from ..const            import (UNKNOWN, HIGH_INTEGER, CRLF_DOT, )
 from .common            import (round_to_zero,  )
 from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
                                 _trace, _traceha, )
-from .time_util         import (secs_since, secs_to_time, secs_to_time_str, )
 
 import homeassistant.util.dt       as dt_util
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

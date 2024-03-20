@@ -6,8 +6,8 @@ from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE,
 from ..helpers.common       import (instr, list_add, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_alert,
                                     log_info_msg, log_exception, log_rawdata, _trace, _traceha, )
-from ..helpers.time_util    import (secs_to_time, secs_since, secs_to_time, secs_to_time_age_str,
-                                    secs_to_time_str, )
+from ..helpers.time_util    import (secs_to_time, secs_since, secs_to_time, format_time_age,
+                                    format_timer, )
 from homeassistant.helpers  import entity_registry as er, device_registry as dr
 
 import json
@@ -265,15 +265,15 @@ def request_location(Device, is_alive_check=False, force_request=False):
 
         if is_alive_check:
             event_msg =(f"MobApp Alive Check > Location Requested, "
-                        f"LastContact-{secs_to_time_age_str(Device.mobapp_data_secs)}")
+                        f"LastContact-{format_time_age(Device.mobapp_data_secs)}")
 
             if Device.mobapp_request_loc_last_secs > 0:
-                event_msg +=  f", LastRequest-{secs_to_time_age_str(Device.mobapp_request_loc_last_secs)}"
+                event_msg +=  f", LastRequest-{format_time_age(Device.mobapp_request_loc_last_secs)}"
         else:
             event_msg =(f"MobApp Location Requested > "
-                        f"LastLocated-{secs_to_time_age_str(Device.mobapp_data_secs)}")
+                        f"LastLocated-{format_time_age(Device.mobapp_data_secs)}")
             if Device.old_loc_cnt > 2:
-                event_msg += f", OldThreshold-{secs_to_time_str(Device.old_loc_threshold_secs)}"
+                event_msg += f", OldThreshold-{format_timer(Device.old_loc_threshold_secs)}"
         post_event(devicename, event_msg)
 
         if Device.mobapp_request_loc_first_secs == 0:

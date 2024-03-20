@@ -20,17 +20,18 @@ from .global_variables  import GlobalVariables as Gb
 from .const             import (HOME, NOT_SET,
                                 DATETIME_ZERO, HHMMSS_ZERO, HHMM_ZERO,
                                 TOWARDS, AWAY_FROM,
-                                INTERVAL,
-                                DISTANCE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
+                                INZONE, INZONE_HOME, INZONE_STATZONE, INZONE_CODES,
+                                INTERVAL, DISTANCE,
+                                ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
                                 MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD,
                                 FROM_ZONE, ZONE_INFO,
-                                TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME, DIR_OF_TRAVEL, MOVED_DISTANCE,
+                                TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM,
+                                ARRIVAL_TIME, DIR_OF_TRAVEL, MOVED_DISTANCE,
                                 LAST_LOCATED, LAST_LOCATED_TIME, LAST_LOCATED_DATETIME,
                                 LAST_UPDATE, LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
                                 NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
                                 )
-from .helpers.dist_util import (calc_distance_km, km_to_um,)
-from .helpers.time_util import (datetime_to_12hrtime, )
+from .helpers.dist_util import (gps_distance_km, km_to_um,)
 from .helpers.messaging import (log_exception, post_internal_error, _trace, _traceha, )
 
 import homeassistant.util.dt as dt_util
@@ -79,7 +80,7 @@ class iCloud3_DeviceFmZone():
             self.zone_dist_m             = 0
             self.zone_center_dist        = 0
             self.waze_results            = None
-            self.home_dist               = calc_distance_km(Gb.HomeZone.gps, self.FromZone.gps)
+            self.home_dist               = gps_distance_km(Gb.HomeZone.gps, self.FromZone.gps)
             self.max_dist_km             = 0
 
             self.sensor_prefix       = (f"sensor.{self.devicename}_") \
@@ -137,11 +138,11 @@ class iCloud3_DeviceFmZone():
 
     @property
     def distance_km(self):
-        return calc_distance_km(self.Device.loc_data_gps, self.FromZone.gps)
+        return gps_distance_km(self.Device.loc_data_gps, self.FromZone.gps)
 
     @property
     def distance_km_mobapp(self):
-        return calc_distance_km(self.Device.mobapp_data_gps, self.FromZone.gps)
+        return gps_distance_km(self.Device.mobapp_data_gps, self.FromZone.gps)
 
     @property
     def is_going_towards(self):
@@ -159,21 +160,48 @@ class iCloud3_DeviceFmZone():
     def isnot_going_awayfrom(self):
         return self.dir_of_travel != AWAY_FROM
 
-    @property
-    def format_dir_of_travel_history(self):
-        ''' Format the dir_of_travel_history into groups. '''
-        if self.dir_of_travel_history == '':
+    # @property
+    # def format_dir_of_travel_history(self):
+    #     ''' Format the dir_of_travel_history into groups. '''
+    #     if self.dir_of_travel_history == '':
+    #         return
+
+    #     self.dir_of_travel_history = self.dir_of_travel_history.replace('i', 'Z')
+    #     dir_codes = list(self.dir_of_travel_history[-36:])
+    #     hist_disp = ''
+    #     cnt = 0
+    #     for dir_code in dir_codes:
+    #         hist_disp += dir_code
+    #         cnt += 1
+    #         if cnt == 10:
+    #             hist_disp += ','
+    #             cnt = 0
+    #     if hist_disp.endswith(','): hist_disp = hist_disp[:-1]
+
+    #     return hist_disp
+
+    def update_dir_of_travel_history(self, dir_of_travel):
+        '''
+        Update and Format the dir_of_travel_history into groups of 5
+        ZZZZA,AA+AA,AASSS,SSTTT,TTTHH
+        '''
+
+        dir_code = INZONE_CODES.get(dir_of_travel)
+        if dir_code is None: dir_code = dir_of_travel[0:1]
+        dir_code_repeat = f"{dir_code}{dir_code}+{dir_code}{dir_code}"
+
+        if self.dir_of_travel_history.endswith(dir_code_repeat):
+            return
+        if self.dir_of_travel_history.endswith(dir_code*5):
+            self.dir_of_travel_history = \
+                self.dir_of_travel_history[:len(self.dir_of_travel_history)-5] \
+                    + dir_code_repeat
             return
 
-        hist_chars = list(self.dir_of_travel_history[-36:])
-        hist_disp = ''
-        cnt = 0
-        for hist_char in hist_chars:
-            hist_disp += hist_char
-            cnt += 1
-            if cnt == 10:
-                hist_disp += ','
-                cnt = 0
-        if hist_disp.endswith(','): hist_disp = hist_disp[:-1]
+        if len(self.dir_of_travel_history) == 29:
+            self.dir_of_travel_history = self.dir_of_travel_history[-23:]
+        if len(self.dir_of_travel_history) in [5, 11, 17, 23]:
+            self.dir_of_travel_history += ','
+        self.dir_of_travel_history += dir_code
 
-        return hist_disp.replace('i', 'Z')
+        return

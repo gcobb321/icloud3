@@ -41,9 +41,7 @@ from ..const            import (
                                 CONF_TRACK_FROM_ZONES, CONF_DEVICE_TYPE, CONF_INZONE_INTERVAL,
                                 CONF_NAME,
                                 NAME, BADGE, BATTERY, BATTERY_STATUS, INFO,
-                                CF_DEFAULT_IC3_CONF_FILE,
-                                DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF,
-                                DEFAULT_SENSORS_CONF,
+                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF,
                                 WAZE_SERVERS_BY_COUNTRY_CODE,
                                 )
 
@@ -111,9 +109,8 @@ CONF_SENSORS_ZONE_LIST              = ['zone', 'zone_fname', 'zone_name', 'zone_
 CONF_SENSORS_OTHER_LIST             = ['gps_accuracy', 'vertical_accuracy', 'altitude']
 
 from ..helpers.common       import (instr, )
-from ..helpers.messaging    import (_traceha, log_info_msg, log_warning_msg, log_exception,
-                                    open_ic3_log_file, write_ic3_log_recd, )
-from ..helpers.time_util    import (time_str_to_secs, datetime_now, )
+from ..helpers.messaging    import (_traceha, log_info_msg, log_warning_msg, log_exception,)
+from ..helpers.time_util    import (time_str_to_secs, datetime_now, datetime_for_filename, )
 from .                      import config_file
 
 import os
@@ -158,7 +155,7 @@ class iCloud3_v2v3ConfigMigration(object):
         self.conf_parm_sensors  = Gb.conf_sensors.copy()
 
         try:
-            self.log_filename_name  = Gb.hass.config.path("icloud3-migration.log")
+            self.log_filename_name  = Gb.hass.config.path(f"icloud3-migration_{datetime_for_filename()}.log")
             self.migration_log_file = open(self.log_filename_name, 'w', encoding='utf8')
         except Exception as err:
             log_exception(err)
@@ -194,16 +191,16 @@ class iCloud3_v2v3ConfigMigration(object):
         config_file.write_storage_icloud3_configuration_file()
         self.migration_log_file.close()
 
-        write_ic3_log_recd(f"Profile:\n{DEBUG_LOG_LINE_TABS}{Gb.conf_profile}")
-        write_ic3_log_recd(f"General Configuration:\n{DEBUG_LOG_LINE_TABS}{Gb.conf_general}")
-        write_ic3_log_recd(f"{DEBUG_LOG_LINE_TABS}{Gb.ha_location_info}")
-        write_ic3_log_recd("")
+        log_info_msg(f"Profile:\n{DEBUG_LOG_LINE_TABS}{Gb.conf_profile}")
+        log_info_msg(f"General Configuration:\n{DEBUG_LOG_LINE_TABS}{Gb.conf_general}")
+        log_info_msg(f"{DEBUG_LOG_LINE_TABS}{Gb.ha_location_info}")
+        log_info_msg("")
 
         for Gb.conf_device in Gb.conf_devices:
-            write_ic3_log_recd(   f"{Gb.conf_device[CONF_FNAME]}, {Gb.conf_device[CONF_IC3_DEVICENAME]}:\n"
+            log_info_msg(   f"{Gb.conf_device[CONF_FNAME]}, {Gb.conf_device[CONF_IC3_DEVICENAME]}:\n"
                                         f"{DEBUG_LOG_LINE_TABS}{Gb.conf_device}")
-        write_ic3_log_recd("")
-        write_ic3_log_recd("iCloud3 - Migration Complete")
+        log_info_msg("")
+        log_info_msg("iCloud3 - Migration Complete")
 
     #-------------------------------------------------------------------------
     def _extract_config_parameters(self, config_yaml_recds):

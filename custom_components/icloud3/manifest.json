@@ -8,6 +8,7 @@
   "documentation": "https://gcobb321.github.io/icloud3_v3_docs/#/",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/gcobb321/icloud3_v3/issues",
+  "loggers": ["icloud3"],
   "requirements": [],
   "version": "3.0"
 }

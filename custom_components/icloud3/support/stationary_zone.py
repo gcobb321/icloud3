@@ -18,32 +18,9 @@ from ..support           import mobapp_interface
 from ..helpers.common    import (isbetween, is_statzone, format_gps,  zone_dname, )
 from ..helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
                                 log_debug_msg, log_exception, log_rawdata, _trace, _traceha, )
-from ..helpers.time_util import (secs_to_time, datetime_now, format_time_age, secs_since, )
-from ..helpers.dist_util import (format_dist_m, calc_distance_km, )
+from ..helpers.time_util import (datetime_now, )
+from ..helpers.dist_util import (format_dist_m, gps_distance_km, )
 # from ..helpers           import entity_io
-
-
-#--------------------------------------------------------------------
-def create_StationaryZones_object():
-    '''
-    Create a new Stationary Zone
-    '''
-
-    statzone_id = str(len(Gb.StatZones) + 1)
-    StatZone = iCloud3_StationaryZone(statzone_id)
-    event_msg = (f"ADDED StatZone > {StatZone.fname} ({StatZone.zone})")
-    post_monitor_msg(event_msg)
-
-    Gb.StatZones.append(StatZone)
-    Gb.StatZones_by_zone[StatZone.zone] = StatZone
-
-    Gb.Zones.append(StatZone)
-    Gb.Zones_by_zone[StatZone.zone] = StatZone
-    Gb.HAZones.append(StatZone)
-    Gb.HAZones_by_zone[StatZone.zone] = StatZone
-    Gb.state_to_zone[StatZone.zone] = StatZone.zone
-
-    return StatZone
 
 #--------------------------------------------------------------------
 def move_into_statzone_if_timer_reached(Device):
@@ -56,7 +33,7 @@ def move_into_statzone_if_timer_reached(Device):
     if Gb.is_statzone_used is False:
         return False
 
-    calc_dist_last_poll_moved_km = calc_distance_km(Device.sensors[GPS], Device.loc_data_gps)
+    calc_dist_last_poll_moved_km = gps_distance_km(Device.sensors[GPS], Device.loc_data_gps)
     Device.update_distance_moved(calc_dist_last_poll_moved_km)
 
     # See if moved less than the stationary zone movement limit
@@ -119,18 +96,10 @@ def move_device_into_statzone(Device):
             break
 
     else:
-        # StatZone = create_StationaryZones_object()
-        statzone_id = str(len(Gb.StatZones) + 1)
-        StatZone = iCloud3_StationaryZone(statzone_id)
+        StatZone = create_StationaryZones_object()
 
         event_msg = f"Created Stationary Zone > {StatZone.fname_id}, SetupBy-{Device.fname}"
     post_event(event_msg)
-
-    # Set location, it will be updated when Device's attributes are updated in main routine
-    # StatZone.latitude  = latitude
-    # StatZone.longitude = longitude
-    # StatZone.radius_m  = Gb.statzone_radius_m
-    # StatZone.passive   = False
 
     _clear_statzone_timer_distance(Device, create_statzone_flag=True)
 
@@ -150,6 +119,28 @@ def move_device_into_statzone(Device):
     _trigger_monitored_device_update(StatZone, Device, ENTER_ZONE)
 
     return True
+
+#--------------------------------------------------------------------
+def create_StationaryZones_object():
+    '''
+    Create a new Stationary Zone
+    '''
+
+    statzone_id = str(len(Gb.StatZones) + 1)
+    StatZone = iCloud3_StationaryZone(statzone_id)
+    event_msg = (f"ADDED StatZone > {StatZone.fname} ({StatZone.zone})")
+    post_monitor_msg(event_msg)
+
+    Gb.StatZones.append(StatZone)
+    Gb.StatZones_by_zone[StatZone.zone] = StatZone
+
+    Gb.Zones.append(StatZone)
+    Gb.Zones_by_zone[StatZone.zone] = StatZone
+    Gb.HAZones.append(StatZone)
+    Gb.HAZones_by_zone[StatZone.zone] = StatZone
+    Gb.state_to_zone[StatZone.zone] = StatZone.zone
+
+    return StatZone
 
 #--------------------------------------------------------------------
 def exit_all_statzones():

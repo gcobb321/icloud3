@@ -26,9 +26,8 @@ from .helpers.common    import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
 from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
                                 log_exception, log_rawdata,_trace, _traceha, )
-from .helpers.time_util import (time_now_secs, datetime_now, secs_to_time, secs_since,
-                                secs_to_datetime, format_time_age, )
-from .helpers.dist_util import (calc_distance_m, calc_distance_km, )
+from .helpers.time_util import (time_now_secs, )
+from .helpers.dist_util import (gps_distance_m, gps_distance_km, )
 
 
 MDI_NAME_LETTERS = {'circle-outline': '', 'box-outline': '', 'circle': '', 'box': ''}
@@ -246,14 +245,14 @@ class iCloud3_Zone(object):
     # Calculate distance in meters
     def distance_m(self, to_latitude, to_longitude):
         to_gps = (to_latitude, to_longitude)
-        distance = calc_distance_m(self.gps, to_gps)
+        distance = gps_distance_m(self.gps, to_gps)
         distance = 0 if distance < .002 else distance
         return distance
 
     # Calculate distance in kilometers
     def distance_km(self, to_latitude, to_longitude):
         to_gps = (to_latitude, to_longitude)
-        distance = calc_distance_km(self.gps, to_gps)
+        distance = gps_distance_km(self.gps, to_gps)
         distance = 0 if distance < .00002 else distance
         return distance
 

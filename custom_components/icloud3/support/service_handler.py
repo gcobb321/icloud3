@@ -24,11 +24,9 @@ from ..support              import start_ic3
 from ..support              import determine_interval as det_interval
 from ..helpers.common       import (instr, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg,
-                                    write_ic3_log_recd, post_alert, clear_alert,
+                                    post_alert, clear_alert,
                                     more_info,
                                     log_info_msg, log_debug_msg, log_exception,
-                                    open_ic3_log_file, close_ic3_log_file,
-                                    close_reopen_ic3_log_file, delete_open_log_file,
                                     _trace, _traceha, )
 from ..helpers.time_util    import (secs_to_time, time_str_to_secs, datetime_now, secs_since,
                                     time_now_secs, time_now, )
@@ -371,9 +369,7 @@ def _handle_global_action(global_action, action_option):
         Gb.restart_icloud3_request_flag = True
         Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_alert=True)
 
-        close_ic3_log_file()
-        open_ic3_log_file()
-        write_ic3_log_recd(f"\n{'-'*25} Opened by Event Log > Actions > Restart {'-'*25}")
+        log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
         return
 
     elif global_action == CMD_EXPORT_EVENT_LOG:
@@ -446,11 +442,8 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
     start_ic3.update_conf_file_log_level(new_log_level)
 
     log_level_fname = new_log_level.replace('-', ' ').title()
-    event_msg = f"Debug Log Level > {log_level_fname}"
+    event_msg = f"Log Level Change > New Level: {log_level_fname}"
     post_event(event_msg)
-
-    open_ic3_log_file()
-    write_ic3_log_recd(f"\n{'-'*25} Change Log Level to: {log_level_fname} {'-'*25}")
 
 def _on_off_text(condition):
     return 'On' if condition else 'Off'
