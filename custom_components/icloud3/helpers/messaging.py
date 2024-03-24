@@ -4,7 +4,7 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOT, ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR, EVLOG_INIT_HDR, EVLOG_MONITOR,
                                 EVLOG_TIME_RECD, EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
                                 EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING,EVLOG_IC3_STAGE_HDR,
-                                IC3_LOG_FILENAME, EVLOG_TIME_RECD,
+                                IC3LOG_FILENAME, EVLOG_TIME_RECD,
                                 CRLF, CRLF_DOT, NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CRLF_INDENT,
                                 DASH_50, DASH_DOTTED_50, TAB_11, RED_ALERT, RED_STOP, RED_CIRCLE, YELLOW_ALERT,
                                 DATETIME_FORMAT, DATETIME_ZERO,
@@ -246,16 +246,16 @@ def more_info(key):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
-def open_ic3_log_file_init():
+def open_ic3log_file_init():
     '''
     Entry point for async_add_executor_job in __init__.py
     '''
-    open_ic3_log_file(new_log_file=Gb.log_debug_flag)
+    open_ic3log_file(new_log_file=Gb.log_debug_flag)
 
 #------------------------------------------------------------------------------
-def open_ic3_log_file(new_log_file=False):
+def open_ic3log_file(new_log_file=False):
 
-    ic3logger_file = Gb.hass.config.path(IC3_LOG_FILENAME)
+    ic3logger_file = Gb.hass.config.path(IC3LOG_FILENAME)
     filemode = 'w' if new_log_file else 'a'
 
     if Gb.iC3Logger is None or new_log_file:
@@ -265,34 +265,46 @@ def open_ic3_log_file(new_log_file=False):
         fileHandler.setFormatter(formatter)
         Gb.iC3Logger.addHandler(fileHandler)
         Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
+        Gb.iC3Logger.setLevel(logging.INFO)
 
-        write_config_file_to_ic3_log()
+        write_config_file_to_ic3log()
 
 #--------------------------------------------------------------------
-def write_ic3_log_recd(log_msg):
+def write_ic3log_recd(log_msg):
     '''
     Check to make sure the icloud3-0.log file exists if the last write to it
     was moe than 2-secs ago. Recreate it if it does not. This catches deletes
     and renames while iCloud3 is running
     '''
-    time_now_msecs = time.time()
-    if time_now_msecs - Gb.iC3Logger_last_check_exist_secs > 2:
-        Gb.iC3Logger_last_check_exist_secs = time_now_msecs
+    try:
+        time_now_msecs = time.time()
+        if time_now_msecs - Gb.iC3Logger_last_check_exist_secs > 2:
+            Gb.iC3Logger_last_check_exist_secs = time_now_msecs
 
-        check_log_file_exists(Gb.hass.config.path(IC3_LOG_FILENAME))
+            check_ic3log_file_exists(Gb.hass.config.path(IC3LOG_FILENAME))
 
-    Gb.iC3Logger.info(log_msg)
+        if Gb.iC3Logger:
+            Gb.iC3Logger.info(log_msg)
+        else:
+            open_ic3log_file(new_log_file=True)
+            Gb.iC3Logger.info(log_msg)
+
+    except Exception as err:
+        return False
 
 #--------------------------------------------------------------------
-def check_log_file_exists(ic3logger_file):
+def check_ic3log_file_exists(ic3logger_file):
     '''
     See if the icloud3-0.log file exists. Recreate it if it does not. This
     catches deletes and renames while iCloud3 is running
     '''
     try:
-        if Gb.iC3Logger and os.path.isfile(ic3logger_file) is False:
+        if Gb.iC3Logger is None:
+            open_ic3log_file(new_log_file=True)
+
+        elif Gb.iC3Logger and os.path.isfile(ic3logger_file) is False:
             Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
-            open_ic3_log_file(new_log_file=True)
+            open_ic3log_file(new_log_file=True)
 
             log_msg = f"{EVLOG_IC3_STARTING}Recreated iCloud3 Log File: {ic3logger_file}"
             log_msg = f"     {format_startup_header_box(log_msg)}"
@@ -310,7 +322,7 @@ def check_log_file_exists(ic3logger_file):
 
 
 #--------------------------------------------------------------------
-def archive_log_file():
+def archive_ic3log_file():
     '''
     At midnight, archive the log files and create a new one for the current day
     Remove icloud-2.log,
@@ -318,9 +330,9 @@ def archive_log_file():
     rename icloud3-0.log to icloud3-1.log
     '''
     try:
-        log_file_0 = Gb.hass.config.path(IC3_LOG_FILENAME)
-        log_file_1 = Gb.hass.config.path(IC3_LOG_FILENAME).replace('-0.', '-1.')
-        log_file_2 = Gb.hass.config.path(IC3_LOG_FILENAME).replace('-0.', '-2.')
+        log_file_0 = Gb.hass.config.path(IC3LOG_FILENAME)
+        log_file_1 = Gb.hass.config.path(IC3LOG_FILENAME).replace('-0.', '-1.')
+        log_file_2 = Gb.hass.config.path(IC3LOG_FILENAME).replace('-0.', '-2.')
 
         post_event(f"iCloud3 Log File Archived")
 
@@ -331,40 +343,44 @@ def archive_log_file():
             Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
             os.rename(log_file_0, log_file_1)
 
-        open_ic3_log_file(new_log_file=True)
+        open_ic3log_file(new_log_file=True)
 
     except Exception as err:
         post_event(f"iCloud3 Log File Archive encountered an error > {err}")
 
 #------------------------------------------------------------------------------
-def write_config_file_to_ic3_log():
+def write_config_file_to_ic3log():
 
     conf_tracking_recd = Gb.conf_tracking.copy()
     conf_tracking_recd[CONF_USERNAME] = obscure_field(conf_tracking_recd[CONF_USERNAME])
     conf_tracking_recd[CONF_PASSWORD] = obscure_field(conf_tracking_recd[CONF_PASSWORD])
     conf_tracking_recd[CONF_DEVICES]  = f"{len(Gb.conf_devices)}"
 
-    recd = (f"iCloud3 v{Gb.version}, "
-            f"{dt_util.now().strftime('%A')}, "
-            f"{dt_util.now().strftime(DATETIME_FORMAT)[:19]}")
-    tabs =  f"{'\t'*4}"
-    recd = (f"\t⡇{DASH_50}\n"
-            f"{tabs}⡇{recd}\n"
-            f"{tabs}⡇{DASH_50}")
-    write_ic3_log_recd(recd)
+    Gb.trace_prefix = '_INIT_'
+    tabs =  TABS_BOX_DEBUG if Gb.log_debug_flag else \
+            TABS_BOX_INFO
+    log_msg = ( f"iCloud3 v{Gb.version}, "
+                f"{dt_util.now().strftime('%A')}, "
+                f"{dt_util.now().strftime(DATETIME_FORMAT)[:19]}")
+    log_msg = ( f" \n"
+                f"{tabs}\t\t⛔{DASH_50}\n"
+                f"{tabs}\t\t⛔    {log_msg}\n"
+                f"{tabs}\t\t⛔{DASH_50}")
+
+    Gb.iC3Logger.info(log_msg)
 
     # Write the ic3 configuration (general & devices) to the Log file
-    write_ic3_log_recd(f"Profile:\n{tabs}{Gb.conf_profile}")
-    write_ic3_log_recd(f"Tracking:\n{tabs}{conf_tracking_recd}")
+    log_info_msg(f"Profile:\n{tabs}\t\t{Gb.conf_profile}")
+    log_info_msg(f"Tracking:\n{tabs}\t\t{conf_tracking_recd}")
 
-    write_ic3_log_recd(f"General Configuration:\n{tabs}{Gb.conf_general}")
-    write_ic3_log_recd(f"{tabs}{Gb.ha_location_info}")
-    write_ic3_log_recd("")
+    log_info_msg(f"General Configuration:\n{tabs}\t\t{Gb.conf_general}")
+    log_info_msg(f"{tabs}\t\t{Gb.ha_location_info}")
+    log_info_msg("")
 
     for conf_device in Gb.conf_devices:
-        write_ic3_log_recd( f"{conf_device[CONF_FNAME]}, {conf_device[CONF_IC3_DEVICENAME]}:\n"
-                            f"{tabs}{conf_device}")
-    write_ic3_log_recd("")
+        log_info_msg(   f"{conf_device[CONF_FNAME]}, {conf_device[CONF_IC3_DEVICENAME]}:\n"
+                        f"{tabs}\t\t{conf_device}")
+    log_info_msg("")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -391,7 +407,7 @@ def log_info_msg(module_name, log_msg='+'):
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
 
     log_msg = format_msg_line(log_msg)
-    write_ic3_log_recd(log_msg)
+    write_ic3log_recd(log_msg)
 
     log_msg = log_msg.replace(' > +', ' > ...\n\t\t\t\t\t\t\t\t\t\t\t+')
     Gb.HALogger.debug(log_msg)
@@ -404,7 +420,7 @@ def log_warning_msg(module_name, log_msg='+'):
     Gb.HALogger.warning(log_msg)
 
     log_msg = format_msg_line(log_msg)
-    write_ic3_log_recd(log_msg)
+    write_ic3log_recd(log_msg)
 
 #--------------------------------------------------------------------
 def log_error_msg(module_name, log_msg='+'):
@@ -414,12 +430,12 @@ def log_error_msg(module_name, log_msg='+'):
     Gb.HALogger.error(log_msg)
 
     log_msg = format_msg_line(log_msg)
-    write_ic3_log_recd(log_msg)
+    write_ic3log_recd(log_msg)
 
 #--------------------------------------------------------------------
 def log_exception(err):
 
-    write_ic3_log_recd(traceback.format_exc())
+    write_ic3log_recd(traceback.format_exc())
     Gb.HALogger.exception(err)
 
 #--------------------------------------------------------------------
@@ -434,7 +450,7 @@ def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
     log_msg = format_msg_line(log_msg)
 
     if Gb.log_debug_flag:
-        write_ic3_log_recd(log_msg)
+        write_ic3log_recd(log_msg)
 
 
     log_msg = log_msg.replace(' > +', ' > ...\n\t\t\t\t\t\t\t\t\t\t\t+')
@@ -854,8 +870,9 @@ def _trace(devicename_or_Device, items='+'):
     called_from = _called_from(trace=True)
 
     #rc9 Reworked post_event and write_config_file to call modules directly
-    Gb.EvLog.post_event(devicename, f"^3^{called_from} {items}")
-    Gb.iC3Logger.info(f"{called_from} ❗❗❗> {items}")
+    if Gb.EvLog:
+        Gb.EvLog.post_event(devicename, f"^3^{called_from} {items}")
+    write_ic3log_recd(f"{called_from} ⛔━⛔  {items}")
 
 #--------------------------------------------------------------------
 def _traceha(items, v1='+++', v2='', v3='', v4='', v5=''):
@@ -869,9 +886,9 @@ def _traceha(items, v1='+++', v2='', v3='', v4='', v5=''):
         else:
             trace_msg = (f"|{v1}|-|{v2}|-|{v3}|-|{v4}|-|{v5}|")
 
-        trace_msg = (f"{called_from} ❗❗❗> {items} {trace_msg}")
+        trace_msg = (f"{called_from} ⛔━⛔  {items} {trace_msg}")
 
-        Gb.iC3Logger.info(trace_msg)
+        write_ic3log_recd(trace_msg)
 
 
     except Exception as err:

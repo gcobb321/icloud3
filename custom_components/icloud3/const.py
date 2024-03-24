@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.1'
+VERSION                         = '3.0.1.1'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -27,7 +27,7 @@ EVLOG_BTNCONFIG_DEFAULT_URL     = '/config/integrations/integration/icloud3'
 HA_CONFIG_IC3_URL               = '/config/integrations/integration/icloud3'
 WAZE_LOCATION_HISTORY_DATABASE  = 'icloud3.waze_location_history.db'
 SENSOR_WAZEHIST_TRACK_NAME      = 'icloud3_wazehist_track'
-IC3_LOG_FILENAME                = 'icloud3-0.log'
+IC3LOG_FILENAME                 = 'icloud3-0.log'
 PICTURE_WWW_STANDARD_DIRS       = 'www/icloud3, www/community, www/images, www/custom_cards'
 
 DEVICE_TRACKER                  = 'device_tracker'

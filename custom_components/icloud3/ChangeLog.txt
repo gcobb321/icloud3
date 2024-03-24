@@ -1,4 +1,4 @@
-v3.0.1 - 3/15/2024
+v3.0.1 - 3/20/2024
 .......................
 1. UPDATE SENSOR & DEVICE TRACKER ENTITIES (Improvement) - Changed the method of updating these items at the request of @balloob (Paulus Schousten, HA Founder) to prevent a potential Home Assistant lockup when doing an update.
 2. LOG FILE (Improvement) - Changed the method of updating the iCloud3 log files. Also changed some of the record formatting to improve readability.

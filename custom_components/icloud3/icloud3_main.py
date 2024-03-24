@@ -63,7 +63,7 @@ from .helpers.messaging import (broadcast_info_msg,
                                 post_event, post_error_msg, post_monitor_msg, post_internal_error,
                                 post_alert, clear_alert,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
-                                log_debug_msg, archive_log_file,
+                                log_debug_msg, archive_ic3log_file,
                                 _trace, _traceha, )
 from .helpers.time_util import (time_now_secs, secs_to_time,  secs_to, secs_since, time_now,
                                 secs_to_time, format_timer, format_age, secs_to_hhmm,
@@ -1227,7 +1227,7 @@ class iCloud3:
                 Gb.WazeHist.wazehist_recalculate_time_dist_all_zones()
 
         # Close log file, rename to '-1', open a new log file
-        archive_log_file()
+        archive_ic3log_file()
         post_event(f"{EVLOG_IC3_STAGE_HDR}End of Day File Maintenance Started")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

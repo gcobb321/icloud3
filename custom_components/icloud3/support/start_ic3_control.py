@@ -1,5 +1,5 @@
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (NOT_SET, IC3_LOG_FILENAME,
+from ..const                import (NOT_SET, IC3LOG_FILENAME,
                                     NEW_LINE, CRLF, CRLF_DOT,
                                     EVLOG_ALERT, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
@@ -19,8 +19,8 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     log_start_finish_update_banner,
                                     log_debug_msg, log_info_msg, log_exception, log_rawdata,
                                     _trace, _traceha, more_info, format_filename,
-                                    write_debug_log,  write_config_file_to_ic3_log,
-                                    open_ic3_log_file, )
+                                    write_debug_log,  write_config_file_to_ic3log,
+                                    open_ic3log_file, )
 from ..helpers.time_util    import (time_now_secs, calculate_time_zone_offset, )
 
 import homeassistant.util.dt as dt_util
@@ -30,12 +30,13 @@ import os
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def stage_1_setup_variables():
 
-    new_log_file=False
-    ic3logger_file = Gb.hass.config.path(IC3_LOG_FILENAME)
-    filemode = 'w' if (new_log_file or os.path.isfile(ic3logger_file) is False) else 'a'
-    open_ic3_log_file()
+    # new_log_file=False
+    # ic3logger_file = Gb.hass.config.path(IC3LOG_FILENAME)
+    # filemode = 'w' if (new_log_file or os.path.isfile(ic3logger_file) is False) else 'a'
     Gb.trace_prefix = 'STAGE1'
     stage_title = f'Stage 1 > Initial Preparations'
+
+    open_ic3log_file()
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     broadcast_info_msg(stage_title)
@@ -63,7 +64,7 @@ def stage_1_setup_variables():
             post_event( f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Restarting, "
                         f"{dt_util.now().strftime('%A, %b %d')}")
             config_file.load_storage_icloud3_configuration_file()
-            write_config_file_to_ic3_log()
+            write_config_file_to_ic3log()
             start_ic3.initialize_global_variables()
             start_ic3.set_global_variables_from_conf_parameters()
 

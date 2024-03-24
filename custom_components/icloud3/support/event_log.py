@@ -894,7 +894,6 @@ class EventLog(object):
 
         elif text.startswith(EVLOG_UPDATE_END):
             text = f">{format_header_box(text[3:], start_finish='finish', evlog_export=True)}"
-            _traceha(f"EVL {text=}")
             text = f"{format_header_box_indent(text, -4)}"
             line_prefix = ''
             return text

@@ -86,20 +86,20 @@ class GlobalVariables(object):
     MobileApp_devices   = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
 
 
-    EvLog           = None
-    EvLogSensor     = None
-    HALogger        = None
-    iC3Logger       = None
+    EvLog               = None
+    EvLogSensor         = None
+    HARootLogger        = None
+    HALogger            = None
+    iC3Logger           = None
     iC3Logger_last_check_exist_secs = 0
-    # iC3Logger_last_recd = None
-    #iC3_LogFile     = None
-    Sensors         = None
-    iC3EntityPlatform = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
-    PyiCloud        = None      # iCloud Account service
-    PyiCloudInit    = None      # iCloud Account service when started from __init__ via executive job
-    PyiCloudConfigFlow = None   # iCloud Account service when started from config_flow
-    Waze            = None
-    WazeHist        = None
+
+    iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
+    PyiCloud            = None      # iCloud Account service
+    PyiCloudInit        = None      # iCloud Account service when started from __init__ via executive job
+    PyiCloudConfigFlow  = None   # iCloud Account service when started from config_flow
+
+    Waze                = None
+    WazeHist            = None
     WazeHistTrackSensor = None    # Sensor for updating the lat/long values for the WazeHist Map display
 
     operating_mode          = 0         # Platform (Legacy using configuration.yaml) or Integration
@@ -197,7 +197,7 @@ class GlobalVariables(object):
     evlog_trk_monitors_flag      = False
     info_notification            = ''
     ha_notification              = {}
-    trace_prefix                 = ''
+    trace_prefix                 = '_INIT_'
     trace_group                  = False
     trace_text_change_1          = ''
     trace_text_change_2          = ''
