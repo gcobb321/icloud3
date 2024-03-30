@@ -657,7 +657,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
                 post_event( f"{EVLOG_NOTICE}The Verification Code was accepted ({user_input[CONF_VERIFICATION_CODE]})")
                 post_event(f"{EVLOG_NOTICE}iCLOUD ALERT > Apple ID Verification complete")
 
-                Gb.EvLog.clear_alert()
+                Gb.EvLog.clear_evlog_greenbar_msg()
                 Gb.EvLog.update_event_log_display("")
                 start_ic3.set_primary_data_source(FAMSHR)
                 Gb.PyiCloud.new_2fa_code_already_requested_flag = False
@@ -2351,7 +2351,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 post_event( f"{EVLOG_NOTICE}The Verification Code was accepted ({user_input[CONF_VERIFICATION_CODE]})")
                 post_event(f"{EVLOG_NOTICE}iCLOUD ALERT > Apple ID Verification complete")
 
-                Gb.EvLog.clear_alert()
+                Gb.EvLog.clear_evlog_greenbar_msg()
                 Gb.icloud_force_update_flag = True
                 PyiCloud.new_2fa_code_already_requested_flag = False
 

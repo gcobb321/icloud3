@@ -4,7 +4,7 @@ from ..global_variables     import GlobalVariables as Gb
 from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE,
                                     CRLF_DOT, CRLF, NBSP6,RED_X, YELLOW_ALERT, )
 from ..helpers.common       import (instr, list_add, )
-from ..helpers.messaging    import (post_event, post_error_msg, post_alert,
+from ..helpers.messaging    import (post_event, post_error_msg, post_evlog_greenbar_msg,
                                     log_info_msg, log_exception, log_rawdata, _trace, _traceha, )
 from ..helpers.time_util    import (secs_to_time, secs_since, secs_to_time, format_time_age,
                                     format_timer, )
@@ -62,7 +62,7 @@ def get_entity_registry_mobile_app_devices():
                 if dup_cnt > 1:
                     alert_msg = (f"Duplicate Mobile App devices in Entity Registry for "
                                 f"{dev_trkr_entity['entity_id']}")
-                    post_alert(alert_msg)
+                    post_evlog_greenbar_msg(alert_msg)
 
                 log_title = (f"mobapp entity_registry entry -- {mobapp_devicename})")
                 log_rawdata(log_title, dev_trkr_entity, log_rawdata_flag=True)

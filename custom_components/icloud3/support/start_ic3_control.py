@@ -17,7 +17,7 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     post_event, post_error_msg, log_error_msg, post_startup_alert,
                                     post_monitor_msg, post_internal_error,
                                     log_start_finish_update_banner,
-                                    log_debug_msg, log_info_msg, log_exception, log_rawdata,
+                                    log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_rawdata,
                                     _trace, _traceha, more_info, format_filename,
                                     write_debug_log,  write_config_file_to_ic3log,
                                     open_ic3log_file, )
@@ -318,11 +318,6 @@ def stage_6_initialization_complete():
     start_ic3.display_platform_operating_mode_msg()
     Gb.EvLog.display_user_message('')
 
-    if Gb.log_debug_flag is False:
-        Gb.startup_log_msgs = (NEW_LINE + '-'*55 +
-                                Gb.startup_log_msgs.replace(CRLF, NEW_LINE) +
-                                NEW_LINE + '-'*55)
-        log_info_msg(Gb.startup_log_msgs)
     Gb.startup_log_msgs = ''
 
     try:
@@ -384,6 +379,14 @@ def stage_7_initial_locate():
             continue
 
         post_event(Device, 'Trigger > Initial Locate')
+
+        if Device.no_location_data:
+            event_msg = f"{EVLOG_ALERT}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE"
+            post_event(Device, event_msg)
+            error_msg = (f"iCloud3 > {Device.fname_devicename} > "
+                        "No GPS data was returned from iCloud Location "
+                        "Service on the initial locate")
+            log_warning_msg(error_msg)
 
         Device.update_sensors_flag = True
 

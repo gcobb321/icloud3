@@ -5,7 +5,8 @@ from ..const                import (EVLOG_NOTICE, EVLOG_ALERT, CRLF_DOT, CRLF, R
 from ..helpers.common       import (list_to_str, zone_dname,)
 from ..helpers.messaging    import (broadcast_info_msg, format_filename,
                                     post_event, post_internal_error, post_monitor_msg, post_startup_alert,
-                                    post_alert, refresh_event_log, log_info_msg, log_error_msg, log_exception,
+                                    post_evlog_greenbar_msg,
+                                    refresh_event_log, log_info_msg, log_error_msg, log_exception,
                                     _trace, _traceha, )
 from ..helpers.time_util    import (datetime_now, format_timer, )
 from ..helpers.dist_util    import (mi_to_km, gps_distance_km, format_dist_km,)
@@ -685,7 +686,7 @@ class WazeRouteHistory(object):
         event_msg =(f"{EVLOG_NOTICE}Waze History > Recalculate Time/Distance Started, "
                     f"TrackFmZone-{zone_dname}, "
                     f"Records-{self.total_recd_cnt}")
-        post_alert(event_msg[3:])
+        post_evlog_greenbar_msg(event_msg[3:])
         post_event(event_msg)
         refresh_event_log()
 
@@ -752,7 +753,7 @@ class WazeRouteHistory(object):
                                 f"Updated-{update_cnt} "
                                 f"({format_timer(running_time)})"   #.replace('mins', 'm').replace(' hrs', 'h')})"
                                 f"{CRLF}Select Action > WazeHist Recalculate... again to cancel")
-                    post_alert(alert_message)
+                    post_evlog_greenbar_msg(alert_message)
                     refresh_event_log()
 
             except:
@@ -775,7 +776,7 @@ class WazeRouteHistory(object):
                     f"Updated-{update_cnt}, "
                     f"Time-{format_timer(running_time)}")
         post_event(log_msg)
-        post_alert('')
+        post_evlog_greenbar_msg('')
         refresh_event_log()
 
         return recd_cnt, self.total_recd_cnt, update_cnt, deleted_cnt

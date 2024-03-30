@@ -44,6 +44,9 @@ def datetime_now():
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def isnot_valid(secs):
+    '''
+    Not valid if before 1/1/2020, = 9999999999 or None
+    '''
     try:
         return secs < 1 or secs == HIGH_INTEGER or secs is None
     except:
@@ -228,6 +231,7 @@ def format_age(secs):
     ''' secs --> 4.5 sec/mins/hrs ago '''
 
     if isnot_valid(secs): return 'Never'
+    if secs < 1577854800: return 'Unknown'
 
     return f"{format_timer(secs_since(secs))} ago"
 
@@ -236,6 +240,7 @@ def format_age_hrs(secs):
     ''' secs --> 4.5 hrs ago '''
 
     if isnot_valid(secs): return 'Never'
+    if secs < 1577854800: return 'Unknown'
 
     return f"{format_timer_hrs(secs_since(secs))} ago"
 
@@ -243,11 +248,14 @@ def format_age_hrs(secs):
 def format_time_age(secs):
     ''' secs --> 10:23:45 or h:mm:ssa/p (4.5 sec/mins/hrs ago) '''
 
-    if isnot_valid(secs):  return '0 mins ago'
+    if isnot_valid(secs): return 'Unknown'
 
     age_secs = secs_since(secs)
     if age_secs >= 86400:
-        return f"{age_secs/86400:.1f} days ago"
+        if secs < 1577854800:
+            return 'Unknown'
+        else:
+            return f"{age_secs/86400:.1f} days ago"
 
     return (f"{secs_to_time(secs)} "
             f"({format_timer(age_secs)} ago)")
@@ -257,6 +265,7 @@ def format_secs_since(secs):
     ''' secs --> 4.5 secs/mins/hrs '''
 
     if isnot_valid(secs): return 'Never'
+    if secs < 1577854800: return 'Unknown'
 
     return f"{format_timer(secs_since(secs))}"
 
@@ -265,6 +274,7 @@ def format_age_hrs(secs):
     ''' secs --> 4.5 hrs ago '''
 
     if isnot_valid(secs): return 'Never'
+    if secs < 1577854800: return 'Unknown'
 
     return f"{format_timer_hrs(secs_since(secs))} ago"
 

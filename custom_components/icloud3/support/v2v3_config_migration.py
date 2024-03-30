@@ -3,10 +3,8 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (
                                 EVLOG_CARD_WWW_DIRECTORY, EVLOG_CARD_WWW_JS_PROG,
-                                IPHONE, IPAD,
-                                WATCH,  AIRPODS,
+                                IPHONE, IPAD, WATCH,  AIRPODS, NO_IOSAPP, NO_MOBAPP,
                                 DEVICE_TYPES,
-                                NO_MOBAPP,
                                 NAME,
                                 NAME, BADGE,
                                 TRIGGER, INACTIVE_DEVICE,

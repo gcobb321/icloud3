@@ -29,7 +29,7 @@ CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
 from .global_variables              import GlobalVariables as Gb
 from .helpers.messaging             import (_trace, _traceha, open_ic3log_file_init,
-                                            post_alert, post_startup_alert,
+                                            post_evlog_greenbar_msg, post_startup_alert,
                                             log_info_msg, log_debug_msg, log_error_msg,
                                             log_exception_HA, log_exception)
 from .helpers.time_util             import (time_now_secs, )

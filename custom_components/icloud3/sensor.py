@@ -1302,16 +1302,17 @@ class Sensor_EventLog(Support_SensorBase):
     @property
     def extra_state_attributes(self):
         '''Return default attributes for the iCloud device entity.'''
-        Gb.EvLog.evlog_attrs['update_time'] =\
-                            (f"{dt_util.now().strftime('%a, %m/%d')}, "
-                            f"{dt_util.now().strftime(Gb.um_time_strfmt)}."
-                            f"{dt_util.now().strftime('%f')}")
+        update_time = ( f"{dt_util.now().strftime('%a, %m/%d')}, "
+                        f"{dt_util.now().strftime(Gb.um_time_strfmt)}."
+                        f"{dt_util.now().strftime('%f')}")
+        Gb.EvLog.evlog_attrs['update_time'] = update_time
+
         if Gb.EvLog:
             return Gb.EvLog.evlog_attrs
 
         return {'log_level_debug': '',
                 'filtername': 'Initialize',
-                'update_time': log_update_time,
+                'update_time': update_time,
                 'popup_message': 'Starting',
                 'names': {'Loading': 'Initializing iCloud3'},
                 'logs': [],

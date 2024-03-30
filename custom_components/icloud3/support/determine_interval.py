@@ -21,7 +21,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONES, HIGH_INTEGER,
                                     CRLF, CHECK_MARK, CIRCLE_X, LTE, LT, PLUS_MINUS, RED_X, CIRCLE_STAR2, CRLF_DOT,
-                                    STATIONARY, STATIONARY_FNAME, STATZONE, WATCH, MOBAPP_FNAME,
+                                    STATIONARY, STATIONARY_FNAME, STATZONE, WATCH, MOBAPP_FNAME, YELLOW_ALERT,
                                     AWAY_FROM, FAR_AWAY, TOWARDS, PAUSED, INZONE, INZONE_STATZONE, INZONE_HOME,
                                     ERROR, UNKNOWN,
                                     VALID_DATA,
@@ -46,6 +46,7 @@ from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONE
 from ..helpers.common       import (instr, round_to_zero, is_zone, is_statzone, isnot_zone,
                                     zone_dname, )
 from ..helpers.messaging    import (post_event, post_error_msg,
+                                    post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                     post_internal_error, post_monitor_msg, log_debug_msg, log_rawdata,
                                     log_info_msg, log_info_msg_HA, log_exception, _trace, _traceha, )
 from ..helpers.time_util    import (secs_to_time, format_timer, format_time_age,
@@ -651,11 +652,13 @@ def determine_interval_monitored_device_offline(Device):
     if age > 3600:
         interval_secs = 3600        # 1-hr
     elif age > 1800:
-        interval_secs = 1800        #30-min
+        interval_secs = 1800        # 30-min
     elif age > 3600:
-        interval_secs = 900         #15-min
-    else:
+        interval_secs = 900         # 15-min
+    elif age > 180:
         interval_secs = 300         # 5-min
+    else:
+        interval_secs = 180         # 3-min
 
     update_all_device_fm_zone_sensors_interval(Device, interval_secs)
 
@@ -696,17 +699,19 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
     try:
         interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
-        if (counter == OLD_LOCATION_CNT
-                and error_cnt > max_error_cnt
-                and secs_since(Device.loc_data_secs) > 7200):
-            Device.reset_tracking_fields(interval_secs=5)
-            interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
+        # Reset interval and counter if the max count was reached
+        if counter == OLD_LOCATION_CNT and error_cnt > max_error_cnt:
+            if (secs_since(Device.loc_data_secs) > 7200
+                    or Device.no_location_data
+                    or Device.is_offline):
+                Device.reset_tracking_fields(interval_secs=5)
+                interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
-            event_msg = (f"{EVLOG_ALERT}Location Old > Tracking Reinitialized, "
-                        f"LastLocated-{format_time_age(Device.loc_data_secs)}, "
-                        f"RetryAt-{Device.FromZone_Home.next_update_time}")
-            post_event(Device, event_msg)
-            return
+                event_msg = (f"Location > Old > Tracking Reinitialized, "
+                            f"LastLocated-{format_time_age(Device.loc_data_secs)}, "
+                            f"RetryAt-{Device.FromZone_Home.next_update_time}")
+                post_event(Device, event_msg)
+                return
 
         if (Device.is_offline and Device.offline_secs == 0):
             Device.offline_secs = Gb.this_update_secs
@@ -715,7 +720,8 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
         # location it has. A second call is needed after a 5-sec delay. This also
         # happens after a reauthentication. If so, do not display an error on the
         # first retry.
-
+        last_interval_secs = Device.interval_secs
+        interval_str       = format_timer(interval_secs)
         next_update_secs = Gb.this_update_secs + interval_secs
         next_update_time = secs_to_time(next_update_secs)
         Device.update_sensors_error_msg = Device.update_sensors_error_msg or Device.old_loc_msg
@@ -725,31 +731,19 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
         Device.display_info_msg(Device.update_sensors_error_msg)
 
         event_msg = ''
-        if (Device.is_data_source_FAMSHR and Device.is_offline):
-            event_msg =(f"{EVLOG_ALERT}Device > Offline, "
-                        f"WentOfflineAt-{format_time_age(Device.offline_secs)}, "
-                        f"RetryAt-{next_update_time} "
-                        f"({format_timer(interval_secs)})")
-                        # f"DeviceStatus-{Device.device_status}")
-
-        elif ((Device.old_loc_cnt > 0
-                and secs_since(Device.FromZone_Home.next_update_secs) < \
-                    (Device.FromZone_Home.interval_secs + 5))
-                or Device.outside_no_exit_trigger_flag):
-            pass
-
-        elif counter == AUTH_ERROR_CNT:
+        if counter == AUTH_ERROR_CNT:
             event_msg =(f"Results > RetryCounter-{Gb.icloud_acct_error_cnt}, "
-                        f"RetryAt {next_update_time} "
-                        f"({Device.FromZone_Home.interval_str})")
+                        f"RetryAt {next_update_time} ({interval_str})")
 
-        if event_msg == '' and Device.update_sensors_error_msg != '':
+        elif Device.update_sensors_error_msg != '':
             event_msg =(f"{Device.update_sensors_error_msg}, "
-                        f"RetryAt-{next_update_time} "
-                        f"({Device.FromZone_Home.interval_str})")
-            if (interval_secs != Device.FromZone_Home.interval_secs
-                    or error_cnt > max_error_cnt and (interval_secs % 4 == 0)):
-                event_msg += f", OldThreshold-{format_timer(Device.old_loc_threshold_secs)}"
+                        f"RetryAt-{next_update_time} ({interval_str})")
+
+            if interval_secs != last_interval_secs:
+                event_msg = f"{EVLOG_ALERT}{event_msg}"
+                if Device.no_location_data is False:
+                    event_msg += f", Over-{format_timer(Device.old_loc_threshold_secs)}"
+
             Device.icloud_update_reason = "Newer Data is Available"
 
         if event_msg and Device.old_loc_cnt > 2:

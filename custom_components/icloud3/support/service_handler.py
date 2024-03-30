@@ -24,7 +24,7 @@ from ..support              import start_ic3
 from ..support              import determine_interval as det_interval
 from ..helpers.common       import (instr, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg,
-                                    post_alert, clear_alert,
+                                    post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                     more_info,
                                     log_info_msg, log_debug_msg, log_exception,
                                     _trace, _traceha, )
@@ -273,11 +273,11 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
     action = action_entry
 
-    if action == f"{CMD_REFRESH_EVENT_LOG}+clear_alerts":
+    if action == f"{CMD_REFRESH_EVENT_LOG}+clear_evlog_greenbar_msgs":
         action = CMD_REFRESH_EVENT_LOG
-        clear_alert()
+        clear_evlog_greenbar_msg()
 
-    clear_alert()
+    clear_evlog_greenbar_msg()
     if (action == CMD_REFRESH_EVENT_LOG
             and Gb.EvLog.secs_since_refresh <= 2
             and Gb.EvLog.last_refresh_devicename == devicename):
@@ -327,7 +327,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
         elif action == CMD_RESUME:
             Gb.all_tracking_paused_flag = False
-            Gb.EvLog.display_user_message('', clear_alert=True)
+            Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
             for Device in Devices:
                 Device.resume_tracking()
 
@@ -338,9 +338,6 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
         elif action == CMD_REQUEST_LOCATION:
             for Device in Devices:
                 _handle_action_device_location_mobapp(Device)
-
-        elif action == 'delete_log':
-            delete_open_log_file()
 
         else:
             return
@@ -367,7 +364,7 @@ def _handle_global_action(global_action, action_option):
         Gb.log_debug_flag_restart     = Gb.log_debug_flag
         Gb.log_rawdata_flag_restart   = Gb.log_rawdata_flag
         Gb.restart_icloud3_request_flag = True
-        Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_alert=True)
+        Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_evlog_greenbar_msg=True)
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
         return

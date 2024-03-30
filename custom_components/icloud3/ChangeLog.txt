@@ -1,3 +1,18 @@
+### Important Links:
+- iCloud3 Documentation is [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/0.1-introduction)
+- The *Installing iCloud3* chapter describes migrating from iCloud3 v2 and installing iCloud3 for the first time
+
+### Change Log
+v3.0.2 - 3/30/2023
+.......................
+1. ICLOUD SERVER ERROR MESSAGE (Fixed) - When the iCloud servers did not respond with location information, the 'no response from iCloud servers' error was displayed correctly. This was followed by another unrelated error which should have not been displayed.
+2. ALERTS, STARTUP ERRORS, WARNING MESSAGES (New) - Unusual errors or warning events for iPhones, iPads, and Watches are displayed in a green bar on the first line of the Event Log whenthe event occurs. The message will continue displaying until the event is corrected. This includes (1) startup errors, (2) no data received from iCloud Location Servers, (3) when a device is offline and (4) when a device's location is over 5-hours old and (5) when tracking is paused. The messages from AirPods and iPods are only displayed when their Event Log screen is displayed.
+3. OTHER - Minor code corrections and cleanup.
+
+v3.0.1.1 - 3/24/2024
+.......................
+1. ICLOUD-0.LOG FILE (Fixed) - The icloud-0.log file was not being created when the HA 'logger:' statement was not in the HA configuration.yaml file.
+
 v3.0.1 - 3/20/2024
 .......................
 1. UPDATE SENSOR & DEVICE TRACKER ENTITIES (Improvement) - Changed the method of updating these items at the request of @balloob (Paulus Schousten, HA Founder) to prevent a potential Home Assistant lockup when doing an update.

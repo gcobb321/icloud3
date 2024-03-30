@@ -66,14 +66,40 @@ FILTER_FIELDS = [
         'items', 'userInfo', 'prsId', 'dsid', 'dsInfo', 'webservices', 'locations',
         'devices', 'content', 'followers', 'following', 'contactDetails', ]
 
-TABS_10 = "\t\t\t\t\t\t\t\t\t\t"
-TABS_BOX_DEBUG = f"{'\t'*10}  "
-TABS_BOX_INFO  = f"{'\t'*5}  "
-TABS_BOX_EVLOG_EXPORT = f"{'\t'*3}"
-TABS_8  = "\t\t\t\t\t\t\t\t"
-TABS_9  = "\t\t\t\t\t\t\t\t\t"
-TABS_3  = "\t\t\t"
-TABS_2  = "\t\t"
+# TABS_BOX_DEBUG = "\t\t\t\t\t\t\t\t\t\t  "
+# TABS_BOX_INFO  = "\t\t\t\t\t  "
+# TABS_BOX_EVLOG_EXPORT = "\t\t\t"
+SP50 = ' '*50
+SP = {
+    4: SP50[1:4],
+    5: SP50[1:5],
+    6: SP50[1:6],
+    8: SP50[1:8],
+    10: SP50[1:10],
+    12: SP50[1:12],
+    16: SP50[1:16],
+    22: SP50[1:22],
+    28: SP50[1:28],
+    26: SP50[1:26],
+    44: SP50[1:44],
+    48: SP50[1:48],
+    50: SP50,
+}
+# SP = {
+#     4: ' '*4,
+#     5: ' '*5,
+#     6: ' '*6,
+#     8: ' '*8,
+#     10: ' '*10,
+#     12: ' '*12,
+#     16: ' '*16,
+#     22: ' '*22,
+#     28: ' '*28,
+#     26: ' '*26,
+#     44: ' '*44,
+#     48: ' '*48,
+#     50: ' '*50,
+# }
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -184,20 +210,39 @@ def refresh_event_log(devicename='', show_one_screen=False):
     Gb.EvLog.update_event_log_display(devicename='', show_one_screen=False)
 
 #-------------------------------------------------------------------------------------------
-def post_alert(alert_message):
+def post_evlog_greenbar_msg(Device, evlog_greenbar_msg='+'):
     '''
     Post an Alert Message on the first line of the event log items
-    '''
 
-    if alert_message == '':
-        Gb.EvLog.clear_alert()
+    Input:
+        Device:
+            If specified, display msg on this Device's EvLog screen only
+            If not specified, display on all screens
+        evlog_greenbar_msg:
+            Message to display -
+    '''
+    # See if the message is really in the Device parameter
+    if evlog_greenbar_msg == '+':
+        evlog_greenbar_msg = Device
+
+    # Device was specified, check to see if this is the screen displayed
     else:
-        Gb.EvLog.alert_message = alert_message
-    Gb.EvLog.display_user_message('')
+        fname = Device.fname if Device.is_tracked else f"{Device.fname} 🅜"
+        if Gb.EvLog.evlog_attrs["fname"] != fname:
+            return
+
+    if Gb.EvLog.greenbar_alert_msg == evlog_greenbar_msg:
+        return
+
+    if evlog_greenbar_msg == '':
+        Gb.EvLog.clear_evlog_greenbar_msg()
+    else:
+        Gb.EvLog.greenbar_alert_msg = evlog_greenbar_msg
+        Gb.EvLog.display_user_message('')
 
 #-------------------------------------------------------------------------------------------
-def clear_alert():
-    Gb.EvLog.clear_alert()
+def clear_evlog_greenbar_msg():
+    Gb.EvLog.clear_evlog_greenbar_msg()
     Gb.EvLog.display_user_message('')
 
 #--------------------------------------------------------------------
@@ -307,7 +352,7 @@ def check_ic3log_file_exists(ic3logger_file):
             open_ic3log_file(new_log_file=True)
 
             log_msg = f"{EVLOG_IC3_STARTING}Recreated iCloud3 Log File: {ic3logger_file}"
-            log_msg = f"     {format_startup_header_box(log_msg)}"
+            log_msg = f"{format_startup_header_box(log_msg)}"
             log_msg = f"{format_header_box_indent(log_msg, 4).replace('⡇', '⛔')}"
             Gb.iC3Logger.info(log_msg)
 
@@ -357,29 +402,30 @@ def write_config_file_to_ic3log():
     conf_tracking_recd[CONF_DEVICES]  = f"{len(Gb.conf_devices)}"
 
     Gb.trace_prefix = '_INIT_'
-    tabs =  TABS_BOX_DEBUG if Gb.log_debug_flag else \
-            TABS_BOX_INFO
+    indent = SP[44] if Gb.log_debug_flag else SP[26]
     log_msg = ( f"iCloud3 v{Gb.version}, "
                 f"{dt_util.now().strftime('%A')}, "
                 f"{dt_util.now().strftime(DATETIME_FORMAT)[:19]}")
     log_msg = ( f" \n"
-                f"{tabs}\t\t⛔{DASH_50}\n"
-                f"{tabs}\t\t⛔    {log_msg}\n"
-                f"{tabs}\t\t⛔{DASH_50}")
+                f"{indent}⛔{DASH_50}\n"
+                f"{indent}⛔    {log_msg}\n"
+                f"{indent}⛔{DASH_50}")
 
     Gb.iC3Logger.info(log_msg)
 
     # Write the ic3 configuration (general & devices) to the Log file
-    log_info_msg(f"Profile:\n{tabs}\t\t{Gb.conf_profile}")
-    log_info_msg(f"Tracking:\n{tabs}\t\t{conf_tracking_recd}")
-
-    log_info_msg(f"General Configuration:\n{tabs}\t\t{Gb.conf_general}")
-    log_info_msg(f"{tabs}\t\t{Gb.ha_location_info}")
+    log_info_msg(f"Profile:\n"
+                f"{indent}{Gb.conf_profile}")
+    log_info_msg(f"Tracking:\n"
+                f"{indent}{conf_tracking_recd}")
+    log_info_msg(f"General Configuration:\n"
+                f"{indent}{Gb.conf_general}\n"
+                f"{indent}{Gb.ha_location_info}")
     log_info_msg("")
 
     for conf_device in Gb.conf_devices:
         log_info_msg(   f"{conf_device[CONF_FNAME]}, {conf_device[CONF_IC3_DEVICENAME]}:\n"
-                        f"{tabs}\t\t{conf_device}")
+                        f"{indent}{conf_device}")
     log_info_msg("")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -409,7 +455,7 @@ def log_info_msg(module_name, log_msg='+'):
     log_msg = format_msg_line(log_msg)
     write_ic3log_recd(log_msg)
 
-    log_msg = log_msg.replace(' > +', ' > ...\n\t\t\t\t\t\t\t\t\t\t\t+')
+    log_msg = log_msg.replace(' > +', f" > ...\n{SP[22]}+")
     Gb.HALogger.debug(log_msg)
 
 #--------------------------------------------------------------------
@@ -453,7 +499,7 @@ def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
         write_ic3log_recd(log_msg)
 
 
-    log_msg = log_msg.replace(' > +', ' > ...\n\t\t\t\t\t\t\t\t\t\t\t+')
+    log_msg = log_msg.replace(' > +', f" > ...\n{SP[22]}+")
     Gb.HALogger.debug(log_msg)
 
 #--------------------------------------------------------------------
@@ -508,7 +554,9 @@ def format_msg_line(log_msg, area=None):
         log_msg = format_header_box_indent(log_msg, len(source))
         msg_prefix= ' ' if log_msg.startswith('⡇') else \
                     ' ⡇ ' if Gb.trace_group else \
-                    ' > '
+                    '   '
+                    # ' ▹ '
+                    # ' > '
 
         log_msg = filter_special_chars(log_msg)
         log_msg = f"{source}{msg_prefix}{log_msg}"
@@ -524,9 +572,9 @@ def filter_special_chars(recd, evlog_export=False):
     Filter out EVLOG_XXX control fields
     '''
 
-    tabs =  TABS_BOX_EVLOG_EXPORT if evlog_export else \
-            TABS_BOX_DEBUG if Gb.log_debug_flag else \
-            TABS_BOX_INFO
+    indent =SP[16] if evlog_export else \
+            SP[48] if Gb.log_debug_flag else \
+            SP[28]
     if recd.startswith('^'): recd = recd[3:]
 
     recd = recd.replace(EVLOG_MONITOR, '')
@@ -537,8 +585,8 @@ def filter_special_chars(recd, evlog_export=False):
     recd = recd.replace(NBSP5, ' ')
     recd = recd.replace(NBSP6, ' ')
     recd = recd.strip()
-    recd = recd.replace(CRLF, f"\n{tabs}\t   ")
-    recd = recd.replace('◦', f"\t◦")
+    recd = recd.replace(CRLF, f"\n{indent}")
+    recd = recd.replace('◦', f"    ◦")
     recd = recd.replace('* >', '')
     recd = recd.replace('&lt;', '<')
 
@@ -588,22 +636,25 @@ def format_header_box(recd, start_finish=None, evlog_export=False):
 
     top_char = bot_char = DASH_50
     if start_finish == 'start':
-        bot_char = f"{'⠐'*37}"
+        bot_char = f"{'⠂'*37}"
         Gb.trace_group = True
     elif start_finish == 'finish':
-        top_char = f"{'⠐'*37}"
+        top_char = f"{'⠂'*37}"
+        # top_char = f"{'⠐'*37}"
         Gb.trace_group = False
 
+    # return (f"⡇{top_char}\n"
     return (f"⡇{top_char}\n"
-            f">⡇\t\t{recd[start_pos:].upper()}\n"
-            f">⡇{bot_char}")
+            f"▹⡇{SP[4]}{recd[start_pos:].upper()}\n"
+            f"▹⡇{bot_char}")
+            # f"▹⡇{bot_char}")
 
 #--------------------------------------------------------------------
 def format_header_box_indent(log_msg, indent):
-    if instr(log_msg, '>⡇') is False:
+    if instr(log_msg, '▹⡇') is False:
         return log_msg
 
-    return  log_msg.replace('>⡇', f"{' '*(16+indent)}⡇")
+    return  log_msg.replace('▹', f"{' '*(16+indent)}")
 
 #-------------------------------------------------------------------------------------------
 def _resolve_devicename_log_msg(devicename_or_Device, event_msg):
@@ -872,7 +923,7 @@ def _trace(devicename_or_Device, items='+'):
     #rc9 Reworked post_event and write_config_file to call modules directly
     if Gb.EvLog:
         Gb.EvLog.post_event(devicename, f"^3^{called_from} {items}")
-    write_ic3log_recd(f"{called_from} ⛔━⛔  {items}")
+    write_ic3log_recd(f"{called_from}⛔.⛔ . . . {devicename} > {items}")
 
 #--------------------------------------------------------------------
 def _traceha(items, v1='+++', v2='', v3='', v4='', v5=''):
@@ -886,7 +937,7 @@ def _traceha(items, v1='+++', v2='', v3='', v4='', v5=''):
         else:
             trace_msg = (f"|{v1}|-|{v2}|-|{v3}|-|{v4}|-|{v5}|")
 
-        trace_msg = (f"{called_from} ⛔━⛔  {items} {trace_msg}")
+        trace_msg = (f"{called_from}⛔.⛔ . . . {items} {trace_msg}")
 
         write_ic3log_recd(trace_msg)
 

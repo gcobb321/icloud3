@@ -109,9 +109,8 @@ def is_icloud_update_needed_general(Device):
         Device.icloud_update_reason = ''
 
     elif (Device.is_online
+            and Device.next_update_secs == 0
             and (Device.sensor_zone == NOT_SET
-                or Device.sensors[LATITUDE] == 0
-                or Device.loc_data_latitude == 0
                 or Device.icloud_initial_locate_done is False)):
         Device.icloud_update_reason = f"Initial FamShr Locate@{Gb.this_update_time}"
 
@@ -266,8 +265,8 @@ def update_PyiCloud_RawData_data(Device, results_msg_flag=True):
                         f"{CRLF_DOT}{_err_msg}, "
                         f"Error-{Gb.PyiCloud.Session.response_status_code}")
 
-            post_event(Device, event_msg)
-            post_error_msg(event_msg)
+            post_event(Device, error_msg)
+            post_error_msg(error_msg)
 
         except Exception as err:
             # log_exception(err)

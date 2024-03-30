@@ -2561,6 +2561,10 @@ def setup_trackable_devices():
                 event_msg += (f"{CRLF_RED_X}DEVICE IS OFFLINE > "
                             f"Since-{format_time_age(timestamp)}")
                 Device.offline_secs = timestamp
+
+            # if Device.no_location_data:
+            #     event_msg += f"{CRLF_RED_X}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE"
+
         except Exception as err:
             # log_exception(err)
             pass

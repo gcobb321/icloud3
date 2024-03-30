@@ -26,7 +26,7 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     )
 
 from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str
-from ..helpers.messaging    import (log_exception, log_info_msg, log_warning_msg, _traceha, _trace,
+from ..helpers.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _traceha, _trace,
                                     filter_special_chars, format_header_box, format_header_box_indent, )
 from ..helpers.time_util    import (time_to_12hrtime, datetime_now, time_now_secs, datetime_for_filename,
                                     adjust_time_hour_value, adjust_time_hour_values, )
@@ -88,9 +88,15 @@ class EventLog(object):
         self.log_rawdata_flag        = False
         self.last_refresh_secs       = 0
         self.last_refresh_devicename = ''
+
+        # An alert message is displayed in a green bar at the top of the EvLog screen
+        #   post_evlog_greenbar_msg("msg") = Display the message
+        #   clear_evlog_greenbar_msg()     = Clear the alert msg and remove the green bar
+        self.greenbar_alert_msg           = ''       # Message to display in green bar at the top of the Evlog
+
         self.user_message            = ''       # Display a message in the name0 button
         self.user_message_alert_flag = False    # Do not clear the message if this is True
-        self.alert_message           = ''       # Message to display in green bar at the top of the  evl
+
         self.evlog_btn_urls          = EVLOG_BTN_URLS.copy()
 
         v2_v3_browser_refresh_msg ={"Browser Refresh Required":
@@ -155,10 +161,10 @@ class EventLog(object):
             self.fnames_by_devicename = {}
             self.event_recds_max_cnt  = EVENT_RECDS_MAX_CNT_BASE
 
-            self.fnames_by_devicename.update({devicename: self._format_evlog_device_fname(Device)
+            self.fnames_by_devicename.update({devicename: self.format_evlog_device_fname(Device)
                             for devicename, Device in Gb.Devices_by_devicename_tracked.items()
                             if devicename != ''})
-            self.fnames_by_devicename.update({devicename: self._format_evlog_device_fname(Device)
+            self.fnames_by_devicename.update({devicename: self.format_evlog_device_fname(Device)
                             for devicename, Device in Gb.Devices_by_devicename_monitored.items()
                             if devicename != ''})
 
@@ -199,11 +205,21 @@ class EventLog(object):
         return
 
 #------------------------------------------------------
-    def _format_evlog_device_fname(self, Device):
+    def format_evlog_device_fname(self, Device):
         # verified = Gb.evlog_alert_by_devicename.get(Device.devicename, '')
         # verified = f"{RED_X} " if Device.verified_flag is False else ''
         tracked  = '' if Device.is_tracked else f" {circle_letter('m')}"
         return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}"
+
+# #------------------------------------------------------
+#     def update_evlog_device_fname(self, Device, new_fname=None):
+#         if new_fname:
+#             self.evlog_attrs["fnames"][Device.devicename] = new_fname
+#         else:
+#             self.evlog_attrs["fnames"][Device.devicename] = self.format_evlog_device_fname(Device)
+#         self.evlog_attrs["run_mode"] = "UpdateFnames"
+#         self.update_evlog_sensor()
+#         self.display_user_message("")
 
 #------------------------------------------------------
     def post_event(self, devicename_or_Device, event_text='+'):
@@ -463,7 +479,7 @@ class EventLog(object):
                 f"{dt_util.now().strftime('%f')}")
 
 #------------------------------------------------------
-    def display_user_message(self, user_message, alert=False, clear_alert=False):
+    def display_user_message(self, user_message, alert=False, clear_evlog_greenbar_msg=False):
         '''
         Display or clear the special message displayed in the name0 button on
         the Event Log. However, do not change or clear it if the persists flag
@@ -473,7 +489,7 @@ class EventLog(object):
         The user_message_alert_flag must be set to False to change or clear
         a message.
         '''
-        if clear_alert:
+        if clear_evlog_greenbar_msg:
             self.user_message_alert_flag = alert = False
 
         if alert:
@@ -481,6 +497,7 @@ class EventLog(object):
 
         self.user_message = user_message
         self.evlog_attrs['logs'] = self._filtered_evlog_recds(self.devicename, HIGH_INTEGER)
+
         self.update_evlog_sensor()
 
 #------------------------------------------------------
@@ -609,8 +626,8 @@ class EventLog(object):
         self.devicename_cnts[devicename_type] += 1
 
 #------------------------------------------------------
-    def clear_alert(self):
-        self.alert_message = ''
+    def clear_evlog_greenbar_msg(self):
+        self.greenbar_alert_msg = ''
 
 #------------------------------------------------------
     def _filtered_evlog_recds(self, devicename='', max_recds=HIGH_INTEGER, selected_devicename=None):
@@ -635,9 +652,9 @@ class EventLog(object):
             refresh_recd = ['',refresh_msg]
             time_text_recds.insert(0, refresh_recd)
 
-        if self.alert_message != '':
-            alert_msg = ( f"{EVLOG_HIGHLIGHT}{self.alert_message}")
-            alert_recd = ['',alert_msg]
+        if self.greenbar_alert_msg != '':
+            alert_msg = ( f"{EVLOG_HIGHLIGHT}{self.greenbar_alert_msg}")
+            alert_recd = ['⚠️', alert_msg]
             time_text_recds.insert(0, alert_recd)
 
         time_text_recds.append(CONTROL_RECD)
@@ -653,7 +670,7 @@ class EventLog(object):
         the resulting list to be passed to the Event Log
         '''
         if devicename == 'startup_log':
-            self.alert_message=(f"Start up log, alerts and èrrors are displayed"
+            self.greenbar_alert_msg=(f"Start up log, alerts and èrrors are displayed"
                                 f"{RARROW}Refresh to close")
             el_recds = [el_recd[1:3] for el_recd in self.startup_event_recds
                                         if (el_recd[ELR_TEXT].startswith(EVLOG_MONITOR) is False
@@ -781,17 +798,17 @@ class EventLog(object):
         try:
             log_update_time =   (f"{dt_util.now().strftime('%a, %m/%d')}, "
                                 f"{dt_util.now().strftime(Gb.um_time_strfmt)}")
-            hdr_recd    = f"Time\t\t   Event\n{'-'*120}\n"
+            hdr_recd    = f"Time{SP[8]}Event\n{'-'*120}\n"
             export_recd = (f"iCloud3 Event Log v{Gb.version}\n\n"
                             f"Log Update Time: {log_update_time}\n"
                             f"Tracked Devices:\n")
 
             export_recd += f"\nGeneral Configuration:\n"
-            export_recd += f"\t{Gb.conf_general}\n"
+            export_recd += f"{SP[4]}{Gb.conf_general}\n"
 
             for devicename, Device in Gb.Devices_by_devicename.items():
-                export_recd += (f"\t{DOT}{Device.fname_devicename} >\n"
-                                f"\t\t\t{Device.conf_device}\n")
+                export_recd += (f"{SP[4]}{DOT}{Device.fname_devicename} >\n"
+                                f"{SP[4]}{Device.conf_device}\n")
 
             #--------------------------------
             # # Prepare Global '*' records. Reverse the list elements using [::-1] and make a string of the results
@@ -852,17 +869,17 @@ class EventLog(object):
             el_recds.reverse()
             for record in el_recds:
                 devicename = record[ELR_DEVICENAME]
-                time       = record[ELR_TIME] if record[ELR_TIME] not in ['Debug', 'Rawdata'] else '\t\t  '
+                time       = record[ELR_TIME] if record[ELR_TIME] not in ['Debug', 'Rawdata'] else SP[4]
                 text       = record[ELR_TEXT]
 
                 if log_section == 'startup':
                     if text[0:3] in [EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR]:
-                        text = f"\t\t\t{format_header_box(text[3:], evlog_export=True)}"
+                        text = f"{SP[12]}{format_header_box(text[3:], evlog_export=True)}"
                         text = format_header_box_indent(text, -4)
                     elif text.startswith('^'):
-                        text = f"\t{filter_special_chars(text[3:], evlog_export=True)}"
+                        text = f"{SP[4]}{filter_special_chars(text[3:], evlog_export=True)}"
                     else:
-                        text = f"\t{filter_special_chars(text, evlog_export=True)}"
+                        text = f"{SP[4]}{filter_special_chars(text, evlog_export=True)}"
 
                 elif log_section == 'other':
                     text = f"  {filter_special_chars(text, evlog_export=True)}"
@@ -885,7 +902,7 @@ class EventLog(object):
 
         # Time-record = {mobapp_state},{ic3_zone},{interval},{travel_time},{distance)
 
-        line_prefix = '\t'
+        line_prefix = SP[4]
         if text.startswith(EVLOG_UPDATE_START):
             text = 'Start Tracking Update' if text[3:] == '' else text[3:]
             text = f">{format_header_box(text, start_finish='start', evlog_export=True)}"
@@ -894,21 +911,23 @@ class EventLog(object):
 
         elif text.startswith(EVLOG_UPDATE_END):
             text = f">{format_header_box(text[3:], start_finish='finish', evlog_export=True)}"
+            _traceha(f"{text=}")
             text = f"{format_header_box_indent(text, -4)}"
+            _traceha(f"{text=}")
             line_prefix = ''
             return text
 
         elif text.startswith(EVLOG_TIME_RECD):
             text = text[3:]
             item = text.split(',')
-            text = (f"MobApp-{item[0]}, "
+            text = (f"{' '*(12-len(time))}⡇ MobApp-{item[0]}, "
                     f"iCloud3-{item[1]}, "
                     f"Interval-{item[2]}, "
                     f"TravTime-{item[3]}, "
                     f"Dist-{item[4]}")
             return text
 
-        if time.startswith('»'): line_prefix = '\t\t'
+        if time.startswith('»'): line_prefix = SP[5]
 
         group_char= '' if text.startswith('⡇') else \
                     '⡇ ' if Gb.trace_group else \
@@ -917,7 +936,7 @@ class EventLog(object):
         text = filter_special_chars(text)
 
         if instr(text, 'Results:') and instr(text, 'From-Home') is False:
-            text = f"{text}\n\t\t\t⡇ {' ~ '*18}"
+            text = f"{text}\n{SP[12]}⡇ {' ~ '*18}"
 
         return f"{line_prefix}{group_char}{text}"
 

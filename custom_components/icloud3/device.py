@@ -61,7 +61,7 @@ from .helpers           import entity_io
 
 from .helpers.common    import (instr, is_zone, isnot_zone, is_statzone, list_add, list_del,
                                 circle_letter, format_gps, zone_dname, )
-from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg, post_alert, clear_alert,
+from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg, post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                 log_exception, log_debug_msg, log_error_msg,
                                 post_startup_alert,
                                 post_internal_error, _trace, _traceha, )
@@ -1018,12 +1018,17 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def is_offline(self):
-        ''' Returns True/False if the device is offline based on the device_status '''
+        '''
+        Returns True/False if the device is offline based on the device_status
+        Return False if there is no GPS location so the old location will be processed
+        '''
+        if self.no_location_data:
+            return False
+
         if (self.dev_data_device_status not in DEVICE_STATUS_OFFLINE
                 or self.is_data_source_FMF):
-            # clear_alert()
             return False
-        # post_alert(f"{self.fname} is Offline")
+
         return True
 
     @property
@@ -1069,12 +1074,16 @@ class iCloud3_Device(TrackerEntity):
 
 #--------------------------------------------------------------------
     def update_location_gps_accuracy_status(self):
-        if self.icloud_devdata_useable_flag or self.loc_data_secs == 0:
-            self.loc_data_isold = False
+        if self.no_location_data or self.is_offline:
+            self.loc_data_isold     = True
+            self.loc_data_ispoorgps = False
+            self.icloud_devdata_useable_flag = False
+        elif self.icloud_devdata_useable_flag or self.loc_data_secs == 0:
+            self.loc_data_isold     = False
             self.loc_data_ispoorgps = False
         else:
-            self.loc_data_isold = (secs_since(self.loc_data_secs) > self.old_loc_threshold_secs + 5
-                                        or self.is_offline)
+            self.loc_data_isold     = (secs_since(self.loc_data_secs) > self.old_loc_threshold_secs + 5
+                                            or self.is_offline)
             self.loc_data_ispoorgps = (self.loc_data_gps_accuracy > Gb.gps_accuracy_threshold)
             self.icloud_devdata_useable_flag = (self.loc_data_isold is False
                                                     and self.loc_data_ispoorgps is False)
@@ -2013,8 +2022,10 @@ class iCloud3_Device(TrackerEntity):
         self.dev_data_low_power_mode   = RawData.device_data.get(ICLOUD_LOW_POWER_MODE, "")
 
         if RawData.device_data.get(ICLOUD_BATTERY_LEVEL):
-            icloud_rawdata_battery_level  = round(RawData.device_data.get(ICLOUD_BATTERY_LEVEL, 0) * 100)
-            icloud_rawdata_battery_status = RawData.device_data.get(ICLOUD_BATTERY_STATUS, UNKNOWN)
+            # icloud_rawdata_battery_level  = round(RawData.device_data.get(ICLOUD_BATTERY_LEVEL, 0) * 100)
+            # icloud_rawdata_battery_status = RawData.device_data.get(ICLOUD_BATTERY_STATUS, UNKNOWN)
+            icloud_rawdata_battery_level  = RawData.battery_level
+            icloud_rawdata_battery_status = RawData.battery_status
         else:
             icloud_rawdata_battery_level  = 0
             icloud_rawdata_battery_status = UNKNOWN
@@ -2315,7 +2326,7 @@ class iCloud3_Device(TrackerEntity):
 
             if self.NearDeviceUsed:
                 info_msg +=(f"UsedNearbyDevice-{self.NearDeviceUsed.fname}, "
-                            f"({m_to_um_ft(Device.near_device_distance, as_integer=True)}")
+                            f"({m_to_um_ft(self.near_device_distance, as_integer=True)}")
 
             # if self.data_source != self.dev_data_source.lower():
             #info_msg += f"LocationData-{self.dev_data_source}, "
