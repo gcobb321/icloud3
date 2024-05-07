@@ -20,7 +20,7 @@ from .const             import (DOMAIN, VERSION, ICLOUD3, RARROW,
                                 SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
                                 HOME, HOME_FNAME, NOT_SET, NOT_SET_FNAME, NONE_FNAME,
                                 DATETIME_ZERO, HHMMSS_ZERO,
-                                BLANK_SENSOR_FIELD, DOT, HDOT, HDOT2, UM_FNAME, NBSP,
+                                BLANK_SENSOR_FIELD, DOT, HDOT, UM_FNAME, NBSP,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
                                 NAME, FNAME, BADGE, FROM_ZONE, ZONE,
                                 ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
@@ -70,6 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     # Save the hass `add_entities` call object for use in config_flow for adding new sensors
     Gb.hass = hass
     Gb.async_add_entities_sensor = async_add_entities
+    Gb.sensors_created_cnt = 0
 
     try:
         if Gb.conf_file_data == {}:
@@ -128,7 +129,6 @@ def create_tracked_device_sensors(devicename, conf_device, new_sensors_list=None
     '''
     try:
         NewSensors = []
-        Gb.sensors_created_cnt = 0
 
         if new_sensors_list is None:
             new_sensors_list = []
@@ -422,6 +422,7 @@ class SensorBase(SensorEntity):
 
             self.sensor_base     = sensor_base
             self.sensor_type     = self._get_sensor_definition(sensor_base, SENSOR_TYPE).replace(' ', '')
+            self.sensor_empty    = self._get_sensor_definition(sensor_base, SENSOR_DEFAULT)
             self.sensor_fname    = (f"{conf_device[FNAME]} "
                                     f"{self._get_sensor_definition(sensor_base, SENSOR_FNAME)}"
                                     f"{self.from_zone_fname}")
@@ -602,8 +603,8 @@ class SensorBase(SensorEntity):
 #-------------------------------------------------------------------------------------------
     def _get_restore_or_default_value(self, sensor):
         '''
-        Get a default value that is used when iCloud3 has not started or the Device for the
-        sensor has not veen created.
+        Get a default value that is used when iCloud3 has not started, the Device for the
+        sensor has not veen created or the type is text and the value is ''.
         '''
         try:
             if self.from_zone:
@@ -848,9 +849,6 @@ class Sensor_Text(SensorBase):
     def native_value(self):
         sensor_value = self._get_sensor_value(self.sensor)
 
-        # if instr(self.sensor_type, 'title'):
-        #     sensor_value = sensor_value.title().replace('_', ' ')
-
         if instr(self.sensor_type, 'time'):
             if instr(sensor_value, ' '):
                 text_um_parts = sensor_value.split(' ')
@@ -861,7 +859,7 @@ class Sensor_Text(SensorBase):
 
         # Set to space if empty
         if sensor_value.strip() == '':
-            sensor_value = BLANK_SENSOR_FIELD
+            sensor_value = self.sensor_empty        #BLANK_SENSOR_FIELD
 
         if self.Device and self.Device.away_time_zone_offset != 0:
             sensor_value = adjust_time_hour_values(sensor_value, self.Device.away_time_zone_offset)
@@ -919,10 +917,14 @@ class Sensor_Timestamp(SensorBase):
     @property
     def native_value(self):
         sensor_value = self._get_sensor_value(self.sensor)
+        state_value=sensor_value
+
         sensor_value = time_to_12hrtime(sensor_value)
+        state_value_12=sensor_value
+
         if self.Device and self.Device.away_time_zone_offset != 0:
             sensor_value = adjust_time_hour_value(sensor_value, self.Device.away_time_zone_offset)
-
+        state_value_adj=sensor_value
         try:
             # Drop the 'a' or 'p' so the field will fit on an iPhone
             if int(sensor_value.split(':')[0]) >= 10:
@@ -934,6 +936,8 @@ class Sensor_Timestamp(SensorBase):
 
     @property
     def extra_state_attributes(self):
+        attrs = self._get_extra_attributes(self.sensor)
+        return attrs
         return self._get_extra_attributes(self.sensor)
 
 
@@ -1253,12 +1257,13 @@ class Support_SensorBase(SensorEntity):
 #-------------------------------------------------------------------------------------------
     def async_update_sensor(self):
         """Update the entity's state."""
+        if Gb.hass is None: return
 
         try:
             # self.async_write_ha_state()
             self.schedule_update_ha_state()
 
-        except RuntimeError:
+        except (RuntimeError, AttributeError):
             # Catch a 'RuntimeError: Attribute hass is None for <DeviceSensor: icloud3_event_log>'
             pass
         except Exception as err:

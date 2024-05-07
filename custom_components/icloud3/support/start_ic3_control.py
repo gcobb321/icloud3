@@ -1,9 +1,10 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (NOT_SET, IC3LOG_FILENAME,
-                                    NEW_LINE, CRLF, CRLF_DOT,
+                                    CRLF, CRLF_DOT, CRLF_HDOT, CRLF_X, NL, NL_DOT,
                                     EVLOG_ALERT, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_VERSION, ICLOUD_FNAME, ZONE_DISTANCE,
+                                    FAMSHR_FNAME, FMF_FNAME, MOBAPP_FNAME,
                                     )
 
 from ..support              import start_ic3
@@ -42,16 +43,16 @@ def stage_1_setup_variables():
     broadcast_info_msg(stage_title)
 
     #check to see if restart is in process
-    if Gb.start_icloud3_inprocess_flag:
-        return
+    #if Gb.start_icloud3_inprocess_flag:
+    #    return
 
     Gb.EvLog.display_user_message(f'iCloud3 v{Gb.version} > Initializiing')
 
     try:
+        # Gb.start_icloud3_inprocess_flag = True
+        # Gb.restart_icloud3_request_flag = False
+        # Gb.all_tracking_paused_flag     = False
         Gb.this_update_secs             = time_now_secs()
-        Gb.start_icloud3_inprocess_flag = True
-        Gb.restart_icloud3_request_flag = False
-        Gb.all_tracking_paused_flag     = False
         Gb.startup_alerts               = []
         Gb.EvLog.alert_message          = ''
         Gb.config_track_devices_change_flag = False
@@ -63,10 +64,11 @@ def stage_1_setup_variables():
             Gb.EvLog.startup_event_save_recd_flag = True
             post_event( f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Restarting, "
                         f"{dt_util.now().strftime('%A, %b %d')}")
-            config_file.load_storage_icloud3_configuration_file()
-            write_config_file_to_ic3log()
-            start_ic3.initialize_global_variables()
-            start_ic3.set_global_variables_from_conf_parameters()
+
+        config_file.load_storage_icloud3_configuration_file()
+        write_config_file_to_ic3log()
+        start_ic3.initialize_global_variables()
+        start_ic3.set_global_variables_from_conf_parameters()
 
         start_ic3.define_tracking_control_fields()
 
@@ -157,6 +159,13 @@ def stage_3_setup_configured_devices():
         broadcast_info_msg(stage_title)
 
         # Make sure a full restart is done if all of the devices were not found in the iCloud data
+        data_sources = ''
+        if Gb.conf_data_source_FAMSHR: data_sources += f"{FAMSHR_FNAME}, "
+        if Gb.conf_data_source_FMF   : data_sources += f"{FMF_FNAME}, "
+        if Gb.conf_data_source_MOBAPP: data_sources += f"{MOBAPP_FNAME}, "
+        data_sources = data_sources[:-2] if data_sources else 'NONE'
+        post_event(f"Data Sources > {data_sources}")
+
         if Gb.config_track_devices_change_flag:
             pass
         elif (Gb.conf_data_source_FMF
@@ -283,7 +292,7 @@ def _are_all_devices_verified(retry=False):
 def stage_5_configure_tracked_devices():
 
     Gb.trace_prefix = 'STAGE5'
-    stage_title = f'Stage 5 > Tracked Devices Configuration Summary'
+    stage_title = f'Stage 5 > Device Configuration Summary'
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     try:
@@ -323,15 +332,23 @@ def stage_6_initialization_complete():
     try:
         start_ic3.display_object_lists()
 
-        item_no = 1
-        if Gb.startup_alerts != []:
-            Gb.EvLog.alert_message = 'Problems occured during startup up that should be reviewed'
-            alert_msg = (f"{EVLOG_ALERT}The following issues were detected when starting iCloud3. "
-                        f"Scroll through the Startup Log for more information:")
-
+        if Gb.startup_alerts:
+            item_no = 1
+            alert_msg = ''
             for alert in Gb.startup_alerts:
                 alert_msg += f"{CRLF}{item_no}. {alert}"
                 item_no += 1
+
+            # Build alert msg for the evlog.attrs['alert_startup'] attribute for display
+            alerts_str = alert_msg.replace(CRLF_HDOT, NL_DOT)
+            alerts_str = alerts_str.replace(CRLF_X, NL_DOT)
+            alerts_str = alerts_str.replace(CRLF, NL)
+            Gb.startup_alerts_str = alerts_str
+
+            Gb.EvLog.alert_message = 'Problems occured during startup up that should be reviewed'
+            alert_msg = (f"{EVLOG_ALERT}The following issues were detected when starting iCloud3. "
+                        f"Scroll through the Startup Log for more information: "
+                        f"{alert_msg}")
             post_event(alert_msg)
 
     except Exception as err:
@@ -378,7 +395,9 @@ def stage_7_initial_locate():
         else:
             continue
 
-        post_event(Device, 'Trigger > Initial Locate')
+        event_msg =(f"{Device.dev_data_source} Trigger > Initial Locate@"
+                    f"{Device.loc_data_time_gps}")
+        post_event(Device, event_msg)
 
         if Device.no_location_data:
             event_msg = f"{EVLOG_ALERT}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE"

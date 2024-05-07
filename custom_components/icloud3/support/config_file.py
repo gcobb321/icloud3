@@ -11,7 +11,7 @@ from ..const                import (
                                     CONF_IC3_VERSION, VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
                                     CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE, CONF_PASSWORD, CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
                                     CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_SETUP_ICLOUD_SESSION_EARLY,
-                                    CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL,
+                                    CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
                                     CONF_DATA_SOURCE, CONF_DISPLAY_GPS_LAT_LONG, CONF_LOG_ZONES,
                                     CONF_FAMSHR_DEVICENAME, CONF_FMF_EMAIL,
                                     CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
@@ -38,7 +38,7 @@ from ..support              import start_ic3
 from ..support              import waze
 from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, )
 from ..helpers.messaging    import (log_exception, _trace, _traceha, log_info_msg, )
-from ..helpers.time_util    import (datetime_now, datetime_now_ymd_hms, )
+from ..helpers.time_util    import (datetime_now, )
 
 import os
 import json
@@ -187,11 +187,11 @@ def config_file_check_new_ic3_version():
     update_config_file_flag = False
     if Gb.conf_profile[CONF_IC3_VERSION] != VERSION:
         Gb.conf_profile[CONF_IC3_VERSION] = VERSION
-        Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now_ymd_hms()
+        Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         update_config_file_flag = True
 
     elif Gb.conf_profile[CONF_VERSION_INSTALL_DATE] == DATETIME_ZERO:
-        Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now_ymd_hms()
+        Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         update_config_file_flag = True
 
     if update_config_file_flag:
@@ -338,6 +338,10 @@ def config_file_add_new_parameters():
     update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_TRACK_FROM_BASE_ZONE_USED, False)
             or update_config_file_flag)
 
+    # Add log level devices to select the devices that should be used when rawdata is selected (v3.0.3)
+    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_LOG_LEVEL_DEVICES, ['all'])
+            or update_config_file_flag)
+
     # Add general.CONF_DEVICE_TRACKER_STATE_SOURCE, b20
     update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_DEVICE_TRACKER_STATE_SOURCE, 'ic3_fname')
             or update_config_file_flag)
@@ -442,7 +446,7 @@ def config_file_check_devices():
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
             update_configuration_flag = True
-        if isbetween(conf_device[CONF_FIXED_INTERVAL], 0, 3):
+        if isbetween(conf_device[CONF_FIXED_INTERVAL], 1, 2):
             conf_device[CONF_FIXED_INTERVAL] = 3.0
             update_configuration_flag = True
 
@@ -513,7 +517,7 @@ def write_storage_icloud3_configuration_file(filename_suffix=''):
             # and in config_flow. Save it, then put the encoded password in the file
             # update the file and then restore the real password
             Gb.conf_tracking[CONF_PASSWORD] = encode_password(Gb.conf_tracking[CONF_PASSWORD])
-            Gb.conf_profile[CONF_UPDATE_DATE] = datetime_now_ymd_hms()
+            Gb.conf_profile[CONF_UPDATE_DATE] = datetime_now()
 
             Gb.conf_data['tracking']['devices'] = Gb.conf_devices
             Gb.conf_data['tracking']        = Gb.conf_tracking

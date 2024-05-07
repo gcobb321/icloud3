@@ -4,8 +4,9 @@ from ..const            import ( HIGH_INTEGER, NOT_SET,
                                 HOME, ZONE, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
                                 TRACE_ICLOUD_ATTRS_BASE, TRACE_ATTRS_BASE,
                                 BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
-                                LAST_CHANGED_SECS, LAST_CHANGED_TIME, STATE,
-                                LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
+                                LAST_CHANGED_SECS, LAST_CHANGED_TIME,
+                                LAST_UPDATED_SECS, LAST_UPDATED_TIME,
+                                STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
 from .common            import (instr,  )
 from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
                                 _trace, _traceha, )
@@ -72,10 +73,16 @@ def get_attributes(entity_id):
         entity_attrs = entity_data.attributes.copy()
 
         last_changed_secs = int(entity_data.last_changed.timestamp())
+        last_updated_secs = int(entity_data.last_updated.timestamp())
+        last_reported_secs = int(entity_data.last_reported.timestamp())
 
-        entity_attrs[STATE] = entity_state
         entity_attrs[LAST_CHANGED_SECS] = last_changed_secs
         entity_attrs[LAST_CHANGED_TIME] = secs_to_time(last_changed_secs)
+        entity_attrs[LAST_UPDATED_SECS] = last_updated_secs
+        entity_attrs[LAST_UPDATED_TIME] = secs_to_time(last_updated_secs)
+        entity_attrs['last_reported_secs'] = last_reported_secs
+        entity_attrs['last_reported_time'] = secs_to_time(last_reported_secs)
+        entity_attrs[STATE] = entity_state
 
         if BATTERY_STATUS in entity_attrs:
             battery_status = entity_attrs[BATTERY_STATUS].lower()
@@ -108,9 +115,6 @@ def get_last_changed_time(entity_id):
 
         last_changed  = States.last_changed
         last_updated  = States.last_updated
-
-        timestamp_utc = str(last_changed).split(".")[0]
-        # time_secs_old = datetime_to_secs(timestamp_utc, UTC_TIME)
 
         if lc := last_changed.timestamp():
             time_secs = int(lc)
@@ -379,7 +383,7 @@ def trace_device_attributes(Device, description, fct_name, attrs):
         log_msg = (f"{description} Attrs-{trace_attrs}{trace_attrs_in_attrs}")
         log_debug_msg(Device.devicename, log_msg)
 
-        log_rawdata(f"iCloud Rawdata - {Device.devicename}--{description}", attrs)
+        log_rawdata(f"FamShr iCloud Rawdata - <{Device.devicename}> {description}", attrs)
 
     except Exception as err:
         pass

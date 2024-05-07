@@ -2,7 +2,29 @@
 - iCloud3 Documentation is [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/0.1-introduction)
 - The *Installing iCloud3* chapter describes migrating from iCloud3 v2 and installing iCloud3 for the first time
 
-### Change Log
+
+
+v3.0.4
+.......................
+### Change Log - v3.0.4 (not released)
+1. ADD DEVICE (Fixed) - An 'Out of Range' error message was encountered adding the first device.
+2. DIRECTION OF TRAVEL (Improvement) - Tweaked the AwayFrom direction override when approaching Home after the previous directions were Towards.
+3. Event Type DEPRECIATED EOORO MESSAGE (Fixed) - This was a warning about the removal of the EventType from HA next year. It has been removed.
+4. RAWDATA LOGGING - Changed some formatting of the log to better filter device messages.
+
+
+v3.0.3
+.......................
+### Change Log - v3.0.3 (5/1/2024)
+1. ALERTS (New) - An alert message is displayed on the Event Log and in the _alert_ attribute on the device's device_tracker and badge entities until it has been resolved. Examples of alerts are a startup error, no gps data, the device is offline, the battery below 20%, and tracking is paused. The alert attribute can be used in an automation to trigger sending a message to any device using the Mobile App. See the _Reference > Devices and Other Alerts_ chapter in the iCloud3 docs [here](#/chapters/7.6-alerts) for more information and example automations.
+2. BATTERY (Improvement) - The battery information attribute has been added to the device's device_tracker and badge entity. It shows the battery level, charging state, when the information was updated and the source of the data. The charging status text has been changed to 'Charged', 'Charging', 'NotCharging', 'Low' and 'Unknown'.
+3. UPDATE SENSOR (Fixed) - An 'AttributeError' message has been fixed. It was caused by trying to update the sensor before the sensor had been set up.
+4. CONFIGURE SETTINGS > ICLOUD ACCOUNT AND MOBILE APP screen (Fixed) - Changing iCloud account information (Username or password) was not being saved correctly so restarting iCloud3 would still use the old account. A Log Off option was added to initialize the iCloud Account username/password fields.
+5. DIRECTION OF TRAVEL (Improvement) - When Driving towards Home, the calculated straight line distance is used to determine the travel direction ('Towards'). The direction would momentarily  change to 'AwayFrom' if the distance from Home increased due to a curve in the road or you were stopped at an intersection. It would then change back to 'Towards' on the next update. In this case, the direction will not be changed and will remain 'Towards'.
+6. Other minor code changes, tuning and code cleanup.
+
+
+
 v3.0.2 - 3/30/2023
 .......................
 1. ICLOUD SERVER ERROR MESSAGE (Fixed) - When the iCloud servers did not respond with location information, the 'no response from iCloud servers' error was displayed correctly. This was followed by another unrelated error which should have not been displayed.

@@ -58,6 +58,7 @@ class iCloud3_DeviceFmZone():
         except Exception as err:
             log_exception(err)
 
+#--------------------------------------------------------------------
     def initialize(self):
         try:
             self.interval_secs           = 0
@@ -67,6 +68,7 @@ class iCloud3_DeviceFmZone():
             self.last_distance_str       = ''
             self.last_distance_km        = 0
             self.dir_of_travel           = NOT_SET
+            self.dir_of_travel_awayfrom_override = False
             self.dir_of_travel_history   = ''
             self.last_update_time        = HHMMSS_ZERO
             self.last_update_secs        = 0
@@ -92,6 +94,7 @@ class iCloud3_DeviceFmZone():
         except:
             post_internal_error(traceback.format_exc)
 
+#--------------------------------------------------------------------
     def initialize_sensors(self):
         self.sensors_um = {}
         self.sensors    = {}
@@ -129,9 +132,11 @@ class iCloud3_DeviceFmZone():
         for sensor, Sensor in from_this_zone_sensors.items():
             Sensor.FromZone = self
 
+#--------------------------------------------------------------------
     def __repr__(self):
         return (f"<DeviceFmZone: {self.devicename_zone}>")
 
+#--------------------------------------------------------------------
     @property
     def zone_distance_str(self):
         return ('' if self.zone_dist == 0 else (f"{km_to_um(self.zone_dist)}"))
@@ -160,48 +165,36 @@ class iCloud3_DeviceFmZone():
     def isnot_going_awayfrom(self):
         return self.dir_of_travel != AWAY_FROM
 
-    # @property
-    # def format_dir_of_travel_history(self):
-    #     ''' Format the dir_of_travel_history into groups. '''
-    #     if self.dir_of_travel_history == '':
-    #         return
-
-    #     self.dir_of_travel_history = self.dir_of_travel_history.replace('i', 'Z')
-    #     dir_codes = list(self.dir_of_travel_history[-36:])
-    #     hist_disp = ''
-    #     cnt = 0
-    #     for dir_code in dir_codes:
-    #         hist_disp += dir_code
-    #         cnt += 1
-    #         if cnt == 10:
-    #             hist_disp += ','
-    #             cnt = 0
-    #     if hist_disp.endswith(','): hist_disp = hist_disp[:-1]
-
-    #     return hist_disp
-
+#--------------------------------------------------------------------
     def update_dir_of_travel_history(self, dir_of_travel):
         '''
-        Update and Format the dir_of_travel_history into groups of 5
-        ZZZZA,AA+AA,AASSS,SSTTT,TTTHH
+        Update and Format the dir_of_travel_history.
+        Away-A and Towards-T directions are stored with the first-letter code (A, T)
+        Other directions (inZone (Home-H, Stationary-S, OtherZone-Z, FarAway-F &
+            Unknown-U) are stored with the number of occurances (H09, S04)
         '''
 
-        dir_code = INZONE_CODES.get(dir_of_travel)
-        if dir_code is None: dir_code = dir_of_travel[0:1]
-        dir_code_repeat = f"{dir_code}{dir_code}+{dir_code}{dir_code}"
-
-        if self.dir_of_travel_history.endswith(dir_code_repeat):
+        dir_code = INZONE_CODES.get(dir_of_travel, dir_of_travel[0:1])
+        if dir_code not in ['A', 'T']:
+            if self.dir_of_travel_history.endswith(dir_code):
+                self.dir_of_travel_history += '02'
+            elif self.dir_of_travel_history[-3:-2] == dir_code:
+                try:
+                    cnt = int(self.dir_of_travel_history[-2:]) + 1
+                    if cnt > 99: cnt = 99
+                except:
+                    cnt = 1
+                self.dir_of_travel_history = self.dir_of_travel_history[:-2] + f"{cnt:0>2}"
+            else:
+                self.dir_of_travel_history += dir_code
             return
-        if self.dir_of_travel_history.endswith(dir_code*5):
-            self.dir_of_travel_history = \
-                self.dir_of_travel_history[:len(self.dir_of_travel_history)-5] \
-                    + dir_code_repeat
-            return
 
-        if len(self.dir_of_travel_history) == 29:
-            self.dir_of_travel_history = self.dir_of_travel_history[-23:]
-        if len(self.dir_of_travel_history) in [5, 11, 17, 23]:
-            self.dir_of_travel_history += ','
+        if self.dir_of_travel_awayfrom_override:
+            dir_code = dir_code.lower()
+
         self.dir_of_travel_history += dir_code
+
+        if len(self.dir_of_travel_history) > 40:
+            self.dir_of_travel_history = self.dir_of_travel_history[-30:]
 
         return

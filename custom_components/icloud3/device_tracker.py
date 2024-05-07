@@ -1,16 +1,14 @@
 """Support for tracking for iCloud devices."""
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (DOMAIN, ICLOUD3, CONF_VERSION,
+from .const             import (DOMAIN, ICLOUD3,
                                 DISTANCE_TO_DEVICES,
-                                NOT_SET, NOT_SET_FNAME, HOME, NOT_HOME, RARROW,
-                                DEVICE_TYPE_ICONS, DEVICE_TYPE_FNAME,
-                                BLANK_SENSOR_FIELD, STATIONARY_FNAME, DEVICE_TRACKER_STATE,
-                                TRACK_DEVICE, INACTIVE_DEVICE,
-                                NAME, FNAME,
-                                PICTURE,
-                                LATITUDE, LONGITUDE, GPS,
-                                LOCATION_SOURCE, TRIGGER,
+                                NOT_SET, HOME,
+                                DEVICE_TYPE_ICONS,
+                                BLANK_SENSOR_FIELD, DEVICE_TRACKER_STATE,
+                                INACTIVE_DEVICE,
+                                NAME, FNAME, PICTURE, ALERT,
+                                LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
                                 ZONE, ZONE_DATETIME,  LAST_ZONE, FROM_ZONE, ZONE_FNAME,
                                 BATTERY, BATTERY_LEVEL,
                                 MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
@@ -363,6 +361,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
 
             extra_attrs[GPS]            = f"({self.latitude}, {self.longitude})"
             extra_attrs[LOCATED]        = self._get_sensor_value(LAST_LOCATED_DATETIME)
+            alert                       = self._get_sensor_value(ALERT)
+            extra_attrs[ALERT]          = alert if alert != BLANK_SENSOR_FIELD else ''
             extra_attrs[f"{'-'*40}"]    = f"{'-'*35}"
             extra_attrs['integration']  = ICLOUD3
             extra_attrs[NAME]           = self._get_sensor_value(NAME)
@@ -373,8 +373,9 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs['away_time_zone_offset'] = self.extra_attrs_away_time_zone_offset
 
             extra_attrs[f"{'-'*41}"]    = f"{'-'*35}"
-            extra_attrs['data_source']  = f"{self._get_sensor_value(LOCATION_SOURCE)}"
+            # extra_attrs['data_source']  = f"{self._get_sensor_value(LOCATION_SOURCE)}"
             extra_attrs[DEVICE_STATUS]  = self._get_sensor_value(DEVICE_STATUS)
+            extra_attrs[LOCATION_SOURCE]= f"{self._get_sensor_value(LOCATION_SOURCE)}"
             extra_attrs[TRIGGER]        = self._get_sensor_value(TRIGGER)
             extra_attrs[ZONE]           = self._get_sensor_value(ZONE)
             extra_attrs[LAST_ZONE]      = self._get_sensor_value(LAST_ZONE)

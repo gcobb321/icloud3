@@ -37,7 +37,7 @@ from ..const            import (ICLOUD3,
                                 CONF_TFZ_TRACKING_MAX_DISTANCE,
                                 CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                                 CONF_TRAVEL_TIME_FACTOR, CONF_PASSTHRU_ZONE_TIME, CONF_DISTANCE_BETWEEN_DEVICES,
-                                CONF_LOG_LEVEL,
+                                CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
                                 CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE, DEVICE_TRACKER_STATE_SOURCE_DESC,
                                 CONF_DISPLAY_GPS_LAT_LONG,
                                 CONF_CENTER_IN_ZONE, CONF_DISCARD_POOR_GPS_INZONE,
@@ -85,7 +85,6 @@ import shutil
 import traceback
 from datetime               import timedelta, date, datetime
 from collections            import OrderedDict
-from homeassistant.helpers.typing import ConfigType, EventType
 from homeassistant.helpers  import event
 from homeassistant.core     import Event, HomeAssistant, ServiceCall, State, callback
 from homeassistant.util     import slugify
@@ -122,7 +121,74 @@ def initialize_directory_filenames():
     if not os.path.exists(Gb.icloud_cookies_dir):
         os.makedirs(Gb.icloud_cookies_dir)
 
+#------------------------------------------------------------------------------
+#
+#   ICLOUD3 CONFIGURATION PARAMETERS WERE UPDATED VIA CONFIG_FLOW
+#
+#   Determine the type of parameters that were updated and reset the variables or
+#   devices based on the type of changes.
+#
+#------------------------------------------------------------------------------
+def process_config_flow_parameter_updates():
 
+    if Gb.config_flow_updated_parms == {''}:
+        return
+
+    # Make copy and Reinitialize so it will not be run again from the 5-secs loop
+    config_flow_updated_parms = Gb.config_flow_updated_parms
+    Gb.config_flow_updated_parms = {''}
+
+    event_msg =(f"Configuration Loading > "
+                f"Type-{list_to_str(config_flow_updated_parms).title()}")
+    post_event(event_msg)
+
+    if 'restart' in config_flow_updated_parms:
+        initialize_icloud_data_source()
+        Gb.restart_icloud3_request_flag = True
+        return
+
+    post_event(f"{EVLOG_IC3_STAGE_HDR}")
+    if 'general' in config_flow_updated_parms:
+        set_global_variables_from_conf_parameters()
+
+    if 'zone_formats' in config_flow_updated_parms:
+        set_zone_display_as()
+
+    if 'evlog' in Gb.config_flow_updated_parms:
+        post_event('Processing Event Log Settings Update')
+        Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
+        Gb.hass.loop.create_task(update_lovelace_resource_event_log_js_entry())
+        check_ic3_event_log_file_version()
+        Gb.EvLog.setup_event_log_trackable_device_info()
+
+    # stage_title = f'Configuration Changes Loaded'
+    # post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
+
+    if 'reauth' in config_flow_updated_parms:
+        Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
+
+    if 'waze' in config_flow_updated_parms:
+        set_waze_conf_parameters()
+
+    if 'tracking' in config_flow_updated_parms:
+        post_event("Tracking parameters updated")
+        initialize_icloud_data_source()
+
+    elif 'devices' in config_flow_updated_parms:
+        post_event("Device parameters updated")
+        initialize_icloud_data_source()
+        update_devices_non_tracked_fields()
+        Gb.EvLog.setup_event_log_trackable_device_info()
+
+        _refresh_all_devices_sensors()
+        _display_all_devices_config_info()
+
+        stage_title = f'Device Configuration Summary'
+        post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
+        Gb.EvLog.display_user_message('')
+
+    post_event(f"{EVLOG_IC3_STAGE_HDR}Configuration Changes Applied")
+    Gb.config_flow_updated_parms = {''}
 
 #------------------------------------------------------------------------------
 #
@@ -359,6 +425,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.away_time_zone_2_devices       = Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES].copy()
 
         Gb.log_level                      = Gb.conf_general[CONF_LOG_LEVEL]
+        Gb.log_level_devices              = Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
 
         # update the interval time for each of the interval types (i.e., ipad: 2 hrs, no_mobapp: 15 min)
         inzone_intervals = Gb.conf_general[CONF_INZONE_INTERVALS]
@@ -738,57 +805,6 @@ def set_zone_display_as():
 
     log_msg =  (f"Set up Zones > zone, Display ({Gb.display_zone_format})")
     post_event(f"{log_msg}{zone_msg}")
-
-#------------------------------------------------------------------------------
-#
-#   ICLOUD3 CONFIGURATION PARAMETERS WERE UPDATED VIA CONFIG_FLOW
-#
-#   Determine the type of parameters that were updated and reset the variables or
-#   devices based on the type of changes.
-#
-#------------------------------------------------------------------------------
-def process_config_flow_parameter_updates():
-
-    if Gb.config_flow_updated_parms == {''}:
-        return
-
-    if 'restart' in Gb.config_flow_updated_parms:
-        Gb.config_flow_updated_parms = {''}
-        initialize_icloud_data_source()
-        Gb.restart_icloud3_request_flag = True
-        return
-
-    post_event(f"{EVLOG_IC3_STAGE_HDR}")
-    if 'general' in Gb.config_flow_updated_parms:
-        set_global_variables_from_conf_parameters()
-
-    if 'zone_formats' in Gb.config_flow_updated_parms:
-        set_zone_display_as()
-
-    if 'evlog' in Gb.config_flow_updated_parms:
-        post_event('Processing Event Log Settings Update')
-        Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
-        Gb.hass.loop.create_task(update_lovelace_resource_event_log_js_entry())
-        check_ic3_event_log_file_version()
-        Gb.EvLog.setup_event_log_trackable_device_info()
-
-    if 'reauth' in Gb.config_flow_updated_parms:
-        Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
-
-    if 'waze' in Gb.config_flow_updated_parms:
-        set_waze_conf_parameters()
-
-    if 'tracking' in Gb.config_flow_updated_parms:
-        post_event("Tracking parameters initialized")
-        initialize_icloud_data_source()
-
-    elif 'devices' in Gb.config_flow_updated_parms:
-        post_event("Device parameters initialized")
-        initialize_icloud_data_source()
-        pass
-
-    post_event(f"{EVLOG_IC3_STAGE_HDR}Configuration Changes Applied")
-    Gb.config_flow_updated_parms = {''}
 
 #------------------------------------------------------------------------------
 #
@@ -1284,6 +1300,13 @@ def create_Devices_object():
     return
 
 #--------------------------------------------------------------------
+def update_devices_non_tracked_fields():
+    for conf_device in Gb.conf_devices:
+        devicename = conf_device[CONF_IC3_DEVICENAME]
+        if Device := Gb.Devices_by_devicename.get(devicename):
+            Device.initialize_non_tracking_config_fields(conf_device)
+
+#--------------------------------------------------------------------
 def _verify_away_time_zone_devicenames():
     '''
     Verify the devicenames in the Away time zone fields
@@ -1434,8 +1457,8 @@ def _check_conf_famshr_devices_not_set_up(_FamShr):
     Gb.debug_log['_.devices_not_set_up'] = devices_not_set_up
 
     devices_not_set_up_str = list_to_str(devices_not_set_up, CRLF_X)
-    post_startup_alert( f"FamShr Device Config Error > "
-                        f"Device Not found{devices_not_set_up_str.replace(CRLF_X, CRLF_HDOT)}")
+    post_startup_alert( f"FamShr Config Error > Device not found"
+                        f"{devices_not_set_up_str.replace(CRLF_X, CRLF_DOT)}")
     log_msg = ( f"{EVLOG_ALERT}FAMSHR DEVICES ERROR > Your Apple iCloud Account Family Sharing List did "
                 f"not return any information for some of configured devices. FamShr will not be used "
                 f"to track these devices."
@@ -1479,6 +1502,8 @@ def _display_devices_verification_status(PyiCloud, _FamShr):
             famshr_name = conf_device.get(CONF_FAMSHR_DEVICENAME)
             Gb.devicenames_x_famshr_devices[devicename]  = famshr_name
             Gb.devicenames_x_famshr_devices[famshr_name] = devicename
+            _RawData.ic3_devicename = devicename
+            _RawData.Device = Gb.Devices_by_devicename.get(devicename)
 
             exception_msg = ''
             if devicename is None:
@@ -1519,7 +1544,7 @@ def _display_devices_verification_status(PyiCloud, _FamShr):
                 log_title = (   f"FamShr PyiCloud Data (device_data -- "
                                 f"{devicename}/{famshr_fname}), "
                                 f"{model_display_name} ({raw_model})")
-                log_rawdata(log_title, {'data': _RawData.device_data})
+                log_rawdata(log_title, {'filter': _RawData.device_data})
 
             # if devicename not in Gb.Devices_by_devicename:
             Device = Gb.Devices_by_devicename.get(devicename)
@@ -1547,8 +1572,8 @@ def _display_devices_verification_status(PyiCloud, _FamShr):
                     Gb.PairedDevices_by_paired_with_id[Device.paired_with_id] = [Device]
 
             Gb.Devices_by_icloud_device_id[device_id] = Device
+
             Gb.famshr_device_verified_cnt += 1
-            #ᗒ>
 
             event_msg += (  f"{CRLF_CHK}"
                             f"{famshr_fname}, {model_display_name} ({raw_model}) >"
@@ -2230,7 +2255,7 @@ def setup_tracked_devices_for_mobapp():
         tracked_msg += (f"{crlf_sym}{mobapp_fname}, {mobapp_devicename} {mobapp_dev_type} >")
         if Device:
             Device.set_fname_alert(YELLOW_ALERT)
-            tracked_msg += (f"{CRLF_SP8_HDOT}{Device.devicename}, {Device.fname}")
+            tracked_msg += (f"{CRLF_SP8_HDOT}{Device.fname}, {Device.devicename}")
         tracked_msg += f"{CRLF_SP8_HDOT}{device_msg}{duplicate_msg}"
     post_event(tracked_msg)
 
@@ -2267,7 +2292,8 @@ def _search_for_mobapp_device(devicename, Device, mobapp_id_by_mobapp_devicename
 
     elif len(matched_mobapp_devices) > 1:
         mobapp_devicename = matched_mobapp_devices[-1]
-        post_startup_alert(f"Mobile App device_tracker entity scan found several devices: {Device.fname_devicename}")
+        post_startup_alert( f"Mobile App device_tracker entity scan found several devices: "
+                            f"{Device.fname_devicename}")
 
         alert_msg =(f"{EVLOG_ALERT}DUPLICATE MOBAPP DEVICES FOUND > More than one Device Tracker Entity "
                     f"was found during the scan of the HA Device Registry."
@@ -2279,7 +2305,7 @@ def _search_for_mobapp_device(devicename, Device, mobapp_id_by_mobapp_devicename
                     f"{CRLF}Monitored-{mobapp_devicename}")
         post_event(alert_msg)
 
-        log_error_msg(f"iCloud3 Error > Mobile App Device Config Error > Dev Trkr Entity not found > "
+        log_error_msg(f"iCloud3 Error > Mobile App Config Error > Dev Trkr Entity not found "
                     f"during Search {conf_mobapp_device}_???. "
                     f"See iCloud3 Event Log > Startup Stage 4 for more info.")
         return mobapp_devicename
@@ -2293,8 +2319,8 @@ def _display_any_mobapp_errors( mobapp_error_mobile_app_msg,
                                 mobapp_error_not_found_msg):
 
     if mobapp_error_mobile_app_msg:
-        post_startup_alert( f"Mobile App Integration (Mobile App) is missing trigger or battery "
-                            f"sensors: {mobapp_error_mobile_app_msg}")
+        post_startup_alert( f"Mobile App Integration missing trigger or battery sensors"
+                            f"{mobapp_error_mobile_app_msg.replace(CRLF_X, CRLF_DOT)}")
 
         alert_msg =(f"{EVLOG_ALERT}MOBILE APP INTEGRATION (Mobile App) SET UP PROBLEM > The Mobile App "
                     f"Integration `last_update_trigger` and `battery_level` sensors are disabled or "
@@ -2310,8 +2336,8 @@ def _display_any_mobapp_errors( mobapp_error_mobile_app_msg,
                     f"{mobapp_error_mobile_app_msg}")
 
     if mobapp_error_search_msg:
-        post_startup_alert( f"Mobile App Device Config Error > Device Tracker Entity was not found:"
-                            f"{mobapp_error_search_msg}")
+        post_startup_alert( f"Mobile App Config Error > Device Tracker Entity not found"
+                            f"{mobapp_error_search_msg.replace(CRLF_X, CRLF_DOT)}")
 
         alert_msg =(f"{EVLOG_ALERT}MOBAPP DEVICE NOT FOUND > An MobApp device_tracker "
                     f"entity was not found in the `Scan for mobile_app devices` in the HA Device Registry."
@@ -2319,14 +2345,14 @@ def _display_any_mobapp_errors( mobapp_error_mobile_app_msg,
                     f"{more_info('mobapp_error_search_msg')}")
         post_event(alert_msg)
 
-        log_error_msg(f"iCloud3 Error > Mobile App Device Tracker Entity was not found "
+        log_error_msg(f"iCloud3 Error > Mobile App Device Tracker Entity not found "
                     f"in the HA Devices List."
                     f"{mobapp_error_search_msg}. "
                     f"See iCloud3 Event Log > Startup Stage 4 for more info.")
 
     if mobapp_error_not_found_msg:
-        post_startup_alert( f"Mobile App Device Config Error > Device Tracker Entity was "
-                            f"not found: {mobapp_error_not_found_msg}")
+        post_startup_alert( f"Mobile App Config Error > Device Tracker Entity not found"
+                            f"{mobapp_error_not_found_msg.replace(CRLF_X, CRLF_DOT)}")
 
         alert_msg =(f"{EVLOG_ALERT}MOBAPP DEVICE NOT FOUND > The device tracker entity "
                     f"was not found during the scan of the HA Device Registry."
@@ -2340,8 +2366,8 @@ def _display_any_mobapp_errors( mobapp_error_mobile_app_msg,
                     f"See iCloud3 Event Log > Startup Stage 4 for more info.")
 
     if mobapp_error_disabled_msg:
-        post_startup_alert( f"Mobile App Device Config Error > Device Tracker Entity was "
-                            f"disabled {mobapp_error_disabled_msg}")
+        post_startup_alert( f"Mobile App Config Error > Device Tracker Entity disabled"
+                            f"{mobapp_error_disabled_msg.replace(CRLF_X, CRLF_DOT)}")
 
         alert_msg =(f"{EVLOG_ALERT}MOBILE APP DEVICE DISABLED > The device tracker entity "
                     f"is disabled so the mobile_app last_update_trigger and bettery_level sensors "
@@ -2476,6 +2502,14 @@ def identify_tracked_monitored_devices():
     Gb.debug_log['Gb.Devices_by_devicename_monitored'] = Gb.Devices_by_devicename_monitored
 
 #------------------------------------------------------------------------------
+def _refresh_all_devices_sensors():
+    '''
+    Rewrite all device sensors in case anything changed diuring config update
+    '''
+    for Device in Gb.Devices:
+        Device.write_ha_sensors_state()
+
+#------------------------------------------------------------------------------
 def setup_trackable_devices():
     '''
     Display a list of all the devices that are tracked and their tracking information
@@ -2492,6 +2526,35 @@ def setup_trackable_devices():
         except:
             pass
 
+    _display_all_devices_config_info()
+
+    # Initialize distance_to_other_devices, add other devicenames to this Device's field
+    for devicename, Device in Gb.Devices_by_devicename_tracked.items():
+        for _devicename, _Device in Gb.Devices_by_devicename.items():
+            if devicename != _devicename:
+                Device.dist_to_other_devices[_devicename] = [0, 0, 0, '0m/00:00:00']
+                Device.near_device_distance         = 0       # Distance to the NearDevice device
+                Device.near_device_checked_secs     = 0       # When the nearby devices were last updated
+                Device.dist_apart_msg               = ''      # Distance to all other devices msg set in icloud3_main
+                Device.dist_apart_msg_by_devicename = {}
+
+        if Device.mobapp_monitor_flag:
+            Gb.used_data_source_MOBAPP = True
+            mobapp_attrs = mobapp_data_handler.get_mobapp_device_trkr_entity_attrs(Device)
+            if mobapp_attrs:
+                mobapp_data_handler.update_mobapp_data_from_entity_attrs(Device, mobapp_attrs)
+
+    if Gb.primary_data_source_ICLOUD is False:
+        if Gb.conf_data_source_ICLOUD:
+            post_event("iCloud Location Tracking is not available")
+        else:
+            post_event("iCloud Location Tracking is not being used")
+
+    if Gb.conf_data_source_MOBAPP is False:
+        post_event("Mobile App Location Tracking is not being used")
+
+#------------------------------------------------------------------------------
+def _display_all_devices_config_info():
     for devicename, Device in Gb.Devices_by_devicename.items():
         Device.display_info_msg(f"Set Trackable Devices > {devicename}")
         if Device.verified_flag:
@@ -2571,31 +2634,6 @@ def setup_trackable_devices():
 
         post_event(event_msg)
 
-    # Initialize distance_to_other_devices, add other devicenames to this Device's field
-    for device, Device in Gb.Devices_by_devicename_tracked.items():
-        for _devicename, _Device in Gb.Devices_by_devicename.items():
-            if devicename != _devicename:
-                Device.dist_to_other_devices[_devicename] = [0, 0, 0, '0m/00:00:00']
-                Device.near_device_distance         = 0       # Distance to the NearDevice device
-                Device.near_device_checked_secs     = 0       # When the nearby devices were last updated
-                Device.dist_apart_msg               = ''      # Distance to all other devices msg set in icloud3_main
-                Device.dist_apart_msg_by_devicename = {}
-
-        if Device.mobapp_monitor_flag:
-            Gb.used_data_source_MOBAPP = True
-            mobapp_attrs = mobapp_data_handler.get_mobapp_device_trkr_entity_attrs(Device)
-            if mobapp_attrs:
-                mobapp_data_handler.update_mobapp_data_from_entity_attrs(Device, mobapp_attrs)
-
-    if Gb.primary_data_source_ICLOUD is False:
-        if Gb.conf_data_source_ICLOUD:
-            post_event("iCloud Location Tracking is not available")
-        else:
-            post_event("iCloud Location Tracking is not being used")
-
-    if Gb.conf_data_source_MOBAPP is False:
-        post_event("Mobile App Location Tracking is not being used")
-
 #------------------------------------------------------------------------------
 def display_inactive_devices():
     '''
@@ -2613,7 +2651,7 @@ def display_inactive_devices():
         return
 
     event_msg = f"Inactive/Untracked Devices > "
-    event_msg+= list_to_str(inactive_devices, separator=CRLF_X)
+    event_msg+= list_to_str(inactive_devices, separator=CRLF_DOT)
     post_event(event_msg)
 
     if len(inactive_devices) == len(Gb.conf_devices):

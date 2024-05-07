@@ -6,8 +6,8 @@ from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE,
 from ..helpers.common       import (instr, list_add, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_evlog_greenbar_msg,
                                     log_info_msg, log_exception, log_rawdata, _trace, _traceha, )
-from ..helpers.time_util    import (secs_to_time, secs_since, secs_to_time, format_time_age,
-                                    format_timer, )
+from ..helpers.time_util    import (secs_to_time, secs_since, mins_since, secs_to_time, format_time_age,
+                                    format_timer, time_now_secs)
 from homeassistant.helpers  import entity_registry as er, device_registry as dr
 
 import json
@@ -64,7 +64,7 @@ def get_entity_registry_mobile_app_devices():
                                 f"{dev_trkr_entity['entity_id']}")
                     post_evlog_greenbar_msg(alert_msg)
 
-                log_title = (f"mobapp entity_registry entry -- {mobapp_devicename})")
+                log_title = (f"MobApp entity_registry entry - <{mobapp_devicename}>)")
                 log_rawdata(log_title, dev_trkr_entity, log_rawdata_flag=True)
 
                 raw_model = 'Unknown'
@@ -73,7 +73,7 @@ def get_entity_registry_mobile_app_devices():
                     # Get raw_model from HA device_registry
                     device_reg_data = device_registry.async_get(device_id)
 
-                    log_title = (f"mobapp device_registry entry -- {mobapp_devicename})")
+                    log_title = (f"MobApp device_registry entry - <{mobapp_devicename}>)")
                     log_rawdata(log_title, str(device_reg_data), log_rawdata_flag=True)
 
                     raw_model = device_reg_data.model
@@ -230,8 +230,7 @@ def send_message_to_device(Device, service_data):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Using the mobapp tracking method or iCloud is disabled
-#   so trigger the osapp to send a
-#   location transaction
+#   Trigger the mobapp to send a location request transaction
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def request_location(Device, is_alive_check=False, force_request=False):
@@ -300,3 +299,16 @@ def request_location(Device, is_alive_check=False, force_request=False):
         error_msg = (f"iCloud3 Error > An error occurred sending a location request > "
                     f"Device-{Device.fname_devicename}, Error-{err}")
         post_error_msg(devicename, error_msg)
+
+#-----------------------------------------------------------------------------------------------------
+def request_sensor_update(Device):
+    '''
+    Request the mobapp to update it's sensors
+    '''
+    #if mins_since(Device.mobapp_request_sensor_update_secs) > 15:
+    Device.mobapp_request_sensor_update_secs = time_now_secs()
+
+    message = {"message": "command_update_sensors"}
+    message_sent_ok = send_message_to_device(Device, message)
+
+    return message_sent_ok

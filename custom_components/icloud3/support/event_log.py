@@ -12,22 +12,23 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, HOME_FNAME, TOWARDS,
-                                    HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP, DOT2,
+                                    HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP,
                                     RED_X, YELLOW_ALERT,
+                                    NL, NL_DOT, LDOT2,
+                                    CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT, DASH_50,
+                                    NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CLOCK_FACE,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_BTN_URLS,
-                                    EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR,
+                                    EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR, EVLOG_TRACE,
                                     EVLOG_ERROR, EVLOG_ALERT, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
-                                    NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6,
-                                    CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT, DASH_50,
                                     CONF_EVLOG_BTNCONFIG_URL,
                                     EVLOG_ERROR, EVLOG_ALERT, EVLOG_WARNING, EVLOG_INIT_HDR,
                                     EVLOG_HIGHLIGHT,EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     )
 
-from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str
+from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str, isbetween
 from ..helpers.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _traceha, _trace,
-                                    filter_special_chars, format_header_box, format_header_box_indent, )
+                                    filter_special_chars, format_header_box, )
 from ..helpers.time_util    import (time_to_12hrtime, datetime_now, time_now_secs, datetime_for_filename,
                                     adjust_time_hour_value, adjust_time_hour_values, )
 
@@ -122,18 +123,23 @@ class EventLog(object):
         self.evlog_btn_urls['btnConfig']    = Gb.evlog_btnconfig_url
 
         self.evlog_attrs                    = {}
+        self.evlog_attrs["update_time"]     = ''
+        self.evlog_attrs["alert"]           = ""
+        self.evlog_attrs["alerts"]          = ""
+        self.evlog_attrs["alert_startup"]   = ""
+        self.evlog_attrs["alert_tracked"]   = ""
+        self.evlog_attrs["alert_monitored"] = ""
+        self.evlog_attrs["user_message"]    = self.user_message
+        self.evlog_attrs["devicename"]      = ''
+        self.evlog_attrs["fname"]           = ''
+        self.evlog_attrs["fnames"]          = {'Setup': 'Initializing iCloud3'}
+        self.evlog_attrs["filtername"]      = 'Initialize'
         self.evlog_attrs["version_ic3"]     = Gb.version
         self.evlog_attrs["version_evlog"]   = Gb.version_evlog
         self.evlog_attrs["versionEvLog"]    = Gb.version_evlog
         self.evlog_attrs["log_level_debug"] = ''
         self.evlog_attrs["run_mode"]        = 'Initialize'
         self.evlog_attrs["evlog_btn_urls"]  = self.evlog_btn_urls
-        self.evlog_attrs["user_message"]    = self.user_message
-        self.evlog_attrs["update_time"]     = ''
-        self.evlog_attrs["devicename"]      = ''
-        self.evlog_attrs["fname"]           = ''
-        self.evlog_attrs["fnames"]          = {'Setup': 'Initializing iCloud3'}
-        self.evlog_attrs["filtername"]      = 'Initialize'
         self.evlog_attrs["name"]            = {"Browser Refresh is Required to load v3":
                                                 "Browser Refresh is Required to load v3"}
         self.evlog_attrs["names"]           = v2_v3_browser_refresh_msg
@@ -185,17 +191,26 @@ class EventLog(object):
                 self.evlog_attrs["name"] = ''
                 self.evlog_attrs["names"] = ''
 
-            self.evlog_btn_urls['btnConfig']   = Gb.evlog_btnconfig_url
-            self.evlog_attrs["version_ic3"]    = Gb.version
-            self.evlog_attrs["version_evlog"]  = Gb.version_evlog
-            self.evlog_attrs["versionEvLog"]   = Gb.version_evlog
-            self.evlog_attrs["run_mode"]       = "Initialize"
-            self.evlog_attrs["evlog_btn_urls"] = self.evlog_btn_urls
             self.evlog_attrs["update_time"]    = "setup"
+            self.evlog_attrs["alert"]          = self.greenbar_alert_msg
+
+            if Gb.start_icloud3_inprocess_flag is False:
+                self.evlog_attrs["alerts"]         = self.alert_attr_filter()
+                self.evlog_attrs["alert_startup"]  = ""
+                self.evlog_attrs["alert_tracked"]  = ""
+                self.evlog_attrs["alert_monitored"]= ""
+
+            self.evlog_attrs["user_message"]   = self.user_message
             self.evlog_attrs["devicename"]     = self.devicename
             self.evlog_attrs["fname"]          = self.fname_selected
             self.evlog_attrs["fnames"]         = self.fnames_by_devicename
             self.evlog_attrs["filtername"]     = 'Initialize'
+            self.evlog_attrs["version_ic3"]    = Gb.version
+            self.evlog_attrs["version_evlog"]  = Gb.version_evlog
+            self.evlog_attrs["versionEvLog"]   = Gb.version_evlog
+            self.evlog_attrs["run_mode"]       = "Initialize"
+            self.evlog_btn_urls['btnConfig']   = Gb.evlog_btnconfig_url
+            self.evlog_attrs["evlog_btn_urls"] = self.evlog_btn_urls
 
             Gb.EvLogSensor.async_update_sensor()
 
@@ -271,6 +286,7 @@ class EventLog(object):
                                         if (v[ELR_DEVICENAME] == devicename \
                                             and v[ELR_TEXT] == event_text \
                                             and v[ELR_TEXT].startswith(EVLOG_TIME_RECD) is False
+                                            and v[ELR_TEXT].startswith(EVLOG_TRACE) is False
                                             and v[ELR_TEXT].startswith('Battery') is False)]
                 if in_last_few_recds != []:
                     return
@@ -508,12 +524,28 @@ class EventLog(object):
 
         self.evlog_attrs["update_time"]  = self.log_update_time()
         self.evlog_attrs["user_message"] = self.user_message
+        self.evlog_attrs["alert"]        = self.greenbar_alert_msg
+        self.evlog_attrs["alerts"]       = self.alert_attr_filter()
 
         # Update EvLog sensor to display all log records
         if Gb.EvLogSensor:
             Gb.EvLogSensor.async_update_sensor()
 
         self.last_refresh_secs = time_now_secs()
+
+#------------------------------------------------------
+    def alert_attr_filter(self, alert_msg=None):
+        if alert_msg is None:
+            alert_msg = self.greenbar_alert_msg
+        if alert_msg == '':
+            return ''
+
+        alert_msg = alert_msg.replace(NBSP2, ' ')
+        alert_msg = alert_msg.replace(NBSP3, ' ')
+        alert_msg = alert_msg.replace(NBSP4, ' ')
+        alert_msg = alert_msg.replace(CRLF, NL)
+
+        return alert_msg
 
 #------------------------------------------------------
     def _add_recd_to_event_recds(self, event_recd):
@@ -627,6 +659,7 @@ class EventLog(object):
 
 #------------------------------------------------------
     def clear_evlog_greenbar_msg(self):
+
         self.greenbar_alert_msg = ''
 
 #------------------------------------------------------
@@ -670,8 +703,8 @@ class EventLog(object):
         the resulting list to be passed to the Event Log
         '''
         if devicename == 'startup_log':
-            self.greenbar_alert_msg=(f"Start up log, alerts and èrrors are displayed"
-                                f"{RARROW}Refresh to close")
+            self.greenbar_alert_msg=(   f"Start up log, alerts and èrrors are displayed"
+                                        f"{RARROW}Refresh to close")
             el_recds = [el_recd[1:3] for el_recd in self.startup_event_recds
                                         if (el_recd[ELR_TEXT].startswith(EVLOG_MONITOR) is False
                                             or Gb.evlog_trk_monitors_flag)]
@@ -770,17 +803,31 @@ class EventLog(object):
     @staticmethod
     def _apply_home_to_away_time_zone_update(elr_time_text, away_time_zone_offset):
         '''
-        Change the Home zone time in the elr_text to the Away Zone time if needed
+        Change the Home zone time in the elr_text to the Away Zone time if needed.
+        A clock face 🕓 is added to the end of the 'Results >' in icloud3_main at the end of
+        the tracking update with the HA-Time: offset to show an Away Time Zone is being displayed.
+        Remove it from the event recd if it is being reset.
 
         Return [elr_time, elr_text]
         '''
-
-        if away_time_zone_offset == 0: return elr_time_text
+        if away_time_zone_offset == 0:
+            return elr_time_text
 
         elr_time, elr_text = elr_time_text
+        if away_time_zone_offset == 0:
+            if instr(elr_text, CLOCK_FACE):
+                elr_text = elr_text.split(CLOCK_FACE)[0]
+            return [elr_time, elr_text]
+
         elr_time = adjust_time_hour_value(elr_time, away_time_zone_offset)
         if instr(elr_text, (':')):
             elr_text = adjust_time_hour_values(elr_text, away_time_zone_offset)
+
+        # Add a note that the Away Time is displayed
+        if elr_text.startswith(EVLOG_UPDATE_END):
+            plus_sign = '+' if away_time_zone_offset > 0 else '-'
+            elr_text += (  f"{NBSP4}{CLOCK_FACE} Time: "
+                            f"{plus_sign}{abs(away_time_zone_offset)}hrs")
 
         return [elr_time, elr_text]
 
@@ -798,17 +845,17 @@ class EventLog(object):
         try:
             log_update_time =   (f"{dt_util.now().strftime('%a, %m/%d')}, "
                                 f"{dt_util.now().strftime(Gb.um_time_strfmt)}")
-            hdr_recd    = f"Time{SP[8]}Event\n{'-'*120}\n"
+            hdr_recd    = f"Time{SP(8)}Event\n{'-'*120}\n"
             export_recd = (f"iCloud3 Event Log v{Gb.version}\n\n"
                             f"Log Update Time: {log_update_time}\n"
                             f"Tracked Devices:\n")
 
             export_recd += f"\nGeneral Configuration:\n"
-            export_recd += f"{SP[4]}{Gb.conf_general}\n"
+            export_recd += f"{SP(4)}{Gb.conf_general}\n"
 
             for devicename, Device in Gb.Devices_by_devicename.items():
-                export_recd += (f"{SP[4]}{DOT}{Device.fname_devicename} >\n"
-                                f"{SP[4]}{Device.conf_device}\n")
+                export_recd += (f"{SP(4)}{DOT}{Device.fname_devicename} >\n"
+                                f"{SP(4)}{Device.conf_device}\n")
 
             #--------------------------------
             # # Prepare Global '*' records. Reverse the list elements using [::-1] and make a string of the results
@@ -833,7 +880,7 @@ class EventLog(object):
                                     if (len(el_recd) == 3
                                         and el_recd[ELR_DEVICENAME] == devicename)]
 
-                export_recd += self._export_ic3_event_log_reformat_recds(devicename, el_recds)
+                export_recd += self._export_ic3_event_log_reformat_recds(Device.fname_devicename, el_recds)
 
             #--------------------------------
             # # Prepare Global '*' records. Reverse the list elements using [::-1] and make a string of the results
@@ -867,25 +914,42 @@ class EventLog(object):
             record_str = ''
             startup_recds_flag = False
             el_recds.reverse()
+            last_tfz_zone = ''
             for record in el_recds:
                 devicename = record[ELR_DEVICENAME]
-                time       = record[ELR_TIME] if record[ELR_TIME] not in ['Debug', 'Rawdata'] else SP[4]
+                time       = record[ELR_TIME] if record[ELR_TIME] not in ['Debug', 'Rawdata'] else SP(4)
                 text       = record[ELR_TEXT]
 
+                # iCloud3 Startup Records
                 if log_section == 'startup':
                     if text[0:3] in [EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR]:
-                        text = f"{SP[12]}{format_header_box(text[3:], evlog_export=True)}"
-                        text = format_header_box_indent(text, -4)
+                        text = f"{SP(9)}{format_header_box(text[3:], indent=12, evlog_export=True)}"
                     elif text.startswith('^'):
-                        text = f"{SP[4]}{filter_special_chars(text[3:], evlog_export=True)}"
+                        text = f"{SP(4)}{filter_special_chars(text[3:], evlog_export=True)}"
                     else:
-                        text = f"{SP[4]}{filter_special_chars(text, evlog_export=True)}"
+                        text = f"{SP(4)}{filter_special_chars(text, evlog_export=True)}"
 
+                # Non-device related Records
                 elif log_section == 'other':
-                    text = f"  {filter_special_chars(text, evlog_export=True)}"
+                    text = f"{filter_special_chars(text, evlog_export=True)}"
 
+                # Device Records
                 else:
-                    text = self._reformat_device_recd(time, text)
+                    time = (time + SP(8))[:8]
+                    text = self._reformat_device_recd(log_section, time, text)
+
+                    if time.startswith('»Home'):
+                        pass
+
+                    # Start of tfz group header
+                    elif time.startswith('»') and time != last_tfz_zone:
+                        text = f"{SP(4)}⡇{' ~ '*18}\n{time}{text}"
+                        last_tfz_zone = time
+
+                    # End of tfz group trailer
+                    elif last_tfz_zone.startswith('»') and time != last_tfz_zone:
+                        text = f"{last_tfz_zone}{SP(4)}⡇{' ~ '*18}\n{time}{text}"
+                        time = last_tfz_zone = ''
 
                 if text != '':
                     record_str += f"{time}{text}\n"
@@ -898,47 +962,40 @@ class EventLog(object):
             return ''
 
 #--------------------------------------------------------------------
-    def _reformat_device_recd(self, time, text):
+    def _reformat_device_recd(self, log_section, time, text):
 
         # Time-record = {mobapp_state},{ic3_zone},{interval},{travel_time},{distance)
 
-        line_prefix = SP[4]
+
         if text.startswith(EVLOG_UPDATE_START):
-            text = 'Start Tracking Update' if text[3:] == '' else text[3:]
-            text = f">{format_header_box(text, start_finish='start', evlog_export=True)}"
-            text = f"{format_header_box_indent(text, -4)}"
+            text = f"Tracking Update ({log_section})" if text[3:] == '' else text[3:]
+            text = f"{SP(5)}{format_header_box(text, indent=12, start_finish='start', evlog_export=True)}"
             return text
 
         elif text.startswith(EVLOG_UPDATE_END):
-            text = f">{format_header_box(text[3:], start_finish='finish', evlog_export=True)}"
-            _traceha(f"{text=}")
-            text = f"{format_header_box_indent(text, -4)}"
-            _traceha(f"{text=}")
-            line_prefix = ''
+            text = f"{SP(4)}{format_header_box(text[3:], indent=12, start_finish='finish', evlog_export=True)}"
             return text
 
         elif text.startswith(EVLOG_TIME_RECD):
+            tfz_adj = '  ' if (time.startswith('»') and time.startswith('»Home')) is False else ''
             text = text[3:]
             item = text.split(',')
-            text = (f"{' '*(12-len(time))}⡇ MobApp-{item[0]}, "
+            text = (f"{' '*(11-len(time))}{tfz_adj}⡇ "
+                    f"MobApp-{item[0]}, "
                     f"iCloud3-{item[1]}, "
                     f"Interval-{item[2]}, "
                     f"TravTime-{item[3]}, "
                     f"Dist-{item[4]}")
             return text
 
-        if time.startswith('»'): line_prefix = SP[5]
-
+        tfz_adj = '  ' if time.startswith('»') else ''
         group_char= '' if text.startswith('⡇') else \
                     '⡇ ' if Gb.trace_group else \
                     ''
 
-        text = filter_special_chars(text)
+        text = filter_special_chars(text, evlog_export=True)
 
-        if instr(text, 'Results:') and instr(text, 'From-Home') is False:
-            text = f"{text}\n{SP[12]}⡇ {' ~ '*18}"
-
-        return f"{line_prefix}{group_char}{text}"
+        return f"{SP(4)}{tfz_adj}{group_char}{text}"
 
 #--------------------------------------------------------------------
     @staticmethod

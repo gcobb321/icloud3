@@ -9,6 +9,7 @@ from ..const                import (DEVICE_TRACKER, NOTIFY,
                                     LATITUDE, LONGITUDE, TIMESTAMP_SECS, TIMESTAMP_TIME,
                                     TRIGGER, LAST_ZONE, ZONE,
                                     GPS_ACCURACY, VERT_ACCURACY, ALTITUDE,
+                                    CONF_IC3_DEVICENAME,
                                     )
 
 from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname, )
@@ -56,15 +57,22 @@ def check_mobapp_state_trigger_change(Device):
         mobapp_data_state      = device_trkr_attrs[DEVICE_TRACKER]
         mobapp_data_state_secs = device_trkr_attrs[f"state_{TIMESTAMP_SECS}"]
         mobapp_data_state_time = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
+        mobapp_data_state_time = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
 
+        # State change will create enter/exit Zone trigger
         if Device.mobapp_data_state != mobapp_data_state:
+            mobapp_data_trigger      = device_trkr_attrs["trigger"] = EXIT_ZONE \
+                            if mobapp_data_state == NOT_HOME else     ENTER_ZONE
+            mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = mobapp_data_state_secs
+            mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = mobapp_data_state_time
+
             event_msg =(f"MobApp State Changed > "
                         f"{zone_dname(Device.mobapp_data_state)}{RARROW}{zone_dname(mobapp_data_state)}")
             post_event(Device, event_msg)
 
         # Get the trigger data
-        entity_id = Device.mobapp[TRIGGER]
-        if entity_id:
+        elif Device.mobapp[TRIGGER]:
+            entity_id = Device.mobapp[TRIGGER]
             mobapp_data_trigger      = device_trkr_attrs["trigger"]                   = entity_io.get_state(entity_id)
             mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = entity_io.get_last_changed_time(entity_id)
             mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = secs_to_time(mobapp_data_trigger_secs)
@@ -81,7 +89,7 @@ def check_mobapp_state_trigger_change(Device):
             Device.mobapp_data_trigger_time = mobapp_data_time = mobapp_data_trigger_time = Gb.this_update_time
             mobapp_data_change_flag = True
 
-        if mobapp_data_state_secs > mobapp_data_trigger_secs:
+        if mobapp_data_state_secs >= mobapp_data_trigger_secs:
             mobapp_data_from = f" (State), Trig-{mobapp_data_trigger_time}"
             mobapp_data_secs = device_trkr_attrs[TIMESTAMP_SECS] = mobapp_data_state_secs
             mobapp_data_time = device_trkr_attrs[TIMESTAMP_TIME] = mobapp_data_state_time
@@ -437,6 +445,7 @@ def get_mobapp_device_trkr_entity_attrs(Device):
                     f"It may be asleep, offline or not available.")
             return None
 
+        device_trkr_attrs[CONF_IC3_DEVICENAME] = Device.devicename
         device_trkr_attrs[f"state_{TIMESTAMP_SECS}"] = entity_io.get_last_changed_time(entity_id)
         device_trkr_attrs[f"state_{TIMESTAMP_TIME}"] = secs_to_time(device_trkr_attrs[f"state_{TIMESTAMP_SECS}"])
 
@@ -475,7 +484,7 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     if Device.mobapp_data_secs >= mobapp_data_secs or gps_accuracy > Gb.gps_accuracy_threshold:
         return
 
-    log_rawdata(f"Mobile App - {Device.devicename}", device_trkr_attrs)
+    log_rawdata(f"MobApp Attrs - <{Device.devicename}>", device_trkr_attrs)
 
     Device.mobapp_data_state             = device_trkr_attrs.get(DEVICE_TRACKER, NOT_SET)
     Device.mobapp_data_state_secs        = device_trkr_attrs.get(f"state_{TIMESTAMP_SECS}", 0)

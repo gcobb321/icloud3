@@ -28,7 +28,7 @@ from ..const                import (AIRPODS_FNAME, NONE_FNAME,
                                     ICLOUD_HORIZONTAL_ACCURACY,
                                     LOCATION, TIMESTAMP, LOCATION_TIME, DATA_SOURCE,
                                     ICLOUD_BATTERY_LEVEL, ICLOUD_BATTERY_STATUS, BATTERY_STATUS_CODES,
-                                    BATTERY_LEVEL, BATTERY_STATUS,
+                                    BATTERY_LEVEL, BATTERY_STATUS, BATTERY_LEVEL_LOW,
                                     ICLOUD_DEVICE_STATUS,
                                     CONF_PASSWORD, CONF_MODEL_DISPLAY_NAME, CONF_RAW_MODEL,
                                     CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
@@ -40,7 +40,7 @@ from ..helpers.time_util    import (time_now_secs, secs_to_time, timestamp_to_ti
                                     secs_since, format_age )
 from ..helpers.messaging    import (post_event, post_monitor_msg, post_startup_alert, post_internal_error,
                                     _trace, _traceha, more_info,
-                                    log_info_msg, log_error_msg, log_debug_msg, log_warning_msg, log_rawdata, log_exception)
+                                    log_info_msg, log_error_msg, log_debug_msg, log_warning_msg, log_rawdata, log_exception, log_rawdata_unfiltered)
 from .config_file            import (encode_password, decode_password)
 
 from uuid       import uuid1
@@ -162,7 +162,7 @@ class PyiCloudSession(Session):
 
         if Gb.log_rawdata_flag:
             log_msg = (f"{secs_to_time(time_now_secs())}, {method}, {url}, {self.prefilter_rawdata(kwargs)}")
-            log_rawdata("PyiCloud_ic3 iCloud Request", {'raw': log_msg})
+            log_rawdata(f"PyiCloud_ic3 iCloud Request ({obscure_field(self.Service.username)})", {'raw': log_msg})
 
         try:
             response = None
@@ -172,7 +172,7 @@ class PyiCloudSession(Session):
 
             #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
         except Exception as err:
-            # log_exception(err)
+            log_exception(err)
             self._raise_error(-2, "Failed to establish a new connection")
             if response is None:
                 return
@@ -196,8 +196,8 @@ class PyiCloudSession(Session):
 
             try:
                 if Gb.log_rawdata_flag_unfiltered:
-                    log_rawdata("PyiCloud_ic3 iCloud Response-Header (Unfiltered)", {'raw': log_msg})
-                    log_rawdata("PyiCloud_ic3 iCloud Response-Data (Unfiltered)", {'raw': data})
+                    log_rawdata_unfiltered("PyiCloud_ic3 iCloud Response-Header (Unfiltered)", {'raw': log_msg})
+                    log_rawdata_unfiltered("PyiCloud_ic3 iCloud Response-Data (Unfiltered)", {'raw': data})
 
                 elif data and ('userInfo' in data is False or 'webservices' in data):
                     log_rawdata("PyiCloud_ic3 iCloud Response-Data", {'filter': self.prefilter_rawdata(data)})
@@ -1181,15 +1181,18 @@ class PyiCloudService():
         self.create_FamilySharing_object()
 
 #----------------------------------------------------------------------------
-    def create_FamilySharing_object(self):
+    def create_FamilySharing_object(self, config_flow_login=False):
         '''
         Initializes the Family Sharing object, refresh the iCloud device data for all
         devices and create the PyiCloud_RawData object containing the data for all locatible devices.
+
+        config_flow_create indicates another iCloud acct is being logged into and a new FamShr object
+        should be created instead of using the existing FamShr object created when iC3 started
         '''
         try:
             if self.FamilySharing is not None:
                 return
-            if Gb.PyiCloud and Gb.PyiCloud.FamilySharing is not None:
+            if config_flow_login is False and Gb.PyiCloud and Gb.PyiCloud.FamilySharing is not None:
                 self.PyiCloud = Gb.PyiCloud
                 return
 
@@ -1198,9 +1201,12 @@ class PyiCloudService():
                                                         self.Session,
                                                         self.params,
                                                         self.with_family)
+            return self.FamilySharing
 
         except Exception as err:
             log_exception(err)
+
+            return None
 
 #----------------------------------------------------------------------------
     @property
@@ -1294,11 +1300,11 @@ class PyiCloud_FamilySharing():
         except Exception as err:
             log_exception(err)
 
-        if Gb.conf_data_source_FAMSHR is False:
-            self._set_service_available(False)
-            return
+        # if Gb.conf_data_source_FAMSHR is False:
+        #     self._set_service_available(False)
+        #     return
 
-        if  self.is_service_not_available:
+        if self.is_service_not_available:
             log_msg = ( f"{EVLOG_ALERT}iCLOUD ALERT > Family Sharing Data Source is not available. "
                         f"The web url providing location data returned a Service Not Available error "
                         f"({self.PyiCloud.called_from})")
@@ -1470,7 +1476,6 @@ class PyiCloud_FamilySharing():
                     # else:
                     monitor_msg +=\
                             self._create_RawData_famshr_object(device_id, device_data_name, device_data)
-
                     continue
 
                 # Non-tracked devices are not updated
@@ -1745,19 +1750,21 @@ class PyiCloud_FindMyFriends():
         self.device_form_icloud_fmf_list   = []
         self.devices_without_location_data = []
 
-        self.is_service_available     = True
-        self.is_service_not_available = False
-        self._set_service_available(service_root is not None)
+        # self.is_service_available     = True
+        # self.is_service_not_available = False
+        # self._set_service_available(service_root is not None)
 
-        if Gb.conf_data_source_FMF is False:
-            self._set_service_available(False)
-            return
+        # if Gb.conf_data_source_FMF is False:
+        #     self._set_service_available(False)
+        #     return
 
+        self.is_service_available     = False
+        self.is_service_not_available = True
         if self.is_service_not_available:
-            log_msg = ( f"{EVLOG_ALERT}iCLOUD ALERT > Find-my-Friends Data Source is not available. "
-                        f"The web url providing location data returned a Service Not Available error "
-                        f"({self.PyiCloud.called_from})")
-            post_event(log_msg)
+            # log_msg = ( f"{EVLOG_ALERT}iCLOUD ALERT > Find-my-Friends Data Source is not available. "
+            #             f"The web url providing location data returned a Service Not Available error "
+            #             f"({self.PyiCloud.called_from})")
+            # post_event(log_msg)
             return
 
         self._friend_endpoint = f"{self._service_root}/fmipservice/client/fmfWeb/initClient"
@@ -2113,7 +2120,8 @@ class PyiCloud_RawData():
         self.fname_dup_suffix= ''                               # Suffix added to fname if duplicates
         self.evlog_alert_char= ''
 
-        # self.Device          = Gb.Devices_by_icloud_device_id.get(device_id)
+        self.Device          = Gb.Devices_by_icloud_device_id.get(device_id)
+        self.ic3_devicename  = self.Device.devicename if self.Device else ''
         self.update_secs     = time_now_secs()
         self.location_secs   = 0
         self.location_time   = HHMMSS_ZERO
@@ -2131,6 +2139,8 @@ class PyiCloud_RawData():
 
         self.set_located_time_battery_info()
         self.device_data[DATA_SOURCE] = self.data_source
+        self.device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
+
 
 #----------------------------------------------------------------------
     @property
@@ -2316,13 +2326,14 @@ class PyiCloud_RawData():
     def set_located_time_battery_info(self):
 
         try:
+            self.device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
+
             if self.is_location_data_available:
                 self.device_data[LOCATION][TIMESTAMP] = int(self.device_data[LOCATION][self.timestamp_field] / 1000)
                 self.device_data[LOCATION][LOCATION_TIME] = secs_to_time(self.device_data[LOCATION][TIMESTAMP])
                 self.location_secs = self.device_data[LOCATION][TIMESTAMP]
                 self.location_time = self.device_data[LOCATION][LOCATION_TIME]
             else:
-                _trace
                 self.device_data[LOCATION] = {self.timestamp_field: 0}
                 self.device_data[LOCATION][TIMESTAMP] = 0
                 self.device_data[LOCATION][LOCATION_TIME] = HHMMSS_ZERO
@@ -2352,13 +2363,18 @@ class PyiCloud_RawData():
 
         # Reformat and convert batteryStatus and batteryLevel
         try:
-            battery_status      = self.device_data[ICLOUD_BATTERY_STATUS].lower()
-            self.battery_status = BATTERY_STATUS_CODES.get(battery_status, battery_status)
             self.battery_level  = self.device_data.get(ICLOUD_BATTERY_LEVEL, 0)
             self.battery_level  = round(self.battery_level*100)
+            self.battery_status = self.device_data[ICLOUD_BATTERY_STATUS]
+            if self.battery_level > 99:
+                self.battery_status = 'Charged'
+            elif self.battery_status in ['Charging', 'Unknown']:
+                pass
+            elif self.battery_level > 0 and self.battery_level < BATTERY_LEVEL_LOW:
+                self.battery_status = 'Low'
 
-            self.device_data[BATTERY_LEVEL] = self.battery_level
-            self.device_data[BATTERY_STATUS] = BATTERY_STATUS_CODES.get(battery_status, battery_status)
+            self.device_data[BATTERY_LEVEL]  = self.battery_level
+            self.device_data[BATTERY_STATUS] = self.battery_status
         except:
             pass
 

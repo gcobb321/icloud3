@@ -3,7 +3,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (RESTORE_STATE_FILE,
                                     DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
-                                    HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME,
+                                    HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME, ALERT,
                                     ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_INFO,
                                     LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
                                     DIR_OF_TRAVEL, )
@@ -77,8 +77,10 @@ def clear_devices():
 #-------------------------------------------------------------------------------------------
 def read_storage_icloud3_restore_state_file():
     '''
-    Read the config/.storage/.icloud3.restore_state file and extract the
-    data into the Global Variables
+    Read the config/.storage/.icloud3.restore_state file.
+        - Extract the data into the Global Variables.
+        - Restoreeach device's sensors values
+        - Reinitialize sensors that should not be restored
     '''
 
     try:
@@ -91,6 +93,7 @@ def read_storage_icloud3_restore_state_file():
                 sensors = devicename_data['sensors']
                 sensors[DISTANCE_TO_OTHER_DEVICES] = {}
                 sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
+                sensors[ALERT] = ''
 
                 _reset_statzone_values_to_away(sensors)
 

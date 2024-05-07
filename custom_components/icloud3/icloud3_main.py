@@ -35,10 +35,11 @@ from homeassistant import config_entries
 
 from .global_variables  import GlobalVariables as Gb
 from .const             import (VERSION,
-                                HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, LT,
+                                HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, LT, NBSP3, CLOCK_FACE,
+                                CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_HDOT, CRLF_X, NL, NL_DOT,
                                 TOWARDS, EVLOG_IC3_STAGE_HDR,
                                 ICLOUD, ICLOUD_FNAME, TRACKING_NORMAL, FNAME,
-                                IPHONE, IPAD, WATCH, AIRPODS, IPOD, 
+                                IPHONE, IPAD, WATCH, AIRPODS, IPOD, ALERT,
                                 CMD_RESET_PYICLOUD_SESSION, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 OLD_LOCATION_CNT, AUTH_ERROR_CNT,
@@ -59,7 +60,7 @@ from .support           import icloud_data_handler
 from .support           import service_handler
 from .support           import zone_handler
 from .support           import determine_interval as det_interval
-from .helpers.common    import (instr, is_zone, is_statzone, isnot_statzone, list_to_str,)
+from .helpers.common    import (instr, is_zone, is_statzone, isnot_statzone, list_to_str, isbetween, )
 from .helpers.messaging import (broadcast_info_msg,
                                 post_event, post_error_msg, post_monitor_msg, post_internal_error,
                                 post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
@@ -144,14 +145,12 @@ class iCloud3:
             self.initial_locate_complete_flag  = False
             self.startup_log_msgs           = ''
             self.startup_log_msgs_prefix    = ''
+            Gb.start_icloud3_inprocess_flag = True
+            Gb.restart_icloud3_request_flag = False
+            Gb.all_tracking_paused_flag     = False
 
             start_ic3_control.stage_1_setup_variables()
             start_ic3_control.stage_2_prepare_configuration()
-            if Gb.polling_5_sec_loop_running is False:
-                broadcast_info_msg("Set Up 5-sec Polling Cycle")
-                Gb.polling_5_sec_loop_running = True
-                track_utc_time_change(Gb.hass, self._polling_loop_5_sec_device,
-                        second=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
 
             start_ic3_control.stage_3_setup_configured_devices()
             stage_4_success = start_ic3_control.stage_4_setup_data_sources()
@@ -169,6 +168,13 @@ class iCloud3:
             Gb.start_icloud3_inprocess_flag = False
             Gb.startup_stage_status_controls = []
             Gb.broadcast_info_msg = None
+
+            if Gb.polling_5_sec_loop_running is False:
+                broadcast_info_msg("Set Up 5-sec Polling Cycle")
+                Gb.polling_5_sec_loop_running = True
+                track_utc_time_change(Gb.hass, self._polling_loop_5_sec_device,
+                        second=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
+
 
             return True
 
@@ -189,13 +195,15 @@ class iCloud3:
         Gb.this_update_secs   = time_now_secs()
         Gb.this_update_time   = dt_util.now().strftime('%H:%M:%S')
 
+        if Gb.start_icloud3_inprocess_flag:
+            return
+
         if Gb.config_flow_updated_parms != {''}:
             start_ic3.process_config_flow_parameter_updates()
 
         # Restart iCloud via service call from EvLog or config_flow
         if Gb.restart_icloud3_request_flag:
             self.start_icloud3()
-            Gb.restart_icloud3_request_flag = False
 
         # Exit 5-sec loop if no devices, updating a device now, or restarting iCloud3
         info_msg = ''
@@ -246,6 +254,7 @@ class iCloud3:
             # End of uncommented out code to test of moving device into a statzone while home
 
             if Gb.all_tracking_paused_flag:
+                post_evlog_greenbar_msg('All Devices > Tracking Paused')
                 return
 
             #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
@@ -304,7 +313,7 @@ class iCloud3:
         except Exception as err:
             log_exception(err)
 
-        self._display_device_error_evlog_greenbar_msg()
+        self._display_device_alert_evlog_greenbar_msg()
         Gb.any_device_was_updated_reason = ''
         self.initialize_5_sec_loop_control_flags()
         self._display_clear_authentication_needed_msg()
@@ -615,6 +624,9 @@ class iCloud3:
                     Device.log_data_fields()
 
             for devicename, Device in Gb.Devices_by_devicename.items():
+                # if devicename == 'gary_iphone':
+                #     mobapp_interface.request_sensor_update(Device)
+
                 if Device.dist_apart_msg:
                     device_time = secs_to_hhmm(Device.dist_to_other_devices_secs)
                     event_msg =(f"Nearby Devices "
@@ -778,7 +790,6 @@ class iCloud3:
 
             # Bypass all update needed checks and force an iCloud update
             elif Device.icloud_force_update_flag:
-                # Device.icloud_force_update_flag = False
                 pass
 
             # elif Device.is_offline or Device.no_location_data:
@@ -1150,7 +1161,7 @@ class iCloud3:
             post_error_msg(log_msg)
 
 #----------------------------------------------------------------------------
-    def _display_device_error_evlog_greenbar_msg(self):
+    def _display_device_alert_evlog_greenbar_msg(self):
         '''
         Check to see if any startup alerts of device issues exist. If so, display
         them in the green alert bar at the to p of the EvLog.
@@ -1158,35 +1169,62 @@ class iCloud3:
         Tracked device screen displayed - Show  all alert messages
         Monitored device screen displayed - Show only that devices alerts
         '''
-        evlog_greenbar_msg = ''
+        evlog_greenbar_msg = evlog_startup_alert_attr = ''
+        evlog_tracked_alert_attr = evlog_monitored_alert_attr = ''
         show_on_displayed_evlog_screen_flag = False
 
         if Gb.startup_alerts != []:
-            evlog_greenbar_msg += "Errors Starting iCloud3, "
+            evlog_greenbar_msg       = f"{LDOT2}Errors Starting iCloud3"
+            evlog_startup_alert_attr = Gb.startup_alerts_str
+
             show_on_displayed_evlog_screen_flag = True
 
         for Device in Gb.Devices:
-            device_msg = ''
+            alert_msg = ''
+            if (Device.verified_flag is False
+                    or (Device.is_data_source_ICLOUD is False and Device.is_data_source_MOBAPP is False)):
+                alert_msg = "Not Verified, No Data Source, "
             if Device.no_location_data:
-                device_msg = "No GPS Data, "
-            elif Device.is_offline:
-                device_msg = "Offline, "
-            elif mins_since(Device.loc_data_secs) > 300:
-                device_msg = f"Location Very Old (>{format_age(Device.loc_data_secs)}), "
-            elif Device.is_tracking_paused:
-                device_msg = "Paused, "
+                alert_msg += "No GPS Data, "
+            if Device.is_offline:
+                alert_msg += "Offline, "
 
-            if device_msg:
-                evlog_greenbar_msg += f"{Device.fname} > {device_msg}"
-                #if (Device.is_tracked
-                #       or Gb.EvLog.evlog_attrs["fname"] == f"{Device.fname} 🅜"):
+            if alert_msg:
+                alert_msg = alert_msg[:-2]
+            elif Device.is_tracking_paused:
+                alert_msg = "Tracking Paused"
+            elif mins_since(Device.loc_data_secs) > 300:
+                alert_msg = f"Location Very Old (>{format_age(Device.loc_data_secs)})"
+            elif isbetween(Device.dev_data_battery_level, 1, 19):
+                alert_msg = f"Low Battery (< 20%)"
+
+            if alert_msg:
+                fname_alert_msg = f"{Device.fname} > {alert_msg}"
+                crlf = CRLF_LDOT if evlog_greenbar_msg else LDOT2
+                evlog_greenbar_msg += f"{crlf}{fname_alert_msg}"
+                if Device.is_tracked:
+                    nldot = NL_DOT if evlog_tracked_alert_attr else DOT
+                    evlog_tracked_alert_attr += f"{nldot}{fname_alert_msg}"
+                else:
+                    nldot = NL_DOT if evlog_monitored_alert_attr else DOT
+                    evlog_monitored_alert_attr += f"{nldot}{fname_alert_msg}"
+
                 if (Device.device_type in [IPHONE, IPAD, WATCH]
                         or Gb.EvLog.evlog_attrs[FNAME].startswith(Device.fname)):
                     show_on_displayed_evlog_screen_flag = True
 
-        if evlog_greenbar_msg and show_on_displayed_evlog_screen_flag:
-            post_evlog_greenbar_msg(evlog_greenbar_msg[:-2])
-        else:
+            if alert_msg != Device.alert:
+                Device.alert = Device.sensors[ALERT] = alert_msg
+                Device.write_ha_device_tracker_state()
+
+        Gb.EvLog.evlog_attrs['alert_startup']   = Gb.EvLog.alert_attr_filter(evlog_startup_alert_attr)
+        Gb.EvLog.evlog_attrs['alert_tracked']   = Gb.EvLog.alert_attr_filter(evlog_tracked_alert_attr)
+        Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(evlog_monitored_alert_attr)
+
+        if (evlog_greenbar_msg != Gb.EvLog.greenbar_alert_msg
+                and show_on_displayed_evlog_screen_flag):
+            post_evlog_greenbar_msg(evlog_greenbar_msg)
+        elif evlog_greenbar_msg == '' and Gb.EvLog.greenbar_alert_msg:
             clear_evlog_greenbar_msg()
 
 #----------------------------------------------------------------------------
@@ -1196,11 +1234,11 @@ class iCloud3:
             pass
 
         elif (Gb.PyiCloud.requires_2fa
-                and Gb.EvLog.alert_message != 'iCloud Account authentication is needed'):
+                and Gb.EvLog.greenbar_alert_msg != 'iCloud Account authentication is needed'):
             post_evlog_greenbar_msg('iCloud Account authentication is needed')
 
         elif (Gb.PyiCloud.requires_2fa is False
-                and Gb.EvLog.alert_message == 'iCloud Account authentication is needed'):
+                and Gb.EvLog.greenbar_alert_msg == 'iCloud Account authentication is needed'):
             clear_evlog_greenbar_msg()
 
 #--------------------------------------------------------------------
@@ -1320,6 +1358,7 @@ class iCloud3:
             elif Device.is_offline:
                 Device.old_loc_msg = f"Device > Offline {cnt_msg}"
                 Device.update_sensors_flag = False
+                statzone.clear_statzone_timer_distance(Device)
             elif Device.is_location_old:
                 Device.old_loc_msg = f"Location > Old {cnt_msg}, {format_age(Device.loc_data_secs)}"
             elif Device.is_gps_poor:

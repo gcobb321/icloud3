@@ -7,7 +7,7 @@ import os
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   DATA VERIFICATION FUNCTIONS
+#   DICTION & LIST UTILITY FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def combine_lists(parm_lists):
@@ -33,8 +33,8 @@ def list_to_str(list_value, separator=None):
     '''
     if list_value == []: return ''
     separator_str = separator if separator else ', '
-    if None in list_value:
-        list_value = [lv for lv in list_value if lv is not None]
+    if None in list_value or '' in list_value:
+        list_value = [lv for lv in list_value if lv is not None and lv != '']
     list_str = separator_str.join(list_value) if list_value else 'None'
 
     if separator_str.startswith(CRLF):
@@ -77,6 +77,28 @@ def delete_from_list(list_value, item):
     return list_value
 
 #--------------------------------------------------------------------
+def sort_dict_by_values(dict_value):
+    '''
+    Return a dictionary sorted by the item values
+    '''
+    if (type(dict_value) is not dict
+            or dict_value == {}):
+        return {}
+
+    dict_value_lower        = {k: v.lower() for k, v in dict_value.items()}
+    sorted_dict_value_lower = sorted(dict_value_lower.items(), key=lambda x:x[1])
+    keys_sorted_dict_value_lower = dict(sorted_dict_value_lower).keys()
+    sorted_dict_value       = {k: dict_value[k] for k in keys_sorted_dict_value_lower}
+
+    return sorted_dict_value
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   DATA VERIFICATION FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 def instr(string, substring):
     '''
     Fine a substring or a list of substrings strings in a string
@@ -112,8 +134,12 @@ def isnumber(string):
         return False
 
 #--------------------------------------------------------------------
-def isbetween(number, greater_than, less_than_equal):
-    return (less_than_equal > number > greater_than)
+def isbetween(number, min_value, max_value):
+    '''
+    Return True if the the number is between the other two numbers
+    including the min_value and max_value number)
+    '''
+    return (max_value+1 > number > min_value-1)
 
 #--------------------------------------------------------------------
 def inlist(string, list_items):

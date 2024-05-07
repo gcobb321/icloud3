@@ -4,7 +4,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.2'
+VERSION                         = '3.0.4'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
@@ -83,7 +83,6 @@ VALID_DATA                      = 1
 UTC_TIME                        = True
 LOCAL_TIME                      = False
 NUMERIC                         = True
-NEW_LINE                        = '\n'
 WAZE                            = 'waze'
 CALC                            = 'calc'
 DIST                            = 'dist'
@@ -233,7 +232,7 @@ EVLOG_IC3_STAGE_HDR = '^g^'
 
 
 EVLOG_NOTICE      = '^5^'
-EVLOG_TRACE       = '^6^'
+EVLOG_TRACE       = '^3^'
 EVLOG_DEBUG       = '^6^'
 EVLOG_MONITOR     = '^6^'
 # SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
@@ -252,8 +251,8 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒⊘Ɵ⊗ⓧⓍ⛒🜔
-Important = ❗❌⚠️❓🛑⛔⚡⭐⭕ⓘ• ⍰ ‶″“”‘’‶″
-  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●
+Important = ❗❌⚠️❓🛑⛔⚡⭐⭕ⓘ• ⍰ ‶″“”‘’‶″ 🕓
+  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … ⋮ 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●
   ▐‖  ▹▻▷◁◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ ²
  ⣇⠈⠉⠋⠛⠟⠿⡿⣿       https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 '''
@@ -264,6 +263,8 @@ NBSP4             = '⠛' #'&nbsp;&nbsp;&nbsp;&nbsp;'
 NBSP5             = '⠟' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 NBSP6             = '⠿' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 CRLF              = '⣇' #'<br>'
+NL                = '\n'
+CLOCK_FACE        = '🕓'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
 YELLOW_ALERT      = '⚠️'
@@ -277,16 +278,19 @@ CIRCLE_BIG_X      = '⊗'
 CIRCLE_SLASH      = '⊘'
 CIRCLE_X          = 'ⓧ'
 DOT               = '• '
-DOT2              = '•'
+PDOT              = '•'
 SQUARE_DOT        = '▪'
 HDOT              = '◦ '
-HDOT2             = '◦'
+PHDOT             = '◦'
 LT                = '&lt;'
 GT                = '&gt;'
 LTE               = '≤'
 GTE               = '≥'
 PLUS_MINUS        = '±'
+LDOT2             = f'•{NBSP2}'
 CRLF_DOT          = f'{CRLF}{NBSP3}•{NBSP2}'
+CRLF_LDOT         = f'{CRLF}•{NBSP2}'
+NL_DOT            = f'{NL} • '
 CRLF_XD           = f'{CRLF}{NBSP2}×{NBSP2}'
 CRLF_X            = f'{CRLF}{NBSP3}×{NBSP2}'
 CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
@@ -494,6 +498,8 @@ ICLOUD_LOST_MODE_CAPABLE   = 'lostModeCapable'
 ID                         = 'id'
 LAST_CHANGED_SECS          = 'last_changed_secs'
 LAST_CHANGED_TIME          = 'last_changed_time'
+LAST_UPDATED_SECS          = 'last_updated_secs'
+LAST_UPDATED_TIME          = 'last_updated_time'
 STATE                      = 'state'
 
 # device tracker attributes
@@ -525,8 +531,9 @@ AGE                        = 'age'
 BATTERY_SOURCE             = 'battery_data_source'
 BATTERY_LEVEL              = 'battery_level'
 BATTERY_UPDATE_TIME        = 'battery_level_updated'
-BATTERY_FAMSHR             = 'battery_last_famshr_data'
-BATTERY_MOBAPP             = 'battery_last_mobapp_data'
+BATTERY_FAMSHR             = 'famshr_battery_info'
+BATTERY_MOBAPP             = 'mobapp_battery_info'
+BATTERY_LATEST             = 'battery_info'
 WAZE_METHOD                = 'waze_method'
 MAX_DISTANCE               = 'max_distance'
 WENT_3KM                   = 'went_3km'
@@ -536,6 +543,7 @@ LOW_POWER_MODE             = 'low_power_mode'
 TRACKING                   = 'tracking'
 DEVICENAME_MOBAPP          = 'mobapp_device'
 AUTHENTICATED              = 'authenticated'
+ALERT                      = 'alert'
 
 LAST_UPDATE_TIME           = 'last_update_time'
 LAST_UPDATE_DATETIME       = 'last_updated_date/time'
@@ -572,8 +580,8 @@ DEVICE_STATUS_CODES = {
         '204': 'Unregistered',
         '0': 'Unknown',
         }
-
-DEVICE_STATUS_ONLINE = ['Online', 'Pending', 'Unknown', 'unknown', '']
+BATTERY_LEVEL_LOW     = 20
+DEVICE_STATUS_ONLINE  = ['Online', 'Pending', 'Unknown', 'unknown', '']
 DEVICE_STATUS_OFFLINE = ['Offline']
 DEVICE_STATUS_PENDING = ['Pending']
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -640,6 +648,7 @@ CONF_TRAVEL_TIME_FACTOR         = 'travel_time_factor'
 CONF_TFZ_TRACKING_MAX_DISTANCE  = 'tfz_tracking_max_distance'
 CONF_PASSTHRU_ZONE_TIME         = 'passthru_zone_time'
 CONF_LOG_LEVEL                  = 'log_level'
+CONF_LOG_LEVEL_DEVICES          = 'log_level_devices'
 CONF_DISPLAY_GPS_LAT_LONG       = 'display_gps_lat_long'
 
 # Zone Parameters
@@ -863,6 +872,7 @@ DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_UNIQUE_ID, None)
 
 DEFAULT_GENERAL_CONF = {
         CONF_LOG_LEVEL: 'debug-auto-reset',
+        CONF_LOG_LEVEL_DEVICES: ['all'],
 
         # General Configuration Parameters
         CONF_UNIT_OF_MEASUREMENT: 'mi',
@@ -934,16 +944,6 @@ RANGE_GENERAL_CONF = {
         CONF_TFZ_TRACKING_MAX_DISTANCE: [1, 100, 1, 'km'],
         CONF_TRAVEL_TIME_FACTOR: [.1, 1, .1, ''],
         CONF_PASSTHRU_ZONE_TIME: [0, 5],
-
-        # inZone Configuration Parameters
-        # CONF_INZONE_INTERVALS: {
-        #         IPHONE: [5, 480],
-        #         IPAD: [5, 480],
-        #         WATCH: [5, 480],
-        #         AIRPODS: [5, 480],
-        #         NO_MOBAPP: [5, 480],
-        #         OTHER: [5, 480],
-        #         },
 
         # Waze Configuration Parameters
         CONF_WAZE_MIN_DISTANCE: [0, 1000, 5, 'km'],

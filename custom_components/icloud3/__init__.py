@@ -75,7 +75,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     config_file.load_storage_icloud3_configuration_file()
 
                     if Gb.conf_profile[CONF_VERSION] == 1:
-                        Gb.HALogger.info(f"Initializing iCloud3 v{VERSION} - Remove Platform: iCloud3 statement")
+                        Gb.HALogger.warning(f"Starting iCloud3 v{VERSION} > "
+                                            "Detected a `platform: icloud3` statement in the "
+                                            "configuration.yaml file. This is depreciated and "
+                                            "should be removed.")
 
     except Exception as err:
         # log_exception(err)

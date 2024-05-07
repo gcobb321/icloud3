@@ -306,7 +306,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
             except Exception as err:
                 rawdata_msg = 'No Location data'
                 if _RawData:
-                    log_rawdata(f"{rawdata_msg}-{_Device.devicename}/{_Device.is_data_source_FAMSHR_FMF}",
+                    log_rawdata(f"iCloud - {rawdata_msg}-{_Device.devicename}/{_Device.is_data_source_FAMSHR_FMF}",
                                 {'filter': _RawData.device_data})
                 continue
                 # log_exception(err)

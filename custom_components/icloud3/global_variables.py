@@ -38,7 +38,7 @@ from .const          import (DEVICENAME_MOBAPP, VERSION, NOT_SET, HOME_FNAME, HO
                             CONF_WAZE_HISTORY_TRACK_DIRECTION,
                             CONF_STAT_ZONE_FNAME,
                             CONF_STAT_ZONE_BASE_LATITUDE, CONF_STAT_ZONE_BASE_LONGITUDE,
-                            CONF_STAT_ZONE_INZONE_INTERVAL, CONF_LOG_LEVEL,
+                            CONF_STAT_ZONE_INZONE_INTERVAL, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
                             CONF_MOBAPP_REQUEST_LOC_MAX_CNT, CONF_DISTANCE_BETWEEN_DEVICES,
                             CONF_PASSTHRU_ZONE_TIME,
                             CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
@@ -180,6 +180,7 @@ class GlobalVariables(object):
     restart_ha_flag                 = False     # HA needs to be restarted
     any_device_was_updated_reason   = ''
     startup_alerts                  = []
+    startup_alerts_str              = ''
     startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
     debug_log                       = {}  # Log variable and dictionsry field/values to icloud3-0.log file
 
@@ -273,6 +274,7 @@ class GlobalVariables(object):
     config_flow_updated_parms = {''}
 
     distance_method_waze_flag       = True
+    icloud_force_update_flag        = False
     max_interval_secs               = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     offline_interval_secs           = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     exit_zone_interval_secs         = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
@@ -287,6 +289,7 @@ class GlobalVariables(object):
     gps_accuracy_threshold          = DEFAULT_GENERAL_CONF[CONF_GPS_ACCURACY_THRESHOLD]
     travel_time_factor              = DEFAULT_GENERAL_CONF[CONF_TRAVEL_TIME_FACTOR]
     log_level                       = DEFAULT_GENERAL_CONF[CONF_LOG_LEVEL]
+    log_level_devices               = DEFAULT_GENERAL_CONF[CONF_LOG_LEVEL_DEVICES]
 
     device_tracker_state_source     = DEFAULT_GENERAL_CONF[CONF_DEVICE_TRACKER_STATE_SOURCE]
     display_gps_lat_long_flag       = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]

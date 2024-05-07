@@ -5,6 +5,7 @@ from ..const                import (HIGH_INTEGER,
                                     CRLF, CRLF_DOT, DASH_20,
                                     ICLOUD, FAMSHR,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
+                                    CONF_USERNAME
                                     )
 
 from ..support              import start_ic3 as start_ic3
@@ -14,7 +15,7 @@ from ..support.pyicloud_ic3 import (PyiCloudService, PyiCloudFailedLoginExceptio
 from ..helpers.common       import (instr, list_to_str, delete_file, )
 from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg, post_startup_alert, log_debug_msg,
                                     log_info_msg, log_exception, log_error_msg, internal_error_msg2, _trace, _traceha, )
-from ..helpers.time_util    import (time_secs, secs_to_time, format_age,
+from ..helpers.time_util    import (time_now_secs, secs_to_time, format_age,
                                     format_time_age, )
 
 import os
@@ -62,7 +63,7 @@ def create_PyiCloudService(PyiCloud, called_from='unknown'):
 #--------------------------------------------------------------------
 def verify_pyicloud_setup_status():
     '''
-    The PyiCloud Servicesinterface set up was started in __init__
+    The PyiCloud Services interface set up was started in __init__
     via create_PyiCloudService_executor_job above. The following steps are done to set up
     PyiCloudService:
         1. Initialize the variables and authenticate the account.
@@ -80,6 +81,14 @@ def verify_pyicloud_setup_status():
         the PyiCloud session data requests must be run in the event loop.
 
     '''
+    # The verify can be requested during started or after a restart request before
+    # the restart has begun
+    if (Gb.PyiCloudInit
+            and Gb.restart_icloud3_request_flag
+            and Gb.start_icloud3_inprocess_flag):
+        Gb.PyiCloudInit.init_step_needed   = ['FamShr', 'FmF']
+        Gb.PyiCloudInit.init_step_complete = ['Setup', 'Authenticate']
+
     init_step_needed   = list_to_str(Gb.PyiCloudInit.init_step_needed)
     init_step_complete = list_to_str(Gb.PyiCloudInit.init_step_complete)
 
@@ -137,7 +146,7 @@ def authenticate_icloud_account(PyiCloud, called_from='unknown', initial_setup=F
     this_fct_error_flag = True
 
     try:
-        Gb.pyicloud_auth_started_secs = time_secs()
+        Gb.pyicloud_auth_started_secs = time_now_secs()
         if PyiCloud and 'Complete' in Gb.PyiCloudInit.init_step_complete:
             PyiCloud.authenticate(refresh_session=True, service='find')
 
@@ -212,9 +221,9 @@ def display_authentication_msg(PyiCloud):
     last_authenticated_time =  Gb.authenticated_time
     # last_authenticated_time = last_authenticated_age = Gb.authenticated_time
     # if last_authenticated_time > 0:
-    #     last_authenticated_age = time_secs() - last_authenticated_time
+    #     last_authenticated_age = time_now_secs() - last_authenticated_time
 
-    Gb.authenticated_time = time_secs()
+    Gb.authenticated_time = time_now_secs()
     Gb.pyicloud_authentication_cnt += 1
 
     event_msg =(f"iCloud Acct Auth "
@@ -305,7 +314,6 @@ def new_2fa_authentication_code_requested(PyiCloud, initial_setup=False):
             elif Gb.restart_icloud3_request_flag:         # via service call
                 event_msg =("iCloud Restarting, Reset command issued")
                 post_error_msg(event_msg)
-                Gb.restart_icloud3_request_flag = True
 
             if PyiCloud is None:
                 event_msg =("iCloud Authentication Required, will retry")
@@ -405,10 +413,17 @@ def create_PyiCloudService_secondary(username, password,
     authentication test routines. This is used by config_flow to open a second
     PyiCloud session
     '''
-    return PyiCloudService( username, password,
+    PyiCloud = PyiCloudService( username, password,
                             cookie_directory=Gb.icloud_cookies_dir,
                             session_directory=(f"{Gb.icloud_cookies_dir}/session"),
                             endpoint_suffix=endpoint_suffix,
                             called_from=called_from,
                             verify_password=verify_password,
                             request_verification_code=request_verification_code)
+
+    return PyiCloud
+
+def create_FamilySharing_secondary(PyiCloud, config_flow_login):
+
+    FamShr = PyiCloud.create_FamilySharing_object(config_flow_login)
+    return FamShr

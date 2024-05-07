@@ -11,50 +11,35 @@ from datetime                   import datetime, timedelta, timezone
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   Time conversion and formatting functions
+#   Current Time conversion and formatting functions
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def time_now():
-    ''' now --> epoch/unix 10:23:45 '''
-    return (dt_util.now().strftime(DATETIME_FORMAT)[11:19])
-
-#--------------------------------------------------------------------
 def time_now_secs():
     ''' now --> epoch/unix secs '''
     return int(time.time())
 
 #--------------------------------------------------------------------
-def time_secs():
-    ''' now --> epoch/unix secs '''
-    return time_now_secs()
-
-#--------------------------------------------------------------------
-def datetime_now_ymd_hms():
-    ''' now --> epoch/unix yyy-mm-dd 10:23:45 '''
-    return (dt_util.now().strftime(DATETIME_FORMAT)[0:19])
+def time_now():
+    ''' now --> epoch/unix 10:23:45 '''
+    return str(datetime.fromtimestamp(int(time.time())))[11:19]
 
 #--------------------------------------------------------------------
 def datetime_now():
     ''' now --> epoch/unix yyy-mm-dd 10:23:45 '''
-    return secs_to_datetime(time_now_secs())
+    return str(datetime.fromtimestamp(int(time.time())))
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Time conversion and formatting functions
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def isnot_valid(secs):
-    '''
-    Not valid if before 1/1/2020, = 9999999999 or None
-    '''
-    try:
-        return secs < 1 or secs == HIGH_INTEGER or secs is None
-    except:
-        return True
-
-#--------------------------------------------------------------------
 def secs_local(secs_utc):
     return secs_utc + Gb.time_zone_offset_secs
+
+#--------------------------------------------------------------------
+def time_local(secs_utc):
+    ''' secs_utc --> 10:23:45 '''
+    return datetime_local(secs_utc)[11:19]
 
 #--------------------------------------------------------------------
 def datetime_local(secs_utc):
@@ -64,16 +49,22 @@ def datetime_local(secs_utc):
     return str(datetime.fromtimestamp(secs_utc))
 
 #--------------------------------------------------------------------
-def time_local(secs_utc):
-    ''' secs_utc --> 10:23:45 '''
-
-    return datetime_local(secs_utc)[11:19]
-
+def isnot_valid(secs):
+    '''
+    Not valid if before 1/1/2020, = 9999999999 or None
+    '''
+    try:
+        return secs < 1 or secs == HIGH_INTEGER or secs is None
+    except:
+        return True
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Time conversion and formatting functions
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def s2t(secs_utc):
+    return secs_to_time(secs_utc)
+
 def secs_to_time(secs_utc):
     ''' secs --> 10:23:45/h:mm:ssa  '''
 
@@ -122,9 +113,7 @@ def mins_to(secs):
 
 #--------------------------------------------------------------------
 def time_to_12hrtime(hhmmss, ampm=True):
-    ''' 10:23:45 --> (h)h:mm:ssa or (h)h:mm:ssp
-
-    '''
+    ''' 10:23:45 --> (h)h:mm:ssa or (h)h:mm:ssp '''
 
     try:
         if hhmmss == HHMMSS_ZERO:
@@ -158,6 +147,27 @@ def time_to_12hrtime(hhmmss, ampm=True):
             pass
 
     return hhmmss
+
+#--------------------------------------------------------------------
+def time_to_24hrtime(hhmmss):
+    ''' (h)h:mm:ssa or (h)h:mm:ssp --> hh:mm:ss '''
+
+    hhmm_colon = hhmmss.find(':')
+    if hhmm_colon == -1: return hhmmss
+
+    ap = hhmmss[-1].lower()                # Get last character of time (#, a, p).lower()
+    if ap not in ['a', 'p']:
+        return hhmmss
+
+    hh = int(hhmmss[:hhmm_colon])
+    if hh == 12 and ap == 'a':
+        hh = 0
+    elif hh <= 11 and ap == 'p':
+        hh += 12
+
+    hhmmss24 = f"{hh:0>2}{hhmmss[hhmm_colon:-1]}"
+
+    return hhmmss24
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   FORMAT TIMER & AGE FUNCTIONS
@@ -471,6 +481,7 @@ def extract_time_fields(msg_str):
         hhmm_colon += 4
 
     return list(times_found)
+
 #--------------------------------------------------------------------------------
 def adjust_time_hour_value(hhmmss, hh_adjustment):
     '''
@@ -492,22 +503,53 @@ def adjust_time_hour_value(hhmmss, hh_adjustment):
     hhmm_colon = hhmmss.find(':')
     if hhmm_colon == -1: return hhmmss
 
-    ap = hhmmss_ap = hhmmss[-1]                # Get last character of time (#, a, p)
-    ap = f"{ap.lower()}m" if ap in ['a', 'p', 'A', 'P'] else '' # Reformat (pm or '')
-    hh = hhmmss[:hhmm_colon] + ap              # Create Hometime zonehours field (3pm, 15)
+    hhmmss24 = time_to_24hrtime(hhmmss)
+    hh = int(hhmmss24[0:2]) + hh_adjustment
+    if hh <= 0:
+        hh += 24
+    elif hh >= 24:
+        hh -=24
 
-    if hh.endswith('m'):
-        dt12 = datetime.strptime(hh, '%I%p')   # Get 12-hour datetime (1900-01-01 03:00:00pm)
-        h24  = dt12.strftime('%H')             # Convert to 24 hour time (03pm -> 15)
-        dt24 = datetime.strptime(h24, '%H')    # Get datetime value of 24-hour time (1900-01-01 15:00:00)
-        dt24 += timedelta(hours=hh_adjustment) # Add time zone offset (15-2=13)
-        ap = dt24.strftime("%p")[0].lower()    # Get a/p for new time (PM -> p)
-        hh_away_zone = dt24.strftime("%-I")    # Get Away time zone 12-hour value (1)
+    hhmmss24 = f"{hh:0>2}{hhmmss24[2:8]}"
 
-    else:
-        dt24 = datetime.strptime(hh, '%H')     # Get datetime value of 24-hour time (15)
-        dt24 += timedelta(hours=hh_adjustment) # Add time zone offset (15-2=13)
-        hh_away_zone = dt24.strftime("%H")    # Get Away time zone 12-hour value (15)
+    return time_to_12hrtime(hhmmss24)
+
+#--------------------------------------------------------------------------------
+def xadjust_time_hour_value(hhmmss, hh_adjustment):
+    '''
+    All times are based on the HA server time. When the device is in another time
+    zone, convert the HA server time to the device's local time so the local time
+    can be displayed on the Event Log and in time-based sensors.
+
+    Input:
+        hhmmss - HA server time (hh:mm, hh:mm:ss, hh:mm(a/p), hh:mm:ss(a/p))
+        hh_adjustment - Number of hours between the HA server time and the
+            local time (-12 to 12)
+    Return:
+        new time value in the same format as the Input hhmmss time
+    '''
+
+    if hh_adjustment == 0 or hhmmss == HHMMSS_ZERO:
+        return hhmmss
+
+    hhmm_colon = hhmmss.find(':')
+    if hhmm_colon == -1: return hhmmss
+
+    ap = hhmmss_ap = hhmmss[-1].lower()             # Get last character of time (#, a, p).lower()
+    h24 = int(hhmmss[:hhmm_colon])
+
+    if ap in ['a', 'p']:                            # 12-hour time (7:23:45p)
+        if (h24 == 12 and ap == 'a'): h24 = 0       # Convert to 24-hour time
+        elif ap == 'p': h24 += 12
+        dt24 = datetime.strptime(str(h24), '%H')    # Get datetime value of 24-hour time (19)
+        dt24 += timedelta(hours=hh_adjustment)      # Add time zone offset (3, -3) = (16, 22)
+        ap = dt24.strftime("%p")[0].lower()         # Get a/p for new time (PM -> p) (p)
+        hh_away_zone = dt24.strftime("%-I")         # Get Away time zone 12-hour value (4, 10)
+
+    else:                                           # 24-hour time (19:23:45)
+        dt24 = datetime.strptime(str(h24), '%H')    # Get datetime value of 24-hour time (19)
+        dt24 += timedelta(hours=hh_adjustment)      # Add time zone offset (3, -3) = (16, 22)
+        hh_away_zone = dt24.strftime("%H")          # Get Away time zone value (16, 22)
 
     hhmmss = f"{hh_away_zone}{hhmmss[hhmm_colon:]}"
     if ap: hhmmss = hhmmss.replace(hhmmss_ap, ap)
