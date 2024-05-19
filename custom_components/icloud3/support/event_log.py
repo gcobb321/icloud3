@@ -358,7 +358,7 @@ class EventLog(object):
 
             MAX_EVLOG_RECD_LENGTH = 2000
             if len(event_text) > MAX_EVLOG_RECD_LENGTH:
-                self._break_up_event_text(devicename, this_update_time, event_text, MAX_EVLOG_RECD_LENGTH)
+                event_recd = self._break_up_event_text(devicename, this_update_time, event_text, MAX_EVLOG_RECD_LENGTH)
             else:
                 event_recd = [devicename, this_update_time, event_text]
 
@@ -415,6 +415,7 @@ class EventLog(object):
         event_recd = [devicename, this_update_time,
                         (f"{chunk_text[:split_str_end_len]} ({chunk_text[:split_str_end_len]})")]
         self._add_recd_to_event_recds(event_recd)
+        return event_recd
 
 #=========================================================================
     def update_event_log_display(self, devicename='', show_one_screen=False):
