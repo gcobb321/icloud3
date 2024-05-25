@@ -34,11 +34,12 @@ from homeassistant import config_entries
 # =================================================================
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (VERSION,
+from .const             import (VERSION, VERSION_BETA,
                                 HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, LT, NBSP3, CLOCK_FACE,
                                 CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_HDOT, CRLF_X, NL, NL_DOT,
                                 TOWARDS, EVLOG_IC3_STAGE_HDR,
                                 ICLOUD, ICLOUD_FNAME, TRACKING_NORMAL, FNAME,
+                                CONF_USERNAME, CONF_PASSWORD,
                                 IPHONE, IPAD, WATCH, AIRPODS, IPOD, ALERT,
                                 CMD_RESET_PYICLOUD_SESSION, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
@@ -50,6 +51,7 @@ from .const             import (VERSION,
                                 CONF_LOG_LEVEL, STATZONE_RADIUS_1M,
                                 )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
+from .support           import hacs_ic3
 from .support           import start_ic3
 from .support           import start_ic3_control
 from .support           import stationary_zone as statzone
@@ -82,7 +84,8 @@ class iCloud3:
 
         Gb.started_secs                    = time_now_secs()
         Gb.hass_configurator_request_id    = {}
-        Gb.version                         = VERSION
+        Gb.version                         = f"{VERSION}{VERSION_BETA}"
+        Gb.version_beta                    = VERSION_BETA
 
         Gb.polling_5_sec_loop_running      = False
         self.pyicloud_refresh_time         = {}     # Last time Pyicloud was refreshed for the trk method
@@ -163,6 +166,7 @@ class iCloud3:
 
             Gb.trace_prefix = '------'
             Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
+
             Gb.EvLog.startup_event_save_recd_flag = False
             Gb.initial_icloud3_loading_flag = False
             Gb.start_icloud3_inprocess_flag = False
@@ -1169,62 +1173,74 @@ class iCloud3:
         Tracked device screen displayed - Show  all alert messages
         Monitored device screen displayed - Show only that devices alerts
         '''
-        evlog_greenbar_msg = evlog_startup_alert_attr = ''
-        evlog_tracked_alert_attr = evlog_monitored_alert_attr = ''
-        show_on_displayed_evlog_screen_flag = False
+        general_alert_msg = startup_alert_attr = ''
+        tracked_alert_attr = monitored_alert_attr = ''
 
         if Gb.startup_alerts != []:
-            evlog_greenbar_msg       = f"{LDOT2}Errors Starting iCloud3"
-            evlog_startup_alert_attr = Gb.startup_alerts_str
+            general_alert_msg  = f"{LDOT2}Errors Starting iCloud3"
+            startup_alert_attr = Gb.startup_alerts_str
+            Gb.primary_data_source_ICLOUD
+            if Gb.PyiCloud is None:
+                if Gb.conf_tracking[CONF_USERNAME] or Gb.conf_tracking[CONF_PASSWORD]:
+                    general_alert_msg += f"{CRLF}{LDOT2}iCloud acct not logged into, Invalid Username/Password"
+                elif Gb.primary_data_source_ICLOUD is False:
+                    general_alert_msg += f"{CRLF}{LDOT2}iCloud acct not logged into, Possible Connection Error"
 
-            show_on_displayed_evlog_screen_flag = True
+        elif Gb.version_hacs:
+            general_alert_msg = f"iCloud3 {Gb.version_hacs} is available on HACS, you are running v{Gb.version}"
+
+        if (Gb.icloud_acct_error_cnt > 5
+                and instr(general_alert_msg, 'errors accessing') is False):
+            general_alert_msg += "Internet or Apple may be down, errors accessing iCloud acct"
 
         for Device in Gb.Devices:
-            alert_msg = ''
+            device_alert_msg = ''
             if (Device.verified_flag is False
                     or (Device.is_data_source_ICLOUD is False and Device.is_data_source_MOBAPP is False)):
-                alert_msg = "Not Verified, No Data Source, "
+                device_alert_msg = "Not Verified, No Data Source, "
             if Device.no_location_data:
-                alert_msg += "No GPS Data, "
+                device_alert_msg += "No GPS Data, "
             if Device.is_offline:
-                alert_msg += "Offline, "
+                device_alert_msg += "Offline, "
 
-            if alert_msg:
-                alert_msg = alert_msg[:-2]
+            if device_alert_msg:
+                device_alert_msg = device_alert_msg[:-2]
             elif Device.is_tracking_paused:
-                alert_msg = "Tracking Paused"
+                device_alert_msg = "Tracking Paused"
             elif mins_since(Device.loc_data_secs) > 300:
-                alert_msg = f"Location Very Old (>{format_age(Device.loc_data_secs)})"
+                device_alert_msg = f"Location Very Old (>{format_age(Device.loc_data_secs)})"
             elif isbetween(Device.dev_data_battery_level, 1, 19):
-                alert_msg = f"Low Battery (< 20%)"
+                device_alert_msg = f"Low Battery (< 20%)"
 
-            if alert_msg:
-                fname_alert_msg = f"{Device.fname} > {alert_msg}"
-                crlf = CRLF_LDOT if evlog_greenbar_msg else LDOT2
-                evlog_greenbar_msg += f"{crlf}{fname_alert_msg}"
+            show_on_displayed_evlog_screen_flag = (general_alert_msg != '')
+
+            if device_alert_msg:
+                fname = f"{Device.fname} > {device_alert_msg}"
+                crlf = CRLF_LDOT if general_alert_msg else LDOT2
+                general_alert_msg += f"{crlf}{fname}"
                 if Device.is_tracked:
-                    nldot = NL_DOT if evlog_tracked_alert_attr else DOT
-                    evlog_tracked_alert_attr += f"{nldot}{fname_alert_msg}"
+                    nldot = NL_DOT if tracked_alert_attr else DOT
+                    tracked_alert_attr += f"{nldot}{fname}"
                 else:
-                    nldot = NL_DOT if evlog_monitored_alert_attr else DOT
-                    evlog_monitored_alert_attr += f"{nldot}{fname_alert_msg}"
+                    nldot = NL_DOT if monitored_alert_attr else DOT
+                    monitored_alert_attr += f"{nldot}{fname}"
 
                 if (Device.device_type in [IPHONE, IPAD, WATCH]
                         or Gb.EvLog.evlog_attrs[FNAME].startswith(Device.fname)):
                     show_on_displayed_evlog_screen_flag = True
 
-            if alert_msg != Device.alert:
-                Device.alert = Device.sensors[ALERT] = alert_msg
+            if device_alert_msg != Device.alert:
+                Device.alert = Device.sensors[ALERT] = device_alert_msg
                 Device.write_ha_device_tracker_state()
 
-        Gb.EvLog.evlog_attrs['alert_startup']   = Gb.EvLog.alert_attr_filter(evlog_startup_alert_attr)
-        Gb.EvLog.evlog_attrs['alert_tracked']   = Gb.EvLog.alert_attr_filter(evlog_tracked_alert_attr)
-        Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(evlog_monitored_alert_attr)
+        Gb.EvLog.evlog_attrs['alert_startup']   = Gb.EvLog.alert_attr_filter(startup_alert_attr)
+        Gb.EvLog.evlog_attrs['alert_tracked']   = Gb.EvLog.alert_attr_filter(tracked_alert_attr)
+        Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(monitored_alert_attr)
 
-        if (evlog_greenbar_msg != Gb.EvLog.greenbar_alert_msg
+        if (general_alert_msg != Gb.EvLog.greenbar_alert_msg
                 and show_on_displayed_evlog_screen_flag):
-            post_evlog_greenbar_msg(evlog_greenbar_msg)
-        elif evlog_greenbar_msg == '' and Gb.EvLog.greenbar_alert_msg:
+            post_evlog_greenbar_msg(general_alert_msg)
+        elif general_alert_msg == '' and Gb.EvLog.greenbar_alert_msg:
             clear_evlog_greenbar_msg()
 
 #----------------------------------------------------------------------------
@@ -1290,6 +1306,9 @@ class iCloud3:
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def _timer_tasks_every_hour(self):
+        # See if there is a new iCloud3 version on HACS
+        Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available())
+
         # Clean out lingering StatZone
         Gb.StatZones_to_delete = [StatZone  for StatZone in Gb.StatZones
                                             if StatZone.radius_m == STATZONE_RADIUS_1M]

@@ -304,7 +304,7 @@ MOBAPP_DEVICE_NONE_ITEMS_KEY_TEXT = {
         'None':     'None - The Mobile App is not installed on this device',
         }
 LOG_ZONES_KEY_TEXT = {
-        '.fmf':             f"{'-'*10} File Name Formats {'-'*10}",
+        # '.fmf':             f"{'-'*10} File Name Formats {'-'*10}",
         'name-zone':        ' → [year]-[zone].csv',
         'name-device':      ' → [year]-[device].csv',
         'name-device-zone': ' → [year]-[device]-[zone].csv',
@@ -954,6 +954,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if Gb.PyiCloud and self.PyiCloud is None:
             self.PyiCloud = Gb.PyiCloud
         Gb.PyiCloudConfigFlow = self.PyiCloud
+
+        if self.PyiCloud is None and self.username:
+            self.header_msg = 'icloud_acct_not_logged_into'
 
         self.step_id = f"menu_{self.menu_page_no}"
         self.called_from_step_id_1 = self.called_from_step_id_2 =''
@@ -2272,8 +2275,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             self.actions_list_default = 'login_icloud_account'
                             self.errors[CONF_USERNAME] = 'icloud_acct_username_password_error'
 
-
-
                 elif action_item == 'logout_icloud_account':
                     user_input = self._initialize_pyicloud_username_password(user_input)
 
@@ -2505,7 +2506,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                         self.username,
                                         self.password,
                                         self.endpoint_suffix,
-                                        'config_flow',
+                                        'config',
                                         verify_password,
                                         request_verification_code)
 
@@ -2949,7 +2950,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                     f"{self.conf_device_selected[CONF_FNAME]}/"
                                     f"{DEVICE_TYPE_FNAME[self.conf_device_selected[CONF_DEVICE_TYPE]]}")
                     post_event(event_msg)
-
                     Gb.conf_devices[self.conf_device_selected_idx] = self.conf_device_selected
 
                 config_file.write_storage_icloud3_configuration_file()
@@ -3099,21 +3099,19 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 and self.devicename_by_famshr_fmf[user_input[CONF_FAMSHR_DEVICENAME]] not in ui_old_devicename):
             self.errors[CONF_FAMSHR_DEVICENAME] = 'already_assigned'
 
-        if (user_input[CONF_FMF_EMAIL] in self.devicename_by_famshr_fmf
-                and self.devicename_by_famshr_fmf[user_input[CONF_FMF_EMAIL]] not in ui_old_devicename):
-            self.errors[CONF_FMF_EMAIL] = 'already_assigned'
+        # if (user_input[CONF_FMF_EMAIL] in self.devicename_by_famshr_fmf
+        #         and self.devicename_by_famshr_fmf[user_input[CONF_FMF_EMAIL]] not in ui_old_devicename):
+        #     self.errors[CONF_FMF_EMAIL] = 'already_assigned'
 
         if self.PyiCloud:
             _FamShr = self.PyiCloud.FamilySharing
             conf_famshr_fname = user_input[CONF_FAMSHR_DEVICENAME]
-            if conf_famshr_fname in _FamShr.device_model_info_by_fname:
-                raw_model, model, model_display_name = _FamShr.device_model_info_by_fname[conf_famshr_fname]
-                if (user_input.get(CONF_RAW_MODEL) != raw_model
-                            or user_input[CONF_MODEL] != model
-                            or user_input[CONF_MODEL_DISPLAY_NAME] != model_display_name):
-                    user_input[CONF_RAW_MODEL] = raw_model
-                    user_input[CONF_MODEL] = model
-                    user_input[CONF_MODEL_DISPLAY_NAME] = model_display_name
+            device_id = self.PyiCloud.device_id_by_famshr_fname.get(conf_famshr_fname, '')
+            raw_model, model, model_display_name = self.PyiCloud.device_model_info_by_fname.get(conf_famshr_fname, ['', '', ''])
+            user_input[CONF_FAMSHR_DEVICE_ID]   = device_id
+            user_input[CONF_RAW_MODEL]          = raw_model
+            user_input[CONF_MODEL]              = model
+            user_input[CONF_MODEL_DISPLAY_NAME] = model_display_name
 
         # Build 'log_zones' list
         if ('none' in user_input[CONF_LOG_ZONES]
@@ -3251,7 +3249,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self._build_zone_list()
 
         await self._build_famshr_devices_list()
-        self._build_fmf_devices_list()
+        # self._build_fmf_devices_list()
         self._build_devicename_by_famshr_fmf()
 
 #----------------------------------------------------------------------
@@ -3278,7 +3276,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if _FamShr := self.PyiCloud.FamilySharing:
             self._check_finish_v2v3conversion_for_famshr_fname()
 
-            sorted_famshr_info_by_famshr_fname = sort_dict_by_values(_FamShr.device_info_by_famshr_fname)
+            sorted_famshr_info_by_famshr_fname = sort_dict_by_values(self.PyiCloud.device_info_by_famshr_fname)
             self.famshr_list_text_by_fname_base.update(sorted_famshr_info_by_famshr_fname)
             self.famshr_list_text_by_fname = self.famshr_list_text_by_fname_base.copy()
 
@@ -3304,7 +3302,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         # Build a dictionary of the FamShr fnames to compare to the ic3_devicename {gary_iphone: Gary-iPhone}
         famshr_fname_by_ic3_devicename = {slugify(fname).strip(): fname
-                                                for fname in _FamShr.device_model_info_by_fname.keys()}
+                                                for fname in self.PyiCloud.device_model_info_by_fname.keys()}
 
         # Cycle thru conf_devices and see if there are any ic3_devicename = famshr_fname entries.
         # If so, they were just converted and the real famshr_devicename needs to be reset to the actual
@@ -3322,12 +3320,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             conf_device[CONF_FAMSHR_DEVICENAME] = famshr_fname
 
             raw_model, model, model_display_name = \
-                                _FamShr.device_model_info_by_fname[famshr_fname]
+                                self.PyiCloud.device_model_info_by_fname[famshr_fname]
+            device_id = Gb.device_id_by_famshr_fname[famshr_fname]
 
+            conf_device[CONF_FAMSHR_DEVICE_ID] = device_id
             conf_device[CONF_MODEL] = model
             conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
             conf_device[CONF_RAW_MODEL] = raw_model
-            conf_device[CONF_FAMSHR_DEVICE_ID] = _FamShr.device_id_by_famshr_fname[famshr_fname]
             update_conf_file_flag = True
 
         if update_conf_file_flag:
@@ -3371,27 +3370,27 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.famshr_list_text_by_fname = self.famshr_list_text_by_fname_base.copy()
         for famshr_devicename, famshr_text in self.famshr_list_text_by_fname_base.items():
             devicename_msg = ''
-            devicename_msg_prefix = ''
+            devicename_msg_alert = ''
             try:
                 if current_devicename != self.devicename_by_famshr_fmf[famshr_devicename]:
-                    devicename_msg_prefix = f"{YELLOW_ALERT} "
+                    devicename_msg_alert = f"{YELLOW_ALERT} "
                     devicename_msg = (  f"{RARROW}ASSIGNED TO-"
                                         f"{self.devicename_by_famshr_fmf[famshr_devicename]}")
             except:
                 pass
             self.famshr_list_text_by_fname[famshr_devicename] = \
-                        f"{devicename_msg_prefix}{famshr_text}{devicename_msg}"
+                        f"{devicename_msg_alert}{famshr_text}{devicename_msg}"
 
-        self.fmf_list_text_by_email = self.fmf_list_text_by_email_base.copy()
-        for fmf_email, fmf_text in self.fmf_list_text_by_email_base.items():
-            devicename_msg = ''
-            try:
-                if current_devicename != self.devicename_by_famshr_fmf[fmf_email]:
-                    devicename_msg = (  f"{RARROW}ASSIGNED TO-"
-                                        f"{self.devicename_by_famshr_fmf[fmf_email]}")
-            except:
-                pass
-            self.fmf_list_text_by_email[fmf_email] = f"{fmf_text}{devicename_msg}"
+        # self.fmf_list_text_by_email = self.fmf_list_text_by_email_base.copy()
+        # for fmf_email, fmf_text in self.fmf_list_text_by_email_base.items():
+        #     devicename_msg = ''
+        #     try:
+        #         if current_devicename != self.devicename_by_famshr_fmf[fmf_email]:
+        #             devicename_msg = (  f"{RARROW}ASSIGNED TO-"
+        #                                 f"{self.devicename_by_famshr_fmf[fmf_email]}")
+        #     except:
+        #         pass
+        #     self.fmf_list_text_by_email[fmf_email] = f"{fmf_text}{devicename_msg}"
 
 #----------------------------------------------------------------------
     def _build_mobapp_entity_list(self):
@@ -3490,8 +3489,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if conf_device_data[CONF_FAMSHR_DEVICENAME] != 'None':
             device_info +=  f", FamShr-({conf_device_data[CONF_FAMSHR_DEVICENAME]})"
 
-        if conf_device_data[CONF_FMF_EMAIL] != 'None':
-            device_info +=  f", FmF-({conf_device_data[CONF_FMF_EMAIL]})"
+        # if conf_device_data[CONF_FMF_EMAIL] != 'None':
+        #     device_info +=  f", FmF-({conf_device_data[CONF_FMF_EMAIL]})"
 
         if conf_device_data[CONF_MOBILE_APP_DEVICE] != 'None':
             device_info +=  f", MobApp-({conf_device_data[CONF_MOBILE_APP_DEVICE]})"
@@ -4531,19 +4530,20 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 self.errors['base'] = 'icloud_acct_not_available'
 
             # If conf_fmf_email is not in available fmf emails list, add it
-            fmf_email = self.conf_device_selected[CONF_FMF_EMAIL]
-            fmf_list_text_by_email = self.fmf_list_text_by_email.copy()
-            if fmf_email not in self.fmf_list_text_by_email:
-                error_key = f"{error_key}_fmf"
-                self.errors[CONF_FMF_EMAIL] = 'unknown_fmf'
-                fmf_list_text_by_email[fmf_email] = f"{fmf_email}{UNKNOWN_DEVICE_TEXT}"
+            # fmf_email = self.conf_device_selected[CONF_FMF_EMAIL]
+            # fmf_list_text_by_email = self.fmf_list_text_by_email.copy()
+            # if fmf_email not in self.fmf_list_text_by_email:
+            #     error_key = f"{error_key}_fmf"
+            #     self.errors[CONF_FMF_EMAIL] = 'unknown_fmf'
+            #     fmf_list_text_by_email[fmf_email] = f"{fmf_email}{UNKNOWN_DEVICE_TEXT}"
 
             if self.PyiCloud:
-                try:
-                    if self.PyiCloud.FindMyFriends.is_service_not_available:
-                        fmf_list_text_by_email[fmf_email] = f"{fmf_email}{DATA_ENTRY_ALERT}{SERVICE_NOT_AVAILABLE}"
-                except:
-                    fmf_list_text_by_email[fmf_email] = f"{fmf_email}{DATA_ENTRY_ALERT}{SERVICE_NOT_STARTED_YET}"
+                pass
+                # try:
+                #     if self.PyiCloud.FindMyFriends.is_service_not_available:
+                #         fmf_list_text_by_email[fmf_email] = f"{fmf_email}{DATA_ENTRY_ALERT}{SERVICE_NOT_AVAILABLE}"
+                # except:
+                #     fmf_list_text_by_email[fmf_email] = f"{fmf_email}{DATA_ENTRY_ALERT}{SERVICE_NOT_STARTED_YET}"
             elif 'base' not in self.errors:
                 self.errors['base'] = 'icloud_acct_not_available'
 

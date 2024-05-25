@@ -1,12 +1,26 @@
 ### Important Links:
-- iCloud3 Documentation is [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/0.1-introduction)
-- The *Installing iCloud3* chapter describes migrating from iCloud3 v2 and installing iCloud3 for the first time
+**Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
+**Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
+**iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+
+3.0.5.1
+.......................
+### Change Log - v3.0.5.1 (5/25/2024)
+1. MOBILE APP (Fix) - Fixed a problem where the device's Mobile App data source would be disabled (reset to NotUsed) if the HA Mobile App Integration was set up after the Mobile App's initial locate had been completed.
+2. TRANSLATION FILE (new) - Added Chinese (Simplified) translation (@MagicStarTrace)
+
+### Change Log - v3.0.5 (5/18/2024)
+1. HACS UPUDATE ALERT (New) - The HACS Integration information will be check on a regular basis to see if a newer version of iCloud3 is available.
+2. ICLOUD ACCOUNT AUTHENTICATION/FAMSHR DEVICES LIST (Fixed) - During startup ("Stage 4), the iCloud Account access is set up and the devices in the Family Sharing List is read. If a problem occurred, iCloud3 would retry this 10-times to see if the error was corrected. However, the FamShr data was not being reread and the old data was being used. The FamShr data is now reread correctly when trying to recover from this error.
+3. UPDATE DEVICES SCREEN (Fixed) - When upgrading a device (iPhone, iPad, Watch) and both the old and new devices are still in the Family Sharing List, the new device was being set back to the old device the next time iCloud3 was started.
+4. LOCKED ICLOUD ACCOUNT (New) - An error message is displayed in the HA logs and on the Event Log if the iCloud account is locked.
+5. EVENT LOG (Fix) - An 'Unbound event_recd' error would display when the length of the the event text > 2000 characters (@ehendrix23).
 
 
 v3.0.4
 .......................
-### Change Log - v3.0.4 (not released)
+### Change Log - v3.0.4 (5/11/2024)
 1. ADD DEVICE (Fixed) - An 'Out of Range' error message was encountered adding the first device.
 2. DIRECTION OF TRAVEL (Improvement) - Tweaked the AwayFrom direction override when approaching Home after the previous directions were Towards.
 3. Event Type DEPRECIATED EOORO MESSAGE (Fixed) - This was a warning about the removal of the EventType from HA next year. It has been removed.

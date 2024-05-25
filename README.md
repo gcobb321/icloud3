@@ -4,9 +4,9 @@
 
 ------
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.0.4-blue.svg)](https://github.com/gcobb321/icloud3_v3)  [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3_v3)  [![HACS](https://img.shields.io/badge/HACS-Standard_Repository-orange.svg)](https://github.com/gcobb321/icloud3_v3)
+[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.0.5-blue.svg)](https://github.com/gcobb321/icloud3)  [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)  [![HACS](https://img.shields.io/badge/HACS-Standard_Repository-orange.svg)](https://github.com/gcobb321/icloud3)
 
-[![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3_v3)  [![Released](https://img.shields.io/badge/Released-May,_2024-forestgreen.svg)](https://github.com/gcobb321/icloud3_v3)
+[![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3)  [![Released](https://img.shields.io/badge/Released-May,_2024-forestgreen.svg)](https://github.com/gcobb321/icloud3)
 
 
 

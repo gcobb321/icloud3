@@ -21,7 +21,7 @@ import logging
 from .const import (DOMAIN, PLATFORMS, ICLOUD3, MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
                     CONF_SETUP_ICLOUD_SESSION_EARLY, CONF_EVLOG_BTNCONFIG_URL,
                     SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
-                    EVLOG_IC3_STARTING, VERSION, )
+                    EVLOG_IC3_STARTING, VERSION, VERSION_BETA,)
 
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
@@ -75,7 +75,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     config_file.load_storage_icloud3_configuration_file()
 
                     if Gb.conf_profile[CONF_VERSION] == 1:
-                        Gb.HALogger.warning(f"Starting iCloud3 v{VERSION} > "
+                        Gb.HALogger.warning(f"Starting iCloud3 v{VERSION}{VERSION_BETA} > "
                                             "Detected a `platform: icloud3` statement in the "
                                             "configuration.yaml file. This is depreciated and "
                                             "should be removed.")
@@ -102,7 +102,7 @@ async def start_icloud3(event=None):
         log_msg =(f"iCloud3 v{Gb.version} Started")
         log_info_msg(log_msg)
         Gb.HALogger.info(f"Gb.HALogger-Setting up iCloud3 v{Gb.version}")
-        # Gb.HALogger.info(f"# Gb.HALogger-Setting up iCloud3 v{Gb.version}")
+
     else:
         log_msg =(f"iCloud3 v{Gb.version} - Failed to Start")
         log_error_msg(log_msg)
@@ -151,8 +151,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await Gb.hass.async_add_executor_job(
                 open_ic3log_file_init)
 
-        Gb.HALogger.info(f"Setting up iCloud3 v{Gb.version}")
-        log_info_msg(f"Setting up iCloud3 v{VERSION}")
+        Gb.HALogger.info(f"Setting up iCloud3 v{Gb.version}{VERSION_BETA}")
+        log_info_msg(f"Setting up iCloud3 v{VERSION}{VERSION_BETA}")
 
         if Gb.restart_ha_flag:
             log_error_msg("iCloud3 > Waiting for HA restart to remove legacy \

@@ -55,7 +55,7 @@ FILTER_FIELDS = [
         INFO, GPS_ACCURACY, GPS, POLL_COUNT, VERT_ACCURACY, ALTITUDE, ICLOUD_LOST_MODE_CAPABLE,
         'ResponseCode', 'reason',
         'id', 'firstName', 'lastName', 'name', 'fullName', CONF_IC3_DEVICENAME,
-        'appleId', 'emails', 'phones',
+        'appleId', 'emails', 'phones', 'locked',
         'deviceStatus', 'batteryStatus', 'batteryLevel', 'membersInfo',
         'deviceModel', 'rawDeviceModel', 'deviceDisplayName', 'modelDisplayName', 'deviceClass',
         'isOld', 'isInaccurate', 'timeStamp', 'altitude', 'location', 'latitude', 'longitude',
@@ -182,6 +182,8 @@ def post_error_msg(devicename_or_Device, event_msg="+"):
 
     post_event(devicename, event_msg)
 
+    if devicename == '*':
+        devicename = 'iCloud3 Error >' if event_msg.find("iCloud3 Error") < 0 else ''
     log_msg = (f"{devicename} {event_msg}")
     log_msg = str(log_msg).replace(CRLF, ". ")
 
@@ -540,6 +542,7 @@ def format_msg_line(log_msg, area=None):
         source = f"{_called_from()}{program_area}"
         log_msg = format_startup_header_box(log_msg)
         msg_prefix= ' ' if log_msg.startswith('⡇') else \
+                    ' ❗' if source.startswith('[pyicloud') else \
                     ' ⡇ ' if Gb.trace_group else \
                     '   '
 
@@ -664,7 +667,7 @@ def log_rawdata_unfiltered(title, rawdata):
         rawdata_copy = rawdata['raw'].copy() if 'raw' in rawdata else rawdata.copy()
 
     except:
-        log_info_msg(f"{'─'*8} {title.upper()} {'─'*8}\n{rawdata}")
+        log_info_msg(f"{'_'*8} {title.upper()} {'_'*8}\n{rawdata}")
         return
 
     devices_data = {}
@@ -675,7 +678,7 @@ def log_rawdata_unfiltered(title, rawdata):
 
         rawdata_copy['content'] = 'DeviceData...'
 
-    log_info_msg(f"{'─'*8} {title.upper()} {'─'*8}\n{rawdata_copy}")
+    log_info_msg(f"{'_'*8} {title.upper()} {'_'*8}\n{rawdata_copy}")
 
     for device_data in devices_data:
         log_msg = ( f"FamShr PyiCloud Data (unfiltered -- "
@@ -703,10 +706,6 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False):
 
     if Gb.log_rawdata_flag is False or rawdata is None:
         return
-    # log_info_msg(f"RAWDATA 706 {title=} {Gb.log_level_devices}")
-    # if Gb.log_rawdata_flag_unfiltered:
-    #     log_rawdata_unfiltered(title, rawdata)
-    #     return
 
     if (Gb.start_icloud3_inprocess_flag
             or 'all' in Gb.log_level_devices
@@ -729,7 +728,7 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False):
 
     try:
         if type(rawdata) is not dict:
-            log_info_msg(f"{'─'*8} {title.upper()} {'─'*8}\n{rawdata}")
+            log_info_msg(f"{'_'*8} {title.upper()} {'_'*8}\n{rawdata}")
             return
 
         if Gb.log_rawdata_flag_unfiltered:
@@ -737,7 +736,7 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False):
             return
 
         if 'raw' in rawdata or log_rawdata_flag:
-            log_info_msg(f"{'─'*8} {title.upper()} {'─'*8}\n{rawdata}")
+            log_info_msg(f"{'_'*8} {title.upper()} {'_'*8}\n{rawdata}")
             return
 
         rawdata_items = {k: v   for k, v in rawdata['filter'].items()
@@ -786,11 +785,12 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False):
             else:
                 log_msg = f"{rawdata[:15]}"
 
-    except:
+    except Exception as err:
+        log_exception(err)
         pass
 
     if log_msg != {}:
-        log_info_msg(f"{'─'*8} {title.upper()} {'─'*8}\n{log_msg}")
+        log_info_msg(f"{'_'*8} {title.upper()} {'_'*8}\n{log_msg}")
 
     return
 

@@ -23,7 +23,8 @@
 #           Gb.Zones_by_zone
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-from .const          import (DEVICENAME_MOBAPP, VERSION, NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
+from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
+                             NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
                             FAMSHR, FMF, FAMSHR_FMF, ICLOUD, MOBAPP, FNAME, HIGH_INTEGER,
                             DEFAULT_GENERAL_CONF,
                             CONF_UNIT_OF_MEASUREMENT,
@@ -60,8 +61,10 @@ class GlobalVariables(object):
     Define global variables used in the various iCloud3 modules
     '''
     # Fixed variables set during iCloud3 loading that will not change
-    version         = VERSION
+    version         = f"{VERSION}{VERSION_BETA}"
+    version_beta    = VERSION_BETA
     version_evlog   = ''
+    version_hacs    = ''
 
     hass            = None      # hass: HomeAssistant set in __init__
     config_entry    = None      # hass.config_entry set in __init__ (integration)
@@ -94,9 +97,9 @@ class GlobalVariables(object):
     iC3Logger_last_check_exist_secs = 0
 
     iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
-    PyiCloud            = None      # iCloud Account service
-    PyiCloudInit        = None      # iCloud Account service when started from __init__ via executive job
-    PyiCloudConfigFlow  = None   # iCloud Account service when started from config_flow
+    PyiCloud            = None    # iCloud Account service
+    PyiCloudInit        = None    # iCloud Account service when started from __init__ via executive job
+    PyiCloudConfigFlow  = None    # iCloud Account service when started from config_flow
 
     Waze                = None
     WazeHist            = None
@@ -112,7 +115,7 @@ class GlobalVariables(object):
     ha_storage_directory        = ''      # 'config/.storage' directory
     ha_storage_icloud3          = ''      # 'config/.storage/icloud3'
     icloud3_config_filename     = ''      # 'config/.storage/icloud3.configuration' - iC3 Configuration File
-    icloud3_restore_state_filename = '' # 'config/.storage/icloud3.restore_state'
+    icloud3_restore_state_filename = ''   # 'config/.storage/icloud3.restore_state'
     config_ic3_yaml_filename    = ''      # 'config/config_ic3.yaml' (v2 config file name)
     icloud3_directory           = ''
     ha_config_www_directory     = ''
@@ -139,12 +142,25 @@ class GlobalVariables(object):
     Devices_by_icloud_device_id       = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_ha_device_id           = {}  # Device by the device_id in the entity/device registry
     Devices_by_mobapp_devicename      = {}  # All verified Devices by the  conf_mobapp_devicename
+    PairedDevices_by_paired_with_id   = {}  # Paired Devices by the paired_with_id (famshr prsID) id=[Dev1, Dev2]
+
+    # FamShr Device information - These is used verify the device, display on the EvLog and in the Config Flow
+    # device selection list on the iCloud3 Devices screen
+    devices_not_set_up                = []
+    device_id_by_famshr_fname         = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+    famshr_fname_by_device_id         = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+    device_info_by_famshr_fname       = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
+    device_model_info_by_fname        = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
+    dup_famshr_fname_cnt              = {}       # Used to create a suffix for duplicate devicenames
+    devices_without_location_data     = []
+
     devicenames_x_famshr_devices      = {}  # All ic3_devicenames by conf_famshr_devices (both ways)
     devicenames_x_mobapp_devicenames  = {}  # All ic3_devicenames by conf_mobapp_devicename (both ways)
+
     mobapp_fnames_x_mobapp_id         = {}  # All mobapp_fnames by mobapp_deviceid from HA hass.data MobApp entry (both ways)
     mobapp_fnames_disabled            = []
     mobile_app_device_fnames          = []  # fname = name_by_user or name in mobile_app device entry
-    PairedDevices_by_paired_with_id   = {}  # Paired Devices by the paired_with_id (famshr prsID) id=[Dev1, Dev2]
+
     Zones                             = []  # Zones object list
     Zones_by_zone                     = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
     HAZones                           = []  # Zones object list for only valid HA Zones
@@ -184,7 +200,7 @@ class GlobalVariables(object):
     startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
     debug_log                       = {}  # Log variable and dictionsry field/values to icloud3-0.log file
 
-    stage_4_no_devices_found_cnt    = 0         # Retry count to connect to iCloud and retrieve FamShr devices
+    get_FAMSHR_devices_retry_cnt    = 0         # Retry count to connect to iCloud and retrieve FamShr devices
     reinitialize_icloud_devices_flag= False     # Set when no devices are tracked and iC3 needs to automatically restart
     reinitialize_icloud_devices_cnt = 0
     initial_icloud3_loading_flag    = False
@@ -199,6 +215,7 @@ class GlobalVariables(object):
     info_notification            = ''
     ha_notification              = {}
     trace_prefix                 = '_INIT_'
+    trace_prefix_pyicloud        = ''
     trace_group                  = False
     trace_text_change_1          = ''
     trace_text_change_2          = ''

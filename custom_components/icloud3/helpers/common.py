@@ -322,3 +322,83 @@ def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_
     except Exception as err:
         Gb.HALogger.exception(err)
         return "Delete error"
+
+#--------------------------------------------------------------------
+def encode_password(password):
+    '''
+    Determine if the password is encoded.
+
+    Return:
+        Decoded password
+    '''
+    try:
+        if (password == '' or Gb.encode_password_flag is False):
+            return password
+
+        return f"««{base64_encode(password)}»»"
+
+    except Exception as err:
+        #log_exception(err)
+        password = password.replace('«', '').replace('»', '')
+        return password
+
+def base64_encode(string):
+    """
+    Encode the string via base64 encoder
+    """
+    # encoded = base64.urlsafe_b64encode(string)
+    # return encoded.rstrip("=")
+
+    try:
+        string_bytes = string.encode('ascii')
+        base64_bytes = base64.b64encode(string_bytes)
+        return base64_bytes.decode('ascii')
+
+    except Exception as err:
+        #log_exception(err)
+        password = password.replace('«', '').replace('»', '')
+        return password
+
+
+#--------------------------------------------------------------------
+def decode_password(password):
+    '''
+    Determine if the password is encoded.
+
+    Return:
+        Decoded password
+    '''
+    try:
+        # If the password in the configuration file is not encoded (no '««' or '»»')
+        # and it should be encoded, save the configuration file which will encode it
+        if (Gb.encode_password_flag
+                and password != ''
+                and (password.startswith('««') is False
+                    or password.endswith('»»') is False)):
+            password = password.replace('«', '').replace('»', '')
+            Gb.conf_tracking[CONF_PASSWORD] = password
+            #write_storage_icloud3_configuration_file()
+
+        # Decode password if it is encoded and has the '««password»»' format
+        if (password.startswith('««') or password.endswith('»»')):
+            password = password.replace('«', '').replace('»', '')
+            return base64_decode(password)
+
+    except Exception as err:
+        #log_exception(err)
+        password = password.replace('«', '').replace('»', '')
+
+    return password
+
+def base64_decode(string):
+    """
+    Decode the string via base64 decoder
+    """
+    # padding = 4 - (len(string) % 4)
+    # string = string + ("=" * padding)
+    # return base64.urlsafe_b64decode(string)
+
+    base64_bytes = string.encode('ascii')
+    string_bytes = base64.b64decode(base64_bytes)
+    return string_bytes.decode('ascii')
+

@@ -139,7 +139,7 @@ def request_icloud_data_update(Device):
     if (Gb.primary_data_source_ICLOUD is False
             or Device.is_data_source_ICLOUD is False
             or Gb.PyiCloud is None):
-        return False # beta 4/13b16
+        return False
 
     devicename = Device.devicename
 
@@ -149,20 +149,22 @@ def request_icloud_data_update(Device):
 
             Device.icloud_devdata_useable_flag = update_PyiCloud_RawData_data(Device)
 
+            # Retry in an error occurs
             if (Device.icloud_devdata_useable_flag is False
                     and Device.icloud_initial_locate_done is False):
                 Device.icloud_devdata_useable_flag = update_PyiCloud_RawData_data(Device)
 
             if Device.icloud_devdata_useable_flag is False:
                 Device.display_info_msg("iCloud Location Not Available")
-                if Gb.icloud_acct_error_cnt > 3:
+                if Gb.icloud_acct_error_cnt > 5:
                     error_msg = (f"iCloud3 Error > No Location Returned for {devicename}. "
                                     "iCloud may be down or there is an Authentication issue. ")
                     post_error_msg(Device.devicename, error_msg)
 
         return True
 
-    except Exception as err:
+
+    except (PyiCloud2FARequiredException, PyiCloudAPIResponseException) as err:
         Device.icloud_acct_error_flag      = True
         Device.icloud_devdata_useable_flag = False
 
@@ -172,7 +174,13 @@ def request_icloud_data_update(Device):
                         f"issue. iCloud3 will try again later. ({err})")
         post_error_msg(Device.devicename, error_msg)
 
-    return False #beta 4/13b16
+    except Exception as err:
+        Device.icloud_acct_error_flag      = True
+        Device.icloud_devdata_useable_flag = False
+
+        # log_exception(err)
+
+    return False
 
 #----------------------------------------------------------------------------
 def update_PyiCloud_RawData_data(Device, results_msg_flag=True):
@@ -269,8 +277,9 @@ def update_PyiCloud_RawData_data(Device, results_msg_flag=True):
             post_error_msg(error_msg)
 
         except Exception as err:
+            Device.icloud_acct_error_flag      = True
+            Device.icloud_devdata_useable_flag = False
             # log_exception(err)
-            pass
 
         return False
 
@@ -398,9 +407,9 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
             if famshr_secs > 0 and Gb.used_data_source_FAMSHR and _Device.dev_data_source != 'FamShr':
                 other_times += f"FamShr-{famshr_time}"
 
-            if fmf_secs > 0 and Gb.used_data_source_FMF and _Device.dev_data_source != 'FmF':
-                if other_times != "": other_times += ", "
-                other_times += f"FmF-{fmf_time}"
+            # if fmf_secs > 0 and Gb.used_data_source_FMF and _Device.dev_data_source != 'FmF':
+            #     if other_times != "": other_times += ", "
+            #     other_times += f"FmF-{fmf_time}"
 
             if _Device.mobapp_monitor_flag and _Device.dev_data_source != 'MobApp':
                 if other_times != "": other_times += ", "
@@ -482,8 +491,8 @@ def is_PyiCloud_RawData_data_useable(Device, results_msg_flag=True):
     event_msg = f"{data_type} {useable_msg} > "
     if famshr_secs > 0 and Gb.used_data_source_FAMSHR:
         event_msg += f"FamShr-{famshr_time}, "
-    if fmf_secs > 0 and Gb.used_data_source_FMF:
-        event_msg += f"FmF-{fmf_time}, "
+    # if fmf_secs > 0 and Gb.used_data_source_FMF:
+    #     event_msg += f"FmF-{fmf_time}, "
     if is_useable_flag is False:
         event_msg += "Requesting New Location"
 
