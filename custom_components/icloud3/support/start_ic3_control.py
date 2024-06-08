@@ -21,7 +21,7 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     log_start_finish_update_banner,
                                     log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_rawdata,
                                     _trace, _traceha, more_info, format_filename,
-                                    write_debug_log,  write_config_file_to_ic3log,
+                                    write_config_file_to_ic3log,
                                     open_ic3log_file, )
 from ..helpers.time_util    import (time_now_secs, calculate_time_zone_offset, )
 
@@ -147,7 +147,7 @@ def stage_2_prepare_configuration():
     except Exception as err:
         log_exception(err)
 
-    write_debug_log()
+    #write_debug_log()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def stage_3_setup_configured_devices():
@@ -184,7 +184,7 @@ def stage_3_setup_configured_devices():
     except Exception as err:
         log_exception(err)
 
-    write_debug_log()
+    #write_debug_log()
 
     post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.update_event_log_display("")
@@ -203,9 +203,8 @@ def stage_4_setup_data_sources(retry=False):
             Gb.conf_data_source_FMF    = False
             Gb.primary_data_source_ICLOUD = False
             post_startup_alert('iCloud username/password invalid or not set up')
-            event_msg =(f"{EVLOG_ALERT}CONFIGURATION ALERT > The iCloud username or password has not been "
+            post_event( f"{EVLOG_ALERT}CONFIGURATION ALERT > The iCloud username or password has not been "
                         f"set up or is incorrect. iCloud will not be used for location tracking")
-            post_event(event_msg)
 
     return_code = True
     Gb.EvLog.display_user_message(stage_title)
@@ -213,7 +212,9 @@ def stage_4_setup_data_sources(retry=False):
 
     try:
         if Gb.primary_data_source_ICLOUD:
-            post_event(f"iCloud Account > Logged Into-{obscure_field(Gb.username)}")
+            account_name = Gb.PyiCloud.account_name if Gb.PyiCloud else ''
+            post_event(f"iCloud Account > Logging Into-{account_name} "
+                       f"({obscure_field(Gb.username)})")
             start_ic3.setup_data_source_ICLOUD()
 
         if Gb.PyiCloud is None:
@@ -235,7 +236,7 @@ def stage_4_setup_data_sources(retry=False):
         log_exception(err)
         return_code = False
 
-    write_debug_log()
+    # write_debug_log()
 
     post_event(f"{EVLOG_IC3_STAGE_HDR} {stage_title}")
     Gb.EvLog.update_event_log_display("")
@@ -304,7 +305,7 @@ def stage_5_configure_tracked_devices():
     except Exception as err:
         log_exception(err)
 
-    write_debug_log()
+    # write_debug_log()
 
     post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message('')
@@ -325,6 +326,7 @@ def stage_6_initialization_complete():
 
     try:
         start_ic3.display_object_lists()
+        start_ic3.write_debug_log()
 
         if Gb.startup_alerts:
             item_no = 1
@@ -340,10 +342,9 @@ def stage_6_initialization_complete():
             Gb.startup_alerts_str = alerts_str
 
             Gb.EvLog.alert_message = 'Problems occured during startup up that should be reviewed'
-            alert_msg = (f"{EVLOG_ALERT}The following issues were detected when starting iCloud3. "
+            post_event( f"{EVLOG_ALERT}The following issues were detected when starting iCloud3. "
                         f"Scroll through the Startup Log for more information: "
                         f"{alert_msg}")
-            post_event(alert_msg)
 
     except Exception as err:
         log_exception(err)
@@ -375,8 +376,7 @@ def stage_7_initial_locate():
     Gb.this_update_secs = time_now_secs()
     Gb.this_update_time = dt_util.now().strftime('%H:%M:%S')
     post_event("Requesting Initial Locate")
-    event_msg =(f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Start up Complete")
-    post_event(event_msg)
+    post_event(f"{EVLOG_IC3_STARTING}iCloud3 v{Gb.version} > Start up Complete")
 
     for Device in Gb.Devices:
         if Device.PyiCloud_RawData_famshr:
@@ -389,13 +389,12 @@ def stage_7_initial_locate():
         else:
             continue
 
-        event_msg =(f"{Device.dev_data_source} Trigger > Initial Locate@"
+        post_event(Device,
+                    f"{Device.dev_data_source} Trigger > Initial Locate@"
                     f"{Device.loc_data_time_gps}")
-        post_event(Device, event_msg)
 
         if Device.no_location_data:
-            event_msg = f"{EVLOG_ALERT}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE"
-            post_event(Device, event_msg)
+            post_event(Device, f"{EVLOG_ALERT}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE")
             error_msg = (f"iCloud3 > {Device.fname_devicename} > "
                         "No GPS data was returned from iCloud Location "
                         "Service on the initial locate")
@@ -438,8 +437,7 @@ def reinitialize_icloud_devices():
 
         post_event(alert_msg)
 
-        event_msg =(f"{EVLOG_IC3_STARTING}Restarting iCloud Location Service")
-        post_event(event_msg)
+        post_event(f"{EVLOG_IC3_STARTING}Restarting iCloud Location Service")
 
         if Gb.PyiCloud and Gb.PyiCloud.FamilySharing:
             Gb.PyiCloud.FamilySharing.refresh_client()
@@ -454,10 +452,9 @@ def reinitialize_icloud_devices():
         Gb.all_tracking_paused_flag = False
 
         if stage_4_success is False:
-            alert_msg =(f"{EVLOG_ALERT}UNVERIFIED DEVICES > One or more devices was still "
+            post_event( f"{EVLOG_ALERT}UNVERIFIED DEVICES > One or more devices was still "
                         f"not verified"
                         f"{more_info('unverified_devices_caused_by')}")
-            post_event(alert_msg)
 
         return False
 

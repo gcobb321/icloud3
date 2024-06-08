@@ -101,14 +101,13 @@ def verify_pyicloud_setup_status():
             return True
 
         if Gb.get_FAMSHR_devices_retry_cnt == 0:
-            event_msg = f"iCloud Location Svcs > Setup Complete"
-            post_event(event_msg)
+            post_event(f"iCloud Location Svcs > Setup Complete")
             return
         else:
             if Gb.PyiCloud.FamilySharing:
                 Gb.PyiCloud.FamilySharing.refresh_client()
-                event_msg = f"iCloud Location Svcs > Refreshing FamShr Data (#{Gb.get_FAMSHR_devices_retry_cnt})"
-                post_event(event_msg)
+                post_event( f"iCloud Location Svcs > Refreshing FamShr Data "
+                            f"(#{Gb.get_FAMSHR_devices_retry_cnt})")
                 return True
             else:
                 Gb.PyiCloudInit.init_step_needed = ['FamShr']
@@ -312,21 +311,20 @@ def check_all_devices_online_status():
         elif Device.is_offline:
             if Device.offline_secs == 0:
                 Device.offline_secs = Gb.this_update_secs
-            event_msg = (   f"Device Offline and not available > "
-                            f"OfflineSince-{format_time_age(Device.offline_secs)}")
-            post_event(Device, event_msg)
+            post_event(Device,
+                        f"Device Offline and not available > "
+                        f"OfflineSince-{format_time_age(Device.offline_secs)}")
 
         elif Device.is_pending:
             if Device.pending_secs == 0:
                 Device.pending_secs = Gb.this_update_secs
-            event_msg = (   f"Device status is Pending/Unknown > "
-                            f"PendingSince-{format_time_age(Device.pending_secs)}")
-            post_event(Device, event_msg)
+            post_event(Device,
+                        f"Device status is Pending/Unknown > "
+                        f"PendingSince-{format_time_age(Device.pending_secs)}")
 
     if any_device_online_flag == False:
-        event_msg = (   f"All Devices are offline or have a pending status. "
-                        f"They may be in AirPlane Mode and not available")
-        post_event(event_msg)
+        post_event( f"All Devices are offline or have a pending status. "
+                    f"They may be in AirPlane Mode and not available")
 
 #--------------------------------------------------------------------
 def new_2fa_authentication_code_requested(PyiCloud, initial_setup=False):
@@ -389,11 +387,10 @@ def pyicloud_reset_session(PyiCloud=None):
             Gb.authentication_alert_displayed_flag = True
 
             if requested_by == ' (Apple)':
-                alert_msg =    (f"{EVLOG_NOTICE}Select `HA Notifications Bell`, then Select `Integration Requires "
-                                f"Reconfiguration > Check it out`, then `iCloud3 > Reconfigure`."
-                                f"{CRLF}Note: If the code is not accepted or has expired, request a "
-                                f"new code and try again")
-                post_event(alert_msg)
+                post_event( f"{EVLOG_NOTICE}Select `HA Notifications Bell`, then Select `Integration Requires "
+                            f"Reconfiguration > Check it out`, then `iCloud3 > Reconfigure`."
+                            f"{CRLF}Note: If the code is not accepted or has expired, request a "
+                            f"new code and try again")
         post_event(f"{EVLOG_NOTICE}iCLOUD ALERT > Apple ID Verification is needed {requested_by}")
         post_event(f"{EVLOG_NOTICE}Resetting iCloud Session Files")
 

@@ -8,7 +8,7 @@ from ..const                import (RESTORE_STATE_FILE,
                                     LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
                                     DIR_OF_TRAVEL, )
 
-from ..helpers.common       import (instr, )
+from ..helpers.common       import (instr, load_json_file, save_json_file, )
 from ..helpers.messaging    import (log_info_msg, log_debug_msg, log_exception, _trace, _traceha, )
 from ..helpers.time_util    import (datetime_now, )
 
@@ -84,27 +84,33 @@ def read_storage_icloud3_restore_state_file():
     '''
 
     try:
-        with open(Gb.icloud3_restore_state_filename, 'r') as f:
-            Gb.restore_state_file_data = json.load(f)
-            Gb.restore_state_profile   = Gb.restore_state_file_data['profile']
-            Gb.restore_state_devices   = Gb.restore_state_file_data['devices']
+        Gb.restore_state_file_data = load_json_file(Gb.icloud3_restore_state_filename)
 
-            for devicename, devicename_data in Gb.restore_state_devices.items():
-                sensors = devicename_data['sensors']
-                sensors[DISTANCE_TO_OTHER_DEVICES] = {}
-                sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
-                sensors[ALERT] = ''
+        if Gb.restore_state_file_data == {}:
+            return False
 
-                _reset_statzone_values_to_away(sensors)
+        # with open(Gb.icloud3_restore_state_filename, 'r') as f:
+        #     Gb.restore_state_file_data = json.load(f)
 
-                from_zones = devicename_data['from_zone']
-                for from_zone, from_zone_sensors in from_zones.items():
-                    _reset_from_zone_statzone_values_to_away(from_zone_sensors)
+        Gb.restore_state_profile   = Gb.restore_state_file_data['profile']
+        Gb.restore_state_devices   = Gb.restore_state_file_data['devices']
+
+        for devicename, devicename_data in Gb.restore_state_devices.items():
+            sensors = devicename_data['sensors']
+            sensors[DISTANCE_TO_OTHER_DEVICES] = {}
+            sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
+            sensors[ALERT] = ''
+
+            _reset_statzone_values_to_away(sensors)
+
+            from_zones = devicename_data['from_zone']
+            for from_zone, from_zone_sensors in from_zones.items():
+                _reset_from_zone_statzone_values_to_away(from_zone_sensors)
 
         return True
 
-    except json.decoder.JSONDecodeError:
-        pass
+    # except json.decoder.JSONDecodeError:
+    #     pass
     except Exception as err:
         log_exception(err)
         return False
@@ -117,15 +123,15 @@ def write_storage_icloud3_restore_state_file():
     Update the config/.storage/.icloud3.restore_state file
     '''
 
+    Gb.restore_state_profile['last_update'] = datetime_now()
+    Gb.restore_state_file_data['profile'] = Gb.restore_state_profile
+    Gb.restore_state_file_data['devices'] = Gb.restore_state_devices
+
     try:
-        with open(Gb.icloud3_restore_state_filename, 'w', encoding='utf8') as f:
-            Gb.restore_state_profile['last_update'] = datetime_now()
-            Gb.restore_state_file_data['profile'] = Gb.restore_state_profile
-            Gb.restore_state_file_data['devices'] = Gb.restore_state_devices
-
-            json.dump(Gb.restore_state_file_data, f, indent=4)
-
-        return True
+        # with open(Gb.icloud3_restore_state_filename, 'w', encoding='utf8') as f:
+            # json.dump(Gb.restore_state_file_data, f, indent=4)
+        success = save_json_file(Gb.icloud3_restore_state_filename, Gb.restore_state_file_data)
+        return success
 
     except Exception as err:
         log_exception(err)

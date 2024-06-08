@@ -66,8 +66,8 @@ from ..support              import pyicloud_ic3_interface
 from ..support              import service_handler
 from ..support              import zone_handler
 from ..support              import stationary_zone as statzone
-from ..support.waze         import Waze
-from ..support.waze_history import WazeRouteHistory as WazeHist
+from .waze         import Waze
+from .waze_history import WazeRouteHistory as WazeHist
 from ..helpers.common       import (instr, format_gps, circle_letter, zone_dname,
                                     is_statzone, isnot_statzone, list_to_str, list_add, list_del, )
 from ..helpers.messaging    import (broadcast_info_msg,
@@ -522,6 +522,7 @@ def initialize_icloud_data_source():
 
     Gb.get_FAMSHR_devices_retry_cnt = 0
 
+#------------------------------------------------------------------------------
 def icloud_server_endpoint_suffix(endpoint_suffix):
     '''
     Determine the suffix to be used based on the country_code and the value of the
@@ -1293,10 +1294,11 @@ def create_Devices_object():
     except Exception as err:
         log_exception(err)
 
-    Gb.debug_log['Gb.Devices'] = Gb.Devices
-    Gb.debug_log['Gb.DevDevices_by_devicename'] = Gb.Devices_by_devicename
-    Gb.debug_log['Gb.conf_devicenames'] = Gb.conf_devicenames
-    Gb.debug_log['Gb.conf_famshr_devicenames'] = Gb.conf_famshr_devicenames
+    Gb.debug_log['Gb.Devices']                      = Gb.Devices
+    Gb.debug_log['Gb.DevDevices_by_devicename']     = Gb.Devices_by_devicename
+    Gb.debug_log['Gb.conf_devicenames']             = Gb.conf_devicenames
+    Gb.debug_log['Gb.conf_famshr_devicenames']      = Gb.conf_famshr_devicenames
+    Gb.debug_log['Gb.devicenames_x_famshr_devices'] = Gb.devicenames_x_famshr_devices
 
     return
 
@@ -1390,13 +1392,15 @@ def setup_tracked_devices_for_famshr(PyiCloud=None):
         return
 
     post_event(f"iCloud Location Service interface > Selected ({Gb.PyiCloud.instance})")
-    Gb.debug_log['Gb.PyiCloud.device_id_by_famshr_fname'] = {k: v[:10] for k, v in Gb.PyiCloud.device_id_by_famshr_fname.items()}
-    Gb.debug_log['Gb.PyiCloud.device_id_by_famshr_fname'] = {k[:10]: v for k, v in Gb.PyiCloud.device_id_by_famshr_fname.items()}
 
     _check_renamed_famshr_devices(_FamShr)
     _check_conf_famshr_devices_not_set_up(_FamShr)
     _check_duplicate_device_names(PyiCloud, _FamShr)
     _display_devices_verification_status(PyiCloud, _FamShr)
+
+    Gb.debug_log['Gb.PyiCloud.device_id_by_famshr_fname'] = {k: v[:10] for k, v in Gb.PyiCloud.device_id_by_famshr_fname.items()}
+    Gb.debug_log['Gb.PyiCloud.famshr_fname_by_device_id'] = {k[:10]: v for k, v in Gb.PyiCloud.famshr_fname_by_device_id.items()}
+    Gb.debug_log['Gb.Devices_by_icloud_device_id']        = {k[:10]: v for k, v in Gb.Devices_by_icloud_device_id.items()}
 
 #----------------------------------------------------------------------------
 def _check_renamed_famshr_devices(_FamShr):
@@ -1404,13 +1408,14 @@ def _check_renamed_famshr_devices(_FamShr):
     Return with a list of famshr devices in the conf_devices that are not in
     _RawData
     '''
-    renamed_devices = [(f"{conf_device[CONF_IC3_DEVICENAME]} > "
-                        f"Renamed: {conf_device[CONF_FAMSHR_DEVICENAME]} "
-                        f"{RARROW}{Gb.PyiCloud.device_id_by_famshr_fname[conf_device[CONF_FAMSHR_DEVICE_ID]]}")
+    renamed_devices = \
+            [(  f"{conf_device[CONF_IC3_DEVICENAME]} > "
+                f"Renamed: {conf_device[CONF_FAMSHR_DEVICENAME]} "
+                f"{RARROW}{Gb.PyiCloud.famshr_fname_by_device_id[conf_device[CONF_FAMSHR_DEVICE_ID]]}")
                     for conf_device in Gb.conf_devices
-                    if (conf_device[CONF_FAMSHR_DEVICE_ID] in Gb.PyiCloud.device_id_by_famshr_fname)
+                    if (conf_device[CONF_FAMSHR_DEVICE_ID] in Gb.PyiCloud.famshr_fname_by_device_id)
                         and conf_device[CONF_FAMSHR_DEVICENAME] != \
-                                Gb.PyiCloud.device_id_by_famshr_fname[conf_device[CONF_FAMSHR_DEVICE_ID]]]
+                                Gb.PyiCloud.famshr_fname_by_device_id[conf_device[CONF_FAMSHR_DEVICE_ID]]]
 
     if renamed_devices == []:
         return
@@ -1467,12 +1472,16 @@ def _check_conf_famshr_devices_not_set_up(_FamShr):
 
     Gb.debug_log['_.devices_not_set_up'] = devices_not_set_up
 
+    for devices_msg in devices_not_set_up:
+        devicename = devices_msg.split(' >')[0]
+        Device = Gb.Devices_by_devicename[devicename]
+        Device.set_fname_alert(YELLOW_ALERT)
+
     devices_not_set_up_str = list_to_str(devices_not_set_up, CRLF_X)
     post_startup_alert( f"FamShr Config Error > Device not found"
                         f"{devices_not_set_up_str.replace(CRLF_X, CRLF_DOT)}")
 
-    if _FamShr.devices_cnt == -1:
-        post_event( f"{EVLOG_ALERT}FAMSHR DEVICES ERROR > Your Apple iCloud Account Family Sharing List did "
+    post_event( f"{EVLOG_ALERT}FAMSHR DEVICES ERROR > Your Apple iCloud Account Family Sharing List did "
                     f"not return any information for some of configured devices. FamShr will not be used "
                     f"to track these devices."
                     f"{devices_not_set_up_str}"
@@ -1700,6 +1709,13 @@ def _check_duplicate_device_names(PyiCloud, _FamShr):
                                     f"Located-{format_age(_RawData.location_secs)} "
                                     f"({_RawData.device_data['rawDeviceModel']})")
 
+                # devicename = Gb.devicenames_x_famshr_devices.get(famshr_fname, '')
+                # _Device    = Gb.Devices_by_devicename.get(devicename)
+
+                if _RawData.Device:
+                    _RawData.Device.set_fname_alert(YELLOW_ALERT)
+                    post_startup_alert(f"Duplicate FamShr device found - {famshr_fname}")
+
             if famshr_fname_base in famshr_fname_last_located_by_base_fname:
                 dup_devices_msg += (f"{CRLF_HDOT}Last Located > {famshr_fname_last_located_by_base_fname[famshr_fname_base]}")
     except:
@@ -1710,8 +1726,8 @@ def _check_duplicate_device_names(PyiCloud, _FamShr):
     if dup_devices_msg  == "":  return
 
     dups_found_msg =(f"{EVLOG_ALERT}DUPLICATE FAMSHR DEVICES > There are several devices in the "
-                f"iCloud Account Family Sharing list with the same or similar names. The unused devices should be reviewed and "
-                f"removed. The Devices are:"
+                f"iCloud Account Family Sharing list with the same or similar names. "
+                f"The unused devices should be reviewed and removed. The Devices are:"
                 f"{dup_devices_msg}")
 
     # Cycle thru dup names, get conf_devices entry for the one matching the famshr_fname_base and update it
@@ -2685,6 +2701,25 @@ def display_object_lists():
 
     monitor_msg = (f"Zones-{list_to_str(Gb.Zones_by_zone.keys())}")
     post_monitor_msg(monitor_msg)
+
+#--------------------------------------------------------------------
+def write_debug_log(debug_log_title=None):
+    '''
+    Cycle thru the Gb.debug_log dictionary that contains internal lists and
+    dictionaries. Write all items to the icloud3-0.log file
+    '''
+    if Gb.log_debug_flag is False or Gb.debug_log  == {}:  return
+
+    if debug_log_title:
+        log_debug_msg(f"{format_header_box(debug_log_title)}")
+
+    for field, values in Gb.debug_log.items():
+        log_debug_msg(f"{field}={values}")
+
+    if debug_log_title:
+        log_debug_msg(f"{format_header_box(debug_log_title)}")
+
+    Gb.debug_log = {}
 
 #------------------------------------------------------------------------------
 def display_platform_operating_mode_msg():

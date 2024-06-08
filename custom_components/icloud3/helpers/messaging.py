@@ -507,23 +507,7 @@ def log_start_finish_update_banner(start_finish, devicename,
 
     log_info_msg(log_msg)
 
-#--------------------------------------------------------------------
-def write_debug_log(debug_log_title=None):
-    '''
-    Cycle thru the debug_log and write all items to the icloud2-0.log file
-    '''
-    if Gb.log_debug_flag is False or Gb.debug_log  == {}:  return
 
-    if debug_log_title:
-        log_debug_msg(f"{format_header_box(debug_log_title)}")
-
-    for field, values in Gb.debug_log.items():
-        log_debug_msg(f"{field}={values}")
-
-    if debug_log_title:
-        log_debug_msg(f"{format_header_box(debug_log_title)}")
-
-    Gb.debug_log = {}
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -574,7 +558,7 @@ def filter_special_chars(recd, evlog_export=False):
     recd = recd.replace(NBSP6, ' ')
     recd = recd.strip()
     recd = recd.replace(CRLF, f"\n{indent}")
-    recd = recd.replace('◦', f"    ◦")
+    recd = recd.replace('◦', f"   ◦")
     recd = recd.replace('* >', '')
     recd = recd.replace('&lt;', '<')
 

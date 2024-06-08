@@ -86,7 +86,7 @@ AUTH_ERROR_CNT         = 1.2
 # RETRY_INTERVAL_RANGE_1 = 30s*4=2m, 4*1.5m=6m=8m, 4*15m=1h=1h8m, 4*30m=2h=3h8m, 4*1h=4h=6.5h
 # RETRY_INTERVAL_RANGE_1 = {0:.25, 4:1, 8:5, 12:30, 16:60, 20:60}
 # RETRY_INTERVAL_RANGE_1 = 15s*5=1.25m, 5*1m=5m=6m, 5*5m=25m=30m, 5*30m=2.5h=3, 4*1h=4h=6h25h
-RETRY_INTERVAL_RANGE_1 = {0:.25, 4:.5, 8:1, 12:5, 16:10, 20:15}
+RETRY_INTERVAL_RANGE_1 = {0:.25, 4:.5, 8:1, 12:5, 16:15, 20:30, 22:60}
 MOBAPP_REQUEST_LOC_CNT = 2.1
 RETRY_INTERVAL_RANGE_2 = {0:.5, 4:2, 8:30, 12:60, 16:60}
 # RETRY_INTERVAL_RANGE_2 = {0:.5, 4:2, 8:30, 12:60, 14:120, 16:180, 18:240, 20:240}
@@ -117,10 +117,10 @@ def determine_interval(Device, FromZone):
         Device.FromZone_LastIn = FromZone
 
     if Device.offline_secs > 0 and Device.is_online:
-        event_msg =(f"{EVLOG_ALERT}Device back Online > "
+        post_event(devicename,
+                    f"{EVLOG_ALERT}Device back Online > "
                     f"WentOfflineAt-{format_time_age(Device.offline_secs)}, "
                     f"DeviceStatus-{Device.device_status}")
-        post_event(devicename, event_msg)
         Device.offline_secs = 0
         Device.display_info_msg(Device.format_info_msg, new_base_msg=True)
 
@@ -631,8 +631,8 @@ def post_zone_time_dist_event_msg(Device, FromZone):
         travel_time  = '' if FromZone.last_travel_time == '0 min' else FromZone.last_travel_time
         distance     = FromZone.zone_distance_str
 
-    event_msg =(f"{EVLOG_TIME_RECD}{mobapp_state},{ic3_zone},{interval_str},{travel_time},{distance}")
-    post_event(Device, event_msg)
+    post_event(Device,
+               f"{EVLOG_TIME_RECD}{mobapp_state},{ic3_zone},{interval_str},{travel_time},{distance}")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -669,10 +669,10 @@ def determine_interval_monitored_device_offline(Device):
 
     update_all_device_fm_zone_sensors_interval(Device, interval_secs)
 
-    event_msg =(f"{RED_X}Offline > "
+    post_event(Device,
+                f"{RED_X}Offline > "
                 f"Since-{format_time_age(Device.loc_data_secs)}, "
                 f"CheckNext-{Device.sensors[NEXT_UPDATE_TIME]}")
-    post_event(Device, event_msg)
 
     return True
 
@@ -714,10 +714,10 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
                 Device.reset_tracking_fields(interval_secs=5)
                 interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
-                event_msg = (f"Location > Old > Tracking Reinitialized, "
+                post_event(Device,
+                            f"Location > Old > Tracking Reinitialized, "
                             f"LastLocated-{format_time_age(Device.loc_data_secs)}, "
                             f"RetryAt-{Device.FromZone_Home.next_update_time}")
-                post_event(Device, event_msg)
                 return
 
         if (Device.is_offline and Device.offline_secs == 0):
@@ -939,8 +939,7 @@ def _get_distance_data(Device, FromZone):
     Device.display_info_msg(f"GetDistancesFrom-{FromZone.from_zone_dname}")
 
     if Device.no_location_data:
-        event_msg = "No location data available, will retry"
-        post_event(Device, event_msg)
+        post_event(Device, "No location data available, will retry")
         return (ERROR, {})
 
 
@@ -1030,8 +1029,7 @@ def _get_distance_data(Device, FromZone):
         waze_dist_from_zone_km = 0.0
 
     if waze_source_msg:
-        event_msg = f"Waze Route Info > {waze_source_msg}"
-        post_event(Device, event_msg)
+        post_event(Device, f"Waze Route Info > {waze_source_msg}")
 
     #--------------------------------------------------------------------------------
     # Get direction of travel
@@ -1096,10 +1094,10 @@ def _get_distance_data(Device, FromZone):
                 and Device.is_tracked):
             Device.statzone_reset_timer
 
-            event_msg =(f"StatZone Timer Reset > "
+            post_event(Device,
+                        f"StatZone Timer Reset > "
                         f"NewTime-{secs_to_time(Device.statzone_timer)}, "
                         f"Moved-{km_to_um(Device.loc_data_dist_moved_km)}")
-            post_event(Device, event_msg)
 
     distance_data = [VALID_DATA,
                     dist_from_zone_km,
@@ -1180,9 +1178,9 @@ def used_near_device_results(Device, FromZone):
     Device.dist_apart_msg = Device.dist_apart_msg.replace(neardevice_fname, neardevice_fname_chk)
     Device.near_device_used = ( f"{Device.NearDevice.fname_devtype} "
                                 f"({m_to_um_ft(Device.near_device_distance)})")
-    event_msg =(f"Using Nearby Device Results > {Device.NearDevice.fname}, "
+    post_event(Device,
+                f"Using Nearby Device Results > {Device.NearDevice.fname}, "
                 f"Distance-{m_to_um_ft(Device.near_device_distance)}")
-    post_event(Device, event_msg)
 
     copy_near_device_results(Device, FromZone)
 

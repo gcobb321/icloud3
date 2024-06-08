@@ -420,11 +420,10 @@ def get_mobapp_device_trkr_entity_attrs(Device):
             Device.mobapp_monitor_flag            = False
             Device.mobapp_device_unavailable_flag = True
             Device.mobapp_data_invalid_error_cnt += 1
-            alert_msg =(f"{EVLOG_ALERT}The Mobile App has returned a `not available` status "
+            post_event( f"{EVLOG_ALERT}The Mobile App has returned a `not available` status "
                         f"and will not be used for tracking or zone enter/exit events"
                         f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
                         f"{more_info('mobapp_device_unavailable')}")
-            post_event(alert_msg)
             log_error_msg(f"iCloud3 Error ({Device.fname_devtype}) > "
                 f"The Mobile App is not available and this device will not be monitored")
             return None
@@ -434,12 +433,11 @@ def get_mobapp_device_trkr_entity_attrs(Device):
         if LATITUDE not in device_trkr_attrs or device_trkr_attrs[LATITUDE] == 0:
             Device.mobapp_data_invalid_error_cnt += 1
             if Device.mobapp_data_invalid_error_cnt == 4:
-                alert_msg =(f"{EVLOG_ALERT}The Mobile App has not reported the gps "
+                post_event( f"{EVLOG_ALERT}The Mobile App has not reported the gps "
                             f"location after 4 requests. It may be asleep, offline "
                             f"or not available and should be reviewed."
                             f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
                             f"{more_info('mobapp_device_no_location')}")
-                post_event(alert_msg)
                 log_error_msg(f"iCloud3 Alert ({Device.fname_devtype}) > "
                     f"The Mobile App has not reported the gps location after 4 requests. "
                     f"It may be asleep, offline or not available.")

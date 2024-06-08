@@ -275,8 +275,7 @@ def post_zone_selected_msg(Device, ZoneSelected, zone_selected,
         and NOT_SET not in zones_cnt_by_zone):
             for _Device in Gb.Devices:
                 if Device is not _Device:
-                    event_msg = f"Zone-Device Counts > {zones_cnt_msg}"
-                    post_event(_Device.devicename, event_msg)
+                    post_event(_Device, f"Zone-Device Counts > {zones_cnt_msg}")
 
 #--------------------------------------------------------------------
 def closest_zone(latitude, longitude):
@@ -397,8 +396,7 @@ def log_zone_enter_exit_activity(Device):
     if Device.log_zone == '':
         Device.log_zone = Device.loc_data_zone
         Device.log_zone_enter_secs = Gb.this_update_secs
-        event_msg = f"Log Zone Activity > Logging Started-{zone_dname(Device.log_zone)}"
-        post_event(Device, event_msg)
+        post_event(Device, f"Log Zone Activity > Logging Started-{zone_dname(Device.log_zone)}")
         return
 
     # Must be in the zone for at least 4-minutes
@@ -424,8 +422,7 @@ def log_zone_enter_exit_activity(Device):
                 f"{Device.devicename}"
                 "\n")
         f.write(recd)
-        event_msg = f"Log Zone Activity > Logging Ended-{zone_dname(Device.log_zone)}"
-        post_event(Device, event_msg)
+        post_event(Device, f"Log Zone Activity > Logging Ended-{zone_dname(Device.log_zone)}")
 
     if Device.loc_data_zone in Device.log_zones:
         Device.log_zone = Device.loc_data_zone
@@ -460,8 +457,7 @@ def request_update_devices_no_mobapp_same_zone_on_exit(Device):
         _Device.trigger = 'Check Zone Exit'
         _Device.check_zone_exit_secs = time_now_secs()
         det_interval.update_all_device_fm_zone_sensors_interval(_Device, 15)
-        event_msg = f"Trigger > Check Zone Exit, GeneratedBy-{Device.fname}"
-        post_event(_Device.devicename, event_msg)
+        post_event(_Device, f"Trigger > Check Zone Exit, GeneratedBy-{Device.fname}")
 
 
 #------------------------------------------------------------------------------

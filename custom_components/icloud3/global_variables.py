@@ -191,7 +191,8 @@ class GlobalVariables(object):
 
     # System Wide variables control iCloud3 start/restart procedures
     polling_5_sec_loop_running      = False     # Indicates the 5-sec polling loop is set up
-    start_icloud3_inprocess_flag    = False
+    initial_icloud3_loading_flag    = True
+    start_icloud3_inprocess_flag    = True
     restart_icloud3_request_flag    = False     # iC3 needs to be restarted
     restart_ha_flag                 = False     # HA needs to be restarted
     any_device_was_updated_reason   = ''
@@ -203,7 +204,6 @@ class GlobalVariables(object):
     get_FAMSHR_devices_retry_cnt    = 0         # Retry count to connect to iCloud and retrieve FamShr devices
     reinitialize_icloud_devices_flag= False     # Set when no devices are tracked and iC3 needs to automatically restart
     reinitialize_icloud_devices_cnt = 0
-    initial_icloud3_loading_flag    = False
 
     # Debug and trace flags
     log_debug_flag               = False

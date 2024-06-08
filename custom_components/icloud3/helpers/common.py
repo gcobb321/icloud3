@@ -3,7 +3,13 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (NOT_HOME, STATIONARY, CIRCLE_LETTERS_DARK, UNKNOWN, CRLF_DOT, CRLF, )
 from collections        import OrderedDict
+from homeassistant.util import json as json_util
+from homeassistant.helpers import json as json_helpers
 import os
+import json
+import logging
+_LOGGER = logging.getLogger(__name__)
+#_LOGGER = logging.getLogger(f"icloud3")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -275,6 +281,90 @@ def format_cnt(desc, n):
     return f", {desc}(#{n})" if n > 1 else ''
 
 #--------------------------------------------------------------------
+async def async_load_json_file(filename):
+    if os.path.exists(filename) is False:
+        return {}
+
+    try:
+        data = await Gb.hass.async_add_executor_job(
+                            json_util.load_json,
+                            filename)
+        return data
+
+    except Exception as err:
+        #_LOGGER.exception(err)
+        pass
+
+    return {}
+
+#--------------------------------------------------------------------
+def load_json_file(filename):
+    if os.path.exists(filename) is False:
+        return {}
+
+    try:
+        if Gb.initial_icloud3_loading_flag:
+            data = json_util.load_json(filename)
+        else:
+            data = Gb.hass.async_add_executor_job(
+                            json_util.load_json,
+                            filename)
+        return data
+
+    except RuntimeError as err:
+        if str(err) == 'no running event loop':
+            data = json_util.load_json(filename)
+            return data
+
+    except Exception as err:
+        _LOGGER.exception(err)
+        pass
+
+    return {}
+
+#--------------------------------------------------------------------
+async def async_save_json_file(filename, data):
+
+    try:
+        await Gb.hass.async_add_executor_job(
+                            json_helpers.save_json,
+                            filename,
+                            data)
+        return True
+
+    except Exception as err:
+        _LOGGER.exception(err)
+        pass
+
+    return False
+
+#--------------------------------------------------------------------
+def save_json_file(filename, data):
+
+    try:
+        # The HA event loop has not been set up yet during initialization
+        if Gb.initial_icloud3_loading_flag:
+            json_helpers.save_json(filename, data)
+        else:
+
+            Gb.hass.async_add_executor_job(
+                            json_helpers.save_json,
+                            filename,
+                            data)
+        return True
+
+    except RuntimeError as err:
+        if err == 'no running event loop':
+            json_helpers.save_json(filename, data)
+            return True
+
+    except Exception as err:
+        _LOGGER.exception(err)
+        pass
+
+    return False
+
+#--------------------------------------------------------------------
 def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_file=False):
     '''
     Delete a file.
@@ -401,4 +491,3 @@ def base64_decode(string):
     base64_bytes = string.encode('ascii')
     string_bytes = base64.b64decode(base64_bytes)
     return string_bytes.decode('ascii')
-

@@ -135,7 +135,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.entry_id       = entry.entry_id
         Gb.operating_mode = MODE_INTEGRATION
         Gb.PyiCloud       = None
-        Gb.start_icloud3_inprocess_flag = True
 
         start_ic3.initialize_directory_filenames()
 

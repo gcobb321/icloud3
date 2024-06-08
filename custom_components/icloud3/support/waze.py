@@ -166,9 +166,9 @@ class Waze(object):
                                                 ZONE)
 
                     if waze_status == WAZE_NO_DATA:
-                        event_msg = (f"Waze Route Error > Problem connecting to Waze Servers. "
+                        post_event(Device,
+                                    f"Waze Route Error > Problem connecting to Waze Servers. "
                                     f"Distance will be calculated, Travel Time not available")
-                        post_event(Device, event_msg)
 
                         return (WAZE_NO_DATA, 0, 0, 0)
 
@@ -369,9 +369,8 @@ class Waze(object):
             self.waze_status = WAZE_NOT_USED
             err = "A problem occurred connecting to `www.waze.com`. Waze is not available at this time"
 
-        log_msg = (f"{EVLOG_ALERT}Alert > Waze Connection Error, Region-{self.waze_region} > {err}. "
+        post_event(f"{EVLOG_ALERT}Alert > Waze Connection Error, Region-{self.waze_region} > {err}. "
                     "The route distance will be calculated, Travel Time is not available.")
-        post_event(log_msg)
 
 #--------------------------------------------------------------------
     def __repr__(self):

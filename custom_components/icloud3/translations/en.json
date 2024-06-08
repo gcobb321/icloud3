@@ -223,7 +223,7 @@
           "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-          "mobapp": "MOBILE APP INSTALLED - The HA Mobile App is installed on this device  ",
+          "mobapp": "MOBILE APP INSTALLED - The HA Mobile App is installed on this device ",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
         },
         "data_description": {
@@ -344,7 +344,7 @@
           "ipad": "IPAD",
           "watch": "APPLE WATCH",
           "airpods": "AIRPODS",
-          "no_mobapp": "MOBILE APP IS NOT INSTALLED ",
+          "no_mobapp": "MOBILE APP IS NOT INSTALLED",
           "other": "OTHER DEVICE TYPE",
           "distance_between_devices": "Determine the distance between devices. Use a near by device's tracking results",
           "action_items": "═════════════════════════════════════════════════════ ACTION COMMANDS"
@@ -379,10 +379,10 @@
         "data": {
           "stat_zone_header":     "═════════════════════════════════════════════════════ STATIONARY ZONE",
           "stat_zone_fname":      "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
-          "stat_zone_still_time": "NO MOVEMENT TIME ",
-          "stat_zone_inzone_interval": "INZONE INTERVAL ",
+          "stat_zone_still_time": "NO MOVEMENT TIME",
+          "stat_zone_inzone_interval": "INZONE INTERVAL",
           "passthru_zone_header": "═════════════════════════════════════════════════════ ENTER ZONE DELAY",
-          "passthru_zone_time":   "ENTER ZONE DELAY TIME ",
+          "passthru_zone_time":   "ENTER ZONE DELAY TIME",
           "track_from_base_zone_used": "═════════════════════════════════════════════════════ PRIMARY TRACK-FROM-HOME ZONE OVERRIDE",
           "track_from_base_zone": "TRACK FROM ZONE - Use this zone instead of Home for tracking results for all devices. Global setting",
           "track_from_home_zone": "TRACK FROM HOME ZONE - Keep tracking from the Home zone when the Primary Track From Zone is not Home",

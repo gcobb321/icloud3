@@ -100,8 +100,8 @@ def get_entity_registry_mobile_app_devices():
         battery_state_sensors_by_mobapp_devicename = _extract_sensor_entities(
                                     mobapp_devicename_by_mobapp_id, battery_state_sensors)
 
-        Gb.debug_log['_.mobapp_id_by_mobapp_devicename'] = mobapp_id_by_mobapp_devicename
-        Gb.debug_log['_.mobapp_devicename_by_mobapp_id'] = mobapp_devicename_by_mobapp_id
+        Gb.debug_log['_.mobapp_id_by_mobapp_devicename'] = {k: v[:10] for k, v in mobapp_id_by_mobapp_devicename.items()}
+        Gb.debug_log['_.mobapp_devicename_by_mobapp_id'] = {k[:10]: v for k, v in mobapp_devicename_by_mobapp_id.items()}
         Gb.debug_log['_.last_updt_trig_by_mobapp_devicename'] = last_updt_trig_by_mobapp_devicename
         Gb.debug_log['_.battery_level_sensors_by_mobapp_devicename'] = battery_level_sensors_by_mobapp_devicename
         Gb.debug_log['_.battery_state_sensors_by_mobapp_devicename'] = battery_state_sensors_by_mobapp_devicename
@@ -206,9 +206,9 @@ def send_message_to_device(Device, service_data):
             return
 
         if service_data.get('message') != "request_location_update":
-            evlog_msg = (f"{EVLOG_NOTICE}Sending Message to Device > "
+            post_event(Device,
+                        f"{EVLOG_NOTICE}Sending Message to Device > "
                         f"Message-{service_data.get('message')}")
-            post_event(Device, evlog_msg)
 
         Gb.hass.services.call("notify", Device.mobapp[NOTIFY], service_data)
 
@@ -273,7 +273,7 @@ def request_location(Device, is_alive_check=False, force_request=False):
                         f"LastLocated-{format_time_age(Device.mobapp_data_secs)}")
             if Device.old_loc_cnt > 2:
                 event_msg += f", OldThreshold-{format_timer(Device.old_loc_threshold_secs)}"
-        post_event(devicename, event_msg)
+        post_event(Device, event_msg)
 
         if Device.mobapp_request_loc_first_secs == 0:
             Device.mobapp_request_loc_first_secs = Gb.this_update_secs
@@ -291,8 +291,7 @@ def request_location(Device, is_alive_check=False, force_request=False):
         else:
             Device.mobapp_request_loc_last_secs = 0
             Device.mobapp_request_loc_sent_secs = 0
-            event_msg = f"{EVLOG_NOTICE}{event_msg} > Failed to send message"
-            post_event(devicename, event_msg)
+            post_event(Device, f"{EVLOG_NOTICE}{event_msg} > Failed to send message")
 
     except Exception as err:
         log_exception(err)

@@ -177,9 +177,9 @@ def exit_statzone(Device):
 
         remove_statzone(StatZone, Device)
 
-        event_msg =(f"Will Remove Stationary Zone > {StatZone.dname}, "
+        post_event(Device,
+                    f"Will Remove Stationary Zone > {StatZone.dname}, "
                     f"LastUsedBy-{Device.fname}")
-        post_event(Device, event_msg)
 
 #--------------------------------------------------------------------
 def kill_and_recreate_unuseable_statzone(Device):
@@ -205,9 +205,9 @@ def kill_and_recreate_unuseable_statzone(Device):
 
     for _Device in Devices_in_statzone:
         _Device.StatZone = _StatZone
-        event_msg =(f"Reassigned Stationary Zone > {StatZone.dname}{RARROW}"
+        post_event(_Device,
+                    f"Reassigned Stationary Zone > {StatZone.dname}{RARROW}"
                     f"{_StatZone.dname}")
-        post_event(_Device.devicename, event_msg)
 
     remove_statzone(StatZone)
 
@@ -259,9 +259,9 @@ def remove_statzone(StatZone, Device=None):
 
     if Device:
         clear_statzone_timer_distance(Device)
-        event_msg =(f"Exited Stationary Zone > {StatZone.dname}, "
+        post_event(Device,
+                    f"Exited Stationary Zone > {StatZone.dname}, "
                     f"DevicesRemaining-{devices_in_statzone_count(StatZone)}")
-        post_event(Device, event_msg)
 
 #--------------------------------------------------------------------
 def ha_statzones():
@@ -289,13 +289,11 @@ def _trigger_monitored_device_update(StatZone, Device, action):
         if action == ENTER_ZONE and _Device.StatZone is None:
             dist_apart_m = _Device.distance_m(Device.loc_data_latitude, Device.loc_data_longitude)
             if dist_apart_m <= Gb.statzone_radius_m:
-                event_msg = f"Trigger > Enter New Stationary Zone > {StatZone.dname}"
-                post_event(_Device.devicename, event_msg)
+                post_event(_Device, f"Trigger > Enter New Stationary Zone > {StatZone.dname}")
 
         elif action == EXIT_ZONE and _Device.StatZone is StatZone:
             _Device.StatZone = None
-            event_msg = f"Trigger > Exit Removed Stationary Zone > {StatZone.dname}"
-            post_event(_Device.devicename, event_msg)
+            post_event(_Device, f"Trigger > Exit Removed Stationary Zone > {StatZone.dname}")
 
         else:
             continue

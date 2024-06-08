@@ -638,13 +638,12 @@ class EventLog(object):
                 del self.event_recds[event_recds_target_cnt:]
 
             if delete_cnt > 0:
-                event_msg = (   f"{EVLOG_MONITOR}Event Log Table Size Reduced > "
+                self.post_event(f"{EVLOG_MONITOR}Event Log Table Size Reduced > "
                                 f"RecdCnt-{event_recds_recd_cnt}{RARROW}"
                                 f"{len(self.event_recds)}, "
                                 f"Deleted-{delete_cnt} "
                                 f"(DevInfo-{delete_reg_cnt}, "
                                 f"Monitor-{delete_mon_cnt})")
-                self.post_event(event_msg)
 
         except Exception as err:
             log_exception(err)

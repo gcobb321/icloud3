@@ -614,9 +614,8 @@ class WazeRouteHistory(object):
             self.total_recd_cnt = len(records)
 
             if self.connection is None:
-                event_msg = (f"{EVLOG_NOTICE}Waze History Database > Warning, Waze Time/Distance "
+                post_event( f"{EVLOG_NOTICE}Waze History Database > Warning, Waze Time/Distance "
                             "is disabled in the iCloud3 configuration")
-                post_event(event_msg)
 
             # Set the Abort Flag which is picked up in the update routine that is running
             # in another thread or as an asyncio task
@@ -665,8 +664,7 @@ class WazeRouteHistory(object):
         self.compress_wazehist_database()
 
         running_time = time.perf_counter() - start_time
-        event_msg = (f"Waze History Completed > Total Time-{format_timer(running_time)}")
-        post_event(event_msg)
+        post_event(f"Waze History Completed > Total Time-{format_timer(running_time)}")
 
         self.wazehist_recalculate_time_dist_running_flag = False
         self.wazehist_recalculate_time_dist_abort_flag   = False
@@ -770,12 +768,11 @@ class WazeRouteHistory(object):
                 post_internal_error(traceback.format_exc)
 
         running_time = time.perf_counter() - start_time
-        log_msg = (f"{EVLOG_NOTICE}Waze History Completed > Recalculate Route Time/Dist > "
+        post_event( f"{EVLOG_NOTICE}Waze History Completed > Recalculate Route Time/Dist > "
                     f"Zone-{zone_dname}, "
                     f"Checked-{recd_cnt} of {self.total_recd_cnt}, "
                     f"Updated-{update_cnt}, "
                     f"Time-{format_timer(running_time)}")
-        post_event(log_msg)
         post_evlog_greenbar_msg('')
         refresh_event_log()
 
@@ -896,9 +893,8 @@ class WazeRouteHistory(object):
 
         if self.connection is None: return
         if self.is_refreshing_map_sensor:
-            event_msg =(f"HA Map Locations Refresh in process, "
+            post_event( f"HA Map Locations Refresh in process, "
                         f"RecdsLeft-{self.sensor_map_recds_cnt-self.sensor_map_recd_cnt}")
-            post_event(event_msg)
             return
 
         self.sensor_map_recds_cnt = self.sensor_map_recd_cnt = 0
@@ -916,15 +912,13 @@ class WazeRouteHistory(object):
         self.sensor_map_recds_cnt = len(records)
 
         if self.connection is None:
-            event_msg = (f"{EVLOG_NOTICE}Waze History Database is disabled in the "
+            post_event( f"{EVLOG_NOTICE}Waze History Database is disabled in the "
                         "iCloud3 configuration")
-            post_event(event_msg)
 
-        event_msg = (f"Waze History > Refreshing HA Map locations for"
-                        f"{CRLF_DOT}Sensor-sensor.icloud3_wazehist_track"
-                        f"{CRLF_DOT}RecordCnt-{self.sensor_map_recds_cnt}, "
-                        f"OrderedBy-{orderby_text}")
-        post_event(event_msg)
+        post_event( f"Waze History > Refreshing HA Map locations for"
+                    f"{CRLF_DOT}Sensor-sensor.icloud3_wazehist_track"
+                    f"{CRLF_DOT}RecordCnt-{self.sensor_map_recds_cnt}, "
+                    f"OrderedBy-{orderby_text}")
 
         try:
             self.sensor_map_recd_cnt = 0

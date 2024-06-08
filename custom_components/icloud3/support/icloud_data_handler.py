@@ -348,11 +348,11 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                             else:
                                 reason_msg = (  f"NewData-{_RawData.location_time}/±{_RawData.gps_accuracy:.0f}m "
                                                 f"vs {_Device.loc_data_time_gps}, ")
-                            event_msg =(f"Rejected  #{Device.old_loc_cnt} > "
+                            post_event(_Device,
+                                        f"Rejected  #{Device.old_loc_cnt} > "
                                         f"{reason_msg}"
                                         f"Updated-{_RawData.data_source} data, "
                                         f"{Device.device_status_msg}")
-                            post_event(_Device.devicename, event_msg)
 
             if (_RawData is None
                     or (_RawData.location_secs == 0 and _Device.mobapp_data_secs == 0)
@@ -620,14 +620,13 @@ def get_famshr_fmf_PyiCloud_RawData_to_use(_Device):
             _RawData = None
             _Device.data_source = MOBAPP
 
-            error_msg = (f"{EVLOG_ALERT}Data Exception > {_Device.devicename} > No iCloud FamShr  "
+            post_event( f"{EVLOG_ALERT}Data Exception > {_Device.devicename} > No iCloud FamShr  "
                         f"or FmF Device Id was assigned to this device. This can be caused by "
                         f"No location data was returned from iCloud when iCloud3 was started."
                         f"{CRLF}Actions > Restart iCloud3. If the error continues, check the Event Log "
                         f"(iCloud3 Initialization Stage 2) and verify that the device is valid and a "
                         f"tracking method has been assigned. "
                         f"The device will be tracked by the Mobile App.")
-            post_event(error_msg)
 
         error_msg = ''
         if _RawData is None:

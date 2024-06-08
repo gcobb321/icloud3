@@ -3,6 +3,12 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+3.0.5.2
+.......................
+### Change Log - v3.0.5.2 (6/8/2024)
+1. HA I/O ERROR FROM EVENT LOOP (Fixed) - HA was complaining about doing I/O (HACS file) outside of the Event Loop. Changed the method of doing I/O to use HA routines for the configuration file, restore state file and HACS file.
+2. FROM_ZONE ERROR (Fixed) - Normally the TrackFrom Zone and NextUpdate Zone is the Home zone. Added a check to set it to Home if it had never been set.
+
 
 3.0.5.1
 .......................

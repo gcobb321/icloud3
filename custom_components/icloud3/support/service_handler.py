@@ -435,8 +435,7 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
     start_ic3.update_conf_file_log_level(new_log_level)
 
     log_level_fname = new_log_level.replace('-', ' ').title()
-    event_msg = f"Log Level Change > New Level: {log_level_fname}"
-    post_event(event_msg)
+    post_event(f"Log Level Change > New Level: {log_level_fname}")
 
 def _on_off_text(condition):
     return 'On' if condition else 'Off'
