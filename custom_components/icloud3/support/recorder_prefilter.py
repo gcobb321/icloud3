@@ -79,8 +79,8 @@ def add_filter(hass: HomeAssistant, entities=None):
 
         rp_data['legacy'] = False
 
-        if _inject_filter(hass) is False:
-            return
+        # if _inject_filter(hass) is False:
+        #     return
 
     _update_filter(hass, entities)
 
