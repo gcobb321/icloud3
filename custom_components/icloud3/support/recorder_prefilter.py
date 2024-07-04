@@ -118,7 +118,7 @@ def _inject_filter(hass: HomeAssistant):
         """
         if entity_id is None:
             return False
-        if entity_id in hass.data['recorder_prefilter']['exclude_entities']):
+        if entity_id in hass.data['recorder_prefilter']['exclude_entities']:
             return False
 
         return recorder_entity_filter(entity_id)
