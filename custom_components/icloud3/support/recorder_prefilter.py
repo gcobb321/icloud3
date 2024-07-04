@@ -116,8 +116,9 @@ def _inject_filter(hass: HomeAssistant):
             Run the original HA recorder_entity_filter function -
                 The entity is not in the filter list.
         """
-        if (entity_id
-                and entity_id in hass.data['recorder_prefilter']['exclude_entities']):
+        if entity_id is None:
+            return False
+        if entity_id in hass.data['recorder_prefilter']['exclude_entities']):
             return False
 
         return recorder_entity_filter(entity_id)
