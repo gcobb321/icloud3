@@ -6,9 +6,11 @@
 3.0.5.5
 .......................
 ### Change Log - v3.0.5.5 (7/15/2024)
-1. ICLOUD3 FAILED TO LOAD (Fix) - iCloud3 injected special code into the HA history recorder to exclude various sensor entities with large text fields from being added to the history recorder. This caused problems with HA in the 2024.7 release.  The HA 2024.7.2 included special code that blocked iCloud3 from loading. A temporary patch was posted on the iCloud3 GitHub repository to disable the recorder injection. This update is a permant fix. All sensor attributes not related to the battery, distance and timer sensors are not being added to the HA recorder history. This includes info sensors, the Event Log sensor, badge, tracking update, zone, etc. sensors.
+1. ICLOUD3 FAILED TO LOAD (Fix) - iCloud3 injected special code into the HA history recorder to exclude various sensor entities with large text fields from being added to the history recorder. This caused problems with HA in the 2024.7 release.  The HA 2024.7.2 included special code that blocked iCloud3 from loading. A temporary patch was posted on the iCloud3 GitHub repository to disable the recorder injection. This update is a permant fix. 
 
-SPECIAL NOTE: If you get an HA error that a sensor attribute is not available, create an issue on the iCloud3 GitHub repository. Let me know the sensor name and attribute name that is causing the error. I will remove it from the exclusion list in the next update.
+    All sensor attributes not related to the battery, distance and timer sensors are being added to the HA recorder history database. Text base sensor attributes are not being added (info sensors, Event Log sensor, badge, tracking update, zone, etc.)..
+
+    **SPECIAL NOTE**: If you get an HA error that a sensor attribute is not available, create an issue on the iCloud3 GitHub repository. Let me know the sensor name and attribute name that is causing the error. I will remove it from the exclusion list in the next update.
 
 
 3.0.5.2
