@@ -35,11 +35,12 @@ from .const             import (DOMAIN, VERSION, ICLOUD3, RARROW,
                                 )
 from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
-                                SENSOR_ATTRS, SENSOR_DEFAULT, )
+                                SENSOR_ATTRS, SENSOR_DEFAULT, ICLOUD3_SENSORS,
+                                SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS, )
 
-from .helpers.common    import (instr,  round_to_zero, isnumber, )
-from .helpers.messaging import (log_info_msg, log_debug_msg, log_error_msg, log_exception,
-                                log_info_msg_HA, log_exception_HA,
+from .helpers.common    import (instr, round_to_zero, isnumber, )
+from .helpers.messaging import (post_event, log_info_msg, log_debug_msg, log_error_msg,
+                                log_exception, log_info_msg_HA, log_exception_HA,
                                 _trace, _traceha, )
 from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, format_timer,
                                 format_mins_timer, time_now_secs, datetime_now,
@@ -50,8 +51,8 @@ from .helpers.format    import (icon_circle, icon_box, )
 from collections        import OrderedDict
 from .helpers           import entity_io
 from .support           import start_ic3
-from .support           import recorder_prefilter
 
+from homeassistant.const                import MATCH_ALL
 from homeassistant.components.sensor    import SensorEntity
 from homeassistant.config_entries       import ConfigEntry
 from homeassistant.helpers.entity       import DeviceInfo
@@ -78,13 +79,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             start_ic3.load_storage_icloud3_configuration_file()
 
         NewSensors = []
-        Gb.EvLogSensor = Sensor_EventLog('iCloud3 Event Log', SENSOR_EVENT_LOG_NAME)
+        Gb.EvLogSensor = Sensor_EventLog(SENSOR_EVENT_LOG_NAME)
+        # Gb.EvLogSensor = Sensor_EventLog_ExcludeFromRecorder(SENSOR_EVENT_LOG_NAME)
+        _traceha(f"EVLOG SENSOR {Gb.EvLogSensor=}")
         if Gb.EvLogSensor:
             NewSensors.append(Gb.EvLogSensor)
         else:
             log_error_msg("Error setting up Event Log Sensor")
 
-        Gb.WazeHistTrackSensor = Sensor_WazeHistTrack('iCloud3 Waze History Track', SENSOR_WAZEHIST_TRACK_NAME)
+        Gb.WazeHistTrackSensor = Sensor_WazeHistTrack(SENSOR_WAZEHIST_TRACK_NAME)
         if Gb.WazeHistTrackSensor:
             NewSensors.append(Gb.WazeHistTrackSensor)
         else:
@@ -108,12 +111,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         if Gb.sensors_cnt == 0:
             excluded_sensors_list = _excluded_sensors_list()
             Gb.sensors_cnt = len(NewSensors)
-            log_info_msg(f'Sensor entities created:  {len(NewSensors)}')
-            log_info_msg(f'Sensor entities excluded: {len(excluded_sensors_list)}')
+            post_event( f"Sensor Entities > Created-{len(NewSensors)}, "
+                        f"Excluded-{len(excluded_sensors_list)}")
 
         if NewSensors != []:
             async_add_entities(NewSensors, True)
-            _setup_recorder_exclude_sensor_filter(NewSensors)
             log_info_msg_HA(f'iCloud3 Sensor entities: {len(NewSensors)}')
 
     except Exception as err:
@@ -334,20 +336,6 @@ def _excluded_sensors_list():
                         if instr(sensor_fname, '(')]
 
 #--------------------------------------------------------------------
-def _setup_recorder_exclude_sensor_filter(NewSensors):
-
-    exclude_entities = []
-
-    for Sensor in NewSensors:
-        if Sensor.history_exclude_flag:
-            exclude_entities.append(Sensor.entity_id)
-
-    if exclude_entities != []:
-        recorder_prefilter.add_filter(Gb.hass, exclude_entities)
-
-    return
-
-#--------------------------------------------------------------------
 def _strip_sensor_def_table_item_prefix(sensor):
     '''
     Remove the prefix for sensor names in the sensor definition table for
@@ -365,36 +353,42 @@ def  _create_sensor_by_type(devicename, sensor, conf_device, from_zone=None):
     '''
     sensor_type = SENSOR_DEFINITION[sensor][SENSOR_TYPE]
     if sensor_type.startswith('battery'):
-        return Sensor_Battery(devicename, sensor, conf_device, from_zone)
+        return Sensor_Battery(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('text'):
-        return Sensor_Text(devicename, sensor, conf_device, from_zone)
+        return Sensor_Text(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('timestamp'):
-        return Sensor_Timestamp(devicename, sensor, conf_device, from_zone)
+        return Sensor_Timestamp(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('timer'):
-        return Sensor_Timer(devicename, sensor, conf_device, from_zone)
+        return Sensor_Timer(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('distance'):
-        return Sensor_Distance(devicename, sensor, conf_device, from_zone)
+        return Sensor_Distance(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('zone_info'):
-        return Sensor_ZoneInfo(devicename, sensor, conf_device, from_zone)
+        return Sensor_ZoneInfo(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('zone'):
-        return Sensor_Zone(devicename, sensor, conf_device, from_zone)
+        return Sensor_Zone(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('info'):
-        return Sensor_Info(devicename, sensor, conf_device, from_zone)
+        return Sensor_Info(sensor, devicename, conf_device, from_zone)
     elif sensor_type.startswith('badge'):
-        return Sensor_Badge(devicename, sensor, conf_device, from_zone)
+        return Sensor_Badge(sensor, devicename, conf_device, from_zone)
     else:
         log_error_msg('iCloud3 Sensor Setup Error, Sensor-{sensor} > Invalid Sensor Type-{sensor_type}')
         return None
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class SensorBase(SensorEntity):
+class DeviceSensor_Base():
     ''' iCloud base device sensor '''
 
-    def __init__(self, devicename, sensor_base, conf_device, from_zone=None):
+    _unrecorded_attributes = frozenset({MATCH_ALL})
+
+    def __init__(self, sensor_base, devicename, conf_device, from_zone=None):
         try:
             self.hass        = Gb.hass
+            self.sensor_base = sensor_base
             self.devicename  = devicename
             self.conf_device = conf_device
+            self.device_sensor = True
+            self.icloud3_sensor = False
+
 
             self.from_zone   = from_zone
             if from_zone:
@@ -420,7 +414,6 @@ class SensorBase(SensorEntity):
             self._on_remove         = [self.after_removal_cleanup]
             self.entity_removed_flag = False
 
-            self.sensor_base     = sensor_base
             self.sensor_type     = self._get_sensor_definition(sensor_base, SENSOR_TYPE).replace(' ', '')
             self.sensor_empty    = self._get_sensor_definition(sensor_base, SENSOR_DEFAULT)
             self.sensor_fname    = (f"{conf_device[FNAME]} "
@@ -430,9 +423,6 @@ class SensorBase(SensorEntity):
 
             self._state = self._get_restore_or_default_value(sensor_base)
             self.current_state_value = ''
-
-            # Add this sensor to the HA Recorder history exclude entity list
-            self.history_exclude_flag = instr(self.sensor_type, 'ha_history_exclude')
 
             Gb.sensors_created_cnt += 1
             log_debug_msg(f'Sensor entity created: {self.entity_id}, #{Gb.sensors_created_cnt}')
@@ -491,6 +481,9 @@ class SensorBase(SensorEntity):
         '''
         extra_attrs = OrderedDict()
         extra_attrs['integration'] = ICLOUD3
+        # extra_attrs['sensor_name'] = sensor
+        # extra_attrs['type'] = self._get_sensor_definition(sensor, SENSOR_TYPE).split(',')[0]
+
         update_time = secs_to_datetime(time_now_secs())
         if self.Device and self.Device.away_time_zone_offset != 0:
             update_time = adjust_time_hour_values(update_time, self.Device.away_time_zone_offset)
@@ -807,8 +800,10 @@ class SensorBase(SensorEntity):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Badge(SensorBase):
+class Sensor_Badge(DeviceSensor_Base, SensorEntity):
     '''  Sensor for displaying the device badge items '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['badge'])
 
     @property
     def native_value(self):
@@ -825,8 +820,10 @@ class Sensor_Badge(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_ZoneInfo(SensorBase):
+class Sensor_ZoneInfo(DeviceSensor_Base, SensorEntity):
     '''  Sensor for displaying the device zone time/distance items '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS[ZONE])
 
     @property
     def native_value(self):
@@ -842,8 +839,10 @@ class Sensor_ZoneInfo(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Text(SensorBase):
+class Sensor_Text(DeviceSensor_Base, SensorEntity):
     '''  Sensor for handling text items '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['text'])
 
     @property
     def native_value(self):
@@ -872,7 +871,7 @@ class Sensor_Text(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Info(SensorBase):
+class Sensor_Info(DeviceSensor_Base, SensorEntity):
     '''
         Sensor for handling info sensor messages.
             1.  This will update a specific Device's info sensor using the
@@ -882,6 +881,8 @@ class Sensor_Info(SensorBase):
                 an info message during startup before the devices have been created
                 or to everyone as a general notification.
     '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['text'])
 
     @property
     def native_value(self):
@@ -908,11 +909,13 @@ class Sensor_Info(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Timestamp(SensorBase):
+class Sensor_Timestamp(DeviceSensor_Base, SensorEntity):
     '''
     Sensor for handling timestamp (mm/dd/yy hh:mm:ss) items
     Sensors: last_update_time, next_update_time, last_located
     '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['timestamp'])
 
     @property
     def native_value(self):
@@ -942,11 +945,13 @@ class Sensor_Timestamp(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Timer(SensorBase):
+class Sensor_Timer(DeviceSensor_Base, SensorEntity):
     '''
     Sensor for handling timer items (30 secs, 1.5 hrs, 30 mins)
     Sensors: inteval, travel_time, travel_time_mins
     '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['timer'])
 
     @property
     def native_value(self):
@@ -997,11 +1002,13 @@ class Sensor_Timer(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Distance(SensorBase):
+class Sensor_Distance(DeviceSensor_Base, SensorEntity):
     '''
     Sensor for handling timer items (30 secs, 1.5 hrs, 30 mins)
     Sensors: inteval, travel_time, travel_time_mins
     '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['distance'])
 
     @property
     def native_value(self):
@@ -1141,11 +1148,13 @@ class Sensor_Distance(SensorBase):
     #     return number
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Battery(SensorBase):
+class Sensor_Battery(DeviceSensor_Base, SensorEntity):
     '''
     Sensor for handling battery items (30s)
     Sensors: battery
     '''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS[BATTERY])
 
     @property
     def icon(self):
@@ -1170,7 +1179,7 @@ class Sensor_Battery(SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_Zone(SensorBase):
+class Sensor_Zone(DeviceSensor_Base, SensorEntity):
     '''
     Sensor for handling zone items
     Sensors:
@@ -1183,6 +1192,8 @@ class Sensor_Zone(SensorBase):
         Attributes = zone
     '''
 
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS[ZONE])
+
     @property
     def native_value(self):
         sensor_value = self._get_sensor_value(f"{self.sensor}")
@@ -1194,34 +1205,27 @@ class Sensor_Zone(SensorBase):
         return self._get_extra_attributes(self.sensor)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Support_SensorBase(SensorEntity):
+class iCloud3Sensor_Base():
     ''' iCloud Support Sensor Base
         - Event Log
         - Waze History Track
     '''
 
-    def __init__(self, fname, entity_name):
+    # _unrecorded_attributes = frozenset({MATCH_ALL})
+
+    def __init__(self, sensor):
         '''Initialize the Event Log sensor (icloud3_event_log).'''
-        self.fname             = fname
-        self.sensor            = entity_name
-        self.entity_name       = entity_name
+        self.sensor            = sensor
+
+        self.fname             = ICLOUD3_SENSORS[sensor]
+        self.entity_name       = sensor
         self.entity_id         = f"sensor.{self.entity_name}"
         self._unsub_dispatcher = None
         self._device           = DOMAIN
         self.current_state_value = ''
-        self.history_exclude_flag = False \
-            if self.entity_name == SENSOR_WAZEHIST_TRACK_NAME \
-            else True
 
         Gb.sensors_created_cnt += 1
         log_debug_msg(f'Sensor entity created: {self.entity_id}, #{Gb.sensors_created_cnt}')
-
-        # Add this sensor to the Recorder history exclude entity list
-        # try:
-        #     ha_history_recorder = Gb.hass.data['recorder_instance']
-        #     ha_history_recorder.entity_filter._exclude_e.add(self.entity_id)
-        # except:
-        #     pass
 
     @property
     def name(self):
@@ -1245,9 +1249,10 @@ class Support_SensorBase(SensorEntity):
                             name         = 'iCloud3 Integration'
                         )
 
+
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
-        return (f"<DeviceSensor: {self.entity_name}>")
+        return (f"<iCloud3Sensor: {self.entity_name}>")
 
     @property
     def should_poll(self):
@@ -1279,9 +1284,10 @@ class Support_SensorBase(SensorEntity):
         except Exception as err:
             log_exception(err)
 
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_EventLog(Support_SensorBase):
+class Sensor_EventLog(iCloud3Sensor_Base, SensorEntity):
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['event_log'])
 
     @property
     def icon(self):
@@ -1325,8 +1331,10 @@ class Sensor_EventLog(Support_SensorBase):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class Sensor_WazeHistTrack(Support_SensorBase):
+class Sensor_WazeHistTrack(iCloud3Sensor_Base, SensorEntity):
     '''iCloud Waze History Track GPS Values Sensor.'''
+
+    _unrecorded_attributes = frozenset(SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS['waze_info'])
 
     @property
     def icon(self):

@@ -4,7 +4,7 @@
 
 from .const     import (DISTANCE_TO_DEVICES,
                         BLANK_SENSOR_FIELD, UNKNOWN,
-                        NAME, BADGE, ALERT,
+                        NAME, BADGE, ALERT, ICON, FRIENDLY_NAME,
                         TRIGGER,
                         FROM_ZONE, ZONE_INFO, NEAR_DEVICE_USED,
                         ZONE, ZONE_DNAME, ZONE_NAME, ZONE_FNAME, ZONE_DATETIME,
@@ -31,6 +31,9 @@ HA_EXCLUDE_SENSORS =    [SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME, ]
                         # '*_zone_datetime', '*_trigger', '*_info',
                         # '*_next_update', '*_last_update', '*_last_located', '*_interval',
                         # ]
+
+ICLOUD3_SENSORS    =    {SENSOR_EVENT_LOG_NAME: 'iCloud3 Event Log',
+                        SENSOR_WAZEHIST_TRACK_NAME: 'iCloud3 Waze History Track',}
 
 SENSOR_LIST_DEVICE =    [NAME, BADGE, BATTERY, BATTERY_STATUS,
                         TRIGGER, INTERVAL, LAST_LOCATED,
@@ -174,7 +177,7 @@ SENSOR_DEFINITION = {
                 UNKNOWN],
         INFO: [
                 'Info',
-                'info, ha_history_exclude',
+                'info',
                 'mdi:information-outline',
                 [],
                 BLANK_SENSOR_FIELD],
@@ -188,19 +191,19 @@ SENSOR_DEFINITION = {
                 0],
         LAST_LOCATED: [
                 'LastLocated',
-                'timestamp, ha_history_exclude',
+                'timestamp',
                 'mdi:history',
                 [LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME, NEXT_UPDATE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_UPDATE: [
                 'LastUpdate',
-                'timestamp, ha_history_exclude',
+                'timestamp',
                 'mdi:history',
                 [LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME, NEXT_UPDATE_DATETIME],
                 BLANK_SENSOR_FIELD],
         NEXT_UPDATE: [
                 'NextUpdate',
-                'timestamp, ha_history_exclude',
+                'timestamp',
                 'mdi:update',
                 [LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME, NEXT_UPDATE_DATETIME],
                 BLANK_SENSOR_FIELD],
@@ -340,7 +343,7 @@ SENSOR_DEFINITION = {
         # CONF_SENSORS_TRACKING_OTHER
         TRIGGER: [
                 'Trigger',
-                'text, ha_history_exclude',
+                'text',
                 'mdi:flash-outline',
                 [],
                 BLANK_SENSOR_FIELD],
@@ -384,37 +387,37 @@ SENSOR_DEFINITION = {
                 BLANK_SENSOR_FIELD],
         ZONE_DATETIME: [
                 'ZoneChanged',
-                'timestamp, ha_history_exclude',
+                'timestamp',
                 'mdi:clock-in',
                 [],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE: [
                 'LastZone',
-                'zone',    #, ha_history_exclude',
+                'zone',
                 'mdi:crosshairs-gps',
                 [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_DNAME: [
                 'LastZone',
-                'zone',    #, ha_history_exclude',
+                'zone',
                 'mdi:crosshairs-gps',
                 [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_FNAME: [
                 'LastZone',
-                'zone',    #, ha_history_exclude',
+                'zone',
                 'mdi:crosshairs-gps',
                 [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_NAME: [
                 'LastZone',
-                'zone',    #, ha_history_exclude',
+                'zone',
                 'mdi:crosshairs-gps',
                 [LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME, LAST_ZONE_DATETIME],
                 BLANK_SENSOR_FIELD],
         LAST_ZONE_DATETIME: [
                 'ZoneChanged',
-                'timestamp, ha_history_exclude',
+                'timestamp',
                 'mdi:clock-in',
                 [],
                 BLANK_SENSOR_FIELD],
@@ -438,4 +441,41 @@ SENSOR_DEFINITION = {
                 'mdi:map-marker-radius',
                 [],
                 0],
+}
+
+SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS = {
+        ZONE:           ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME,
+                        ZONE_DATETIME, TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME,
+                        DISTANCE, MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE, DIR_OF_TRAVEL],
+        'timer':        ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME,
+                        NEXT_UPDATE_DATETIME, LAST_LOCATED, LAST_UPDATE, 'last_updated',
+                        NEXT_UPDATE, 'next_update', 'unit_of_measurement', ],
+        'timestamp':    ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        LAST_LOCATED_DATETIME, LAST_UPDATE_DATETIME,
+                        NEXT_UPDATE_DATETIME, LAST_LOCATED, LAST_UPDATE, 'last_updated',
+                        'next_update', 'unit_of_measurement',],
+        BATTERY:        ['integration', 'sensor_updated', ICON, FRIENDLY_NAME, ],
+        DISTANCE:       ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        WAZE_METHOD, GPS, 'last_gps',
+                        GPS_ACCURACY, VERTICAL_ACCURACY, ALTITUDE, NEAR_DEVICE_USED, WENT_3KM,
+                        DIR_OF_TRAVEL, ARRIVAL_TIME, 'unit_of_measurement', 'moved_from', 'moved_to'],
+        'text':         ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        FROM_ZONE, TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM,
+                        ARRIVAL_TIME, DISTANCE, MAX_DISTANCE, DIR_OF_TRAVEL, BATTERY, BATTERY_SOURCE,
+                        'nearby_device_used'],
+        'badge':        ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        'entity_picture', NAME, 'battery_info', ZONE, ZONE_FNAME,
+                        'alert','location_source', 'home_distance', MAX_DISTANCE,TRAVEL_TIME, DIR_OF_TRAVEL,
+                        INTERVAL, 'distance_to', 'zone_changed', LAST_LOCATED, LAST_UPDATE, 'last_updated',
+                        DEVICE_STATUS],
+        'waze_info':    ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        'records', 'updated', 'latitude', 'longitude'],
+        'event_log':    ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        'update_time', 'alert', 'alerts', 'alert_startup', 'alert_tracked', 'alert_monitored',
+                        'user_message', 'devicename', 'fname', 'fnames', 'filtername',
+                        'version_ic3', 'version_evlog', 'versionEvLog',
+                        'log_level_debug', 'run_mode', 'evlog_btn_urls',
+                        'name', 'names', 'logs',]
 }

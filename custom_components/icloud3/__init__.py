@@ -25,8 +25,6 @@ from .const import (DOMAIN, PLATFORMS, ICLOUD3, MODE_PLATFORM, MODE_INTEGRATION,
 
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
-# from .const_sensor import (HA_EXCLUDE_SENSORS, )
-
 from .global_variables              import GlobalVariables as Gb
 from .helpers.messaging             import (_trace, _traceha, open_ic3log_file_init,
                                             post_evlog_greenbar_msg, post_startup_alert,
@@ -40,9 +38,7 @@ from .support                       import restore_state
 from .support.service_handler       import register_icloud3_services
 from .support                       import pyicloud_ic3_interface
 from .support                       import event_log
-from .support                       import recorder_prefilter
 from .icloud3_main                  import iCloud3
-from .                              import config_flow
 
 Gb.HARootLogger = logging.getLogger("")
 Gb.HALogger     = logging.getLogger(__name__)
@@ -159,8 +155,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return False
 
         await async_get_ha_location_info(hass)
-
-        recorder_prefilter.add_filter(hass, [SENSOR_EVENT_LOG_NAME])
 
         start_ic3.initialize_icloud_data_source()
         await Gb.hass.async_add_executor_job(
