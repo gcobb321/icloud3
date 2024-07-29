@@ -3,10 +3,19 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+3.0.5.6
+.......................
+### Change Log - v3.0.5.6 (7/15/2024)
+1. ICLOUD3 BUG FIXES - Fixes the following errors:
+    ```AttributeError: 'NoneType' object has no attribute 'init_step_complete'```
+    ```AttributeError: module 'custom_components.icloud3.sensor' has no attribute _setup_recorder_exclude_sensor_filter'```
+2. HA ERROR/WARNING MESSAGES - Fixed a problem where some I/O getting directory and filename list for the Update Devices configuration screen was being done outside of the HA Event Loop
+
+
 3.0.5.5
 .......................
 ### Change Log - v3.0.5.5 (7/15/2024)
-1. ICLOUD3 FAILED TO LOAD (Fix) - iCloud3 injected special code into the HA history recorder to exclude various sensor entities with large text fields from being added to the history recorder. This caused problems with HA in the 2024.7 release.  The HA 2024.7.2 included special code that blocked iCloud3 from loading. A temporary patch was posted on the iCloud3 GitHub repository to disable the recorder injection. This update is a permant fix. 
+1. ICLOUD3 FAILED TO LOAD (Fix) - iCloud3 injected special code into the HA history recorder to exclude various sensor entities with large text fields from being added to the history recorder. This caused problems with HA in the 2024.7 release.  The HA 2024.7.2 included special code that blocked iCloud3 from loading. A temporary patch was posted on the iCloud3 GitHub repository to disable the recorder injection. This update is a permant fix.
 
     All sensor attributes not related to the battery, distance and timer sensors are being added to the HA recorder history database. Text base sensor attributes are not being added (info sensors, Event Log sensor, badge, tracking update, zone, etc.)..
 

@@ -280,7 +280,11 @@ def format_list(arg_list):
 def format_cnt(desc, n):
     return f", {desc}(#{n})" if n > 1 else ''
 
-#--------------------------------------------------------------------
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#            PYTHON OS. FILE I/O AND OTHER UTILITIES
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_load_json_file(filename):
     if os.path.exists(filename) is False:
         return {}
@@ -412,6 +416,71 @@ def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_
     except Exception as err:
         Gb.HALogger.exception(err)
         return "Delete error"
+
+#--------------------------------------------------------------------
+def get_file_list(start_dir=None,  file_extn_filter=[]):
+    return get_file_or_directory_list(  directory_list=False,
+                                        start_dir=start_dir,
+                                        file_extn_filter=file_extn_filter)
+
+def get_directory_list(start_dir=None):
+    return get_file_or_directory_list(  directory_list=True,
+                                        start_dir=start_dir,
+                                        file_extn_filter=[])
+
+#--------------------------------------------------------------------
+def get_file_or_directory_list(directory_list=False, start_dir=None,  file_extn_filter=[]):
+    '''
+    Return a list of directories or files in a given path
+
+    Parameters:
+        - directory_list = True (List of directories), False (List of files)
+        - start_dir      = Top level directory to start searching from ('www')
+        -file_extn_filter = List of files witn extensions to include (['png' 'jpg'], [])
+
+        Can call from executor function:
+        directory_list, start_dir, file_filter = [False, 'www', ['png', 'jpg', 'jpeg']]
+        image_filenames = await Gb.hass.async_add_executor_job(
+                                                    self.get_file_or_directory_list,
+                                                    directory_list,
+                                                    start_dir,
+                                                    file_filter)
+    '''
+
+    directory_filter      = ['/.', 'deleted', '/x-']
+    filename_or_directory_list = []
+    path_config_base = f"{Gb.ha_config_directory}/"
+    back_slash       = '\\'
+    if start_dir is None: start_dir = ''
+
+    for path, dirs, files in os.walk(f"{path_config_base}{start_dir}"):
+        www_sub_directory = path.replace(path_config_base, '')
+        in_filter_cnt = len([filter for filter in directory_filter if instr(www_sub_directory, filter)])
+        if in_filter_cnt > 0 or www_sub_directory.count('/') > 4 or www_sub_directory.count(back_slash):
+            continue
+
+        if directory_list:
+            filename_or_directory_list.append(www_sub_directory)
+            continue
+
+        # Filter unwanted directories - std dirs are www/icloud3, www/cummunity, www/images
+        if Gb.picture_www_dirs:
+            valid_dir = [dir for dir in Gb.picture_www_dirs if www_sub_directory.startswith(dir)]
+            if valid_dir == []:
+                continue
+
+        dir_filenames = [f"{www_sub_directory}/{file}"
+                                for file in files
+                                if (file_extn_filter
+                                    and file.rsplit('.', 1)[-1] in file_extn_filter)]
+
+        filename_or_directory_list.extend(dir_filenames[:25])
+        if len(dir_filenames) > 25:
+            filename_or_directory_list.append(
+                        f"⛔ {www_sub_directory} > The first 25 files out of "
+                        f"{len(dir_filenames)} are listed")
+
+    return filename_or_directory_list
 
 #--------------------------------------------------------------------
 def encode_password(password):

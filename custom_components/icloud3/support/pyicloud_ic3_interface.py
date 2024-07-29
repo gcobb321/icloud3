@@ -117,7 +117,8 @@ def verify_pyicloud_setup_status():
         create_PyiCloudService(Gb.PyiCloud, instance='startup')
 
         Gb.PyiCloud = Gb.PyiCloud or Gb.PyiCloudInit
-        if 'Authenticate' not in Gb.PyiCloud.init_step_complete:
+        if (Gb.PyiCloud is None
+                or 'Authenticate' not in Gb.PyiCloud.init_step_complete):
             create_PyiCloudService(Gb.PyiCloud, instance='startup')
         Gb.PyiCloud = Gb.PyiCloud or Gb.PyiCloudInit
         if Gb.PyiCloud is None:

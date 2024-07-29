@@ -1802,7 +1802,6 @@ def setup_tracked_devices_for_fmf(PyiCloud=None):
     return
 
     broadcast_info_msg(f"Stage 3 > Set up Find-my-Friends Devices")
-    _trace(f"Stage 3 > Set up Find-my-Friends Devices")
 
     # devices_desc             = get_fmf_devices(PyiCloud)
     # device_id_by_fmf_email   = devices_desc[0]
@@ -1815,13 +1814,11 @@ def setup_tracked_devices_for_fmf(PyiCloud=None):
         return
 
     PyiCloud = Gb.PyiCloud
-    _trace(f"{PyiCloud.FindMyFriends=}")
     PyiCloud.create_FindMyFriends_object()
     _FmF = PyiCloud.FindMyFriends
     # _Fmf._set_service_available(True)
     Gb.conf_data_source_FMF = True
     _FmF.refresh_client()
-    _trace(f"{PyiCloud.FindMyFriends=}")
 
     event_msg = "Find-My-Friends Devices > "
     # if Gb.conf_data_source_FMF is False:

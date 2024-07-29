@@ -670,7 +670,6 @@ class PyiCloudService():
             self.data = req.json()
 
             if 'dsInfo' in self.data:
-                _traceha(f"{self.account_name=} {self.data['dsInfo']=}")
                 if 'fullName' in self.data['dsInfo']:
                     self.account_name   = self.data['dsInfo']['fullName']
                     self.account_locked = self.data['dsInfo']['locked']

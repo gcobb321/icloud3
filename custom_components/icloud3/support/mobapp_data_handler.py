@@ -412,6 +412,10 @@ def get_mobapp_device_trkr_entity_attrs(Device):
         None -  error or no data is available
     '''
     try:
+        if (Device.mobapp_monitor_flag is False
+                or Gb.conf_data_source_MOBAPP is False):
+            return None
+
         entity_id = Device.mobapp[DEVICE_TRACKER]
         device_trkr_attrs = {}
         device_trkr_attrs[DEVICE_TRACKER] =  entity_io.get_state(entity_id)

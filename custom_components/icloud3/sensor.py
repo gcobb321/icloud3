@@ -80,8 +80,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
         NewSensors = []
         Gb.EvLogSensor = Sensor_EventLog(SENSOR_EVENT_LOG_NAME)
-        # Gb.EvLogSensor = Sensor_EventLog_ExcludeFromRecorder(SENSOR_EVENT_LOG_NAME)
-        _traceha(f"EVLOG SENSOR {Gb.EvLogSensor=}")
         if Gb.EvLogSensor:
             NewSensors.append(Gb.EvLogSensor)
         else:
@@ -1133,14 +1131,11 @@ class Sensor_Distance(DeviceSensor_Base, SensorEntity):
     #     '''
     #     try:
     #         if isnumber(number) is False:
-    #             _trace(f"zz {self.sensor} {number=} {um=}")
     #             return number
 
     #         um = um if um else Gb.um
     #         precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
-    #         _trace(f"aa {self.sensor} {number=} {um=} {precision=}")
     #         number = round(float(number), precision)
-    #         _trace(f"bb {self.sensor} {number=} {um=} {precision=}")
 
     #     except Exception as err:
     #         pass
