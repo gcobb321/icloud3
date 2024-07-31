@@ -2423,8 +2423,9 @@ def setup_notify_service_name_for_mobapp_devices(post_event_msg=False):
         mobapp_devicename = mobile_app_notify_devicename.replace('mobile_app_', '')
         for devicename, Device in Gb.Devices_by_devicename.items():
             if instr(mobapp_devicename, devicename) or instr(devicename, mobapp_devicename):
-                Device.mobapp_monitor_flag = True
-                if Device.mobapp[NOTIFY] == '':
+                if (Device.conf_mobapp_fname != 'None'
+                        and Device.mobapp_monitor_flag
+                        and Device.mobapp[NOTIFY] == ''):
                     Device.mobapp[NOTIFY] = mobile_app_notify_devicename
                     setup_msg += (f"{CRLF_DOT}{Device.devicename_fname}{RARROW}{mobile_app_notify_devicename}")
                 break

@@ -3,6 +3,15 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+
+3.0.5.7
+.......................
+### Change Log - v3.0.5.6 (7/15/2024)
+1. ICLOUD3 PROBLEMS WITH HA 2024.7.4 - Fixed
+2. ADD/UPDATE DEVICE CONFIGURATION (Fixed) - This was probably caused by HA 2024.7.4 Loading issues.
+3. MOBILE APP NOTIFY MESSAGE (Fixed) - A warning message about not being able to send a notification to a device was displayed in the Event Log when the device was not using the Mobile App.
+
+
 3.0.5.6
 .......................
 ### Change Log - v3.0.5.6 (7/15/2024)

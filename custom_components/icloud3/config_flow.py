@@ -1520,7 +1520,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 #-------------------------------------------------------------------------------------------
     async def async_step_special_zones(self, user_input=None, errors=None):
         self.step_id = 'special_zones'
-        user_input, action_item = self._action_text_to_item(user_input)\
+        user_input, action_item = self._action_text_to_item(user_input)
+        await self._build_zone_list()
 
         if self.common_form_handler(user_input, action_item, errors):
             return await self.async_step_menu()
@@ -2865,6 +2866,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.step_id = 'add_device'
         self.errors = errors or {}
         self.errors_user_input = {}
+        await self._build_update_device_selection_lists()
 
         if user_input is None:
             return self.async_show_form(step_id=self.step_id,
@@ -3271,12 +3273,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         """ Setup the option lists used to select device parameters """
 
         await self._build_picture_filename_list()
-        self._build_mobapp_entity_list()
-        self._build_zone_list()
+        await self._build_mobapp_entity_list()
+        await self._build_zone_list()
 
         await self._build_famshr_devices_list()
         # self._build_fmf_devices_list()
-        self._build_devicename_by_famshr_fmf()
+        await self._build_devicename_by_famshr_fmf()
 
 #----------------------------------------------------------------------
     async def _build_famshr_devices_list(self):
@@ -3378,7 +3380,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.fmf_list_text_by_email = self.fmf_list_text_by_email_base.copy()
 
 #----------------------------------------------------------------------
-    def _build_devicename_by_famshr_fmf(self, current_devicename=None):
+    async def _build_devicename_by_famshr_fmf(self, current_devicename=None):
         '''
         Cycle thru the configured devices and build a devicename by the
         famshr fname and fmf email values. This is used to validate these
@@ -3419,7 +3421,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         #     self.fmf_list_text_by_email[fmf_email] = f"{fmf_text}{devicename_msg}"
 
 #----------------------------------------------------------------------
-    def _build_mobapp_entity_list(self):
+    async def _build_mobapp_entity_list(self):
         '''
         Cycle through the /config/.storage/core.entity_registry file and return
         the entities for platform ('mobile_app', etc)
@@ -3652,10 +3654,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             log_exception(err)
 
 #-------------------------------------------------------------------------------------------
-    def _build_zone_list(self):
+    async def _build_zone_list(self):
 
         if self.zone_name_key_text != {}:
             return
+
 
         fname_zones = []
         for zone, Zone in Gb.HAZones_by_zone.items():
@@ -5051,9 +5054,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         #------------------------------------------------------------------------
         elif step_id == 'special_zones':
             try:
-                if self.zone_name_key_text == {}:
-                    self._build_zone_list()
-
                 pass_thru_zone_used  = (Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] > 0)
                 stat_zone_used       = (Gb.conf_general[CONF_STAT_ZONE_STILL_TIME] > 0)
                 track_from_base_zone_used = Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
