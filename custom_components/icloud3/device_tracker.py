@@ -363,7 +363,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs[LOCATED]        = self._get_sensor_value(LAST_LOCATED_DATETIME)
             alert                       = self._get_sensor_value(ALERT)
             extra_attrs[ALERT]          = alert if alert != BLANK_SENSOR_FIELD else ''
-            extra_attrs[f"{'-'*40}"]    = f"{'-'*35}"
+
+            extra_attrs[f"{'-'*5} DEVICE CONFIGURATION {'-'*20}"] = ''
             extra_attrs['integration']  = ICLOUD3
             extra_attrs[NAME]           = self._get_sensor_value(NAME)
             extra_attrs[PICTURE]        = self._get_sensor_value(PICTURE)
@@ -372,8 +373,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs['primary_home_zone']     = self.extra_attrs_primary_home_zone
             extra_attrs['away_time_zone_offset'] = self.extra_attrs_away_time_zone_offset
 
-            extra_attrs[f"{'-'*41}"]    = f"{'-'*35}"
-            # extra_attrs['data_source']  = f"{self._get_sensor_value(LOCATION_SOURCE)}"
+            extra_attrs[f"{'-'*5} LOCATION INFO {'-'*20}"] = self._get_sensor_value(LAST_UPDATE_DATETIME)
             extra_attrs[DEVICE_STATUS]  = self._get_sensor_value(DEVICE_STATUS)
             extra_attrs[LOCATION_SOURCE]= f"{self._get_sensor_value(LOCATION_SOURCE)}"
             extra_attrs[TRIGGER]        = self._get_sensor_value(TRIGGER)
@@ -391,7 +391,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs[NEXT_UPDATE]    = self._get_sensor_value(NEXT_UPDATE_DATETIME)
             extra_attrs['last_timestamp']= f"{self._get_sensor_value(LAST_LOCATED_SECS)}"
 
-            extra_attrs[f"{'-'*42}"]         = f"{'-'*35}"
+            xtra_attrs[f"{'-'*5} ICLOUD3 CONFIGURATION {'-'*19}"] = ''
             extra_attrs['icloud3_devices']   = ', '.join(Gb.Devices_by_devicename.keys())
             extra_attrs['icloud3_version']   = f"v{Gb.version}"
             extra_attrs['event_log_version'] = f"v{Gb.version_evlog}"

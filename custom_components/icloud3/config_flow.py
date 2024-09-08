@@ -3452,7 +3452,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                 f"({slugify(self._mobapp_fname(entity_attrs))})")
                             for dev_trkr_entity, entity_attrs in mobapp_entity_data.items()}
         except:
-            pass
+            search_mobapp_devices = {}
 
         self.mobapp_list_text_by_entity_id.update(sort_dict_by_values(mobapp_devices))
         self.mobapp_list_text_by_entity_id.update(sort_dict_by_values(search_mobapp_devices))
@@ -3462,7 +3462,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 #-------------------------------------------------------------------------------------------
     @staticmethod
     def _mobapp_fname(entity_attrs):
-        return entity_attrs['name'] or entity_attrs['original_name']
+        return entity_attrs.get('name') or entity_attrs.get('original_name') or 'Unknown'
 
 #-------------------------------------------------------------------------------------------
     def _prepare_device_selection_list(self):
