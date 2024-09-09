@@ -391,7 +391,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs[NEXT_UPDATE]    = self._get_sensor_value(NEXT_UPDATE_DATETIME)
             extra_attrs['last_timestamp']= f"{self._get_sensor_value(LAST_LOCATED_SECS)}"
 
-            xtra_attrs[f"{'-'*5} ICLOUD3 CONFIGURATION {'-'*19}"] = ''
+            extra_attrs[f"{'-'*5} ICLOUD3 CONFIGURATION {'-'*19}"] = ''
             extra_attrs['icloud3_devices']   = ', '.join(Gb.Devices_by_devicename.keys())
             extra_attrs['icloud3_version']   = f"v{Gb.version}"
             extra_attrs['event_log_version'] = f"v{Gb.version_evlog}"

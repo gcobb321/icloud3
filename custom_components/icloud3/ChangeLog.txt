@@ -3,6 +3,12 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+
+3.0.5.9
+### Change Log - v3.0.5.9 (9/9/2024)
+1. CONFIGURATION - UPDATE DEVICES (Fixed) - An error would occur on the _Configure > Update Devices_ screen if the Mobile App Integration had not been set up or if the name had not been set up on one of the Mobile App devices was missing. This occured predominately when adding the first device to iCloud3.
+2. DEVICE_TRACKER ATTRIBUTES (Fix/Update) - There are 3 sections on thedevice  attribute's list to group similar attributes together. A title has been added to the section's dividing lines to prevent problems with other AddOns that use the attribute's name. Corrected a spelling error on one of the attribute names created in 3.0.5.8.
+
 3.0.5.8
 .......................
 ### Change Log - v3.0.5.8 (9/8/2024)
