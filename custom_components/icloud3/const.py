@@ -10,16 +10,17 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.0.5.9'
+VERSION                         = '3.1'
 VERSION_BETA                    = ''
 #-----------------------------------------
-DOMAIN                          = 'icloud3'
 ICLOUD3                         = 'iCloud3'
+DOMAIN                          = ICLOUD3.lower()
+ICLOUD3_VERSION_MSG             = f"{ICLOUD3} v{VERSION}{VERSION_BETA}"
+STORAGE_KEY                     = DOMAIN
+STORAGE_VERSION                 = 1
 MODE_PLATFORM                   = -1
 MODE_INTEGRATION                = 1
 DEBUG_TRACE_CONTROL_FLAG        = False
-STORAGE_KEY                     = DOMAIN
-STORAGE_VERSION                 = 1
 
 HA_ENTITY_REGISTRY_FILE_NAME    = 'config/.storage/core.entity_registry'
 ENTITY_REGISTRY_FILE_KEY        = 'core.entity_registry'
@@ -27,14 +28,14 @@ DEFAULT_CONFIG_IC3_FILE_NAME    = 'config/config_ic3.yaml'
 
 STORAGE_DIR                     = ".storage"
 STORAGE_KEY_ENTITY_REGISTRY     = 'core.entity_registry'
-SENSOR_EVENT_LOG_NAME           = 'icloud3_event_log'
-EVLOG_CARD_WWW_DIRECTORY        = 'www/icloud3'
+SENSOR_EVENT_LOG_NAME           = f'{DOMAIN}_event_log'
+EVLOG_CARD_WWW_DIRECTORY        = f'www/{DOMAIN}'
 EVLOG_CARD_WWW_JS_PROG          = 'icloud3-event-log-card.js'
-EVLOG_BTNCONFIG_DEFAULT_URL     = '/config/integrations/integration/icloud3'
-HA_CONFIG_IC3_URL               = '/config/integrations/integration/icloud3'
+EVLOG_BTNCONFIG_DEFAULT_URL     = f'/config/integrations/integration/{DOMAIN}'
+HA_CONFIG_IC3_URL               = f'/config/integrations/integration/{DOMAIN}'
 WAZE_LOCATION_HISTORY_DATABASE  = 'icloud3.waze_location_history.db'
 SENSOR_WAZEHIST_TRACK_NAME      = 'icloud3_wazehist_track'
-IC3LOG_FILENAME                 = 'icloud3-0.log'
+IC3LOG_FILENAME                 = f'{DOMAIN}-0.log'
 PICTURE_WWW_STANDARD_DIRS       = 'www/icloud3, www/community, www/images, www/custom_cards'
 
 DEVICE_TRACKER                  = 'device_tracker'
@@ -98,13 +99,15 @@ IPHONE_FNAME                    = 'iPhone'
 IPHONE                          = 'iphone'
 IPAD_FNAME                      = 'iPad'
 IPAD                            = 'ipad'
+IMAC_FNAME                      = 'iMac'
+IMAC                            = 'imac'
 IPOD_FNAME                      = 'iPod'
 IPOD                            = 'ipod'
 WATCH_FNAME                     = 'Watch'
 WATCH                           = 'watch'
 AIRPODS_FNAME                   = 'AirPods'
 AIRPODS                         = 'airpods'
-ICLOUD_FNAME                    = 'iCloud'
+ICLOUD                          = 'iCloud'
 ICLOUD                          = 'icloud'
 OTHER_FNAME                     = 'Other'
 OTHER                           = 'other'
@@ -114,23 +117,26 @@ OTHER                           = 'other'
 APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE = ['cn', 'CN']
 
 DEVICE_TYPES = [
-        IPHONE, IPAD, IPOD, WATCH, ICLOUD_FNAME, AIRPODS,
-        IPHONE_FNAME, IPAD_FNAME, IPOD_FNAME, WATCH_FNAME, ICLOUD_FNAME, AIRPODS_FNAME,
+        IPHONE, IPAD, WATCH, AIRPODS, IMAC, IPOD, ICLOUD,
+        IPHONE_FNAME, IPAD_FNAME, WATCH_FNAME, AIRPODS_FNAME,
+        IMAC_FNAME, IPOD_FNAME, ICLOUD,
 ]
 DEVICE_TYPE_FNAME = {
         IPHONE: IPHONE_FNAME,
         IPAD: IPAD_FNAME,
         WATCH: WATCH_FNAME,
         AIRPODS: AIRPODS_FNAME,
+        IMAC: IMAC_FNAME,
         IPOD: IPOD_FNAME,
         OTHER: OTHER_FNAME,
 }
 DEVICE_TYPE_ICONS = {
         IPHONE: "mdi:cellphone",
         IPAD: "mdi:tablet",
-        IPOD: "mdi:ipod",
-        AIRPODS: "mdi:earbuds-outline",
         WATCH: "mdi:watch-variant",
+        AIRPODS: "mdi:earbuds-outline",
+        IMAC : "mdi:laptop",
+        IPOD: "mdi:ipod",
         OTHER: 'mdi:laptop'
 }
 
@@ -258,10 +264,13 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒⊘Ɵ⊗ⓧⓍ⛒🜔
-Important =✔️❗❌✨➰⚠️❓⚽🛑⛔⚡⭐⭕ⓘ• ⍰ ‶″“”‘’‶″ 🕓
-  — –ᗒ ⁃ » ━▶ ━➤🡺 —> > > ❯↦ … ⋮ 🡪ᗕ ᗒ ᐳ ─🡢 ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉●
-  ▐‖  ▹▻▷◁◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ ²
- ⣇⠈⠉⠋⠛⠟⠿⡿⣿       https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
+Important =✔️❗❌✨➰⚠️❓⚽🛑⛔⚡⭐⭕ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔✅❎☑️☁️🍎🔻⏭️⏮️🍏🅰️⮽➕
+↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️
+  — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ … ⋮ 🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ≻≺ ⸩⸨
+  ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
+ ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨
+ https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
+ https://www.htmlsymbols.xyz/unit-symbols
 '''
 NBSP              = '⠈' #'&nbsp;'
 NBSP2             = '⠉' #'&nbsp;&nbsp;'
@@ -271,7 +280,12 @@ NBSP5             = '⠟' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 NBSP6             = '⠿' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 CRLF              = '⣇' #'<br>'
 NL                = '\n'
+#LINK              = ' ⟛ '
+LLINK             = '⸨'
+RLINK             = '⸩'
+LINK              = '-⸨'
 CLOCK_FACE        = '🕓'
+INFO              = '🛈'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
 YELLOW_ALERT      = '⚠️'
@@ -293,6 +307,7 @@ LT                = '&lt;'
 GT                = '&gt;'
 LTE               = '≤'
 GTE               = '≥'
+DOTS              = '…'
 PLUS_MINUS        = '±'
 LDOT2             = f'•{NBSP2}'
 CRLF_DOT          = f'{CRLF}{NBSP3}•{NBSP2}'
@@ -304,14 +319,15 @@ CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
 CRLF_CHK          = f'{CRLF}{NBSP3}✓{NBSP}'
 CRLF_STAR         = f'{CRLF}{NBSP3}✪{NBSP}'
 CRLF_RED_X        = f'{CRLF}❌'
+CRLF_YELLOW_ALERT = f'{CRLF}⚠️{NBSP}'
 CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}ⓧ{NBSP}'
 CRLF_SP3_DOT      = f'{CRLF}{NBSP3}•{NBSP}'
 CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
 CRLF_SP8_DOT      = f'{CRLF}{NBSP4}{NBSP4}•{NBSP}'
 CRLF_SP8_HDOT     = f'{CRLF}{NBSP4}{NBSP4}◦{NBSP}'
-CRLF_SP3_HDOT     = f'{CRLF}{NBSP3}◦{NBSP}'
+CRLF_SP3_HDOT     = f'{CRLF}{NBSP3}◦{NBSP2}'
 CRLF_SP3_STAR     = f'{CRLF}{NBSP3}✪{NBSP}'
-CRLF_TAB          = f'{CRLF}{NBSP6}'
+CRLF_TAB          = f'{CRLF}{NBSP4}{NBSP4}{NBSP4}'
 CRLF_INDENT       = f'{CRLF}{NBSP6}{NBSP6}'
 CRLF_DASH_75      = f'{CRLF}{"-"*75}'
 
@@ -332,21 +348,12 @@ DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 OPT_NONE          = 0
 
 #tracking_method config parameter being used
-ICLOUD            = 'icloud'    #iCloud Location Services (FmF & FamShr)
-ICLOUD_FNAME      = 'iCloud'
-FMF               = 'fmf'       #Find My Friends
-FAMSHR            = 'famshr'    #Family Sharing
+ICLOUD            = 'iCloud'    #iCloud Location Services
+FAMSHR            = 'iCloud'    #Family Sharing
 IOSAPP            = 'iosapp'
-MOBAPP            = 'mobapp'    #HA Mobile App v1.5x or v2.x
-MOBAPP_FNAME      = 'MobApp'
+MOBAPP            = 'MobApp'    #HA Mobile App v1.5x or v2.x
 NO_MOBAPP         = 'no_mobapp'
 NO_IOSAPP         = 'no_iosapp'
-FMF_FNAME         = 'FmF'
-FAMSHR_FNAME      = 'FamShr'
-FAMSHR_FMF        = 'famshr_fmf'
-FAMSHR_FMF_FNAME  = 'FamShr-FmF'
-DATA_SOURCE_FNAME = {FMF: FMF_FNAME, FAMSHR: FAMSHR_FNAME, FAMSHR_FMF: FAMSHR_FMF_FNAME,
-                        MOBAPP: MOBAPP_FNAME, ICLOUD: ICLOUD_FNAME}
 
 # Device tracking modes
 TRACK_DEVICE      = 'track'
@@ -390,12 +397,11 @@ STATE_TO_ZONE_BASE = {
         STATIONARY_FNAME: STATIONARY_FNAME,
         }
 
-TRK_METHOD_SHORT_NAME = {
-        FMF: FMF_FNAME,
-        FAMSHR: FAMSHR_FNAME,
-        MOBAPP: MOBAPP_FNAME, }
+# TRK_METHOD_SHORT_NAME = {
+#         ICLOUD: ICLOUD,
+#         MOBAPP: MOBAPP, }
 
-# Standardize the battery status text between the Mobile App and icloud famshr
+# Standardize the battery status text between the Mobile App and icloud icloud
 BATTERY_STATUS_CODES = {
         'full': 'not charging',
         'charged': 'not charging',
@@ -492,7 +498,7 @@ CONF_CREATE_SENSORS        = 'create_sensors'
 CONF_EXCLUDE_SENSORS       = 'exclude_sensors'
 CONF_CONFIG_IC3_FILE_NAME  = 'config_ic3_file_name'
 
-# entity attributes (iCloud FmF & FamShr)
+# entity attributes (iCloud FmF & iCloud)
 ICLOUD_TIMESTAMP           = 'timeStamp'
 ICLOUD_HORIZONTAL_ACCURACY = 'horizontalAccuracy'
 ICLOUD_VERTICAL_ACCURACY   = 'verticalAccuracy'
@@ -538,7 +544,7 @@ AGE                        = 'age'
 BATTERY_SOURCE             = 'battery_data_source'
 BATTERY_LEVEL              = 'battery_level'
 BATTERY_UPDATE_TIME        = 'battery_level_updated'
-BATTERY_FAMSHR             = 'famshr_battery_info'
+BATTERY_ICLOUD             = 'icloud_battery_info'
 BATTERY_MOBAPP             = 'mobapp_battery_info'
 BATTERY_LATEST             = 'battery_info'
 WAZE_METHOD                = 'waze_method'
@@ -588,9 +594,12 @@ DEVICE_STATUS_CODES = {
         '0': 'Unknown',
         }
 BATTERY_LEVEL_LOW     = 20
-DEVICE_STATUS_ONLINE  = ['Online', 'Pending', 'Unknown', 'unknown', '']
-DEVICE_STATUS_OFFLINE = ['Offline']
-DEVICE_STATUS_PENDING = ['Pending']
+DEVICE_STATUS_ONLINE  = [200, 203, 204, 0]
+DEVICE_STATUS_OFFLINE = 201
+DEVICE_STATUS_PENDING = 203
+# DEVICE_STATUS_ONLINE  = ['Online', 'Pending', 'Unknown', 'unknown', '']
+# DEVICE_STATUS_OFFLINE = ['Offline']
+# DEVICE_STATUS_PENDING = ['Pending']
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 ICLOUD3_EVENT_LOG    = 'icloud3_event_log'
@@ -603,7 +612,6 @@ DEVTRKR_ONLY_MONITOR = 'devtrkr_only_monitored_devices'
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-# to store the cookie
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1
 
@@ -622,6 +630,9 @@ CONF_PICTURE_WWW_DIRS           = 'picture_www_dirs'
 # Account, Devices, Tracking Parameters
 CONF_USERNAME                   = 'username'
 CONF_PASSWORD                   = 'password'
+CONF_TOTP_KEY                   = 'totp_key'
+CONF_LOCATE_ALL                 = 'locate_all'
+CONF_APPLE_ACCOUNTS             = 'apple_accounts'
 CONF_DEVICES                    = 'devices'
 CONF_DATA_SOURCE                = 'data_source'
 CONF_VERIFICATION_CODE          = 'verification_code'
@@ -692,21 +703,19 @@ CONF_DISPLAY_TEXT_AS            = 'display_text_as'
 # Devices Parameters
 CONF_IC3_DEVICENAME             = 'ic3_devicename'
 CONF_FNAME                      = 'fname'
+CONF_APPLE_ACCOUNT              = 'apple_account'
+CONF_APPLE_ACCT                 = 'apple_account'
+CONF_ICLOUD_DEVICENAME          = 'famshr_devicename'
+CONF_ICLOUD_DEVICE_ID           = 'famshr_device_id'
 CONF_FAMSHR_DEVICENAME          = 'famshr_devicename'
 CONF_FAMSHR_DEVICE_ID           = 'famshr_device_id'
 CONF_RAW_MODEL                  = 'raw_model'
 CONF_MODEL                      = 'model'
 CONF_MODEL_DISPLAY_NAME         = 'model_display_name'
-CONF_FAMSHR_DEVICENAME2         = 'famshr_devicename2'
-CONF_FAMSHR_DEVICE_ID2          = 'famshr_device_id2'
-CONF_RAW_MODEL2                 = 'raw_model2'
-CONF_MODEL2                     = 'model2'
-CONF_MODEL_DISPLAY_NAME2        = 'model_display_name2'
 CONF_FMF_EMAIL                  = 'fmf_email'
 CONF_FMF_DEVICE_ID              = 'fmf_device_id'
 CONF_IOSAPP_DEVICE              = 'iosapp_device'
 CONF_MOBILE_APP_DEVICE          = 'mobile_app_device'
-CONF_MOBILE_APP_DEVICE2         = 'mobapp_device2'
 CONF_PICTURE                    = 'picture'
 CONF_TRACKING_MODE              = 'tracking_mode'
 CONF_TRACK_FROM_BASE_ZONE_USED  = 'track_from_base_zone_used'   # Primary Zone a device is tracking from, normally Home
@@ -810,10 +819,11 @@ VERTICAL_ACCURACY  = "vertical_accuracy"
 
 CF_PROFILE         = 'profile'
 CF_DATA            = 'data'
-CF_DATA_TRACKING   = 'tracking'
+CF_TRACKING        = 'tracking'
 CF_DATA_DEVICES    = 'devices'
-CF_DATA_GENERAL    = 'general'
-CF_DATA_SENSORS    = 'sensors'
+CF_DATA_APPLE_ACCOUNTS = 'apple_accounts'
+CF_GENERAL         = 'general'
+CF_SENSORS         = 'sensors'
 
 #--------------------------------------------------------
 DEFAULT_PROFILE_CONF = {
@@ -829,13 +839,21 @@ DEFAULT_PROFILE_CONF = {
         CONF_PICTURE_WWW_DIRS: []
 }
 
+DEFAULT_APPLE_ACCOUNTS_CONF = {
+        CONF_USERNAME: '',
+        CONF_PASSWORD: '',
+        CONF_TOTP_KEY: '',
+        CONF_LOCATE_ALL: True,
+}
+
 DEFAULT_TRACKING_CONF = {
         CONF_USERNAME: '',
         CONF_PASSWORD: '',
+        CONF_APPLE_ACCOUNTS: [DEFAULT_APPLE_ACCOUNTS_CONF],
         CONF_ENCODE_PASSWORD: True,
         CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX: '',
         CONF_SETUP_ICLOUD_SESSION_EARLY: True,
-        CONF_DATA_SOURCE: f'{FAMSHR},{MOBAPP}',
+        CONF_DATA_SOURCE: f'{ICLOUD},{MOBAPP}',
         CONF_DEVICES: [],
 }
 
@@ -849,6 +867,7 @@ DEFAULT_DEVICE_CONF = {
         CONF_INZONE_INTERVAL: 120,
         CONF_FIXED_INTERVAL: 0,
         CONF_TRACKING_MODE: TRACK_DEVICE,
+        CONF_APPLE_ACCOUNT: '',
         CONF_FAMSHR_DEVICENAME: 'None',
         CONF_FAMSHR_DEVICE_ID: '',
         CONF_RAW_MODEL : '',
@@ -909,6 +928,7 @@ DEFAULT_GENERAL_CONF = {
                 IPHONE: 120,
                 IPAD: 120,
                 WATCH: 15,
+                IMAC: 120,
                 AIRPODS: 15,
                 NO_MOBAPP: 15,
                 OTHER: 120,
@@ -1004,17 +1024,17 @@ DEFAULT_SENSORS_CONF = {
 }
 
 DEFAULT_DATA_CONF =  {
-        CF_DATA_TRACKING: DEFAULT_TRACKING_CONF,
-        CF_DATA_GENERAL: DEFAULT_GENERAL_CONF,
-        CF_DATA_SENSORS: DEFAULT_SENSORS_CONF,
+        CF_TRACKING: DEFAULT_TRACKING_CONF,
+        CF_GENERAL: DEFAULT_GENERAL_CONF,
+        CF_SENSORS: DEFAULT_SENSORS_CONF,
 }
 
 CF_DEFAULT_IC3_CONF_FILE = {
         CF_PROFILE: DEFAULT_PROFILE_CONF,
         CF_DATA: {
-                CF_DATA_TRACKING: DEFAULT_TRACKING_CONF,
-                CF_DATA_GENERAL: DEFAULT_GENERAL_CONF,
-                CF_DATA_SENSORS: DEFAULT_SENSORS_CONF,
+                CF_TRACKING: DEFAULT_TRACKING_CONF,
+                CF_GENERAL: DEFAULT_GENERAL_CONF,
+                CF_SENSORS: DEFAULT_SENSORS_CONF,
         }
 }
 
@@ -1032,6 +1052,7 @@ CONF_PARAMETER_TIME_STR = [
         CONF_OLD_LOCATION_ADJUSTMENT,
         IPHONE,
         IPAD,
+        IMAC,
         WATCH,
         AIRPODS,
         NO_MOBAPP,
@@ -1044,7 +1065,7 @@ CONF_PARAMETER_FLOAT = [
         CONF_STAT_ZONE_BASE_LONGITUDE,
 ]
 
-CONF_ALL_FAMSHR_DEVICES = "all_famshr_devices"
+CONF_ALL_FAMSHR_DEVICES = "all_find_devices"
 DEFAULT_ALL_FAMSHR_DEVICES = True
 
 # .storage/icloud3.restore_state file used to resore the device_trackers
@@ -1107,7 +1128,7 @@ TRACE_ICLOUD_ATTRS_BASE = {
         ICLOUD_VERTICAL_ACCURACY: 0,
         'positionType': 'Wifi',
         }
-FMF_FAMSHR_LOCATION_FIELDS = [
+FAMSHR_LOCATION_FIELDS = [
         ALTITUDE,
         LATITUDE,
         LONGITUDE,

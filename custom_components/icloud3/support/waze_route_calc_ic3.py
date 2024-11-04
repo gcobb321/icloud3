@@ -22,7 +22,7 @@ import logging
 import requests
 import re
 
-from ..helpers.messaging  import (_traceha, log_exception, log_warning_msg, log_error_msg, log_info_msg, )
+from ..helpers.messaging  import (_log, log_exception, log_warning_msg, log_error_msg, log_info_msg, )
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class WRCError(Exception):

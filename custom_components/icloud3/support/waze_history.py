@@ -7,10 +7,10 @@ from ..helpers.messaging    import (broadcast_info_msg, format_filename,
                                     post_event, post_internal_error, post_monitor_msg, post_startup_alert,
                                     post_evlog_greenbar_msg,
                                     refresh_event_log, log_info_msg, log_error_msg, log_exception,
-                                    _trace, _traceha, )
+                                    _evlog, _log, )
 from ..helpers.time_util    import (datetime_now, format_timer, )
 from ..helpers.dist_util    import (mi_to_km, gps_distance_km, format_dist_km,)
-from ..support.waze_route_calc_ic3 import WRCError
+from ..support.waze_route_calc_ic3 import WazeRouteCalculator, WRCError
 
 import homeassistant.util.dt as dt_util
 
@@ -18,6 +18,7 @@ import traceback
 import time
 import sqlite3
 from sqlite3 import Error
+import threading
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -159,28 +160,36 @@ class WazeRouteHistory(object):
     def __init__(self, wazehist_used, max_distance, track_direction):
 
         # Flags to control db maintenance
-        self.wazehist_recalculate_time_dist_abort_flag = False
+
+        self.WazeRouteCalc        = None
+        self.wazehist_database    = Gb.wazehist_database_filename
+        self.use_wazehist_flag    = wazehist_used
+        self.max_distance         = mi_to_km(max_distance)
+        self.track_recd_cnt       = 0
+        self.total_recd_cnt       = 0
+        self.total_recds_cnt      = 0
+        self.total_update_cnt     = 0
+        self.total_deleted_cnt    = 0
+        self.sensor_map_recds_cnt = 0
+        self.sensor_map_recd_cnt  = 0
+        self.track_latitude       = 0
+        self.track_longitude      = 0
+        self.last_lat_long_key    = ''   # Last lat:long key read
+        self.last_location_recds  = []   # List of the last recds retrieved for the lat:long
+
+        self.track_direction_north_south_flag            = track_direction in ['north-south', 'north_south']
+        self.is_refreshing_map_sensor                    = False
+        self.wazehist_recalculate_time_dist_abort_flag   = False
         self.wazehist_recalculate_time_dist_running_flag = False
-
-        self.use_wazehist_flag = wazehist_used
-        self.max_distance = mi_to_km(max_distance)
-        self.track_direction_north_south_flag =  track_direction in ['north-south', 'north_south']
-        self.track_latitude = self.track_longitude = 0
-        self.track_recd_cnt = 0
-        self.sensor_map_recds_cnt = self.sensor_map_recd_cnt = 0
-        self.total_recd_cnt = self.total_recds_cnt = self.total_update_cnt = self.total_deleted_cnt = 0
-        self.is_refreshing_map_sensor = False
-
-        self.last_lat_long_key = ''   # Last lat:long key read
-        self.last_location_recds    = []   # List of the last recds retrieved for the lat:long
 
         self.connection = None
         self.cursor     = None
-        wazehist_database = Gb.wazehist_database_filename
-        post_event(Gb.devicename, f"Waze History Database > {format_filename(wazehist_database)}")
+        self.lock       = None
+
+        post_event(f"Waze History Database > {CRLF_DOT}{format_filename(self.wazehist_database)}")
 
         if self.use_wazehist_flag and self.connection is None:
-            self.open_waze_history_database(wazehist_database)
+            self.open_waze_history_database()
 
 #--------------------------------------------------------------------
     @property
@@ -188,25 +197,24 @@ class WazeRouteHistory(object):
         return self.use_wazehist_flag
 
 #--------------------------------------------------------------------
-    def open_waze_history_database(self, wazehist_database):
+    def open_waze_history_database(self):
         """
         Create a database connection to the SQLite database
             specified by db_file
-
-        wazehist_database: The filename of the waze history sqlite3 database
 
         Note: This sets the sql connection and cursor fields if the database
                 opened successfully
         """
 
         try:
-            self.connection = sqlite3.connect(wazehist_database, check_same_thread=False)
+            self.lock       = threading.Lock()
+            self.lock.acquire(True)
+            self.connection = sqlite3.connect(self.wazehist_database, check_same_thread=False)
             self.cursor     = self.connection.cursor()
+            self.lock.release()
 
             self._sql(CREATE_ZONES_TABLE)
             self._sql(CREATE_LOCATIONS_TABLE)
-
-            # self.compress_wazehist_database()
 
         except:
             post_internal_error(traceback.format_exc)
@@ -223,8 +231,10 @@ class WazeRouteHistory(object):
         if self.connection is None: return
 
         try:
+            self.lock.acquire(True)
             self.connection.commit()
             self.connection.close()
+            self.lock.release()
 
         except:
             pass
@@ -233,17 +243,48 @@ class WazeRouteHistory(object):
         self.cursor = None
 
 #--------------------------------------------------------------------
-    def _sql(self, sql):
+    def _sql(self, sql, data=None, fetchone=False, fetchall=False):
+        records = None
         try:
-            self.cursor.execute(sql)
-            self.connection.commit()
-        except:
-            post_internal_error(traceback.format_exc)
+            self.lock.acquire(True)
 
+            if data:
+                self.cursor.execute(sql, data)
+                self.connection.commit()
+            else:
+                self.cursor.execute(sql)
+
+            if fetchone:
+                records = self.cursor.fetchone()
+            elif fetchall:
+                records = self.cursor.fetchall()
+
+            self.lock.release()
+
+            return records
+
+        except Exception as err:
+            log_exception(err)
 #--------------------------------------------------------------------
-    def _sql_data(self, sql, data):
-        self.cursor.execute(sql, data)
-        self.connection.commit()
+    def _execute(self, cursor, sql, fetchone=False, fetchall=False):
+        try:
+            records = None
+            self.lock.acquire(True)
+            cursor.execute(sql)
+
+            if fetchone:
+                records = cursor.fetchone()
+            elif fetchall:
+                records = cursor.fetchall()
+
+            self.lock.release()
+
+            return records
+
+        except Exception as err:
+            log_exception(err)
+
+        return None
 
 #--------------------------------------------------------------------
     def _add_record(self, sql, data):
@@ -254,8 +295,11 @@ class WazeRouteHistory(object):
         :return     rowid   - id of the added row
         '''
         try:
-            self.cursor.execute(sql, data)
-            self.connection.commit()
+            self._sql(sql, data=data)
+            # self.lock.acquire(True)
+            # self.cursor.execute(sql, data)
+            # self.connection.commit()
+            # self.lock.release()
 
             return self.cursor.lastrowid
 
@@ -271,11 +315,15 @@ class WazeRouteHistory(object):
                     data    - list containing the data to be added that matches the sql stmt
         '''
         try:
-            self.cursor.execute(sql, data)
-            self.connection.commit()
+            self._sql(sql, data=data)
+            # self.lock.acquire(True)
+            # self.cursor.execute(sql, data)
+            # self.connection.commit()
+            # self.lock.release()
             return True
 
-        except:
+        except Exception as err:
+            log_exception(err)
             error_msg = f"Error updating Waze History Database, {sql}, {data}"
             log_error_msg(error_msg)
             # post_internal_error(traceback.format_exc)
@@ -291,8 +339,7 @@ class WazeRouteHistory(object):
         if criteria:
             sql += (f" WHERE {criteria}")
 
-        self.cursor.execute(sql)
-        self.connection.commit()
+        self._sql(sql)
 
 #--------------------------------------------------------------------
     def _get_record(self, table, criteria=''):
@@ -308,9 +355,7 @@ class WazeRouteHistory(object):
             if criteria:
                 sql += (f" WHERE {criteria}")
 
-
-            self.cursor.execute(sql)
-            record = self.cursor.fetchone()
+            record = self._sql(sql, fetchone=True)
 
             try:
                 if table == 'locations':
@@ -351,8 +396,7 @@ class WazeRouteHistory(object):
             if orderby:
                 sql += (f"ORDER BY {orderby} ")
 
-            self.cursor.execute(sql)
-            records = self.cursor.fetchall()
+            records = self._sql(sql, fetchall=True)
 
             post_monitor_msg(   Gb.devicename,
                                 f"WazeHistDB > Get All Records, "
@@ -449,16 +493,23 @@ class WazeRouteHistory(object):
 
             sql = (f"SELECT * FROM locations WHERE loc_id={location_id}")
 
-            self.cursor.execute(sql)
-            record = self.cursor.fetchone()
+
+            record = self._sql(sql, fetchone=True)
+            # self.lock.acquire(True)
+            # self.cursor.execute(sql)
+            # record = self.cursor.fetchone()
+            # self.lock.release()
 
             cnt = record[LOC_USAGE_CNT] + 1
             usage_data = [datetime_now(), cnt, location_id]
 
             self._update_record(UPDATE_LOCATION_USED, usage_data)
 
-            self.cursor.execute(sql)
-            record = self.cursor.fetchone()
+            record = self._sql(sql, fetchone=True)
+            # self.lock.acquire(True)
+            # self.cursor.execute(sql)
+            # record = self.cursor.fetchone()
+            # self.lock.release()
 
             if self.wazehist_recalculate_time_dist_running_flag is False:
                 post_monitor_msg(   Gb.devicename,
@@ -478,27 +529,32 @@ class WazeRouteHistory(object):
 
         if self.connection is None: return
 
-        cursor = self.connection.cursor()
-
+        # cursor = self.connection.cursor()
+        vac_conn = sqlite3.connect(self.wazehist_database, 
+                                    check_same_thread=False, 
+                                    isolation_level=None)
+        vac_cursor = vac_conn.cursor()
         try:
-            cursor.execute(DUPLICATE_LOCATION_RECDS_SELECT)
-            records = cursor.fetchall()
+            # records = self._execute(cursor, DUPLICATE_LOCATION_RECDS_SELECT, fetchall=True)
+            records = self._execute(vac_cursor, DUPLICATE_LOCATION_RECDS_SELECT, fetchall=True)
 
             if records != []:
                 post_event(f"Waze History Database > Deleted Duplicate Recds, Count-{len(records)}")
-                cursor.execute(DUPLICATE_LOCATION_RECDS_DELETE)
-                self.connection.commit()
 
-            cursor.execute("VACUUM;")
-            self.connection.commit()
+                self._execute(vac_cursor, DUPLICATE_LOCATION_RECDS_DELETE)
+
+            self._execute(vac_cursor, "VACUUM;")
+            vac_conn.commit()
 
         except Exception as err:
             log_exception(err)
 
-        cursor.execute(GET_LOCATIONS_TABLE_RECD_COUNT)
-        recd_cnt = cursor.fetchone()[0]
-        post_event(f"Waze History Database > Compressed, Record Count-{recd_cnt}")
-        cursor.close()
+        recd_cnts = self._execute(vac_cursor, GET_LOCATIONS_TABLE_RECD_COUNT, fetchone=True)
+        post_event(f"Waze History Database > Compressed, Record Count-{recd_cnts[0]}")
+            
+        vac_cursor.close()
+        vac_conn.close()
+
 
 #--------------------------------------------------------------------
     def __repr__(self):
@@ -595,7 +651,16 @@ class WazeRouteHistory(object):
     def wazehist_recalculate_time_dist_all_zones(self):
         if self.connection is None: return
 
-        self.wazehist_recalculate_time_dist(all_zones_flag=True)
+        try:
+            # Set another WazeRouteCalc object so recalculating all of the history will not effect
+            # calling Waze when updating a tracked device's info
+            if self.WazeRouteCalc is None:
+                self.WazeRouteCalc = WazeRouteCalculator(Gb.Waze.waze_region, Gb.Waze.waze_realtime)
+
+            self.wazehist_recalculate_time_dist(all_zones_flag=True)
+        except:
+            post_event("Waze Hist > Error encountered recalculating time/distance values")
+
 
     def wazehist_recalculate_time_dist(self, all_zones_flag=False):
         '''
@@ -649,7 +714,7 @@ class WazeRouteHistory(object):
                 self.total_recds_cnt   += recds_cnt
                 self.total_update_cnt  += update_cnt
                 self.total_deleted_cnt += deleted_cnt
-                restart_cnt        = 0 if recd_cnt == recds_cnt else recd_cnt
+                restart_cnt = 0 if recd_cnt == recds_cnt else recd_cnt
 
                 zone_data = [Zone.latitude5, Zone.longitude5, 0, datetime_now(), restart_cnt, zone_id]
 
@@ -743,13 +808,16 @@ class WazeRouteHistory(object):
                                 f"ElapsedTime-{format_timer(running_time)}")
                     post_event(log_msg)
 
-                if (recd_cnt % 10) == 0:
+                if (recd_cnt % 25) == 0:
+                    # timer = format_timer(running_time).replace(' secs', 's')
+                    # timer = timer.replace(' mins', 'm').replace(' min', 'm')
+                    # timer = timer.replace(' hrs', 'h').replace(' hr', 'h')
                     alert_message = (f"Waze Hist > "
-                                f"{zone_dname}, "
-                                # f"Recd-{recd_cnt}/{self.total_recd_cnt}, "
-                                f"Checked-{(recd_cnt/self.total_recd_cnt*100):.0f}% "
+                                f"{zone_dname[:6]}, "
+                                f"Recd-{recd_cnt}/{self.total_recd_cnt} "
+                                f"({(recd_cnt/self.total_recd_cnt*100):.0f}%), "
                                 f"Updated-{update_cnt} "
-                                f"({format_timer(running_time)})"   #.replace('mins', 'm').replace(' hrs', 'h')})"
+                                # f"({timer})"
                                 f"{CRLF}Select Action > WazeHist Recalculate... again to cancel")
                     post_evlog_greenbar_msg(alert_message)
                     refresh_event_log()
@@ -799,7 +867,7 @@ class WazeRouteHistory(object):
                 to_lat  , to_long   = wazehist_to_loc.split(',')
 
                 new_time, new_dist = \
-                            Gb.Waze.WazeRouteCalc.calc_route_info   (from_lat, from_long,
+                            self.WazeRouteCalc.calc_route_info  (from_lat, from_long,
                                                                     to_lat, to_long,
                                                                     log_results_flag=False)
                 break
@@ -811,8 +879,7 @@ class WazeRouteHistory(object):
                 # post_internal_error('Update WazeHist Recd', traceback.format_exc)
 
         #** 5/15/2022 Make sure values are above 0
-        if (new_time < 0
-                or new_dist < 0):
+        if (new_time < 0 or new_dist < 0):
             return False, False, 0, 0
 
         update_time_flag = (abs(new_time - current_time) > .25)

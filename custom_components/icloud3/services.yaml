@@ -16,7 +16,7 @@ action:
             - "Restart iCloud3"
             - "Pause Tracking"
             - "Resume Tracking"
-            - "Locate Device(s) using iCloud FamShr"
+            - "Locate Device(s) using iCloud"
             - "Send Locate Request to Mobile App"
     device_name:
       name: "Device Name"

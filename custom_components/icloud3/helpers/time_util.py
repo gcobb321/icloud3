@@ -1,8 +1,9 @@
 
 from ..global_variables         import GlobalVariables as Gb
-from ..const                    import ( HIGH_INTEGER, HHMMSS_ZERO, DATETIME_ZERO, DATETIME_FORMAT, WAZE_USED, )
+from ..const                    import (HIGH_INTEGER, HHMMSS_ZERO, HHMM_ZERO, DATETIME_ZERO,
+                                        DATETIME_FORMAT, WAZE_USED, )
 
-from .messaging                 import (_trace, _traceha, post_event, internal_error_msg, )
+from .messaging                 import (_evlog, _log, post_event, log_exception, internal_error_msg, )
 from .common                    import instr
 
 import homeassistant.util.dt    as dt_util
@@ -24,9 +25,43 @@ def time_now():
     return str(datetime.fromtimestamp(int(time.time())))[11:19]
 
 #--------------------------------------------------------------------
-def datetime_now():
+def utcnow():
+    '''
+    Return the utcnow datetime item
+
+    now=datetime.datetime(2024, 8, 29, 19, 44, 55, 444380, tzinfo=datetime.timezone.utc)
+    dt_util.utcnow()=datetime.datetime(2024, 8, 29, 19, 44, 55, 446351, tzinfo=datetime.timezone.utc)
+    utcnow = 2024-08-29 19:44:55.442437+00:00
+    '''
+    return dt_util.utcnow()
+
+#--------------------------------------------------------------------
+def datetime_plus(datetime, secs=None, mins=None, hrs=None, days=None):
+        '''
+        Determine the current datetime + specified interval
+
+        datetime: datetime.datetime(2024, 8, 29, 19, 44, 55, 444380, tzinfo=datetime.timezone.utc)
+        '''
+        secs = secs or 0
+        mins = mins or 0
+        hrs  = hrs  or 0
+        days = days or 0
+        return datetime + timedelta(days=days, seconds=secs, minutes=mins, hours=hrs)
+
+#--------------------------------------------------------------------
+def datetime_now(datetime_struct=False):
     ''' now --> epoch/unix yyy-mm-dd 10:23:45 '''
-    return str(datetime.fromtimestamp(int(time.time())))
+    if datetime_struct:
+        return datetime.fromtimestamp(int(time.time()))
+    else:
+        return str(datetime.fromtimestamp(int(time.time())))
+
+#--------------------------------------------------------------------
+def smh_time(time):
+    smh_time_str = time.replace(' sec', 's').replace(' secs', 's')
+    smh_time_str = smh_time_str.replace(' min', 'm').replace(' mins', 'm')
+    smh_time_str = smh_time_str.replace(' hr', 'h').replace(' hrss', 'h')
+    return smh_time_str
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -85,10 +120,12 @@ def secs_to_hhmm(secs_utc):
         if isnot_valid(secs_utc): return '00:00'
 
         if Gb.time_format_24_hour:
-            return time_local(secs_utc)[:-3]
+            return time_local(secs_utc+30)[:-3]
 
-        hhmmss = time_to_12hrtime(time_local(secs_utc))
-        return hhmmss[:-4] + hhmmss[-1:]
+        hhmmss = time_to_12hrtime(time_local(secs_utc+30))
+        hhmm = hhmmss[:-4] + hhmmss[-1:]
+
+        return hhmm
 
     except:
         return '00:00'
@@ -338,6 +375,16 @@ def time_str_to_secs(time_str=None) -> int:
 
     return secs
 
+#--------------------------------------------------------------------
+def datetime_to_secs(date_time, date_time_format=None):
+
+    if date_time_format is None:
+        date_time_format = "%Y-%m-%d %H:%M:%S"
+
+    dt_struct = datetime.strptime(date_time, date_time_format)
+    secs = datetime.timestamp(dt_struct)
+
+    return secs
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Time conversion and formatting functions
@@ -497,64 +544,40 @@ def adjust_time_hour_value(hhmmss, hh_adjustment):
         new time value in the same format as the Input hhmmss time
     '''
 
-    if hh_adjustment == 0 or hhmmss == HHMMSS_ZERO:
+    if hh_adjustment == 0 or hhmmss == HHMMSS_ZERO or hhmmss == HHMM_ZERO:
         return hhmmss
 
     hhmm_colon = hhmmss.find(':')
     if hhmm_colon == -1: return hhmmss
 
-    hhmmss24 = time_to_24hrtime(hhmmss)
+    try:
+        hhmm_flag = len(hhmmss) < 7
+        if hhmm_flag:
+            _hhmmss = f"{hhmmss}:00" if Gb.time_format_24_hour else f"{hhmmss[:5]}:00{_ap(hhmmss)}"
+        else:
+            _hhmmss = hhmmss
+    except Exception as err:
+        log_exception(err)
+
+    hhmmss24 = time_to_24hrtime(_hhmmss)
     hh = int(hhmmss24[0:2]) + hh_adjustment
     if hh <= 0:
         hh += 24
     elif hh >= 24:
         hh -=24
+    if hh > 12 and Gb.time_format_12_hour:
+        hh -= 12
 
     hhmmss24 = f"{hh:0>2}{hhmmss24[2:8]}"
+    adj_hhmmss = time_to_12hrtime(hhmmss24)
 
-    return time_to_12hrtime(hhmmss24)
+    try:
+        if hhmm_flag:
+            adj_hhmmss = f"{adj_hhmmss[:-4]}{_ap(adj_hhmmss)}"
+    except Exception as err:
+        log_exception(err)
 
-#--------------------------------------------------------------------------------
-def xadjust_time_hour_value(hhmmss, hh_adjustment):
-    '''
-    All times are based on the HA server time. When the device is in another time
-    zone, convert the HA server time to the device's local time so the local time
-    can be displayed on the Event Log and in time-based sensors.
-
-    Input:
-        hhmmss - HA server time (hh:mm, hh:mm:ss, hh:mm(a/p), hh:mm:ss(a/p))
-        hh_adjustment - Number of hours between the HA server time and the
-            local time (-12 to 12)
-    Return:
-        new time value in the same format as the Input hhmmss time
-    '''
-
-    if hh_adjustment == 0 or hhmmss == HHMMSS_ZERO:
-        return hhmmss
-
-    hhmm_colon = hhmmss.find(':')
-    if hhmm_colon == -1: return hhmmss
-
-    ap = hhmmss_ap = hhmmss[-1].lower()             # Get last character of time (#, a, p).lower()
-    h24 = int(hhmmss[:hhmm_colon])
-
-    if ap in ['a', 'p']:                            # 12-hour time (7:23:45p)
-        if (h24 == 12 and ap == 'a'): h24 = 0       # Convert to 24-hour time
-        elif ap == 'p': h24 += 12
-        dt24 = datetime.strptime(str(h24), '%H')    # Get datetime value of 24-hour time (19)
-        dt24 += timedelta(hours=hh_adjustment)      # Add time zone offset (3, -3) = (16, 22)
-        ap = dt24.strftime("%p")[0].lower()         # Get a/p for new time (PM -> p) (p)
-        hh_away_zone = dt24.strftime("%-I")         # Get Away time zone 12-hour value (4, 10)
-
-    else:                                           # 24-hour time (19:23:45)
-        dt24 = datetime.strptime(str(h24), '%H')    # Get datetime value of 24-hour time (19)
-        dt24 += timedelta(hours=hh_adjustment)      # Add time zone offset (3, -3) = (16, 22)
-        hh_away_zone = dt24.strftime("%H")          # Get Away time zone value (16, 22)
-
-    hhmmss = f"{hh_away_zone}{hhmmss[hhmm_colon:]}"
-    if ap: hhmmss = hhmmss.replace(hhmmss_ap, ap)
-
-    return hhmmss
+    return adj_hhmmss
 
 #--------------------------------------------------------------------
 def timestamp_to_time_utcsecs(utc_timestamp) -> int:
@@ -569,3 +592,11 @@ def timestamp_to_time_utcsecs(utc_timestamp) -> int:
         hhmmss = hhmmss[1:]
 
     return hhmmss
+
+#--------------------------------------------------------------------
+def _has_ap(hhmmss):
+    ''' See if  the time ends in a or p (12-hour time) '''
+    return hhmmss[-1].lower() in ['a', 'p']
+
+def _ap(hhmmss):
+    return hhmmss[-1].lower() if _has_ap(hhmmss) else ''

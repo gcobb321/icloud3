@@ -3,44 +3,26 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
-
-3.0.5.9
-### Change Log - v3.0.5.9 (9/9/2024)
-1. CONFIGURATION - UPDATE DEVICES (Fixed) - An error would occur on the _Configure > Update Devices_ screen if the Mobile App Integration had not been set up or if the name had not been set up on one of the Mobile App devices was missing. This occured predominately when adding the first device to iCloud3.
-2. DEVICE_TRACKER ATTRIBUTES (Fix/Update) - There are 3 sections on thedevice  attribute's list to group similar attributes together. A title has been added to the section's dividing lines to prevent problems with other AddOns that use the attribute's name. Corrected a spelling error on one of the attribute names created in 3.0.5.8.
-
-3.0.5.8
+3.1
 .......................
-### Change Log - v3.0.5.8 (9/8/2024)
-1. CONFIGURATION - UPDATE DEVICES (Fixed) - An error would occur on the _Configure > Update Devices_ screen if the Mobile App Integration had not been set up or if the name had not been set up on one of the Mobile App devices was missing. This occured predominately when adding the first device to iCloud3.
-2. DEVICE_TRACKER ATTRIBUTES (Update) - There are 3 sections on thedevice  attribute's list to group similar attributes together. A title has been added to the section's dividing lines to prevent problems with other AddOns that use the attribute's name.
+### Change Log - v3.1
+1. APPLE ACCOUNT LOGIN (Fixed) - Apple changed the method of logging into the Apple Account to use Secure Remote Password verification where a hash-key is calculated from the password by both iCloud3 and Apple. The hash-key, instead of the password, is sent over the internet. Apple then compares the hash-key sent by iCloud3 to it's hash-key to determine the validity of the password. Note: In a few cases, the hash-key algorithm used by iCloud3 may not be the same as Apple for a valid password and you will need to change your password.
+1. MULTIPLE APPLE ACCOUNTS (New) - iCloud3 now supports tracking devices from more than one Apple Account. The accounts are setup on the 'Configuration > Data Sources' screen and devices can be tracked from any apple account and the d if the device is set up as an account owners deviceThe Primary account belongs to the person with the main Family Sharing list as it always has. Secondary accounts can also be configured and devices from those accounts can be tracked. The Apple Account for the specific iCloud3 device is selected on the Update Devices screen as it always has.
+2. FAMSHR - Everything called FamShr has been changed to iCloud.
+2. THE APPLE ACCOUNT (Improved) - Logging into the Apple Account is now started before the beginning the HA process that creates the device_tracker and sensor entities. Both processes now run concurrently, eliminating (or reducing) any delays waiting for the Apple Account device data to be returned. The result is iCloud3 starts up faster.
+3. APPLE ACCOUNT & MOBILE APP DEVICE ASSIGNMENT (Improved) - The results of matching the Apple Account iCloud devices and the Mobile App devices during startup are displayed in the Event Log. This has been simplified and is easier to read.
+4. CONFIGURATION SCREENS (Improved) -
+    - Saving changes is faster.
+    - The iCloud3 Devices screen indicates if there is a problem with the iCloud or Mobile App device selection.
+    - Update Devices screen - Impoved selection of Apple Account and Mobile App devices.
+5. MISSING APPLE ACCOUNT DEVICES (Improved) - Sometimes, an iCloud device's information is not returned from iCloud when iCloud3 starts. The error recovery and data request retry routines have been rewritten to only retry setting up devices with the error. This greatly simplifies and reduces the steps needed to retrieve the data from iCloud.
+6. WAZE & WAZE HISTORY (Improved) - Improved the error checking, added retry on error conditions and updated the History database recalculation routines to better support concurrent operations.
+7. APPLE ACCOUNT DEVICE STARTUP ERRORS (Enhanced) - Improved the handling and reporting duplicate and missing Apple Account devices.
+8 STARTING/RESTARTING ICLOUD3 -
+    - Device Sensors (Fixed) - They were being reinitialized when Restarting iCloud3 when they shouldn't have been.
+    - Mobile App entities (Fixed) - They are no longer being reinitialized when iCloud3 is restarted on a configuration change or Event Log restart request. This includes the device_tracker, battery, trigger and notify entities..
+    - Improved messaging and fixed miscellaneous bugs
 
-
-3.0.5.7
-.......................
-### Change Log - v3.0.5.6 (7/15/2024)
-1. ICLOUD3 PROBLEMS WITH HA 2024.7.4 - Fixed
-2. ADD/UPDATE DEVICE CONFIGURATION (Fixed) - This was probably caused by HA 2024.7.4 Loading issues.
-3. MOBILE APP NOTIFY MESSAGE (Fixed) - A warning message about not being able to send a notification to a device was displayed in the Event Log when the device was not using the Mobile App.
-
-
-3.0.5.6
-.......................
-### Change Log - v3.0.5.6 (7/15/2024)
-1. ICLOUD3 BUG FIXES - Fixes the following errors:
-    ```AttributeError: 'NoneType' object has no attribute 'init_step_complete'```
-    ```AttributeError: module 'custom_components.icloud3.sensor' has no attribute _setup_recorder_exclude_sensor_filter'```
-2. HA ERROR/WARNING MESSAGES - Fixed a problem where some I/O getting directory and filename list for the Update Devices configuration screen was being done outside of the HA Event Loop
-
-
-3.0.5.5
-.......................
-### Change Log - v3.0.5.5 (7/15/2024)
-1. ICLOUD3 FAILED TO LOAD (Fix) - iCloud3 injected special code into the HA history recorder to exclude various sensor entities with large text fields from being added to the history recorder. This caused problems with HA in the 2024.7 release.  The HA 2024.7.2 included special code that blocked iCloud3 from loading. A temporary patch was posted on the iCloud3 GitHub repository to disable the recorder injection. This update is a permant fix.
-
-    All sensor attributes not related to the battery, distance and timer sensors are being added to the HA recorder history database. Text base sensor attributes are not being added (info sensors, Event Log sensor, badge, tracking update, zone, etc.)..
-
-    **SPECIAL NOTE**: If you get an HA error that a sensor attribute is not available, create an issue on the iCloud3 GitHub repository. Let me know the sensor name and attribute name that is causing the error. I will remove it from the exclusion list in the next update.
 
 
 3.0.5.2
@@ -58,7 +40,7 @@
 
 ### Change Log - v3.0.5 (5/18/2024)
 1. HACS UPUDATE ALERT (New) - The HACS Integration information will be check on a regular basis to see if a newer version of iCloud3 is available.
-2. ICLOUD ACCOUNT AUTHENTICATION/FAMSHR DEVICES LIST (Fixed) - During startup ("Stage 4), the iCloud Account access is set up and the devices in the Family Sharing List is read. If a problem occurred, iCloud3 would retry this 10-times to see if the error was corrected. However, the FamShr data was not being reread and the old data was being used. The FamShr data is now reread correctly when trying to recover from this error.
+2. ICLOUD ACCOUNT AUTHENTICATION/FAMSHR DEVICES LIST (Fixed) - During startup ("Stage 4), the iCloud Account access is set up and the devices in the Family Sharing List is read. If a problem occurred, iCloud3 would retry this 10-times to see if the error was corrected. However, the iCloud data was not being reread and the old data was being used. The iCloud data is now reread correctly when trying to recover from this error.
 3. UPDATE DEVICES SCREEN (Fixed) - When upgrading a device (iPhone, iPad, Watch) and both the old and new devices are still in the Family Sharing List, the new device was being set back to the old device the next time iCloud3 was started.
 4. LOCKED ICLOUD ACCOUNT (New) - An error message is displayed in the HA logs and on the Event Log if the iCloud account is locked.
 5. EVENT LOG (Fix) - An 'Unbound event_recd' error would display when the length of the the event text > 2000 characters (@ehendrix23).

@@ -5,7 +5,7 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (UNKNOWN, HIGH_INTEGER, CRLF_DOT, )
 from .common            import (round_to_zero,  )
 from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
-                                _trace, _traceha, )
+                                _evlog, _log, )
 
 import homeassistant.util.dt       as dt_util
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

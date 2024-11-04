@@ -1,12 +1,16 @@
 
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (NOT_HOME, STATIONARY, CIRCLE_LETTERS_DARK, UNKNOWN, CRLF_DOT, CRLF, )
+from ..const            import (NOT_HOME, STATIONARY,
+                                CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
+                                UNKNOWN, CRLF_DOT, CRLF,
+                                CONF_USERNAME, CONF_PASSWORD, )
 from collections        import OrderedDict
-from homeassistant.util import json as json_util
-from homeassistant.helpers import json as json_helpers
-import os
-import json
+# from homeassistant.util import json as json_util
+# from homeassistant.helpers import json as json_helpers
+# import os
+# import json
+import base64
 import logging
 _LOGGER = logging.getLogger(__name__)
 #_LOGGER = logging.getLogger(f"icloud3")
@@ -37,7 +41,7 @@ def list_to_str(list_value, separator=None):
     list_valt - list to be converted
     separator - Strig valut that separates each item (default = ', ')
     '''
-    if list_value == []: return ''
+    if list_value == [] or list_value is None: return ''
     separator_str = separator if separator else ', '
     if None in list_value or '' in list_value:
         list_value = [lv for lv in list_value if lv is not None and lv != '']
@@ -52,6 +56,13 @@ def list_to_str(list_value, separator=None):
 def list_add(list_value, add_value):
     if add_value is None:
         return list_value
+
+    if type(add_value) is list:
+        for add_item in add_value:
+            if add_item not in list_value:
+                list_value.append(add_item)
+        return list_value
+
     if add_value not in list_value:
         list_value.append(add_value)
     return list_value
@@ -98,6 +109,17 @@ def sort_dict_by_values(dict_value):
 
     return sorted_dict_value
 
+#-----------------------------------------------------------------------------------------
+def dict_value_to_list(key_value_dict):
+    """ Make a list from a dictionary's values  """
+
+    if type(key_value_dict) is dict:
+        value_list = [v for v in key_value_dict.values()]
+    else:
+        value_list = list(key_value_dict)
+
+    return value_list
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -107,17 +129,23 @@ def sort_dict_by_values(dict_value):
 
 def instr(string, substring):
     '''
-    Fine a substring or a list of substrings strings in a string
+    Find a substring or a list of substrings strings in a string
     '''
+    if type(substring) is str:
+        try:
+            return substring in string
+        except:
+            return False
+
     if string is None or substring is None:
         return False
 
-    if type(substring) is str:
-        substring = [substring]
+    # Is a list of substrings in the string
+    if type(substring) is list:
+        for substring_item in substring:
+            if substring_item in string:
+                return True
 
-    for substring_str in substring:
-        if str(string).find(substring_str) >= 0:
-            return True
     return False
 
 #--------------------------------------------------------------------
@@ -154,6 +182,13 @@ def inlist(string, list_items):
             return True
 
     return False
+
+#--------------------------------------------------------------------
+def is_empty(list_dict_str):
+    return not list_dict_str
+
+def isnot_empty(list_dict_str):
+    return not is_empty(list_dict_str)
 
 #--------------------------------------------------------------------
 def round_to_zero(number):
@@ -200,7 +235,8 @@ def ordereddict_to_dict(odict_item):
 #--------------------------------------------------------------------
 def circle_letter(field):
     first_letter = field[:1].lower()
-    return CIRCLE_LETTERS_DARK.get(first_letter, '✪')
+    # return CIRCLE_LETTERS_DARK.get(first_letter, '✪')
+    return CIRCLE_LETTERS_LITE.get(first_letter, '✪')
 
 #--------------------------------------------------------------------
 def obscure_field(field):
@@ -277,212 +313,25 @@ def format_list(arg_list):
     return (f"{CRLF_DOT}{formatted_list}")
 
 #--------------------------------------------------------------------
+def strip_lead_comma(text):
+    '''
+    Strip a leading special character from a text string
+    '''
+    if text[:1] in [',', '+']:
+        return text[1:].strip()
+    else:
+        return text.strip()
+
+#--------------------------------------------------------------------
 def format_cnt(desc, n):
     return f", {desc}(#{n})" if n > 1 else ''
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#            PYTHON OS. FILE I/O AND OTHER UTILITIES
+#            PASSWORD ENCODE/DECODE FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_load_json_file(filename):
-    if os.path.exists(filename) is False:
-        return {}
-
-    try:
-        data = await Gb.hass.async_add_executor_job(
-                            json_util.load_json,
-                            filename)
-        return data
-
-    except Exception as err:
-        #_LOGGER.exception(err)
-        pass
-
-    return {}
-
-#--------------------------------------------------------------------
-def load_json_file(filename):
-    if os.path.exists(filename) is False:
-        return {}
-
-    try:
-        if Gb.initial_icloud3_loading_flag:
-            data = json_util.load_json(filename)
-        else:
-            data = Gb.hass.async_add_executor_job(
-                            json_util.load_json,
-                            filename)
-        return data
-
-    except RuntimeError as err:
-        if str(err) == 'no running event loop':
-            data = json_util.load_json(filename)
-            return data
-
-    except Exception as err:
-        _LOGGER.exception(err)
-        pass
-
-    return {}
-
-#--------------------------------------------------------------------
-async def async_save_json_file(filename, data):
-
-    try:
-        await Gb.hass.async_add_executor_job(
-                            json_helpers.save_json,
-                            filename,
-                            data)
-        return True
-
-    except Exception as err:
-        _LOGGER.exception(err)
-        pass
-
-    return False
-
-#--------------------------------------------------------------------
-def save_json_file(filename, data):
-
-    try:
-        # The HA event loop has not been set up yet during initialization
-        if Gb.initial_icloud3_loading_flag:
-            json_helpers.save_json(filename, data)
-        else:
-
-            Gb.hass.async_add_executor_job(
-                            json_helpers.save_json,
-                            filename,
-                            data)
-        return True
-
-    except RuntimeError as err:
-        if err == 'no running event loop':
-            json_helpers.save_json(filename, data)
-            return True
-
-    except Exception as err:
-        _LOGGER.exception(err)
-        pass
-
-    return False
-
-#--------------------------------------------------------------------
-def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_file=False):
-    '''
-    Delete a file.
-    Parameters:
-        directory   - directory containing the file to be deleted
-        filename    - file to be deleted
-        backup_extn - rename the filename to this extension before deleting
-        delete_old_sv_file - Some files were previously renamed to .sv before deleting
-                    They should be deleted if they exist.
-    '''
-    try:
-        file_msg = ""
-        directory_filename = (f"{directory}/{filename}")
-
-        if backup_extn:
-            filename_bu = f"{filename.split('.')[0]}.{backup_extn}"
-            directory_filename_bu = (f"{directory}/{filename_bu}")
-
-            if os.path.isfile(directory_filename_bu):
-                os.remove(directory_filename_bu)
-                file_msg += (f"{CRLF_DOT}Deleted backup file (...{filename_bu})")
-
-            os.rename(directory_filename, directory_filename_bu)
-            file_msg += (f"{CRLF_DOT}Rename current file to ...{filename}.{backup_extn})")
-
-        if os.path.isfile(directory_filename):
-            os.remove(directory_filename)
-            file_msg += (f"{CRLF_DOT}Deleted file (...{filename})")
-
-        if delete_old_sv_file:
-            filename = f"{filename.split('.')[0]}.sv"
-            directory_filename = f"{directory_filename.split('.')[0]}.sv"
-            if os.path.isfile(directory_filename):
-                os.remove(directory_filename)
-                file_msg += (f"{CRLF_DOT}Deleted file (...{filename})")
-
-        if file_msg != "":
-            if instr(directory, 'config'):
-                directory = f"config{directory.split('config')[1]}"
-            file_msg = f"{file_desc} file > ({directory}) {file_msg}"
-            # Gb.EvLog.post_event(event_msg)
-
-        return file_msg
-
-    except Exception as err:
-        Gb.HALogger.exception(err)
-        return "Delete error"
-
-#--------------------------------------------------------------------
-def get_file_list(start_dir=None,  file_extn_filter=[]):
-    return get_file_or_directory_list(  directory_list=False,
-                                        start_dir=start_dir,
-                                        file_extn_filter=file_extn_filter)
-
-def get_directory_list(start_dir=None):
-    return get_file_or_directory_list(  directory_list=True,
-                                        start_dir=start_dir,
-                                        file_extn_filter=[])
-
-#--------------------------------------------------------------------
-def get_file_or_directory_list(directory_list=False, start_dir=None,  file_extn_filter=[]):
-    '''
-    Return a list of directories or files in a given path
-
-    Parameters:
-        - directory_list = True (List of directories), False (List of files)
-        - start_dir      = Top level directory to start searching from ('www')
-        -file_extn_filter = List of files witn extensions to include (['png' 'jpg'], [])
-
-        Can call from executor function:
-        directory_list, start_dir, file_filter = [False, 'www', ['png', 'jpg', 'jpeg']]
-        image_filenames = await Gb.hass.async_add_executor_job(
-                                                    self.get_file_or_directory_list,
-                                                    directory_list,
-                                                    start_dir,
-                                                    file_filter)
-    '''
-
-    directory_filter      = ['/.', 'deleted', '/x-']
-    filename_or_directory_list = []
-    path_config_base = f"{Gb.ha_config_directory}/"
-    back_slash       = '\\'
-    if start_dir is None: start_dir = ''
-
-    for path, dirs, files in os.walk(f"{path_config_base}{start_dir}"):
-        www_sub_directory = path.replace(path_config_base, '')
-        in_filter_cnt = len([filter for filter in directory_filter if instr(www_sub_directory, filter)])
-        if in_filter_cnt > 0 or www_sub_directory.count('/') > 4 or www_sub_directory.count(back_slash):
-            continue
-
-        if directory_list:
-            filename_or_directory_list.append(www_sub_directory)
-            continue
-
-        # Filter unwanted directories - std dirs are www/icloud3, www/cummunity, www/images
-        if Gb.picture_www_dirs:
-            valid_dir = [dir for dir in Gb.picture_www_dirs if www_sub_directory.startswith(dir)]
-            if valid_dir == []:
-                continue
-
-        dir_filenames = [f"{www_sub_directory}/{file}"
-                                for file in files
-                                if (file_extn_filter
-                                    and file.rsplit('.', 1)[-1] in file_extn_filter)]
-
-        filename_or_directory_list.extend(dir_filenames[:25])
-        if len(dir_filenames) > 25:
-            filename_or_directory_list.append(
-                        f"⛔ {www_sub_directory} > The first 25 files out of "
-                        f"{len(dir_filenames)} are listed")
-
-    return filename_or_directory_list
-
-#--------------------------------------------------------------------
 def encode_password(password):
     '''
     Determine if the password is encoded.
@@ -544,7 +393,7 @@ def decode_password(password):
             return base64_decode(password)
 
     except Exception as err:
-        #log_exception(err)
+        _LOGGER.exception(err)
         password = password.replace('«', '').replace('»', '')
 
     return password

@@ -13,7 +13,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP,
-                                    RED_X, YELLOW_ALERT,
+                                    RED_X, YELLOW_ALERT, CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
                                     NL, NL_DOT, LDOT2,
                                     CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT, DASH_50,
                                     NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CLOCK_FACE,
@@ -27,7 +27,7 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     )
 
 from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str, isbetween
-from ..helpers.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _traceha, _trace,
+from ..helpers.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _log, _evlog,
                                     filter_special_chars, format_header_box, )
 from ..helpers.time_util    import (time_to_12hrtime, datetime_now, time_now_secs, datetime_for_filename,
                                     adjust_time_hour_value, adjust_time_hour_values, )
@@ -59,6 +59,7 @@ MAX_EVLOG_RECD_LENGTH = 2000
 
 MONITORED_DEVICE_EVENT_FILTERS = [
     'iCloud Acct Auth',
+    'Apple Acct Auth',
     'Nearby Devices',
     'iOSApp Location',
     'MobApp Location',
@@ -89,11 +90,13 @@ class EventLog(object):
         self.log_rawdata_flag        = False
         self.last_refresh_secs       = 0
         self.last_refresh_devicename = ''
+        self.dist_to_devices_recd_found_flag = False    # Display only the last DistTo Devices > stmt
+        self.apple_acct_auth_cnts_by_owner = {}      # Display only the last 4 Apple Acct Auth statements
 
         # An alert message is displayed in a green bar at the top of the EvLog screen
         #   post_evlog_greenbar_msg("msg") = Display the message
         #   clear_evlog_greenbar_msg()     = Clear the alert msg and remove the green bar
-        self.greenbar_alert_msg           = ''       # Message to display in green bar at the top of the Evlog
+        self.greenbar_alert_msg      = ''       # Message to display in green bar at the top of the Evlog
 
         self.user_message            = ''       # Display a message in the name0 button
         self.user_message_alert_flag = False    # Do not clear the message if this is True
@@ -170,6 +173,7 @@ class EventLog(object):
             self.fnames_by_devicename.update({devicename: self.format_evlog_device_fname(Device)
                             for devicename, Device in Gb.Devices_by_devicename_tracked.items()
                             if devicename != ''})
+
             self.fnames_by_devicename.update({devicename: self.format_evlog_device_fname(Device)
                             for devicename, Device in Gb.Devices_by_devicename_monitored.items()
                             if devicename != ''})
@@ -226,16 +230,6 @@ class EventLog(object):
         tracked  = '' if Device.is_tracked else f" {circle_letter('m')}"
         return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}"
 
-# #------------------------------------------------------
-#     def update_evlog_device_fname(self, Device, new_fname=None):
-#         if new_fname:
-#             self.evlog_attrs["fnames"][Device.devicename] = new_fname
-#         else:
-#             self.evlog_attrs["fnames"][Device.devicename] = self.format_evlog_device_fname(Device)
-#         self.evlog_attrs["run_mode"] = "UpdateFnames"
-#         self.update_evlog_sensor()
-#         self.display_user_message("")
-
 #------------------------------------------------------
     def post_event(self, devicename_or_Device, event_text='+'):
         '''
@@ -270,7 +264,7 @@ class EventLog(object):
             Device = None
 
         # If monitored device and the event msg is a status msg for other devices,
-        # do not display it on a monitoed device screen
+        # do not display it on a monitored device screen
         if Device and Device.is_monitored:
             start_pos = 2 if event_text.startswith('^') else 0
             for filter_text in MONITORED_DEVICE_EVENT_FILTERS:
@@ -365,7 +359,9 @@ class EventLog(object):
                 self._add_recd_to_event_recds(event_recd)
 
             if (self.startup_event_save_recd_flag
-                    or event_recd[ELR_TEXT].startswith(EVLOG_ALERT)):
+                    or (event_text.startswith(EVLOG_ALERT)
+                        and instr(event_text, 'Location > Old') is False)
+                    or instr(event_text, 'Acct Auth')):
                 self._save_startup_log_recd(Device, event_recd)
 
         except Exception as err:
@@ -682,7 +678,7 @@ class EventLog(object):
 
             refresh_msg = ( f"{EVLOG_HIGHLIGHT}Tap `Refresh` or select a device "
                             f"to display all of the events")
-            refresh_recd = ['',refresh_msg]
+            refresh_recd = ['🔄',refresh_msg]
             time_text_recds.insert(0, refresh_recd)
 
         if self.greenbar_alert_msg != '':
@@ -710,6 +706,9 @@ class EventLog(object):
                                             or Gb.evlog_trk_monitors_flag)]
             return el_recds
 
+        elif Gb.EvLog.greenbar_alert_msg.startswith('Start up log'):
+            self.clear_evlog_greenbar_msg()
+
         el_devicename_check = ['*', '**', 'nodevices', devicename]
 
         if Device := Gb.Devices_by_devicename.get(devicename):
@@ -721,6 +720,9 @@ class EventLog(object):
 
         # Select devicename recds, keep time & test elements, drop devicename
         try:
+            self.dist_to_devices_recd_found_flag = False
+            self.apple_acct_auth_cnts_by_owner   = {}
+
             el_recds = [self._master_reformat_text(el_recd, Device)
                                             for el_recd in self.event_recds
                                             if self._master_filter_recd(el_recd, devicename)]
@@ -752,12 +754,34 @@ class EventLog(object):
         # Return all of the time/text items if 'Show Tracking Monitors' was selected in the EvLog
         if Gb.evlog_trk_monitors_flag:
             return True
+        # if instr(el_recd[ELR_TEXT], 'Acct Auth'):
+        #     return True
+
+        # Only display the last DistTo Devices entry
+        if elr_text.startswith('DistTo Devices'):
+            if self.dist_to_devices_recd_found_flag:
+                return False
+            self.dist_to_devices_recd_found_flag = True
+
+        # Only display the last DistTo Devices entry
+        # Apple Acct Auth #12 > GaryCobb(xxxxxxxx), Token
+        try:
+            if elr_text.startswith('Apple Acct Auth'):
+                apple_acct_owner = elr_text.split(' ')[5]
+                cnt = self.apple_acct_auth_cnts_by_owner.get(apple_acct_owner, 0)
+                cnt += 1
+                self.apple_acct_auth_cnts_by_owner[apple_acct_owner] = cnt
+                if cnt < 3:
+                    return True
+        except Exception as err:
+            log_exception(err)
+            pass
 
         # Drop Tracking Monitor recds or iCloud Authentication recds
         if elr_text.startswith(EVLOG_MONITOR):
             return False
 
-        if (elr_text.startswith('iCloud Acct')
+        if (instr(elr_text, 'Acct Auth')
                 and Device
                 and (Device.is_monitored or Device.primary_data_source == MOBAPP)):
             return False

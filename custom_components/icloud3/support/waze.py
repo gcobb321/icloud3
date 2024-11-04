@@ -13,8 +13,8 @@ from ..support.waze_history         import WazeRouteHistory as WazeHist
 from ..support.waze_route_calc_ic3  import WazeRouteCalculator, WRCError
 
 from ..helpers.common       import (instr, format_gps, )
-from ..helpers.messaging    import (post_event, post_internal_error, log_info_msg, _trace, _traceha, )
-from ..helpers.time_util    import (time_now_secs, datetime_now, secs_since, format_timer,  )
+from ..helpers.messaging    import (post_event, post_internal_error, log_info_msg, _evlog, _log, )
+from ..helpers.time_util    import (time_now_secs, secs_to_time, format_timer,  )
 from ..helpers.dist_util    import (km_to_um, )
 
 import traceback
@@ -49,6 +49,8 @@ class Waze(object):
         self.waze_manual_pause_flag        = False  #If Paused via iCloud command
         self.waze_close_to_zone_pause_flag = False  #pause if dist from zone < 1 flag
         self.WazeRouteCalc                 = None
+        self.error_server_unavailable_secs = 0       # Time (secs) of first  Server unavailable error
+        self.error_server_unavailable_cnt  = 0       # Count of  things error occurred
 
         try:
             if self.WazeRouteCalc is None:
@@ -138,6 +140,14 @@ class Waze(object):
             elif Device.loc_data_zone == FromZone.from_zone:
                 return (WAZE_NOT_USED, 0, 0, 0)
 
+            if self.error_server_unavailable_secs > 0:
+                if time_now_secs() < self.error_server_unavailable_secs:
+                    return (WAZE_NO_DATA, 0, 0, 0)
+
+                # Reset error and retry Waze after 10/30/60-mins
+                self.error_server_unavailable_secs = 0
+                post_event("Waze Route Service > Resuming")
+
             try:
                 from_zone         = FromZone.from_zone
                 waze_status       = WAZE_USED
@@ -165,12 +175,15 @@ class Waze(object):
                                                 FromZone.FromZone.longitude,
                                                 ZONE)
 
-                    if waze_status == WAZE_NO_DATA:
-                        post_event(Device,
-                                    f"Waze Route Error > Problem connecting to Waze Servers. "
-                                    f"Distance will be calculated, Travel Time not available")
+                    self._determine_next_waze_retry()
 
+                    if waze_status == WAZE_NO_DATA:
+                        self._determine_next_waze_retry()
                         return (WAZE_NO_DATA, 0, 0, 0)
+
+                    elif self.error_server_unavailable_cnt > 0:
+                        self.error_server_unavailable_cnt = 0
+                        self.error_server_unavailable_secs = 0
 
                     # Add a time/distance record to the waze history database
                     try:
@@ -350,6 +363,24 @@ class Waze(object):
 
         return (WAZE_NO_DATA, 0, 0)
 
+#--------------------------------------------------------------------
+    def _determine_next_waze_retry(self):
+        self.error_server_unavailable_cnt += 1
+        retry_interval = {10: 600, 20: 1800, 30: 3600}.get(self.error_server_unavailable_cnt, 0)
+        if retry_interval > 0:
+            self.error_server_unavailable_secs = time_now_secs() + retry_interval
+            post_event( f"Waze Route Service Error #{self.error_server_unavailable_cnt} > "
+                        f"An error occurred connecting to Waze Servers, "
+                        f"distance will be calculated, Travel Time not available. "
+                        f"Waze will be paused for {retry_interval/60}-mins and will "
+                        f"retry at {secs_to_time(self.error_server_unavailable_secs)}")
+
+        if self.error_server_unavailable_cnt > 40:
+            self.error_server_unavailable_cnt = 0
+            self.error_server_unavailable_secs = 0
+            self.waze_status = WAZE_PAUSED
+            post_event( f"Waze Route Service > "
+                        f"Waze has been paused after excessive errors")
 
 #--------------------------------------------------------------------
     def _set_waze_not_available_error(self, err):

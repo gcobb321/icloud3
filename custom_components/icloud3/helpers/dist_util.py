@@ -2,10 +2,11 @@
 
 from   homeassistant.util.location import distance
 
+from ..const            import (NEAR_DEVICE_DISTANCE, LT, )
 from ..global_variables import GlobalVariables as Gb
 from .common            import (round_to_zero, isnumber, )
-from .messaging         import (_trace, _traceha, )
-
+from .messaging         import (_evlog, _log, )
+from .time_util         import (format_secs_since, )
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -28,8 +29,7 @@ def gps_distance_m(from_gps, to_gps):
         return 0.0
 
     dist_m = distance(from_lat, from_long, to_lat, to_long)
-    #dist_m = round_to_zero(dist_m)
-    #dist_m = 0 if dist_m < .002 else dist_m
+
     return round(dist_m, 8)
 
 #--------------------------------------------------------------------
@@ -39,7 +39,6 @@ def km_to_mi(dist_km):
 #--------------------------------------
 def mi_to_km(dist_mi):
     return round(float(dist_mi) / Gb.um_km_mi_factor, 8)
-    #return round(float(dist_mi) / Gb.um_km_mi_factor, 2)
 
 #--------------------------------------
 def m_to_ft(dist_m):
@@ -101,9 +100,9 @@ def format_dist_m(dist_m):
 def format_dist_km(dist_km):
 
     if dist_km < 0:
-        dist_km = abs(dist_km) 
+        dist_km = abs(dist_km)
 
-    if dist_km >= 100: return f"{dist_km:.0f}km"
+    if dist_km >= 100: return f"{dist_km:.0f}km".replace('.0', '')
     if dist_km >= 10:  return f"{dist_km:.1f}km"
     if dist_km >= 1:   return f"{dist_km:.2f}km"
     dist_m = dist_km * 1000
@@ -115,9 +114,9 @@ def format_dist_km(dist_km):
 def format_dist_mi(dist_mi):
 
     if dist_mi < 0:
-        dist_mi = abs(dist_mi) 
+        dist_mi = abs(dist_mi)
 
-    if dist_mi >= 100:     return f"{dist_mi:.0f}mi"
+    if dist_mi >= 100:     return f"{dist_mi:.0f}mi".replace('.0', '')
     if dist_mi >= 10:      return f"{dist_mi:.1f}mi"
     if dist_mi >= 1:       return f"{dist_mi:.1f}mi"
     if dist_mi >= .0947:   return f"{dist_mi:.2f}mi"

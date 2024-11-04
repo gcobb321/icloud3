@@ -17,7 +17,7 @@ from ..support           import determine_interval as det_interval
 from ..support           import mobapp_interface
 from ..helpers.common    import (isbetween, is_statzone, format_gps,  zone_dname, )
 from ..helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
-                                log_debug_msg, log_exception, log_rawdata, _trace, _traceha, )
+                                log_debug_msg, log_exception, log_rawdata, _evlog, _log, )
 from ..helpers.time_util import (datetime_now, )
 from ..helpers.dist_util import (format_dist_m, gps_distance_km, )
 # from ..helpers           import entity_io

@@ -8,13 +8,19 @@ from ..const                import (RESTORE_STATE_FILE,
                                     LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
                                     DIR_OF_TRAVEL, )
 
-from ..helpers.common       import (instr, load_json_file, save_json_file, )
-from ..helpers.messaging    import (log_info_msg, log_debug_msg, log_exception, _trace, _traceha, )
-from ..helpers.time_util    import (datetime_now, )
+from ..helpers.common       import (instr, )
+from ..helpers.file_io      import (file_exists, read_json_file, save_json_file, async_save_json_file, )
+from ..helpers.messaging    import (log_info_msg, log_debug_msg, log_exception, _evlog, _log, )
+from ..helpers.time_util    import (datetime_now, time_now_secs, utcnow, s2t, datetime_plus, )
 
-import os
 import json
 import logging
+
+from homeassistant.core             import (callback, )
+from homeassistant.helpers.event    import (async_track_point_in_time, )
+import homeassistant.util.dt    as dt_util
+from datetime                   import datetime, timedelta, timezone
+
 # _LOGGER = logging.getLogger(__name__)
 _LOGGER = logging.getLogger(f"icloud3")
 
@@ -26,7 +32,7 @@ _LOGGER = logging.getLogger(f"icloud3")
 def load_storage_icloud3_restore_state_file():
 
     try:
-        if os.path.exists(Gb.icloud3_restore_state_filename) is False:
+        if file_exists(Gb.icloud3_restore_state_filename) is False:
             build_initial_restore_state_file_structure()
             write_storage_icloud3_restore_state_file()
 
@@ -84,17 +90,18 @@ def read_storage_icloud3_restore_state_file():
     '''
 
     try:
-        Gb.restore_state_file_data = load_json_file(Gb.icloud3_restore_state_filename)
+        Gb.restore_state_file_data = read_json_file(Gb.icloud3_restore_state_filename)
 
         if Gb.restore_state_file_data == {}:
             return False
 
-        # with open(Gb.icloud3_restore_state_filename, 'r') as f:
-        #     Gb.restore_state_file_data = json.load(f)
-
         Gb.restore_state_profile   = Gb.restore_state_file_data['profile']
         Gb.restore_state_devices   = Gb.restore_state_file_data['devices']
 
+        # The sensors here are used in sensor.py to set the device's last sensor state values when
+        # the sensors are being set up. They are not related to the Device.sensors{} and the
+        # Device.sensors{} are not loaded here. The Device.sensors{} are loaded in the
+        # Device._restore_sensors_from_restore_state_file() function when the Device object is created.
         for devicename, devicename_data in Gb.restore_state_devices.items():
             sensors = devicename_data['sensors']
             sensors[DISTANCE_TO_OTHER_DEVICES] = {}
@@ -109,8 +116,6 @@ def read_storage_icloud3_restore_state_file():
 
         return True
 
-    # except json.decoder.JSONDecodeError:
-    #     pass
     except Exception as err:
         log_exception(err)
         return False
@@ -120,23 +125,43 @@ def read_storage_icloud3_restore_state_file():
 #--------------------------------------------------------------------
 def write_storage_icloud3_restore_state_file():
     '''
-    Update the config/.storage/.icloud3.restore_state file
+    Update the config/.storage/.icloud3.restore_state file when the sensors for
+    a device have changed. Since the multiple sensors are updated on one tracking
+    update, the update to the restore file is done on a 10-sec delay to catch
+    other sensors that have been changed.
+
+    The changes are committed based on the 10-sec timer event being fired in a
+    callback function.
     '''
 
     Gb.restore_state_profile['last_update'] = datetime_now()
     Gb.restore_state_file_data['profile'] = Gb.restore_state_profile
     Gb.restore_state_file_data['devices'] = Gb.restore_state_devices
 
+    Gb.restore_state_commit_cnt += 1
+    if Gb.restore_state_commit_time == 0:
+        Gb.restore_state_commit_time = time_now_secs() + 10
+        Gb.restore_state_commit_cnt  = 0
+
+        async_track_point_in_time(Gb.hass,
+                            _async_commit_storage_icloud3_restore_state_file_changes,
+                            datetime_plus(utcnow(), secs=10))
+
+#--------------------------------------------------------------------
+@callback
+async def _async_commit_storage_icloud3_restore_state_file_changes(callback_datetime_struct):
     try:
-        # with open(Gb.icloud3_restore_state_filename, 'w', encoding='utf8') as f:
-            # json.dump(Gb.restore_state_file_data, f, indent=4)
-        success = save_json_file(Gb.icloud3_restore_state_filename, Gb.restore_state_file_data)
+        Gb.restore_state_profile['last_commit'] = datetime_now()
+        Gb.restore_state_profile['recds_changed']  = Gb.restore_state_commit_cnt
+
+        success = await async_save_json_file(Gb.icloud3_restore_state_filename, Gb.restore_state_file_data)
+
+        Gb.restore_state_commit_time = 0
+        Gb.restore_state_commit_cnt  = 0
         return success
 
     except Exception as err:
         log_exception(err)
-
-    return False
 
 #--------------------------------------------------------------------
 def _reset_statzone_values_to_away(sensors):

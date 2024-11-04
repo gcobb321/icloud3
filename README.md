@@ -4,9 +4,9 @@
 
 ------
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.0.5-blue.svg)](https://github.com/gcobb321/icloud3)  [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)  [![HACS](https://img.shields.io/badge/HACS-Standard_Repository-orange.svg)](https://github.com/gcobb321/icloud3)
+[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.1-blue.svg)](https://github.com/gcobb321/icloud3)  [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3)  [![HACS](https://img.shields.io/badge/HACS-Standard_Repository-orange.svg)](https://github.com/gcobb321/icloud3)
 
-[![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3)  [![Released](https://img.shields.io/badge/Released-June,_2024-forestgreen.svg)](https://github.com/gcobb321/icloud3)
+[![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3)  [![Released](https://img.shields.io/badge/Released-November,_2024-forestgreen.svg)](https://github.com/gcobb321/icloud3)
 
 
 
@@ -21,7 +21,8 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 - **HA Integration** - iCloud3 is a Home Assistant custom integration that is set up and configured from the *HA Settings > Devices & Services > Integrations* screen.
 - **Configuration Settings** - Configuration parameters are updated online using various screens and take effect immediately without restarting HA.
 - **Track iPhones, iPads and Apple Watches** - Track or monitor your iDevices. 
-- **Location data sources** - Location data comes from the iCloud Account and the HA Companion App (Mobile App).
+- **Location data sources** - Location data comes from the Apple  Account and the HA Companion App (Mobile App).
+- **Multiple Apple Accounts** - Devices from several Apple Accounts can be tracked (yours, your spouse, children, friend, relative, etc.)
 - **Actively track a device** - The device will request it's location on a regular interval based on its distance from Home or another zone. 
 - **Passively monitor a device** - The device does not request it's location. It is updated when another tracked device requests theirs.
 - **Waze Route Service** - The travel time and distance to Home or another tracked zone is provided by Waze.
@@ -56,7 +57,7 @@ The screens below are an example of how the many tracking sensors can be display
 ### iCloud3 Documentation
 
 - Introduces the many features and components of iCloud3
-- Describes how to migration from v2.4.7 to v3.0
+- Describes how to migration from v2.4.7 to v3.1
 - Provides step-by-step to install and configure iCloud3, it's components and it's supporting components (iCloud Account and the Mobile App)
 - Highlights the configuration screens and parameters
 - Provides example screens, automations and scripts

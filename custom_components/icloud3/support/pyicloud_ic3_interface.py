@@ -1,25 +1,31 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HIGH_INTEGER,
-                                    EVLOG_ALERT, EVLOG_NOTICE,
+                                    EVLOG_ALERT, EVLOG_NOTICE, EVLOG_ERROR,
                                     CRLF, CRLF_DOT, DASH_20,
-                                    ICLOUD, FAMSHR,
+                                    ICLOUD,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
-                                    CONF_USERNAME
+                                    CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY, CONF_LOCATE_ALL,
+                                    CONF_TRACKING_MODE, INACTIVE_DEVICE,
                                     )
 
 from ..support              import start_ic3 as start_ic3
-from ..support.pyicloud_ic3 import (PyiCloudService, PyiCloudFailedLoginException, PyiCloudNoDevicesException,
+from ..support              import start_ic3_control
+from ..support.pyicloud_ic3 import (PyiCloudValidateAppleAcct, PyiCloudService,
+                                    PyiCloudNoDevicesException, PyiCloudFailedLoginException,
                                     PyiCloudAPIResponseException, PyiCloud2FARequiredException,)
-
-from ..helpers.common       import (instr, list_to_str, list_add, list_del, delete_file, )
-from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg, post_startup_alert, log_debug_msg,
-                                    log_info_msg, log_exception, log_error_msg, internal_error_msg2, _trace, _traceha, )
+from ..helpers.common       import (instr, list_to_str, list_add, list_del, is_empty, isnot_empty, )
+from ..helpers              import file_io
+from ..support              import config_file
+from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg,
+                                    post_evlog_greenbar_msg, post_startup_alert, log_debug_msg,
+                                    log_info_msg, log_exception, log_error_msg, log_warning_msg,
+                                    internal_error_msg2, _evlog, _log, )
 from ..helpers.time_util    import (time_now_secs, secs_to_time, format_age,
                                     format_time_age, )
 
-import os
 import time
+import pyotp
 import traceback
 from re import match
 from homeassistant.util    import slugify
@@ -30,224 +36,255 @@ from homeassistant.util    import slugify
 #   PYICLOUD-IC3 INTERFACE FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def create_PyiCloudService_executor_job():
+def create_all_PyiCloudServices():
     '''
     This is the entry point for the hass.async_add_executor_job statement from __init__
     '''
-    create_PyiCloudService(Gb.PyiCloudInit, instance='initial')
+    if Gb.PyiCloudValidateAppleAcct is None:
+        Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
+    post_event('Log into Apple Accounts')
 
-#--------------------------------------------------------------------
-def create_PyiCloudService(PyiCloud, instance='unknown'):
-    #See if pyicloud_ic3 is available
+    for conf_apple_acct in Gb.conf_apple_accounts:
+        username   = conf_apple_acct[CONF_USERNAME]
+        password   = Gb.PyiCloud_password_by_username[username]
+        locate_all = conf_apple_acct[CONF_LOCATE_ALL]
 
-    Gb.pyicloud_authentication_cnt  = 0
-    Gb.pyicloud_location_update_cnt = 0
-    Gb.pyicloud_calls_time          = 0.0
+        if is_empty(username) or is_empty(password):
+            continue
 
-    if Gb.username == '' or Gb.password == '':
-        return
+        post_evlog_greenbar_msg(f"Apple Acct > Setting up {username.split('@')[0]}")
 
-    if authenticate_icloud_account(PyiCloud, instance=instance, initial_setup=True):
-        if ((Gb.PyiCloud and Gb.PyiCloud.is_authenticated)
-                or (Gb.PyiCloudInit and Gb.PyiCloudInit.is_authenticated)):
-            event_msg =(f"iCloud Location Service interface > Verified ({instance})")
-            post_event(event_msg)
+        # Validate username/password so we know all future login attempts will be with valid apple accts
+        if username not in Gb.username_valid_by_username:
+            username_password_valid = \
+                    Gb.PyiCloudValidateAppleAcct.validate_username_password(username, password)
 
-            if Gb.PyiCloud:
-                log_debug_msg(f"PyiCloud Instance Verified > {Gb.PyiCloud.instance}")
-            if Gb.PyiCloudInit:
-                log_debug_msg(f"PyiCloudInit Instance Verified > {Gb.PyiCloudInit.instance}")
-    else:
-        event_msg =(f"iCloud Location Service interface > Not Verified ({instance})")
-        post_event(event_msg)
+            Gb.username_valid_by_username[username] = username_password_valid
 
-#--------------------------------------------------------------------
-def verify_pyicloud_setup_status():
-    '''
-    The PyiCloud Services interface set up was started in __init__
-    via create_PyiCloudService_executor_job above. The following steps are done to set up
-    PyiCloudService:
-        1. Initialize the variables and authenticate the account.
-        2. Create the FamShr object and get the FamShr devices.
-        3. Create the FmF object and get the FamShr devices.
-
-    This function is called from Stage 4 to determine the set up status.
-        1. If the set up started in __init__ is comlete, return the PyiCloudInit object
-        2. If FamShr has not been completed, rerequest setting up the FamShr object.
-        3. If FmF has not been completed, rerequest setting up the FmF object.
-        4. Return the PyiCloudInit object after #2 and #3 above.
-        5. If the the authenticate step from the original set up request is not done,
-        start all over. The original request will eventually be comleted but it will
-        not be used. This will prevent HA from issuing Blocking call errors indicating
-        the PyiCloud session data requests must be run in the event loop.
-
-    '''
-    # iCloud was never started
-    if Gb.PyiCloudInit is None:
-        return False
-
-    # The verify can be requested during started or after a restart request before
-    # the restart has begun
-    if (Gb.restart_icloud3_request_flag
-            and Gb.start_icloud3_inprocess_flag):
-        Gb.PyiCloudInit.init_step_needed   = ['FamShr']
-        Gb.PyiCloudInit.init_step_complete = ['Setup', 'Authenticate']
-
-    if 'Complete' in Gb.PyiCloudInit.init_step_complete:
-        Gb.PyiCloud = Gb.PyiCloudInit
-
-        log_debug_msg(f"PyiCloud Instance Selected > {Gb.PyiCloud.instance}")
-        if _get_famshr_devices(Gb.PyiCloud):
-            return True
-
-        if Gb.get_FAMSHR_devices_retry_cnt == 0:
-            post_event(f"iCloud Location Svcs > Setup Complete")
-            return
+        if Gb.username_valid_by_username[username]:
+            log_into_apple_account(username, password, locate_all)
         else:
-            if Gb.PyiCloud.FamilySharing:
-                Gb.PyiCloud.FamilySharing.refresh_client()
-                post_event( f"iCloud Location Svcs > Refreshing FamShr Data "
-                            f"(#{Gb.get_FAMSHR_devices_retry_cnt})")
-                return True
-            else:
-                Gb.PyiCloudInit.init_step_needed = ['FamShr']
+            event_msg =(f"Apple Acct > "
+                        f"{username.split('@')[0]}, Invalid Username or Password")
+            post_event( f"{EVLOG_ALERT}{event_msg}")
+            post_startup_alert(event_msg)
 
-    if 'Authenticate' not in Gb.PyiCloudInit.init_step_complete:
-        Gb.PyiCloudInit._set_step_completed('Cancel')
-        create_PyiCloudService(Gb.PyiCloud, instance='startup')
+    post_evlog_greenbar_msg('')
 
-        Gb.PyiCloud = Gb.PyiCloud or Gb.PyiCloudInit
-        if (Gb.PyiCloud is None
-                or 'Authenticate' not in Gb.PyiCloud.init_step_complete):
-            create_PyiCloudService(Gb.PyiCloud, instance='startup')
-        Gb.PyiCloud = Gb.PyiCloud or Gb.PyiCloudInit
-        if Gb.PyiCloud is None:
-            return False
-
-        log_debug_msg(f"PyiCloud Instance Created > {Gb.PyiCloud.instance}")
-
-    # FamShare object exists, check/refresh the devices list
-    Gb.PyiCloud = Gb.PyiCloud or Gb.PyiCloudInit
-    if 'FamShr' in Gb.PyiCloud.init_step_complete:
-        if _get_famshr_devices(Gb.PyiCloud):
-            return True
-
-    # Create FamShare object and then check/refresh the devices list
-    Gb.PyiCloud.create_FamilySharing_object()
-    Gb.PyiCloud.init_step_needed == []
-    Gb.PyiCloud._set_step_completed('FamShr')
-    Gb.PyiCloud._set_step_completed('Complete')
-    if _get_famshr_devices(Gb.PyiCloud):
-        return True
-
-    return False
+    Gb.startup_lists['Gb.PyiCloud_by_username']       = Gb.PyiCloud_by_username
+    Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
+    Gb.startup_lists['Gb.username_pyicloud_503_connection_error'] = Gb.username_pyicloud_503_connection_error
 
 #--------------------------------------------------------------------
-def _get_famshr_devices(PyiCloud):
-    if PyiCloud is None:
-        return False
-    if PyiCloud.FamilySharing.devices_cnt >= 0:
-        return True
-
-    Gb.get_FAMSHR_devices_retry_cnt = 0
-    while Gb.get_FAMSHR_devices_retry_cnt < 8:
-        Gb.get_FAMSHR_devices_retry_cnt += 1
-        if Gb.get_FAMSHR_devices_retry_cnt > 1:
-            post_event( f"Family Sharing List Refresh "
-                        f"(#{Gb.get_FAMSHR_devices_retry_cnt} of 8)")
-
-        PyiCloud.FamilySharing.refresh_client()
-        if PyiCloud.FamilySharing.devices_cnt >= 0:
-            return True
-
-    return (PyiCloud.FamilySharing.devices_cnt >= 0)
-
-#--------------------------------------------------------------------
-def authenticate_icloud_account(PyiCloud, instance='unknown', initial_setup=False):
+def retry_apple_acct_login():
     '''
-    Authenticate the iCloud Account via pyicloud
+    Retry to log into the Apple acct after receiving a 503 Connection Error.
+    This is done in the 15-min cycle of icoud3_main
+    '''
+    for username in Gb.username_pyicloud_503_connection_error:
+        conf_apple_acct, apple_acct_id = config_file.conf_apple_acct(username)
+        password = conf_apple_acct[CONF_PASSWORD]
+        locate_all = conf_apple_acct[CONF_LOCATE_ALL]
 
-    Arguments:
-        PyiCloud - Gb.PyiCloud or Gb.PyiCloudInit object depending on instance module
-        instance - Called from module (init or start_ic3)
+        PyiCloud = log_into_apple_account(username, password, locate_all)
 
-    If successful - Gb.PyiCloud or Gb.PyiCloudInit = PyiCloudService object
-    If not        - Gb.PyiCloud or Gb.PyiCloudInit = None
+        if PyiCloud:
+            post_event(f"{EVLOG_ERROR}Apple Acct > {PyiCloud.account_owner}, Login Successful")
+            list_del(Gb.username_pyicloud_503_connection_error, username)
+
+            list_add(Gb.usernames_setup_error_retry_list, username)
+            start_ic3_control.stage_4_setup_data_sources_retry()
+
+        else:
+            post_event(f"Apple Acct > {username}, Failed to Login, will try again later")
+
+    post_evlog_greenbar_msg('')
+
+#--------------------------------------------------------------------
+def verify_all_apple_accounts():
+    '''
+    Cycle through the apple accounts and validate that each one is valid
+    '''
+    if Gb.PyiCloudValidateAppleAcct is None:
+        Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
+
+    post_event('Verify Apple Account Username/Password')
+    cnt = -1
+    for conf_apple_acct in Gb.conf_apple_accounts:
+        cnt += 1
+        username   = conf_apple_acct[CONF_USERNAME]
+        password   = Gb.PyiCloud_password_by_username[username]
+
+        if is_empty(username):
+            Gb.username_valid_by_username[f"AA-NOTSPECIFIED-#{cnt}"]
+            continue
+        if is_empty(password):
+            Gb.username_valid_by_username[f"AA-NOPASSWORD-#-{cnt}"]
+            continue
+
+        # Validate username/password so we know all future login attempts will be with valid apple accts
+        valid_apple_acct = Gb.PyiCloudValidateAppleAcct.validate_username_password(username, password)
+
+        Gb.username_valid_by_username[username] = valid_apple_acct
+        if valid_apple_acct is False:
+            post_event(f"Apple Acct > {username}, Username/Password Invalid")
+
+        Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
+
+
+#--------------------------------------------------------------------
+def log_into_apple_account(username, password, locate_all=True):
+    '''
+    Log in and Authenticate the Apple Account via pyicloud
+
+    If successful - PyiCloud = PyiCloudService object
+    If not        - PyiCloud = None
     '''
 
     # If not using the iCloud location svcs, nothing to do
-    if (Gb.primary_data_source_ICLOUD is False
-            or Gb.username == ''
-            or Gb.password == ''):
+    if (Gb.use_data_source_ICLOUD is False
+            or username == ''
+            or password == ''):
         return
 
     this_fct_error_flag = True
+    login_err = 0
+    post_evlog_greenbar_msg(f"Apple Acct > Setting up {username.split('@')[0]}")
 
     try:
-        Gb.pyicloud_auth_started_secs = time_now_secs()
-        if PyiCloud and 'Complete' in Gb.PyiCloudInit.init_step_complete:
-            PyiCloud.authenticate(refresh_session=True, service='find')
+        PyiCloud = Gb.PyiCloud_by_username.get(username)
 
-        elif PyiCloud:
-            PyiCloud.__init__(Gb.username, Gb.password,
-                                    cookie_directory=Gb.icloud_cookies_dir,
-                                    session_directory=(f"{Gb.icloud_cookies_dir}/session"),
-                                    instance=instance)
-            log_debug_msg(f"PyiCloud Instance Initialized > {PyiCloud.instance}")
+        pyicloud_msg = (f"{PyiCloud=}")
+        if PyiCloud:
+            pyicloud_msg += f"{PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
+            if PyiCloud.DeviceSvc:
+                pyicloud_msg += f"{PyiCloud.RawData_by_device_id.values()=}"
+        username_base = username.split('@')[0]
+        debug_msg_hdr =f"APPLE ACCT SETUP > {username_base}, Step-"
+        log_debug_msg(f"{debug_msg_hdr}0, Login Started, {pyicloud_msg}")
 
+        # # Refresh existing PyiCloud/iCloud
+        # if PyiCloud and PyiCloud.connection_error_retry_cnt > 5:
+        #     return
+
+        if (PyiCloud
+                and PyiCloud.is_DeviceSvc_setup_complete
+                and PyiCloud.DeviceSvc):
+            PyiCloud.dup_icloud_dname_cnt = {}
+
+            PyiCloud.DeviceSvc.refresh_client()
+
+            pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
+            if PyiCloud.DeviceSvc:
+                pyicloud_msg += f"{PyiCloud.RawData_by_device_id.values()=}"
+            log_debug_msg(f"{debug_msg_hdr}1, Request iCloud Refresh, {pyicloud_msg}")
+            post_event(f"Apple Acct > {PyiCloud.account_owner}, Device Data Refreshed")
+
+        # Setup iCloud
+        elif (PyiCloud
+                and PyiCloud.is_DeviceSvc_setup_complete):
+
+            PyiCloud.create_DeviceSvc_object()
+            Gb.PyiCloud_by_username[username] = PyiCloud
+
+            pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
+            if PyiCloud.DeviceSvc:
+                pyicloud_msg += f"{PyiCloud.RawData_by_device_id.values()=}"
+            log_debug_msg(f"{debug_msg_hdr}2, Create DeviceSvc, {pyicloud_msg}")
+            post_event(f"Apple Acct > {PyiCloud.account_owner}, iCloud Created & Refreshed")
+
+            return PyiCloud
+
+        # Setup PyiCloud and iCloud
         else:
-            log_info_msg(f"Connecting to and Authenticating iCloud Location Service Interface ({instance})")
-            PyiCloud = PyiCloudService(Gb.username, Gb.password,
-                                    cookie_directory=Gb.icloud_cookies_dir,
-                                    session_directory=(f"{Gb.icloud_cookies_dir}/session"),
-                                    instance=instance)
+            PyiCloud = PyiCloudService( username, password,
+                                        locate_all_devices=locate_all,
+                                        cookie_directory=Gb.icloud_cookie_directory,
+                                        session_directory=Gb.icloud_session_directory)
 
-            #PyiCloud.instance = instance    #f"{instance}-{str(id(PyiCloud))[-5:]}"
-            log_debug_msg(f"PyiCloud Instance Created > {PyiCloud.instance}")
+            # Stage 4 checks to see if PyiCloud exists and it has RawData device info. These values exists
+            # if the __init__ login was completed. However, if it was not completed and they do not exist,
+            # Stage 4 will do another login and set these values when it finishes, which is before the
+            # __init__ is complete. Do not set them again when __init__ login finially completes.
 
+            pyicloud_msg = (f"{PyiCloud.account_owner_username}, "
+                            f"Complete={PyiCloud.is_DeviceSvc_setup_complete}, ")
+            if PyiCloud.DeviceSvc:
+                rawdata_items = [_RawData.fname_device_id for _RawData in PyiCloud.RawData_by_device_id.values()]
+                pyicloud_msg += f"RawDataItems-({list_to_str(rawdata_items)})"
+            log_debug_msg(f"{debug_msg_hdr}3, Setup PyiCloud, {pyicloud_msg}")
+
+            post_event(f"Apple Acct > {PyiCloud.account_owner}, Login Successful")
+
+        verify_icloud_device_info_received(PyiCloud)
         is_authentication_2fa_code_needed(PyiCloud, initial_setup=True)
+
         display_authentication_msg(PyiCloud)
 
-    except PyiCloudAPIResponseException as err:
-        event_msg =(f"{EVLOG_ALERT}iCloud3 Error > An error occurred communicating with "
-                    f"iCloud Account servers. This can be caused by:"
-                    f"{CRLF_DOT}Your network or wifi is down, or"
-                    f"{CRLF_DOT}Apple iCloud servers are down"
-                    f"{CRLF}Error-{err}")
-        post_startup_alert('Error occurred logging into the iCloud Account')
-
-    except PyiCloudFailedLoginException as err:
-        event_msg =(f"{EVLOG_ALERT}iCloud3 Error > An error occurred logging into the iCloud Account. "
-                    f"{err})")
-                    # f"Authentication Process, Error-({Gb.PyiCloud.authenticate_method[2:]})")
-        post_error_msg(event_msg)
-        post_startup_alert('iCloud Account Login Error')
-
-        Gb.PyiCloud = Gb.PyiCloudInit = PyiCloud = None
-        Gb.username = Gb.password = ''
-        return False
+        return PyiCloud
 
     except PyiCloud2FARequiredException as err:
+        login_err = str(err)
         is_authentication_2fa_code_needed(PyiCloud, initial_setup=True)
-        return False
+        return PyiCloud
+
+    except PyiCloudAPIResponseException as err:
+        login_err = str(err)
+        pass
+
+    except PyiCloudFailedLoginException as err:
+        PyiCloud = Gb.PyiCloudLoggingInto
+        login_err = str(err)
+        login_err + ", Will retry logging into the Apple Account later"
+        # Gb.username = Gb.username_base = Gb.password = ''
 
     except Exception as err:
-        if this_fct_error_flag is False:
-            log_exception(err)
-            return
-
-        event_msg =(f"{EVLOG_ALERT}iCloud3 Error > An error occurred logging into the iCloud Account. "
-                    f"Error-{err}")
-        post_error_msg(event_msg)
+        PyiCloud = Gb.PyiCloudLoggingInto
+        login_err = str(err)
         log_exception(err)
-        return False
 
-    return True
+    Gb.PyiCloud_by_username[username] = PyiCloud
+    if Gb.PyiCloud and Gb.PyiCloud.response_code_pwsrp_err == 503:
+        list_add(Gb.username_pyicloud_503_connection_error, username)
+
+    else:
+        list_add(Gb.usernames_setup_error_retry_list, username)
+
+    # list_del(Gb.PyiCloud_by_username, username)
+    post_error_msg( f"{EVLOG_ALERT}{login_err}")
+    post_startup_alert(f"Apple Acct > {username_base}, Login Failed")
+
+    return PyiCloud
 
 #--------------------------------------------------------------------
-def reset_authentication_time(PyiCloud, authentication_took_secs):
-    display_authentication_msg(PyiCloud)
+def verify_icloud_device_info_received(PyiCloud):
+    if (PyiCloud is None
+            or PyiCloud.DeviceSvc is None):
+        return False
 
+    if PyiCloud.DeviceSvc.devices_cnt >= 0:
+        return True
+
+    Gb.get_ICLOUD_devices_retry_cnt = 0
+
+    while Gb.get_ICLOUD_devices_retry_cnt < 8:
+        Gb.get_ICLOUD_devices_retry_cnt += 1
+        if Gb.get_ICLOUD_devices_retry_cnt > 1:
+            post_event( f"Apple Acct > {PyiCloud.account_owner}, "
+                        f"Family Sharing List Refresh "
+                        f"(#{Gb.get_ICLOUD_devices_retry_cnt} of 8)")
+
+        PyiCloud.DeviceSvc.refresh_client(locate_all_devices=True)
+
+        if PyiCloud.DeviceSvc.devices_cnt >= 0:
+            return True
+
+    post_event( f"{EVLOG_ERROR}Apple Account > {PyiCloud.account_owner}, "
+                f"Family Sharing List Refresh failed")
+
+    return (PyiCloud.DeviceSvc.devices_cnt >= 0)
+
+#--------------------------------------------------------------------
 def display_authentication_msg(PyiCloud):
     '''
     If an authentication was done, update the count & time and display
@@ -257,22 +294,13 @@ def display_authentication_msg(PyiCloud):
     if authentication_method == '':
         return
 
-    last_authenticated_time =  Gb.authenticated_time
+    last_authenticated_secs = PyiCloud.last_authenticated_secs
+    PyiCloud.last_authenticated_secs = time_now_secs()
+    PyiCloud.authentication_cnt += 1
 
-    Gb.authenticated_time = time_now_secs()
-    Gb.pyicloud_authentication_cnt += 1
-
-    event_msg =(f"iCloud Acct Auth "
-                f"#{Gb.pyicloud_authentication_cnt} > {authentication_method}, "
-                f"Last-{secs_to_time(last_authenticated_time)}")
-    if instr(authentication_method, 'Password') is False:
-        event_msg += f" ({format_age(last_authenticated_time)})"
-
-
-    if instr(authentication_method, 'Password'):
-        post_event(event_msg)
-    else:
-        post_monitor_msg(event_msg)
+    event_msg =(f"Apple Acct > {PyiCloud.account_owner}, "
+                f"Auth #{PyiCloud.authentication_cnt} > {authentication_method}")
+    post_monitor_msg(event_msg)
 
 #--------------------------------------------------------------------
 def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
@@ -292,9 +320,38 @@ def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
         return False
 
     if new_2fa_authentication_code_requested(PyiCloud, initial_setup):
+        alert_msg =(f"Apple Acct > {PyiCloud.account_owner}, Authentication Needed")
+        post_startup_alert(alert_msg)
+        log_warning_msg(alert_msg)
+
         if PyiCloud.new_2fa_code_already_requested_flag is False:
+            post_event(f"{EVLOG_ALERT}{alert_msg}")
+            # Tell HA to generate reauth needed notification that will be handled
+            # handled in config_flow
             Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
+
             PyiCloud.new_2fa_code_already_requested_flag = True
+            post_event( f"Apple Acct > {PyiCloud.account_owner}, "
+                        f"Authentication Request Submitted to HA")
+            Gb.PyiCloud_needing_reauth_via_ha = {
+                    CONF_USERNAME: PyiCloud.username,
+                    CONF_PASSWORD: PyiCloud.password,
+                    'account_owner': PyiCloud.account_owner}
+
+#--------------------------------------------------------------------
+def send_totp_key(conf_apple_accts):
+    '''
+    The 30-sec check in icloud3_main identified apple accts that need to be verified
+    using the otp token. Generate the token and send to the Apple acct
+    '''
+    return
+
+    for conf_apple_acct in conf_apple_accts:
+        PyCloud = Gb.PyiCloud_by_username[conf_apple_acct[CONF_USERNAME]]
+        OTP = pyotp.TOTP(conf_apple_acct[CONF_TOTP_KEY].replace('-', ''))
+        otp_code = OTP.now()
+        #_evlog(f"{conf_apple_acct[CONF_USERNAME]} {otp_code}")
+    pass
 
 #--------------------------------------------------------------------
 def check_all_devices_online_status():
@@ -366,100 +423,3 @@ def new_2fa_authentication_code_requested(PyiCloud, initial_setup=False):
     except Exception as err:
         internal_error_msg2('Apple ID Verification', traceback.format_exc)
         return True
-
-#--------------------------------------------------------------------
-def pyicloud_reset_session(PyiCloud=None):
-    '''
-    Reset the current session and authenticate to restart pyicloud_ic3
-    and enter a new verification code
-    '''
-    if PyiCloud is None:
-        PyiCloud = Gb.PyiCloud
-        requested_by = ' (Apple)'
-    else:
-        requested_by = ' (User)'
-
-    if Gb.PyiCloud is None:
-        return
-
-    resetting_primary_pyicloud_flag = (PyiCloud == Gb.PyiCloud)
-    try:
-        if Gb.authentication_alert_displayed_flag is False:
-            Gb.authentication_alert_displayed_flag = True
-
-            if requested_by == ' (Apple)':
-                post_event( f"{EVLOG_NOTICE}Select `HA Notifications Bell`, then Select `Integration Requires "
-                            f"Reconfiguration > Check it out`, then `iCloud3 > Reconfigure`."
-                            f"{CRLF}Note: If the code is not accepted or has expired, request a "
-                            f"new code and try again")
-        post_event(f"{EVLOG_NOTICE}iCLOUD ALERT > Apple ID Verification is needed {requested_by}")
-        post_event(f"{EVLOG_NOTICE}Resetting iCloud Session Files")
-
-        delete_pyicloud_cookies_session_files()
-
-        post_event(f"{EVLOG_NOTICE}Initializing iCloud Interface")
-        PyiCloud.__init__(   Gb.username, Gb.password,
-                                cookie_directory=Gb.icloud_cookies_dir,
-                                session_directory=(f"{Gb.icloud_cookies_dir}/session"),
-                                with_family=True,
-                                instance='reset')
-
-        # Initialize PyiCloud object to force a new one that will trigger the 2fa process
-        PyiCloud = None
-        Gb.verification_code = None
-
-        authenticate_icloud_account(PyiCloud, initial_setup=True)
-
-        post_event(f"{EVLOG_NOTICE}Waiting for 6-digit Verification Code Entry")
-
-        Gb.EvLog.update_event_log_display(Gb.EvLog.devicename)
-
-    except Exception as err:
-        log_exception(err)
-
-#--------------------------------------------------------------------
-def delete_pyicloud_cookies_session_files(cookie_filename=None):
-    '''
-    Delete the cookies and session files as part of the reset_session and request_verification_code
-    This is called from config_flow/setp_reauth and pyicloud_reset_session
-
-    '''
-    cookie_directory  = Gb.PyiCloud.cookie_directory
-    cookie_filename   = cookie_filename or Gb.PyiCloud.cookie_filename
-    session_directory = f"{cookie_directory}/session"
-
-    delete_msg =  f"Deleting iCloud Cookie & Session Files > ({cookie_directory})"
-    delete_msg += f"{CRLF_DOT}Cookies ({cookie_filename})"
-    delete_file('iCloud Acct cookies', cookie_directory,  cookie_filename, delete_old_sv_file=True)
-    delete_msg += f"{CRLF_DOT}Token Password ({cookie_filename}.tpw)"
-    delete_file('iCloud Acct tokenpw', session_directory, f"{cookie_filename}.tpw")
-    delete_msg += f"{CRLF_DOT}Session (/session/{cookie_filename})"
-    delete_file('iCloud Acct session', session_directory, cookie_filename, delete_old_sv_file=True)
-    post_monitor_msg(delete_msg)
-
-#--------------------------------------------------------------------
-def create_PyiCloudService_secondary(username, password,
-                                        endpoint_suffix, instance,
-                                        verify_password, request_verification_code=False):
-    '''
-    Create the PyiCloudService object without going through the error checking and
-    authentication test routines. This is used by config_flow to open a second
-    PyiCloud session
-    '''
-    PyiCloud = PyiCloudService( username, password,
-                            cookie_directory=Gb.icloud_cookies_dir,
-                            session_directory=(f"{Gb.icloud_cookies_dir}/session"),
-                            endpoint_suffix=endpoint_suffix,
-                            instance=instance,
-                            verify_password=verify_password,
-                            request_verification_code=request_verification_code)
-
-    #PyiCloud.instance = instance    #f"{instance}-{str(id(PyiCloud))[-5:]}"
-
-    log_debug_msg(f"PyiCloud Instance Created > {PyiCloud.instance}")
-    return PyiCloud
-
-def create_FamilySharing_secondary(PyiCloud, config_flow_login):
-
-    FamShr = PyiCloud.create_FamilySharing_object(config_flow_login)
-    return FamShr

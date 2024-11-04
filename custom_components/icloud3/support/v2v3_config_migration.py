@@ -21,7 +21,7 @@ from ..const            import (
                                 CONFIG_IC3, CONF_VERSION_INSTALL_DATE,
                                 CONF_CONFIG_IC3_FILE_NAME,
                                 CONF_VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM,
-                                CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES,
+                                CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_APPLE_ACCOUNT,
                                 CONF_TRACK_FROM_ZONES, CONF_TRACKING_MODE,
                                 CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL,
@@ -35,7 +35,7 @@ from ..const            import (
                                 CONF_STAT_ZONE_BASE_LATITUDE,
                                 CONF_STAT_ZONE_BASE_LONGITUDE, CONF_DISPLAY_TEXT_AS,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
-                                CONF_MOBILE_APP_DEVICE, CONF_PICTURE, CONF_FMF_EMAIL,
+                                CONF_MOBILE_APP_DEVICE, CONF_PICTURE,
                                 CONF_TRACK_FROM_ZONES, CONF_DEVICE_TYPE, CONF_INZONE_INTERVAL,
                                 CONF_NAME,
                                 NAME, BADGE, BATTERY, BATTERY_STATUS, INFO,
@@ -107,11 +107,11 @@ CONF_SENSORS_ZONE_LIST              = ['zone', 'zone_fname', 'zone_name', 'zone_
 CONF_SENSORS_OTHER_LIST             = ['gps_accuracy', 'vertical_accuracy', 'altitude']
 
 from ..helpers.common       import (instr, )
-from ..helpers.messaging    import (_traceha, log_info_msg, log_warning_msg, log_exception,)
+from ..helpers.file_io      import (file_exists, )
+from ..helpers.messaging    import (_log, log_info_msg, log_warning_msg, log_exception,)
 from ..helpers.time_util    import (time_str_to_secs, datetime_now, datetime_for_filename, )
 from .                      import config_file
 
-import os
 import json
 import yaml
 from   homeassistant.util    import slugify
@@ -261,16 +261,16 @@ class iCloud3_v2v3ConfigMigration(object):
             if instr(config_ic3_filename, "/"):
                 pass
 
-            elif os.path.exists(f"{Gb.ha_config_directory}{config_ic3_filename}"):
+            elif file_exists(f"{Gb.ha_config_directory}{config_ic3_filename}"):
                 config_ic3_filename = (f"{Gb.ha_config_directory}{config_ic3_filename}")
 
-            elif os.path.exists(f"{Gb.icloud3_directory}/{config_ic3_filename}"):
+            elif file_exists(f"{Gb.icloud3_directory}/{config_ic3_filename}"):
                 config_ic3_filename = (f"{Gb.icloud3_directory}/{config_ic3_filename}")
 
             config_ic3_filename = config_ic3_filename.replace("//", "/")
 
             self.write_migration_log_msg(f"Converting parameters, Source: {config_ic3_filename}")
-            if os.path.exists(config_ic3_filename) is False:
+            if file_exists(config_ic3_filename) is False:
                 self.write_migration_log_msg(f" -- Skipped, {config_ic3_filename} not used")
                 return {}
 
@@ -312,6 +312,7 @@ class iCloud3_v2v3ConfigMigration(object):
                         fname, device_type = self._extract_name_device_type(pvalue)
                         conf_device[CONF_IC3_DEVICENAME]    = devicename
                         conf_device[CONF_FNAME]             = fname
+                        conf_device[CONF_APPLE_ACCOUNT]     = self.conf_parm_tracking[CONF_USERNAME]
                         conf_device[CONF_FAMSHR_DEVICENAME] = devicename
                         conf_device[CONF_DEVICE_TYPE]       = device_type
 
@@ -324,8 +325,8 @@ class iCloud3_v2v3ConfigMigration(object):
                             tfz_list = pvalue.split(',')
                             conf_device[CONF_TRACK_FROM_ZONES] = tfz_list
 
-                    elif pname == CONF_EMAIL:
-                        conf_device[CONF_FMF_EMAIL] = pvalue
+                    # elif pname == CONF_EMAIL:
+                    #     conf_device[CONF_FMF_EMAIL] = pvalue
 
                     elif pname == CONF_NAME:
                         conf_device[CONF_FNAME] = pvalue
@@ -345,11 +346,11 @@ class iCloud3_v2v3ConfigMigration(object):
                         conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
 
                     elif pname == CONF_TRACKING_METHOD:
-                        if pvalue == 'fmf':
+                        # if pvalue == 'fmf':
+                        #     conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
+                        if pvalue == 'iosapp':
                             conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
-                        elif pvalue == 'iosapp':
-                            conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
-                            conf_device[CONF_FMF_EMAIL] = 'None'
+                            # conf_device[CONF_FMF_EMAIL] = 'None'
 
 
                     elif pname == CONF_PICTURE:
@@ -612,7 +613,7 @@ class iCloud3_v2v3ConfigMigration(object):
 
             known_devices_file = Gb.hass.config.path('known_devices.yaml')
 
-            if os.path.isfile(known_devices_file) is False:
+            if file_exists(known_devices_file) is False:
                 return
 
             ic3_devicenames = []

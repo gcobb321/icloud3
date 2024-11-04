@@ -9,13 +9,14 @@ from ..const                import (DEVICE_TRACKER, NOTIFY,
                                     LATITUDE, LONGITUDE, TIMESTAMP_SECS, TIMESTAMP_TIME,
                                     TRIGGER, LAST_ZONE, ZONE,
                                     GPS_ACCURACY, VERT_ACCURACY, ALTITUDE,
-                                    CONF_IC3_DEVICENAME,
+                                    CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                     )
 
-from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname, )
+from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname,
+                                    list_add, list_to_str, )
 from ..helpers.messaging    import (post_event, post_monitor_msg, more_info,
                                     log_debug_msg, log_exception, log_error_msg, log_rawdata,
-                                    _trace, _traceha, )
+                                    _evlog, _log, )
 from ..helpers.time_util    import (secs_to_time, secs_since, format_time_age, format_age,  )
 from ..helpers.dist_util    import (format_dist_km, format_dist_m, )
 from ..helpers              import entity_io
@@ -49,7 +50,7 @@ def check_mobapp_state_trigger_change(Device):
 
         mobapp_data_state_not_set_flag = (Device.mobapp_data_state == NOT_SET)
 
-        # Get the state data
+        # Get the state data, If error cnt > 50, mobile app monitoring disabled
         device_trkr_attrs = get_mobapp_device_trkr_entity_attrs(Device)
         if device_trkr_attrs is None:
             return
@@ -417,36 +418,12 @@ def get_mobapp_device_trkr_entity_attrs(Device):
             return None
 
         entity_id = Device.mobapp[DEVICE_TRACKER]
-        device_trkr_attrs = {}
-        device_trkr_attrs[DEVICE_TRACKER] =  entity_io.get_state(entity_id)
 
-        if device_trkr_attrs[DEVICE_TRACKER] == 'unavailable':
-            Device.mobapp_monitor_flag            = False
-            Device.mobapp_device_unavailable_flag = True
-            Device.mobapp_data_invalid_error_cnt += 1
-            post_event( f"{EVLOG_ALERT}The Mobile App has returned a `not available` status "
-                        f"and will not be used for tracking or zone enter/exit events"
-                        f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
-                        f"{more_info('mobapp_device_unavailable')}")
-            log_error_msg(f"iCloud3 Error ({Device.fname_devtype}) > "
-                f"The Mobile App is not available and this device will not be monitored")
-            return None
+        device_trkr_attrs = get_and_verify_device_trkr_data(Device, entity_id)
+        if device_trkr_attrs is None:
+            return
 
-        device_trkr_attrs.update(entity_io.get_attributes(entity_id))
-
-        if LATITUDE not in device_trkr_attrs or device_trkr_attrs[LATITUDE] == 0:
-            Device.mobapp_data_invalid_error_cnt += 1
-            if Device.mobapp_data_invalid_error_cnt == 4:
-                post_event( f"{EVLOG_ALERT}The Mobile App has not reported the gps "
-                            f"location after 4 requests. It may be asleep, offline "
-                            f"or not available and should be reviewed."
-                            f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
-                            f"{more_info('mobapp_device_no_location')}")
-                log_error_msg(f"iCloud3 Alert ({Device.fname_devtype}) > "
-                    f"The Mobile App has not reported the gps location after 4 requests. "
-                    f"It may be asleep, offline or not available.")
-            return None
-
+        Device.mobapp_data_invalid_error_cnt = 0
         device_trkr_attrs[CONF_IC3_DEVICENAME] = Device.devicename
         device_trkr_attrs[f"state_{TIMESTAMP_SECS}"] = entity_io.get_last_changed_time(entity_id)
         device_trkr_attrs[f"state_{TIMESTAMP_TIME}"] = secs_to_time(device_trkr_attrs[f"state_{TIMESTAMP_SECS}"])
@@ -465,6 +442,71 @@ def get_mobapp_device_trkr_entity_attrs(Device):
     except Exception as err:
         log_exception(err)
         return None
+
+# -----------------------------------------------------------------
+def get_and_verify_device_trkr_data(Device, entity_id):
+    '''
+    1. Get the state value of the device_tracker entity, then get the attributes
+    if it is available.
+    2. Verify the location is available in the attributes. Increment an error counter if not.
+    3. If the error counter > 50, disable the Device's mobile_app monitoring flag.
+    Display an error message on every 5th error. The counter is reset when good data
+    is received.
+
+    Return:
+        device_trkr_attributes - State value and all attributes or None
+    '''
+    # Get only the entity stateto see if it is available
+    try:
+        device_trkr_attrs = {}
+        device_trkr_attrs[DEVICE_TRACKER] = entity_io.get_state(entity_id)
+
+        if device_trkr_attrs[DEVICE_TRACKER] == NOT_SET:
+            if Device.mobapp_data_invalid_error_cnt < 50:
+                Device.mobapp_data_invalid_error_cnt += 1
+                if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
+                    post_event(Device,
+                                f"{EVLOG_ALERT}MOBILE APP ERROR (#{Device.mobapp_data_invalid_error_cnt}) > "
+                                F"Returned a `not available` status"
+                                f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}")
+                                # f"{more_info('mobapp_device_unavailable')}")
+                    log_error_msg(f"iCloud3 Error ({Device.fname}) > Mobile App status is `unavailable`")
+                return None
+
+            # More than 50 errors, shut down Mobile App monitoring for this device
+            Device.mobapp_monitor_flag            = False
+            Device.mobapp_device_unavailable_flag = True
+
+            post_event(Device,
+                        f"{EVLOG_ALERT}The Mobile App has not reported the gps "
+                        f"location after 4 requests. It may be asleep, offline "
+                        f"or not available and should be reviewed."
+                        f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
+                        f"{more_info('mobapp_device_no_location')}")
+            log_error_msg(f"iCloud3 Alert ({Device.fname_devtype}) > "
+                f"The Mobile App has not reported the gps location after 4 requests. "
+                f"It may be asleep, offline or not available.")
+            return None
+
+        # Entity is available, get the attributes
+        device_trkr_attrs.update(entity_io.get_attributes(entity_id))
+
+        if LATITUDE not in device_trkr_attrs or device_trkr_attrs[LATITUDE] == 0:
+            Device.mobapp_data_invalid_error_cnt += 1
+            if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
+                post_event( f"{EVLOG_ALERT}MOBILE APP ERROR (#{Device.mobapp_data_invalid_error_cnt}) > "
+                            f"No gps location reported. It may be asleep, offline or not available"
+                            f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}")
+                            # f"{more_info('mobapp_device_no_location')}")
+                log_error_msg(f"iCloud3 Alert ({Device.fname}) > "
+                            f"Mobile App gps location not reported")
+            return None
+
+    except Exception as err:
+        log_exception(err)
+        return None
+
+    return device_trkr_attrs
 
 # -----------------------------------------------------------------
 def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
@@ -495,7 +537,6 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     Device.mobapp_data_trigger           = device_trkr_attrs.get("trigger", NOT_SET)
     Device.mobapp_data_secs              = mobapp_data_secs
     Device.mobapp_data_time              = mobapp_data_time
-    Device.mobapp_data_invalid_error_cnt = 0
     Device.mobapp_data_latitude          = device_trkr_attrs.get(LATITUDE, 0)
     Device.mobapp_data_longitude         = device_trkr_attrs.get(LONGITUDE, 0)
     Device.mobapp_data_gps_accuracy      = gps_accuracy
@@ -514,7 +555,6 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     if monitor_msg != Device.update_mobapp_data_monitor_msg:
         Device.update_mobapp_data_monitor_msg = monitor_msg
         post_monitor_msg(Device.devicename, monitor_msg)
-
 
 #--------------------------------------------------------------------
 def sync_mobapp_data_state_statzone(Device):
@@ -543,7 +583,6 @@ def sync_mobapp_data_state_statzone(Device):
     if (is_statzone(mobapp_data_state)
             and is_statzone(Device.loc_data_zone)
             and Device.isnotin_zone_mobapp_state):
-            #and Device.mobapp_data_state == NOT_HOME):
         Device.mobapp_data_state      = mobapp_data_state
         Device.mobapp_data_state_secs = Gb.this_update_secs
         Device.mobapp_data_state_time = Gb.this_update_time
@@ -551,3 +590,129 @@ def sync_mobapp_data_state_statzone(Device):
         return True
 
     return False
+
+#--------------------------------------------------------------------
+def build_mobapp_integration_device_tables():
+
+    '''
+    {'d7f4264ab72046285ca92c0946f381e167a6ba13292eef17d4f60a4bf0bd654c':
+    DeviceEntry(area_id=None, config_entries={'ad5c8f66b14fda011107827b383d4757'},
+    configuration_url=None, connections=set(), disabled_by=None, entry_type=None,
+    hw_version=None, id='93e3d6b65eb05072dcb590b46c02d920',
+    identifiers={('mobile_app', '1A9EAFA3-2448-4F37-B069-3B3A1324EFC5')},
+    manufacturer='Apple', model='iPad8,9', name_by_user='Gary-iPad-app',
+    name='Gary-iPad', serial_number=None, suggested_area=None, sw_version='17.2',
+    via_device_id=None, is_new=False),
+    '''
+    try:
+        if Gb.conf_data_source_MOBAPP is False:
+            return True
+
+        if 'mobile_app' in Gb.hass.data:
+            Gb.MobileApp_data  = Gb.hass.data['mobile_app']
+            mobile_app_devices = Gb.MobileApp_data.get('devices', {})
+
+            Gb.mobile_app_device_fnames   = []
+            Gb.mobapp_fnames_by_mobapp_id = {}
+            Gb.mobapp_ids_by_mobapp_fname = {}
+            Gb.mobapp_fnames_disabled     = []
+            for device_id, device_entry in mobile_app_devices.items():
+                if device_entry.disabled_by is None:
+                    list_add(Gb.mobile_app_device_fnames, device_entry.name_by_user)
+                    list_add(Gb.mobile_app_device_fnames, device_entry.name)
+                    Gb.mobapp_fnames_by_mobapp_id[device_entry.id] = device_entry.name_by_user or device_entry.name
+                    Gb.mobapp_ids_by_mobapp_fname[device_entry.name] = device_entry.id
+                    Gb.mobapp_ids_by_mobapp_fname[device_entry.name_by_user] = device_entry.id
+                else:
+                    list_add(Gb.mobapp_fnames_disabled, device_entry.id)
+                    list_add(Gb.mobapp_fnames_disabled, device_entry.name)
+                    list_add(Gb.mobapp_fnames_disabled, device_entry.name_by_user)
+
+            if Gb.mobile_app_device_fnames:
+                post_event( f"Checking Mobile App Integration > Loaded, "
+                            f"Devices-{list_to_str(Gb.mobile_app_device_fnames)}")
+
+        Gb.startup_lists['Gb.mobile_app_device_fnames']  = Gb.mobile_app_device_fnames
+        Gb.startup_lists['Gb.mobapp_fnames_by_mobapp_id'] = Gb.mobapp_fnames_by_mobapp_id
+        Gb.startup_lists['Gb.mobapp_ids_by_mobapp_fname'] = Gb.mobapp_ids_by_mobapp_fname
+        Gb.startup_lists['Gb.mobapp_fnames_disabled']    = Gb.mobapp_fnames_disabled
+
+        return True
+
+    except Exception as err:
+        #log_exception(err)
+        return False
+
+#--------------------------------------------------------------------
+def verify_device_in_ha_mobile_app_config():
+    '''
+    Cycle through the iCloud3 device's configuration and see if a
+    mobapp device is in the HA Mobiole App Integrations list
+
+    Update the Device's mobapp_monitor_flag to True if it is found.
+    Do not change it if it is not found.
+
+    Return:
+        unverified_devices_list - list of devices that are not verified (Device.fname)
+    '''
+
+    try:
+        # Cycle thru conf_devices, see if Device's Mobile app entity is found
+        Gb.device_mobapp_verify_retry_needed = False
+        unverified_devices_list = []
+        for conf_device in Gb.conf_devices:
+            Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
+            if (Device.mobapp_monitor_flag
+                    or conf_device[CONF_MOBILE_APP_DEVICE] == 'None'):
+                continue
+
+            if Device.conf_mobapp_fname in Gb.mobile_app_device_fnames:
+                Device.mobapp_monitor_flag = True
+            else:
+                Gb.device_mobapp_verify_retry_needed = True
+                list_add(unverified_devices_list, Device.fname)
+
+    except Exception as err:
+        #log_exception(err)
+        return []
+
+    return unverified_devices_list
+
+#--------------------------------------------------------------------
+def x_unverified_devices_mobapp_handler():
+    '''
+
+    Retry Device Mobile App verification
+    '''
+    Gb.device_mobapp_verify_retry_cnt += 1
+    build_mobapp_integration_device_tables()
+    unverified_devices_list = verify_device_in_ha_mobile_app_config()
+
+    if Gb.device_mobapp_verify_retry_needed is False:
+        post_event("All Devices monitoring the Mobile App Integration have been verified")
+    else:
+        event_msg =(f"{EVLOG_ALERT}MOBILE APP DEVICES NOT VERIFIED (#{Gb.device_mobapp_verify_retry_cnt}) > "
+                    f"Some Devices are not verified as as available in the HA "
+                    f"Mobile App Integration, "
+                    f"Devices-{list_to_str(unverified_devices_list)}, ")
+        if Gb.device_mobapp_verify_retry_cnt < 5:
+            event_msg += "Will retry in 5-mins"
+        else:
+            Gb.device_mobapp_verify_retry_needed = False
+            event_msg += "Max retries have been done. Devices will not monitor the Mobile App devices"
+        post_event(event_msg)
+
+#--------------------------------------------------------------------
+def unverified_devices_mobapp_list():
+    '''
+    Returns a list of devices that are unverified that are monitoring the mobapp
+    '''
+
+    unverified_devices_list = []
+    for conf_device in Gb.conf_devices:
+            Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
+            if (Device.mobapp_monitor_flag is False
+                    and conf_device[CONF_MOBILE_APP_DEVICE] != 'None'):
+                list_add(unverified_devices_list, Device.fname)
+
+    return unverified_devices_list

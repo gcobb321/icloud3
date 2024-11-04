@@ -24,8 +24,7 @@
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
-                             NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
-                            FAMSHR, FMF, FAMSHR_FMF, ICLOUD, MOBAPP, FNAME, HIGH_INTEGER,
+                            NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
                             DEFAULT_GENERAL_CONF,
                             CONF_UNIT_OF_MEASUREMENT,
                             CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
@@ -98,8 +97,11 @@ class GlobalVariables(object):
 
     iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
     PyiCloud            = None    # iCloud Account service
-    PyiCloudInit        = None    # iCloud Account service when started from __init__ via executive job
-    PyiCloudConfigFlow  = None    # iCloud Account service when started from config_flow
+    PyiCloudLoggingInto = None    # PyiCloud being set up  that can be used if the login fails
+    PyiCloud_needing_reauth_via_ha = {} # Reauth needed sent to ha for notify msg display
+    PyiCloudValidateAppleAcct = None    # A session that can be used to verify the username/password
+    PyiCloudSession_by_username = {}    # Session object for a username, set in Session so exists on an error
+    username_pyicloud_503_connection_error = [] # Session object for a username, set in Session so exists on an error
 
     Waze                = None
     WazeHist            = None
@@ -108,14 +110,15 @@ class GlobalVariables(object):
     operating_mode          = 0         # Platform (Legacy using configuration.yaml) or Integration
     ha_config_platform_stmt = False     # a platform: icloud3 stmt is in the configurationyaml file that needs to be removed
     v2v3_config_migrated    = False     # Th v2 configuration parameters were migrated to v3
-    add_entities = None
+    add_entities            = None
+    ha_started              = False     # Set to True in start_ic3.ha_startup_completed from listener in __init__
 
     # iCloud3 Directory & File Names
     ha_config_directory         = ''      # '/config', '/home/homeassistant/.homeassistant'
     ha_storage_directory        = ''      # 'config/.storage' directory
     ha_storage_icloud3          = ''      # 'config/.storage/icloud3'
-    icloud3_config_filename     = ''      # 'config/.storage/icloud3.configuration' - iC3 Configuration File
-    icloud3_restore_state_filename = ''   # 'config/.storage/icloud3.restore_state'
+    icloud3_config_filename     = ''      # 'config/.storage/icloud3/configuration' - iC3 Configuration File
+    icloud3_restore_state_filename = ''   # 'config/.storage/icloud3/restore_state'
     config_ic3_yaml_filename    = ''      # 'config/config_ic3.yaml' (v2 config file name)
     icloud3_directory           = ''
     ha_config_www_directory     = ''
@@ -130,7 +133,7 @@ class GlobalVariables(object):
     password                     = ''
     icloud_server_endpoint_suffix = ''
     encode_password_flag         = True
-    all_famshr_devices           = True
+    all_find_devices             = True
     entity_registry_file         = ''
     devices                      = ''
 
@@ -141,25 +144,62 @@ class GlobalVariables(object):
     Devices_by_devicename_tracked     = {}  # All monitored Devices by devicename
     Devices_by_icloud_device_id       = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_ha_device_id           = {}  # Device by the device_id in the entity/device registry
-    Devices_by_mobapp_devicename      = {}  # All verified Devices by the  conf_mobapp_devicename
-    PairedDevices_by_paired_with_id   = {}  # Paired Devices by the paired_with_id (famshr prsID) id=[Dev1, Dev2]
+    Devices_by_mobapp_dname           = {}  # All verified Devices by the  conf_mobapp_dname
 
-    # FamShr Device information - These is used verify the device, display on the EvLog and in the Config Flow
+    # PyiCloud objects by various categories
+    conf_usernames                    = set()  # List of Apple Acct usernames in config
+    Devices_by_username               = {}  # A list of Devices for each Apple Acct username ('gary@email.com': [gary_iphone, lillian_iphone])
+    owner_device_ids_by_username      = {}  # List of owner info for Devices in Apple Acct
+    owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
+    username_valid_by_username        = {}  # The username/password validation status
+    PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename
+    PyiCloud_by_username              = {}  # PyiCloud object for each Apple acct username
+    PyiCloud_password_by_username     = {}  # Password for each Apple acct username
+    PyiCloud_logging_in_usernames     = []  # A list of usernames that are currently logging in. Used to prevent another login
+    usernames_setup_error_retry_list  = []  # A list of usernames that failed to set up in Stage 4 and need to be retried
+    devicenames_setup_error_retry_list= []  # A list of devices that failed to set up in Stage 4 and need to be retried
+    log_file_filter                   = []  # email extensions filter from apple accounts to remove in the icloud3-0.log file (messaging.py)
+
+    # iCloud Device information - These is used verify the device, display on the EvLog and in the Config Flow
     # device selection list on the iCloud3 Devices screen
     devices_not_set_up                = []
-    device_id_by_famshr_fname         = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
-    famshr_fname_by_device_id         = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
-    device_info_by_famshr_fname       = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
+    device_id_by_icloud_dname         = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+    icloud_dname_by_device_id         = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+    device_info_by_icloud_dname       = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
     device_model_info_by_fname        = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
-    dup_famshr_fname_cnt              = {}       # Used to create a suffix for duplicate devicenames
+    dup_icloud_dname_cnt              = {}       # Used to create a suffix for duplicate devicenames
     devices_without_location_data     = []
 
-    devicenames_x_famshr_devices      = {}  # All ic3_devicenames by conf_famshr_devices (both ways)
-    devicenames_x_mobapp_devicenames  = {}  # All ic3_devicenames by conf_mobapp_devicename (both ways)
+    devicenames_by_icloud_dname       = {}  # All ic3_devicenames by conf_find_devices
+    icloud_dnames_by_devicename       = {}  # All ic3_devicenames by conf_find_devices
+    devicenames_by_mobapp_dname  = {}  # All ic3_devicenames by conf_mobapp_dname
+    mobapp_dnames_by_devicename  = {}  # All ic3_devicenames by conf_mobapp_dname
 
-    mobapp_fnames_x_mobapp_id         = {}  # All mobapp_fnames by mobapp_deviceid from HA hass.data MobApp entry (both ways)
-    mobapp_fnames_disabled            = []
-    mobile_app_device_fnames          = []  # fname = name_by_user or name in mobile_app device entry
+    mobapp_fnames_by_mobapp_id      = {}  # All mobapp_fnames by mobapp_deviceid from HA hass.data MobApp entry
+    mobapp_ids_by_mobapp_fname      = {}  # All mobapp_fnames by mobapp_deviceid from HA hass.data MobApp entry
+    mobapp_fnames_disabled          = []
+    mobile_app_device_fnames        = []  # fname = name_by_user or name in mobile_app device entry
+    model_display_name_by_raw_model = {}
+
+    # From HA Entity Reg file - mobapp_interface.get_entity_registry_mobile_app_devices
+    mobapp_id_by_mobapp_dname         = {}
+    mobapp_dname_by_mobapp_id         = {}
+
+    device_info_by_mobapp_dname       = {}  # [mobapp_fname, raw_model, model, model_display_name]
+                                            # ['Gary-iPhome (MobApp)','iPhone15,2', 'iPhone', 'iPhone 14 Pro']
+    last_updt_trig_by_mobapp_dname        = {}
+    mobile_app_notify_devicename          = []
+    battery_level_sensors_by_mobapp_dname = {}
+    battery_state_sensors_by_mobapp_dname = {}
+
+    devicenames_x_famshr_devices      = {}  # All ic3_devicenames by conf_famshr_devices (both ways)
+    devicenames_x_mobapp_dnames       = {}  # All ic3_devicenames by conf_mobapp_dname (both ways)
+
+    # Mobile App Integration info from hass_data['mobile_app'], Updated in start_ic3.check_mobile_app_integration
+    MobileApp_data                    = {}  # data dict from hass.data['mobile_app']
+    MobileApp_device_fnames           = []  # fname = name_by_user or name in mobile_app device entry
+    MobileApp_fnames_x_mobapp_id      = {}  # All mobapp_fnames by mobapp_deviceid (both ways)
+    MobileApp_fnames_disabled         = []
 
     Zones                             = []  # Zones object list
     Zones_by_zone                     = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
@@ -199,9 +239,9 @@ class GlobalVariables(object):
     startup_alerts                  = []
     startup_alerts_str              = ''
     startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
-    debug_log                       = {}  # Log variable and dictionsry field/values to icloud3-0.log file
+    startup_lists                   = {}        # Log variable and dictionsry field/values to icloud3-0.log file
 
-    get_FAMSHR_devices_retry_cnt    = 0         # Retry count to connect to iCloud and retrieve FamShr devices
+    get_ICLOUD_devices_retry_cnt    = 0         # Retry count to connect to iCloud and retrieve iCloud devices
     reinitialize_icloud_devices_flag= False     # Set when no devices are tracked and iC3 needs to automatically restart
     reinitialize_icloud_devices_cnt = 0
 
@@ -265,12 +305,14 @@ class GlobalVariables(object):
     conf_data         = {}
     conf_tracking     = {}
     conf_devices      = []
+    conf_apple_accounts = []
     conf_general      = {}
     conf_sensors      = {}
     conf_devicenames  = []
-    conf_famshr_devicenames = []
+    conf_icloud_dnames = []
+    conf_startup_errors_by_devicename = {}        # device config apple acct & mobapp devicename errors
     conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter
-    conf_famshr_device_cnt  = 0                   # Number of devices with FamShr tracking set up
+    conf_icloud_device_cnt  = 0                   # Number of devices with iCloud tracking set up
     conf_fmf_device_cnt     = 0                   # Number of devices with FmF tracking set up
     conf_mobapp_device_cnt  = 0                   # Number of devices with Mobile App  tracking set up
 
@@ -281,14 +323,16 @@ class GlobalVariables(object):
     area_id_personal_device     = None
 
     # restore_state file
-    restore_state_file_data = {}
-    restore_state_profile   = {}
-    restore_state_devices   = {}
+    restore_state_commit_time = 0               # Set a callback timmer to commit te changes to the restore_state file
+    restore_state_commit_cnt  = 0               # Set a callback timmer to commit te changes to the restore_state file
+    restore_state_file_data   = {}
+    restore_state_profile     = {}
+    restore_state_devices     = {}
 
     # This stores the type of configuration parameter change done in the config_flow module
     # It indicates the type of change and if a restart is required to load device or sensor changes.
     # Items in the set are 'tracking', 'devices', 'profile', 'sensors', 'general', 'restart'
-    config_flow_updated_parms = {''}
+    config_parms_update_control     = []
 
     distance_method_waze_flag       = True
     icloud_force_update_flag        = False
@@ -312,7 +356,6 @@ class GlobalVariables(object):
     display_gps_lat_long_flag       = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]
     center_in_zone_flag             = DEFAULT_GENERAL_CONF[CONF_CENTER_IN_ZONE]
     display_zone_format             = DEFAULT_GENERAL_CONF[CONF_DISPLAY_ZONE_FORMAT]
-    display_gps_lat_long_flag       = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]
     # device_tracker_state_format     = DEFAULT_GENERAL_CONF[CONF_DEVICE_TRACKER_STATE_FORMAT]
     # if device_tracker_state_format == 'display_as': device_tracker_state_format = display_zone_format
 
@@ -351,42 +394,31 @@ class GlobalVariables(object):
     # Used to reset Gb.is_data_source after pyicloud/icloud account successful reset
 
     # Specifed in configuration file (set in config_flow icloud credentials screen)
-    conf_data_source_FAMSHR   = True
-    conf_data_source_FMF      = False
-    conf_data_source_MOBAPP   = True
-    conf_data_source_ICLOUD   = conf_data_source_FAMSHR or conf_data_source_FMF
+    conf_data_source_ICLOUD   = False
+    conf_data_source_MOBAPP   = False
+    conf_data_source_ICLOUD   = False
 
     # A trackable device uses this data source (set in start_ic3.set trackable_devices)
-    used_data_source_FAMSHR  = False
-    used_data_source_FMF     = False
+    used_data_source_ICLOUD  = False
     used_data_source_MOBAPP  = False
-    mobapp_monitor_any_devices_false_flag = False
+    device_not_monitoring_mobapp = True             # At least one device does not monitor the mobapp
+    device_mobapp_verify_retry_cnt = 0
+    device_mobapp_verify_retry_needed = False   # A device that monitors the mobapp has not been verfied as
+                                                    # being set up in tme mobapp integration (mobapp_data_handler)
 
     # Primary data source being used that can be turned off if errors
-    primary_data_source_ICLOUD = conf_data_source_ICLOUD
-    primary_data_source        = ICLOUD if primary_data_source_ICLOUD else MOBAPP
+    use_data_source_ICLOUD     = False
+    use_data_source_MOBAPP     = False
+    primary_data_source        = None
 
     # iCloud account authorization variables
-    icloud_acct_error_cnt         = 0
-    authenticated_time            = 0
-    authentication_error_cnt      = 0
-    authentication_error_retry_secs = HIGH_INTEGER
-    pyicloud_refresh_time         = {}     # Last time Pyicloud was refreshed for the trk method
-    pyicloud_refresh_time[FMF]    = 0
-    pyicloud_refresh_time[FAMSHR] = 0
-
-    # Pyicloud counts, times and common variables
     force_icloud_update_flag     = False
-    pyicloud_auth_started_secs   = 0
-    pyicloud_authentication_cnt  = 0
-    pyicloud_location_update_cnt = 0
-    pyicloud_calls_time          = 0.0
     trusted_device               = None
     verification_code            = None
-    icloud_cookies_dir           = ''
-    icloud_cookies_file          = ''
-    fmf_device_verified_cnt      = 0
-    famshr_device_verified_cnt   = 0
+    icloud_cookie_directory      = ''
+    icloud_session_directory     = ''
+    icloud_cookie_file           = ''
+    icloud_device_verified_cnt   = 0
     mobapp_device_verified_cnt   = 0
     authentication_alert_displayed_flag = False
 

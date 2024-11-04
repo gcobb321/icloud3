@@ -9,7 +9,7 @@ from ..const            import ( HIGH_INTEGER, NOT_SET,
                                 STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
 from .common            import (instr,  )
 from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
-                                _trace, _traceha, )
+                                _evlog, _log, )
 from .time_util         import (secs_to_time)
 
 from homeassistant.helpers import entity_registry, device_registry
@@ -56,7 +56,7 @@ def get_state(entity_id):
     # When starting iCloud3, the device_tracker for the mobapp might
     # not have been set up yet. Catch the entity_id error here.
     except Exception as err:
-        log_exception(err)
+        #log_exception(err)
         state = NOT_SET
 
     return state
@@ -355,7 +355,7 @@ def trace_device_attributes(Device, description, fct_name, attrs):
             return
 
         attrs_in_attrs = {}
-        if description.find("iCloud") >= 0 or description.find("FamShr") >= 0:
+        if description.find("iCloud") >= 0:
             attrs_base_elements = TRACE_ICLOUD_ATTRS_BASE
             if LOCATION in attrs:
                 attrs_in_attrs  = attrs[LOCATION]
@@ -383,7 +383,7 @@ def trace_device_attributes(Device, description, fct_name, attrs):
         log_msg = (f"{description} Attrs-{trace_attrs}{trace_attrs_in_attrs}")
         log_debug_msg(Device.devicename, log_msg)
 
-        log_rawdata(f"FamShr iCloud Rawdata - <{Device.devicename}> {description}", attrs)
+        log_rawdata(f"iCloud Rawdata - <{Device.devicename}> {description}", attrs)
 
     except Exception as err:
         pass

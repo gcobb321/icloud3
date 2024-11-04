@@ -32,7 +32,7 @@ from .const             import (HOME, NOT_SET,
                                 NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
                                 )
 from .helpers.dist_util import (gps_distance_km, km_to_um,)
-from .helpers.messaging import (log_exception, post_internal_error, _trace, _traceha, )
+from .helpers.messaging import (log_exception, post_internal_error, _evlog, _log, )
 
 import homeassistant.util.dt as dt_util
 import traceback
@@ -76,13 +76,13 @@ class iCloud3_DeviceFmZone():
             self.next_update_secs        = 0
             self.next_update_devicenames = ''
             self.waze_time               = 0
-            self.waze_dist               = 0
-            self.calc_dist               = 0
-            self.zone_dist               = 0
+            self.waze_dist_km            = 0
+            self.calc_dist_km            = 0
+            self.zone_dist_km            = 0
             self.zone_dist_m             = 0
             self.zone_center_dist        = 0
             self.waze_results            = None
-            self.home_dist               = gps_distance_km(Gb.HomeZone.gps, self.FromZone.gps)
+            self.home_dist_km            = gps_distance_km(Gb.HomeZone.gps, self.FromZone.gps)
             self.max_dist_km             = 0
 
             self.sensor_prefix       = (f"sensor.{self.devicename}_") \
@@ -139,7 +139,7 @@ class iCloud3_DeviceFmZone():
 #--------------------------------------------------------------------
     @property
     def zone_distance_str(self):
-        return ('' if self.zone_dist == 0 else (f"{km_to_um(self.zone_dist)}"))
+        return ('' if self.zone_dist_km == 0 else (f"{km_to_um(self.zone_dist_km)}"))
 
     @property
     def distance_km(self):

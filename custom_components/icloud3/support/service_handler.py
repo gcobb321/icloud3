@@ -27,7 +27,7 @@ from ..helpers.messaging    import (post_event, post_error_msg, post_monitor_msg
                                     post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                     more_info,
                                     log_info_msg, log_debug_msg, log_exception,
-                                    _trace, _traceha, )
+                                    _evlog, _log, )
 from ..helpers.time_util    import (secs_to_time, time_str_to_secs, datetime_now, secs_since,
                                     time_now_secs, time_now, )
 
@@ -85,7 +85,7 @@ ACTION_FNAME_TO_ACTION = {
                     'Restart iCloud3': 'restart',
                     'Pause Tracking': 'pause',
                     'Resume Tracking': 'resume',
-                    'Locate Device(s) using iCloud FamShr': 'locate',
+                    'Locate Device(s) using iCloud iCloud': 'locate',
                     'Send Locate Request to iOS App': 'locate iosapp',
                     'Send Locate Request to Mobile App': 'locate mobapp',
                     'Send Locate Request to Mobile App': 'locate mobileapp'
@@ -159,9 +159,9 @@ def process_lost_device_alert_service_request(call):
             result_msg = (  f"Required field missing, device_name-{devicename}, "
                             f"number-{number}, message-{message}")
 
-        elif (Device.PyiCloud_RawData_famshr
-                and Device.PyiCloud_RawData_famshr.device_data
-                and Device.PyiCloud_RawData_famshr.device_data.get(ICLOUD_LOST_MODE_CAPABLE, False)):
+        elif (Device.PyiCloud_RawData_icloud
+                and Device.PyiCloud_RawData_icloud.device_data
+                and Device.PyiCloud_RawData_icloud.device_data.get(ICLOUD_LOST_MODE_CAPABLE, False)):
 
             lost_device_alert_service_handler(devicename, number, message)
 
@@ -257,7 +257,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
     - pause-resume      - same as above but toggles between pause and resume
     - reset             - reset everything and rescans all of the devices
     - location          - request location update from mobile app
-    - locate x mins     - locate in x minutes from FamShr or FmF
+    - locate x mins     - locate in x minutes from iCloud
     - locate iosapp     - request location update from ios app
     - locate mobapp     - request location update from mobile app
     - locate mobile     - request location update from mobile app
@@ -381,7 +381,11 @@ def _handle_global_action(global_action, action_option):
 
     elif global_action == CMD_RESET_PYICLOUD_SESSION:
         # This will be handled in the 5-second ic3 loop
-        Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
+        # Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
+        post_event(f"{EVLOG_ERROR}The `Action > Request Apple Verification Code` "
+                       f"is no longer available. This must be done using the "
+                       f"`Configuration > Enter/Request An Apple Account Verification "
+                       f"Code` screen")
         return
 
     elif global_action == CMD_LOG_LEVEL:
@@ -389,14 +393,15 @@ def _handle_global_action(global_action, action_option):
         return
 
     elif global_action == CMD_WAZEHIST_MAINTENANCE:
-        event_msg = "Waze History > Recalculate Route Time/Distance "
+        event_msg = f"{EVLOG_ALERT}Waze History > Recalculate Route Time/Dist. "
         if Gb.wazehist_recalculate_time_dist_flag:
             event_msg += "Starting Immediately"
             post_event(event_msg)
             Gb.WazeHist.wazehist_recalculate_time_dist_all_zones()
         else:
             Gb.wazehist_recalculate_time_dist_flag = True
-            event_msg += "Scheduled to run tonight at Midnight"
+            event_msg+=(f"Scheduled to run tonight at Midnight. "
+                        "SELECT AGAIN TO RUN IMMEDIATELY")
             post_event(event_msg)
 
     elif global_action == CMD_WAZEHIST_TRACK:
@@ -478,15 +483,15 @@ def _handle_action_device_locate(Device, action_option):
         else:
             post_event(Device, "Mobile App Location Tracking is not available")
 
-    if (Gb.primary_data_source_ICLOUD is False
-            or (Device.device_id_famshr is None and Device.device_id_fmf is None)
+    if (Gb.use_data_source_ICLOUD is False
+            or (Device.icloud_device_id is None)
             or Device.is_data_source_ICLOUD is False):
         post_event(Device, "iCloud Location Tracking is not available")
         return
 
-    elif Device.is_offline:
-        post_event(Device, "The device is offline, iCloud Location Tracking is not available")
-        return
+    # elif Device.is_offline:
+    #     post_event(Device, "The device is offline, iCloud Location Tracking is not available")
+    #     return
 
     try:
         interval_secs = time_str_to_secs(action_option)
@@ -534,24 +539,26 @@ def issue_ha_notification():
 #--------------------------------------------------------------------
 def find_iphone_alert_service_handler(devicename):
     """
-    Call the lost iPhone function if using th e FamShr tracking method.
+    Call the lost iPhone function if using th e iCloud tracking method.
     Otherwise, send a notification to the Mobile App
     """
     Device = Gb.Devices_by_devicename[devicename]
-    if Device.is_data_source_FAMSHR:
-        device_id = Device.device_id_famshr
-        if device_id and Gb.PyiCloud and Gb.PyiCloud.FamilySharing:
-            Gb.PyiCloud.FamilySharing.play_sound(device_id, subject="Find My iPhone Alert")
+    if Device.is_data_source_ICLOUD:
+        device_id = Device.icloud_device_id
+        if device_id and Device.PyiCloud and Device.PyiCloud.DeviceSvc:
+            Device.PyiCloud.DeviceSvc.play_sound(device_id, subject="Find My iPhone Alert")
+        # if device_id and Gb.PyiCloud and Gb.PyiCloud.DeviceSvc:
+        #     Gb.PyiCloud.DeviceSvc.play_sound(device_id, subject="Find My iPhone Alert")
 
             post_event(devicename, "iCloud Find My iPhone Alert sent")
             return
 
-    if Device.conf_famshr_device_id and Device.verified is False:
-        alert_msg =(f"{EVLOG_ALERT}ALERT CAN NOT BE SENT - The FamShr device has been specified "
+    if Device.conf_icloud_device_id and Device.verified is False:
+        alert_msg =(f"{EVLOG_ALERT}ALERT CAN NOT BE SENT - The iCloud device has been specified "
                     f"but it was not verified during startup and is not available."
-                    f"{more_info('famshr_find_my_phone_alert_error')}")
+                    f"{more_info('icloud_dind_my_phone_alert_error')}")
     else:
-        alert_msg =("The iCloud FamShr Device was not specified or is not available. "
+        alert_msg =("The iCloud iCloud Device was not specified or is not available. "
                     "The alert will be sent using the Mobile App")
     post_event(devicename, alert_msg)
 
@@ -571,17 +578,19 @@ def find_iphone_alert_service_handler(devicename):
 #--------------------------------------------------------------------
 def lost_device_alert_service_handler(devicename, number, message=None):
     """
-    Call the lost iPhone function if using the FamShr tracking method.
+    Call the lost iPhone function if using the iCloud tracking method.
     Otherwise, send a notification to the Mobile App
     """
     if message is None:
         message = 'This Phone has been lost. Please call this number to report it found.'
 
     Device = Gb.Devices_by_devicename[devicename]
-    if Device.is_data_source_FAMSHR:
-        device_id = Device.device_id_famshr
-        if device_id and Gb.PyiCloud and Gb.PyiCloud.FamilySharing:
-            Gb.PyiCloud.FamilySharing.lost_device(device_id, number=number, message=message)
+    if Device.is_data_source_ICLOUD:
+        device_id = Device.icloud_device_id
+        if device_id and Device.PyiCloud and Device.PyiCloud.DeviceSvc:
+            Device.PyiCloud.DeviceSvc.lost_device(device_id, number=number, message=message)
+        # if device_id and Gb.PyiCloud and Gb.PyiCloud.DeviceSvc:
+        #     Gb.PyiCloud.DeviceSvc.lost_device(device_id, number=number, message=message)
 
             post_event(devicename, "iCloud Lost Device Alert sent")
             return

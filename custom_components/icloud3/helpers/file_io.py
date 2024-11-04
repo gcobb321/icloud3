@@ -2,14 +2,14 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (CRLF_DOT,  )
 from .common                import (instr, )
-from .messaging             import (log_exception, _trace, _traceha, )
+from .messaging             import (log_exception, _evlog, _log, )
 
 from collections            import OrderedDict
 from homeassistant.util     import json as json_util
 from homeassistant.helpers  import json as json_helpers
 import os
+import shutil
 import asyncio
-import aiofiles.ospath
 import logging
 _LOGGER = logging.getLogger(__name__)
 #_LOGGER = logging.getLogger(f"icloud3")
@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 #            JSON FILE UTILITIES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_load_json_file(filename):
+async def async_read_json_file(filename):
 
     if file_exists(filename) is False:
         return {}
@@ -38,7 +38,7 @@ async def async_load_json_file(filename):
     return {}
 
 #--------------------------------------------------------------------
-def load_json_file(filename):
+def read_json_file(filename):
 
     if file_exists(filename) is False:
         return {}
@@ -81,23 +81,10 @@ async def async_save_json_file(filename, data):
 
 #--------------------------------------------------------------------
 def save_json_file(filename, data):
-
     try:
         # The HA event loop has not been set up yet during initialization
-        if Gb.initial_icloud3_loading_flag:
-            json_helpers.save_json(filename, data)
-        else:
-
-            Gb.hass.async_add_executor_job(
-                            json_helpers.save_json,
-                            filename,
-                            data)
+        json_helpers.save_json(filename, data)
         return True
-
-    except RuntimeError as err:
-        if err == 'no running event loop':
-            json_helpers.save_json(filename, data)
-            return True
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -114,107 +101,128 @@ def save_json_file(filename, data):
 
 def file_exists(filename):
     return _os(os.path.isfile, filename)
-    # return _os(aiofiles.ospath.isfile, filename)
-def remove_file(filename):
-    return _os(os.remove, filename)
-    # return _os(aiofiles.ospath.remove, filename)
 
-def directory_exists(dir_name):
-    return _os(os.path.exists, dir_name)
-    # return _os(aiofiles.ospath.exists, dir_name)
-def make_directory(dir_name):
-    if directory_exists(dir_name):
-        return True
-    return _os(os.makedirs, dir_name)
-    # return _os(aiofiles.ospath.makedirs, dir_name)
+def delete_file(filename):
+    try:
+        return _os(os.remove, filename)
+    except FileNotFoundError:
+        pass
+    except Exception as err:
+        log_exception(err)
+
+def copy_file(from_dir_filename, to_directory):
+    shutil.copy(from_dir_filename, to_directory)
+
+def move_files(from_dir_filename, to_directory):
+    shutil.move(from_dir_filename, to_directory)
+
+def file_size(filename):
+    try:
+        return _os(os.path.getsize, filename)
+    except FileNotFoundError:
+        pass
+    except Exception as err:
+        log_exception(err)
+    return 0
 
 def extract_filename(directory_filename):
     return _os(os.path.basename, directory_filename)
-    # return _os(aiofiles.ospath.basename, directory_filename)
+
+
+def directory_exists(dir_name):
+    return _os(os.path.exists, dir_name)
+
+def make_directory(dir_name):
+    if directory_exists(dir_name) is False:
+        _os(os.makedirs, dir_name)
 
 #--------------------------------------------------------------------
-def _os(os_module, filename, on_error=None):
+def rename_file(from_filename, to_filename):
+    if file_exists(from_filename) is False:
+        return
+    if file_exists(to_filename):
+        delete_file(to_filename)
+
+    os.rename(from_filename, to_filename)
+
+#--------------------------------------------------------------------
+def _os(os_module, filename):
+    results = os_module(filename)
+    return results
+
+#--------------------------------------------------------------------
+def is_event_loop_running():
     try:
-        # if Gb.ha_started:
-        if True is False:
-            results = asyncio.run_coroutine_threadsafe(
-                    async_os(os_module, filename), Gb.hass.loop).result()
-        else:
-            results = os_module(filename)
-
-        return results
-
-    except RuntimeError as err:
-        if err == 'no running event loop':
-            return os_module(filename)
-
+        asyncio.get_running_loop()
+        return True
+    except RuntimeError:
+        return False
     except Exception as err:
         log_exception(err)
-        pass
+    return False
 
-    return on_error or False
+def is_event_loop_running2():
+    if asyncio.get_event_loop_policy()._local._loop:
+        return True
+    return False
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#            PYTHON ASYNC OS. FILE I/O AND OTHER UTILITIES
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+async def async_file_exists(filename):
+    return await Gb.hass.async_add_executor_job(os.path.isfile, filename)
+
+async def async_delete_file(filename):
+    try:
+        return await Gb.hass.async_add_executor_job(os.remove, filename)
+    except FileNotFoundError:
+        pass
+    except Exception as err:
+        log_exception(err)
+
+async def async_copy_file(from_dir_filename, to_directory):
+    return await Gb.hass.async_add_executor_job(shutil.copy, from_dir_filename, to_directory)
+
+async def async_file_size(filename):
+    return await Gb.hass.async_add_executor_job(os.path.getsize, filename)
+
+async def async_extract_filename(directory_filename):
+    return await Gb.hass.async_add_executor_job(os.path.basename, directory_filename)
+
+async def async_rename_file(from_filename, to_filename):
+    if await async_file_exists(from_filename) is False:
+        return
+    if await async_file_exists(to_filename):
+        await async_delete_file(to_filename)
+    return await Gb.hass.async_add_executor_job(os.rename, from_filename, to_filename)
+
+
+async def async_directory_exists(dir_name):
+    return await Gb.hass.async_add_executor_job(os.path.exists, dir_name)
+
+async def async_make_directory(dir_name):
+    _directory_exists = await async_directory_exists(dir_name)
+    if _directory_exists is False:
+        exist_ok = True
+        await Gb.hass.async_add_executor_job(os.makedirs, dir_name, exist_ok)
+
+async def async_delete_directory(dir_name):
+    try:
+        return await Gb.hass.async_add_executor_job(os.rmdir, dir_name)
+    except FileNotFoundError:
+        pass
+    except Exception as err:
+        log_exception(err)
+
 #...................................................................
 async def async_os(os_module, filename):
     return await Gb.hass.async_add_executor_job(os_module, filename)
 
 #--------------------------------------------------------------------
-def rename_file(from_filename, to_filename):
-    try:
-        if file_exists(from_filename) is False:
-            return False
-        if file_exists(to_filename):
-            remove_file(to_filename)
-
-        if Gb.initial_icloud3_loading_flag:
-            os.rename(from_filename, to_filename)
-            return True
-        else:
-            asyncio.run_coroutine_threadsafe(
-                    async_rename_file(from_filename, to_filename), Gb.hass.loop)
-        return True
-
-    except RuntimeError as err:
-        if err == 'no running event loop':
-            os.rename(from_filename, to_filename)
-            return True
-
-    except Exception as err:
-        log_exception(err)
-        pass
-
-    return False
-#...................................................................
-async def async_rename_file(from_filename, to_filename):
-    return await Gb.hass.async_add_executor_job(os.rename, from_filename, to_filename)
-
-#--------------------------------------------------------------------
-# def x_extract_filename(directory_filename):
-#     try:
-#         if file_exists(directory_filename) is False:
-#             return '???.???'
-#         elif Gb.initial_icloud3_loading_flag:
-#             filename = os.path.basename(directory_filename)
-#         else:
-#             filename = asyncio.run_coroutine_threadsafe(
-#                     async_extract_filename(directory_filename), Gb.hass.loop).result()
-#         return filename
-
-#     except RuntimeError as err:
-#         if err == 'no running event loop':
-#             filename = os.path.basename(directory_filename)
-#             return filename
-
-#     except Exception as err:
-#         log_exception(err)
-#         pass
-
-#     return '???.???'
-# #...................................................................
-# async def async_extract_filename(directory_filename):
-#     return await Gb.hass.async_add_executor_job(os.path.basename, directory_filename)
-
-#--------------------------------------------------------------------
-def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_file=False):
+async def async_delete_file_with_msg(file_desc, directory, filename, backup_extn=None, delete_old_sv_file=False):
     '''
     Delete a file.
     Parameters:
@@ -233,21 +241,21 @@ def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_
             directory_filename_bu = (f"{directory}/{filename_bu}")
 
             if file_exists(directory_filename_bu):
-                remove_file(directory_filename_bu)
+                delete_file(directory_filename_bu)
                 file_msg += (f"{CRLF_DOT}Deleted backup file (...{filename_bu})")
 
             rename_file(directory_filename, directory_filename_bu)
             file_msg += (f"{CRLF_DOT}Rename current file to ...{filename}.{backup_extn})")
 
         if file_exists(directory_filename):
-            remove_file(directory_filename)
+            delete_file(directory_filename)
             file_msg += (f"{CRLF_DOT}Deleted file (...{filename})")
 
         if delete_old_sv_file:
             filename = f"{filename.split('.')[0]}.sv"
             directory_filename = f"{directory_filename.split('.')[0]}.sv"
             if file_exists(directory_filename):
-                remove_file(directory_filename)
+                delete_file(directory_filename)
                 file_msg += (f"{CRLF_DOT}Deleted file (...{filename})")
 
         if file_msg != "":
@@ -263,23 +271,35 @@ def delete_file(file_desc, directory, filename, backup_extn=None, delete_old_sv_
 
 
 #--------------------------------------------------------------------
-def get_file_list(start_dir=None,  file_extn_filter=[]):
-    return get_file_or_directory_list(  directory_list=False,
+def get_directory_filename_list(start_dir=None,  file_extn_filter=[]):
+    return get_file_or_directory_list(  list_type=0,
                                         start_dir=start_dir,
                                         file_extn_filter=file_extn_filter)
 
 def get_directory_list(start_dir=None):
-    return get_file_or_directory_list(  directory_list=True,
+    return get_file_or_directory_list(  list_type=1,
                                         start_dir=start_dir,
                                         file_extn_filter=[])
 
+def get_file_list(list_type=None, start_dir=None,  file_extn_filter=[]):
+    return get_file_or_directory_list(  list_type,
+                                        start_dir=start_dir,
+                                        file_extn_filter=file_extn_filter)
+
+def get_filename_list(start_dir=None,  file_extn_filter=[]):
+    return get_file_or_directory_list(  list_type=2,
+                                        start_dir=start_dir,
+                                        file_extn_filter=file_extn_filter)
+
 #--------------------------------------------------------------------
-def get_file_or_directory_list(directory_list=False, start_dir=None,  file_extn_filter=[]):
+def get_file_or_directory_list(list_type=None, start_dir=None,  file_extn_filter=[]):
     '''
     Return a list of directories or files in a given path
 
     Parameters:
-        - directory_list = True (List of directories), False (List of files)
+        - list_type      = 0 - Directory/filename list (Default)
+        - list_type      = 1 - Directory/subdirectory list
+        - list_type      = 2 - Filename list
         - start_dir      = Top level directory to start searching from ('www')
         -file_extn_filter = List of files witn extensions to include (['png' 'jpg'], [])
 
@@ -291,38 +311,49 @@ def get_file_or_directory_list(directory_list=False, start_dir=None,  file_extn_
                                                     start_dir,
                                                     file_filter)
     '''
-
+    if list_type is None: list_type = 0
+    back_slash       = '\\'
     directory_filter      = ['/.', 'deleted', '/x-']
     filename_or_directory_list = []
     path_config_base = f"{Gb.ha_config_directory}/"
-    back_slash       = '\\'
+    start_dir = start_dir.replace(path_config_base, '')
     if start_dir is None: start_dir = ''
 
-    for path, dirs, files in os.walk(f"{path_config_base}{start_dir}"):
-        www_sub_directory = path.replace(path_config_base, '')
-        in_filter_cnt = len([filter for filter in directory_filter if instr(www_sub_directory, filter)])
-        if in_filter_cnt > 0 or www_sub_directory.count('/') > 4 or www_sub_directory.count(back_slash):
-            continue
-
-        if directory_list:
-            filename_or_directory_list.append(www_sub_directory)
-            continue
-
-        # Filter unwanted directories - std dirs are www/icloud3, www/cummunity, www/images
-        if Gb.picture_www_dirs:
-            valid_dir = [dir for dir in Gb.picture_www_dirs if www_sub_directory.startswith(dir)]
-            if valid_dir == []:
+    try:
+        for path, dirs, files in os.walk(f"{path_config_base}{start_dir}"):
+            sub_directory = path.replace(path_config_base, '')
+            in_filter_cnt = len([filter for filter in directory_filter if instr(sub_directory, filter)])
+            if in_filter_cnt > 0 or sub_directory.count('/') > 4 or sub_directory.count(back_slash):
                 continue
 
-        dir_filenames = [f"{www_sub_directory}/{file}"
-                                for file in files
-                                if (file_extn_filter
-                                    and file.rsplit('.', 1)[-1] in file_extn_filter)]
+            # list_type=1 - Directory/subdirectory list
+            if list_type == 1:
+                filename_or_directory_list.append(sub_directory)
+                continue
 
-        filename_or_directory_list.extend(dir_filenames[:25])
-        if len(dir_filenames) > 25:
-            filename_or_directory_list.append(
-                        f"⛔ {www_sub_directory} > The first 25 files out of "
-                        f"{len(dir_filenames)} are listed")
+            # Filter unwanted directories - std dirs are www/icloud3, www/community, www/images
+            if start_dir.endswith('/event_log_card/'):
+                pass
+            elif Gb.picture_www_dirs:
+                valid_dir = [dir for dir in Gb.picture_www_dirs if sub_directory.startswith(dir)]
+                if valid_dir == []:
+                    continue
 
-    return filename_or_directory_list
+            # list_type=2 - filename only, does not contain directory name
+            dir_name =  '' if list_type == 2 else f"{sub_directory}/"
+            dir_name = dir_name.replace('//', '/')
+            dir_filenames = [f"{dir_name}{file}"
+                                    for file in files
+                                    if (file_extn_filter
+                                        and file.rsplit('.', 1)[-1] in file_extn_filter)]
+
+            filename_or_directory_list.extend(dir_filenames[:25])
+            if len(dir_filenames) > 25:
+                filename_or_directory_list.append(
+                            f"⛔ {sub_directory} > The first 25 files out of "
+                            f"{len(dir_filenames)} are listed")
+
+        return filename_or_directory_list
+
+    except Exception as err:
+        Gb.HALogger.exception(err)

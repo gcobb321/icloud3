@@ -22,7 +22,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version = "3.0.17"
+        const version = "3.1"
         const cardTitle = "iCloud3 v3 - Event Log"
 
         const root = this.shadowRoot
@@ -170,14 +170,14 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionGenResume)
 
         var btnActionGenLoc = document.createElement("option")
-        var btnActionGenLocTxt = document.createTextNode("Locate All Devices with iCloud FamShr")
+        var btnActionGenLocTxt = document.createTextNode("Locate All Devices using iCloud")
         btnActionGenLoc.setAttribute("value", "locate")
         btnActionGenLoc.classList.add("btnActionOption")
         btnActionGenLoc.appendChild(btnActionGenLocTxt)
         btnAction.appendChild(btnActionGenLoc)
 
         var btnActionGenMobRqst = document.createElement("option")
-        var btnActionGenMobRqstTxt = document.createTextNode("Send Locate Request to Mobile App")
+        var btnActionGenMobRqstTxt = document.createTextNode("Send Locate Requests to Mobile App")
         btnActionGenMobRqst.setAttribute("value", "location")
         btnActionGenMobRqst.classList.add("btnActionOption")
         btnActionGenMobRqst.appendChild(btnActionGenMobRqstTxt)
@@ -191,21 +191,21 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionDevGrp)
 
         var btnActionDevPause = document.createElement("option")
-        var btnActionDevPauseTxt = document.createTextNode("Pause Tracking This Device")
+        var btnActionDevPauseTxt = document.createTextNode("Pause Tracking this Device")
         btnActionDevPause.setAttribute("value", "dev-pause")
         btnActionDevPause.classList.add("btnActionOption")
         btnActionDevPause.appendChild(btnActionDevPauseTxt)
         btnAction.appendChild(btnActionDevPause)
 
         var btnActionDevResume = document.createElement("option")
-        var btnActionDevResumeTxt = document.createTextNode("Resume Tracking This Device")
+        var btnActionDevResumeTxt = document.createTextNode("Resume Tracking this Device")
         btnActionDevResume.setAttribute("value", "dev-resume")
         btnActionDevResume.classList.add("btnActionOption")
         btnActionDevResume.appendChild(btnActionDevResumeTxt)
         btnAction.appendChild(btnActionDevResume)
 
         var btnActionDevLoc = document.createElement("option")
-        var btnActionDevLocTxt = document.createTextNode("Locate This Device with iCloud FamShr")
+        var btnActionDevLocTxt = document.createTextNode("Locate this Device using iCloud")
         btnActionDevLoc.setAttribute("value", "dev-locate")
         btnActionDevLoc.classList.add("btnActionOption")
         btnActionDevLoc.appendChild(btnActionDevLocTxt)
@@ -219,14 +219,14 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionDevMobRqst)
 
         var btnActionDevFind = document.createElement("option")
-        var btnActionDevFindTxt = document.createTextNode("Send Find-My-iPhone Alert (FamShr)")
+        var btnActionDevFindTxt = document.createTextNode("Send Find-My-iPhone Alert to iCloud")
         btnActionDevFind.setAttribute("value", "dev-find-iphone-alert")
         btnActionDevFind.classList.add("btnActionOption")
         btnActionDevFind.appendChild(btnActionDevFindTxt)
         btnAction.appendChild(btnActionDevFind)
 
         // var btnActionDevLostLost = document.createElement("option")
-        // var btnActionDevLostLostTxt = document.createTextNode("Send Lost-Device Alert (FamShr)")
+        // var btnActionDevLostLostTxt = document.createTextNode("Send Lost-Device Alert to iCloud")
         // btnActionDevLostLost.setAttribute("value", "dev-lost-device-alert")
         // btnActionDevLostLost.classList.add("btnActionOption")
         // btnActionDevLostLost.appendChild(btnActionDevLostLostTxt)
@@ -292,13 +292,13 @@ class iCloud3EventLogCard extends HTMLElement {
         btnActionOptOC7.appendChild(btnActionOptOC7Txt)
         btnAction.appendChild(btnActionOptOC7)
 
-        var btnActionOptOC6 = document.createElement("option")
-        var btnActionOptOC6Txt = document.createTextNode("Request Apple ID Verification Code")
-        btnActionOptOC6.setAttribute("value", "reset_session")
-        btnActionOptOC6.setAttribute("id", "optResetPyicloud")
-        btnActionOptOC6.classList.add("btnActionOption")
-        btnActionOptOC6.appendChild(btnActionOptOC6Txt)
-        btnAction.appendChild(btnActionOptOC6)
+        // var btnActionOptOC6 = document.createElement("option")
+        // var btnActionOptOC6Txt = document.createTextNode("Request Apple ID Verification Code")
+        // btnActionOptOC6.setAttribute("value", "reset_session")
+        // btnActionOptOC6.setAttribute("id", "optResetPyicloud")
+        // btnActionOptOC6.classList.add("btnActionOption")
+        // btnActionOptOC6.appendChild(btnActionOptOC6Txt)
+        // btnAction.appendChild(btnActionOptOC6)
 
         var btnActionOptVer = document.createElement("optGroup")
         btnActionOptVer.setAttribute("label", "Version Information")
@@ -511,7 +511,7 @@ class iCloud3EventLogCard extends HTMLElement {
                                 background-color: rgba(var(--rgb-primary-color), 0.85);
                                 border-top: 1px solid rgba(108, 204, 249, .5);
                                 border-bottom: 1px solid rgba(108, 204, 249, .5);
-                                font-weight: 450;
+                                font-weight: 500;
                                 }
             .updateRecdHdrTime  {color: black;
                                 background-color: rgba(var(--rgb-primary-color), 0.85);
@@ -521,7 +521,7 @@ class iCloud3EventLogCard extends HTMLElement {
             .updateEdgeBar      {border-left: 2px solid var(--dark-primary-color);}
             .highlightBar       {color: white;
                                 background-color: green;
-                                font-weight: 450;
+                                font-weight: 500;
                                 border-top: 1px solid darkseagreen;
                                 border-bottom: 1px solid darkseagreen;
                                 }
@@ -529,7 +529,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
             .iC3StartingHdr     {color: white;
                                 background-color: chocolate;
-                                font-weight: 450;
+                                font-weight: 500;
                                 border-top: 1px solid chocolate;
                                 border-bottom: 1px solid chocolate;
                                 }
@@ -540,7 +540,7 @@ class iCloud3EventLogCard extends HTMLElement {
                                 }
             .stageRecdHdr       {color: white;
                                 background-color: peru;
-                                font-weight: 450;
+                                font-weight: 500;
                                 border-top: 1px solid peru;
                                 border-bottom: 1px solid peru;
                                 }
@@ -792,7 +792,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 /*visibility: visible;*/
                 font-family: Roboto,sans-serif;
                 font-size: 14px;
-                font-weight: bolder;
+                font-weight: 500;
                 color: var(--primary-text-color);
                 /*background-color: transparent;*/
                 background-color: rgba(var(--rgb-primary-text-color), 0.05);
@@ -842,7 +842,7 @@ class iCloud3EventLogCard extends HTMLElement {
             #btnAction:hover {border: 1px solid var(--primary-color);}
             .btnAction {
                 background: darkred;
-                font-weight: bolder;
+                font-weight: 500;
                 height: 24px;
                 width: 80px;
                 border-radius: 3px;
@@ -891,9 +891,9 @@ class iCloud3EventLogCard extends HTMLElement {
                 .title          {font-size: 18px;}
                 .btnBaseFormat  {margin: 0px 2px 4px 0px; padding: 1px 3px;)
                 .btnAction      {width: 45px; height: 22px;}
-                .updateRecd     {font-weight: 450;}
+                .updateRecd     {font-weight: 500;}
 
-                .ic3StartupMsg  {font-weight: 450;}
+                .ic3StartupMsg  {font-weight: 500;}
                 .tblEvlogBody tr:nth-child(even) {background-color: #EEF2F5;}
                 ::-webkit-scrollbar {width: 1px;}
                 ::-webkit-scrollbar-thumb {background: rgba(var(--rgb-accent-color), 0.7);}
@@ -903,9 +903,9 @@ class iCloud3EventLogCard extends HTMLElement {
             @media only screen
                 and (min-device-width : 768px)
                 and (max-device-width : 1024px) {
-                    .updateRecd  {font-weight: 450;}
+                    .updateRecd  {font-weight: 500;}
                     .updateEdgeBar {border-left-width: 2px;}
-                    .ic3StartupMsg {font-weight: 450;}
+                    .ic3StartupMsg {font-weight: 500;}
                     .tblEvlogBody tr:nth-child(even) {background-color: #EEF2F5;}
                     ::-webkit-scrollbar {width: 1px;}
                     ::-webkit-scrollbar-thumb {background: rgba(var(--rgb-accent-color), 0.7);}
@@ -1477,6 +1477,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     cancelEdgeBarFlag = true
                     classHeaderBar = ' highlightBar'
                     classEdgeBar   = ' highlightEdgeBar'
+                    classTime      = ' highlightBar'
 
                 // ^g^ = iCloud3 Stage # Header
                 } else if (tText.startsWith("^g^")) {
@@ -1582,6 +1583,11 @@ class iCloud3EventLogCard extends HTMLElement {
                     classTime = classTime.replace("inprocessResults", "")
                     classTime += classRecdType + classHeaderBar
                     classTime += ' colTimeTextRow'
+
+                    if (classHeaderBar.indexOf("highlightBar") > 0) {
+                        classTime = classTime.replace("normalText", "")
+                        classTime = classTime.replace("colTimeTextRow", "")
+                    }
 
                     if (classTime.indexOf("Hdr") >= 0) {
                         classText += ' noLeftEdge'
@@ -2065,13 +2071,12 @@ class iCloud3EventLogCard extends HTMLElement {
 
         } else if (buttonId == "btnAction") {
             var versionMsg = ""
-            // if (iC3Version   == null) {iC3Version = '?.?' }
-            // versionMsg += "iCloud3 v" + iC3Version +", "
-
+            if (iC3Version   == null) {iC3Version = '?.?' }
             if (EvLogLatestVersion == null) {EvLogLatestVersion = '?.?'}
-            versionMsg += "EventLog Latest v" + EvLogLatestVersion
+            versionMsg += "iCloud3 v" + iC3Version +", "
+            versionMsg += "EvLog v" + aboutVersion.innerText
             if (EvLogLatestVersion != aboutVersion.innerText) {
-                versionMsg +=  ", Running v" + aboutVersion.innerText
+                versionMsg += " (Avail v" + EvLogLatestVersion + ')'
             }
 
             this._displayInfoText(versionMsg)

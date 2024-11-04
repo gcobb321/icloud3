@@ -41,7 +41,7 @@ from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
 from .helpers.common    import (instr, round_to_zero, isnumber, )
 from .helpers.messaging import (post_event, log_info_msg, log_debug_msg, log_error_msg,
                                 log_exception, log_info_msg_HA, log_exception_HA,
-                                _trace, _traceha, )
+                                _evlog, _log, )
 from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, format_timer,
                                 format_mins_timer, time_now_secs, datetime_now,
                                 secs_to_datetime, secs_to_datetime,
@@ -76,10 +76,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     try:
         if Gb.conf_file_data == {}:
             start_ic3.initialize_directory_filenames()
-            start_ic3.load_storage_icloud3_configuration_file()
+            # start_ic3.load_storage_icloud3_configuration_file()
+            await config_file.async_load_storage_icloud3_configuration_file()
+
 
         NewSensors = []
         Gb.EvLogSensor = Sensor_EventLog(SENSOR_EVENT_LOG_NAME)
+        # Gb.EvLogSensor = Sensor_EventLog_ExcludeFromRecorder(SENSOR_EVENT_LOG_NAME)
         if Gb.EvLogSensor:
             NewSensors.append(Gb.EvLogSensor)
         else:
@@ -479,8 +482,6 @@ class DeviceSensor_Base():
         '''
         extra_attrs = OrderedDict()
         extra_attrs['integration'] = ICLOUD3
-        # extra_attrs['sensor_name'] = sensor
-        # extra_attrs['type'] = self._get_sensor_definition(sensor, SENSOR_TYPE).split(',')[0]
 
         update_time = secs_to_datetime(time_now_secs())
         if self.Device and self.Device.away_time_zone_offset != 0:
@@ -1131,11 +1132,14 @@ class Sensor_Distance(DeviceSensor_Base, SensorEntity):
     #     '''
     #     try:
     #         if isnumber(number) is False:
+    #             _evlog(f"zz {self.sensor} {number=} {um=}")
     #             return number
 
     #         um = um if um else Gb.um
     #         precision = 5 if um in ['km', 'mi'] else 2 if um in ['m', 'ft'] else 4
+    #         _evlog(f"aa {self.sensor} {number=} {um=} {precision=}")
     #         number = round(float(number), precision)
+    #         _evlog(f"bb {self.sensor} {number=} {um=} {precision=}")
 
     #     except Exception as err:
     #         pass

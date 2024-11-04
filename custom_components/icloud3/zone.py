@@ -25,7 +25,7 @@ from .helpers           import entity_io
 from .helpers.common    import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
 from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
-                                log_exception, log_rawdata,_trace, _traceha, )
+                                log_exception, log_rawdata,_evlog, _log, )
 from .helpers.time_util import (time_now_secs, )
 from .helpers.dist_util import (gps_distance_m, gps_distance_km, )
 
@@ -60,11 +60,11 @@ class iCloud3_Zone(object):
         self.initialize_zone_name(self.zone_data)
         self.setup_zone_display_name()
 
-        Gb.Zones = list_add(Gb.Zones, self)
+        list_add(Gb.Zones, self)
         Gb.Zones_by_zone[zone] = self
 
         if self.is_ha_zone:
-            Gb.HAZones = list_add(Gb.HAZones, self)
+            list_add(Gb.HAZones, self)
             Gb.HAZones_by_zone[self.zone] = self
 
         if zone_data:

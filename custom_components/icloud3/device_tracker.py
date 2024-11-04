@@ -1,14 +1,14 @@
 """Support for tracking for iCloud devices."""
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (DOMAIN, ICLOUD3,
+from .const             import (DOMAIN, ICLOUD3, ICLOUD3_VERSION_MSG,
                                 DISTANCE_TO_DEVICES,
                                 NOT_SET, HOME,
                                 DEVICE_TYPE_ICONS,
                                 BLANK_SENSOR_FIELD, DEVICE_TRACKER_STATE,
                                 INACTIVE_DEVICE,
                                 NAME, FNAME, PICTURE, ALERT,
-                                LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
+                                DEVICE_TRACKER, LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
                                 ZONE, ZONE_DATETIME,  LAST_ZONE, FROM_ZONE, ZONE_FNAME,
                                 BATTERY, BATTERY_LEVEL,
                                 MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
@@ -31,7 +31,7 @@ from .helpers.common    import (instr, isnumber, is_statzone, zone_dname)
 from .helpers.messaging import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 log_exception_HA, log_info_msg_HA,
-                                _trace, _traceha, )
+                                _evlog, _log, )
 from .helpers.time_util import (adjust_time_hour_values, secs_to_datetime)
 from .support           import start_ic3
 from .support           import config_file
@@ -65,7 +65,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     try:
         if Gb.conf_file_data == {}:
             start_ic3.initialize_directory_filenames()
-            config_file.load_storage_icloud3_configuration_file()
+            # config_file.load_storage_icloud3_configuration_file()
+            await config_file.async_load_storage_icloud3_configuration_file()
 
         try:
             Gb.conf_devicenames = [conf_device[CONF_IC3_DEVICENAME]
@@ -97,12 +98,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         # Set the total count of the device_trackers that will be created
         if Gb.device_trackers_cnt == 0:
             Gb.device_trackers_cnt = len(NewDeviceTrackers)
-            log_info_msg(f'Device Tracker Entities: {Gb.device_trackers_cnt}')
+            post_event(f"Device Tracker Entities > Created-{Gb.device_trackers_cnt}")
 
         if NewDeviceTrackers != []:
             async_add_entities(NewDeviceTrackers, True)
+
             _get_ha_device_ids_from_device_registry(hass)
-            log_info_msg_HA(f"iCloud3 Device Tracker entities: {Gb.device_trackers_cnt}")
+            log_info_msg_HA(f"{ICLOUD3} Device Tracker entities: {Gb.device_trackers_cnt}")
 
         Devices_no_area = [Device   for Device in Gb.DeviceTrackers_by_devicename.values() \
                                     if Device.ha_area_id in [None, 'unknown', '']]
@@ -179,9 +181,9 @@ def _get_ha_device_id_from_device_entry(hass, device, device_entry):
         id='9045bf3f0363c28957353cf2c47163d0', orphaned_timestamp=None
     '''
     try:
-        if device_entry.name in [DOMAIN, ICLOUD3, 'iCloud3 Integration']:
-            Gb.ha_device_id_by_devicename[ICLOUD3] = device_entry.id
-            Gb.ha_area_id_by_devicename[ICLOUD3]   = device_entry.area_id
+        if device_entry.name in [DOMAIN, DOMAIN, f'{ICLOUD3} Integration']:
+            Gb.ha_device_id_by_devicename[DOMAIN] = device_entry.id
+            Gb.ha_area_id_by_devicename[DOMAIN]   = device_entry.area_id
             return
     except:
         pass
@@ -213,6 +215,9 @@ class iCloud3_DeviceTracker(TrackerEntity):
             self.devicename    = devicename
             self.Device        = None   # Filled in after Device object has been created in start_ic3
             self.entity_id     = f"device_tracker.{devicename}"
+            # If the DOMAIN is not 'icloud3' ('iCloud3_dev'), add it to the device_tracker
+            # entity name to make it unique
+            if DOMAIN != 'icloud3': self.entity_id += f"_{DOMAIN}"
             self.ha_device_id  = Gb.ha_device_id_by_devicename.get(self.devicename)
             self.ha_area_id    = Gb.ha_area_id_by_devicename.get(self.devicename)
 
@@ -297,19 +302,12 @@ class iCloud3_DeviceTracker(TrackerEntity):
     @property
     def latitude(self):
         """Return latitude value of the device."""
-        # return self.Device.sensors[LATITUDE]
         return self._get_sensor_value(LATITUDE, number=True)
 
     @property
     def longitude(self):
         """Return longitude value of the device."""
-        # return self.Device.sensors[LONGITUDE]
         return self._get_sensor_value(LONGITUDE, number=True)
-
-    # @property
-    # def gps(self):
-    #     """Return gps value of the device."""
-    #     return (self.latitude, self.longitude)
 
     @property
     def battery_level(self):
@@ -357,18 +355,33 @@ class iCloud3_DeviceTracker(TrackerEntity):
                     self.extra_attrs_away_time_zone_offset = \
                                 f"HomeZone {plus_minus}{self.Device.away_time_zone_offset} hours"
 
+            icloud3 = ICLOUD3.lower()
             extra_attrs = {}
-
             extra_attrs[GPS]            = f"({self.latitude}, {self.longitude})"
             extra_attrs[LOCATED]        = self._get_sensor_value(LAST_LOCATED_DATETIME)
             alert                       = self._get_sensor_value(ALERT)
             extra_attrs[ALERT]          = alert if alert != BLANK_SENSOR_FIELD else ''
 
             extra_attrs[f"{'-'*5} DEVICE CONFIGURATION {'-'*20}"] = ''
-            extra_attrs['integration']  = ICLOUD3
-            extra_attrs[NAME]           = self._get_sensor_value(NAME)
-            extra_attrs[PICTURE]        = self._get_sensor_value(PICTURE)
-            extra_attrs['picture_file'] = self._get_sensor_value(PICTURE)
+            extra_attrs['integration']  = icloud3
+
+            if self.Device:
+                if self.Device.PyiCloud:
+                    extra_attrs['apple_account'] = self.Device.PyiCloud.account_owner_username
+                else:
+                    extra_attrs['apple_account'] = 'None'
+                if self.Device.mobapp[DEVICE_TRACKER]:
+                    extra_attrs['mobile_app'] = self.Device.mobapp[DEVICE_TRACKER]
+                else:
+                    extra_attrs['mobile_app'] = 'None'
+
+            extra_attrs[NAME]                    = self._get_sensor_value(NAME)
+            picture                              = self._get_sensor_value(PICTURE)
+            if instr(picture,'None'):
+                extra_attrs['picture_file']      = 'None'
+            else:
+                extra_attrs[PICTURE]             = picture
+                extra_attrs['picture_file']      = self._get_sensor_value(PICTURE)
             extra_attrs['track_from_zones']      = self.extra_attrs_track_from_zones
             extra_attrs['primary_home_zone']     = self.extra_attrs_primary_home_zone
             extra_attrs['away_time_zone_offset'] = self.extra_attrs_away_time_zone_offset
@@ -387,15 +400,15 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs[WAZE_DISTANCE]  = self._get_sensor_value(WAZE_DISTANCE)
             extra_attrs[DISTANCE_TO_DEVICES] = self._get_sensor_value(DISTANCE_TO_DEVICES)
             extra_attrs[ZONE_DATETIME]  = self._get_sensor_value(ZONE_DATETIME)
-            extra_attrs[LAST_UPDATE]    = self._get_sensor_value(LAST_UPDATE_DATETIME)
+            #extra_attrs[LAST_UPDATE]    = self._get_sensor_value(LAST_UPDATE_DATETIME)
             extra_attrs[NEXT_UPDATE]    = self._get_sensor_value(NEXT_UPDATE_DATETIME)
             extra_attrs['last_timestamp']= f"{self._get_sensor_value(LAST_LOCATED_SECS)}"
 
             extra_attrs[f"{'-'*5} ICLOUD3 CONFIGURATION {'-'*19}"] = ''
             extra_attrs['icloud3_devices']   = ', '.join(Gb.Devices_by_devicename.keys())
-            extra_attrs['icloud3_version']   = f"v{Gb.version}"
+            extra_attrs[f'{icloud3}_version']   = f"v{Gb.version}"
             extra_attrs['event_log_version'] = f"v{Gb.version_evlog}"
-            extra_attrs['icloud3_directory'] = Gb.icloud3_directory
+            extra_attrs[f'{icloud3}_directory'] = Gb.icloud3_directory
 
             return extra_attrs
 
@@ -548,7 +561,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
         and called by HA after processing the async_remove request
         """
 
-        log_info_msg(f"Registered device_tracker.icloud3 entity removed: {self.entity_id}")
+        log_info_msg(f"Unregistered device_tracker.icloud3 entity removed: {self.entity_id}")
 
         self._remove_from_registries()
         self.entity_removed_flag = True
