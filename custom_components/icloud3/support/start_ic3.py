@@ -9,7 +9,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 EVLOG_ALERT, EVLOG_IC3_STARTING, EVLOG_NOTICE, EVLOG_IC3_STAGE_HDR,
                                 CIRCLE_LETTERS_DARK,
                                 EVENT_RECDS_MAX_CNT_BASE, EVENT_RECDS_MAX_CNT_ZONE,
-                                CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, HDOT, CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK,
+                                CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, HDOT, CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK, CRLF_CIRCLE_X,
                                 CRLF_SP3_HDOT, CRLF_INDENT, CRLF_X, CRLF_TAB, DOT, CRLF_SP8_HDOT, CRLF_SP8_DOT,
                                 CRLF_RED_X, RED_X, CRLF_STAR, CRLF_YELLOW_ALERT, YELLOW_ALERT, UNKNOWN,
                                 RARROW, NBSP2, NBSP4, NBSP6, CIRCLE_STAR, INFO_SEPARATOR, DASH_20, CHECK_MARK,
@@ -1147,7 +1147,7 @@ def create_Devices_object():
                 post_startup_alert(f"HA device_tracker entity id not configured for {icloud_dname}")
                 post_event( f"{EVLOG_ALERT}CONFIGURATION ALERT > The device_tracker entity id (devicename) "
                             f"has not been configured for {icloud_dname}/"
-                            f"{DEVICE_TYPE_FNAME.get(conf_device[CONF_DEVICE_TYPE], conf_device[CONF_DEVICE_TYPE])}")
+                            f"{DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])}")
                 continue
 
             Gb.conf_icloud_dnames.append(icloud_dname)
@@ -1155,7 +1155,7 @@ def create_Devices_object():
 
             if conf_device[CONF_TRACKING_MODE] ==  INACTIVE_DEVICE:
                 post_event( f"{CIRCLE_STAR} {conf_device[CONF_FNAME]} ({devicename}) > "
-                            f"{DEVICE_TYPE_FNAME.get(conf_device[CONF_DEVICE_TYPE], conf_device[CONF_DEVICE_TYPE])}, INACTIVE, "
+                            f"{DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])}, INACTIVE, "
                             f"{CRLF_DOT}iCloud Device-{icloud_dname}"
                             f"{CRLF_DOT}MobApp Entity-{conf_device[CONF_MOBILE_APP_DEVICE]}")
                 continue
@@ -1238,7 +1238,8 @@ def create_Devices_object():
     _verify_away_time_zone_devicenames()
 
     Gb.startup_lists['Gb.Devices']                     = Gb.Devices
-    Gb.startup_lists['Gb.DevDevices_by_devicename']    = Gb.Devices_by_devicename
+    Gb.startup_lists['Gb.DeviceTrackers_by_devicename']= Gb.DeviceTrackers_by_devicename
+    Gb.startup_lists['Gb.Devices_by_devicename']       = Gb.Devices_by_devicename
     Gb.startup_lists['Gb.conf_devicenames']            = Gb.conf_devicenames
     Gb.startup_lists['Gb.conf_icloud_dnames']          = Gb.conf_icloud_dnames
     Gb.startup_lists['Gb.devicenames_by_icloud_dname'] = Gb.devicenames_by_icloud_dname
@@ -1297,6 +1298,10 @@ def setup_data_source_ICLOUD(retry=False):
 
     apple_acct_not_found_msg = ''
     for username, PyiCloud in Gb.PyiCloud_by_username.items():
+        if is_empty(PyiCloud.RawData_by_device_id):
+            #PyiCloud.DeviceSvc.refresh_client(locate_all_devices=True)
+            PyiCloud.refresh_icloud_data()
+
         if PyiCloud and Gb.username_valid_by_username.get(username):
             setup_tracked_devices_for_icloud(PyiCloud)
             set_device_data_source(PyiCloud)
@@ -1459,7 +1464,7 @@ def _match_PyiCloud_devices_to_Device(PyiCloud, retry_match_devices=None):
 
         icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
         Gb.devicenames_by_icloud_dname[icloud_dname] = devicename
-        Gb.icloud_dnames_by_devicename[devicename]  = icloud_dname
+        Gb.icloud_dnames_by_devicename[devicename]   = icloud_dname
 
         _RawData.Device            = Device
         _RawData.ic3_devicename    = devicename
@@ -1513,7 +1518,8 @@ def _check_for_missing_find_devices(PyiCloud):
     retry_cnt = 0 if PyiCloud.DeviceSvc else 10
     while retry_cnt < 5:
         retry_cnt += 1
-        PyiCloud.DeviceSvc.refresh_client()
+        #PyiCloud.DeviceSvc.refresh_client()
+        PyiCloud.refresh_icloud_data()
 
         # See in the untracked devices are now available
         retry_match_devices = {}
@@ -1691,10 +1697,13 @@ def _post_evlog_apple_acct_tracked_devices_info(PyiCloud):
                     f"{devices_assigned_msg}"
                     f"{devices_not_assigned_msg}")
 
+        famshr_crlf = CRLF_DOT if PyiCloud.locate_all_devices else CRLF_CIRCLE_X
         if owner_icloud_dnames:
             evlog_msg += f"{CRLF_DOT} myDevices-{owner_icloud_dnames}"
         if famshr_dnames_msg:
-            evlog_msg += f"{CRLF_DOT} FamShr List Devices-{famshr_dnames_msg}"
+            evlog_msg += f"{famshr_crlf} Family List-{famshr_dnames_msg}"
+            if PyiCloud.locate_all_devices is False:
+                evlog_msg += f"{CRLF_STAR} Family List Devices are Not Located"
 
         post_event(evlog_msg)
 
@@ -2454,8 +2463,7 @@ def display_inactive_devices():
 
     inactive_devices =[(f"{conf_device[CONF_IC3_DEVICENAME]} ("
                         f"{conf_device[CONF_FNAME]}/"
-                        f"{DEVICE_TYPE_FNAME.get(
-                            conf_device[CONF_DEVICE_TYPE], conf_device[CONF_DEVICE_TYPE])})")
+                        f"{DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])})")
                                     for conf_device in Gb.conf_devices
                                     if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE]
 

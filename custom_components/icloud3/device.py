@@ -124,8 +124,8 @@ class iCloud3_Device(TrackerEntity):
 
         # Operational variables
         self.device_type                  = 'iPhone'
-        self.raw_model                    = DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)      # iPhone15,2
-        self.model                        = DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)      # iPhone
+        self.raw_model                    = DEVICE_TYPE_FNAME(self.device_type)      # iPhone15,2
+        self.model                        = DEVICE_TYPE_FNAME(self.device_type)      # iPhone
         #self.model_display_name           = DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)      # iPhone 14 Pro
         self.model_display_name           = Gb.model_display_name_by_raw_model.get(self.raw_model, self.raw_model)  # iPhone 14 Pro
         self.data_source                  = None
@@ -815,15 +815,15 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def devtype_fname(self):
-        return DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)
+        return DEVICE_TYPE_FNAME(self.device_type)
 
     @property
     def fname_devtype(self):
-        if instr(self.fname, DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)):
+        if instr(self.fname, DEVICE_TYPE_FNAME(self.device_type)):
             return self.fname
 
         return (f"{self.fname} "
-                f"({DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)})")
+                f"({DEVICE_TYPE_FNAME(self.device_type)})")
         # return (f"{self.fname}{INFO_SEPARATOR}"
         #         f"{DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)}")
 

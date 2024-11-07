@@ -3,6 +3,21 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+
+
+3.1.1
+.......................
+1. LOCATING DEVICES:
+    - Added additional checks to insure the Apple Account location data was refreshed during startup and while configuing iCloud3 settings. Fixed a problem where the location information data from Apple was not being initialized properly.
+    - Fixed the location refresh not being causied the '0 of 0' to be displayed in the Configure Setting screens, leading to the Apple Account selection lists to not be populated.
+    - Fixed some problems where 'Locate All Devices = False' would still locate all the devices in the Apple account
+    - Added error checking to make sure the Locate All Devices can not be disabled if there were Family devices that
+    were asigned to that Apple account. If it was disabled, they would never be locaed.
+2. UPDATE DEVICE SCREEN - Added (and fixed) the TOOLS - RESET DATA SOURCE(S), DELETE DEVICE(S) option where you can reset the device's Apple Account and Mobile App to default values (None) and fixed a problem deleting devices. Reworked the Apple Acccount selection list to provide more information and identify setup errors.
+3. UPDATE APPLE ACCOUNT USERNAME/PASSWORD SCREEN - Added checks to insure Locating All Devices can not be disabled if there are tracked devices assigned to this account that are in the Family list.
+4. OTHER THINGS - Changed several things under the covers.
+
+
 3.1
 .......................
 ### Change Log - v3.1

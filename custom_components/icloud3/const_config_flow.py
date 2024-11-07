@@ -73,12 +73,13 @@ ACTION_LIST_OPTIONS = {
 
         'update_device':            'SELECT THE DEVICE ᐳ Update the selected device, Add a new device to be tracked by iCloud3, Display more Devices on the next page',
         'add_device':               'ADD DEVICE ᐳ Add a device to be tracked by iCloud3',
-        'delete_device':            'DELETE DEVICE(S), OTHER DEVICE MAINTENANCE ᐳ Delete the device(s) from the tracked device list, clear the iCloud/Mobile App selection fields',
+        'delete_device':            'TOOLS - RESET DATA SOURCE(S), DELETE DEVICE(S) ᐳ Reset Apple Acct & Mobile App to `None`, Delete the device(s)',
         'change_device_order':      'CHANGE DEVICE ORDER ᐳ Change the tracking order of the Devices and their display sequence on the Event Log',
 
-        'delete_this_device':       'DELETE THIS DEVICE ᐳ Delete this device',
-        'delete_all_devices':       'DELETE ALL DEVICES ᐳ Delete all devices from the iCloud3 tracked devices list',
-        'delete_icloud_mobapp_info':'CLEAR ICLOUDR/MOBAPP INFO ᐳ Reset the iCloud/Mobile App seletion fields on all devices',
+        'reset_this_device_data_source': 'RESET THIS DEVICE`S DATA SOURCE ᐳ Set Apple Acct & Mobile App to `None`',
+        'delete_this_device':       'DELETE THIS DEVICE ᐳ Delete this device from the iCloud3 tracked devices list',
+        'reset_all_devices_data_source': '⚠️ RESET ALL DEVICE`S DATA SOURCE ᐳ Set Apple Acct & Mobile App to `None`',
+        'delete_all_devices':       '⚠️ DELETE ALL DEVICES ᐳ Delete all devices from the iCloud3 tracked devices list',
         'delete_device_cancel':     'CANCEL ᐳ Return to the Device List screen',
 
         'inactive_to_track':        'TRACK ALL OR SELECTED ᐳ Change the `Tracking Mode‘ of all of the devices (or the selected devices) from `Inactive‘ to `Tracked‘',
@@ -171,9 +172,10 @@ DEVICE_LIST_ACTIONS_NO_ADD = [
         ACTION_LIST_OPTIONS['change_device_order'],
         ACTION_LIST_OPTIONS['return']]
 DELETE_DEVICE_ACTIONS = [
+        ACTION_LIST_OPTIONS['reset_this_device_data_source'],
         ACTION_LIST_OPTIONS['delete_this_device'],
+        ACTION_LIST_OPTIONS['reset_all_devices_data_source'],
         ACTION_LIST_OPTIONS['delete_all_devices'],
-        ACTION_LIST_OPTIONS['delete_icloud_mobapp_info'],
         ACTION_LIST_OPTIONS['delete_device_cancel']]
 REVIEW_INACTIVE_DEVICES =  [
         ACTION_LIST_OPTIONS['inactive_to_track'],

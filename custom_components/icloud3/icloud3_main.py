@@ -143,13 +143,6 @@ class iCloud3:
             Gb.start_icloud3_inprocess_flag = True
             Gb.restart_icloud3_request_flag = False
             Gb.all_tracking_paused_flag     = False
-            # _evlog(f"fil exists {Gb.icloud3_config_filename} {file_exists(Gb.icloud3_config_filename)}")
-            # _evlog(f"dir exists {Gb.ha_storage_icloud3} {directory_exists(Gb.ha_storage_icloud3)}")
-            # _evlog(f"dir exists {Gb.ha_storage_directory} {directory_exists(Gb.ha_storage_directory)}")
-            # _evlog(f"fil exists {f'{Gb.icloud3_config_filename}.test2'} {file_exists(f'{Gb.icloud3_config_filename}.test2')}")
-            # _evlog(f"dir exists {f'{Gb.ha_storage_icloud3}/test2'} {directory_exists(f'{Gb.ha_storage_icloud3}/test2')}")
-            # _evlog(f"make dir {f'make-{Gb.ha_storage_icloud3}/test2'} {make_directory(f'{Gb.ha_storage_icloud3}/test2')}")
-            # _evlog(f"ext filename {Gb.icloud3_config_filename} {extract_filename(Gb.icloud3_config_filename)}")
 
             start_ic3_control.stage_1_setup_variables()
             start_ic3_control.stage_2_prepare_configuration()

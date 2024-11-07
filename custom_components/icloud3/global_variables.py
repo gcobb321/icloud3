@@ -94,6 +94,7 @@ class GlobalVariables(object):
     HALogger            = None
     iC3Logger           = None
     iC3Logger_last_check_exist_secs = 0
+    prestartup_log      = ''
 
     iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
     PyiCloud            = None    # iCloud Account service

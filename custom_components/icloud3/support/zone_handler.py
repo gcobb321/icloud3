@@ -311,7 +311,9 @@ def is_same_or_overlapping_zone(zone1, zone2):
         if zone1 == zone2:
             return True
 
-        if (isnot_zone(zone1) or zone1 == 'not_set'  or zone2 == 'not_set'
+        if (isnot_zone(zone1)
+                or zone1 not in Gb.Zones_by_zone or zone2 not in Gb.Zones_by_zone
+                or zone1 == 'not_set' or zone2 == 'not_set'
                 or zone1 == "" or zone2 == ""):
             return False
 
@@ -323,7 +325,7 @@ def is_same_or_overlapping_zone(zone1, zone2):
         return (zone_dist_m <= 2)
 
     except Exception as err:
-        log_exception(err)
+        #log_exception(err)
         return False
 
 #--------------------------------------------------------------------

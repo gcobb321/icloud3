@@ -45,9 +45,10 @@ def create_all_PyiCloudServices():
     post_event('Log into Apple Accounts')
 
     for conf_apple_acct in Gb.conf_apple_accounts:
+
         username   = conf_apple_acct[CONF_USERNAME]
         password   = Gb.PyiCloud_password_by_username[username]
-        locate_all = conf_apple_acct[CONF_LOCATE_ALL]
+        locate_all_devices = conf_apple_acct[CONF_LOCATE_ALL]
 
         if is_empty(username) or is_empty(password):
             continue
@@ -62,7 +63,7 @@ def create_all_PyiCloudServices():
             Gb.username_valid_by_username[username] = username_password_valid
 
         if Gb.username_valid_by_username[username]:
-            log_into_apple_account(username, password, locate_all)
+            log_into_apple_account(username, password, locate_all_devices)
         else:
             event_msg =(f"Apple Acct > "
                         f"{username.split('@')[0]}, Invalid Username or Password")
@@ -84,9 +85,9 @@ def retry_apple_acct_login():
     for username in Gb.username_pyicloud_503_connection_error:
         conf_apple_acct, apple_acct_id = config_file.conf_apple_acct(username)
         password = conf_apple_acct[CONF_PASSWORD]
-        locate_all = conf_apple_acct[CONF_LOCATE_ALL]
+        locate_all_devices = conf_apple_acct[CONF_LOCATE_ALL]
 
-        PyiCloud = log_into_apple_account(username, password, locate_all)
+        PyiCloud = log_into_apple_account(username, password, locate_all_devices)
 
         if PyiCloud:
             post_event(f"{EVLOG_ERROR}Apple Acct > {PyiCloud.account_owner}, Login Successful")
@@ -112,8 +113,9 @@ def verify_all_apple_accounts():
     cnt = -1
     for conf_apple_acct in Gb.conf_apple_accounts:
         cnt += 1
-        username   = conf_apple_acct[CONF_USERNAME]
-        password   = Gb.PyiCloud_password_by_username[username]
+
+        username = conf_apple_acct[CONF_USERNAME]
+        password = Gb.PyiCloud_password_by_username[username]
 
         if is_empty(username):
             Gb.username_valid_by_username[f"AA-NOTSPECIFIED-#{cnt}"]
@@ -133,7 +135,7 @@ def verify_all_apple_accounts():
 
 
 #--------------------------------------------------------------------
-def log_into_apple_account(username, password, locate_all=True):
+def log_into_apple_account(username, password, locate_all_devices=None):
     '''
     Log in and Authenticate the Apple Account via pyicloud
 
@@ -147,7 +149,11 @@ def log_into_apple_account(username, password, locate_all=True):
             or password == ''):
         return
 
-    this_fct_error_flag = True
+    locate_all_devices = locate_all_devices \
+                            if   locate_all_devices is not None \
+                            else PyiCloud.locate_all_devices if PyiCloud.locate_all_devices is not None \
+                            else True
+
     login_err = 0
     post_evlog_greenbar_msg(f"Apple Acct > Setting up {username.split('@')[0]}")
 
@@ -172,7 +178,8 @@ def log_into_apple_account(username, password, locate_all=True):
                 and PyiCloud.DeviceSvc):
             PyiCloud.dup_icloud_dname_cnt = {}
 
-            PyiCloud.DeviceSvc.refresh_client()
+            # PyiCloud.DeviceSvc.refresh_client()
+            PyiCloud.refresh_icloud_data(locate_all_devices=True)
 
             pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
             if PyiCloud.DeviceSvc:
@@ -184,36 +191,58 @@ def log_into_apple_account(username, password, locate_all=True):
         elif (PyiCloud
                 and PyiCloud.is_DeviceSvc_setup_complete):
 
-            PyiCloud.create_DeviceSvc_object()
-            Gb.PyiCloud_by_username[username] = PyiCloud
+            try:
+                PyiCloud.create_DeviceSvc_object()
+                Gb.PyiCloud_by_username[username] = PyiCloud
 
-            pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
-            if PyiCloud.DeviceSvc:
-                pyicloud_msg += f"{PyiCloud.RawData_by_device_id.values()=}"
-            log_debug_msg(f"{debug_msg_hdr}2, Create DeviceSvc, {pyicloud_msg}")
-            post_event(f"Apple Acct > {PyiCloud.account_owner}, iCloud Created & Refreshed")
+                pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
+                if PyiCloud.DeviceSvc:
+                    pyicloud_msg += f"{PyiCloud.RawData_by_device_id.values()=}"
+                log_debug_msg(f"{debug_msg_hdr}2, Create DeviceSvc, {pyicloud_msg}")
+                post_event(f"Apple Acct > {PyiCloud.account_owner}, iCloud Created & Refreshed")
 
-            return PyiCloud
+                return PyiCloud
+
+            except Exception as err:
+                log_exception(err)
 
         # Setup PyiCloud and iCloud
         else:
-            PyiCloud = PyiCloudService( username, password,
-                                        locate_all_devices=locate_all,
-                                        cookie_directory=Gb.icloud_cookie_directory,
-                                        session_directory=Gb.icloud_session_directory)
+            try:
 
-            # Stage 4 checks to see if PyiCloud exists and it has RawData device info. These values exists
-            # if the __init__ login was completed. However, if it was not completed and they do not exist,
-            # Stage 4 will do another login and set these values when it finishes, which is before the
-            # __init__ is complete. Do not set them again when __init__ login finially completes.
+                PyiCloud = None
+                PyiCloud = PyiCloudService( username, password,
+                                            locate_all_devices=locate_all_devices,
+                                            cookie_directory=Gb.icloud_cookie_directory,
+                                            session_directory=Gb.icloud_session_directory)
 
-            pyicloud_msg = (f"{PyiCloud.account_owner_username}, "
-                            f"Complete={PyiCloud.is_DeviceSvc_setup_complete}, ")
+                # Stage 4 checks to see if PyiCloud exists and it has RawData device info. These values exists
+                # if the __init__ login was completed. However, if it was not completed and they do not exist,
+                # Stage 4 will do another login and set these values when it finishes, which is before the
+                # __init__ is complete. Do not set them again when __init__ login finially completes.
+
+                pyicloud_msg = (f"{PyiCloud.account_owner_username}, "
+                                f"Complete={PyiCloud.is_DeviceSvc_setup_complete}, ")
+
+            except Exception as err:
+                log_exception(err)
+
             if PyiCloud.DeviceSvc:
-                rawdata_items = [_RawData.fname_device_id for _RawData in PyiCloud.RawData_by_device_id.values()]
-                pyicloud_msg += f"RawDataItems-({list_to_str(rawdata_items)})"
-            log_debug_msg(f"{debug_msg_hdr}3, Setup PyiCloud, {pyicloud_msg}")
+                if is_empty(PyiCloud.RawData_by_device_id):
+                    PyiCloud.refresh_icloud_data(locate_all_devices=True)
 
+                rawdata_items = [_RawData.fname_device_id
+                                        for _RawData in PyiCloud.RawData_by_device_id.values()]
+
+                if is_empty(rawdata_items):
+                    PyiCloud.refresh_icloud_data(locate_all_devices=True)
+
+                    rawdata_items = [_RawData.fname_device_id
+                                            for _RawData in PyiCloud.RawData_by_device_id.values()]
+
+                pyicloud_msg += f"RawDataItems-({list_to_str(rawdata_items)})"
+
+            log_debug_msg(f"{debug_msg_hdr}3, Setup PyiCloud, {pyicloud_msg}")
             post_event(f"Apple Acct > {PyiCloud.account_owner}, Login Successful")
 
         verify_icloud_device_info_received(PyiCloud)
@@ -274,7 +303,7 @@ def verify_icloud_device_info_received(PyiCloud):
                         f"Family Sharing List Refresh "
                         f"(#{Gb.get_ICLOUD_devices_retry_cnt} of 8)")
 
-        PyiCloud.DeviceSvc.refresh_client(locate_all_devices=True)
+        PyiCloud.refresh_icloud_data(locate_all_devices=True)
 
         if PyiCloud.DeviceSvc.devices_cnt >= 0:
             return True

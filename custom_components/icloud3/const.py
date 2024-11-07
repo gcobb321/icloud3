@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.1'
+VERSION                         = '3.1.1'
 VERSION_BETA                    = ''
 #-----------------------------------------
 ICLOUD3                         = 'iCloud3'
@@ -121,7 +121,7 @@ DEVICE_TYPES = [
         IPHONE_FNAME, IPAD_FNAME, WATCH_FNAME, AIRPODS_FNAME,
         IMAC_FNAME, IPOD_FNAME, ICLOUD,
 ]
-DEVICE_TYPE_FNAME = {
+DEVICE_TYPE_FNAMES = {
         IPHONE: IPHONE_FNAME,
         IPAD: IPAD_FNAME,
         WATCH: WATCH_FNAME,
@@ -130,6 +130,9 @@ DEVICE_TYPE_FNAME = {
         IPOD: IPOD_FNAME,
         OTHER: OTHER_FNAME,
 }
+def DEVICE_TYPE_FNAME(device_type):
+        return DEVICE_TYPE_FNAMES.get(device_type, device_type)
+
 DEVICE_TYPE_ICONS = {
         IPHONE: "mdi:cellphone",
         IPAD: "mdi:tablet",
@@ -315,12 +318,12 @@ CRLF_LDOT         = f'{CRLF}•{NBSP2}'
 NL_DOT            = f'{NL} • '
 CRLF_XD           = f'{CRLF}{NBSP2}×{NBSP2}'
 CRLF_X            = f'{CRLF}{NBSP3}×{NBSP2}'
-CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
-CRLF_CHK          = f'{CRLF}{NBSP3}✓{NBSP}'
-CRLF_STAR         = f'{CRLF}{NBSP3}✪{NBSP}'
+CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⮾{NBSP}'
 CRLF_RED_X        = f'{CRLF}❌'
+CRLF_HDOT         = f'{CRLF}{NBSP4}{NBSP3}◦{NBSP2}'
+CRLF_CHK          = f'{CRLF}{NBSP3}✓{NBSP}'
+CRLF_STAR         = f'{CRLF}{NBSP2}✪{NBSP}'
 CRLF_YELLOW_ALERT = f'{CRLF}⚠️{NBSP}'
-CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}ⓧ{NBSP}'
 CRLF_SP3_DOT      = f'{CRLF}{NBSP3}•{NBSP}'
 CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
 CRLF_SP8_DOT      = f'{CRLF}{NBSP4}{NBSP4}•{NBSP}'
@@ -861,7 +864,7 @@ DEFAULT_DEVICE_CONF = {
         CONF_IC3_DEVICENAME: ' ',
         CONF_FNAME: '',
         CONF_PICTURE: 'None',
-        CONF_EVLOG_DISPLAY_ORDER: 0,
+        #CONF_EVLOG_DISPLAY_ORDER: 0,
         CONF_UNIQUE_ID: '',
         CONF_DEVICE_TYPE: 'iPhone',
         CONF_INZONE_INTERVAL: 120,
@@ -873,28 +876,28 @@ DEFAULT_DEVICE_CONF = {
         CONF_RAW_MODEL : '',
         CONF_MODEL: '',
         CONF_MODEL_DISPLAY_NAME: '',
-        CONF_FMF_EMAIL: 'None',
-        CONF_FMF_DEVICE_ID: '',
+        #CONF_FMF_EMAIL: 'None',
+        #CONF_FMF_DEVICE_ID: '',
         CONF_MOBILE_APP_DEVICE: 'None',
         CONF_TRACK_FROM_BASE_ZONE: HOME,
         CONF_TRACK_FROM_ZONES: [HOME],
         CONF_LOG_ZONES: ['none'],
+}
+# Used in conf_flow to reinialize the Configuration Devices
+DEFAULT_DEVICE_DATA_SOURCE = {
+        CONF_APPLE_ACCOUNT: '',
+        CONF_FAMSHR_DEVICENAME: 'None',
+        CONF_FAMSHR_DEVICE_ID: '',
+        CONF_RAW_MODEL : '',
+        CONF_MODEL: '',
+        CONF_MODEL_DISPLAY_NAME: '',
+        CONF_MOBILE_APP_DEVICE: 'None',
 }
 
 RANGE_DEVICE_CONF = {
         CONF_INZONE_INTERVAL: [5, 480],
         CONF_FIXED_INTERVAL: [0, 480],
 }
-
-# Used in conf_flow to reinialize the Configuration Devices
-# Reset the FamShe FmF Mobile App track_from_zone fields
-DEFAULT_DEVICE_REINITIALIZE_CONF = DEFAULT_DEVICE_CONF.copy()
-DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_IC3_DEVICENAME, None)
-DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_FNAME, None)
-DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_PICTURE, None)
-DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_EVLOG_DISPLAY_ORDER, None)
-DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_DEVICE_TYPE, None)
-DEFAULT_DEVICE_REINITIALIZE_CONF.pop(CONF_UNIQUE_ID, None)
 
 DEFAULT_GENERAL_CONF = {
         CONF_LOG_LEVEL: 'debug-auto-reset',

@@ -69,6 +69,7 @@
       "icloud_acct_logging_into": "Logging into Apple Account",
       "icloud_acct_logged_into": "✅ Logged into the Apple Account",
       "icloud_acct_already_logged_into": "Already Logged into the Apple Account",
+      "icloud_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
       "icloud_acct_login_error_user_pw": "❌ Login Error, Invalid Username or Password",
       "icloud_acct_login_error_other": "❌ Login Error, Other Error or iCloud is not Available",
       "icloud_acct_login_error_503": "🍎 Apple is delaying displaying a new Verification code to prevent Suspicious Activity, probably due to too many requests. It should be displayed in about 20-30 minutes. Restart HA if it is not displayed",
@@ -97,7 +98,7 @@
       "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
       "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
       "inactive_few_devices": "A Few Devices are INACTIVE and will not be located or tracked",
-      "inactive_no_devices": "No Devices have been set up. Select `Add Device` and Submit",
+      "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Add a New Device`, then select `Submit` to display the screen to add an iCloud3 device_tracker entity.",
 
       "away_time_zone_dup_devices_1": "One of these devices is also selected in the Other Device List",
       "away_time_zone_dup_devices_2": "One of these devices is also selected in the Otner Device List",
@@ -255,14 +256,15 @@
       "add_device": {
         "title": "Add iCloud3 Device",
         "data": {
-          "ic3_devicename": "ICLOUD3 ENTITY ID - The HA device_tracker entity forto this device",
-          "fname": "FRIENDLY NAME - Displayed in HA entities and on the Event Log",
+          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity for this device. (Example: gary_iphone)",
+          "fname": "FRIENDLY NAME - Displayed in HA entities and on the Event Log (Example: Gary-iPhone)",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
           "tracking_mode": "TRACKING MODE - Location request method (Tracked, Monitored, Inactive)",
           "mobapp": "MOBILE APP INSTALLED - HA Mobile App is installed on this device",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
+          "ic3_devicename": "This is the device_tracker entity you are assigning to the iCloud3 device you want to track. The Apple Account and Mobile App devices to be associated with this device_tracker entity are selected on the next page. (Example: gary_iphone)"
         }
       },
       "update_device": {

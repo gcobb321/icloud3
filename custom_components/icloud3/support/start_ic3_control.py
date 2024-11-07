@@ -20,7 +20,7 @@ from ..helpers.common       import (instr, is_empty, isnot_empty, list_to_str, l
 from ..helpers.messaging    import (broadcast_info_msg,
                                     post_event, post_error_msg, log_error_msg, post_startup_alert,
                                     post_monitor_msg, post_internal_error,
-                                    log_start_finish_update_banner,
+                                    write_ic3log_recd,
                                     log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_rawdata,
                                     _evlog, _log, more_info, format_filename,
                                     write_config_file_to_ic3log,
@@ -37,6 +37,12 @@ def stage_1_setup_variables():
     stage_title = f'Stage 1 > Initial Preparations'
 
     open_ic3log_file()
+
+    # if Gb.prestartup_log:
+    #     _prestartup_log = Gb.prestartup_log
+    #     Gb.prestartup_log = ''
+    #     write_ic3log_recd(f"$$$$$\n#####\n{_prestartup_log}")
+
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     broadcast_info_msg(stage_title)
@@ -346,13 +352,13 @@ def _log_into_apple_accounts(retry=False):
             PyiCloud = pyicloud_ic3_interface.log_into_apple_account(
                                         username,
                                         Gb.PyiCloud_password_by_username[username],
-                                        locate_all=conf_apple_acct[CONF_LOCATE_ALL])
+                                        locate_all_devices=conf_apple_acct[CONF_LOCATE_ALL])
 
             if PyiCloud:
                 Gb.PyiCloud_by_username[username] = PyiCloud
 
     if is_empty(Gb.devices_without_location_data):
-        post_event("Apple Acct > All Devices Located")
+        post_event(f"Apple Acct > {PyiCloud.username_base}, All Devices Located")
     else:
         post_event(f"Apple Acct > Devices not Located > {list_to_str(Gb.devices_without_location_data)}")
     return False
@@ -380,8 +386,8 @@ def _are_all_devices_verified(retry=False):
                             for devicename, Device in Gb.Devices_by_devicename.items()
                             if Device.verified_flag is False and Device.isnot_inactive]
 
-    Gb.usernames_setup_error_retry_list   = unverified_device_usernames
-    Gb.devicenames_setup_error_retry_list = unverified_devices
+    Gb.usernames_setup_error_retry_list   = list(set(unverified_device_usernames))
+    Gb.devicenames_setup_error_retry_list = list(set(unverified_devices))
 
     Gb.startup_lists['_.usernames_setup_error_retry_list']   = Gb.usernames_setup_error_retry_list
     Gb.startup_lists['_.devicenames_setup_error_retry_list'] = Gb.devicenames_setup_error_retry_list

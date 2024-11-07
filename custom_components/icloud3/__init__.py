@@ -29,12 +29,14 @@ from .helpers.messaging             import (_evlog, _log, open_ic3log_file_init,
                                             log_exception_HA, log_exception)
 from .helpers.time_util             import (time_now_secs, )
 from .helpers.file_io               import (async_make_directory, async_directory_exists, async_copy_file,
+                                            read_json_file, save_json_file,
                                             async_rename_file, async_delete_directory,
                                             make_directory, directory_exists, copy_file, file_exists,
                                             rename_file, move_files, )
 from .support.v2v3_config_migration import iCloud3_v2v3ConfigMigration
 from .support                       import start_ic3
 from .support                       import config_file
+from .                              import device_tracker as ic3_device_tracker
 from .support                       import restore_state
 from .support.service_handler       import register_icloud3_services
 from .support                       import pyicloud_ic3_interface
@@ -135,6 +137,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.entry_id       = entry.entry_id
         Gb.operating_mode = MODE_INTEGRATION
         Gb.PyiCloud       = None
+        ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
 
         start_ic3.initialize_directory_filenames()
 
@@ -181,9 +184,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         Gb.EvLog.display_user_message(f"Starting {ICLOUD3_VERSION_MSG}")
         if Gb.use_data_source_ICLOUD:
-            await _rename_icloud_v30_cookie_directory()
-            Gb.hass.async_add_executor_job(
-                           pyicloud_ic3_interface.verify_all_apple_accounts)
+            await Gb.hass.async_add_executor_job(
+                            move_icloud_cookies_to_icloud3_apple_acct)
+            await Gb.hass.async_add_executor_job(
+                            pyicloud_ic3_interface.verify_all_apple_accounts)
             #                pyicloud_ic3_interface.create_all_PyiCloudServices)
 
         # set_up_default_area_id()
@@ -298,7 +302,7 @@ async def async_get_ha_location_info(hass):
             pass
 
 #-------------------------------------------------------------------------------------------
-async def _rename_icloud_v30_cookie_directory():
+def move_icloud_cookies_to_icloud3_apple_acct():
     '''
     iCloud3 v3.1 uses the '.../apple_acct.ic3' cookie directory instead of the '.../icloud'
     directory to avoid conflicts with Apple Account integrations (iCloud, HomeKit, etc)
@@ -309,20 +313,15 @@ async def _rename_icloud_v30_cookie_directory():
     if the '.../icloapple_acct.ic3/' directory does not exist. create it.
     '''
     try:
-        # v30_icloud_config_dir = Gb.ha_storage_icloud3.replace('.config', '')
-        # v31_ic3_config_dir_exists = await async_directory_exists(Gb.ha_storage_icloud3)
-        # if v31_ic3_config_dir_exists is False:
-        #     Gb.HALogger.info(f"{v30_icloud_config_dir} --> {Gb.ha_storage_icloud3}")
-        #     move_files(v30_icloud_config_dir, Gb.ha_storage_icloud3)
 
-        v31_cookie_dir = Gb.icloud_cookie_directory
-        v31_cookie_dir_exists = await async_directory_exists(v31_cookie_dir)
+        v31_cookie_dir = f"{Gb.icloud_cookie_directory}"
+        v31_cookie_dir_exists = directory_exists(v31_cookie_dir)
         if v31_cookie_dir_exists:
             return
 
-        await async_make_directory(v31_cookie_dir)
+        make_directory(v31_cookie_dir)
         v30_cookie_dir = Gb.hass.config.path(Gb.ha_storage_directory, 'icloud')
-        v30_cookie_dir_exists = await async_directory_exists(v30_cookie_dir)
+        v30_cookie_dir_exists = directory_exists(v30_cookie_dir)
         Gb.HALogger.info(f"{v30_cookie_dir=} {v30_cookie_dir_exists=}")
 
         if v30_cookie_dir_exists is False:
@@ -335,10 +334,13 @@ async def _rename_icloud_v30_cookie_directory():
         cookie_filename = "".join([c for c in username if match(r"\w", c)])
         Gb.HALogger.info(f"{cookie_filename=}")
 
-        v30_cookie_filename = f"{v30_cookie_dir}/{cookie_filename}"
+        v30_cookie_filename     = f"{v30_cookie_dir}/{cookie_filename}"
         v30_cookie_tpw_filename = f"{v30_cookie_dir}/session/{cookie_filename}.tpw"
-        v30_session_filename = f"{v30_cookie_dir}/session/{cookie_filename}"
-        v30_tpw_file_exists = await async_directory_exists(v30_cookie_tpw_filename)
+        v30_session_filename    = f"{v30_cookie_dir}/session/{cookie_filename}"
+        v30_tpw_file_exists     = directory_exists(v30_cookie_tpw_filename)
+        v31_cookie_filename     = f"{v31_cookie_dir}/{cookie_filename}"
+        v31_cookie_tpw_filename = f"{v31_cookie_dir}/{cookie_filename}.tpw"
+        v31_session_filename    = f"{v31_cookie_dir}/{cookie_filename}.session"
 
         Gb.HALogger.info(f"{v30_cookie_filename =}")
         Gb.HALogger.info(f"{v30_cookie_tpw_filename =}")
@@ -347,16 +349,20 @@ async def _rename_icloud_v30_cookie_directory():
         if v30_tpw_file_exists is False:
             return
 
-        Gb.HALogger.info(f"{v30_cookie_filename} --> {v31_cookie_dir}/{cookie_filename}.session")
-        await async_copy_file(v30_cookie_filename, f"{v31_cookie_dir}/{cookie_filename}")
+        Gb.HALogger.info(f"{v30_cookie_filename} --> {v31_session_filename}")
+        data = read_json_file(v30_session_filename)
+        save_json_file(v31_session_filename, data)
 
-        Gb.HALogger.info(f"{v30_session_filename} --> {v31_cookie_dir}/{cookie_filename}.session")
-        await async_copy_file(v30_session_filename, f"{v31_cookie_dir}/{cookie_filename}.session")
-        # await async_rename_file(v30_session_filename, f"{v30_cookie_dir}/{cookie_filename}.session")
+        Gb.HALogger.info(f"{v30_cookie_tpw_filename} --> {v31_cookie_tpw_filename}")
+        data = read_json_file(v30_cookie_tpw_filename)
+        save_json_file(v31_cookie_tpw_filename, data)
 
-        Gb.HALogger.info(f"{v30_session_filename}.tpw --> {v31_cookie_dir}/{cookie_filename}.tpw")
-        await async_copy_file(f"{v30_session_filename}.tpw", f"{v31_cookie_dir}/{cookie_filename}.tpw")
-        # await async_rename_file(f"{v30_session_filename}.tpw", f"{v30_cookie_dir}/{cookie_filename}.tpw")
+        Gb.HALogger.info(f"{v30_cookie_filename} --> {v31_cookie_filename}")
+        with open(v30_cookie_filename, 'r') as v30_file:
+            data = v30_file.read()
+
+        with open(v31_cookie_filename, 'w') as v31_file:
+            v31_file.write(data)
 
         post_monitor_msg(f"Cookie Directory > Directory and files were copied "
                         f"from `{v30_cookie_dir}` to `{v31_cookie_dir}`")

@@ -25,21 +25,21 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 INFO, GPS_ACCURACY, GPS, POLL_COUNT, VERT_ACCURACY, ALTITUDE,
                                 BADGE,
                                 )
-from ..const_more_info  import more_info_text
-from .common            import (obscure_field, instr, is_empty, isnot_empty, )
+from ..const_more_info      import more_info_text
+from .common                import (obscure_field, instr, is_empty, isnot_empty, )
 
 import homeassistant.util.dt   as dt_util
 from homeassistant.components  import persistent_notification
 
 import os
 import time
-from inspect import getframeinfo, stack
+from inspect                import getframeinfo, stack
 import traceback
 import logging
 
 DO_NOT_SHRINK     = ['url', 'accountName', ]
 FILTER_DATA_DICTS = ['items', 'userInfo', 'dsid', 'dsInfo', 'webservices', 'locations','location',
-                    'params', 'headers', 'kwargs', ]
+                    'params', 'headers', 'kwargs', 'clientContext', ]
 FILTER_DATA_LISTS = ['devices', 'content', 'followers', 'following', 'contactDetails',]
 FILTER_FIELDS = [
         ICLOUD3_VERSION, AUTHENTICATED,
@@ -71,7 +71,15 @@ FILTER_FIELDS = [
         'dsWebAuthToken', 'accountCountryCode', 'extended_login', 'trustToken',
         'data', 'json', 'headers', 'params', 'url', 'retry_cnt', 'retried', 'retry', '#',
         'code', 'ok', 'method', 'securityCode',
+        'fmly', 'shouldLocate', 'selectedDevice',
         'accountName', 'salt', 'a', 'b', 'c', 'm1', 'm2', 'protocols', 'iteration', 'Authorization', ]
+FILTER_OUT = [
+    'features', 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
+    'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
+    'LCK', 'REM', 'MCS', 'REP', 'KEY', 'KPD', 'WIP', 'scd',
+    'rm2State', 'pendingRemoveUntilTS', 'repairReadyExpireTS', 'repairReady', 'lostModeCapable', 'wipedTimestamp',
+    'encodedDeviceId', 'scdPh', 'locationCapable', 'trackingInfo', 'nwd', 'remoteWipe', 'canWipeAfterLock', 'baUUID',
+    'snd', 'continueButtonTitle', 'alertText', 'cancelButtonTitle', 'createTimestamp',  'alertTitle', ]
 
 
 SP_str = ' '*50
@@ -298,6 +306,10 @@ def open_ic3log_file_init():
 #------------------------------------------------------------------------------
 def open_ic3log_file(new_log_file=False):
 
+    # Items will be logged to home-assistane.log until the configuration file has been read
+    if is_empty(Gb.conf_general):
+        return
+
     ic3logger_file = Gb.hass.config.path(IC3LOG_FILENAME)
     filemode = 'w' if new_log_file else 'a'
 
@@ -312,6 +324,7 @@ def open_ic3log_file(new_log_file=False):
 
         write_config_file_to_ic3log()
 
+
 #--------------------------------------------------------------------
 def write_ic3log_recd(log_msg):
     '''
@@ -320,6 +333,10 @@ def write_ic3log_recd(log_msg):
     and renames while iCloud3 is running
     '''
     try:
+        if is_empty(Gb.conf_general):
+            Gb.prestartup_log += f"\n{dt_util.now().strftime(DATETIME_FORMAT)[5:19]} {log_msg}"
+            return
+
         time_now_msecs = time.time()
         if time_now_msecs - Gb.iC3Logger_last_check_exist_secs > 2:
             Gb.iC3Logger_last_check_exist_secs = time_now_msecs
@@ -330,6 +347,7 @@ def write_ic3log_recd(log_msg):
             Gb.iC3Logger.info(log_msg)
         else:
             open_ic3log_file(new_log_file=True)
+
             Gb.iC3Logger.info(log_msg)
 
     except Exception as err:
@@ -392,6 +410,10 @@ def archive_ic3log_file():
 
 #------------------------------------------------------------------------------
 def write_config_file_to_ic3log():
+
+    if Gb.prestartup_log:
+        write_ic3log_recd(f"{Gb.prestartup_log}")
+        Gb.prestartup_log = ''
 
     conf_tracking_recd = Gb.conf_tracking.copy()
     # conf_tracking_recd[CONF_USERNAME] = obscure_field(conf_tracking_recd[CONF_USERNAME])
@@ -949,6 +971,8 @@ def post_internal_error(err_text, traceback_format_exec_obj='+'):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def dummy_evlog():
     _evlog(None, None)
+def dummy_log():
+    _log(None, None)
 
 #--------------------------------------------------------------------
 def _evlog(devicename_or_Device, items='+'):
@@ -985,7 +1009,8 @@ def _log(items, v1='+++', v2='', v3='', v4='', v5=''):
 
 
     except Exception as err:
-        log_exception(err)
+        Gb.HARootLogger.info(trace_msg)
+        # log_exception(err)
 
 #--------------------------------------------------------------------
 def _called_from(trace=False):

@@ -36,7 +36,7 @@ from ..const                import (
                                     CONF_PICTURE_WWW_DIRS, PICTURE_WWW_STANDARD_DIRS,
                                     RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
                                     CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS,
-                                    CONF_DEVICES, CONF_APPLE_ACCOUNTS,
+                                    CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNTS_CONF,
                                     )
 
 from ..support              import start_ic3
@@ -197,8 +197,13 @@ def _reconstruct_conf_file():
     '''
     Gb.conf_profile[CONF_UPDATE_DATE] = datetime_now()
 
-    Gb.conf_tracking[CONF_PASSWORD] = \
-            encode_password(Gb.conf_tracking[CONF_PASSWORD])
+    # Gb.conf_tracking[CONF_PASSWORD] = \
+    #         encode_password(Gb.conf_tracking[CONF_PASSWORD])
+
+    # for apple_acct in Gb.conf_apple_accounts:
+    #     apple_acct[CONF_PASSWORD] = encode_password(apple_acct[CONF_PASSWORD])
+    
+    encode_all_passwords()
 
     Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = Gb.conf_apple_accounts
     Gb.conf_tracking[CONF_DEVICES]        = Gb.conf_devices
@@ -370,6 +375,11 @@ def conf_apple_acct(idx_or_username):
         - conf_apple_acct_idx = index
     '''
     try:
+        if len(Gb.conf_apple_accounts) == 0:
+            conf_apple_acct = DEFAULT_APPLE_ACCOUNTS_CONF.copy()
+            Gb.conf_apple_accounts = [conf_apple_acct]
+            return (conf_apple_acct, 0)
+
         if type(idx_or_username) is int:
             if isbetween(idx_or_username, 0, len(Gb.conf_apple_accounts)-1):
                 conf_apple_acct = Gb.conf_apple_accounts[idx_or_username].copy()
@@ -377,9 +387,10 @@ def conf_apple_acct(idx_or_username):
                 return (conf_apple_acct, idx_or_username)
 
         elif type(idx_or_username) is str:
-            conf_apple_acct = [apple_account   for apple_account in Gb.conf_apple_accounts
-                                                if apple_account[CONF_USERNAME] == idx_or_username]
-            conf_apple_acct_username = [apple_account[CONF_USERNAME] for apple_account in Gb.conf_apple_accounts]
+            conf_apple_acct = [apple_acct   for apple_acct in Gb.conf_apple_accounts
+                                            if apple_acct[CONF_USERNAME] == idx_or_username]
+            conf_apple_acct_username = [apple_account[CONF_USERNAME] 
+                                            for apple_account in Gb.conf_apple_accounts]
             conf_apple_acct_idx = conf_apple_acct_username.index(idx_or_username)
 
             if conf_apple_acct != []:
@@ -419,9 +430,9 @@ def apple_acct_password_for_username(username):
         return ''
 
     try:
-        return [apple_account[CONF_PASSWORD]
-                                for apple_account in Gb.conf_apple_accounts
-                                if apple_account[CONF_USERNAME] == username][0]
+        return [apple_acct[CONF_PASSWORD]
+                                for apple_acct in Gb.conf_apple_accounts
+                                if apple_acct[CONF_USERNAME] == username][0]
     except:
         return ''
 
@@ -890,11 +901,11 @@ def _insert_into_conf_dict_parameter(dict_parameter,
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def encode_all_passwords():
+
     Gb.conf_tracking[CONF_PASSWORD] = encode_password(Gb.conf_tracking[CONF_PASSWORD])
 
     for apple_acct in Gb.conf_apple_accounts:
-        apple_acct[CONF_PASSWORD] = \
-                            encode_password(apple_acct[CONF_PASSWORD])
+        apple_acct[CONF_PASSWORD] = encode_password(apple_acct[CONF_PASSWORD])
 
 #--------------------------------------------------------------------
 def decode_all_passwords():

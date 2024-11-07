@@ -232,10 +232,11 @@ def update_PyiCloud_RawData_data(Device, results_msg_flag=True):
                 device_id = None if Device.PyiCloud.locate_all_devices else Device.icloud_device_id
 
                 locate_all_devices, device_id = _locate_all_or_acct_owner(Device)
-                if Device.PyiCloud.DeviceSvc:
-                    Device.PyiCloud.DeviceSvc.refresh_client(   requested_by_devicename=Device.devicename,
-                                                                locate_all_devices=locate_all_devices,
-                                                                device_id=device_id)
+                #if Device.PyiCloud.DeviceSvc:
+                    #Device.PyiCloud.DeviceSvc.refresh_client(   requested_by_devicename=Device.devicename,
+                Device.PyiCloud.refresh_icloud_data(requested_by_devicename=Device.devicename,
+                                                    locate_all_devices=locate_all_devices,
+                                                    device_id=device_id)
         if (Device.PyiCloud.response_code == 503
                     and Device.devicename not in Gb.username_pyicloud_503_connection_error):
                 list_add(Gb.username_pyicloud_503_connection_error, Device.devicename)

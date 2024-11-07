@@ -10,7 +10,7 @@ from datetime           import datetime
 from .global_variables  import GlobalVariables as Gb
 from .const             import (RED_ALERT, LINK, RLINK, RARROW,
                                 IPHONE, IPAD, WATCH, AIRPODS, ICLOUD, OTHER,
-                                DEVICE_TYPE_FNAME, MOBAPP, NO_MOBAPP,
+                                DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, MOBAPP, NO_MOBAPP,
                                 INACTIVE_DEVICE, HOME_DISTANCE,
                                 PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
                                 DEFAULT_DEVICE_CONF,
@@ -313,7 +313,7 @@ def form_update_apple_acct(self):
                     default=password):
                     password_selector,
         vol.Optional(CONF_TOTP_KEY,
-                    default=totp_key):
+                    default='For future use in supporting hardware keys (YubiKey)'):
                     selector.TextSelector(),
         vol.Optional('locate_all',
                     default=locate_all):
@@ -498,6 +498,7 @@ def _build_device_items_displayed_over_5(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_add_device(self):
     self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
+    device_type_fname = DEVICE_TYPE_FNAME(self._parm_or_device(CONF_DEVICE_TYPE))
 
     return vol.Schema({
         vol.Required(CONF_IC3_DEVICENAME,
@@ -509,7 +510,7 @@ def form_add_device(self):
         vol.Required(CONF_DEVICE_TYPE,
                     default=self._parm_or_device(CONF_DEVICE_TYPE, suggested_value=IPHONE)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DEVICE_TYPE_FNAME), mode='dropdown')),
+                        options=dict_value_to_list(DEVICE_TYPE_FNAMES), mode='dropdown')),
         vol.Required(CONF_TRACKING_MODE,
                     default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -536,7 +537,8 @@ def form_update_device(self):
     # Display Advanced Tracking Parameters
     log_zones_fnames = [zone_dname(zone) for zone in self.conf_device[CONF_LOG_ZONES] if zone.startswith('Name') is False]
     tfz_fnames = [zone_dname(zone) for zone in self.conf_device[CONF_TRACK_FROM_ZONES]]
-    RARELY_UPDATED_PARMS_HEADER = ( f"DeviceType ({self._option_parm_to_text(CONF_DEVICE_TYPE, DEVICE_TYPE_FNAME)}), "
+    device_type_fname = DEVICE_TYPE_FNAME(self._parm_or_device(CONF_DEVICE_TYPE))
+    RARELY_UPDATED_PARMS_HEADER = ( f"DeviceType ({device_type_fname}), "
                                     f"inZoneInterval ({format_timer(self.conf_device[CONF_INZONE_INTERVAL]*60)}), "
                                     f"FixedInterval ({format_timer(self.conf_device[CONF_FIXED_INTERVAL]*60)}), "
                                     f"LogFromZones ({list_to_str(log_zones_fnames)}), "
@@ -628,11 +630,12 @@ def form_update_device(self):
             })
 
     if self.display_rarely_updated_parms:
+        device_type_fname = DEVICE_TYPE_FNAME(self._parm_or_device(CONF_DEVICE_TYPE))
         schema.update({
             vol.Required(CONF_DEVICE_TYPE,
-                    default=self._option_parm_to_text(CONF_DEVICE_TYPE, DEVICE_TYPE_FNAME)):
+                    default=self._option_parm_to_text(CONF_DEVICE_TYPE, DEVICE_TYPE_FNAMES)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DEVICE_TYPE_FNAME), mode='dropdown')),
+                        options=dict_value_to_list(DEVICE_TYPE_FNAMES), mode='dropdown')),
             vol.Required(CONF_INZONE_INTERVAL,
                     default=self.conf_device[CONF_INZONE_INTERVAL]):
                     # default=self._parm_or_device(CONF_INZONE_INTERVAL)):
