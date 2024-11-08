@@ -2052,6 +2052,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         # Add a new account
         elif self.add_apple_acct_flag:
+            if len(Gb.conf_apple_accounts) < 1:
+                Gb.conf_apple_accounts = [DEFAULT_APPLE_ACCOUNTS_CONF.copy()]
+
             if Gb.conf_apple_accounts[0][CONF_USERNAME] == '':
                 Gb.conf_apple_accounts[0] = self.conf_apple_acct.copy()
                 self.aa_idx = 0

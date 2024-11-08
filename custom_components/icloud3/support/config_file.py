@@ -202,7 +202,7 @@ def _reconstruct_conf_file():
 
     # for apple_acct in Gb.conf_apple_accounts:
     #     apple_acct[CONF_PASSWORD] = encode_password(apple_acct[CONF_PASSWORD])
-    
+
     encode_all_passwords()
 
     Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = Gb.conf_apple_accounts
@@ -308,7 +308,9 @@ def build_log_file_filters():
 
     try:
         for apple_acct in Gb.conf_apple_accounts:
-            if instr(apple_acct[CONF_USERNAME], '@'):
+            if apple_acct[CONF_USERNAME] == '':
+                continue
+            elif instr(apple_acct[CONF_USERNAME], '@'):
                 email_extn = f"{apple_acct[CONF_USERNAME].split('@')[1]}"
                 list_add(Gb.log_file_filter, email_extn)
 
@@ -377,7 +379,7 @@ def conf_apple_acct(idx_or_username):
     try:
         if len(Gb.conf_apple_accounts) == 0:
             conf_apple_acct = DEFAULT_APPLE_ACCOUNTS_CONF.copy()
-            Gb.conf_apple_accounts = [conf_apple_acct]
+            # Gb.conf_apple_accounts = [conf_apple_acct]
             return (conf_apple_acct, 0)
 
         if type(idx_or_username) is int:
@@ -389,7 +391,7 @@ def conf_apple_acct(idx_or_username):
         elif type(idx_or_username) is str:
             conf_apple_acct = [apple_acct   for apple_acct in Gb.conf_apple_accounts
                                             if apple_acct[CONF_USERNAME] == idx_or_username]
-            conf_apple_acct_username = [apple_account[CONF_USERNAME] 
+            conf_apple_acct_username = [apple_account[CONF_USERNAME]
                                             for apple_account in Gb.conf_apple_accounts]
             conf_apple_acct_idx = conf_apple_acct_username.index(idx_or_username)
 
@@ -606,8 +608,8 @@ def _update_tracking_parameters():
 
     # v3.1 Add Apple accounts list
     try:
-        if (CONF_APPLE_ACCOUNTS not in Gb.conf_tracking
-                or Gb.conf_tracking[CONF_APPLE_ACCOUNTS] == []):
+        if (CONF_APPLE_ACCOUNTS not in Gb.conf_tracking):
+                # or Gb.conf_tracking[CONF_APPLE_ACCOUNTS] == []):
             update_config_file_flag = True
 
             Gb.conf_tracking = _insert_into_conf_dict_parameter(
@@ -615,12 +617,12 @@ def _update_tracking_parameters():
                                             CONF_APPLE_ACCOUNTS, '',
                                             before=CONF_DEVICES)
 
-            Gb.conf_apple_accounts = Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = [
-                {   CONF_USERNAME: Gb.conf_tracking[CONF_USERNAME],
-                    CONF_PASSWORD: encode_password(Gb.conf_tracking[CONF_PASSWORD]),
-                    CONF_TOTP_KEY: '',
-                    CONF_LOCATE_ALL: True,
-                }]
+            Gb.conf_apple_accounts = Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = []
+                # {   CONF_USERNAME: Gb.conf_tracking[CONF_USERNAME],
+                #     CONF_PASSWORD: encode_password(Gb.conf_tracking[CONF_PASSWORD]),
+                #     CONF_TOTP_KEY: '',
+                #     CONF_LOCATE_ALL: True,
+                # }]
 
     except Exception as err:
         _LOGGER.exception(err)

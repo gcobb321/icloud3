@@ -1135,8 +1135,10 @@ def create_Devices_object():
         Gb.icloud_dnames_by_devicename = {}
         Gb.conf_startup_errors_by_devicename = {}
 
+        _log(f"{len(Gb.conf_apple_accounts)=} {len(Gb.username_valid_by_username)=}")
         if len(Gb.conf_apple_accounts) != len(Gb.username_valid_by_username):
             pyicloud_ic3_interface.verify_all_apple_accounts()
+        _log(f"{len(Gb.conf_apple_accounts)=} {len(Gb.username_valid_by_username)=}")
 
         for conf_device in Gb.conf_devices:
             devicename   = conf_device[CONF_IC3_DEVICENAME]
@@ -1697,7 +1699,7 @@ def _post_evlog_apple_acct_tracked_devices_info(PyiCloud):
                     f"{devices_assigned_msg}"
                     f"{devices_not_assigned_msg}")
 
-        famshr_crlf = CRLF_DOT if PyiCloud.locate_all_devices else CRLF_CIRCLE_X
+        famshr_crlf = CRLF_DOT if PyiCloud.locate_all_devices else CRLF_STAR
         if owner_icloud_dnames:
             evlog_msg += f"{CRLF_DOT} myDevices-{owner_icloud_dnames}"
         if famshr_dnames_msg:

@@ -600,6 +600,7 @@ def filter_special_chars(log_msg, evlog_export=False):
     log_msg = log_msg.replace('* >', '')
     log_msg = log_msg.replace('&lt;', '<')
 
+    # The Gb.log_file_filter is set up in config_file.build_log_file_filter
     for log_file_filter in Gb.log_file_filter:
         log_msg = log_msg.replace(log_file_filter, '…………')
 

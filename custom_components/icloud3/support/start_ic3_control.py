@@ -211,8 +211,14 @@ def stage_4_setup_data_sources():
     post_event(f"Data Source > HA Mobile App used-{Gb.use_data_source_MOBAPP}")
 
     try:
-        if Gb.use_data_source_ICLOUD:
-            _log_into_apple_accounts()
+        # Get list of all unique Apple Acct usernames in config
+        Gb.conf_usernames = [apple_account[CONF_USERNAME]
+                                    for apple_account in Gb.conf_apple_accounts
+                                    if (apple_account[CONF_USERNAME] in Gb.username_valid_by_username
+                                            and apple_account[CONF_USERNAME] != '')]
+
+        if Gb.use_data_source_ICLOUD and isnot_empty(Gb.conf_usernames):
+            _log_into_apple_accounts(retry=True)
 
             start_ic3.setup_data_source_ICLOUD()
 
@@ -332,13 +338,13 @@ def _log_into_apple_accounts(retry=False):
     if Gb.initial_icloud3_loading_flag is False:
         return True
 
-    # When iCloud3 starts, an executor job is started at the beginning of __init__
-    # to connect to all Apple Accounts. Now, cycle through the PyiCloud object table
-    # and see if any are not set up that should be
-        # Get list of all unique Apple Acct usernames in config
-    Gb.conf_usernames = [apple_account[CONF_USERNAME]
-                                        for apple_account in Gb.conf_apple_accounts
-                                        if apple_account[CONF_USERNAME] in Gb.username_valid_by_username]
+    # # Get list of all unique Apple Acct usernames in config
+    # Gb.conf_usernames = [apple_account[CONF_USERNAME]
+    #                                     for apple_account in Gb.conf_apple_accounts
+    #                                     if (apple_account[CONF_USERNAME] in Gb.username_valid_by_username
+    #                                             and apple_account[CONF_USERNAME] != '')]
+    if is_empty(Gb.conf_usernames):
+        return False
 
     # Verify that all apple accts have been setup. Restart the setup process for any that
     # are not complete
@@ -361,7 +367,8 @@ def _log_into_apple_accounts(retry=False):
         post_event(f"Apple Acct > {PyiCloud.username_base}, All Devices Located")
     else:
         post_event(f"Apple Acct > Devices not Located > {list_to_str(Gb.devices_without_location_data)}")
-    return False
+
+    return True
 
 #------------------------------------------------------------------
 def _are_all_devices_verified(retry=False):

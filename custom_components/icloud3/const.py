@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.1.1'
+VERSION                         = '3.1.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
 ICLOUD3                         = 'iCloud3'
@@ -295,12 +295,12 @@ YELLOW_ALERT      = '⚠️'
 RED_ALERT         = '⛔'
 RED_STOP          = '🛑'
 RED_CIRCLE        = '⭕'
-SMALL_X           = '× '
+SMALL_X           = '⊗ '
 CIRCLE_STAR       = '✪ '
 CIRCLE_STAR2      = '✪'
 CIRCLE_BIG_X      = '⊗'
 CIRCLE_SLASH      = '⊘'
-CIRCLE_X          = 'ⓧ'
+CIRCLE_X          = '⊗'
 DOT               = '• '
 PDOT              = '•'
 SQUARE_DOT        = '▪'
@@ -318,7 +318,7 @@ CRLF_LDOT         = f'{CRLF}•{NBSP2}'
 NL_DOT            = f'{NL} • '
 CRLF_XD           = f'{CRLF}{NBSP2}×{NBSP2}'
 CRLF_X            = f'{CRLF}{NBSP3}×{NBSP2}'
-CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⮾{NBSP}'
+CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⊗{NBSP}'
 CRLF_RED_X        = f'{CRLF}❌'
 CRLF_HDOT         = f'{CRLF}{NBSP4}{NBSP3}◦{NBSP2}'
 CRLF_CHK          = f'{CRLF}{NBSP3}✓{NBSP}'
@@ -852,7 +852,7 @@ DEFAULT_APPLE_ACCOUNTS_CONF = {
 DEFAULT_TRACKING_CONF = {
         CONF_USERNAME: '',
         CONF_PASSWORD: '',
-        CONF_APPLE_ACCOUNTS: [DEFAULT_APPLE_ACCOUNTS_CONF],
+        CONF_APPLE_ACCOUNTS: [],
         CONF_ENCODE_PASSWORD: True,
         CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX: '',
         CONF_SETUP_ICLOUD_SESSION_EARLY: True,
