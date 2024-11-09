@@ -802,11 +802,8 @@ class PyiCloudService():
                     Gb.PyiCloudValidateAppleAcct.validate_username_password(
                                                         self.username, self.password)
                 if username_password_valid:
-                    err_msg += ("Python SRP Library Credentials Error. The Python "
-                                "module that creates the Secure Remote Password hash key "
-                                "has calculated an incorrect value for a valid "
-                                "Username/Password. Try changing the Password to see "
-                                "if the Apple Acct can be logged into. ")
+                    err_msg += (f"Python SRP Library Credentials Error"
+                                f"{more_info('password_srp_error')}")
                 else:
                     err_msg += "Authentication error, Invalid Username or Password, "
             elif self.response_code == 503 or self.response_code_pwsrp_err == 503:
@@ -1815,7 +1812,7 @@ class PyiCloud_DeviceSvc():
                         or device_data[LOCATION] == {}
                         or device_data[LOCATION] is None):
                     if device_id not in Gb.devices_without_location_data:
-                        Gb.devices_without_location_data.append(device_id)
+                        list_add(Gb.devices_without_location_data, device_data_name)
                         rawdata_hdr_msg = 'NO LOCATION'
                         if device_data[ICLOUD_DEVICE_STATUS] == 203:
                             rawdata_hdr_msg += ', OFFLINE'

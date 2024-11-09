@@ -1135,10 +1135,9 @@ def create_Devices_object():
         Gb.icloud_dnames_by_devicename = {}
         Gb.conf_startup_errors_by_devicename = {}
 
-        _log(f"{len(Gb.conf_apple_accounts)=} {len(Gb.username_valid_by_username)=}")
-        if len(Gb.conf_apple_accounts) != len(Gb.username_valid_by_username):
-            pyicloud_ic3_interface.verify_all_apple_accounts()
-        _log(f"{len(Gb.conf_apple_accounts)=} {len(Gb.username_valid_by_username)=}")
+        # _log(f"{len(Gb.conf_apple_accounts)=} {len(Gb.username_valid_by_username)=}")
+        # if len(Gb.conf_apple_accounts) != len(Gb.username_valid_by_username):
+        pyicloud_ic3_interface.verify_all_apple_accounts()
 
         for conf_device in Gb.conf_devices:
             devicename   = conf_device[CONF_IC3_DEVICENAME]
@@ -1639,6 +1638,9 @@ def _post_evlog_apple_acct_tracked_devices_info(PyiCloud):
                     exception_msg = ', DUPLICATE DEVICE'
                 else:
                     msg_symb = CRLF_X
+                if pyicloud_icloud_dname in Gb.devices_without_location_data:
+                    msg_symb = f"{CRLF} {YELLOW_ALERT} "
+                    exception_msg = ', NOT LOCATED'
 
                 device_msg = (  f"{msg_symb}"
                                 f"{pyicloud_icloud_dname}{RARROW}")
@@ -1683,7 +1685,8 @@ def _post_evlog_apple_acct_tracked_devices_info(PyiCloud):
                 # log_rawdata(log_title, {'filter': _RawData.device_data})
 
             devices_assigned_cnt += 1
-            msg_symb = f"{CRLF}{NBSP2}{YELLOW_ALERT}" if pyicloud_icloud_dname.endswith('.') else CRLF_CHK
+            msg_symb = f"{CRLF}{NBSP2}{YELLOW_ALERT}" \
+                            if pyicloud_icloud_dname.endswith('.') else CRLF_CHK
             device_msg=(f"{msg_symb}"
                         f"{pyicloud_icloud_dname}{RARROW}"
                         f"{Device.fname}/{devicename} ")

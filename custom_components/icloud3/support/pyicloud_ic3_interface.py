@@ -118,7 +118,7 @@ def verify_all_apple_accounts():
         password = Gb.PyiCloud_password_by_username[username]
 
         if is_empty(username) or is_empty(password):
-            Gb.username_valid_by_username[f"AppleAcctNoUserPW-#{cnt}"] = False
+            # Gb.username_valid_by_username[f"AppleAcctNoUserPW-#{cnt}"] = False
             continue
 
         # Validate username/password so we know all future login attempts will be with valid apple accts

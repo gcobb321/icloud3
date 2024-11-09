@@ -213,6 +213,15 @@ more_info_text = {
 
     'instructions_already_displayed': (
         f"{CRLF_DASH_75}"
-        f"{CRLF}See the instructions that have already been displayed"
-        ),
+        f"{CRLF}See the instructions that have already been displayed"),
+
+    'password_srp_error': (
+        f"{CRLF_DASH_75}"        
+        f"{CRLF}The Python module that creates the Secure Remote Password (SRP) "
+        f"hash key has calculated an incorrect value for a valid assword. You probably "
+        f"will have to change the Apple Account password to be able to log into it. "
+        f"{CRLF}{CRLF}For more infornation, go to the iCloud3 GitHub "
+        f"issues page. Click the red Bug icon on the Event Log and "
+        f"review the{CRLF}`➤ Password SRP Error Message` issue at the top of the screen."),
+
 }

@@ -8,7 +8,17 @@
 3.1.2
 .......................
 ### Change Log - v3.1.2
-1. INITIAL SETUP (Fixed) - Fixed some issues related to setting up iCloud3 the first time or with no apple accounts.
+1. INITIAL SETUP (Fixed) - This fixed some issues related an initial install where there are no apple accounts or where the iCloud3 Apple account's first configuration file entry was blank.. This fixes the error message:
+    ```
+    File "/config/custom_components/icloud3/config_flow.py", line 1974,
+        in async_step_update_apple_acct
+    self._update_conf_apple_accounts(self.aa_idx, user_input)
+    File "/config/custom_components/icloud3/config_flow.py", line 2055,
+        in _update_conf_apple_accounts
+    if Gb.conf_apple_accounts[0][CONF_USERNAME] == '':
+    ~~~~~~~~~~~~~~~~~~~~~~^^^
+    IndexError: list index out of range
+```
 
 
 

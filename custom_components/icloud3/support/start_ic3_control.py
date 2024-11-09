@@ -1,7 +1,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
                                     NOT_SET, IC3LOG_FILENAME,
-                                    CRLF, CRLF_DOT, CRLF_HDOT, CRLF_X, NL, NL_DOT, LINK,
+                                    CRLF, CRLF_DOT, CRLF_HDOT, CRLF_X, NL, NL_DOT, LINK, YELLOW_ALERT,
                                     EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_VERSION, ICLOUD, ZONE_DISTANCE,
@@ -365,8 +365,8 @@ def _log_into_apple_accounts(retry=False):
 
     if is_empty(Gb.devices_without_location_data):
         post_event(f"Apple Acct > {PyiCloud.username_base}, All Devices Located")
-    else:
-        post_event(f"Apple Acct > Devices not Located > {list_to_str(Gb.devices_without_location_data)}")
+    # else:
+    #     post_event(f"{YELLOW_ALERT}Apple Acct > Devices not Located, {list_to_str(Gb.devices_without_location_data)}")
 
     return True
 

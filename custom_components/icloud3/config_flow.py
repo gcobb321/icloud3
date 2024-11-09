@@ -64,7 +64,7 @@ from .helpers.common    import (instr, isnumber, is_empty, isnot_empty, list_to_
                                 sort_dict_by_values,
                                 encode_password, decode_password, )
 from .helpers.messaging import (log_exception, log_debug_msg, log_info_msg,
-                                _log, _evlog,
+                                _log, _evlog, more_info,
                                 post_event, post_monitor_msg, )
 from .helpers           import entity_io
 from .helpers           import file_io
@@ -3977,9 +3977,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 Gb.mobapp_dnames_by_devicename[_conf_device[CONF_IC3_DEVICENAME]] =\
                                 _conf_device[CONF_MOBILE_APP_DEVICE]
 
-        # if is_empty(Gb.devicenames_by_mobapp_dname):
-        #     return
-
         mobapp_devices ={mobapp_dname:(
                             f"{mobapp_info[0]} "
                             f"(device_tracker.{mobapp_dname}) > "
@@ -3998,10 +3995,15 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             else:
                 devicename = Gb.devicenames_by_mobapp_dname[mobapp_dname]
-                Device = Gb.Devices_by_devicename[devicename]
+                Device = Gb.Devices_by_devicename.get(devicename)
+                if Device:
+                    fname_devicename = Device.fname_devicename
+                else:
+                    fname_devicename = f"{CIRCLE_STAR}{devicename} (UNKNOWN)"
+                
                 devices_used[mobapp_dname] = (
                             f"{mobapp_info.split(';')[0]}{RARROW}"
-                            f"ASSIGNED TO-{Device.fname_devicename}")
+                            f"ASSIGNED TO-{fname_devicename}")
 
         try:
             scan_for_mobapp_devices = {
