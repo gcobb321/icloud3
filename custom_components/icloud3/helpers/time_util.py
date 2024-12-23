@@ -560,6 +560,8 @@ def adjust_time_hour_value(hhmmss, hh_adjustment):
         log_exception(err)
 
     hhmmss24 = time_to_24hrtime(_hhmmss)
+    if hhmmss24[1:2] == ':':
+        hhmmss24 = f"0{hhmmss24}"
     hh = int(hhmmss24[0:2]) + hh_adjustment
     if hh <= 0:
         hh += 24

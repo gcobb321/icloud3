@@ -27,7 +27,7 @@ from ..const                import (
                                     CONF_TRACK_FROM_BASE_ZONE_USED,
                                     CF_DEFAULT_IC3_CONF_FILE,
                                     DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF,
-                                    DEFAULT_SENSORS_CONF,
+                                    DEFAULT_SENSORS_CONF, DEFAULT_DATA_CONF,
                                     HOME_DISTANCE, CONF_SENSORS_TRACKING_DISTANCE,
                                     CONF_SENSORS_DEVICE, BATTERY_STATUS,
                                     CONF_WAZE_USED, CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_DISTANCE_METHOD,
@@ -42,7 +42,7 @@ from ..const                import (
 from ..support              import start_ic3
 from ..support              import waze
 from ..helpers              import file_io
-from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, list_add, )
+from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, list_add, is_empty)
 from ..helpers.messaging    import (log_exception, _evlog, _log, log_info_msg, )
 from ..helpers.time_util    import (datetime_now, )
 
@@ -71,9 +71,10 @@ def load_storage_icloud3_configuration_file():
     if file_io.file_exists(Gb.icloud3_config_filename) is False:
         _LOGGER.info(f"Creating Configuration File-{Gb.icloud3_config_filename}")
 
-        Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
-        _build_initial_config_file_structure()
-        write_storage_icloud3_configuration_file()
+        initialize_icloud3_configuration_file()
+        # Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
+        # build_initial_config_file_structure()
+        # write_storage_icloud3_configuration_file()
 
     success = read_storage_icloud3_configuration_file()
 
@@ -207,12 +208,12 @@ def _reconstruct_conf_file():
 
     Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = Gb.conf_apple_accounts
     Gb.conf_tracking[CONF_DEVICES]        = Gb.conf_devices
-    Gb.conf_data[CF_TRACKING]       = Gb.conf_tracking
-    Gb.conf_data[CF_GENERAL]        = Gb.conf_general
-    Gb.conf_data[CF_SENSORS]        = Gb.conf_sensors
+    Gb.conf_data[CF_TRACKING]             = Gb.conf_tracking
+    Gb.conf_data[CF_GENERAL]              = Gb.conf_general
+    Gb.conf_data[CF_SENSORS]              = Gb.conf_sensors
 
-    Gb.conf_file_data[CF_PROFILE]   = Gb.conf_profile
-    Gb.conf_file_data[CF_DATA]      = Gb.conf_data
+    Gb.conf_file_data[CF_PROFILE]         = Gb.conf_profile
+    Gb.conf_file_data[CF_DATA]            = Gb.conf_data
 
 #--------------------------------------------------------------------
 def _restore_config_file_from_backup():
@@ -236,10 +237,14 @@ def _restore_config_file_from_backup():
         _LOGGER.error(f"iCloud3{RARROW}Restore from backup configuration file failed")
         _LOGGER.error(f"iCloud3{RARROW}Recreating configuration file with default parameters-"
                         f"{Gb.icloud3_config_filename}")
-        _build_initial_config_file_structure()
-        Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
-        write_storage_icloud3_configuration_file()
-        read_storage_icloud3_configuration_file()
+        initialize_icloud3_configuration_file()
+
+#--------------------------------------------------------------------
+def initialize_icloud3_configuration_file():
+    build_initial_config_file_structure()
+    Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
+    write_storage_icloud3_configuration_file()
+    read_storage_icloud3_configuration_file()
 
 #--------------------------------------------------------------------
 def _add_parms_and_check_config_file():
@@ -306,6 +311,7 @@ async def async_load_icloud3_ha_config_yaml(ha_config_yaml):
 #--------------------------------------------------------------------
 def build_log_file_filters():
 
+    return
     try:
         for apple_acct in Gb.conf_apple_accounts:
             if apple_acct[CONF_USERNAME] == '':
@@ -321,7 +327,7 @@ def build_log_file_filters():
         _LOGGER.exception(err)
 
 #--------------------------------------------------------------------
-def _build_initial_config_file_structure():
+def build_initial_config_file_structure():
     '''
     Create the initial data structure of the ic3 config file
 
@@ -378,22 +384,29 @@ def conf_apple_acct(idx_or_username):
     '''
     try:
         if len(Gb.conf_apple_accounts) == 0:
-            conf_apple_acct = DEFAULT_APPLE_ACCOUNTS_CONF.copy()
-            # Gb.conf_apple_accounts = [conf_apple_acct]
-            return (conf_apple_acct, 0)
+            return (DEFAULT_APPLE_ACCOUNTS_CONF.copy(), 0)
 
+        # Get conf_apple_acct by it's index
         if type(idx_or_username) is int:
             if isbetween(idx_or_username, 0, len(Gb.conf_apple_accounts)-1):
                 conf_apple_acct = Gb.conf_apple_accounts[idx_or_username].copy()
                 conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
                 return (conf_apple_acct, idx_or_username)
 
+            else:
+                return (DEFAULT_APPLE_ACCOUNTS_CONF.copy(), -1)
+
+        # Get conf_apple_acct by it's username
         elif type(idx_or_username) is str:
             conf_apple_acct = [apple_acct   for apple_acct in Gb.conf_apple_accounts
                                             if apple_acct[CONF_USERNAME] == idx_or_username]
-            conf_apple_acct_username = [apple_account[CONF_USERNAME]
-                                            for apple_account in Gb.conf_apple_accounts]
-            conf_apple_acct_idx = conf_apple_acct_username.index(idx_or_username)
+            if is_empty(conf_apple_acct):
+                return (DEFAULT_APPLE_ACCOUNTS_CONF.copy(), -1)
+
+            # Get it's index
+            conf_apple_acct_usernames = [apple_acct[CONF_USERNAME]
+                                            for apple_acct in Gb.conf_apple_accounts]
+            conf_apple_acct_idx = conf_apple_acct_usernames.index(idx_or_username)
 
             if conf_apple_acct != []:
                 conf_apple_acct = conf_apple_acct[0]
@@ -404,7 +417,8 @@ def conf_apple_acct(idx_or_username):
         log_exception(err)
         pass
 
-    return ({}, -1)
+    return (DEFAULT_APPLE_ACCOUNTS_CONF.copy(), 0)
+
 
 #--------------------------------------------------------------------
 def apple_acct_username_password(idx):
@@ -609,20 +623,22 @@ def _update_tracking_parameters():
     # v3.1 Add Apple accounts list
     try:
         if (CONF_APPLE_ACCOUNTS not in Gb.conf_tracking):
-                # or Gb.conf_tracking[CONF_APPLE_ACCOUNTS] == []):
             update_config_file_flag = True
 
             Gb.conf_tracking = _insert_into_conf_dict_parameter(
                                             Gb.conf_tracking,
-                                            CONF_APPLE_ACCOUNTS, '',
+                                            CONF_APPLE_ACCOUNTS, [],
                                             before=CONF_DEVICES)
 
-            Gb.conf_apple_accounts = Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = []
-                # {   CONF_USERNAME: Gb.conf_tracking[CONF_USERNAME],
-                #     CONF_PASSWORD: encode_password(Gb.conf_tracking[CONF_PASSWORD]),
-                #     CONF_TOTP_KEY: '',
-                #     CONF_LOCATE_ALL: True,
-                # }]
+            if Gb.conf_tracking[CONF_USERNAME] == '':
+                Gb.conf_apple_accounts = Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = []
+            else:
+                Gb.conf_apple_accounts = Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = [
+                    {   CONF_USERNAME: Gb.conf_tracking[CONF_USERNAME],
+                        CONF_PASSWORD: encode_password(Gb.conf_tracking[CONF_PASSWORD]),
+                        CONF_TOTP_KEY: '',
+                        CONF_LOCATE_ALL: True,
+                    }]
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -662,12 +678,10 @@ def _update_device_parameters():
         # v3.1 - Add Apple account parameter
         if CONF_APPLE_ACCOUNT not in conf_device:
             conf_device = _insert_into_conf_dict_parameter(
-                                            conf_device,
-                                            CONF_APPLE_ACCOUNT, [],
-                                            before=CONF_FAMSHR_DEVICENAME)
+                                    conf_device,
+                                    CONF_APPLE_ACCOUNT, Gb.conf_tracking[CONF_USERNAME],
+                                    before=CONF_FAMSHR_DEVICENAME)
 
-            conf_device[CONF_APPLE_ACCOUNT] = Gb.conf_tracking[CONF_USERNAME]
-            # Gb.conf_devices[cd_idx] = conf_device
             update_config_file_flag = True
 
         # v3.1 - Change Search: to ScanFor: in Mobile App parameter

@@ -1,7 +1,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (CRLF_DOT,  )
-from .common                import (instr, )
+from .common                import (instr, is_empty, isnot_empty, list_to_str, )
 from .messaging             import (log_exception, _evlog, _log, )
 
 from collections            import OrderedDict
@@ -100,7 +100,7 @@ def save_json_file(filename, data):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 def file_exists(filename):
-    return _os(os.path.isfile, filename)
+    return _os(os.path.exists, filename)
 
 def delete_file(filename):
     try:
@@ -317,6 +317,7 @@ def get_file_or_directory_list(list_type=None, start_dir=None,  file_extn_filter
     filename_or_directory_list = []
     path_config_base = f"{Gb.ha_config_directory}/"
     start_dir = start_dir.replace(path_config_base, '')
+    file_extn_filter_str = list_to_str(file_extn_filter, '.')
     if start_dir is None: start_dir = ''
 
     try:
@@ -334,7 +335,7 @@ def get_file_or_directory_list(list_type=None, start_dir=None,  file_extn_filter
             # Filter unwanted directories - std dirs are www/icloud3, www/community, www/images
             if start_dir.endswith('/event_log_card/'):
                 pass
-            elif Gb.picture_www_dirs:
+            elif start_dir == 'www' and Gb.picture_www_dirs:
                 valid_dir = [dir for dir in Gb.picture_www_dirs if sub_directory.startswith(dir)]
                 if valid_dir == []:
                     continue
@@ -344,8 +345,10 @@ def get_file_or_directory_list(list_type=None, start_dir=None,  file_extn_filter
             dir_name = dir_name.replace('//', '/')
             dir_filenames = [f"{dir_name}{file}"
                                     for file in files
-                                    if (file_extn_filter
-                                        and file.rsplit('.', 1)[-1] in file_extn_filter)]
+                                    if (is_empty(file_extn_filter)
+                                        or file.rsplit('.', 1)[-1] in file_extn_filter)]
+                                    # if (file_extn_filter_str == ''
+                                    #     or instr(file.rsplit('.', 1)[-1], file_extn_filter))]
 
             filename_or_directory_list.extend(dir_filenames[:25])
             if len(dir_filenames) > 25:

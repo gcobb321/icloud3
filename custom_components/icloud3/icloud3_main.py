@@ -54,7 +54,7 @@ from .support           import zone_handler
 from .support           import determine_interval as det_interval
 from .helpers.file_io   import (is_event_loop_running,  is_event_loop_running2,)
 from .helpers.common    import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone,
-                                list_to_str, isbetween, )
+                                list_to_str, isbetween, get_username_base, )
 from .helpers.file_io   import (file_exists, directory_exists, make_directory, extract_filename, )
 from .helpers.messaging import (broadcast_info_msg,
                                 post_event, post_error_msg, post_monitor_msg, post_internal_error,
@@ -463,8 +463,6 @@ class iCloud3:
         if (Device.PyiCloud is None):
         #        or Device.devicename in Gb.username_pyicloud_503_connection_error):
             return
-        # if Gb.PyiCloud is None:
-        #     return
 
         Gb.trace_prefix = 'ICLOUD'
         devicename = Device.devicename
@@ -619,7 +617,7 @@ class iCloud3:
         #   - Reset daily counts
         #   - Compress the WazeHist database
         #   - Cycle the iCloud3 log files
-        if Gb.this_update_time == '00:00:00':
+        if Gb.this_update_time == '00:15:00':
             self._timer_tasks_midnight()
 
         # At 1am:
@@ -645,12 +643,14 @@ class iCloud3:
         # Every 15-minutes:
         #   - Refresh a device's distance to the other devices
         if time_now_mm in ['00', '15', '30', '45']:
+            det_interval.set_dist_to_devices(post_event_msg=True)   
+
             if Gb.log_debug_flag:
                 for devicename, Device in Gb.Devices_by_devicename_tracked.items():
                     Device.log_data_fields()
-            pyicloud_ic3_interface.retry_apple_acct_login()
-            det_interval.set_dist_to_devices(post_event_msg=True)
 
+            if isnot_empty(Gb.username_pyicloud_503_connection_error):
+                pyicloud_ic3_interface.retry_apple_acct_login()
 
         # Every 5-minutes
         if time_now_mmss[1:] in ['0:00', '5:00']:
@@ -847,7 +847,7 @@ class iCloud3:
                 if (Device.old_loc_cnt > 4
                         and Device.FromZone_Home.interval_secs >= 300
                         and Device.loc_data_secs > Device.last_update_loc_secs):
-                    event_msg = (f"Location > Old, Using Anyway, "
+                    event_msg = (f"iCloud Loc > Old, Using Anyway, "
                                 f"{Device.last_update_loc_time}{RARROW}"
                                 f"{Device.loc_data_time}")
                     post_event(Device, event_msg)
@@ -1130,7 +1130,7 @@ class iCloud3:
             if Device.old_loc_cnt > 8:
                 error_interval_secs, error_cnt, max_error_cnt = det_interval.get_error_retry_interval(Device)
                 if error_interval_secs > Device.interval_secs:
-                    event_msg =(f"Location > Old #{Device.old_loc_cnt}, Old Loc Counter Reset, "
+                    event_msg =(f"iCloud Loc > Old #{Device.old_loc_cnt}, Old Loc Counter Reset, "
                                 f"NextUpdate-{format_age(Device.interval_secs)}, "
                                 f"OldLocRetryUpdate-{format_age(error_interval_secs)}")
                     Device.old_loc_cnt = 0
@@ -1190,7 +1190,7 @@ class iCloud3:
         tracked_alert_attr = monitored_alert_attr = ''
 
         if Gb.version_hacs:
-            general_alert_msg += f"{LDOT2}iCloud3 {Gb.version_hacs} is available on HACS, you are running v{Gb.version}"
+            general_alert_msg += f"{CRLF_LDOT}iCloud3 {Gb.version_hacs} is available on HACS, you are running v{Gb.version}"
 
         if (Gb.startup_alerts
                 and is_empty(Gb.username_pyicloud_503_connection_error)
@@ -1198,34 +1198,31 @@ class iCloud3:
             Gb.startup_alerts = []
 
         if isnot_empty(Gb.username_pyicloud_503_connection_error):
-            general_alert_msg += (f"{LDOT2}Apple Acct Waiting to Complete Login > "
-                                    f"{list_to_str(Gb.username_pyicloud_503_connection_error)}")
+            username_base = [get_username_base(username) 
+                                        for username in Gb.username_pyicloud_503_connection_error]
+            general_alert_msg += (f"{CRLF_LDOT}Apple Login Failed > AutoRetry-"
+                                    f"{list_to_str(username_base)}")
 
         if isnot_empty(Gb.startup_alerts):
             startup_alert_attr = Gb.startup_alerts_str
-            if general_alert_msg: general_alert_msg += CRLF
-            general_alert_msg += f"{LDOT2}Alerts starting iCloud3{RARROW}Review Event Log for more info"
+            general_alert_msg += f"{CRLF_LDOT}Alerts starting iCloud3{RARROW}Review Event Log for more info"
 
             for devicename, error_msg in Gb.conf_startup_errors_by_devicename.items():
-                if general_alert_msg: general_alert_msg += CRLF
-                general_alert_msg += f"{LDOT2}{devicename} > {error_msg}"
+                general_alert_msg += f"{CRLF_LDOT}{devicename} > {error_msg}"
 
         for username, PyiCloud in Gb.PyiCloud_by_username.items():
             if PyiCloud and PyiCloud.requires_2fa:
-                if general_alert_msg: general_alert_msg += CRLF
-                general_alert_msg += (  f"{LDOT2}Apple Acct > {PyiCloud.account_owner_short}, "
+                general_alert_msg += (  f"{CRLF_LDOT}Apple Acct > {PyiCloud.account_owner_short}, "
                                         f"Authentication Needed")
 
         if (Gb.icloud_acct_error_cnt > 5
                 and instr(general_alert_msg, 'errors accessing') is False):
-            if general_alert_msg: general_alert_msg += CRLF
-            general_alert_msg += f"{LDOT2}Internet or Apple may be down, errors accessing Apple Acct"
+            general_alert_msg += f"{CRLF_LDOT}Internet or Apple may be down, errors accessing Apple Acct"
 
         apple_acct_errors = [username.split('@')[0] for username in Gb.username_valid_by_username
                                                     if Gb.username_valid_by_username[username] is False]
         if isnot_empty(apple_acct_errors):
-            if general_alert_msg: general_alert_msg += CRLF
-            general_alert_msg += f"{LDOT2}Apple Acct Login Errors-{list_to_str(apple_acct_errors)}"
+            general_alert_msg += f"{CRLF_LDOT}Apple Acct Login Errors-{list_to_str(apple_acct_errors)}"
 
         verified_msg = ''
         poor_location_msg = ''
@@ -1245,13 +1242,13 @@ class iCloud3:
                 elif Device.no_location_data:
                     poor_location_msg += f"{Device.fname}, "
                 elif mins_since(Device.loc_data_secs) > 300:
-                    poor_location_msg += f"{Device.fname} ({format_secs_since(Device.loc_data_secs)} ago), "
+                    age_hrs = int(mins_since(Device.loc_data_secs)/60)
+                    poor_location_msg += f"{Device.fname} (> {age_hrs} hrs ago), "
             if isbetween(Device.dev_data_battery_level, 1, 19):
                 device_alert_msg = f"{Device.fname} > Low Battery ({Device.dev_data_battery_level}%)"
 
-            crlf = CRLF_LDOT if general_alert_msg else LDOT2
             if device_alert_msg:
-                general_alert_msg += f"{crlf}{device_alert_msg}"
+                general_alert_msg += f"{CRLF_LDOT}{device_alert_msg}"
 
             if device_alert_msg != Device.alert:
                 Device.alert = Device.sensors[ALERT] = device_alert_msg
@@ -1266,11 +1263,15 @@ class iCloud3:
         if offline_msg:
             general_alert_msg += f"{CRLF_LDOT}Offline-{offline_msg[:-2]}"
 
-        Gb.EvLog.evlog_attrs['alert_startup']   = Gb.EvLog.alert_attr_filter(startup_alert_attr)
-        Gb.EvLog.evlog_attrs['alert_tracked']   = Gb.EvLog.alert_attr_filter(tracked_alert_attr)
-        Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(monitored_alert_attr)
+        if Gb.EvLog.alert_attr_filter(startup_alert_attr) != startup_alert_attr:
+            Gb.EvLog.evlog_attrs['alert_startup'] = Gb.EvLog.alert_attr_filter(startup_alert_attr)
+        if Gb.EvLog.alert_attr_filter(tracked_alert_attr) != tracked_alert_attr:
+            Gb.EvLog.evlog_attrs['alert_tracked'] = Gb.EvLog.alert_attr_filter(tracked_alert_attr)
+        if Gb.EvLog.alert_attr_filter(monitored_alert_attr) != monitored_alert_attr:
+            Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(monitored_alert_attr)
 
-
+        if general_alert_msg.startswith(CRLF):
+            general_alert_msg = general_alert_msg[1:]
         if general_alert_msg != Gb.EvLog.greenbar_alert_msg:
             post_evlog_greenbar_msg(general_alert_msg)
         elif general_alert_msg == '' and Gb.EvLog.greenbar_alert_msg:
@@ -1375,25 +1376,24 @@ class iCloud3:
     def _timer_tasks_midnight(self):
 
         post_event(f"{EVLOG_IC3_STAGE_HDR}")
+
+        # Close log file, rename to 'icloud.log.1', open a new log file
+        archive_ic3log_file()
+
+        log_start_finish_update_banner('start', 'End-of-Day Maintenance', 'Started', '')
+
         if instr(Gb.conf_general[CONF_LOG_LEVEL], 'auto-reset'):
                 start_ic3.set_log_level('info')
                 start_ic3.update_conf_file_log_level('info')
 
         for username, PyiCloud in Gb.PyiCloud_by_username.items():
-            PyiCloud.authentication_cnt  = 0
-            PyiCloud.location_update_cnt = 0
+            PyiCloud.auth_cnt  = 0
+            
+        if Gb.WazeHist and Gb.WazeHist.is_historydb_USED:
+            Gb.WazeHist.end_of_day_maintenance()
 
-        if Gb.WazeHist:
-            Gb.WazeHist.wazehist_delete_invalid_records()
-            Gb.WazeHist.compress_wazehist_database()
-            Gb.WazeHist.wazehist_update_track_sensor()
-            if Gb.wazehist_recalculate_time_dist_flag:
-                Gb.wazehist_recalculate_time_dist_flag = False
-                Gb.WazeHist.wazehist_recalculate_time_dist_all_zones()
-
-        # Close log file, rename to '-1', open a new log file
-        archive_ic3log_file()
-        post_event(f"{EVLOG_IC3_STAGE_HDR}End of Day File Maintenance Started")
+        log_start_finish_update_banner('finish', 'End-of-Day Maintenance', 'Complete', '')
+        post_event(f"{EVLOG_IC3_STAGE_HDR}End of Day File Maintenance")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1428,20 +1428,21 @@ class iCloud3:
                 return
 
             cnt_msg = f"#{Device.old_loc_cnt}.{Device.max_error_cycle_cnt}"
+            cnt_msg = cnt_msg.replace('.0', '')
             # No GPS data takes presidence over offline
             if Device.no_location_data:
-                Device.old_loc_msg = f"Location > No GPS Data {cnt_msg}"
+                Device.old_loc_msg = f"iCloud Loc > No GPS Data {cnt_msg}"
                 Device.update_sensors_flag = False
             elif Device.is_offline:
                 Device.old_loc_msg = f"Device > Offline {cnt_msg}"
                 Device.update_sensors_flag = False
                 statzone.clear_statzone_timer_distance(Device)
             elif Device.is_location_old:
-                Device.old_loc_msg = f"Location > Old {cnt_msg}, {format_age(Device.loc_data_secs)}"
+                Device.old_loc_msg = f"iCloud Loc > Old {cnt_msg}, {format_age(Device.loc_data_secs)}"
             elif Device.is_gps_poor:
                 Device.old_loc_msg = f"Poor GPS > {cnt_msg}, Accuracy-±{Device.loc_data_gps_accuracy:.0f}m"
             else:
-                Device.old_loc_msg = f"Locaton > Unknown {cnt_msg}, {format_age(Device.loc_data_secs)}"
+                Device.old_loc_msg = f"iCloud Loc > Unknown {cnt_msg}, {format_age(Device.loc_data_secs)}"
 
         except Exception as err:
             log_exception(err)

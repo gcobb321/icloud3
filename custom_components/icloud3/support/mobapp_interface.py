@@ -400,7 +400,7 @@ def request_location(Device, is_alive_check=False, force_request=False):
             if Device.mobapp_request_loc_last_secs > 0:
                 event_msg +=  f", LastRequest-{format_time_age(Device.mobapp_request_loc_last_secs)}"
         else:
-            event_msg =(f"MobApp Location Requested > "
+            event_msg =(f"MobApp Loc > Requested, "
                         f"LastLocated-{format_time_age(Device.mobapp_data_secs)}")
             if Device.old_loc_cnt > 2:
                 event_msg += f", OldThreshold-{format_timer(Device.old_loc_threshold_secs)}"

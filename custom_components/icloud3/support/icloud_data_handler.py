@@ -244,9 +244,6 @@ def update_PyiCloud_RawData_data(Device, results_msg_flag=True):
                             f"Refresh Location Data Failed, Connection Error 503, Will "
                             f"try to reconnect in 15-min")
 
-
-        Device.PyiCloud.location_update_cnt += 1
-
         if update_all_devices_wih_latest_raw_data(Device) is False:
             return False
 
@@ -465,7 +462,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                 else:
                     post_monitor_msg(_Device, event_msg)
 
-        pyicloud_ic3_interface.display_authentication_msg(Device.PyiCloud)
+        #pyicloud_ic3_interface.display_authentication_msg(Device.PyiCloud)
         # pyicloud_ic3_interface.display_authentication_msg(Gb.PyiCloud)
         Gb.trace_prefix = save_evlog_prefix
 
@@ -569,7 +566,7 @@ def _get_devdata_useable_status(Device, data_source):
 
         # rc9 Added loc_age_secs check so msg is only displayed after 20-secs
         if loc_time_ok is False and loc_age_secs > 20:
-            event_msg = f"Location > Refresh Needed, "
+            event_msg = f"iCloud Loc > Refresh Needed, "
             if Device.loc_data_secs == Device.last_update_loc_secs:
                 event_msg += "Location not Updated"
             else:

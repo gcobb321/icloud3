@@ -7,7 +7,7 @@ from ..const                import (DEVICE_TRACKER, NOTIFY,
                                     NUMERIC, HIGH_INTEGER, HHMMSS_ZERO,
                                     ENTER_ZONE, EXIT_ZONE, MOBAPP_TRIGGERS_EXIT,
                                     LATITUDE, LONGITUDE, TIMESTAMP_SECS, TIMESTAMP_TIME,
-                                    TRIGGER, LAST_ZONE, ZONE,
+                                    TRIGGER, LAST_ZONE, ZONE, NEXT_UPDATE, 
                                     GPS_ACCURACY, VERT_ACCURACY, ALTITUDE,
                                     CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                     )
@@ -17,7 +17,8 @@ from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname,
 from ..helpers.messaging    import (post_event, post_monitor_msg, more_info,
                                     log_debug_msg, log_exception, log_error_msg, log_rawdata,
                                     _evlog, _log, )
-from ..helpers.time_util    import (secs_to_time, secs_since, format_time_age, format_age,  )
+from ..helpers.time_util    import (secs_to_time, secs_since, mins_since, 
+                                    format_time_age, format_age,  )
 from ..helpers.dist_util    import (format_dist_km, format_dist_m, )
 from ..helpers              import entity_io
 from ..support              import mobapp_interface
@@ -109,8 +110,8 @@ def check_mobapp_state_trigger_change(Device):
         if mobapp_data_state == NOT_SET:
             change_msg += 'NotSet, '
 
-        if  Gb.log_rawdata_flag and change_msg:
-            log_rawdata(f"MobApp Data - <{Device.devicename}> {change_msg}", device_trkr_attrs, log_rawdata_flag=True)
+        if Gb.log_rawdata_flag and change_msg:
+            log_rawdata(f"MobApp Data - Changed - <{Device.devicename}> {change_msg}", device_trkr_attrs, log_rawdata_flag=True)
 
         mobapp_data_change_flag = (Device.mobapp_data_trigger != mobapp_data_trigger
                                 or Device.mobapp_data_secs != mobapp_data_secs
@@ -435,7 +436,13 @@ def get_mobapp_device_trkr_entity_attrs(Device):
         if VERT_ACCURACY in device_trkr_attrs:
             device_trkr_attrs[VERT_ACCURACY] = round(device_trkr_attrs[VERT_ACCURACY])
 
-        #log_rawdata(f"MobApp Data - {entity_id}", device_trkr_attrs)
+        # Reset next update back to tune if location request msg it's displayed
+        if (Device.sensors[NEXT_UPDATE] == 'LOC RQSTD'
+                and secs_since(Device.mobapp_request_loc_sent_secs) > 60):
+            Device.write_ha_sensor_state(
+                        NEXT_UPDATE, Device.FromZone_NextToUpdate.sensors[NEXT_UPDATE])
+
+        # log_rawdata(f"MobApp Data - {entity_id}", device_trkr_attrs)
 
         return device_trkr_attrs
 
@@ -462,7 +469,7 @@ def get_and_verify_device_trkr_data(Device, entity_id):
         device_trkr_attrs[DEVICE_TRACKER] = entity_io.get_state(entity_id)
 
         if device_trkr_attrs[DEVICE_TRACKER] == NOT_SET:
-            if Device.mobapp_data_invalid_error_cnt < 50:
+            if Device.mobapp_data_invalid_error_cnt > 5:    #50:
                 Device.mobapp_data_invalid_error_cnt += 1
                 if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
                     post_event(Device,
@@ -528,13 +535,13 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     if Device.mobapp_data_secs >= mobapp_data_secs or gps_accuracy > Gb.gps_accuracy_threshold:
         return
 
-    log_rawdata(f"MobApp Attrs - <{Device.devicename}>", device_trkr_attrs)
+    log_rawdata(f"MobApp Attrs - Updated - <{Device.devicename}>", device_trkr_attrs)
 
     Device.mobapp_data_state             = device_trkr_attrs.get(DEVICE_TRACKER, NOT_SET)
     Device.mobapp_data_state_secs        = device_trkr_attrs.get(f"state_{TIMESTAMP_SECS}", 0)
     Device.mobapp_data_state_time        = device_trkr_attrs.get(f"state_{TIMESTAMP_TIME}", HHMMSS_ZERO)
 
-    Device.mobapp_data_trigger           = device_trkr_attrs.get("trigger", NOT_SET)
+    Device.mobapp_data_trigger           = device_trkr_attrs.get('trigger', 'manual')
     Device.mobapp_data_secs              = mobapp_data_secs
     Device.mobapp_data_time              = mobapp_data_time
     Device.mobapp_data_latitude          = device_trkr_attrs.get(LATITUDE, 0)

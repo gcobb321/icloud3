@@ -8,7 +8,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 NOTIFY, DISTANCE_TO_DEVICES, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 HOME, HOME_FNAME, NOT_HOME, NOT_SET, UNKNOWN, NOT_HOME_ZONES,
-                                DOT, RED_X, RARROW, RARROW2, INFO_SEPARATOR, YELLOW_ALERT, CRLF_DOT, CRLF_HDOT,
+                                DOT, RED_X, RARROW, RARROW2, INFO_SEPARATOR, RED_ALERT, CRLF_DOT, CRLF_HDOT,
                                 EVLOG_ALERT, BLANK_SENSOR_FIELD,
                                 TOWARDS, AWAY, AWAY_FROM, INZONE, STATIONARY, STATIONARY_FNAME,
                                 TOWARDS_HOME, AWAY_FROM_HOME, INZONE_HOME, INZONE_STATZONE,
@@ -322,7 +322,12 @@ class iCloud3_Device(TrackerEntity):
         except:
             pass
 
-        self.mobapp = {DEVICE_TRACKER: '', TRIGGER: '', BATTERY_LEVEL: '', BATTERY_STATUS: '', NOTIFY: ''}
+        # self.mobapp = { DEVICE_TRACKER: '',
+        #                 TRIGGER: '',
+        #                 BATTERY_LEVEL: '',
+        #                 BATTERY_STATUS: '',
+        #                 NOTIFY: ''}
+        self.initialize_mobapp_ha_entity_names()
 
         # MobApp state variables
         self.update_mobapp_data_monitor_msg= ''
@@ -357,6 +362,13 @@ class iCloud3_Device(TrackerEntity):
         # rc9 Added battery_info sensors to display last battery data for icloud
         # & mobapp sensor.battery attributes
         self.battery_info                 = {ICLOUD: '', MOBAPP: ''}
+
+    def initialize_mobapp_ha_entity_names(self):
+        self.mobapp = { DEVICE_TRACKER: '',
+                        TRIGGER: '',
+                        BATTERY_LEVEL: '',
+                        BATTERY_STATUS: '',
+                        NOTIFY: ''}
 
 #------------------------------------------------------------------------------
     def initialize_sensors(self):
@@ -573,10 +585,14 @@ class iCloud3_Device(TrackerEntity):
         self.device_type          = conf_device.get(CONF_DEVICE_TYPE, 'iphone')
         self.log_zones            = conf_device.get(CONF_LOG_ZONES, ['none'])
 
-        self.away_time_zone_offset = \
-                Gb.away_time_zone_1_offset if self.devicename in Gb.away_time_zone_1_devices else \
-                Gb.away_time_zone_2_offset if self.devicename in Gb.away_time_zone_2_devices else \
-                0
+        if (self.devicename in Gb.away_time_zone_1_devices
+                or 'all' in Gb.away_time_zone_1_devices):
+            self.away_time_zone_offset = Gb.away_time_zone_1_offset
+        elif (self.devicename in Gb.away_time_zone_2_devices
+                or 'all' in Gb.away_time_zone_2_devices):
+            self.away_time_zone_offset = Gb.away_time_zone_2_offset
+        else:
+            self.away_time_zone_offset = 0
 
 #--------------------------------------------------------------------
     def _initialize_data_source_fields(self, conf_device):
@@ -709,7 +725,7 @@ class iCloud3_Device(TrackerEntity):
         if lza_zones or tfz_zones or tfbz_zone:
             config_file.write_storage_icloud3_configuration_file()
 
-            self.set_fname_alert(YELLOW_ALERT)
+            self.set_fname_alert(RED_ALERT)
 
             post_startup_alert( f"Device Config Error > Unknown Zone removed "
                         f"{CRLF_DOT}{self.fname_devicename}")
@@ -2425,7 +2441,7 @@ class iCloud3_Device(TrackerEntity):
 
             info_msg = ''
             if Gb.startup_alerts and mins_since(Gb.started_secs) < 5:
-                info_msg += f"{YELLOW_ALERT}Startup Alerts ({len(Gb.startup_alerts)})-Review Event Log, "
+                info_msg += f"{RED_ALERT}Startup Alerts ({len(Gb.startup_alerts)})-Review Event Log, "
 
             if self.offline_secs > 0:
                 info_msg +=(f"{RED_X}Offline@{format_time_age(self.offline_secs)} "

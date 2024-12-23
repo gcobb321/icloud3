@@ -46,7 +46,7 @@ from .const             import (RED_ALERT, LINK, RLINK, RARROW,
                                 )
 from .const_config_flow import *
 from .support           import config_file
-from .helpers.common    import (instr, isbetween, list_to_str, list_add, is_empty, zone_dname, )
+from .helpers.common    import (instr, isbetween, list_to_str, list_add, is_empty, isnot_empty, zone_dname, )
 from .helpers.messaging import (log_exception, log_debug_msg, log_info_msg,
                                 _log, _evlog,
                                 post_event, post_monitor_msg, )
@@ -119,7 +119,32 @@ def form_menu(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             CONFIRM ACTION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_confirm_action(self,
+def form_confirm_action(self, action_desc=None):
+    '''
+    confirm_action form uses information in the self.confirm_action{}
+    '''
+
+    actions_list = CONFIRM_ACTIONS.copy()
+    actions_list_default = 'confirm_return_no'
+    action_desc = action_desc if action_desc is not None else\
+                    'Do you want to perform the selected action?'
+
+    return vol.Schema({
+        vol.Required('action_desc',
+                    default=action_desc):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=[action_desc], mode='list')),
+        vol.Required('action_items',
+                    default=self.action_default_text(actions_list_default)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=actions_list, mode='list')),
+        })
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#             CONFIRM ACTION
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def sv_form_confirm_action(self,
                         extra_action_items=None,
                         actions_list_default=None,
                         confirm_action_form_hdr=None):
@@ -152,8 +177,10 @@ def form_restart_icloud3(self):
     if 'restart_ha' in self.config_parms_update_control:
         restart_default='restart_ha'
         self.actions_list.append(ACTION_LIST_OPTIONS['restart_ha'])
+    else:
+        restart_default='restart_ic3_now'
+        self.actions_list.append(ACTION_LIST_OPTIONS['restart_ic3_now'])
 
-    self.actions_list.append(ACTION_LIST_OPTIONS['restart_ic3_now'])
     self.actions_list.append(ACTION_LIST_OPTIONS['restart_ic3_later'])
 
     actions_list_default = self.action_default_text(restart_default)
@@ -207,7 +234,7 @@ def form_data_source(self):
     self._build_apple_accounts_list()
 
     self.actions_list = []
-    self.actions_list.extend(ICLOUD_ACCOUNT_ACTIONS)
+    self.actions_list.extend(APPLE_ACCOUNT_ACTIONS)
     self.actions_list.extend(ACTION_LIST_ITEMS_BASE)
     if self.username != '' and self.password != '' and instr(self.data_source, ICLOUD) is False:
         self.errors['base'] = 'icloud_acct_data_source_warning'
@@ -279,8 +306,8 @@ def form_update_apple_acct(self):
     self.actions_list = USERNAME_PASSWORD_ACTIONS.copy()
 
     errs_ui = self.errors_user_input
-    username   = errs_ui.get(CONF_USERNAME)   or self.conf_apple_acct[CONF_USERNAME] or f" {self.username}"
-    password   = errs_ui.get(CONF_PASSWORD)   or self.conf_apple_acct[CONF_PASSWORD] or f" {self.password}"
+    username   = errs_ui.get(CONF_USERNAME)   or self.conf_apple_acct[CONF_USERNAME] or ' ' #f"{self.username}"
+    password   = errs_ui.get(CONF_PASSWORD)   or self.conf_apple_acct[CONF_PASSWORD] or ' ' #f"{self.password}"
     locate_all = errs_ui.get(CONF_LOCATE_ALL) or self.conf_apple_acct[CONF_LOCATE_ALL]
     totp_key   = errs_ui.get(CONF_TOTP_KEY)   or self.conf_apple_acct[CONF_TOTP_KEY] or ' '
 
@@ -299,7 +326,7 @@ def form_update_apple_acct(self):
         acct_info = '➤ ADD A NEW APPLE ACCOUNT'
     else:
         acct_info =(f"{self.apple_acct_items_by_username[username]}, "
-                    f"{self.tracked_untracked_form_msg(username)}")
+                    f"{self.tracked_untracked_form_msg(username)[1]}")
 
     schema = ({
         vol.Optional('account_selected',
@@ -329,7 +356,7 @@ def form_update_apple_acct(self):
 
     schema.update({
         vol.Required('action_items',
-                    default=self.action_default_text('log_into_apple_acct')):
+                    default=self.action_default_text('save_log_into_apple_acct')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -341,7 +368,7 @@ def form_update_apple_acct(self):
 #           DELETE APPLE ACCOUNT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_delete_apple_acct(self):
-    self.actions_list = DELETE_APPLE_ACCT_ACTIONS.copy()
+    self.actions_list = APPLE_ACCOUNT_DELETE_ACTIONS.copy()
 
     username = self.conf_apple_acct[CONF_USERNAME]
     apple_acct_info = self.apple_acct_items_by_username[username]
@@ -353,7 +380,7 @@ def form_delete_apple_acct(self):
     else:
         default_device_action = 'reassign_devices'
 
-    acct_info = f"{apple_acct_info}, {self.tracked_untracked_form_msg(username)}"
+    acct_info = f"{apple_acct_info}, {self.tracked_untracked_form_msg(username)[1]}"
 
     return vol.Schema({
         vol.Optional('account_selected',
@@ -376,28 +403,59 @@ def form_delete_apple_acct(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            REAUTH
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_reauth(self):
+def form_reauth(self, reauth_username=None):
 
     try:
+        action_list_default = 'send_verification_code'
+        self.actions_list = REAUTH_ACTIONS.copy()
+
+        # account_selected = account_selected if acount_selected is not None else None
+
         self._build_apple_accounts_list()
 
-        # Get the 1st username if it is coming from the menu or the HA reauth request
-        # and has not been selected yet
-        if Gb.conf_apple_accounts:
-            if self.conf_apple_acct == '':
-                if instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION'):
-                    self.apple_acct_reauth_username = [username
-                                    for username, acct_info in self.apple_acct_items_by_username.items()
-                                    if instr(acct_info, 'AUTHENTICATION')][0]
-                    self.conf_apple_acct, self.aa_idx = \
-                                    config_file.conf_apple_acct(self.apple_acct_reauth_username)
-                else:
-                    self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(0)
+        # No Apple accts are set up
+        if (is_empty(self.apple_acct_items_by_username)
+                or is_empty(Gb.conf_apple_accounts)):
+            self.apple_acct_reauth_username = ''
 
-            username = (self.apple_acct_reauth_username or self.conf_apple_acct[CONF_USERNAME])
-            default_acct_selected = self.apple_acct_items_by_username.get(username)
+        # Requesting a new code will set the selected acct. Use it to deselect the acct
+        elif reauth_username is not None:
+            self.apple_acct_reauth_username = reauth_username
+            self.conf_apple_acct, self.aa_idx = \
+                            config_file.conf_apple_acct(reauth_username)
+
+        # No Apple acct is selected. get the first one or one that needs to be authenticated
+        elif instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION'):
+            self.apple_acct_reauth_username = [username
+                            for username, acct_info in self.apple_acct_items_by_username.items()
+                            if instr(acct_info, 'AUTHENTICATION')][0]
+            self.conf_apple_acct, self.aa_idx = \
+                            config_file.conf_apple_acct(self.apple_acct_reauth_username)
+
+        elif isnot_empty(self.conf_apple_acct):
+            self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
+
         else:
-            default_acct_selected = ' '
+            self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(0)
+            self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
+
+        # Set the default list from the username list or an error
+        if  self.apple_acct_reauth_username in Gb.PyiCloud_by_username:
+            default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
+            pass
+
+        # If No Apple accts are set up yet
+        elif is_empty(self.apple_acct_items_by_username):
+            default_acct_selected = 'No Apple Accounts have been set up'
+            self.apple_acct_items_by_username = {'.noacctssetup': default_acct_selected}
+            self.errors['base'] = 'icloud_acct_not_set_up'
+            action_list_default = 'cancel_return'
+
+        else:
+            # Apple accts but the selected one is not logged into
+            default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
+            self.errors['base'] = 'icloud_acct_not_logged_into'
+            action_list_default = 'cancel_return'
 
         # try:
         #     if self.conf_apple_acct[CONF_TOTP_KEY]:
@@ -408,17 +466,6 @@ def form_reauth(self):
         #     log_exception(err)
         # else:
         otp_code = ' '
-
-        # See if any apple acounts are not logged into
-        # Check a str of the list instead of cycling thru it since we don't care  which one
-        if instr(default_acct_selected, 'Not logged into'):
-            action_list_default = 'log_into_apple_acct'
-            self.errors['base'] = 'icloud_acct_not_logged_into'
-            self.actions_list = [ACTION_LIST_OPTIONS['log_into_apple_acct']]
-        else:
-            action_list_default = 'send_verification_code'
-            self.actions_list = []
-        self.actions_list.extend(REAUTH_ACTIONS)
 
         return vol.Schema({
             vol.Optional('account_selected',
@@ -433,6 +480,7 @@ def form_reauth(self):
                         selector.SelectSelector(selector.SelectSelectorConfig(
                             options=self.actions_list, mode='list')),
             })
+
     except Exception as err:
         log_exception(err)
 
@@ -497,28 +545,61 @@ def _build_device_items_displayed_over_5(self):
 #            ADD DEVICE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_add_device(self):
-    self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
-    device_type_fname = DEVICE_TYPE_FNAME(self._parm_or_device(CONF_DEVICE_TYPE))
+    self.actions_list = DEVICE_ADD_ACTIONS.copy()
+
+    devicename    = self._parm_or_device(CONF_IC3_DEVICENAME) or ' '
+    icloud3_fname = self._parm_or_device(CONF_FNAME) or ' '
+
+    # iCloud Devices list default item
+    apple_acct    = self._parm_or_device(CONF_APPLE_ACCOUNT)
+    icloud_dname  = self._parm_or_device(CONF_FAMSHR_DEVICENAME)
+    if icloud_dname == 'None'  or devicename == '':
+        device_list_item_key = 'None'
+    else:
+        device_list_item_key = f"{icloud_dname}{LINK}{apple_acct}"
+
+    device_list_item_text = self.icloud_list_text_by_fname.get(device_list_item_key)
+    if device_list_item_text is None:
+        device_list_item_text = self.icloud_list_text_by_fname['None']
+
+    # Mobile App Devices list setup
+    mobapp_device = self._parm_or_device(CONF_MOBILE_APP_DEVICE)
+    mobapp_list_text_by_entity_id = self.mobapp_list_text_by_entity_id.copy()
+    if '.unknown' in mobapp_list_text_by_entity_id:
+        default_mobile_app_device = mobapp_list_text_by_entity_id['.unknown']
+    else:
+        default_mobile_app_device = mobapp_list_text_by_entity_id[mobapp_device]
+
+    # Picture list setup
+    picture_filename = self._parm_or_device(CONF_PICTURE)
+    default_picture_filename = self.picture_by_filename.get(picture_filename)
+    if default_picture_filename is None:
+        picture_filename = 'None'
+        default_picture_filename = self.picture_by_filename['None']
 
     return vol.Schema({
         vol.Required(CONF_IC3_DEVICENAME,
-                    default=self._parm_or_device(CONF_IC3_DEVICENAME)):
+                    default=devicename):
                     selector.TextSelector(),
         vol.Required(CONF_FNAME,
-                    default=self._parm_or_device(CONF_FNAME)):
+                    default=icloud3_fname):
                     selector.TextSelector(),
-        vol.Required(CONF_DEVICE_TYPE,
-                    default=self._parm_or_device(CONF_DEVICE_TYPE, suggested_value=IPHONE)):
+        vol.Required(CONF_FAMSHR_DEVICENAME,
+                    default=device_list_item_text):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DEVICE_TYPE_FNAMES), mode='dropdown')),
-        vol.Required(CONF_TRACKING_MODE,
-                    default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
+                        options=dict_value_to_list(self.icloud_list_text_by_fname), mode='dropdown')),
+        vol.Required(CONF_MOBILE_APP_DEVICE,
+                    default=default_mobile_app_device):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
-        vol.Required('mobapp',
-                    default=True):
-                    cv.boolean,
-                    # selector.BooleanSelector(),
+                        options=dict_value_to_list(mobapp_list_text_by_entity_id), mode='dropdown')),
+        vol.Required(CONF_PICTURE,
+                    default=default_picture_filename):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(self.picture_by_filename), mode='dropdown')),
+        vol.Required('action_items',
+                default=self.action_default_text('add_device')):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=self.actions_list, mode='list')),
         })
 
 
@@ -546,32 +627,32 @@ def form_update_device(self):
                                     f"PrimaryTrackFromZone ({zone_dname(self.conf_device[CONF_TRACK_FROM_BASE_ZONE])})")
     atp_default  = [RARELY_UPDATED_PARMS_HEADER] if self.display_rarely_updated_parms else []
 
-    icloud_dname_username =(f"{self.conf_device[CONF_FAMSHR_DEVICENAME]}"
-                            f"{LINK}{self.conf_device[CONF_APPLE_ACCOUNT]}")
+    devicename    = self._parm_or_device(CONF_IC3_DEVICENAME)
+    icloud3_fname = self._parm_or_device(CONF_FNAME) or ' '
 
-    # iCloud Devices list setup
-    if self.conf_device[CONF_FAMSHR_DEVICENAME] == 'None':
-        icloud_dname_username = 'None'
-    elif (self.conf_device[CONF_APPLE_ACCOUNT]  == ''
-            and self.conf_device[CONF_FAMSHR_DEVICENAME] != 'None'):
-        icloud_dname_username = f"{self.conf_device[CONF_IC3_DEVICENAME]}{LINK}UNKNOWN"
+    # iCloud Devices list default item
+    apple_acct    = self._parm_or_device(CONF_APPLE_ACCOUNT)
+    icloud_dname  = self._parm_or_device(CONF_FAMSHR_DEVICENAME)
+    if icloud_dname == 'None' or devicename == '':
+        device_list_item_key = 'None'
+    else:
+        icloud_dname_apple_acct, status_msg = \
+                        self._format_apple_acct_device_info(self.conf_device)
 
-    default_icloud_devicename = self.icloud_list_text_by_fname.get(
-                            icloud_dname_username,
-                            f"{self.conf_device[CONF_FAMSHR_DEVICENAME]}{LINK}UNKNOWN")
+        if status_msg == '':
+            device_list_item_key = f"{icloud_dname}{LINK}{apple_acct}"
+        else:
+            device_list_item_key = f"{devicename}{LINK}{apple_acct}"
 
-    unknown_key = f".{self.conf_device[CONF_IC3_DEVICENAME]}{LINK}UNKNOWN"
-    if unknown_key in self.icloud_list_text_by_fname:
-        default_icloud_devicename = self.icloud_list_text_by_fname[unknown_key]
-    # if '.unknown' in self.icloud_list_text_by_fname:
-    #     default_icloud_devicename = self.icloud_list_text_by_fname['.unknown']
-
+    device_list_item_text = self.icloud_list_text_by_fname.get(device_list_item_key)
+    if device_list_item_text is None:
+        device_list_item_text = self.icloud_list_text_by_fname['None']
 
     # Check the icloud_dname and mobile app devicename for any errors
-    self._validate_data_source_names(self.conf_device)
+    self._validate_data_source_selections(self.conf_device)
 
-    # Mobile App Devices list setup
-    mobapp_device = self.conf_device[CONF_MOBILE_APP_DEVICE]
+    # Mobile App Devices list default item
+    mobapp_device = self._parm_or_device(CONF_MOBILE_APP_DEVICE)
     mobapp_list_text_by_entity_id = self.mobapp_list_text_by_entity_id.copy()
     if '.unknown' in mobapp_list_text_by_entity_id:
         default_mobile_app_device = mobapp_list_text_by_entity_id['.unknown']
@@ -579,17 +660,18 @@ def form_update_device(self):
         default_mobile_app_device = mobapp_list_text_by_entity_id[mobapp_device]
 
     # Picture list setup
-    picture_filename = self.conf_device[CONF_PICTURE]
-    picture_by_filename = self.picture_by_filename.copy()
-    if picture_filename not in picture_by_filename:
+    picture_filename = self._parm_or_device(CONF_PICTURE)
+    _picture_by_filename = self.picture_by_filename.copy()
+    default_picture_filename = _picture_by_filename.get(picture_filename)
+    if default_picture_filename is None:
         self.errors[CONF_PICTURE] = 'unknown_picture'
-        picture_by_filename[picture_filename] = (f"{RED_ALERT}{picture_filename}{RARROW}"
+        _picture_by_filename[picture_filename] = (f"{RED_ALERT}{picture_filename}{RARROW}"
                                                 "FILE NOT FOUND")
 
     if self.errors != {}:
         self.errors['base'] = 'unknown_value'
 
-    if self.conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
+    if self._parm_or_device(CONF_TRACKING_MODE) == INACTIVE_DEVICE:
         self.errors[CONF_TRACKING_MODE] = 'inactive_device'
 
     log_zones_key_text = {'none': 'None'}
@@ -603,23 +685,22 @@ def form_update_device(self):
         vol.Required(CONF_FNAME,
                     default=self._parm_or_device(CONF_FNAME)):
                     selector.TextSelector(),
-        vol.Required(CONF_TRACKING_MODE,
-                    default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
         vol.Required(CONF_FAMSHR_DEVICENAME,
-                    default=default_icloud_devicename):
+                    default=device_list_item_text):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.icloud_list_text_by_fname), mode='dropdown')),
         vol.Required(CONF_MOBILE_APP_DEVICE,
                     default=default_mobile_app_device):
-                    # default=self._option_parm_to_text(CONF_MOBILE_APP_DEVICE, mobapp_list_text_by_entity_id)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(mobapp_list_text_by_entity_id), mode='dropdown')),
         vol.Required(CONF_PICTURE,
-                    default=self._option_parm_to_text(CONF_PICTURE, picture_by_filename)):
+                    default=default_picture_filename):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(picture_by_filename), mode='dropdown')),
+                        options=dict_value_to_list(_picture_by_filename), mode='dropdown')),
+        vol.Required(CONF_TRACKING_MODE,
+                    default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
         }
 
     if self.display_rarely_updated_parms is False:
@@ -672,24 +753,47 @@ def form_update_device(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           DELETE DEVICE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_delete_device(self):
-    self.actions_list = DELETE_DEVICE_ACTIONS.copy()
-    device_text = ( f"{self.conf_device[CONF_FNAME]} "
-                    f"({self.conf_device[CONF_IC3_DEVICENAME]})")
-    device_selected = self.device_items_list[self.conf_device_idx]
+# def form_delete_device(self):
+#     self.actions_list = DEVICE_DELETE_ACTIONS.copy()
+#     device_text = ( f"{self.conf_device[CONF_FNAME]} "
+#                     f"({self.conf_device[CONF_IC3_DEVICENAME]})")
+#     device_selected = self.device_items_list[self.conf_device_idx]
 
-    # The first item is 'Delete this device, add the selected device's info
+#     # The first item is 'Delete this device, add the selected device's info
+#     return vol.Schema({
+#         vol.Required('device_selected',
+#                     default=device_selected):
+#                     selector.SelectSelector(selector.SelectSelectorConfig(
+#                         options=[device_selected], mode='list')),
+#         vol.Required('action_items',
+#                     default=self.action_default_text('delete_device_cancel')):
+#                     selector.SelectSelector(
+#                         selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+#         })
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#           TOOLS
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def form_tools(self):
+    self.actions_list = TOOL_LIST_ITEMS.copy()
+    action_default = 'return'
+
+    self._build_log_level_devices_list()
+
     return vol.Schema({
-        vol.Required('device_selected',
-                    default=device_selected):
+        vol.Required(CONF_LOG_LEVEL_DEVICES,
+                    default=Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
+                    cv.multi_select(six_item_dict(self.log_level_devices_key_text)),
+        vol.Required(CONF_LOG_LEVEL,
+                    default=self._option_parm_to_text(CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=[device_selected], mode='list')),
+                        options=dict_value_to_list(LOG_LEVEL_OPTIONS), mode='dropdown')),
+
         vol.Required('action_items',
-                    default=self.action_default_text('delete_device_cancel')):
+                    default=self.action_default_text(action_default)):
                     selector.SelectSelector(
                         selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
         })
-
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            ACTIONS
@@ -1150,7 +1254,7 @@ def form_sensors(self):
 #            EXCLUDE SENSORS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_exclude_sensors(self):
-    self.actions_list = DEVICE_LIST_ACTIONS_EXCLUDE_SENSORS.copy()
+    self.actions_list = SENSORS_EXCLUDE_ACTIONS_.copy()
 
     if self.sensors_list_filter == '?':
         filtered_sensors_fname_list = [f"None Displayed - Enter a Filter or `all` \
@@ -1200,13 +1304,14 @@ def form_exclude_sensors(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            RESTART HA IC3
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_restart_ha_ic3(self):
+def form_restart_ha(self):
 
     self.actions_list = []
     self.actions_list.append(ACTION_LIST_OPTIONS['restart_ha'])
-    self.actions_list.append(ACTION_LIST_OPTIONS['restart_icloud3'])
-    self.actions_list.append(ACTION_LIST_OPTIONS['cancel'])
-    actions_list_default = self.action_default_text('restart_HA')
+    # self.actions_list.append(ACTION_LIST_OPTIONS['restart_icloud3'])
+    self.actions_list.append(ACTION_LIST_OPTIONS['return'])
+    self.actions_list.append(ACTION_LIST_OPTIONS['exit'])
+    actions_list_default = self.action_default_text('restart_ha')
 
     return vol.Schema({
         vol.Required('action_items',

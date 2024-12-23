@@ -153,6 +153,7 @@ class GlobalVariables(object):
     owner_device_ids_by_username      = {}  # List of owner info for Devices in Apple Acct
     owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
     username_valid_by_username        = {}  # The username/password validation status
+    
     PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename
     PyiCloud_by_username              = {}  # PyiCloud object for each Apple acct username
     PyiCloud_password_by_username     = {}  # Password for each Apple acct username

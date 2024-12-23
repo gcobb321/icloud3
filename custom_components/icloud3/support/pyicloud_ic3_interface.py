@@ -2,7 +2,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HIGH_INTEGER,
                                     EVLOG_ALERT, EVLOG_NOTICE, EVLOG_ERROR,
-                                    CRLF, CRLF_DOT, DASH_20,
+                                    CRLF, CRLF_DOT, DASH_20, RED_X, CRLF_RED_MARK, CRLF_RED_STOP, CRLF_RED_ALERT,
                                     ICLOUD,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY, CONF_LOCATE_ALL,
@@ -45,7 +45,6 @@ def create_all_PyiCloudServices():
     post_event('Log into Apple Accounts')
 
     for conf_apple_acct in Gb.conf_apple_accounts:
-
         username   = conf_apple_acct[CONF_USERNAME]
         password   = Gb.PyiCloud_password_by_username[username]
         locate_all_devices = conf_apple_acct[CONF_LOCATE_ALL]
@@ -89,28 +88,34 @@ def retry_apple_acct_login():
 
         PyiCloud = log_into_apple_account(username, password, locate_all_devices)
 
-        if PyiCloud:
+        if PyiCloud and PyiCloud.is_authenticated:
             post_event(f"{EVLOG_ERROR}Apple Acct > {PyiCloud.account_owner}, Login Successful")
             list_del(Gb.username_pyicloud_503_connection_error, username)
 
             list_add(Gb.usernames_setup_error_retry_list, username)
             start_ic3_control.stage_4_setup_data_sources_retry()
 
-        else:
-            post_event(f"Apple Acct > {username}, Failed to Login, will try again later")
+        # else:
+        #     retry_at = secs_to_time(timenow_secs() + 900)
+        #     post_event( f"Apple Acct > {username_base}, Login Failed, "
+        #                 f"{PyiCloud.response_code_desc}, "
+        #                 f"Retry At-{retry_at}")
 
     post_evlog_greenbar_msg('')
 
 #--------------------------------------------------------------------
-def verify_all_apple_accounts():
+def check_all_apple_accts_valid_upw():
     '''
     Cycle through the apple accounts and validate that each one is valid
-    '''
-    if Gb.PyiCloudValidateAppleAcct is None:
-        Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
 
-    post_event('Verify Apple Account Username/Password')
+    This is done when iCloud3 starts in __init__
+    '''
+    # if Gb.PyiCloudValidateAppleAcct is None:
+    #     Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
+
+    results_msg = ''
     cnt = -1
+    alert_symb = ''
     for conf_apple_acct in Gb.conf_apple_accounts:
         cnt += 1
 
@@ -122,14 +127,17 @@ def verify_all_apple_accounts():
             continue
 
         # Validate username/password so we know all future login attempts will be with valid apple accts
-        valid_apple_acct = Gb.PyiCloudValidateAppleAcct.validate_username_password(username, password)
+        valid_upw = Gb.PyiCloudValidateAppleAcct.validate_username_password(username, password)
 
-        Gb.username_valid_by_username[username] = valid_apple_acct
-        if valid_apple_acct is False:
-            post_event(f"Apple Acct > {username}, Username/Password Invalid")
+        Gb.username_valid_by_username[username]= valid_upw
+
+        # if valid_apple_acct is False: alert_symb = EVLOG_ALERT
+        crlf_symb = CRLF_DOT if valid_upw else f"{CRLF_RED_ALERT}"
+        results_msg += f"{crlf_symb}{username}, Valid-{valid_upw}"
+
+    post_event(f"{alert_symb}Verify Apple Account Username/Password{results_msg}")
 
     Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
-
 
 #--------------------------------------------------------------------
 def log_into_apple_account(username, password, locate_all_devices=None):
@@ -206,7 +214,6 @@ def log_into_apple_account(username, password, locate_all_devices=None):
         # Setup PyiCloud and iCloud
         else:
             try:
-
                 PyiCloud = None
                 PyiCloud = PyiCloudService( username, password,
                                             locate_all_devices=locate_all_devices,
@@ -240,12 +247,21 @@ def log_into_apple_account(username, password, locate_all_devices=None):
                 pyicloud_msg += f"RawDataItems-({list_to_str(rawdata_items)})"
 
             log_debug_msg(f"{debug_msg_hdr}3, Setup PyiCloud, {pyicloud_msg}")
-            post_event(f"Apple Acct > {PyiCloud.account_owner}, Login Successful")
+            code_msg = f" ({PyiCloud.response_code})"
+            if PyiCloud.is_authenticated:
+                post_event(f"Apple Acct > {PyiCloud.account_owner}, "
+                            f"Login Successful, "
+                            f"{PyiCloud.auth_method}")
+            else:
+                retry_at = secs_to_time(time_now_secs() + 900)
+                post_event( f"Apple Acct > {username_base}, Login Failed, "
+                        f"{PyiCloud.response_code_desc}, "
+                        f"Retry At-{retry_at}")
 
         verify_icloud_device_info_received(PyiCloud)
         is_authentication_2fa_code_needed(PyiCloud, initial_setup=True)
 
-        display_authentication_msg(PyiCloud)
+        #display_authentication_msg(PyiCloud)
 
         return PyiCloud
 
@@ -311,22 +327,22 @@ def verify_icloud_device_info_received(PyiCloud):
     return (PyiCloud.DeviceSvc.devices_cnt >= 0)
 
 #--------------------------------------------------------------------
-def display_authentication_msg(PyiCloud):
-    '''
-    If an authentication was done, update the count & time and display
-    an Event Log message
-    '''
-    authentication_method = PyiCloud.authentication_method
-    if authentication_method == '':
-        return
+# def display_authentication_msg(PyiCloud):
+#     '''
+#     If an authentication was done, update the count & time and display
+#     an Event Log message
+#     '''
+#     authentication_method = PyiCloud.authentication_method
+#     if authentication_method == '':
+#         return
 
-    last_authenticated_secs = PyiCloud.last_authenticated_secs
-    PyiCloud.last_authenticated_secs = time_now_secs()
-    PyiCloud.authentication_cnt += 1
+#     last_authenticated_secs = PyiCloud.last_authenticated_secs
+#     PyiCloud.last_authenticated_secs = time_now_secs()
+#     PyiCloud.authentication_cnt += 1
 
-    event_msg =(f"Apple Acct > {PyiCloud.account_owner}, "
-                f"Auth #{PyiCloud.authentication_cnt} > {authentication_method}")
-    post_monitor_msg(event_msg)
+#     event_msg =(f"Apple Acct > {PyiCloud.account_owner}, "
+#                 f"Auth #{PyiCloud.authentication_cnt} > {authentication_method}")
+#     post_monitor_msg(event_msg)
 
 #--------------------------------------------------------------------
 def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
@@ -358,7 +374,7 @@ def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
 
             PyiCloud.new_2fa_code_already_requested_flag = True
             post_event( f"Apple Acct > {PyiCloud.account_owner}, "
-                        f"Authentication Request Submitted to HA")
+                        f"Auth Request Submitted to HA")
             Gb.PyiCloud_needing_reauth_via_ha = {
                     CONF_USERNAME: PyiCloud.username,
                     CONF_PASSWORD: PyiCloud.password,

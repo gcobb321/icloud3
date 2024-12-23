@@ -1,8 +1,8 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
                                     NOT_SET, IC3LOG_FILENAME,
-                                    CRLF, CRLF_DOT, CRLF_HDOT, CRLF_X, NL, NL_DOT, LINK, YELLOW_ALERT,
-                                    EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
+                                    CRLF, CRLF_DOT, CRLF_HDOT, CRLF_X, NL, NL_DOT, LINK, YELLOW_ALERT, RED_ALERT,
+                                    EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_VERSION, ICLOUD, ZONE_DISTANCE,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
@@ -16,7 +16,8 @@ from ..support              import mobapp_interface
 from ..support              import pyicloud_ic3_interface
 from ..support              import determine_interval as det_interval
 
-from ..helpers.common       import (instr, is_empty, isnot_empty, list_to_str, list_add, list_del, )
+from ..helpers.common       import (instr, is_empty, isnot_empty, list_to_str, list_add, list_del,
+                                    get_username_base, )
 from ..helpers.messaging    import (broadcast_info_msg,
                                     post_event, post_error_msg, log_error_msg, post_startup_alert,
                                     post_monitor_msg, post_internal_error,
@@ -25,7 +26,7 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     _evlog, _log, more_info, format_filename,
                                     write_config_file_to_ic3log,
                                     open_ic3log_file, )
-from ..helpers.time_util    import (time_now_secs, calculate_time_zone_offset, )
+from ..helpers.time_util    import (time_now_secs, secs_to_time, calculate_time_zone_offset, )
 
 import homeassistant.util.dt as dt_util
 
@@ -139,11 +140,11 @@ def stage_2_prepare_configuration():
                                         'THEY MUST BE REVIEWED BEFORE STARTING ICLOUD3'
         elif ((is_empty(Gb.conf_apple_accounts) and Gb.conf_data_source_ICLOUD)
                 or is_empty(Gb.conf_devices)):
-            configuration_needed_msg = 'ICLOUD3 CONFIGURATION NEEDS TO BE SET UP'
+            configuration_needed_msg = 'ICLOUD3 APPLE ACCT OR DEVICES HAVE NOT BEEN SETUP '
 
         if configuration_needed_msg:
             post_startup_alert('iCloud3 Configuration not set up')
-            event_msg =(f"{EVLOG_ALERT}CONFIGURATION ALERT > {configuration_needed_msg}{CRLF}"
+            event_msg =(f"{EVLOG_ALERT}{configuration_needed_msg}{CRLF}"
                         f"{more_info('configure_icloud3')}")
             post_event(event_msg)
 
@@ -207,8 +208,19 @@ def stage_4_setup_data_sources():
     for Device in Gb.Devices:
         Device.set_fname_alert('')
 
-    post_event(f"Data Source > Apple Account used-{Gb.use_data_source_ICLOUD}")
-    post_event(f"Data Source > HA Mobile App used-{Gb.use_data_source_MOBAPP}")
+    apple_acct_used_msg = 'Apple Account used-'
+    if Gb.use_data_source_ICLOUD:
+        apple_acct_used_msg += "Yes"
+    else:
+        apple_acct_used_msg = f"{RED_ALERT}{apple_acct_used_msg}No"
+    mobapp_used_msg = 'HA Mobile App used-'
+    if Gb.use_data_source_MOBAPP:
+        mobapp_used_msg += "Yes"
+    else:
+        mobapp_used_msg = f"{RED_ALERT}{mobapp_used_msg}No"
+
+    post_event(f"Data Source > {apple_acct_used_msg}")
+    post_event(f"Data Source > {mobapp_used_msg}")
 
     try:
         # Get list of all unique Apple Acct usernames in config
@@ -217,7 +229,7 @@ def stage_4_setup_data_sources():
                                     if (apple_account[CONF_USERNAME] in Gb.username_valid_by_username
                                             and apple_account[CONF_USERNAME] != '')]
 
-        if Gb.use_data_source_ICLOUD and isnot_empty(Gb.conf_usernames):
+        if Gb.use_data_source_ICLOUD:
             _log_into_apple_accounts(retry=True)
 
             start_ic3.setup_data_source_ICLOUD()
@@ -236,21 +248,24 @@ def stage_4_setup_data_sources():
             start_ic3.setup_tracked_devices_for_mobapp()
 
         start_ic3.set_devices_verified_status()
-        return_code = _are_all_devices_verified()
+        all_verified_flag = _are_all_devices_verified()
 
         if isnot_empty(Gb.username_pyicloud_503_connection_error):
-            post_event( f"{EVLOG_ERROR}Apple Acct > {list_to_str(Gb.username_pyicloud_503_connection_error)}, "
-                        f"Failed to log into the Apple Account (Connection Error 503), will "
-                        f"retry every 15-minutes")
+            username_base = [get_username_base(username)
+                                        for username in Gb.username_pyicloud_503_connection_error]
+            retry_at = secs_to_time(time_now_secs() + 900)
+            post_event( f"{EVLOG_ALERT}Apple Acct > {list_to_str(username_base)}, Login Failed, "
+                        f"Error-503 (Apple Server Refused SRP Password Validation Request), "
+                        f"Retry At-{retry_at}")
 
     except Exception as err:
         log_exception(err)
-        return_code = False
+        all_verified_flag = False
 
     post_event(f"{EVLOG_IC3_STAGE_HDR} {stage_title}")
     Gb.EvLog.update_event_log_display("")
 
-    return return_code
+    return all_verified_flag
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def stage_4_setup_data_sources_retry(final_retry=False):
@@ -298,8 +313,8 @@ def stage_4_setup_data_sources_retry(final_retry=False):
                 start_ic3.set_devices_verified_status()
 
                 if PyiCloud.account_locked:
-                    post_error_msg( f"{EVLOG_ERROR}Apple Account {PyiCloud.account_owner} "
-                                    f"is Locked. Log onto www.icloud.com and unlock "
+                    post_error_msg( f"{EVLOG_ERROR}Apple Acct > {PyiCloud.account_owner}, "
+                                    f"Acct is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
                     post_startup_alert(f"Apple Account {PyiCloud.account_owner_USERNAME} is Locked")
             else:
@@ -314,7 +329,6 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     except Exception as err:
         log_exception(err)
         all_verified_flag = False
-
 
     post_event(f"{EVLOG_IC3_STAGE_HDR} {stage_title}")
     Gb.EvLog.update_event_log_display("")
@@ -348,6 +362,7 @@ def _log_into_apple_accounts(retry=False):
 
     # Verify that all apple accts have been setup. Restart the setup process for any that
     # are not complete
+    aa_login_error = ''
     for username in Gb.conf_usernames:
         PyiCloud = Gb.PyiCloud_by_username.get(username)
         if (PyiCloud is None
@@ -362,11 +377,19 @@ def _log_into_apple_accounts(retry=False):
 
             if PyiCloud:
                 Gb.PyiCloud_by_username[username] = PyiCloud
+                if PyiCloud.auth_failed_503:
+                    if aa_login_error: aa_login_error += ', '
+                    aa_login_error += f"{PyiCloud.account_owner} (503)"
 
-    if is_empty(Gb.devices_without_location_data):
-        post_event(f"Apple Acct > {PyiCloud.username_base}, All Devices Located")
-    # else:
-    #     post_event(f"{YELLOW_ALERT}Apple Acct > Devices not Located, {list_to_str(Gb.devices_without_location_data)}")
+    if (aa_login_error
+            or is_empty(PyiCloud.RawData_by_device_id)):
+        pass
+        # post_event(f"Apple Acct > Login Failed, {aa_login_error}")
+    elif is_empty(Gb.devices_without_location_data):
+        post_event(f"Apple Acct > All Tracked Devices Located")
+    else:
+        post_event( f"{RED_ALERT}Apple Acct > Some Tracked Devices not Located:"
+                    f"{CRLF}{NBSP6}{DOT}{list_to_str(Gb.devices_without_location_data)}")
 
     return True
 
@@ -421,8 +444,6 @@ def stage_5_configure_tracked_devices():
     stage_title = f'Stage 5 > Device Configuration Summary'
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
 
-    # if Gb.PyiCloud:
-        # log_debug_msg(f"PyiCloud Finialized > {Gb.PyiCloud.account_owner}")
     for username, PyiCloud in Gb.PyiCloud_by_username.items():
         log_debug_msg(f"PyiCloud Finialized > {PyiCloud.account_owner}")
 

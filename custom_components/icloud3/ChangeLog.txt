@@ -3,6 +3,26 @@
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 
+3.1.4
+.......................
+### Change Log - v3.1.4 (12/22/2024)
+1. APPLE ACCOUNT PASSWORD AUTHENTICATION:
+    - Reverted back to the old password authentication protocol before the Secure Remote Password (SRP) protocol was implemented
+    - The Password SRP protocol will be tried if the old password authentication protocol fails.
+2. ADD ICLOUD3 DEVICE SCREEN (Redesign) - Redesigned the screen so the basic tracking parameters (iCloud & Mobile App devices and picture) are selected on this screen instead of the Update Device screen.
+3. UPDATE DEVICE SCREEN (Redesign) - The rarely used fields (inZone & Fixed Interval, Track from Zone, etc) are not displayed if they are using the default values. A check box is enabled to display these fields.
+4. TOOLS SCREEN (New Feature) - A `Tools` screen replaces the `Actions` screen on the Configure Menu screen. This is used for configuration file maintenance to reset all Devices Apple Account fields, Delete all Apple Accounts and Devices, Delete all iCloud3 and Apple Account cookie files, etc.
+5. STARTUP (Improved) - Error and warning messages have been improved when setting up Apple Accounts and the Mobile App devices. When errors are encountered (devices can not be found, invalid Apple Account information, etc), an attempt will be made to correct the error using known device names and identification codes. Sometimes it works, sometimes it doesn't and the configuration will need to be updated.
+6. ERROR & WARNING MESSAGES (Improved) - Changed various messages to improve readability and simplify the text.
+7. A lot of internal code changes to improve code maintenance and to remove dead code.
+
+What's Next:
+.......................
+1. YubiKey support.
+2. Implementation of the Password SRP protocol as the primary method of authentication passwords. It works but asks for the 6-digit verification code constantly. I have things to try but it will need long-term testing to insure the verification code request is minimized.
+3. There are times when HA adds a `_2` extension to the device_tracker and sensor entity name when HA is reloaded and the iCloud3 integration is still running. A new Tool will be developed to easily reset these entity names to their correct name without the `_2`.
+
+
 
 
 3.1.2
@@ -18,7 +38,7 @@
     if Gb.conf_apple_accounts[0][CONF_USERNAME] == '':
     ~~~~~~~~~~~~~~~~~~~~~~^^^
     IndexError: list index out of range
-```
+    ```
 
 
 

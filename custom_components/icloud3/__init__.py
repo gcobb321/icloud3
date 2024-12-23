@@ -42,7 +42,7 @@ from .support.service_handler       import register_icloud3_services
 from .support                       import pyicloud_ic3_interface
 from .support                       import event_log
 from .icloud3_main                  import iCloud3
-
+from .support.pyicloud_ic3          import (PyiCloudValidateAppleAcct, )
 
 Gb.HARootLogger = logging.getLogger("")
 Gb.HALogger     = logging.getLogger(__name__)
@@ -183,12 +183,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         Gb.EvLog.display_user_message(f"Starting {ICLOUD3_VERSION_MSG}")
+        Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
+        Gb.username_valid_by_username = {}
         if Gb.use_data_source_ICLOUD:
             await Gb.hass.async_add_executor_job(
                             move_icloud_cookies_to_icloud3_apple_acct)
             await Gb.hass.async_add_executor_job(
-                            pyicloud_ic3_interface.verify_all_apple_accounts)
-            #                pyicloud_ic3_interface.create_all_PyiCloudServices)
+                            pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
 
         # set_up_default_area_id()
 

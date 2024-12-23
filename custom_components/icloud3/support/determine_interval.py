@@ -736,7 +736,7 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
                 interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
                 post_event(Device,
-                            f"Location > Old > Tracking Reinitialized, "
+                            f"iCloud Loc > Old > Tracking Reinitialized, "
                             f"Retry Cycle #{Device.max_error_cycle_cnt}, "
                             f"LastLocated-{format_time_age(Device.loc_data_secs)}, "
                             f"RetryAt-{Device.FromZone_Home.next_update_time}")
@@ -751,7 +751,7 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
         if Device.max_error_cycle_cnt > 8:
             Device.pause_tracking
         elif (Device.max_error_cycle_cnt > 4
-                and mins_since(Device.last_loc_secs) > 2880):
+                and mins_since(Device.last_update_loc_secs) > 2880):
             Device.pause_tracking
         elif Device.max_error_cycle_cnt > 2:
             interval_secs = interval_secs * int(Device.max_error_cycle_cnt/2)

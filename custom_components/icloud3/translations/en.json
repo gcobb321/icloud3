@@ -7,7 +7,7 @@
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "An error occurred logging into the Apple Account. Verify the username and password.",
       "reauth_successful": "The reauthentication has been successfully completed",
-      "verification_code_accepted": "The Apple ID Verification Code was accepted. Reauthentication is complete",
+      "verification_code_accepted": "✅ The Apple ID Verification Code was accepted. Reauthentication is complete",
       "verification_code_cancelled": "The Apple ID Verification was cancelled",
       "update_cancelled": "Update Cancelled",
       "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3",
@@ -41,14 +41,14 @@
         "data": {
           "apple_account": "APPLE ACCOUNT TO BE AUTHENTICATED",
           "verification_code": "APPLE ACCOUNT VERIFICATION CODE",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "restart_ha": {
         "title": "Confirm Restarting Home Assistant",
         "description": "iCloud3 needs to restart Home Assistant to prevent device_tracker entity name conflicts",
         "data": {
-          "action_items": ""
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       }
     }
@@ -63,6 +63,7 @@
       "reauth_successful": "The reauthentication has been successfully completed"
     },
     "error": {
+      "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
@@ -70,25 +71,25 @@
       "icloud_acct_logged_into": "✅ Logged into the Apple Account",
       "icloud_acct_already_logged_into": "Already Logged into the Apple Account",
       "icloud_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
-      "icloud_acct_login_error_user_pw": "❌ Login Error, Invalid Username or Password",
+      "icloud_acct_login_error_user_pw": "❌ Could not log into the Apple Account, Invalid Username or Password",
       "icloud_acct_login_error_other": "❌ Login Error, Other Error or iCloud is not Available",
       "icloud_acct_login_error_503": "🍎 Apple is delaying displaying a new Verification code to prevent Suspicious Activity, probably due to too many requests. It should be displayed in about 20-30 minutes. Restart HA if it is not displayed",
       "icloud_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into. ",
-      "icloud_acct_username_password_error": "❌ Entry Error, Invalid Username or Password",
       "icloud_acct_dup_username_error": "Error: Username is being used by another Data Source entry",
       "icloud_acct_username_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
       "icloud_acct_not_available": "❌ Login Failed, Apple Account is not Available",
       "icloud_acct_not_logged_into": "Not logged into the Apple Account",
       "icloud_acct_updated_not_logged_into": "Apple Acct info was saved, Login Error, Will Complete Login Later",
       "icloud_acct_data_source_warning": "Apple Acct is not selected as a data source, username/password are setup",
-      "icloud_acct_not_set_up": "Apple Account Username or Password needs to be entered",
+      "icloud_acct_not_set_up": "No Apple Accts are set up. See `Data Sources > Apple Acct & Mobile App` screen",
+      "icloud_acct_parm_error": "Apple Account parameter error. Update it on the `Data Sources > Apple Account & Mobile App` screen",
       "icloud_acct_no_data_source": "❌ No Data Source has been selected (Apple iCloud Account or Mobile App)",
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id and name on the device (Settings > General > About) can not be exactly the same (letters & case)",
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
 
       "verification_code_requested": "The Apple Account Verification Code was requested, BROWSER REFRESH MAY BE NEEDED",
       "verification_code_requested2": "The Apple Account Verification Code was requested",
-      "verification_code_needed": "The Apple Account Verification Code is needed",
+      "verification_code_needed": "One of the Apple Accounts has requested a Verification Code",
       "verification_code_accepted": "✅ The Apple Account Verification Code was accepted",
       "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
       "verification_code_send_error": "❌ Failed to send the Apple ID Verification Code",
@@ -108,12 +109,13 @@
       "waze_server_error_us": "The correct server for your location is: United States, Canada",
       "waze_server_error_il": "The correct server for your location is: Israel",
       "waze_server_error_row": "The correct server for your location is: Rest of the World",
-      "required_field": "❌ This parameter must be specified",
+      "required_field": "This parameter must be specified",
       "required_field_device": "A device providing location data must be selected from the Family Share, Find-my-Friends, or Mobile App devices lists",
-      "no_device_selected": "❌ A device providing location data must be selected",
+      "no_data_source": "All location data sources are `None`. Device `Tracking Mode` changed to `Inactive`",
       "no_add_entities_device_tracker_fct": "The HA component for adding devices is not available. HA MUST BE RESTARTED",
 
       "unknown_value": "One of the selection parameters needs to be reviewed",
+      "invalid_selection": "An invalid or header item was selected, reset to original value",
       "unknown_devicename": "The configured device was not found in any of the Apple Accts or the Mobile App device list",
       "unknown_icloud": "The configured device was not found in any of the Apple Accounts",
       "unknown_mobapp": "The configured device was not found in the Mobile App devices list",
@@ -151,7 +153,7 @@
         }
       },
       "menu_0": {
-        "title": "Configure Devices and Sensors Menu",
+        "title": "Configure Devices & Sensors",
         "data": {
           "xmenu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
@@ -159,7 +161,7 @@
         }
       },
       "menu_1": {
-        "title": "Configure Parameters Menu",
+        "title": "Configure Parameters",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
@@ -172,11 +174,11 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
         }
       },
-      "restart_ha_ic3": {
-        "title": "Restart Home Assistant or iCloud3",
-        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
+      "restart_ha": {
+        "title": "Restart Home Assistant",
+        "description": "Restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
         "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "restart_ha_ic3_load_error": {
@@ -189,7 +191,7 @@
       "confirm_action": {
         "title": "Confirm Selected Action",
         "data": {
-          "confirm_action_form_hdr": "REQUESTED ACTION",
+          "action_desc": "REQUESTED ACTION",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -258,13 +260,16 @@
         "data": {
           "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity for this device. (Example: gary_iphone)",
           "fname": "FRIENDLY NAME - Displayed in HA entities and on the Event Log (Example: Gary-iPhone)",
+          "famshr_devicename": "APPLE ACCOUNT iCLOUD DEVICE  - Apple iCloud device providing location data",
+          "mobile_app_device": "MOBILE APP DEVICE_TRACKER ENTITY - Mobile App device providing location data & zone triggers",
+          "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
           "tracking_mode": "TRACKING MODE - Location request method (Tracked, Monitored, Inactive)",
           "mobapp": "MOBILE APP INSTALLED - HA Mobile App is installed on this device",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-          "ic3_devicename": "This is the device_tracker entity you are assigning to the iCloud3 device you want to track. The Apple Account and Mobile App devices to be associated with this device_tracker entity are selected on the next page. (Example: gary_iphone)"
+          "ic3_devicename": "This is the device_tracker entity you are assigning to the iCloud3 device you want to track."
         }
       },
       "update_device": {
@@ -273,11 +278,11 @@
         "data": {
           "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
           "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.E",
-          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "famshr_devicename": "APPLE ACCOUNT iCLOUD DEVICE  - Apple iCloud device providing location data",
           "mobile_app_device": "MOBILE APP DEVICE_TRACKER ENTITY - Mobile App device providing location data & zone triggers",
           "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
+          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
+          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "inzone_interval": "INZONE INTERVAL",
           "rarely_updated_parms": "RARELY UPDATED PARAMETERS - Select and Submit to update these items",
           "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
@@ -330,11 +335,23 @@
           "time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
         }
       },
+      "tools": {
+        "title": "Config Tools & Actions",
+        "description": "This screen provides Configuration File Maintenance Tools",
+        "data": {
+          "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud RawData to the log file for only these devices",
+          "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",
+          "tools": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT TOOLS",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TOOLS"
+        },
+        "data_description": {
+        }
+      },
       "format_settings": {
         "title": "Format Settings",
         "description": "Tracking activity, results and information messages are displayed in the Event log, sensors and device_tracker entities for tracked and monitored devices.\n\nThis screen us used to specify how these results should be displayed.",
         "data": {
-          "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3-0.log}",
+          "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",
           "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud RawData to the log file for only these devices",
           "display_zone_format": "EVENT LOG ZONE DISPLAY NAME - How the Zone name is displayed in sensors and the Event Log",
           "device_tracker_state_source": "DEVICE TRACKER STATE VALUE - How the device's device_tracker entity state value is determined",

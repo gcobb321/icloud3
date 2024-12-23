@@ -360,7 +360,7 @@ class EventLog(object):
 
             if (self.startup_event_save_recd_flag
                     or (event_text.startswith(EVLOG_ALERT)
-                        and instr(event_text, 'Location > Old') is False)
+                        and instr(event_text, '> Old') is False)
                     or instr(event_text, 'Acct Auth')):
                 self._save_startup_log_recd(Device, event_recd)
 
@@ -642,7 +642,8 @@ class EventLog(object):
                                 f"Monitor-{delete_mon_cnt})")
 
         except Exception as err:
-            log_exception(err)
+            # log_exception(err)
+            pass
 
 #------------------------------------------------------
     def _update_event_recds_device_cnt(self, elr_recd):
@@ -825,7 +826,7 @@ class EventLog(object):
 
 #--------------------------------------------------------------------
     @staticmethod
-    def _apply_home_to_away_time_zone_update(elr_time_text, away_time_zone_offset):
+    def _apply_home_to_away_time_zone_update(elr_time_text, device_away_time_zone_offset):
         '''
         Change the Home zone time in the elr_text to the Away Zone time if needed.
         A clock face 🕓 is added to the end of the 'Results >' in icloud3_main at the end of
@@ -834,24 +835,24 @@ class EventLog(object):
 
         Return [elr_time, elr_text]
         '''
-        if away_time_zone_offset == 0:
+        if device_away_time_zone_offset == 0:
             return elr_time_text
 
         elr_time, elr_text = elr_time_text
-        if away_time_zone_offset == 0:
+        if device_away_time_zone_offset == 0:
             if instr(elr_text, CLOCK_FACE):
                 elr_text = elr_text.split(CLOCK_FACE)[0]
             return [elr_time, elr_text]
 
-        elr_time = adjust_time_hour_value(elr_time, away_time_zone_offset)
+        elr_time = adjust_time_hour_value(elr_time, device_away_time_zone_offset)
         if instr(elr_text, (':')):
-            elr_text = adjust_time_hour_values(elr_text, away_time_zone_offset)
+            elr_text = adjust_time_hour_values(elr_text, device_away_time_zone_offset)
 
         # Add a note that the Away Time is displayed
         if elr_text.startswith(EVLOG_UPDATE_END):
-            plus_sign = '+' if away_time_zone_offset > 0 else '-'
-            elr_text += (  f"{NBSP4}{CLOCK_FACE} Time: "
-                            f"{plus_sign}{abs(away_time_zone_offset)}hrs")
+            plus_sign = '+' if device_away_time_zone_offset > 0 else '-'
+            elr_text += (  f"{NBSP4}{CLOCK_FACE} "
+                            f"{plus_sign}{abs(device_away_time_zone_offset)}h")
 
         return [elr_time, elr_text]
 

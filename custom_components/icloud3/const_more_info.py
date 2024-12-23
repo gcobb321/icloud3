@@ -189,14 +189,10 @@ more_info_text = {
         f"{CRLF}5. Exit the configurator and `Restart iCloud3`."),
 
     'configure_icloud3': (
-        f"{CRLF}1. Click the “Gear” icon at the top right corner on the Event Log screen "
-        f"or select “Settings > Devices & Services > Integrations” from the HA sidebar >"
-        f"{CRLF}2. Select “iCloud3 > Configuration” to  display the “Configure Settings” screen."
-        f"{CRLF}3. Select “Update Data Sources” to add your Apple account that will "
-        f"provide location information"
-        f"{CRLF}3. Select “Update Devices” to add devices that will be tracked."
-        f"{CRLF}3. Review the other configuration screens and update any parameters "
-        f"that need to be changed."),
+        f"{CRLF}The Apple Account and Devices need to be setup in the iCloud3 configuration"
+        f"{CRLF}1. “Event Log `Gear` > Configure” or “HA Settngs > Devices & Services > iCloud3 > Configure”"
+        f"{CRLF}2. “Data Sources > Apple ……” to add an Apple account"
+        f"{CRLF}3. “iCloud3 Devices” to add devices that will be tracked"),
 
     'unverified_devices_caused_by': (
         f"{CRLF}This can be caused by:"
@@ -216,7 +212,7 @@ more_info_text = {
         f"{CRLF}See the instructions that have already been displayed"),
 
     'password_srp_error': (
-        f"{CRLF_DASH_75}"        
+        f"{CRLF_DASH_75}"
         f"{CRLF}The Python module that creates the Secure Remote Password (SRP) "
         f"hash key has calculated an incorrect value for a valid assword. You probably "
         f"will have to change the Apple Account password to be able to log into it. "

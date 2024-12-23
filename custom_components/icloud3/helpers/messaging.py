@@ -12,7 +12,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 NEXT_UPDATE_TIME, INTERVAL,
                                 ICLOUD, MOBAPP,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
-                                CONF_DEVICES,
+                                CONF_DEVICES, CONF_APPLE_ACCOUNTS,
                                 LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD,
                                 ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
                                 TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
@@ -39,8 +39,8 @@ import logging
 
 DO_NOT_SHRINK     = ['url', 'accountName', ]
 FILTER_DATA_DICTS = ['items', 'userInfo', 'dsid', 'dsInfo', 'webservices', 'locations','location',
-                    'params', 'headers', 'kwargs', 'clientContext', ]
-FILTER_DATA_LISTS = ['devices', 'content', 'followers', 'following', 'contactDetails',]
+                    'params', 'headers', 'kwargs', 'clientContext', 'identifiers', 'labels', ]
+FILTER_DATA_LISTS = ['devices', 'content', 'followers', 'following', 'contactDetails', 'protocols', 'trustTokens', ]
 FILTER_FIELDS = [
         ICLOUD3_VERSION, AUTHENTICATED,
         LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD,
@@ -68,11 +68,12 @@ FILTER_FIELDS = [
         'invitationFromEmail', 'invitationAcceptedHandles',
         'items', 'userInfo', 'prsId', 'dsid', 'dsInfo', 'webservices', 'locations',
         'devices', 'content', 'followers', 'following', 'contactDetails',
-        'dsWebAuthToken', 'accountCountryCode', 'extended_login', 'trustToken',
+        'dsWebAuthToken', 'accountCountryCode', 'extended_login', 'trustToken', 'trustTokens',
         'data', 'json', 'headers', 'params', 'url', 'retry_cnt', 'retried', 'retry', '#',
-        'code', 'ok', 'method', 'securityCode',
-        'fmly', 'shouldLocate', 'selectedDevice',
-        'accountName', 'salt', 'a', 'b', 'c', 'm1', 'm2', 'protocols', 'iteration', 'Authorization', ]
+        'code', 'ok', 'method', 'securityCode', 'fmly', 'shouldLocate', 'selectedDevice',
+        'accountName', 'salt', 'a', 'b', 'c', 'm1', 'm2', 'protocols', 'iteration', 'Authorization',
+        'X-Apple-OAuth-State', 'X-Apple-ID-Session-Id', 'Accept',
+         'identifiers', 'labels', 'model', 'name_by_user', 'area_id', 'manufacturer', 'sw_version', ]
 FILTER_OUT = [
     'features', 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
     'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
@@ -391,8 +392,8 @@ def archive_ic3log_file():
     '''
     try:
         log_file_0 = Gb.hass.config.path(IC3LOG_FILENAME)
-        log_file_1 = Gb.hass.config.path(IC3LOG_FILENAME).replace('-0.', '-1.')
-        log_file_2 = Gb.hass.config.path(IC3LOG_FILENAME).replace('-0.', '-2.')
+        log_file_1 = f"{Gb.hass.config.path(IC3LOG_FILENAME)}.1"    #.replace('.', '-1.')
+        log_file_2 = f"{Gb.hass.config.path(IC3LOG_FILENAME)}.2"    #.replace('.', '-2.')
 
         post_event(f"{ICLOUD3} Log File Archived")
 
@@ -416,9 +417,9 @@ def write_config_file_to_ic3log():
         Gb.prestartup_log = ''
 
     conf_tracking_recd = Gb.conf_tracking.copy()
-    # conf_tracking_recd[CONF_USERNAME] = obscure_field(conf_tracking_recd[CONF_USERNAME])
     conf_tracking_recd[CONF_PASSWORD] = obscure_field(conf_tracking_recd[CONF_PASSWORD])
-    conf_tracking_recd[CONF_DEVICES]  = f"{len(Gb.conf_devices)}"
+    conf_tracking_recd[CONF_APPLE_ACCOUNTS] = len(Gb.conf_apple_accounts)
+    conf_tracking_recd[CONF_DEVICES] = len(Gb.conf_devices)
 
     Gb.trace_prefix = '_INIT_'
     indent = SP(44) if Gb.log_debug_flag else SP(26)
@@ -433,20 +434,20 @@ def write_config_file_to_ic3log():
     Gb.iC3Logger.info(log_msg)
 
     # Write the ic3 configuration (general & devices) to the Log file
-    log_info_msg(f"Profile:\n"
-                f"{indent}{Gb.conf_profile}")
-    log_info_msg(f"Tracking:\n"
-                f"{indent}{conf_tracking_recd}")
-    log_info_msg(f"Apple Accounts:\n"
-                f"{indent}{Gb.conf_apple_accounts}")
-    log_info_msg(f"General Configuration:\n"
-                f"{indent}{Gb.conf_general}\n"
-                f"{indent}{Gb.ha_location_info}")
+    log_info_msg(f"PROFILE:\n"
+                f"{indent} {Gb.conf_profile}")
+    log_info_msg(f"GENERAL CONFIGURAION:\n"
+                f"{indent} {Gb.conf_general}\n"
+                f"{indent} {Gb.ha_location_info}")
+    log_info_msg(f"TRACKING:\n"
+                f"{indent} {conf_tracking_recd}")
+    log_info_msg(f"APPLE ACCOUNTS:\n"
+                f"{indent} {Gb.conf_apple_accounts}")
     log_info_msg("")
 
     for conf_device in Gb.conf_devices:
-        log_info_msg(   f"{conf_device[CONF_FNAME]}, {conf_device[CONF_IC3_DEVICENAME]}:\n"
-                        f"{indent}{conf_device}")
+        log_info_msg(   f"DEVICE: {conf_device[CONF_FNAME]}, {conf_device[CONF_IC3_DEVICENAME]}:\n"
+                        f"{indent} {conf_device}")
     log_info_msg("")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -743,7 +744,7 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False, data_source=None, filter
                 or instr(title, 'iCloud')
                 or instr(title, 'Mobile'))):
 
-        if instr(title,'iCloud Data'):
+        if True is True or instr(title,'iCloud Data'):
             log_level_devices = [devicename for devicename in Gb.log_level_devices if instr(title, devicename)]
             if log_level_devices == []:
                 return
@@ -950,7 +951,7 @@ def post_internal_error(err_text, traceback_format_exec_obj='+'):
 
 
     try:
-        err_msg =  (f"{CRLF_DOT}File…… > {err_file_line_module})"
+        err_msg =  (f"{CRLF_DOT}File.. > {err_file_line_module})"
                     f"{CRLF_DOT}Code > {err_code}"
                     f"{CRLF_DOT}Error. > {err_error_msg}")
 
@@ -1018,7 +1019,7 @@ def _called_from(trace=False):
 
 
     if Gb.log_debug_flag is False and trace == False:
-       return ''
+        return ''
 
     caller = None
     level = 0
@@ -1033,7 +1034,7 @@ def _called_from(trace=False):
         return ' '
 
     caller_path = caller.filename.replace('.py','')
-    caller_filename = f"{caller_path.split('/')[-1]}………….."
+    caller_filename = f"{caller_path.split('/')[-1]}………………"
     caller_lineno = caller.lineno
 
     return f"[{caller_filename[:12]}:{caller_lineno:04}] "

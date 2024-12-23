@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.1.3'
+VERSION                         = '3.1.4'
 VERSION_BETA                    = ''
 #-----------------------------------------
 ICLOUD3                         = 'iCloud3'
@@ -35,7 +35,7 @@ EVLOG_BTNCONFIG_DEFAULT_URL     = f'/config/integrations/integration/{DOMAIN}'
 HA_CONFIG_IC3_URL               = f'/config/integrations/integration/{DOMAIN}'
 WAZE_LOCATION_HISTORY_DATABASE  = 'icloud3.waze_location_history.db'
 SENSOR_WAZEHIST_TRACK_NAME      = 'icloud3_wazehist_track'
-IC3LOG_FILENAME                 = f'{DOMAIN}-0.log'
+IC3LOG_FILENAME                 = f'{DOMAIN}.log'
 PICTURE_WWW_STANDARD_DIRS       = 'www/icloud3, www/community, www/images, www/custom_cards'
 
 DEVICE_TRACKER                  = 'device_tracker'
@@ -99,34 +99,40 @@ IPHONE_FNAME                    = 'iPhone'
 IPHONE                          = 'iphone'
 IPAD_FNAME                      = 'iPad'
 IPAD                            = 'ipad'
-IMAC_FNAME                      = 'iMac'
-IMAC                            = 'imac'
+MAC_FNAME                      = 'Mac'
+MAC                            = 'mac'
 IPOD_FNAME                      = 'iPod'
 IPOD                            = 'ipod'
 WATCH_FNAME                     = 'Watch'
 WATCH                           = 'watch'
 AIRPODS_FNAME                   = 'AirPods'
 AIRPODS                         = 'airpods'
-ICLOUD                          = 'iCloud'
-ICLOUD                          = 'icloud'
 OTHER_FNAME                     = 'Other'
 OTHER                           = 'other'
+
+#tracking_method config parameter being used
+ICLOUD            = 'iCloud'    #iCloud Location Services
+FAMSHR            = 'iCloud'    #Family Sharing
+MOBAPP            = 'MobApp'    #HA Mobile App v1.5x or v2.x
+NO_MOBAPP         = 'no_mobapp'
+IOSAPP            = 'iosapp'
+NO_IOSAPP         = 'no_iosapp'
 
 # Apple is using a country specific iCloud server based on the country code in pyicloud_ic3.
 # Add to the HOME_ENDPOINT & SETUP_ENDPOINT urls if the HA country code is one of these values.
 APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE = ['cn', 'CN']
 
 DEVICE_TYPES = [
-        IPHONE, IPAD, WATCH, AIRPODS, IMAC, IPOD, ICLOUD,
+        IPHONE, IPAD, WATCH, AIRPODS, MAC, IPOD, ICLOUD,
         IPHONE_FNAME, IPAD_FNAME, WATCH_FNAME, AIRPODS_FNAME,
-        IMAC_FNAME, IPOD_FNAME, ICLOUD,
+        MAC_FNAME, IPOD_FNAME, ICLOUD,
 ]
 DEVICE_TYPE_FNAMES = {
         IPHONE: IPHONE_FNAME,
         IPAD: IPAD_FNAME,
         WATCH: WATCH_FNAME,
         AIRPODS: AIRPODS_FNAME,
-        IMAC: IMAC_FNAME,
+        MAC: MAC_FNAME,
         IPOD: IPOD_FNAME,
         OTHER: OTHER_FNAME,
 }
@@ -138,9 +144,19 @@ DEVICE_TYPE_ICONS = {
         IPAD: "mdi:tablet",
         WATCH: "mdi:watch-variant",
         AIRPODS: "mdi:earbuds-outline",
-        IMAC : "mdi:laptop",
+        MAC : "mdi:laptop",
         IPOD: "mdi:ipod",
         OTHER: 'mdi:laptop'
+}
+
+DEVICE_TYPE_INZONE_INTERVALS = {
+        IPHONE: 120,
+        IPAD: 120,
+        WATCH: 15,
+        MAC: 120,
+        AIRPODS: 15,
+        NO_MOBAPP: 15,
+        OTHER: 120,
 }
 
 UM_FNAME        = {'mi': 'Miles', 'km': 'Kilometers'}
@@ -266,12 +282,13 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 '''
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
-Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⛒⊘Ɵ⊗ⓧⓍ⛒🜔
-Important =✔️❗❌✨➰⚠️❓⚽🛑⛔⚡⭐⭕ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔✅❎☑️☁️🍎🔻⏭️⏮️🍏🅰️⮽➕
-↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️
-  — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ … ⋮ 🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ≻≺ ⸩⸨
+Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
+Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔✅❎☑️☁️🍎🔻⏭️⏮️🍏🅰️⮽➕
+↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗✳
+  — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
   ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
- ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨
+ ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 ⲶⲼ+≈⟣⟢⟡
+ ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
  https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
  https://www.htmlsymbols.xyz/unit-symbols
 '''
@@ -283,10 +300,9 @@ NBSP5             = '⠟' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 NBSP6             = '⠿' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 CRLF              = '⣇' #'<br>'
 NL                = '\n'
-#LINK              = ' ⟛ '
-LLINK             = '⸨'
-RLINK             = '⸩'
-LINK              = '-⸨'
+LLINK             = ''
+RLINK             = ''
+LINK              = '⟢'
 CLOCK_FACE        = '🕓'
 INFO              = '🛈'
 CHECK_MARK        = '✓ '
@@ -313,17 +329,21 @@ GTE               = '≥'
 DOTS              = '…'
 PLUS_MINUS        = '±'
 LDOT2             = f'•{NBSP2}'
-CRLF_DOT          = f'{CRLF}{NBSP3}•{NBSP2}'
-CRLF_LDOT         = f'{CRLF}•{NBSP2}'
+CRLF_DOT          = f'{CRLF}{NBSP2}•{NBSP2}'
+CRLF_LDOT         = f'{CRLF}•{NBSP}'
 NL_DOT            = f'{NL} • '
-CRLF_XD           = f'{CRLF}{NBSP2}×{NBSP2}'
-CRLF_X            = f'{CRLF}{NBSP3}×{NBSP2}'
+CRLF_XD           = f'{CRLF}{NBSP}×{NBSP2}'
+CRLF_X            = f'{CRLF}{NBSP2}×{NBSP2}'
 CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⊗{NBSP}'
-CRLF_RED_X        = f'{CRLF}❌'
-CRLF_HDOT         = f'{CRLF}{NBSP4}{NBSP3}◦{NBSP2}'
-CRLF_CHK          = f'{CRLF}{NBSP3}✓{NBSP}'
-CRLF_STAR         = f'{CRLF}{NBSP2}✪{NBSP}'
+CRLF_RED_X        = f'{CRLF}❌{NBSP}'
+CRLF_RED_ALERT    = f'{CRLF}⛔{NBSP}'
+CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
+CRLF_CHK          = f'{CRLF}{NBSP2}✓{NBSP}'
+CRLF_STAR         = f'{CRLF}{NBSP}✪{NBSP}'
 CRLF_YELLOW_ALERT = f'{CRLF}⚠️{NBSP}'
+CRLF_RED_MARK     = f'{CRLF}{NBSP}❗{NBSP}'
+CRLF_RED_STOP     = f'{CRLF}{NBSP}{RED_STOP}'
+CRLF_RED_ALERT    = f'{CRLF}{NBSP}{RED_ALERT}'
 CRLF_SP3_DOT      = f'{CRLF}{NBSP3}•{NBSP}'
 CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
 CRLF_SP8_DOT      = f'{CRLF}{NBSP4}{NBSP4}•{NBSP}'
@@ -349,14 +369,6 @@ DATA_ENTRY_ALERT_CHAR = '⛔'
 DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 OPT_NONE          = 0
-
-#tracking_method config parameter being used
-ICLOUD            = 'iCloud'    #iCloud Location Services
-FAMSHR            = 'iCloud'    #Family Sharing
-IOSAPP            = 'iosapp'
-MOBAPP            = 'MobApp'    #HA Mobile App v1.5x or v2.x
-NO_MOBAPP         = 'no_mobapp'
-NO_IOSAPP         = 'no_iosapp'
 
 # Device tracking modes
 TRACK_DEVICE      = 'track'
@@ -842,6 +854,17 @@ DEFAULT_PROFILE_CONF = {
         CONF_PICTURE_WWW_DIRS: []
 }
 
+DEFAULT_TRACKING_CONF = {
+        CONF_USERNAME: '',
+        CONF_PASSWORD: '',
+        CONF_ENCODE_PASSWORD: True,
+        CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX: '',
+        CONF_SETUP_ICLOUD_SESSION_EARLY: True,
+        CONF_DATA_SOURCE: f'{ICLOUD},{MOBAPP}',
+        CONF_APPLE_ACCOUNTS: [],
+        CONF_DEVICES: [],
+}
+
 DEFAULT_APPLE_ACCOUNTS_CONF = {
         CONF_USERNAME: '',
         CONF_PASSWORD: '',
@@ -849,22 +872,10 @@ DEFAULT_APPLE_ACCOUNTS_CONF = {
         CONF_LOCATE_ALL: True,
 }
 
-DEFAULT_TRACKING_CONF = {
-        CONF_USERNAME: '',
-        CONF_PASSWORD: '',
-        CONF_APPLE_ACCOUNTS: [],
-        CONF_ENCODE_PASSWORD: True,
-        CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX: '',
-        CONF_SETUP_ICLOUD_SESSION_EARLY: True,
-        CONF_DATA_SOURCE: f'{ICLOUD},{MOBAPP}',
-        CONF_DEVICES: [],
-}
-
 DEFAULT_DEVICE_CONF = {
         CONF_IC3_DEVICENAME: ' ',
         CONF_FNAME: '',
         CONF_PICTURE: 'None',
-        #CONF_EVLOG_DISPLAY_ORDER: 0,
         CONF_UNIQUE_ID: '',
         CONF_DEVICE_TYPE: 'iPhone',
         CONF_INZONE_INTERVAL: 120,
@@ -884,16 +895,17 @@ DEFAULT_DEVICE_CONF = {
         CONF_LOG_ZONES: ['none'],
 }
 # Used in conf_flow to reinialize the Configuration Devices
-DEFAULT_DEVICE_DATA_SOURCE = {
+DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE = {
         CONF_APPLE_ACCOUNT: '',
         CONF_FAMSHR_DEVICENAME: 'None',
         CONF_FAMSHR_DEVICE_ID: '',
         CONF_RAW_MODEL : '',
         CONF_MODEL: '',
         CONF_MODEL_DISPLAY_NAME: '',
+}
+DEFAULT_DEVICE_MOBAPP_DATA_SOURCE = {
         CONF_MOBILE_APP_DEVICE: 'None',
 }
-
 RANGE_DEVICE_CONF = {
         CONF_INZONE_INTERVAL: [5, 480],
         CONF_FIXED_INTERVAL: [0, 480],
@@ -927,15 +939,7 @@ DEFAULT_GENERAL_CONF = {
         CONF_CENTER_IN_ZONE: False,
         CONF_DISCARD_POOR_GPS_INZONE: False,
         CONF_DISTANCE_BETWEEN_DEVICES: True,
-        CONF_INZONE_INTERVALS: {
-                IPHONE: 120,
-                IPAD: 120,
-                WATCH: 15,
-                IMAC: 120,
-                AIRPODS: 15,
-                NO_MOBAPP: 15,
-                OTHER: 120,
-                },
+        CONF_INZONE_INTERVALS: DEVICE_TYPE_INZONE_INTERVALS.copy(),
 
         # Waze Configuration Parameters
         CONF_WAZE_USED: True,
@@ -1055,7 +1059,7 @@ CONF_PARAMETER_TIME_STR = [
         CONF_OLD_LOCATION_ADJUSTMENT,
         IPHONE,
         IPAD,
-        IMAC,
+        MAC,
         WATCH,
         AIRPODS,
         NO_MOBAPP,

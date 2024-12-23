@@ -250,9 +250,9 @@ class WazeRouteHistory(object):
 
             if data:
                 self.cursor.execute(sql, data)
-                self.connection.commit()
             else:
                 self.cursor.execute(sql)
+            self.connection.commit()
 
             if fetchone:
                 records = self.cursor.fetchone()
@@ -282,6 +282,7 @@ class WazeRouteHistory(object):
             return records
 
         except Exception as err:
+            self.lock.release()
             log_exception(err)
 
         return None
@@ -398,8 +399,7 @@ class WazeRouteHistory(object):
 
             records = self._sql(sql, fetchall=True)
 
-            post_monitor_msg(   Gb.devicename,
-                                f"WazeHistDB > Get All Records, "
+            post_monitor_msg(   f"WazeHistDB > Get All Records, "
                                 f"Table-{table}, "
                                 f"Criteria-{criteria}, "
                                 f"RecdCnt-{len(records)}")
@@ -565,6 +565,32 @@ class WazeRouteHistory(object):
 #   Waze History Database MAINTENANCE SETUP
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def end_of_day_maintenance(self):
+        try:
+            waze_process = ''
+
+            waze_process = 'Delete Invalid Records'
+            self.wazehist_delete_invalid_records()
+
+            waze_process = 'Compress Waze History Database'
+            self.compress_wazehist_database()
+
+            waze_process = 'Update Waze Map Sensor'
+            self.wazehist_update_track_sensor()
+
+            waze_process = 'Recalculate Travel Time/Distance'
+            if Gb.wazehist_recalculate_time_dist_flag:
+                Gb.wazehist_recalculate_time_dist_flag = False
+                self.wazehist_recalculate_time_dist_all_zones()
+
+        except Exception as err:
+            post_event("Waze History > An error occurred during end-of-day maintenance, "
+                        f"Step-{waze_process}, "
+                        f"Error-{err}")
+            log_exception(err)
+            pass
+
+#--------------------------------------------------------------------
     def load_track_from_zone_table(self):
         '''
         Cycle through the tracked from zones and see if the zone and it's location is in the
