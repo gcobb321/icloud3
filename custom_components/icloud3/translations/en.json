@@ -110,10 +110,9 @@
       "waze_server_error_il": "The correct server for your location is: Israel",
       "waze_server_error_row": "The correct server for your location is: Rest of the World",
       "required_field": "This parameter must be specified",
-      "required_field_device": "A device providing location data must be selected from the Family Share, Find-my-Friends, or Mobile App devices lists",
-      "no_data_source": "All location data sources are `None`. Device `Tracking Mode` changed to `Inactive`",
+      "no_data_source": "A device providing location data must be selected from the Apple Acct or Mobile App devices list",
+      "no_data_source_set_inactive": "Set the  Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
       "no_add_entities_device_tracker_fct": "The HA component for adding devices is not available. HA MUST BE RESTARTED",
-
       "unknown_value": "One of the selection parameters needs to be reviewed",
       "invalid_selection": "An invalid or header item was selected, reset to original value",
       "unknown_devicename": "The configured device was not found in any of the Apple Accts or the Mobile App device list",

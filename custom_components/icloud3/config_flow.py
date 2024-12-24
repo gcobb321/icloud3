@@ -782,7 +782,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         elif self.step_id == "display_text_as":
             pass
         elif self.step_id == 'tracking_parameters':
-            user_input = self._validate_tracking_parameters(user_input)
+            user_input = self._validate_tracking_paramdeters(user_input)
         elif self.step_id == 'inzone_intervals':
             user_input = self._validate_inzone_intervals(user_input)
         elif self.step_id == "waze_main":
@@ -936,6 +936,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if action_item == 'save':
                 Gb.picture_www_dirs = Gb.conf_profile[CONF_PICTURE_WWW_DIRS].copy()
                 self.picture_by_filename = {}
+                await self._build_picture_filename_selection_list()
             return await self.async_step_menu()
 
 
@@ -2907,10 +2908,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input = self._option_text_to_parm(user_input, CONF_MOBILE_APP_DEVICE, self.mobapp_list_text_by_entity_id)
         user_input = self._option_text_to_parm(user_input, CONF_PICTURE, self.picture_by_filename)
-
+        user_input = self._option_text_to_parm(user_input, CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)
+        
+        self.log_step_info(user_input, action_item)
         user_input = self._validate_ic3_devicename(user_input)
-        user_input = self._validate_data_source_selections(user_input)
+
         user_input = self._resolve_selection_list_items(user_input)
+        user_input = self._validate_data_source_selections(user_input)        
         ui_devicename = user_input[CONF_IC3_DEVICENAME]
 
         self.log_step_info(user_input, action_item)
@@ -3305,11 +3309,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.errors[CONF_FAMSHR_DEVICENAME] = 'unknown_icloud'
 
         elif (ui_icloud_dname == 'None'
-                and ui_mobile_app_name == 'None'):
-            if user_input.get(CONF_TRACKING_MODE, TRACK_DEVICE) != INACTIVE_DEVICE:
-                user_input[CONF_TRACKING_MODE] = INACTIVE_DEVICE
-                self.errors[CONF_FAMSHR_DEVICENAME] = 'no_data_source'
-                # self.errors[CONF_MOBILE_APP_DEVICE] = 'no_device_selected'
+                and ui_mobile_app_name == 'None'
+                and user_input.get(CONF_TRACKING_MODE, TRACK_DEVICE) != INACTIVE_DEVICE):
+            self.errors[CONF_FAMSHR_DEVICENAME] = 'no_data_source'
+            self.errors[CONF_TRACKING_MODE] = 'no_data_source_set_inactive'
 
         if (ui_mobile_app_name != 'None'
                 and ui_mobile_app_name not in self.mobapp_list_text_by_entity_id

@@ -10,5 +10,5 @@
   "issue_tracker": "https://github.com/gcobb321/icloud3/issues",
   "loggers": ["icloud3"],
   "requirements": ["srp"],
-  "version": "3.1.4"
+  "version": "3.1.4.1"
 }

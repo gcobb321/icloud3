@@ -596,6 +596,10 @@ def form_add_device(self):
                     default=default_picture_filename):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.picture_by_filename), mode='dropdown')),
+        vol.Required(CONF_TRACKING_MODE,
+                    default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
         vol.Required('action_items',
                 default=self.action_default_text('add_device')):
                 selector.SelectSelector(selector.SelectSelectorConfig(

@@ -5,7 +5,7 @@
 
 3.1.4
 .......................
-### Change Log - v3.1.4 (12/22/2024)
+### Release Notes - v3.1.4 (12/24/2024)
 1. APPLE ACCOUNT PASSWORD AUTHENTICATION:
     - Reverted back to the old password authentication protocol before the Secure Remote Password (SRP) protocol was implemented
     - The Password SRP protocol will be tried if the old password authentication protocol fails.
@@ -14,7 +14,7 @@
 4. TOOLS SCREEN (New Feature) - A `Tools` screen replaces the `Actions` screen on the Configure Menu screen. This is used for configuration file maintenance to reset all Devices Apple Account fields, Delete all Apple Accounts and Devices, Delete all iCloud3 and Apple Account cookie files, etc.
 5. STARTUP (Improved) - Error and warning messages have been improved when setting up Apple Accounts and the Mobile App devices. When errors are encountered (devices can not be found, invalid Apple Account information, etc), an attempt will be made to correct the error using known device names and identification codes. Sometimes it works, sometimes it doesn't and the configuration will need to be updated.
 6. ERROR & WARNING MESSAGES (Improved) - Changed various messages to improve readability and simplify the text.
-7. A lot of internal code changes to improve code maintenance and to remove dead code.
+7. MISCELLANEOUS CHANGES - A lot of internal code changes to make messages consistant, alerts all the same format with the samt highlight icons, improve code maintenance and to remove dead code and more.
 
 What's Next:
 .......................

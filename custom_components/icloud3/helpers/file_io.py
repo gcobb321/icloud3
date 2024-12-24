@@ -336,7 +336,7 @@ def get_file_or_directory_list(list_type=None, start_dir=None,  file_extn_filter
             if start_dir.endswith('/event_log_card/'):
                 pass
             elif start_dir == 'www' and Gb.picture_www_dirs:
-                valid_dir = [dir for dir in Gb.picture_www_dirs if sub_directory.startswith(dir)]
+                valid_dir = [dir for dir in Gb.picture_www_dirs if sub_directory.endswith(dir)]
                 if valid_dir == []:
                     continue
 

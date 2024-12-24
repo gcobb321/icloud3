@@ -37,6 +37,7 @@ from ..const                import (
                                     RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
                                     CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS,
                                     CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNTS_CONF,
+                                    IC3LOG_FILENAME,
                                     )
 
 from ..support              import start_ic3
@@ -501,7 +502,19 @@ def _config_file_check_new_ic3_version():
         Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         new_icloud3_version_flag = True
 
+    if new_icloud3_version_flag and VERSION.startswith('3.1.4'):
+        _delete_old_log_files()
+
     return new_icloud3_version_flag
+
+#--------------------------------------------------------------------
+def _delete_old_log_files():
+    log_file_0 = Gb.hass.config.path(IC3LOG_FILENAME).replace('.', '-0.')
+    log_file_1 = Gb.hass.config.path(IC3LOG_FILENAME).replace('.', '-1.')
+    log_file_2 = Gb.hass.config.path(IC3LOG_FILENAME).replace('.', '-2.')
+    file_io.delete_file(log_file_0)
+    file_io.delete_file(log_file_1)
+    file_io.delete_file(log_file_2)
 
 #--------------------------------------------------------------------
 def _config_file_check_range_values():
