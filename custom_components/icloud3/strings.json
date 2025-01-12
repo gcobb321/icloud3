@@ -82,7 +82,7 @@
       "icloud_acct_login_error_user_pw": "❌ Could not log into the Apple Account, Invalid Username or Password",
       "icloud_acct_login_error_other": "❌ Login Error, Other Error or iCloud is not Available",
       "icloud_acct_login_error_503": "🍎 Apple is delaying displaying a new Verification code to prevent Suspicious Activity, probably due to too many requests. It should be displayed in about 20-30 minutes. Restart HA if it is not displayed",
-      "icloud_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into. ",
+      "icloud_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into.",
       "icloud_acct_dup_username_error": "Error: Username is being used by another Data Source entry",
       "icloud_acct_username_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
       "icloud_acct_not_available": "❌ Login Failed, Apple Account is not Available",
