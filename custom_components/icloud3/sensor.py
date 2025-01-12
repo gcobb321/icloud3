@@ -16,11 +16,11 @@
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (DOMAIN, VERSION, ICLOUD3, RARROW,
+from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3, RARROW,
                                 SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
                                 HOME, HOME_FNAME, NOT_SET, NOT_SET_FNAME, NONE_FNAME,
                                 DATETIME_ZERO, HHMMSS_ZERO,
-                                BLANK_SENSOR_FIELD, DOT, HDOT, UM_FNAME, NBSP,
+                                BLANK_SENSOR_FIELD, DOT, HDOT, UM_FNAME, NBSP, RED_ALERT,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
                                 NAME, FNAME, BADGE, FROM_ZONE, ZONE,
                                 ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
@@ -38,20 +38,23 @@ from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
                                 SENSOR_ATTRS, SENSOR_DEFAULT, ICLOUD3_SENSORS,
                                 SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS, )
 
-from .helpers.common    import (instr, round_to_zero, isnumber, )
+from .helpers.common    import (instr, is_empty, isnot_empty, round_to_zero, isnumber,
+                                list_add, )
 from .helpers.messaging import (post_event, log_info_msg, log_debug_msg, log_error_msg,
                                 log_exception, log_info_msg_HA, log_exception_HA,
                                 _evlog, _log, )
 from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, format_timer,
                                 format_mins_timer, time_now_secs, datetime_now,
-                                secs_to_datetime, secs_to_datetime,
+                                secs_to_datetime, secs_to_datetime, datetime_struct_to_secs,
                                 adjust_time_hour_values, adjust_time_hour_value)
 from .helpers.dist_util import (km_to_mi, m_to_ft, m_to_um, set_precision, reformat_um, )
 from .helpers.format    import (icon_circle, icon_box, )
-from collections        import OrderedDict
 from .helpers           import entity_io
+from .support           import config_file
 from .support           import start_ic3
 
+from collections        import OrderedDict
+from homeassistant      import config_entries, core
 from homeassistant.const                import MATCH_ALL
 from homeassistant.components.sensor    import SensorEntity
 from homeassistant.config_entries       import ConfigEntry
@@ -73,6 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     Gb.async_add_entities_sensor = async_add_entities
     Gb.sensors_created_cnt = 0
 
+
     try:
         if Gb.conf_file_data == {}:
             start_ic3.initialize_directory_filenames()
@@ -81,21 +85,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
         NewSensors = []
-        Gb.EvLogSensor = Sensor_EventLog(SENSOR_EVENT_LOG_NAME)
-        # Gb.EvLogSensor = Sensor_EventLog_ExcludeFromRecorder(SENSOR_EVENT_LOG_NAME)
-        if Gb.EvLogSensor:
-            NewSensors.append(Gb.EvLogSensor)
-        else:
-            log_error_msg("Error setting up Event Log Sensor")
+        NewSensors.extend(_configure_icloud3_internal_sensors())
+        NewSensors.extend(_configure_icloud3_device_sensors())
 
-        Gb.WazeHistTrackSensor = Sensor_WazeHistTrack(SENSOR_WAZEHIST_TRACK_NAME)
-        if Gb.WazeHistTrackSensor:
-            NewSensors.append(Gb.WazeHistTrackSensor)
-        else:
-            log_error_msg("Error setting up Waze History Track Sensor")
+        # Set the total count of the sensors that will be created
+        if Gb.sensors_cnt == 0:
+            excluded_sensors_list = _excluded_sensors_list()
+            Gb.sensors_cnt = len(NewSensors)
+            post_event( f"Sensor Entities > Created-{len(NewSensors)}, "
+                        f"Excluded-{len(excluded_sensors_list)}")
 
-        # Create the selected sensors for each devicename
-        # Cycle through each device being tracked or monitored and create it's sensors
+        if NewSensors != []:
+            async_add_entities(NewSensors, True)
+            log_info_msg_HA(f'iCloud3 Sensor Entities: {len(NewSensors)}')
+
+        correct_sensor_entity_ids_with_2_extension()
+
+    except Exception as err:
+        log_exception(err)
+        log_msg = (f"►INTERNAL ERROR (UpdtSensorUpdate-{err})")
+        log_error_msg(log_msg)
+
+#--------------------------------------------------------------------
+def _configure_icloud3_internal_sensors():
+    '''
+    Create the sensors for the Event Log and Waze Track History
+    '''
+    NewSensors = []
+    Gb.EvLogSensor = Sensor_EventLog(SENSOR_EVENT_LOG_NAME)
+    NewSensors.append(Gb.EvLogSensor)
+
+    Gb.WazeHistTrackSensor = Sensor_WazeHistTrack(SENSOR_WAZEHIST_TRACK_NAME)
+    NewSensors.append(Gb.WazeHistTrackSensor)
+
+    return NewSensors
+
+#--------------------------------------------------------------------
+def _configure_icloud3_device_sensors():
+    '''
+    Create the sensors for each device being tracked or monitored and
+    the sensors associated with each device
+    '''
+    try:
+        NewSensors = []
         for conf_device in Gb.conf_devices:
             devicename = conf_device[CONF_IC3_DEVICENAME]
 
@@ -108,21 +140,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             elif conf_device[CONF_TRACKING_MODE] == MONITOR_DEVICE:
                 NewSensors.extend(create_monitored_device_sensors(devicename, conf_device))
 
-        # Set the total count of the sensors that will be created
-        if Gb.sensors_cnt == 0:
-            excluded_sensors_list = _excluded_sensors_list()
-            Gb.sensors_cnt = len(NewSensors)
-            post_event( f"Sensor Entities > Created-{len(NewSensors)}, "
-                        f"Excluded-{len(excluded_sensors_list)}")
-
-        if NewSensors != []:
-            async_add_entities(NewSensors, True)
-            log_info_msg_HA(f'iCloud3 Sensor entities: {len(NewSensors)}')
-
+        return NewSensors
     except Exception as err:
         log_exception(err)
-        log_msg = (f"►INTERNAL ERROR (UpdtSensorUpdate-{err})")
-        log_error_msg(log_msg)
 
 #--------------------------------------------------------------------
 def create_tracked_device_sensors(devicename, conf_device, new_sensors_list=None):
@@ -172,9 +192,9 @@ def _create_device_sensors(devicename, conf_device, sensors_list):
     excluded_sensors_list = _excluded_sensors_list()
 
     # Cycle through the sensor definition names in the list of selected sensors,
-    # Get the sensor entity name and create the sensor.[ic3_devicename]_[sensor_name] entity
+    # Get the Sensor entity name and create the sensor.[ic3_devicename]_[sensor_name] entity
     # The sensor_def name is the conf_sensor name set up in the Sensor_definition table.
-    # The table contains the actual ha sensor entity name. That permits support for track-from-zone
+    # The table contains the actual ha Sensor entity name. That permits support for track-from-zone
     # suffixes.
 
     for sensor in sensors_list:
@@ -188,12 +208,12 @@ def _create_device_sensors(devicename, conf_device, sensors_list):
 
         devicename_sensor = f"{devicename}_{sensor}"
         if devicename_sensor in excluded_sensors_list:
-            log_debug_msg(f"Sensor entity excluded: sensor.{devicename_sensor}")
+            log_debug_msg(f"Sensor entity Excluded: sensor.{devicename_sensor}")
             continue
 
         Sensor = None
         if sensor in devicename_sensors:
-            # Sensor object might exist, use it to recreate the sensor entity
+            # Sensor object might exist, use it to recreate the Sensor entity
             _Sensor = devicename_sensors[sensor]
             if _Sensor.entity_removed_flag:
                 Sensor = _Sensor
@@ -244,13 +264,13 @@ def _create_track_from_zone_sensors(devicename, conf_device, sensors_list):
             devicename_sensor_zone = f"{devicename}_{sensor}_{from_zone}"
 
             if devicename_sensor_zone in excluded_sensors_list:
-                log_debug_msg(f"Sensor entity excluded: sensor.{devicename_sensor_zone}")
+                log_debug_msg(f"Sensor entity Excluded: sensor.{devicename_sensor_zone}")
                 continue
 
             if sensor_zone in devicename_from_zone_sensors:
                 continue
 
-            # Sensor object might exist, use it to recreate the sensor entity
+            # Sensor object might exist, use it to recreate the Sensor entity
             if sensor_zone in devicename_from_zone_sensors:
                 _Sensor = devicename_from_zone_sensors[sensor_zone]
                 if _Sensor.entity_removed_flag:
@@ -294,19 +314,19 @@ def create_monitored_device_sensors(devicename, conf_device, new_sensors_list=No
         devicename_sensors = Gb.Sensors_by_devicename.get(devicename, {})
 
         # Cycle through the sensor definition names in the list of selected sensors,
-        # Get the sensor entity name and create the sensor.[ic3_devicename]_[sensor_name] entity
+        # Get the Sensor entity name and create the sensor.[ic3_devicename]_[sensor_name] entity
         # The sensor_def name is the conf_sensor name set up in the Sensor_definition table.
-        # The table contains the actual ha sensor entity name. That permits support for track-from-zone
+        # The table contains the actual ha Sensor entity name. That permits support for track-from-zone
         # suffixes.
         for sensor in sensors_list:
             Sensor = None
 
             devicename_sensor = f"{devicename}_{sensor}"
             if devicename_sensor in excluded_sensors_list:
-                log_debug_msg(f"Sensor entity excluded: sensor.{devicename_sensor}")
+                log_debug_msg(f"Sensor entity Excluded: sensor.{devicename_sensor}")
                 continue
 
-            # Sensor object might exist, use it to recreate the sensor entity
+            # Sensor object might exist, use it to recreate the Sensor entity
             if sensor in devicename_sensors:
                 _Sensor = devicename_sensors[sensor]
                 if _Sensor.entity_removed_flag:
@@ -372,9 +392,56 @@ def  _create_sensor_by_type(devicename, sensor, conf_device, from_zone=None):
     elif sensor_type.startswith('badge'):
         return Sensor_Badge(sensor, devicename, conf_device, from_zone)
     else:
-        log_error_msg('iCloud3 Sensor Setup Error, Sensor-{sensor} > Invalid Sensor Type-{sensor_type}')
+        log_error_msg(f"iCloud3 Sensor Setup Error, Sensor-{sensor} > Invalid Sensor Type-{sensor_type}")
         return None
 
+#--------------------------------------------------------------------
+def correct_sensor_entity_ids_with_2_extension(verify=None):
+    '''
+    Get the iCloud3 sensor entities and see if any end with _2. If so,
+    remove the non_2 sensor and rename the _2 sensor to it's correct value
+
+    This is called when the sensors are fist loded (here) and in config_flow (Tools)
+
+    Parameters:
+    verify - True --> Return True/False if there are any correctable sensors
+    '''
+    verify = False if verify is None else True
+
+    # Get all iCloud sensors in hass.states
+    entity_ids = entity_io.get_states_entity_ids()
+    if is_empty(entity_ids):
+        return False
+
+    # Keep sensors that have an '_x' extension (sensor.……_distance_2)
+    entity_ids = [entity_id for entity_id in entity_ids
+                            if entity_id[-2:-1] == '_']
+
+    if is_empty(entity_ids):
+        return False
+    if verify:
+        return True
+
+    # remove sensor.……_distance and change name sensor.……_distance_2 to sensor.……_distance
+    for entity_id in entity_ids:
+        entity_id_base = entity_id[:-2]
+        eid_base_is_avail = entity_io.is_entity_available(entity_id_base)
+        if eid_base_is_avail is False:
+            # Ex.: Remove sensor.gary_iphone_home_distance
+            entity_io.remove_entity(entity_id_base)
+
+        extn = entity_id.replace(entity_id_base, '')
+        log_debug_msg(f"Sensor entity, Named:  {entity_id_base}, (×{extn})")
+        # Ex.: Change sensor.gary_iphone_home_distance_2 to sensor.gary_iphone_home_distance
+        entity_io.change_entity_id(entity_id, entity_id_base)
+
+    return True
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#       CONFIGURE ICLOUD3 SENSORS
+#
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class DeviceSensor_Base():
     ''' iCloud base device sensor '''
@@ -383,12 +450,13 @@ class DeviceSensor_Base():
 
     def __init__(self, sensor_base, devicename, conf_device, from_zone=None):
         try:
-            self.hass        = Gb.hass
-            self.sensor_base = sensor_base
-            self.devicename  = devicename
-            self.conf_device = conf_device
-            self.device_sensor = True
+            self.hass           = Gb.hass
+            self.sensor_base    = sensor_base
+            self.devicename     = devicename
+            self.conf_device    = conf_device
+            self.device_sensor  = True
             self.icloud3_sensor = False
+            self.sensor_number  = 0
 
 
             self.from_zone   = from_zone
@@ -399,11 +467,17 @@ class DeviceSensor_Base():
                 self.from_zone_fname = ''
                 self.sensor          = sensor_base
 
-            self.entity_name     = f"{devicename}_{self.sensor}"
-            self.entity_id       = f"sensor.{self.entity_name}"
-            self.device_id       = Gb.ha_device_id_by_devicename.get(ICLOUD3)
+            self.device_id           = Gb.ha_device_id_by_devicename.get(ICLOUD3)
+            self.entity_name         = f"{devicename}_{self.sensor}"
+            self._attr_unique_id     = f"{DOMAIN}_{self.entity_name}"
+            self.entity_id_base      = f"{PLATFORM_SENSOR}.{self.entity_name}"
 
-            self.Device          = Gb.Devices_by_devicename.get(devicename)
+            # entity_id is changed by ha to the name actually assigned. It will have
+            #  a '_2' added to it if it is already in the  entity registry
+            self.entity_id           = f"{PLATFORM_SENSOR}.{self.entity_name}"
+
+
+            self.Device = Gb.Devices_by_devicename.get(devicename)
             if self.Device and from_zone:
                 self.FromZone = self.Device.FromZones_by_zone.get(from_zone)
             else:
@@ -426,7 +500,9 @@ class DeviceSensor_Base():
             self.current_state_value = ''
 
             Gb.sensors_created_cnt += 1
-            log_debug_msg(f'Sensor entity created: {self.entity_id}, #{Gb.sensors_created_cnt}')
+            self.sensor_number = Gb.sensors_created_cnt
+
+            log_debug_msg(f"Sensor entity, Config: {self.entity_id}, #{self.sensor_number}")
 
         except Exception as err:
             log_exception(err)
@@ -693,13 +769,14 @@ class DeviceSensor_Base():
                             f"{self._get_sensor_definition(self.sensor, SENSOR_FNAME)}"
                             f"{self.from_zone_fname}")
 
-        log_debug_msg(f"Sensor entity changed: {self.entity_id}, {self.sensor_fname}")
+        log_debug_msg(f"Sensor entity Changed: {self.entity_id}, {self.sensor_fname}")
 
         kwargs = {}
         kwargs['original_name'] = self.sensor_fname
 
-        entity_registry = er.async_get(Gb.hass)
-        entity_registry.async_update_entity(self.entity_id, **kwargs)
+        # entity_registry = er.async_get(Gb.hass)
+        # entity_registry.async_update_entity(self.entity_id, **kwargs)
+        entity_io.update_entity(self.entity_id, **kwargs)
 
         """
             Typically used:
@@ -725,24 +802,46 @@ class DeviceSensor_Base():
     """
 
 #-------------------------------------------------------------------------------------------
-    def remove_entity(self):
-        try:
-            Gb.hass.async_create_task(self.async_remove(force_remove=True))
+    async def async_added_to_hass(self):
+        '''
+        When adding the entity, check to see if the entity_id (what was really added) is the
+        same as entity_id_base (what iC3 wanted to add).
 
-        except Exception as err:
-            log_exception(err)
+        Note: HA will add an extension (_2) if HA has determined that the entity_id iC3 specified
+        already exists (it is in the hass.states.data tables). If so, remove the iC3 base entity
+        and rename the one HA created (with _2) to the one iC3 entity_id.
+        '''
+
+        log_debug_msg(f"Sensor entity, Added:  {self.entity_id}, #{self.sensor_number}")
+
+        if self.entity_id == self.entity_id_base:
+            return
+
+        eid_base_is_avail = entity_io.is_entity_available(self.entity_id_base)
+        if eid_base_is_avail is False:
+            # Ex.: Remove sensor.gary_iphone_home_distance
+            entity_io.remove_entity(self.entity_id_base)
+
+        # Ex.: Change sensor.gary_iphone_home_distance_2 to sensor.gary_iphone_home_distance
+        extn = self.entity_id.replace(self.entity_id_base, '')
+        log_debug_msg(f"Sensor entity, Named:  {self.entity_id_base}, (×{extn})")
+        entity_io.change_entity_id(self.entity_id, self.entity_id_base)
 
 #-------------------------------------------------------------------------------------------
     def after_removal_cleanup(self):
-        """ Cleanup sensor after removal
+        """
+        Cleanup sensor after removal
 
         Passed in the `self._on_remove` parameter during initialization
         and called by HA after processing the async_remove request
+
+        Make sure entity is removed from the entity_registry and the hass.state.entities
+        dictionary.
         """
 
-        log_info_msg(f"Unregistered sensor.icloud3 entity Removed: {self.entity_id}")
+        log_info_msg(f"Sensor entity, Remove: {self.entity_id}, #{self.sensor_number}")
 
-        self._remove_from_registries()
+        entity_io.remove_entity(self.entity_id)
         self.entity_removed_flag = True
 
         if self.Device is None:
@@ -755,16 +854,8 @@ class DeviceSensor_Base():
             self.Device.Sensors.pop(self.sensor)
 
 #-------------------------------------------------------------------------------------------
-    def _remove_from_registries(self) -> None:
-        """ Remove entity/device from registry """
-
-        if not self.registry_entry:
-            return
-
-        if entity_id := self.registry_entry.entity_id:
-            entity_registry = er.async_get(Gb.hass)
-            if entity_id in entity_registry.entities:
-                entity_registry.async_remove(self.entity_id)
+    def x_remove_entity():
+        entity_io.remove_entity(self.entity_id)
 
 #-------------------------------------------------------------------------------------------
     async def async_will_remove_from_hass(self):
@@ -779,7 +870,6 @@ class DeviceSensor_Base():
         """Update the entity's state if the state value has changed."""
 
         try:
-            # self.async_write_ha_state()
             self.schedule_update_ha_state()
 
         except Exception as err:
@@ -1214,18 +1304,33 @@ class iCloud3Sensor_Base():
 
     def __init__(self, sensor):
         '''Initialize the Event Log sensor (icloud3_event_log).'''
-        self.sensor            = sensor
+        entity_reg = er.async_get(Gb.hass)
 
-        self.fname             = ICLOUD3_SENSORS[sensor]
-        self.entity_name       = sensor
-        self.entity_id         = f"sensor.{self.entity_name}"
-        self._unsub_dispatcher = None
-        self._device           = DOMAIN
-        self.current_state_value = ''
+        self.hass            = Gb.hass
+        self.sensor          = sensor
+
+        self.fname           = ICLOUD3_SENSORS[sensor]
+
+        self._device         = DOMAIN
+        self.entity_name     = sensor
+        self.entity_id       = f"{PLATFORM_SENSOR}.{self.entity_name}"
+        self._attr_unique_id = f"{DOMAIN}_{self.entity_name}"
 
         Gb.sensors_created_cnt += 1
-        log_debug_msg(f'Sensor entity created: {self.entity_id}, #{Gb.sensors_created_cnt}')
+        self.sensor_number = Gb.sensors_created_cnt
 
+        self._unsub_dispatcher = None
+        self.current_state_value = ''
+
+        eid_assigned = entity_io.get_assigned_sensor_entity(self._attr_unique_id)
+        if eid_assigned and eid_assigned != self.entity_id:
+            extn_added = f"+{eid_assigned.replace(self.entity_id, '')}"
+            extn_alert = f" {RED_ALERT} Added-`{extn_added}`"
+        else:
+            extn_alert = ''
+        log_debug_msg(  f"Sensor entity, Config: {self.entity_id}{extn_alert}, #{self.sensor_number}")
+
+#..........................................................................................
     @property
     def name(self):
         '''Sensor friendly name.'''
@@ -1248,15 +1353,15 @@ class iCloud3Sensor_Base():
                             name         = 'iCloud3 Integration'
                         )
 
-
-#-------------------------------------------------------------------------------------------
-    def __repr__(self):
-        return (f"<iCloud3Sensor: {self.entity_name}>")
-
     @property
     def should_poll(self):
         ''' Do not poll to update the sensor '''
         return False
+
+#-------------------------------------------------------------------------------------------
+    async def async_added_to_hass(self):
+
+        log_debug_msg(f"Sensor entity, Added:  {self.entity_id}, #{self.sensor_number}")
 
 #-------------------------------------------------------------------------------------------
     def async_update_sensor(self):
@@ -1264,15 +1369,14 @@ class iCloud3Sensor_Base():
         if Gb.hass is None: return
 
         try:
-            # self.async_write_ha_state()
             self.schedule_update_ha_state()
 
         except (RuntimeError, AttributeError):
-            # Catch a 'RuntimeError: Attribute hass is None for <DeviceSensor: icloud3_event_log>'
             pass
         except Exception as err:
             log_exception(err)
 
+#-------------------------------------------------------------------------------------------
     async def async_will_remove_from_hass(self):
         '''Clean up after entity before removal.'''
         try:
@@ -1282,6 +1386,10 @@ class iCloud3Sensor_Base():
             pass
         except Exception as err:
             log_exception(err)
+
+#-------------------------------------------------------------------------------------------
+    def __repr__(self):
+        return (f"<iCloud3Sensor: {self.entity_name}>")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Sensor_EventLog(iCloud3Sensor_Base, SensorEntity):

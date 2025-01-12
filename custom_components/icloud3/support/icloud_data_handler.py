@@ -150,6 +150,11 @@ def request_icloud_data_update(Device):
 
             Device.icloud_devdata_useable_flag = update_PyiCloud_RawData_data(Device)
 
+            if Gb.internet_connection_error:
+                for Device in Gb.Devices:
+                    Device.pause_tracking
+                return False
+
             # Retry in an error occurs
             if (Device.icloud_devdata_useable_flag is False
                     and Device.icloud_initial_locate_done is False):
@@ -339,10 +344,11 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
             Update_Devices = [Device]
 
         for _Device in Update_Devices:
-            if _Device.verified_flag is False:
-                continue
-            _RawData = get_icloud_PyiCloud_RawData_to_use(_Device)
-            if _RawData is None:
+            if _Device.verified_flag and _Device.is_data_source_ICLOUD:
+                _RawData = get_icloud_PyiCloud_RawData_to_use(_Device)
+                if _RawData is None:
+                    continue
+            else:
                 continue
 
             # Make sure data is really a available
@@ -401,7 +407,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                                                     _RawData.device_data[LOCATION][LONGITUDE])
 
                     # Move data from PyiCloud_RawData
-                    _Device.update_dev_loc_data_from_raw_data_FAMSHR(_RawData,
+                    _Device.update_dev_loc_data_from_raw_data_ICLOUD(_RawData,
                                                     requesting_device_flag=requesting_device_flag)
 
             elif _Device.mobapp_data_secs > 0:

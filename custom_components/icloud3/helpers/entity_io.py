@@ -1,19 +1,21 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import ( HIGH_INTEGER, NOT_SET,
+from ..const            import (PLATFORM_SENSOR, DOMAIN, SENSOR,
+                                HIGH_INTEGER, NOT_SET,
                                 HOME, ZONE, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
                                 TRACE_ICLOUD_ATTRS_BASE, TRACE_ATTRS_BASE,
                                 BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME,
                                 LAST_UPDATED_SECS, LAST_UPDATED_TIME,
                                 STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
-from .common            import (instr,  )
+from .common            import (instr,  is_empty, isnot_empty, list_add, list_del,)
 from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
                                 _evlog, _log, )
 from .time_util         import (secs_to_time)
 
-from homeassistant.helpers import entity_registry, device_registry
+from homeassistant.helpers import entity_registry as er, device_registry as dr
 from datetime import datetime
+import json
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -37,6 +39,7 @@ def get_state(entity_id):
 
     try:
         entity_data = Gb.hass.states.get(entity_id)
+        # _log(f"{entity_id=} {entity_data.state=}")
 
         if entity_data is None: return NOT_SET
 
@@ -127,16 +130,16 @@ def get_last_changed_time(entity_id):
         log_exception(err)
         time_secs = 0
 
-
     return time_secs
 
 #--------------------------------------------------------------------
-def get_entity_registry_data(platform=None, domain=None) -> list:
+def get_entity_registry_data(platform=None, domain=None):
     """
     Cycle through the entity registry and extract the entities in a platform.
 
     Parameter:
-        platform - platform to extract from the entity_registry
+        platform - platform filter ('icloud3')
+        domain   - domain filter ('sensor')
     Returns:
         [platform_entity_ids], [platform_entity_data]
 
@@ -151,120 +154,129 @@ def get_entity_registry_data(platform=None, domain=None) -> list:
     """
 
     try:
-        entity_reg = entity_registry.async_get(Gb.hass)
-        entities   = {k:_registry_data_str_to_dict(k, v, platform, domain)
-                        for k, v in entity_reg.entities.items()
-                        if _base_domain(k) in ['device_tracker', 'zone', 'sensor']}
+        entity_reg = er.async_get(Gb.hass)
+        entity_ids_attrs   = {entity_id: EntRegItem.as_partial_dict
+                        for entity_id, EntRegItem in entity_reg.entities.items()
+                        if _select_entity_reg_item(EntRegItem, platform, domain)}
 
-        if platform is None and domain:
-            platform_entity_data = {k:v for k, v in entities.items()
-                                        if _base_domain(k) == domain}
-
-        elif platform and domain is None:
-            platform_entity_data = {k:v for k, v in entities.items()
-                                        if v['platform'] == platform}
-
-        elif platform and domain:
-            platform_entity_data = {k:v for k, v in entities.items()
-                                        if (v['platform'] == platform and _base_domain(k) == domain)}
-
-        else:
+        if is_empty(entity_ids_attrs):
             return [], {}
 
-        platform_entity_ids  = [k for k in platform_entity_data.keys()]
+        entity_ids  = [entity_id for entity_id in entity_ids_attrs.keys()]
 
-        # Get raw_model from HA device_registry
+        # Get raw_model from device_registry
         if platform == 'mobile_app' or domain == 'device_tracker':
-            device_reg = device_registry.async_get(Gb.hass)
-            for dev_trkr_entity, dev_trkr_entity_data in platform_entity_data.items():
-                raw_model = 'Unknown'
+            device_reg = dr.async_get(Gb.hass)
+            for entity_id, entity_id_attrs in entity_ids_attrs.items():
+                model = 'Unknown'
                 try:
-                    # 12/18/2022 (beta 1)-Check to see if in device_reg
-                    device_id = dev_trkr_entity_data['device_id']
+                    device_id = entity_id_attrs['device_id']
                     device_reg_data = device_reg.async_get(device_id)
                     if device_reg_data:
-                        raw_model = device_reg_data.model
+                        model = device_reg_data.model
 
                 except Exception as err:
-                    # 12/18/2022 (beta 1)-Don't display error msg if no device_reg data
                     # log_exception(err)
                     pass
 
-                dev_trkr_entity_data[RAW_MODEL] = raw_model
+                entity_id_attrs[RAW_MODEL] = model
 
         # Remove 'zone.' and add Home zone to the zone platform items
         if platform == 'zone':
-            platform_entity_ids = [v.replace('zone.', '') for v in platform_entity_ids]
-            platform_entity_ids.append(HOME)
+            entity_ids = [entity_id.replace('zone.', '') for entity_id in entity_ids]
+            entity_ids.append(HOME)
 
-        return platform_entity_ids, platform_entity_data
+        return entity_ids, entity_ids_attrs
 
     except Exception as err:
         log_exception(err)
         return [], {}
 
-#-------------------------------------------------------------------------------------------
-def _base_domain(domain_entity_id):
-    return domain_entity_id.split('.')[0]
+#...........................................................................................
+def _select_entity_reg_item(EntRegItem, platform, domain):
 
-def _base_entity_id(domain_entity_id):
-    return domain_entity_id.split('.')[1]
+    '''
+    Determine if this Entity Registry item is selected based on the platform
+    and domain criteria
+    '''
 
-#--------------------------------------------------------------------
-def _registry_data_str_to_dict(key, text, platform, domain):
-    """ Convert the entity/device registry data to a dictionary
+    _domain = EntRegItem.entity_id.split('.')[0]
 
-        Input (EntityRegistry or DeviceRegistry attribute items for an entity/device):
-            key:        The key of the items data
-            text:       String that is in the form a dictioary.
-            platform:   Requested platform
+    if _domain not in ['device_tracker', 'zone', 'sensor']:
+        return False
 
-            Input text:
-                "RequestedEntry(entity_id='zone.quail', area_id=None, capabilities={},
-                version='11.22', item_type=[], supported_features=0,
-                unit_of_measurement=None)"
-            Reformatted:
-                ['entity_id:'zone.quail', 'area_id': None, 'capabilities': {},
-                'version': 11.22, item_tupe: [], 'supported_features': 0,
-                'unit_of_measurement': None}
-    """
-    text = str(text).replace('RegistryEntry(', '')[:-1]
-    items = [item.replace("'", "") for item in text.split(', ')]
+    if platform is None and domain == _domain:
+        return True
 
-    # Do not reformat items if not requested platform
-    if (f"platform={platform}" in items
-            and (domain is None or _base_domain(key) == domain)):
-        pass
-    elif platform is None and _base_domain(key) == domain:
-        pass
-    else:
-        return {'platform': 'not_platform_domain'}
+    if domain is None and EntRegItem.platform == platform:
+        return True
 
-    items_dict = {}
-    for item in items:
-        try:
-            if instr(item, '=') is False:
-                continue
+    if EntRegItem.platform == platform and domain == _domain:
+        return True
 
-            key_value = item.split('=')
-            key = key_value[0]
-            value = key_value[1]
-            if value == 'None':
-                items_dict[key] = None
-            elif value.isnumeric():
-                items_dict[key] = int(value)
-            elif value.find('.') and value.split('.')[0].isnumeric() and value.split('.')[1].isnumeric():
-                items_dict[key] = float(value)
-            elif value.startswith('{'):
-                items_dict[key] = eval(value)
-            elif value.startswith('['):
-                items_dict[key] = eval(value)
-            else:
-                items_dict[key] = value.replace('xa0', '')
-        except:
-            pass
+    return False
 
-    return items_dict
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#    HA STATES ENTITY FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def get_states_entity_ids(domain=None, integration=None):
+    '''
+    Parameter:
+        domain - domain filter, default=sensor
+        integration - integration name, default=iCloud3
+    Return:
+        entity_ids (list)
+
+    Sample data:
+        entity_ids=['sensor.ipad_mini_zone_distance', 'sensor.ipad_mini_home_distance',
+            'sensor.ipad_mini_battery', 'sensor.ipad_mini_name', ...
+    '''
+    domain = SENSOR if domain is None else domain
+    integration = DOMAIN if integration is None else integration
+
+    entity_ids = []
+    for Entity in Gb.hass.states.async_all(domain):
+
+        if Entity.entity_id.startswith(domain) is False:
+            continue
+
+        entity_id_attrs = Gb.hass.states.get(Entity.entity_id).attributes
+        if entity_id_attrs and entity_id_attrs.get('integration') is not None:
+            if entity_id_attrs['integration'].lower() == integration.lower():
+                list_add(entity_ids, Entity.entity_id)
+
+    return entity_ids
+
+
+def get_states_entity_data(domain=None, integration=None):
+    '''
+    Parameter:
+        domain - domain filter, default=sensor
+        integration - integration name, default=iCloud3
+    Return:
+        entity_ids (list), attributes (dict)
+
+    Sample data:
+        entity_ids=['sensor.ipad_mini_zone_distance', 'sensor.ipad_mini_home_distance',
+            'sensor.ipad_mini_battery', 'sensor.ipad_mini_name', ...
+        entity_ids_attrs={'sensor.ipad_mini_zone_distance': {'integration': 'iCloud3',
+            'sensor_updated': '2025-01-09 12:34:09', 'from_zone': 'home', 'distance (meters)': 25.838,
+            'distance_to_zone_edge (meters)': 74.162, 'distance (miles)': 0.01605,
+            'distance_units (attributes)': 'mi', 'calculated_distance': 0.02584,
+            'waze_route_distance': '×Paused', 'max_distance': 0.0, 'nearby_device_used': '',
+            'went_3km': 'false', 'unit_of_measurement': 'mi', 'icon': 'mdi:map-marker-distance',
+            'friendly_name': 'iPad-Mini ZoneDistance'}, ...
+    '''
+    entity_ids = get_states_entity_ids(domain, integration)
+
+    entity_ids_attrs = {}
+    for entity_id in entity_ids:
+        entity_ids_attrs[entity_id] = Gb.hass.states.get(entity_id).attributes
+
+    return entity_ids, entity_ids_attrs
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -301,16 +313,73 @@ def ha_zone_entities():
     name='The Point', options={}, original_device_class=None, original_icon='mdi:map-marker',
     original_name='The.Point', supported_features=0, translation_key=None, unit_of_measurement=None)
     '''
-    entity_reg = entity_registry.async_get(Gb.hass)
-    ha_zone_entities = {zone_entity_id: RegEntry
+    entity_reg = er.async_get(Gb.hass)
+    ha_zone_entity_items = {zone_entity_id: RegEntry
                         for zone_entity_id, RegEntry in entity_reg.entities.items()
                         if zone_entity_id.startswith('zone')}
 
     ha_zone_entity_ids = [zone_entity_id.replace('zone.', '')
-                        for zone_entity_id in ha_zone_entities.keys()]
+                        for zone_entity_id in ha_zone_entity_items.keys()]
     ha_zone_entity_ids.append(HOME)
 
+    zone_entity_ids, zone_entity_items = get_entity_registry_data(domain='zone')
+
     return ha_zone_entity_ids
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   ENTITY REGISTRY MAINTENANCE FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def get_entity(entity_id):
+    try:
+        entity_reg = er.async_get(Gb.hass)
+        return entity_reg.async_get(entity_id)
+    except:
+        return {}
+
+def remove_entity(entity_id):
+    try:
+        entity_reg = er.async_get(Gb.hass)
+        entity_reg.async_remove(entity_id)
+    except Exception as err:
+        pass
+
+    try:
+        if Gb.hass.states.async_available(entity_id) is False:
+            Gb.hass.async_add_executor_job(Gb.hass.states.remove, entity_id)
+
+    except Exception as err:
+        #log_exception(err)
+        pass
+
+def get_assigned_sensor_entity(unique_id):
+    try:
+        entity_reg = er.async_get(Gb.hass)
+        return entity_reg.async_get_entity_id(PLATFORM_SENSOR, DOMAIN, unique_id)
+    except:
+        return None
+
+def change_entity_id(from_entity_id, to_entity_id):
+    try:
+        entity_reg = er.async_get(Gb.hass)
+        entity_reg.async_update_entity(from_entity_id, new_entity_id=to_entity_id)
+    except Exception as err:
+        log_exception(err)
+
+def update_entity(entity_id, kwargs):
+    try:
+        entity_reg = er.async_get(Gb.hass)
+        entity_reg.async_update_entity(entity_id, **kwargs)
+    except:
+        return False
+
+def is_entity_available(entity_id):
+    try:
+        entity_reg = er.async_get(Gb.hass)
+        entity_reg._entity_id_available(entity_id, None)
+    except:
+        return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

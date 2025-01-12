@@ -50,6 +50,13 @@
         "data": {
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
+      },
+      "restart_ha_reload_icloud3": {
+        "title": "Restart Home Assistant or iCloud3",
+        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
+        "data": {
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        }
       }
     }
   },
@@ -59,10 +66,11 @@
       "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
-      "ic3_restarting": "Restarting iCloud3",
+      "ic3_reloading": "RELOADING ICLOUD3",
       "reauth_successful": "The reauthentication has been successfully completed"
     },
     "error": {
+      "unknown_action": "Selected Action could not be identified",
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
@@ -140,7 +148,10 @@
       "action_completed": "Requested Action has been completed",
       "action_cancelled": "Requested Action has been cancelled",
       "restart_ha": "Home Assistant needs to be restarted to continue",
-      "excluded_sensors_ha_restart": "Excluded Sensors were Updated. An HA restart is required"
+      "excluded_sensors_ha_restart": "Excluded Sensors were Updated. An HA restart is required",
+
+      "fix_entity_name_complete": "Sensor Entity Name Corrected completed",
+      "fix_entity_name_not_needed": "No Sensor Entity Name Errors were found"
 
     },
     "step": {
@@ -185,6 +196,13 @@
         "description": "iCloud3 did not load and initialize when HA started. Reload iCloud3 again or restart HA",
         "data": {
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+        }
+      },
+      "restart_ha_reload_icloud3": {
+        "title": "Restart Home Assistant or iCloud3",
+        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
+        "data": {
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "confirm_action": {
@@ -283,7 +301,7 @@
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "inzone_interval": "INZONE INTERVAL",
-          "rarely_updated_parms": "RARELY UPDATED PARAMETERS - Select and Submit to update these items",
+          "rarely_updated_parms": "DISPLAY RARELY UPDATED PARAMETERS - Check and Submit to update these items",
           "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
           "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
           "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
@@ -335,8 +353,8 @@
         }
       },
       "tools": {
-        "title": "Config Tools & Actions",
-        "description": "This screen provides Configuration File Maintenance Tools",
+        "title": "Maintenance Tools",
+        "description": "Maintenance Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
         "data": {
           "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud RawData to the log file for only these devices",
           "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",

@@ -55,9 +55,9 @@ MENU_ACTION_ITEMS = [
         ]
 
 ACTION_LIST_OPTIONS = {
-        'next_page_items':          'NEXT PAGE ITEMS > ^info_field^',
+        'next_page_items':          'NEXT PAGE ITEMS > ^add-text^',
         'next_page':                'NEXT PAGE > Save changes. Display the next page',
-        'next_page_device':         'NEXT PAGE > Friendly Name, Track-from-Zones, Other Setup Fields',
+        'next_page_devices':        'NEXT PAGE > Display devices ^add-text^',
         'next_page_waze':           'NEXT PAGE > Waze History Database parameters',
         'select_form':              'SELECT > Select the parameter update form',
 
@@ -77,38 +77,35 @@ ACTION_LIST_OPTIONS = {
         'delete_device':            'DELETE DEVICE > Delete the selected device',
         'change_device_order':      'CHANGE DEVICE ORDER > Change the tracking order of the Devices and their display sequence on the Event Log',
 
-        # 'reset_this_device_data_source': 'RESET THIS DEVICE`S DATA SOURCE > Set Apple Acct & Mobile App to `None`',
-        # 'delete_this_device':       'DELETE THIS DEVICE > Delete this device from the iCloud3 tracked devices list',
-        # 'reset_all_devices_data_source': '⚠️ RESET ALL DEVICE`S DATA SOURCE > Set Apple Acct & Mobile App to `None`',
-        # 'delete_all_devices':       '⚠️ DELETE ALL DEVICES > Delete all devices from the iCloud3 tracked devices list',
-        # 'delete_device_cancel':     'CANCEL > Return to the Device List screen',
-
         'inactive_to_track':        'TRACK ALL OR SELECTED > Change the `Tracking Mode‘ of all of the devices (or the selected devices) from `Inactive‘ to `Tracked‘',
         'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE > None of these devices should be `Tracked‘ and should remain `Inactive‘',
 
         'restart_ha':               'RESTART HOME ASSISTANT > Restart HA, Restart iCloud3',
         'restart_icloud3':          'RESTART ICLOUD3 > Restart iCloud3 (Does not restart Home Assistant)',
         'restart_ic3_now':          'RESTART NOW > Restart iCloud3 now to load the updated configuration',
+        'reload_icloud3':           'RELOAD ICLOUD3 ᐳ Reload & Restart iCloud3 (This does not load a new version)',
         'restart_ic3_later':        'RESTART LATER > The configuration changes have been saved. Load the updated configuration the next time iCloud3 is started',
-        'review_inactive_devices':  'REVIEW INACTIVE DEVICES > Some Devices are `Inactive` and will not be located or tracked',
+        'review_inactive_devices':  'REVIEW INACTIVE DEVICES > Some Devices are `Inactive` and will not be located or tracked ^add-text^',
 
         'select_text_as':           'SELECT > Update selected `Display Text As‘ field',
         'clear_text_as':            'CLEAR > Remove `Display Text As‘ entry',
 
         'exclude_sensors':          'EXCLUDE SENSORS > Select specific Sensors that should not be created',
         'filter_sensors':           'FILTER SENSORS > Select Sensors that should be displayed',
+        'set_to_default_sensors':   'SET TO DEFAULT > Reset sensors to the default selection',
 
         'move_up':                  'MOVE UP > Move the Device up in the list',
         'move_down':                'MOVE DOWN > Move the Device down in the list',
 
+        'cancel_goto_previous':     'RETURN > Return to the previous screen. Cancel any unsaved changes',
+        'goto_previous':            'RETURN > Return to the previous screen',
+        'cancel_goto_menu':         'MENU > Return to the Menu screen. Cancel any unsaved changes',
+        'goto_menu':                'MENU > Return to the Menu screen',
+        'cancel_goto_select_device': 'BACK TO DEVICE SELECTION > Return to the Device Selection screen. Cancel any unsaved changes',
+
+        'exit':                     'EXIT > Exit the iCloud3 Configure Parameters Settings, Return to HA',
         'save':                     'SAVE > Update Configuration File, Return to the Menu screen',
         'save_stay':                'SAVE > Update Configuration File',
-        'return':                   'MENU > Return to the Menu screen',
-
-        'cancel_return':            'RETURN > Return to the previous screen. Cancel any unsaved changes',
-        'cancel':                   'MENU > Return to the Menu screen. Cancel any unsaved changes',
-        'cancel_device_selection':  'BACK TO DEVICE SELECTION > Return to the Device Selection screen. Cancel any unsaved changes',
-        'exit':                     'EXIT > Exit the iCloud3 Configure Parameters Settings, Return to HA',
 
         'confirm_action_yes':       'YES > Complete the requested action',
         'confirm_return_no':        'NO  > Cancel the request',
@@ -123,7 +120,7 @@ ACTION_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in ACTION_LIST_OPTIONS.
 
 ACTION_LIST_ITEMS_BASE = [
         ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['cancel']
+        ACTION_LIST_OPTIONS['cancel_goto_menu']
         ]
 
 NONE_DICT_KEY_TEXT          = {'None': 'None'}
@@ -142,12 +139,12 @@ APPLE_ACCOUNT_ACTIONS = [
         ACTION_LIST_OPTIONS['delete_apple_acct']]
 APPLE_ACCOUNT_DELETE_ACTIONS = [
         ACTION_LIST_OPTIONS['delete_apple_acct'],
-        ACTION_LIST_OPTIONS['cancel_return']]
+        ACTION_LIST_OPTIONS['cancel_goto_previous']]
 USERNAME_PASSWORD_ACTIONS = [
         ACTION_LIST_OPTIONS['save_log_into_apple_acct'],
         ACTION_LIST_OPTIONS['delete_apple_acct'],
         ACTION_LIST_OPTIONS['verification_code'],
-        ACTION_LIST_OPTIONS['cancel_return']]
+        ACTION_LIST_OPTIONS['cancel_goto_previous']]
 REAUTH_CONFIG_FLOW_ACTIONS = [
         ACTION_LIST_OPTIONS['send_verification_code'],
         ACTION_LIST_OPTIONS['request_verification_code'],
@@ -155,31 +152,25 @@ REAUTH_CONFIG_FLOW_ACTIONS = [
 REAUTH_ACTIONS = [
         ACTION_LIST_OPTIONS['send_verification_code'],
         ACTION_LIST_OPTIONS['request_verification_code'],
-        ACTION_LIST_OPTIONS['cancel_return']]
+        ACTION_LIST_OPTIONS['goto_previous']]
 DEVICE_LIST_ACTIONS = [
         ACTION_LIST_OPTIONS['update_device'],
         ACTION_LIST_OPTIONS['delete_device'],
         ACTION_LIST_OPTIONS['change_device_order'],
-        ACTION_LIST_OPTIONS['return']]
+        ACTION_LIST_OPTIONS['goto_menu']]
 DEVICE_ADD_ACTIONS = [
         ACTION_LIST_OPTIONS['add_device'],
-        ACTION_LIST_OPTIONS['cancel']]
+        ACTION_LIST_OPTIONS['cancel_goto_menu']]
 DEVICE_LIST_ACTIONS_NO_ADD = [
         ACTION_LIST_OPTIONS['update_device'],
         ACTION_LIST_OPTIONS['delete_device'],
         ACTION_LIST_OPTIONS['change_device_order'],
-        ACTION_LIST_OPTIONS['return']]
-
-# DEVICE_DELETE_ACTIONS = [
-#         ACTION_LIST_OPTIONS['reset_this_device_data_source'],
-#         ACTION_LIST_OPTIONS['delete_this_device'],
-#         ACTION_LIST_OPTIONS['reset_all_devices_data_source'],
-#         # ACTION_LIST_OPTIONS['delete_all_devices'],
-#         # ACTION_LIST_OPTIONS['delete_device_cancel']]
+        ACTION_LIST_OPTIONS['goto_menu']]
 
 REVIEW_INACTIVE_DEVICES =  [
         ACTION_LIST_OPTIONS['inactive_to_track'],
-        ACTION_LIST_OPTIONS['inactive_keep_inactive']]
+        ACTION_LIST_OPTIONS['goto_previous'],
+        ACTION_LIST_OPTIONS['goto_menu']]
 RESTART_NOW_LATER_ACTIONS = [
         ACTION_LIST_OPTIONS['restart_ha'],
         ACTION_LIST_OPTIONS['restart_icloud3'],
@@ -191,13 +182,14 @@ CONFIRM_ACTIONS =  [
         ACTION_LIST_OPTIONS['confirm_return_no']]
 
 TOOL_LIST = {
-        'reset_data_source':      'ERASE DEVICE`S APPLE ACCOUNT > Clear the Apple Account setting for all Devices',
-        'reset_tracking':         'DELETE ALL APPLE ACCOUNTS & DEVICES > Initialize Tracking Parameters (Apple Accounts and Devices). General & Sensor Parameters are not deleted.',
-        'reset_general':          '⚠️ RESET GENERAL CONFIGURATION PARAMETERS > Set the General Parameters on the ‘Other Parameter Menu’ screens to their default value',
-        'del_apple_acct_cookies': '⛔ DELETE ALL APPLE/ICLOUD COOKIE FILES > Delete Apple Acct Cookie & Session files in the ‘.storage/icloud3.apple_acct’ directory, Restart HA',
-        'del_icloud3_config_files': '⛔ DELETE ALL ICLOUD3 CONFIGURATION FILES > Delete the iCloud3  Configuration files in the ‘.storage/icloud3’ directory',
-        'fix_entity_name_error':  '(ToDo) REPAIR ‘_2’ SENSOR ENTITY NAME ERRORS > Rename ‘_2’ sensor entities back to the correct name without the ‘_2’ extension set by HA',
-        'return':                 'MENU > Return to the Menu screen',
+        'reset_data_source':      'CLEAR DEVICE`S DATA SOURCE SELECTIONS > Erase the `Apple Acct Device` and `Mobile App Device` selection fields for all iCloud3 devices (Update iCloud3 Device screen)',
+        'reset_tracking':         'REMOVE ALL APPLE ACCTS & DEVICES > Erase all Apple Accts (Data Sources - Apple Acct and Mobile App screen) and Erase all Devices (iCloud3 Devices screen)',
+        'reset_general':          'RESET GENERAL CONFIGURATION PARAMETERS > Set the `General Parameters` to their default value (Other Parameter Menu screens). Sensors are reset on the Sensors screen.',
+        'del_apple_acct_cookies': 'DELETE ALL APPLE/ICLOUD COOKIE FILES > Delete Apple Acct Cookie & Session files in the ‘.storage/icloud3.apple_acct’ directory, Restart HA',
+        'del_icloud3_config_files': 'DELETE ALL ICLOUD3 CONFIGURATION FILES > Delete the iCloud3  Configuration files in the ‘.storage/icloud3’ directory. Apple Accts will be reverified.',
+        'restart_ha_reload_icloud3': 'RESTART HA OR RELOAD ICLOUD3 > Restart Home Assistant, Reload current version of iCloud3',
+        'fix_entity_name_error':  'REPAIR ‘_2’ SENSOR ENTITY NAME ERRORS > Rename ‘_2’ sensor entities back to the correct name without the ‘_2’ extension',
+        'goto_menu':                 'MENU > Return to the Menu screen',
 }
 TOOL_LIST_ITEMS = [
         TOOL_LIST['reset_data_source'],
@@ -205,8 +197,9 @@ TOOL_LIST_ITEMS = [
         TOOL_LIST['reset_general'],
         TOOL_LIST['del_apple_acct_cookies'],
         TOOL_LIST['del_icloud3_config_files'],
+        TOOL_LIST['restart_ha_reload_icloud3'],
         TOOL_LIST['fix_entity_name_error'],
-        TOOL_LIST['return'],
+        TOOL_LIST['goto_menu'],
 ]
 TOOL_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in TOOL_LIST.items()}
 
@@ -289,7 +282,8 @@ WAZE_HISTORY_TRACK_DIRECTION_OPTIONS = {
 SENSORS_EXCLUDE_ACTIONS_= [
         ACTION_LIST_OPTIONS['filter_sensors'],
         ACTION_LIST_OPTIONS['save_stay'],
-        ACTION_LIST_OPTIONS['cancel_return']]
+        ACTION_LIST_OPTIONS['cancel_goto_previous']]
+
 CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT = {
         'md_badge':         '_badge > Badge sensor - A badge showing the Zone Name or distance from the Home zone. Attributes include location related information',
         'md_battery':       '_battery, battery_status > Create Battery (65%) and Battery Status (Charging, Low, etc) sensors',

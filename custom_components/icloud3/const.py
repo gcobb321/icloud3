@@ -10,11 +10,19 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.1.4.1'
+# from homeassistant.const import (Platform)
+
+VERSION                         = '3.1.4.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
+DOMAIN                          = 'icloud3'
+PLATFORMS                       = ['sensor', 'device_tracker']
+PLATFORM_DEVICE_TRACKER         = 'device_tracker'
+PLATFORM_SENSOR                 = 'sensor'
+
+#-----------------------------------------
+
 ICLOUD3                         = 'iCloud3'
-DOMAIN                          = ICLOUD3.lower()
 ICLOUD3_VERSION_MSG             = f"{ICLOUD3} v{VERSION}{VERSION_BETA}"
 STORAGE_KEY                     = DOMAIN
 STORAGE_VERSION                 = 1
@@ -38,11 +46,9 @@ SENSOR_WAZEHIST_TRACK_NAME      = 'icloud3_wazehist_track'
 IC3LOG_FILENAME                 = f'{DOMAIN}.log'
 PICTURE_WWW_STANDARD_DIRS       = 'www/icloud3, www/community, www/images, www/custom_cards'
 
-DEVICE_TRACKER                  = 'device_tracker'
+DEVICE_TRACKER                  = PLATFORM_DEVICE_TRACKER
 DEVICE_TRACKER_DOT              = 'device_tracker.'
-PLATFORMS                       = ['sensor', 'device_tracker']
-PLATFORM                        = 'device_tracker'
-SENSOR                          = 'sensor'
+SENSOR                          = PLATFORM_SENSOR
 ATTRIBUTES                      = 'attributes'
 ENTITY_ID                       = 'entity_id'
 HA_DEVICE_TRACKER_LEGACY_MODE   = False
@@ -99,8 +105,8 @@ IPHONE_FNAME                    = 'iPhone'
 IPHONE                          = 'iphone'
 IPAD_FNAME                      = 'iPad'
 IPAD                            = 'ipad'
-MAC_FNAME                      = 'Mac'
-MAC                            = 'mac'
+MAC_FNAME                       = 'Mac'
+MAC                             = 'mac'
 IPOD_FNAME                      = 'iPod'
 IPOD                            = 'ipod'
 WATCH_FNAME                     = 'Watch'
@@ -284,8 +290,9 @@ lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ 
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
 Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔✅❎☑️☁️🍎🔻⏭️⏮️🍏🅰️⮽➕
-↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗✳
-  — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
+🔵🔴🟠🟡🟢🟣🟤🟦🟥🟧🟨🟩🟪🟫🛑🔶🔷🔸🔹🔺🔻
+↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗✳🞺🞴🞸🞳
+  ═ ⎯ — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
   ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
  ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 ⲶⲼ+≈⟣⟢⟡
  ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
@@ -308,7 +315,7 @@ INFO              = '🛈'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
 YELLOW_ALERT      = '⚠️'
-RED_ALERT         = '⛔'
+RED_ALERT         = '⛔ '
 RED_STOP          = '🛑'
 RED_CIRCLE        = '⭕'
 SMALL_X           = '⊗ '
@@ -336,7 +343,7 @@ CRLF_XD           = f'{CRLF}{NBSP}×{NBSP2}'
 CRLF_X            = f'{CRLF}{NBSP2}×{NBSP2}'
 CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⊗{NBSP}'
 CRLF_RED_X        = f'{CRLF}❌{NBSP}'
-CRLF_RED_ALERT    = f'{CRLF}⛔{NBSP}'
+CRLF_RED_ALERT    = f'{CRLF}⛔{NBSP2}'
 CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
 CRLF_CHK          = f'{CRLF}{NBSP2}✓{NBSP}'
 CRLF_STAR         = f'{CRLF}{NBSP}✪{NBSP}'
@@ -361,8 +368,8 @@ RARROW2           = '→'         #U+27F6 (Long Arrow Right)  ⟹ ⟾
 LARROW            = ' <-- '     #U+27F5 (Long Arrow Left) ⟸ ⟽
 LARROW2           = '<--'       #U+27F5 (Long Arrow Left) ⟸ ⟽
 INFO_SEPARATOR    = '/' #'∻'
-DASH_20           = '━'*20
-DASH_50           = '━'*50
+DASH_20           = '—'*20
+DASH_50           = '—'*50
 DASH_DOTTED_50    = '- '*25
 TAB_11            = '\t'*11
 DATA_ENTRY_ALERT_CHAR = '⛔'

@@ -2,7 +2,8 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HIGH_INTEGER,
                                     EVLOG_ALERT, EVLOG_NOTICE, EVLOG_ERROR,
-                                    CRLF, CRLF_DOT, DASH_20, RED_X, CRLF_RED_MARK, CRLF_RED_STOP, CRLF_RED_ALERT,
+                                    CRLF, CRLF_DOT, DASH_20, RED_X, CRLF_RED_MARK, CRLF_RED_STOP,
+                                    RED_ALERT, CRLF_RED_ALERT,
                                     ICLOUD,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY, CONF_LOCATE_ALL,
@@ -174,16 +175,18 @@ def log_into_apple_account(username, password, locate_all_devices=None):
         debug_msg_hdr =f"APPLE ACCT SETUP > {username_base}, Step-"
         log_debug_msg(f"{debug_msg_hdr}0, Login Started, {pyicloud_msg}")
 
-        # # Refresh existing PyiCloud/iCloud
-        # if PyiCloud and PyiCloud.connection_error_retry_cnt > 5:
-        #     return
+        if Gb.internet_connection_error:
+            post_event( f"{EVLOG_ALERT}HOME ASST SERVER IS OFFLINE > "
+                        f"Apple Acct not available:"
+                        f"{CRLF_DOT}{username_base}")
+            return None
 
         if (PyiCloud
                 and PyiCloud.is_DeviceSvc_setup_complete
                 and PyiCloud.DeviceSvc):
             PyiCloud.dup_icloud_dname_cnt = {}
 
-            # PyiCloud.DeviceSvc.refresh_client()
+
             PyiCloud.refresh_icloud_data(locate_all_devices=True)
 
             pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_DeviceSvc_setup_complete=} {PyiCloud.DeviceSvc=}"
@@ -230,6 +233,12 @@ def log_into_apple_account(username, password, locate_all_devices=None):
 
             except Exception as err:
                 log_exception(err)
+
+            if Gb.internet_connection_error:
+                post_event( f"{EVLOG_ALERT}HOME ASST SERVER IS OFFLINE > "
+                        f"Apple Acct unavailable:"
+                        f"{CRLF_DOT}{username_base}")
+                return None
 
             if PyiCloud.DeviceSvc:
                 if is_empty(PyiCloud.RawData_by_device_id):

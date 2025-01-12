@@ -131,7 +131,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # hass_data["unsub_options_update_listener"] = unsub_options_update_listener
         # hass.data[DOMAIN][entry.entry_id] = hass_data
 
-
         Gb.hass           = hass
         Gb.config_entry   = entry
         Gb.entry_id       = entry.entry_id
@@ -145,6 +144,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             config_file.load_storage_icloud3_configuration_file)
 
         start_ic3.set_log_level(Gb.log_level)
+        
+        # Setup iCloud Log File (icloud3.log)
+        await Gb.hass.async_add_executor_job(open_ic3log_file_init)
 
         Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
         Gb.evlog_version       = Gb.conf_profile['event_log_version']
@@ -152,10 +154,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         Gb.EvLog.post_event(f"{EVLOG_IC3_STARTING}{ICLOUD3_VERSION_MSG} > Loading, "
                             f"{dt_util.now().strftime('%A, %b %d')}")
-
-        # Setup iCloud Log File (icloud3-0.log)
-        await Gb.hass.async_add_executor_job(
-                            open_ic3log_file_init)
 
         Gb.HALogger.info(f"Setting up {ICLOUD3_VERSION_MSG}{VERSION_BETA}")
         log_info_msg(f"Setting up {ICLOUD3} v{VERSION}{VERSION_BETA}")
@@ -204,6 +202,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await Gb.hass.config_entries.async_forward_entry_setups(
                                 entry,
                                 ['sensor'])
+        # await Gb.hass.async_add_executor_job(
+        #                     rename_all_entity_id_x_to_entity_id_base)
 
         # Do not start if loading/initialization failed
         if successful_startup is False:

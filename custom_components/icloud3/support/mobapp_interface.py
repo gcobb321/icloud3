@@ -36,10 +36,10 @@ PUSH_URL = "https://ios-push.home-assistant.io/push"
 def get_entity_registry_mobile_app_devices():
     Gb.mobapp_id_by_mobapp_dname      = {}
     Gb.mobapp_dname_by_mobapp_id      = {}
-    Gb.device_info_by_mobapp_dname    = {} # [mobapp_fname, raw_model, model, model_display_name]
-                                                # ['Gary-iPhone (MobApp), iPhone15,2', 'iPhone', 'iPhone 14 Pro']
+    Gb.device_info_by_mobapp_dname    = {}  # [mobapp_fname, raw_model, model, model_display_name]
+                                            # ['Gary-iPhone (MobApp), iPhone15,2', 'iPhone', 'iPhone 14 Pro']
     Gb.last_updt_trig_by_mobapp_dname = {}
-    Gb.mobile_app_notify_devicename        = []
+    Gb.mobile_app_notify_devicename   = []
     Gb.battery_level_sensors_by_mobapp_dname = {}
     Gb.battery_state_sensors_by_mobapp_dname = {}
 
@@ -161,26 +161,32 @@ def _entity_name_disabled_by(sensor):
     return sensor['entity_id'].replace('sensor.', '')
 
 #-----------------------------------------------------------------------------------------------------
-def get_mobile_app_notify_devicenames():
+def _get_mobile_app_notify_devices():
     '''
     Get the mobile_app_[devicename] notify services entries from ha that are used to
     send notifications to a device.
+
+    notify_targets={'Lillian-iPhone-app': '7ada3fe77c0db7b47703d27452bd7cce324afe731ea9cdf76c7b11905528a4dd',
+                    'Gary-iPhone-app': 'fc79dc30d9d8da0f726228caf6c575fc96dae7255d526d3654efbb35465bdd6e',
+                    'Gary-iPad-app': '7f8496d4c94b958b7d091e5438353ac5795323b1b261815b4573f690f1b7b7ff'}
+
     '''
 
     Gb.mobile_app_notify_devicenames = []
     try:
         notify_targets = mobile_app_notify.push_registrations(Gb.hass)
-        for notify_target in notify_targets:
-            Gb.mobile_app_notify_devicenames.append(f"mobile_app_{slugify(notify_target)}")
 
-        return Gb.mobile_app_notify_devicenames
+        for notify_target in notify_targets.keys():
+            list_add(Gb.mobile_app_notify_devicenames)
+
+        return notify_targets   #Gb.mobile_app_notify_devicenames
 
     except Exception as err:
         log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
         # log_exception(err)
         pass
 
-    return Gb.mobile_app_notify_devicenames
+    return notify_targets   #Gb.mobile_app_notify_devicenames
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -261,7 +267,7 @@ def get_mobile_app_integration_device_info(ha_started_check=False):
             Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
             mobapp_id = Gb.mobapp_id_by_mobapp_dname.get(conf_mobapp_dname)
             if mobapp_id:
-                if Device.conf_mobapp_fname is not None:
+                if Device.conf_mobapp_fname != '':
                     mobapp_fname_update_msg += (f"{CRLF_DOT}{Device.fname} > "
                                                 f"{Device.conf_mobapp_fname}{RARROW}"
                                                 f"{Gb.MobileApp_fnames_x_mobapp_id[mobapp_id]}")
@@ -290,28 +296,29 @@ def setup_notify_service_name_for_mobapp_devices(post_evlog_msg=False):
                 Post an event msg indicating the notify device names were set up. This is done
                 when they are set up when this is run after HA has started
 
+
     '''
-    mobile_app_notify_devicenames = get_mobile_app_notify_devicenames()
+    notify_devices = _get_mobile_app_notify_devices()
 
     setup_msg = ''
 
     # Cycle thru the ha notify names and match them up with a device. This function runs
     # while iC3 is starting and again when ha has started. HA may run iC3 before
     # 'notify.mobile_app' so running again when ha has started makes sure they are set up.
-    for mobile_app_notify_devicename in mobile_app_notify_devicenames:
-        mobapp_dname = mobile_app_notify_devicename.replace('mobile_app_', '')
+    for mobapp_fname, mobapp_id in notify_devices.items():
+        notify_devicename = slugify(mobapp_fname)
+        Gb.mobapp_fnames_by_mobapp_id[mobapp_id] = mobapp_fname
         for devicename, Device in Gb.Devices_by_devicename.items():
             if (Device.mobapp_monitor_flag is False
                     or Gb.conf_data_source_MOBAPP is False):
+                    # or Device.mobapp[NOTIFY] != ''):
                 continue
 
-            if instr(mobapp_dname, devicename) or instr(devicename, mobapp_dname):
-                if (Device.conf_mobapp_fname != 'None'
-                        and Device.mobapp_monitor_flag
-                        and Device.mobapp[NOTIFY] == ''):
-                    Device.mobapp[NOTIFY] = mobile_app_notify_devicename
-                    setup_msg+=(f"{CRLF_DOT}{Device.devicename_fname}{RARROW}"
-                                f"{mobile_app_notify_devicename}")
+            if instr(notify_devicename, devicename) or instr(devicename, notify_devicename):
+                Device.conf_mobapp_fname = mobapp_fname
+                Device.mobapp[NOTIFY] = f"mobile_app_{notify_devicename}"
+                setup_msg+=(f"{CRLF_DOT}{Device.devicename_fname}{RARROW}"
+                            f"{mobapp_fname} ({notify_devicename})")
                 break
 
     if setup_msg and post_evlog_msg:

@@ -323,8 +323,10 @@ def open_ic3log_file(new_log_file=False):
         Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
         Gb.iC3Logger.setLevel(logging.INFO)
 
-        write_config_file_to_ic3log()
-
+#--------------------------------------------------------------------
+def close_ic3_log_file():
+    Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
+    # Gb.iC3Logger.flush()
 
 #--------------------------------------------------------------------
 def write_ic3log_recd(log_msg):

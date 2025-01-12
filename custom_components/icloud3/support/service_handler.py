@@ -10,8 +10,7 @@ import asyncio
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (DOMAIN,
-                                    HHMMSS_ZERO, HIGH_INTEGER, EVLOG_ALERT, EVLOG_ERROR,
-                                    WAZE,
+                                    RED_ALERT, EVLOG_ALERT, EVLOG_ERROR,
                                     CMD_RESET_PYICLOUD_SESSION,
                                     LOCATION, NEXT_UPDATE_TIME, NEXT_UPDATE, INTERVAL,
                                     CONF_DEVICENAME, CONF_ZONE, CONF_COMMAND, CONF_LOG_LEVEL,
@@ -125,7 +124,9 @@ def process_update_service_request(call):
 def process_restart_icloud3_service_request(call):
     """ icloud3.restart service call request  """
 
-    Gb.restart_icloud3_request_flag = True
+    Gb.restart_icloud3_request_flag   = True
+    Gb.internet_connection_error      = False
+    Gb.internet_connection_error_secs = 0
 
 #--------------------------------------------------------------------
 def process_find_iphone_alert_service_request(call):
@@ -357,9 +358,11 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 def _handle_global_action(global_action, action_option):
 
     if global_action == CMD_RESTART:
-        Gb.log_debug_flag_restart     = Gb.log_debug_flag
-        Gb.log_rawdata_flag_restart   = Gb.log_rawdata_flag
-        Gb.restart_icloud3_request_flag = True
+        Gb.log_debug_flag_restart         = Gb.log_debug_flag
+        Gb.log_rawdata_flag_restart       = Gb.log_rawdata_flag
+        Gb.restart_icloud3_request_flag   = True
+        Gb.internet_connection_error      = False
+        Gb.internet_connection_error_secs = 0
         Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_evlog_greenbar_msg=True)
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
@@ -414,17 +417,24 @@ def _handle_global_action(global_action, action_option):
 #--------------------------------------------------------------------
 def handle_action_log_level(action_option, change_conf_log_level=True):
 
+    # Shor/Hide Tracking Monitors
     if instr(action_option, 'monitor'):
         Gb.evlog_trk_monitors_flag = (not Gb.evlog_trk_monitors_flag)
+
+        # Test trigger for Internet  connection error
+        # Gb.internet_connection_error = Gb.evlog_trk_monitors_flag
+        # _evlog(f"{RED_ALERT}Internet Connection Error-{Gb.internet_connection_error}")
         return
 
     new_log_debug_flag   = Gb.log_debug_flag
     new_log_rawdata_flag = Gb.log_rawdata_flag
 
+    # Log Level Debug
     if instr(action_option, 'debug'):
         new_log_debug_flag   = (not Gb.log_debug_flag)
         new_log_rawdata_flag = False
 
+    # Log Level Rawdata
     if instr(action_option, 'rawdata'):
         new_log_rawdata_flag = (not Gb.log_rawdata_flag)
         new_log_debug_flag   = new_log_rawdata_flag
@@ -432,6 +442,7 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
     if new_log_rawdata_flag is False:
         Gb.log_rawdata_flag_unfiltered = False
 
+    # Log Level Rawdata Auto Reset at midnight
     new_log_level = 'rawdata-auto-reset' if new_log_rawdata_flag \
         else 'debug-auto-reset' if new_log_debug_flag \
         else 'info'

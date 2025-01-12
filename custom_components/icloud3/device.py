@@ -322,12 +322,7 @@ class iCloud3_Device(TrackerEntity):
         except:
             pass
 
-        # self.mobapp = { DEVICE_TRACKER: '',
-        #                 TRIGGER: '',
-        #                 BATTERY_LEVEL: '',
-        #                 BATTERY_STATUS: '',
-        #                 NOTIFY: ''}
-        self.initialize_mobapp_ha_entity_names()
+        self.initialize_mobapp_device_tracker_entity_name()
 
         # MobApp state variables
         self.update_mobapp_data_monitor_msg= ''
@@ -363,7 +358,7 @@ class iCloud3_Device(TrackerEntity):
         # & mobapp sensor.battery attributes
         self.battery_info                 = {ICLOUD: '', MOBAPP: ''}
 
-    def initialize_mobapp_ha_entity_names(self):
+    def initialize_mobapp_device_tracker_entity_name(self):
         self.mobapp = { DEVICE_TRACKER: '',
                         TRIGGER: '',
                         BATTERY_LEVEL: '',
@@ -507,8 +502,8 @@ class iCloud3_Device(TrackerEntity):
 
         # Configuration parameters
         # Change Monitored to tracked if primary data source is MOBAPP since
-        # a monitored device only monitors the iCloud data aand iOS Data may be available
-        self.tracking_mode        = conf_device.get(CONF_TRACKING_MODE, 'track')
+        # a monitored device only monitors the iCloud data and MobApp Data may be available
+        self.tracking_mode        = conf_device.get(CONF_TRACKING_MODE, TRACK_DEVICE)
         self.sensors['dev_id']    = self.devicename
         self.evlog_fname_alert_char = ''          # Character added to the fname in the EvLog (❗❌⚠️)
 
@@ -516,7 +511,7 @@ class iCloud3_Device(TrackerEntity):
         self.initialize_non_tracking_config_fields(conf_device)
         self._validate_zone_parameters()
 
-        self.raw_model           = conf_device.get(CONF_RAW_MODEL, self.device_type)  # iPhone15,2
+        self.raw_model            = conf_device.get(CONF_RAW_MODEL, self.device_type)  # iPhone15,2
         self.model                = conf_device.get(CONF_MODEL, self.device_type)      # iPhone
         self.model_display_name   = conf_device.get(CONF_MODEL_DISPLAY_NAME, self.device_type) # iPhone 14 Pro
         self.track_from_zones     = conf_device.get(CONF_TRACK_FROM_ZONES, [HOME]).copy()
@@ -597,28 +592,36 @@ class iCloud3_Device(TrackerEntity):
 #--------------------------------------------------------------------
     def _initialize_data_source_fields(self, conf_device):
 
-        if Gb.conf_data_source_ICLOUD and conf_device.get(CONF_FAMSHR_DEVICENAME, 'None') != 'None':
+        if conf_device.get(CONF_FAMSHR_DEVICENAME, 'None') != 'None':
             self.conf_apple_acct_username = conf_device.get(CONF_APPLE_ACCOUNT, '')
-            self.conf_icloud_dname        = conf_device.get(CONF_FAMSHR_DEVICENAME, 'None')
+            self.conf_icloud_dname        = conf_device.get(CONF_FAMSHR_DEVICENAME, '')
             self.conf_icloud_devicename   = slugify(self.conf_icloud_dname)
 
-            if self.conf_apple_acct_username:
-                username_devices = Gb.Devices_by_username.get(self.conf_apple_acct_username, [])
-                Gb.Devices_by_username[self.conf_apple_acct_username] = list_add(username_devices, self)
+        if self.conf_apple_acct_username:
+            username_devices = Gb.Devices_by_username.get(self.conf_apple_acct_username, [])
+            Gb.Devices_by_username[self.conf_apple_acct_username] = list_add(username_devices, self)
 
-        if Gb.conf_data_source_MOBAPP and conf_device.get(CONF_MOBILE_APP_DEVICE, 'None') != 'None':
-            self.mobapp[DEVICE_TRACKER] = conf_device[CONF_MOBILE_APP_DEVICE]
+        self. initialize_mobapp_device_tracker_entity_name()
+        self.mobapp[DEVICE_TRACKER] = conf_device[CONF_MOBILE_APP_DEVICE]
 
-        self.is_data_source_ICLOUD     = Gb.conf_data_source_ICLOUD and self.conf_icloud_dname is not None
-        self.is_data_source_MOBAPP     = Gb.conf_data_source_MOBAPP and self.mobapp[DEVICE_TRACKER] != ''
+        self.is_data_source_ICLOUD = Gb.conf_data_source_ICLOUD and self.conf_icloud_dname != ''
+        self.is_data_source_MOBAPP = Gb.conf_data_source_MOBAPP and self.mobapp[DEVICE_TRACKER] != ''
 
         # Set primary data source
-        if self.conf_icloud_dname:
+        if self.is_data_source_ICLOUD:
             self.primary_data_source = ICLOUD
-        elif self.mobapp[DEVICE_TRACKER]:
+        elif self.is_data_source_MOBAPP:
             self.primary_data_source = MOBAPP
+            if self.is_monitored:
+                self.tracking_mode = TRACK_DEVICE
         else:
             self.primary_data_source = None
+        # if self.conf_icloud_dname:
+        #     self.primary_data_source = ICLOUD
+        # elif self.mobapp[DEVICE_TRACKER]:
+        #     self.primary_data_source = MOBAPP
+        # else:
+        #     self.primary_data_source = None
 
 #--------------------------------------------------------------------
     def initialize_track_from_zones(self):
@@ -780,7 +783,7 @@ class iCloud3_Device(TrackerEntity):
                 device_tfz_sensors = Gb.Sensors_by_devicename_from_zone.get(self.devicename, [])
                 for sensor, Sensor in device_tfz_sensors.items():
                     if sensor.endswith(f"_{zone}") and Sensor.entity_removed_flag is False:
-                        Sensor.remove_entity()
+                        entity_io.remove_entity(Sensor.entity_id)
 
             # Update log_zone_activity zone
             if zone in self.log_zones:
@@ -2134,7 +2137,7 @@ class iCloud3_Device(TrackerEntity):
         self.display_update_location_msg()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def update_dev_loc_data_from_raw_data_FAMSHR(self, RawData, requesting_device_flag=True):
+    def update_dev_loc_data_from_raw_data_ICLOUD(self, RawData, requesting_device_flag=True):
         '''
         Update the Device's location data with the RawData (iCloud) from the iCloud Account.
 

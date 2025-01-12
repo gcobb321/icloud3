@@ -385,6 +385,17 @@ def datetime_to_secs(date_time, date_time_format=None):
     secs = datetime.timestamp(dt_struct)
 
     return secs
+
+#--------------------------------------------------------------------
+def datetime_struct_to_secs(datetime_struct):
+    '''
+    Determine secs from datetime structure
+    Input: datetime.datetime(2025, 1, 3, 21, 17, 1, 226338, tzinfo=datetime.timezone.utc)
+    Return: secs (1736156863.690547)
+    '''
+
+    return datetime_struct.timestamp()
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Time conversion and formatting functions

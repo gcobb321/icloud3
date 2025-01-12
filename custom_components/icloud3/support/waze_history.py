@@ -530,8 +530,8 @@ class WazeRouteHistory(object):
         if self.connection is None: return
 
         # cursor = self.connection.cursor()
-        vac_conn = sqlite3.connect(self.wazehist_database, 
-                                    check_same_thread=False, 
+        vac_conn = sqlite3.connect(self.wazehist_database,
+                                    check_same_thread=False,
                                     isolation_level=None)
         vac_cursor = vac_conn.cursor()
         try:
@@ -551,7 +551,7 @@ class WazeRouteHistory(object):
 
         recd_cnts = self._execute(vac_cursor, GET_LOCATIONS_TABLE_RECD_COUNT, fetchone=True)
         post_event(f"Waze History Database > Compressed, Record Count-{recd_cnts[0]}")
-            
+
         vac_cursor.close()
         vac_conn.close()
 
@@ -696,7 +696,6 @@ class WazeRouteHistory(object):
         '''
         if self.connection is None: return
 
-        _Device = Gb.Devices[0] if len(Gb.Devices) > 0 else None
 
         # Cycle through the zones. If the location change flag is set, cycle through the
         # Waze History Database for those zones and recalculate the time & distance.
@@ -712,8 +711,7 @@ class WazeRouteHistory(object):
             # in another thread or as an asyncio task
             if self.wazehist_recalculate_time_dist_running_flag:
                 self.wazehist_recalculate_time_dist_abort_flag = True
-                if _Device:
-                    _Device.display_info_msg("Waze History > Update stopped")
+                post_event("Waze History > Update stopped")
                 return
 
             self.total_recd_cnt = self.total_recds_cnt = self.total_update_cnt = self.total_deleted_cnt = 0
@@ -765,8 +763,6 @@ class WazeRouteHistory(object):
         '''
 
         '''
-        _Device = Gb.Devices[0] if len(Gb.Devices) > 0 else None
-
         criteria = (f"zone_id={abs(zone_id)}")
         orderby  = "lat_long_key"
         records  = self._get_all_records('locations', criteria=criteria, orderby=orderby)
@@ -799,11 +795,10 @@ class WazeRouteHistory(object):
                     self.update_usage_cnt(last_recd_loc_id)
                     criteria = (f"loc_id={record[LOC_ID]};")
                     self._delete_record('locations', criteria)
-                    log_msg = (f"Waze History > updated, (#{recd_cnt}), "
-                                f"deleted duplicate record, "
-                                f"LocationKey-{record[LOC_LAT_LONG_KEY]}, "
-                                f"id-{record[LOC_ID]}")
-                    log_info_msg(log_msg)
+                    log_info_msg(   f"Waze History > updated, (#{recd_cnt}), "
+                                    f"deleted duplicate record, "
+                                    f"LocationKey-{record[LOC_LAT_LONG_KEY]}, "
+                                    f"id-{record[LOC_ID]}")
                     deleted_cnt += 1
                     update_cnt += 1
 
@@ -827,24 +822,22 @@ class WazeRouteHistory(object):
 
                 running_time = time.perf_counter() - start_time
                 if (recd_cnt % 100) == 0:
-                    log_msg = (f"Waze History > Recalculate Route Time/Dist > "
+                    post_event( f"Waze History > Recalculate Route Time/Dist > "
                                 f"Zone-{zone_dname}, "
                                 f"Recd-{recd_cnt} of {self.total_recd_cnt}, "
                                 f"Updated-{update_cnt}, "
                                 f"ElapsedTime-{format_timer(running_time)}")
-                    post_event(log_msg)
 
-                if (recd_cnt % 25) == 0:
+                if (recd_cnt % 100) == 0:
                     # timer = format_timer(running_time).replace(' secs', 's')
                     # timer = timer.replace(' mins', 'm').replace(' min', 'm')
                     # timer = timer.replace(' hrs', 'h').replace(' hr', 'h')
-                    alert_message = (f"Waze Hist > "
-                                f"{zone_dname[:6]}, "
-                                f"Recd-{recd_cnt}/{self.total_recd_cnt} "
-                                f"({(recd_cnt/self.total_recd_cnt*100):.0f}%), "
-                                f"Updated-{update_cnt} "
-                                # f"({timer})"
-                                f"{CRLF}Select Action > WazeHist Recalculate... again to cancel")
+                    alert_message =(f"Waze Hist > "
+                                    f"{zone_dname[:6]}, "
+                                    f"Recd-{recd_cnt}/{self.total_recd_cnt} "
+                                    f"({(recd_cnt/self.total_recd_cnt*100):.0f}%), "
+                                    f"Updated-{update_cnt} "
+                                    f"{CRLF}Select Action > WazeHist Recalculate... again to cancel")
                     post_evlog_greenbar_msg(alert_message)
                     refresh_event_log()
 
@@ -992,7 +985,6 @@ class WazeRouteHistory(object):
 
         self.sensor_map_recds_cnt = self.sensor_map_recd_cnt = 0
         self.is_refreshing_map_sensor = True
-        _Device = Gb.Devices[0] if len(Gb.Devices) > 0 else None
 
         if self.track_direction_north_south_flag:
             orderby = 'latitude, longitude'
@@ -1019,18 +1011,16 @@ class WazeRouteHistory(object):
 
             for record in records:
                 self.sensor_map_recd_cnt += 1
-                if _Device:
-                    info_msg = (f"Waze History > "
-                                f"Records-{self.sensor_map_recd_cnt}/{self.sensor_map_recds_cnt}, "
-                                f"GPS-{record[LOC_LAT_LONG_KEY]}")
-                    _Device.display_info_msg(info_msg)
+                # if (self.sensor_map_recd_cnt % 500) == 0:
+                    # post_event( f"Waze History > Update wazehist_track sensor, "
+                    #             f"{self.sensor_map_recd_cnt} of {self.sensor_map_recds_cnt}")
 
                 self._update_sensor_ic3_wazehist_track(record[LOC_LAT], record[LOC_LONG])
 
             self._update_sensor_ic3_wazehist_track(Gb.HomeZone.latitude, Gb.HomeZone.longitude)
-
-            if _Device:
-                _Device.display_info_msg(_Device.format_info_msg)
+            # post_event( f"Waze History > Update wazehist_track sensor, "
+            #             f"{self.sensor_map_recd_cnt} of {self.sensor_map_recds_cnt}")
+            post_event(f"Waze History > Update HA Map locations, Complete")
 
         except Exception as err:
             log_exception(err)

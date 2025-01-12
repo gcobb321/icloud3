@@ -1,7 +1,7 @@
 """Support for tracking for iCloud devices."""
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (DOMAIN, ICLOUD3, ICLOUD3_VERSION_MSG,
+from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3, ICLOUD3_VERSION_MSG,
                                 DISTANCE_TO_DEVICES,
                                 NOT_SET, HOME,
                                 DEVICE_TYPE_ICONS,
@@ -23,10 +23,6 @@ from .const             import (DOMAIN, ICLOUD3, ICLOUD3_VERSION_MSG,
                                 CONF_IC3_DEVICENAME,
                                 )
 
-EVENT_ENTER = "enter"
-EVENT_LEAVE = "leave"
-EVENT_DESCRIPTION = {EVENT_ENTER: "entering", EVENT_LEAVE: "leaving"}
-
 from .helpers.common    import (instr, isnumber, is_statzone, zone_dname)
 from .helpers.messaging import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
@@ -42,10 +38,13 @@ from homeassistant.config_entries       import ConfigEntry
 from homeassistant.core                 import HomeAssistant
 from homeassistant.helpers.entity       import DeviceInfo
 from homeassistant.helpers              import (entity_registry as er, device_registry as dr, area_registry as ar)
-from homeassistant.const                import (CONF_DEVICE_ID, CONF_DOMAIN, CONF_ENTITY_ID, CONF_EVENT,
-                                                CONF_PLATFORM, CONF_TYPE, CONF_ZONE, )
+# from homeassistant.const                import (CONF_DEVICE_ID, CONF_DOMAIN, CONF_ENTITY_ID, CONF_EVENT,
+#                                                 CONF_PLATFORM, CONF_TYPE, CONF_ZONE, )
 
-
+# PLATFORM    = PLATFORM_DEVICE_TRACKER
+EVENT_ENTER = "enter"
+EVENT_LEAVE = "leave"
+EVENT_DESCRIPTION = {EVENT_ENTER: "entering", EVENT_LEAVE: "leaving"}
 #-------------------------------------------------------------------------------------------
 async def async_setup_scanner(hass: HomeAssistant, config, see, discovery_info=None):
     """Old way of setting up the iCloud tracker with platform: icloud3 statement."""
@@ -59,8 +58,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     """Set up iCloud3 device tracker component."""
     # Save the hass `add_entities` call object for use in config_flow for adding devices
 
+    PLATFORM = PLATFORM_DEVICE_TRACKER
     Gb.hass = hass
     Gb.async_add_entities_device_tracker = async_add_entities
+    _log("DEVICE_TRACKER SETUP_ENTRY LOAD")
 
     try:
         if Gb.conf_file_data == {}:
@@ -93,12 +94,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
             if DeviceTracker:
                 Gb.DeviceTrackers_by_devicename[devicename] = DeviceTracker
-                # if devicename not in Gb.ha_device_id_by_devicename:
-                #     NewDeviceTrackers.append(DeviceTracker)
-                # else:
-                #     NewDeviceTrackers.append(DeviceTracker)
                 NewDeviceTrackers.append(DeviceTracker)
-
 
         # Set the total count of the device_trackers that will be created
         if Gb.device_trackers_cnt == 0:
@@ -208,6 +204,7 @@ def _get_ha_device_id_from_device_entry(hass, device, device_entry):
                 # _log(f"{device_entry.is_new=}")
                 # _log(f"{device_entry.disabled_by=}")
 
+        # _log(f"{Gb.ha_device_id_by_devicename=}")
 
     except Exception as err:
         #log_exception(err)
@@ -222,19 +219,21 @@ class iCloud3_DeviceTracker(TrackerEntity):
         """Set up the iCloud3 device_tracker entity."""
 
         try:
-            self.hass          = Gb.hass
-            self.devicename    = devicename
-            self.Device        = None   # Filled in after Device object has been created in start_ic3
-            self.entity_id     = f"device_tracker.{devicename}"
-            self.ha_device_id  = Gb.ha_device_id_by_devicename.get(self.devicename)
+            PLATFORM    = PLATFORM_DEVICE_TRACKER
+            self.hass            = Gb.hass
+            self.devicename      = devicename
+            self.Device          = None   # Filled in after Device object has been created in start_ic3
+            self.entity_id       = f"{PLATFORM_DEVICE_TRACKER}.{devicename}"
+            self.ha_device_id    = Gb.ha_device_id_by_devicename.get(self.devicename)
+            self._attr_unique_id = f"{DOMAIN}_{self.devicename}"
 
-            self.ha_area_id    = Gb.ha_area_id_by_devicename.get(self.devicename)
+            self.ha_area_id      = Gb.ha_area_id_by_devicename.get(self.devicename)
 
-            self.device_fname  = conf_device[FNAME]
-            self.device_type   = conf_device[CONF_DEVICE_TYPE]
-            self.tracking_mode = conf_device[CONF_TRACKING_MODE]
-            self.raw_model     = conf_device[CONF_RAW_MODEL]                # iPhone15,2
-            self.model         = conf_device[CONF_MODEL]                    # iPhone
+            self.device_fname    = conf_device[FNAME]
+            self.device_type     = conf_device[CONF_DEVICE_TYPE]
+            self.tracking_mode   = conf_device[CONF_TRACKING_MODE]
+            self.raw_model       = conf_device[CONF_RAW_MODEL]                # iPhone15,2
+            self.model           = conf_device[CONF_MODEL]                    # iPhone
             self.model_display_name = conf_device[CONF_MODEL_DISPLAY_NAME]  # iPhone 14 Pro
 
             try:
@@ -266,10 +265,10 @@ class iCloud3_DeviceTracker(TrackerEntity):
             log_error_msg(log_msg)
 
 #-------------------------------------------------------------------------------------------
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return f"{DOMAIN}_{self.devicename}"
+    # @property
+    # def unique_id(self) -> str:
+    #     """Return a unique ID."""
+    #     return self._attr_unique_id
 
     @property
     def should_poll2(self):

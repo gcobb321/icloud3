@@ -2,12 +2,12 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (DEVICE_TRACKER, NOTIFY,
-                                    CRLF_DOT, EVLOG_ALERT, RARROW, LT,
+                                    CRLF_DOT, CRLF, EVLOG_ALERT, RARROW, LT,
                                     NOT_SET, NOT_HOME, RARROW,
                                     NUMERIC, HIGH_INTEGER, HHMMSS_ZERO,
                                     ENTER_ZONE, EXIT_ZONE, MOBAPP_TRIGGERS_EXIT,
                                     LATITUDE, LONGITUDE, TIMESTAMP_SECS, TIMESTAMP_TIME,
-                                    TRIGGER, LAST_ZONE, ZONE, NEXT_UPDATE, 
+                                    TRIGGER, LAST_ZONE, ZONE, NEXT_UPDATE,
                                     GPS_ACCURACY, VERT_ACCURACY, ALTITUDE,
                                     CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                     )
@@ -17,7 +17,7 @@ from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname,
 from ..helpers.messaging    import (post_event, post_monitor_msg, more_info,
                                     log_debug_msg, log_exception, log_error_msg, log_rawdata,
                                     _evlog, _log, )
-from ..helpers.time_util    import (secs_to_time, secs_since, mins_since, 
+from ..helpers.time_util    import (secs_to_time, secs_since, mins_since,
                                     format_time_age, format_age,  )
 from ..helpers.dist_util    import (format_dist_km, format_dist_m, )
 from ..helpers              import entity_io
@@ -156,7 +156,6 @@ def check_mobapp_state_trigger_change(Device):
         # Exiting a zone when we are in a zone
         elif (Device.mobapp_data_trigger == EXIT_ZONE
                 and Device.isin_zone):
-                # and Device.isnotin_zone):
             Device.got_exit_trigger_flag = True
             Device.mobapp_zone_exit_secs = mobapp_data_secs
             Device.mobapp_zone_exit_time = mobapp_data_state_time
@@ -315,6 +314,18 @@ def check_mobapp_state_trigger_change(Device):
             log_exception(err)
 
 #--------------------------------------------------------------------
+def new_mobapp_data_data_available(Device, after_secs):
+    if Device.mobapp_monitor_flag:
+        return False
+
+    device_trkr_attrs = get_mobapp_device_trkr_entity_attrs(Device)
+    if device_trkr_attrs is None:
+        return False
+
+    mobapp_data_trigger_secs = entity_io.get_last_changed_time(entity_id)
+    return mobapp_data_trigger_secs > after_secs
+
+#--------------------------------------------------------------------
 def _display_mobapp_msg(Device, mobapp_msg):
     try:
         Device.last_mobapp_msg = mobapp_msg
@@ -421,7 +432,10 @@ def get_mobapp_device_trkr_entity_attrs(Device):
         entity_id = Device.mobapp[DEVICE_TRACKER]
 
         device_trkr_attrs = get_and_verify_device_trkr_data(Device, entity_id)
-        if device_trkr_attrs is None:
+        # _log(f"{device_trkr_attrs=}")
+
+        Device.mobapp_device_unavailable_flag = (device_trkr_attrs is None)
+        if Device.mobapp_device_unavailable_flag:
             return
 
         Device.mobapp_data_invalid_error_cnt = 0
@@ -468,17 +482,38 @@ def get_and_verify_device_trkr_data(Device, entity_id):
         device_trkr_attrs = {}
         device_trkr_attrs[DEVICE_TRACKER] = entity_io.get_state(entity_id)
 
-        if device_trkr_attrs[DEVICE_TRACKER] == NOT_SET:
-            if Device.mobapp_data_invalid_error_cnt > 5:    #50:
+        # Display an 'unknown' device msg every 2-hrs
+        # _log(f"{device_trkr_attrs=}")
+        if device_trkr_attrs[DEVICE_TRACKER] in ['unavailable', 'unknown', NOT_SET]:
+            if (Device.mobapp_data_invalid_error_cnt % 1440) == 0:
                 Device.mobapp_data_invalid_error_cnt += 1
-                if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
-                    post_event(Device,
-                                f"{EVLOG_ALERT}MOBILE APP ERROR (#{Device.mobapp_data_invalid_error_cnt}) > "
-                                F"Returned a `not available` status"
-                                f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}")
-                                # f"{more_info('mobapp_device_unavailable')}")
-                    log_error_msg(f"iCloud3 Error ({Device.fname}) > Mobile App status is `unavailable`")
-                return None
+                post_event( f"{EVLOG_ALERT}MOBILE APP DEVICE ERROR > DEVICE UNAVAILABLE, "
+                            f"{CRLF}{Device.conf_mobapp_fname} ({entity_id}), "
+                            f"AssignedTo-{Device.fname_devicename}, "
+                            f"{CRLF}Disabled in MobApp Integration or Unknown Name in MobApp on device")
+                log_error_msg(f"iCloud3 Error ({Device.fname}) > MobApp status is `unnknown`")
+
+                if Device.mobapp_data_state != 'Unavailable':
+                    Device.mobapp_data_state = 'Unavailable'
+                    Device.mobapp_data_state_secs = time_now_secs()
+                    Device.mobapp_data_state_time = time_now()
+                    Device.mobapp_data_trigger = f"Unavailable@{time_now()}"
+
+            return None
+
+        # Display an 'unavailable' device msg every 2-hrs
+        # elif device_trkr_attrs[DEVICE_TRACKER] == NOT_SET:
+        #     if Device.mobapp_data_invalid_error_cnt > 5:    #50:
+        #         Device.mobapp_data_invalid_error_cnt += 1
+        #         if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
+        #             post_event(Device, (
+        #                         f"{EVLOG_ALERT}Mobile App Error (#{Device.mobapp_data_invalid_error_cnt}) > "
+        #                         f"{Device.conf_mobapp_fname}/{entity_id} "
+        #                         f"AssignedTo-{Device.fname_devicename}, "
+        #                         f"Returned a `not available` status"))
+        #                         # f"{more_info('mobapp_device_unavailable')}")
+        #             log_error_msg(f"iCloud3 Error ({Device.fname}) > Mobile App status is `unavailable`")
+        #         return None
 
             # More than 50 errors, shut down Mobile App monitoring for this device
             Device.mobapp_monitor_flag            = False
