@@ -7,33 +7,23 @@ from ..const                import (
                                     CONF_PARAMETER_TIME_STR,
                                     CONF_INZONE_INTERVALS,
                                     CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
-                                    CONF_MOBAPP_ALIVE_INTERVAL, CONF_IOSAPP_ALIVE_INTERVAL,
                                     CONF_IC3_VERSION, VERSION, VERSION_BETA,
                                     CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
-                                    CONF_EVLOG_VERSION, CONF_EVLOG_VERSION_RUNNING, CONF_EVLOG_BTNCONFIG_URL,
                                     CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_TOTP_KEY,
                                     CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
                                     CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                     CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
-                                    CONF_DATA_SOURCE, CONF_DISPLAY_GPS_LAT_LONG, CONF_LOG_ZONES,
+                                    CONF_DATA_SOURCE, CONF_LOG_ZONES,
                                     CONF_APPLE_ACCOUNT, CONF_FAMSHR_DEVICENAME,
                                     CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
                                     CONF_TRACKING_MODE,
                                     CONF_PICTURE, CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES,
-                                    CONF_STAT_ZONE_FNAME, CONF_DEVICE_TRACKER_STATE_SOURCE,
-                                    CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
-                                    CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
-                                    CONF_TRACK_FROM_BASE_ZONE_USED,
+                                    CONF_DISPLAY_TEXT_AS,
+                                    CONF_TRACK_FROM_BASE_ZONE,
                                     CF_DEFAULT_IC3_CONF_FILE,
-                                    DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF,
+                                    DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF, DEFAULT_DEVICE_CONF,
                                     DEFAULT_SENSORS_CONF, DEFAULT_DATA_CONF,
-                                    HOME_DISTANCE, CONF_SENSORS_TRACKING_DISTANCE,
-                                    CONF_SENSORS_DEVICE, BATTERY_STATUS,
-                                    CONF_WAZE_USED, CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_DISTANCE_METHOD,
-                                    WAZE_SERVERS_BY_COUNTRY_CODE, WAZE_SERVERS_FNAME,
-                                    CONF_EXCLUDED_SENSORS, CONF_OLD_LOCATION_ADJUSTMENT, CONF_DISTANCE_BETWEEN_DEVICES,
-                                    CONF_PICTURE_WWW_DIRS, PICTURE_WWW_STANDARD_DIRS,
                                     RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
                                     CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS,
                                     CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNTS_CONF,
@@ -43,8 +33,8 @@ from ..const                import (
 from ..support              import start_ic3
 from ..support              import waze
 from ..helpers              import file_io
-from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, list_add, is_empty)
-from ..helpers.messaging    import (log_exception, _evlog, _log, log_info_msg, )
+from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, list_add, is_empty, )
+from ..helpers.messaging    import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter, )
 from ..helpers.time_util    import (datetime_now, )
 
 import os
@@ -269,7 +259,7 @@ def _add_parms_and_check_config_file():
     except Exception as err:
         _LOGGER.exception(err)
         _LOGGER.error(  "iCloud3 > An error occured verifying the iCloud3 "
-                            "Configuration File. Will continue.")
+                        "Configuration File. Will continue.")
 
 #--------------------------------------------------------------------
 def set_conf_devices_index_by_devicename():
@@ -312,17 +302,14 @@ async def async_load_icloud3_ha_config_yaml(ha_config_yaml):
 #--------------------------------------------------------------------
 def build_log_file_filters():
 
-    return
     try:
-        for apple_acct in Gb.conf_apple_accounts:
-            if apple_acct[CONF_USERNAME] == '':
+        for conf_apple_acct in Gb.conf_apple_accounts:
+            if conf_apple_acct[CONF_USERNAME] == '':
                 continue
-            elif instr(apple_acct[CONF_USERNAME], '@'):
-                email_extn = f"{apple_acct[CONF_USERNAME].split('@')[1]}"
-                list_add(Gb.log_file_filter, email_extn)
 
-            list_add(Gb.log_file_filter, apple_acct[CONF_PASSWORD])
-            list_add(Gb.log_file_filter, Gb.PyiCloud_password_by_username[apple_acct[CONF_USERNAME]])
+            add_log_file_filter(conf_apple_acct[CONF_USERNAME], hide_text=True)
+            add_log_file_filter(conf_apple_acct[CONF_PASSWORD])
+            add_log_file_filter(decode_password(conf_apple_acct[CONF_PASSWORD]))
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -612,32 +599,46 @@ def _hhmmss_to_minutes(hhmmss):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def _update_tracking_parameters():
     '''
-    Fix conf_tracking errors or add any new fields
+    Update Gb.conf_tracking with new fields
     '''
 
-    update_config_file_flag = False
+    new_items = [item   for item in DEFAULT_TRACKING_CONF
+                        if item not in Gb.conf_tracking]
 
-    # Add tracking.CONF_SETUP_ICLOUD_SESSION_EARLY
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_tracking, CONF_SETUP_ICLOUD_SESSION_EARLY, True)
-            or update_config_file_flag)
-
-    # Change icloud to iCloud (3.1)
+    # v3.1.0 - Change 'famshr' to 'iCloud'
     if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'famshr'):
-        Gb.conf_tracking[CONF_DATA_SOURCE] = \
-            Gb.conf_tracking[CONF_DATA_SOURCE].replace('famshr', ICLOUD).replace(' ', '')
-        update_config_file_flag = True
+        list_add(item, CONF_DATA_SOURCE)
 
-    # Change mobapp to MobApp (3.1)
-    if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'mobapp'):
-        Gb.conf_tracking[CONF_DATA_SOURCE] = \
-            Gb.conf_tracking[CONF_DATA_SOURCE].replace('mobapp', MOBAPP).replace(' ', '')
-        update_config_file_flag = True
+    if is_empty(new_items):
+        return False
+
+    for item in new_items:
+        if item in [CONF_APPLE_ACCOUNTS, CONF_DATA_SOURCE]:
+            Gb.conf_tracking = _v310_tracking_parameter_updates()
+
+        else:
+            Gb.conf_tracking = _insert_into_conf_dict_parameter(
+                                            Gb.conf_tracking,
+                                            item, DEFAULT_TRACKING_CONF[item],
+                                            before=CONF_DEVICES)
+
+    return True
+
+#.....................................................................
+def _v310_tracking_parameter_updates():
+    '''
+    v3.1.0 changes:
+        - add the 'apple_accounts' parameter using the username/password from the tracking fields
+        - Changed the data source field from 'famshr,mobapp' to 'iCloud, MobApp'
+    '''
+
+    Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace('famshr', ICLOUD)
+    Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace('mobapp', MOBAPP)
+    Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace(' ', '')
 
     # v3.1 Add Apple accounts list
     try:
         if (CONF_APPLE_ACCOUNTS not in Gb.conf_tracking):
-            update_config_file_flag = True
-
             Gb.conf_tracking = _insert_into_conf_dict_parameter(
                                             Gb.conf_tracking,
                                             CONF_APPLE_ACCOUNTS, [],
@@ -656,240 +657,88 @@ def _update_tracking_parameters():
     except Exception as err:
         _LOGGER.exception(err)
 
-    return update_config_file_flag
+    return
 
 #--------------------------------------------------------------------
 def _update_device_parameters():
     '''
-    Update all device configuration with new/changeditem
+    Update Gb.conf_device with new fields
     '''
-    update_config_file_flag = False
     cd_idx = -1
     conf_devices = Gb.conf_devices.copy()
     for conf_device in conf_devices:
         cd_idx += 1
-        # b16 - Remove the stat zone friendly name
-        if CONF_STAT_ZONE_FNAME in conf_device:
-            conf_device.pop(CONF_STAT_ZONE_FNAME)
-            update_config_file_flag = True
 
-        # rc8.2 - Add zones for logging enter/exit activity
-        if CONF_LOG_ZONES not in conf_device:
-            conf_device[CONF_LOG_ZONES] = ['none']
-            update_config_file_flag = True
+        new_items = [item   for item in DEFAULT_DEVICE_CONF
+                            if item not in conf_device]
 
-        # rc8.2 - Add zones for logging enter/exit activity
-        if CONF_FIXED_INTERVAL not in conf_device:
-            conf_device[CONF_FIXED_INTERVAL] = 0.0
-            update_config_file_flag = True
+        if is_empty(new_items):
+            return False
 
-        # rc8.2 - Cleanup a bug introduced in v3.0.rc8
-        if 'action_items' in conf_device:
-            conf_device.pop('action_items')
-            update_config_file_flag = True
+        for item in new_items:
+            # v3.1.0 'apple_account' and other fields
+            if item == CONF_APPLE_ACCOUNT:
+                conf_device = _v310_device_parameter_updates(conf_device)
 
-        # v3.1 - Add Apple account parameter
-        if CONF_APPLE_ACCOUNT not in conf_device:
-            conf_device = _insert_into_conf_dict_parameter(
-                                    conf_device,
-                                    CONF_APPLE_ACCOUNT, Gb.conf_tracking[CONF_USERNAME],
-                                    before=CONF_FAMSHR_DEVICENAME)
+            else:
+                conf_device = _insert_into_conf_dict_parameter(
+                                            conf_device,
+                                            item, DEFAULT_DEVICE_CONF[item],
+                                            before=CONF_TRACK_FROM_BASE_ZONE)
 
-            update_config_file_flag = True
+        Gb.conf_devices[cd_idx] = conf_device
 
-        # v3.1 - Change Search: to ScanFor: in Mobile App parameter
-        if conf_device[CONF_MOBILE_APP_DEVICE].startswith('Search:'):
-            conf_device[CONF_MOBILE_APP_DEVICE] = \
-                    conf_device[CONF_MOBILE_APP_DEVICE].replace('Search:', 'ScanFor:')
-            update_config_file_flag = True
+    return True
 
-        # v3.1 Remove unused parameters
-        if 'evlog_display_order' in conf_device:
-            conf_device.pop('evlog_display_order')
-            conf_device.pop('unique_id')
-            update_config_file_flag = True
-        if 'old_devicename' in conf_device:
-            conf_device.pop('old_devicename')
-            update_config_file_flag = True
+#.....................................................................
+def _v310_device_parameter_updates(conf_device):
+    # v3.1 - Add Apple account parameter
+    if CONF_APPLE_ACCOUNT not in conf_device:
+        conf_device = _insert_into_conf_dict_parameter(
+                                conf_device,
+                                CONF_APPLE_ACCOUNT, Gb.conf_tracking[CONF_USERNAME],
+                                before=CONF_FAMSHR_DEVICENAME)
 
-        if update_config_file_flag:
-            Gb.conf_devices[cd_idx] = conf_device
 
-    return update_config_file_flag
+    # v3.1 - Change Search: to ScanFor: in Mobile App parameter
+    if conf_device[CONF_MOBILE_APP_DEVICE].startswith('Search:'):
+        conf_device[CONF_MOBILE_APP_DEVICE] = \
+                conf_device[CONF_MOBILE_APP_DEVICE].replace('Search:', 'ScanFor:')
+
+    # v3.1 Remove unused parameters
+    if 'evlog_display_order' in conf_device:
+        conf_device.pop('evlog_display_order')
+        conf_device.pop('unique_id')
+    if 'old_devicename' in conf_device:
+        conf_device.pop('old_devicename')
+
+    return conf_device
 
 #-------------------------------------------------------------------
 def _update_general_parameters():
     '''
-    Fix conf_general and conf_sensors  errors or add any new fields
+    Update Gb.conf_general with new fields
     '''
 
-    update_config_file_flag = False
+    new_items = [item   for item in DEFAULT_GENERAL_CONF
+                        if item not in Gb.conf_general]
 
-    # Fix time format from migration (b1)
-    if instr(Gb.conf_data[CF_GENERAL][CONF_TIME_FORMAT], '-hour-hour'):
-        Gb.conf_data[CF_GENERAL][CONF_TIME_FORMAT].replace('-hour-hour', '-hour')
-        update_config_file_flag = True
+    if is_empty(new_items):
+        return False
 
-    if Gb.conf_profile[CONF_EVLOG_CARD_DIRECTORY].startswith('www/') is False:
-        Gb.conf_profile[CONF_EVLOG_CARD_DIRECTORY] = f"www/{Gb.conf_profile[CONF_EVLOG_CARD_DIRECTORY]}"
+    for item in new_items:
+        Gb.conf_data[CF_GENERAL][item] = DEFAULT_GENERAL_CONF[item]
+        Gb.conf_general = _insert_into_conf_dict_parameter(
+                                            Gb.conf_general,
+                                            item, DEFAULT_GENERAL_CONF[item],
+                                            before=CONF_DISPLAY_TEXT_AS)
 
-    # Remove tracking_from_zone item from sensors list which shouldn't have been added (b3)
-    if BATTERY_STATUS in Gb.conf_sensors[CONF_SENSORS_DEVICE]:
-        Gb.conf_sensors[CONF_SENSORS_DEVICE].pop(BATTERY_STATUS, None)
-        update_config_file_flag = True
-
-    if 'tracking_by_zones' in Gb.conf_sensors:
-        Gb.conf_sensors.pop('tracking_by_zones', None)
-        update_config_file_flag = True
-
-    # Add sensors.HOME_DISTANCE sensor to conf_sensors
-    if HOME_DISTANCE not in Gb.conf_sensors[CONF_SENSORS_TRACKING_DISTANCE]:
-        Gb.conf_sensors[CONF_SENSORS_TRACKING_DISTANCE].append(HOME_DISTANCE)
-        update_config_file_flag = True
-
-    # Add sensors.CONF_EXCLUDED_SENSORS
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_sensors, CONF_EXCLUDED_SENSORS, ['None'])
-            or update_config_file_flag)
-
-    # Add general.CONF_OLD_LOCATION_ADJUSTMENT
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_OLD_LOCATION_ADJUSTMENT, HHMMSS_ZERO)
-            or update_config_file_flag)
-
-    # Add generalCONF_DISTANCE_BETWEEN_DEVICES
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_DISTANCE_BETWEEN_DEVICES, True)
-            or update_config_file_flag)
-
-    # Add general.CONF_EXIT_ZONE_INTERVAL
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_EXIT_ZONE_INTERVAL, 3)
-            or update_config_file_flag)
-
-    # Add profile.CONF_VERSION_INSTALL_DATE
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_profile, CONF_VERSION_INSTALL_DATE, DATETIME_ZERO)
-            or update_config_file_flag)
-
-    # Remove CONF_ZONE_SENSOR_EVLOG_FORMAT, Add CONF_ZONE_SENSOR_EVLOG_FORMAT
-    dtf = 'zone'
-    if 'zone_sensor_evlog_format' in Gb.conf_general:
-        dtf = 'fname' if Gb.conf_general['zone_sensor_evlog_format'] else 'zone'
-        Gb.conf_general.pop('zone_sensor_evlog_format')
-
-    # Change Waze server codes
-    if Gb.conf_general[CONF_WAZE_REGION].lower() in ['na']:
-        Gb.conf_general[CONF_WAZE_REGION] = 'us'
-        update_config_file_flag = True
-    elif Gb.conf_general[CONF_WAZE_REGION].lower() in ['eu', 'au']:
-        Gb.conf_general[CONF_WAZE_REGION] = 'row'
-        update_config_file_flag = True
-
-    # Change all time fields from hh:mm:ss to minutes (b12)
-    update_config_file_flag = (_convert_hhmmss_to_minutes(Gb.conf_general)
-            or update_config_file_flag)
-    update_config_file_flag = (_convert_hhmmss_to_minutes(Gb.conf_general[CONF_INZONE_INTERVALS])
-            or update_config_file_flag)
-    for conf_device in Gb.conf_devices:
-        update_config_file_flag = (_convert_hhmmss_to_minutes(conf_device)
-                or update_config_file_flag)
-
-    # Change StatZone friendly Name (b16)
-    if instr(Gb.conf_general[CONF_STAT_ZONE_FNAME], '[name]'):
-        Gb.conf_general[CONF_STAT_ZONE_FNAME] = 'StatZon#'
-        update_config_file_flag = True
-
-    # Add general.Display GPS coordinates Flag (b17)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_DISPLAY_GPS_LAT_LONG, True)
-            or update_config_file_flag)
-
-    if 'device_tracker_state_format' in Gb.conf_general:
-        Gb.conf_general.pop('device_tracker_state_format')
-
-    # Remove profile.CONF_HA_CONFIG_IC3_URL that is used by EvLog to open Configuration Wizard (b20)
-    if 'ha_config_ic3_url' in Gb.conf_profile:
-        Gb.conf_profile.pop('ha_config_ic3_url')
-        update_config_file_flag = True
-
-    # Add profile.CONF_EVLOG_BTNCONFIG_URL that is used by EvLog to open HA iCloud3 Configure screen (b20)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_profile, CONF_EVLOG_BTNCONFIG_URL, '')
-            or update_config_file_flag)
-
-    # Add profile.event_log_version that is being used, set via action/event_log_version svc call (b20)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_profile, CONF_EVLOG_VERSION, '')
-            or update_config_file_flag)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_profile, CONF_EVLOG_VERSION_RUNNING, '')
-            or update_config_file_flag)
-
-    # Add profile.CONF_PICTURE_WWW_DIRS that is used by Configure Sreen > Update Devices for dir image scan (3.0)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_profile, CONF_PICTURE_WWW_DIRS, [])
-            or update_config_file_flag)
-
-    # Add track from base zone used control on the Special Zones screen (rc9)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_TRACK_FROM_BASE_ZONE_USED, False)
-            or update_config_file_flag)
-
-    # Add log level devices to select the devices that should be used when rawdata is selected (v3.0.3)
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_LOG_LEVEL_DEVICES, ['all'])
-            or update_config_file_flag)
-
-    # Add general.CONF_DEVICE_TRACKER_STATE_SOURCE, b20
-    update_config_file_flag = (_add_config_file_parameter(Gb.conf_general, CONF_DEVICE_TRACKER_STATE_SOURCE, 'ic3_fname')
-            or update_config_file_flag)
-    if Gb.conf_general[CONF_DEVICE_TRACKER_STATE_SOURCE] == ICLOUD3:
-        Gb.conf_general[CONF_DEVICE_TRACKER_STATE_SOURCE] = 'ic3_fname'
-        update_config_file_flag = True
-
-    # Add Local Zone Time display (rc9)
-    if CONF_AWAY_TIME_ZONE_1_OFFSET not in Gb.conf_general:
-        _add_config_file_parameter(Gb.conf_general, CONF_AWAY_TIME_ZONE_1_OFFSET, 0)
-        _add_config_file_parameter(Gb.conf_general, CONF_AWAY_TIME_ZONE_1_DEVICES, ['none'])
-        _add_config_file_parameter(Gb.conf_general, CONF_AWAY_TIME_ZONE_2_OFFSET, 0)
-        _add_config_file_parameter(Gb.conf_general, CONF_AWAY_TIME_ZONE_2_DEVICES, ['none'])
-        update_config_file_flag = True
-
-    # Convert iosapp to mobapp in various parameters (rc10)
-    if CONF_IOSAPP_ALIVE_INTERVAL in Gb.conf_general:
-        if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'ios'):
-            Gb.conf_tracking[CONF_DATA_SOURCE] = \
-                Gb.conf_tracking[CONF_DATA_SOURCE].replace('ios', 'mob')
-
-        Gb.conf_general[CONF_INZONE_INTERVALS][NO_MOBAPP] = \
-            Gb.conf_general[CONF_INZONE_INTERVALS][NO_IOSAPP]
-        del Gb.conf_general[CONF_INZONE_INTERVALS][NO_IOSAPP]
-
-        Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL] = \
-            Gb.conf_general[CONF_IOSAPP_ALIVE_INTERVAL]
-        del Gb.conf_general[CONF_IOSAPP_ALIVE_INTERVAL]
-
-        for conf_device in Gb.conf_devices:
-            conf_device[CONF_MOBILE_APP_DEVICE] = conf_device[CONF_IOSAPP_DEVICE]
-            del conf_device[CONF_IOSAPP_DEVICE]
-        update_config_file_flag = True
-
-    return update_config_file_flag
-
-#--------------------------------------------------------------------
-def _add_config_file_parameter(conf_section, conf_parameter, default_value):
-    '''
-    Update the configuration file with a new field if it is not in the file.
-
-    Return:
-        True - File was updated
-        False - File was not updated
-    '''
-
-    if conf_parameter not in conf_section:
-        if conf_section is Gb.conf_tracking:
-            Gb.conf_tracking = _insert_into_conf_dict_parameter(
-                                            Gb.conf_tracking,
-                                            conf_parameter, default_value)
-        else:
-            conf_section[conf_parameter] = default_value
-        return True
-
-    return False
+    return True
 
 #--------------------------------------------------------------------
 def _insert_into_conf_dict_parameter(dict_parameter,
-                                    new_item=None,
-                                    initial_value=None, before=None, after=None):
+                                        new_item=None,
+                                        initial_value=None, before=None, after=None):
     '''
     Add items to the configuration file dictionary parameters
 

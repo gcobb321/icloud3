@@ -164,8 +164,8 @@ def form_restart_icloud3(self):
             ACTION_LIST_OPTIONS['review_inactive_devices'].replace(
                     '^add-text^', list_to_str(inactive_devices))
         self.actions_list.append(inactive_devices_list)
-        if self._set_inactive_devices_header_msg() in ['all', 'most']:
-            actions_list_default = inactive_devices_list
+        # if self._set_inactive_devices_header_msg() in ['all', 'most']:
+        #     actions_list_default = inactive_devices_list
 
     self.actions_list.append(ACTION_LIST_OPTIONS['goto_menu'])
 
@@ -775,7 +775,7 @@ def form_update_device(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_tools(self):
     self.actions_list = TOOL_LIST_ITEMS.copy()
-    action_default = 'return'
+    action_default = 'goto_menu'
 
     self._build_log_level_devices_list()
 
@@ -1312,7 +1312,7 @@ def form_restart_ha(self):
     self.actions_list = []
     self.actions_list.append(ACTION_LIST_OPTIONS['restart_ha'])
     # self.actions_list.append(ACTION_LIST_OPTIONS['restart_icloud3'])
-    self.actions_list.append(ACTION_LIST_OPTIONS['return'])
+    self.actions_list.append(ACTION_LIST_OPTIONS['goto_menu'])
     self.actions_list.append(ACTION_LIST_OPTIONS['exit'])
 
     actions_list_default = self.action_default_text('restart_ha')

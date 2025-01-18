@@ -56,7 +56,7 @@ async def check_hacs_icloud3_update_available(event_time):
         hacs_ic3dev_newer_msg = ' (Newer)' if hacs_ic3dev_newer else ''
 
         if hacs_ic3dev_newer:
-            Gb.version_hacs = f"{version_hacs_ic3dev} (Dev)"
+            Gb.version_hacs = f"{version_hacs_ic3dev}"
         elif hacs_ic3_newer:
             Gb.version_hacs = version_hacs_ic3
 

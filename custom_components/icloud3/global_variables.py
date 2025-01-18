@@ -94,7 +94,10 @@ class GlobalVariables(object):
     HALogger            = None
     iC3Logger           = None
     iC3Logger_last_check_exist_secs = 0
+    log_file_filter_items = []  # items to be filtered from the log file (passwords, etc)
+    log_file_hide_items = []  # email extensions filter from apple accounts to remove in the icloud3-0.log file (messaging.py)
     prestartup_log      = ''
+    disable_log_filter  = False
 
     iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
     PyiCloud            = None    # iCloud Account service
@@ -163,7 +166,7 @@ class GlobalVariables(object):
     PyiCloud_logging_in_usernames     = []  # A list of usernames that are currently logging in. Used to prevent another login
     usernames_setup_error_retry_list  = []  # A list of usernames that failed to set up in Stage 4 and need to be retried
     devicenames_setup_error_retry_list= []  # A list of devices that failed to set up in Stage 4 and need to be retried
-    log_file_filter                   = []  # email extensions filter from apple accounts to remove in the icloud3-0.log file (messaging.py)
+
 
     # iCloud Device information - These is used verify the device, display on the EvLog and in the Config Flow
     # device selection list on the iCloud3 Devices screen

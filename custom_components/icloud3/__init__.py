@@ -33,7 +33,6 @@ from .helpers.file_io               import (async_make_directory, async_director
                                             async_rename_file, async_delete_directory,
                                             make_directory, directory_exists, copy_file, file_exists,
                                             rename_file, move_files, )
-from .support.v2v3_config_migration import iCloud3_v2v3ConfigMigration
 from .support                       import start_ic3
 from .support                       import config_file
 from .                              import device_tracker as ic3_device_tracker
@@ -144,7 +143,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                             config_file.load_storage_icloud3_configuration_file)
 
         start_ic3.set_log_level(Gb.log_level)
-        
+
         # Setup iCloud Log File (icloud3.log)
         await Gb.hass.async_add_executor_job(open_ic3log_file_init)
 

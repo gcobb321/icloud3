@@ -64,7 +64,7 @@ from .helpers.common    import (instr, isnumber, is_empty, isnot_empty, list_to_
                                 is_statzone, zone_dname, isbetween, list_del, list_add,
                                 sort_dict_by_values,
                                 encode_password, decode_password, )
-from .helpers.messaging import (log_exception, log_debug_msg, log_info_msg,
+from .helpers.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3_log_file,
                                 post_event, post_monitor_msg, )
 from .helpers           import entity_io
@@ -2070,6 +2070,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         conf_password   = decode_password(self.conf_apple_acct[CONF_PASSWORD])
         conf_locate_all = self.conf_apple_acct[CONF_LOCATE_ALL]
 
+        add_log_file_filter(ui_username, hide_text=True)
+        add_log_file_filter(ui_password)
+
         if Gb.log_debug_flag:
             log_user_input = user_input.copy()
             log_debug_msg(f"{self.step_id.upper()} ({action_item}) > UserInput-{log_user_input}, Errors-{errors}")
@@ -3935,7 +3938,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                         PyiCloud)
 
             if PyiCloud:
-                self._check_finish_v2v3conversion_for_icloud_dname()
+                # self._check_finish_v2v3conversion_for_icloud_dname()
 
                 devices_available, devices_used, devices_not_available, this_device = \
                         self._get_icloud_devices_list_avail_used_this(

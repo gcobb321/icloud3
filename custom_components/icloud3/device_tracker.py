@@ -61,7 +61,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     PLATFORM = PLATFORM_DEVICE_TRACKER
     Gb.hass = hass
     Gb.async_add_entities_device_tracker = async_add_entities
-    _log("DEVICE_TRACKER SETUP_ENTRY LOAD")
 
     try:
         if Gb.conf_file_data == {}:

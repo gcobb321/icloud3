@@ -42,7 +42,7 @@ from ..helpers.file_io      import (delete_file, read_json_file, save_json_file,
 from ..helpers.time_util    import (time_now, time_now_secs, secs_to_time, s2t,
                                     secs_since, format_age )
 from ..helpers.messaging    import (post_event, post_monitor_msg, post_startup_alert, post_error_msg,
-                                    _evlog, _log, more_info,
+                                    _evlog, _log, more_info, add_log_file_filter,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_rawdata, log_exception, log_rawdata_unfiltered, filter_data_dict, )
 from ..support              import pyicloud_session as pyi_session   #(PyiCloudSession, PyiCloudPasswordFilter)
@@ -199,7 +199,6 @@ class PyiCloudValidateAppleAcct():
 
         self.session_data    = ''      #Dummy statement for PyiCloudSession
         self.session_id      = ''      #Dummy statement for PyiCloudSession
-        self.password_filter = ''      #Dummy statement for PyiCloudSession
         self.instance        = ''      #Dummy statement for PyiCloudSession
 
         log_debug_msg(f"{self.username_base}, Validate Username/Password")
@@ -220,7 +219,7 @@ class PyiCloudValidateAppleAcct():
             log_debug_msg(f"{self.username_base}, Method-{method}, Results-{valid_upw}")
 
         if valid_upw is False:
-            method = 'AllFailed'
+            method = 'AllTestsFailed'
             if aa_cookie_files_exist is False:
                 delete_file(self.ValidationPyiCloud.cookie_dir_filename)
                 delete_file(self.ValidationPyiCloud.session_dir_filename)
@@ -265,7 +264,6 @@ class PyiCloudValidateAppleAcct():
     def validate_with_authenticate(self, username, password):
 
         valid_upw = self.ValidationPyiCloud.authenticate()        #username, password)
-        # valid_upw = self.ValidationPyiCloud.authenticate_with_password()        #username, password)
 
         return valid_upw
 
@@ -383,7 +381,8 @@ class PyiCloudService():
             self.session_id          = ''
             self.client_id      = f"auth-{str(uuid1()).lower()}"
 
-            self._setup_password_filter(password)
+            # self._setup_password_filter(password)
+            add_log_file_filter(password)
             self._setup_PyiCloudSession()
             self._initialize_variables()
             if validate_aa_upw is True:
@@ -880,16 +879,16 @@ class PyiCloudService():
         return headers
 
 #----------------------------------------------------------------------------
-    def _setup_password_filter(self, password):
-        '''
-        Set up the password_filter
-        '''
-        # if self.validate_aa_upw is False:
-        #     return
+    # def _setup_password_filter(self, password):
+    #     '''
+    #     Set up the password_filter
+    #     '''
+    #     # if self.validate_aa_upw is False:
+    #     #     return
 
-        self.password_filter = pyi_session.PyiCloudPasswordFilter(password)
-        LOGGER.addFilter(self.password_filter)
-        Gb.iC3Logger.addFilter(self.password_filter)
+    #     self.password_filter = pyi_session.PyiCloudPasswordFilter(password)
+    #     LOGGER.addFilter(self.password_filter)
+    #     Gb.iC3Logger.addFilter(self.password_filter)
 
 #----------------------------------------------------------------------------
     def _setup_PyiCloudSession(self):

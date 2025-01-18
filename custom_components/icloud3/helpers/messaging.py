@@ -11,6 +11,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 DATETIME_FORMAT, DATETIME_ZERO,
                                 NEXT_UPDATE_TIME, INTERVAL,
                                 ICLOUD, MOBAPP,
+                                CONF_APPLE_ACCOUNT,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS,
                                 LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD,
@@ -26,7 +27,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 BADGE,
                                 )
 from ..const_more_info      import more_info_text
-from .common                import (obscure_field, instr, is_empty, isnot_empty, )
+from .common                import (obscure_field, instr, is_empty, isnot_empty, list_add, list_del, )
 
 import homeassistant.util.dt   as dt_util
 from homeassistant.components  import persistent_notification
@@ -315,13 +316,16 @@ def open_ic3log_file(new_log_file=False):
     filemode = 'w' if new_log_file else 'a'
 
     if Gb.iC3Logger is None or new_log_file:
-        Gb.iC3Logger = logging.getLogger(DOMAIN)
-        formatter    = logging.Formatter('%(asctime)s %(message)s', datefmt='%m-%d %H:%M:%S')
-        fileHandler  = logging.FileHandler(ic3logger_file, mode=filemode, encoding='utf-8')
-        fileHandler.setFormatter(formatter)
-        Gb.iC3Logger.addHandler(fileHandler)
-        Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
+        Gb.iC3Logger  = logging.getLogger(DOMAIN)
         Gb.iC3Logger.setLevel(logging.INFO)
+
+        handler   = logging.FileHandler(ic3logger_file, mode=filemode, encoding='utf-8')
+        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        handler.addFilter(LoggerFilter)
+
+        Gb.iC3Logger.addHandler(handler)
+        Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
 
 #--------------------------------------------------------------------
 def close_ic3_log_file():
@@ -419,7 +423,7 @@ def write_config_file_to_ic3log():
         Gb.prestartup_log = ''
 
     conf_tracking_recd = Gb.conf_tracking.copy()
-    conf_tracking_recd[CONF_PASSWORD] = obscure_field(conf_tracking_recd[CONF_PASSWORD])
+    # conf_tracking_recd[CONF_PASSWORD] = obscure_field(conf_tracking_recd[CONF_PASSWORD])
     conf_tracking_recd[CONF_APPLE_ACCOUNTS] = len(Gb.conf_apple_accounts)
     conf_tracking_recd[CONF_DEVICES] = len(Gb.conf_devices)
 
@@ -438,15 +442,20 @@ def write_config_file_to_ic3log():
     # Write the ic3 configuration (general & devices) to the Log file
     log_info_msg(f"PROFILE:\n"
                 f"{indent} {Gb.conf_profile}")
+    log_info_msg("")
     log_info_msg(f"GENERAL CONFIGURAION:\n"
                 f"{indent} {Gb.conf_general}\n"
                 f"{indent} {Gb.ha_location_info}")
+    log_info_msg("")
     log_info_msg(f"TRACKING:\n"
                 f"{indent} {conf_tracking_recd}")
-    log_info_msg(f"APPLE ACCOUNTS:\n"
-                f"{indent} {Gb.conf_apple_accounts}")
-    log_info_msg("")
 
+    log_info_msg("")
+    for conf_apple_accounts in Gb.conf_apple_accounts:
+        log_info_msg(   f"APPLE ACCOUNTS: {conf_apple_accounts.get(CONF_USERNAME)}:\n"
+                        f"{indent} {conf_apple_accounts}")
+
+    log_info_msg("")
     for conf_device in Gb.conf_devices:
         log_info_msg(   f"DEVICE: {conf_device[CONF_FNAME]}, {conf_device[CONF_IC3_DEVICENAME]}:\n"
                         f"{indent} {conf_device}")
@@ -556,21 +565,19 @@ def format_msg_line(log_msg, area=None):
         if type(log_msg) is str is False:
             return log_msg
 
-        program_area =  f"{RED_STOP}    "  if instr(log_msg, EVLOG_ALERT) else \
-                        f"{RED_ALERT}    " if instr(log_msg, EVLOG_ERROR) else \
-                        area               if area else \
-                        Gb.trace_prefix
-        source  = f"{_called_from()}{program_area}"
-        log_msg = format_startup_header_box(log_msg)
         msg_prefix= ' ' if log_msg.startswith('⡇') else \
                     '\n🔺 ' if instr(log_msg, 'REQUEST') else \
                     '\n🔻 ' if instr(log_msg, 'RESPONSE') else \
                     '\n❗' if instr(log_msg, 'ICLOUD DATA') else \
                     ' ⡇ ' if Gb.trace_group else \
                     '  '
+        program_area =  f"{RED_STOP}    "  if instr(log_msg, EVLOG_ALERT) else \
+                        f"{RED_ALERT}    " if instr(log_msg, EVLOG_ERROR) else \
+                        area               if area else \
+                        Gb.trace_prefix
 
-        # if instr(msg_prefix, '🔺'): log_msg += " 🔺"
-        # if instr(msg_prefix, '🔻'): log_msg += " 🔻"
+        source  = f"{_called_from()}{program_area}"
+        log_msg = format_startup_header_box(log_msg)
         log_msg = filter_special_chars(log_msg)
         log_msg = f"{source}{msg_prefix}{log_msg}"
 
@@ -602,10 +609,6 @@ def filter_special_chars(log_msg, evlog_export=False):
     log_msg = log_msg.replace('◦', f"   ◦")
     log_msg = log_msg.replace('* >', '')
     log_msg = log_msg.replace('&lt;', '<')
-
-    # The Gb.log_file_filter is set up in config_file.build_log_file_filter
-    for log_file_filter in Gb.log_file_filter:
-        log_msg = log_msg.replace(log_file_filter, '…………')
 
     if log_msg.find('^') == -1: return log_msg.strip()
 
@@ -1011,7 +1014,6 @@ def _log(items, v1='+++', v2='', v3='', v4='', v5=''):
 
         write_ic3log_recd(trace_msg)
 
-
     except Exception as err:
         Gb.HARootLogger.info(trace_msg)
         # log_exception(err)
@@ -1036,7 +1038,57 @@ def _called_from(trace=False):
         return ' '
 
     caller_path = caller.filename.replace('.py','')
-    caller_filename = f"{caller_path.split('/')[-1]}………………"
+    caller_filename = caller_path.split('/')[-1]
+    if len(caller_filename) > 12 and instr(caller_filename, '_ic3_'):
+        caller_filename = caller_filename.replace('_ic3_', '…')
+    caller_filename = f"{caller_filename}………………"
     caller_lineno = caller.lineno
 
     return f"[{caller_filename[:12]}:{caller_lineno:04}] "
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   LOG FILE PASSWORD FILTER
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def add_log_file_filter(item, hide_text=None):
+    '''
+    Set up  log file filter to replace the items value with *'s or prevent it
+    from displaying in the log file. If item contains an '@' and it is being hidden,
+    it is an email address and it's url will be hidden.
+
+    parameters:
+        hide_text:  True = Do not display it instead of replacing with *'s
+
+    Note
+    '''
+    if item is not None:
+        if hide_text is None:
+            list_add(Gb.log_file_filter_items, item)
+        else:
+            if instr(item, '@'):
+                item = item.split('@')[1]
+            list_add(Gb.log_file_hide_items, item)
+
+#--------------------------------------------------------------------
+class LoggerFilter(logging.Filter):
+    '''
+    Filter items from being displayed in the log file (Password)
+    '''
+    @staticmethod
+    def filter(record):
+        if Gb.disable_log_filter:
+            return True
+
+        message = record.msg
+        for filtered_item in Gb.log_file_filter_items:
+            if instr(message, filtered_item):
+                message = message.replace(filtered_item, '*'*8)
+
+        for filtered_item in Gb.log_file_hide_items:
+            if instr(message, filtered_item):
+                message = message.replace(filtered_item, '')
+
+        record.msg  = message
+        record.args = []
+        return True

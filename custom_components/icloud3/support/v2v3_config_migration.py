@@ -21,7 +21,7 @@ from ..const            import (
                                 CONFIG_IC3, CONF_VERSION_INSTALL_DATE,
                                 CONF_CONFIG_IC3_FILE_NAME,
                                 CONF_VERSION, CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM,
-                                CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_APPLE_ACCOUNT,
+                                CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_APPLE_ACCOUNT,  CONF_APPLE_ACCOUNTS,
                                 CONF_TRACK_FROM_ZONES, CONF_TRACKING_MODE,
                                 CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL,
@@ -39,7 +39,7 @@ from ..const            import (
                                 CONF_TRACK_FROM_ZONES, CONF_DEVICE_TYPE, CONF_INZONE_INTERVAL,
                                 CONF_NAME,
                                 NAME, BADGE, BATTERY, BATTERY_STATUS, INFO,
-                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF,
+                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF, DEFAULT_APPLE_ACCOUNTS_CONF,
                                 WAZE_SERVERS_BY_COUNTRY_CODE,
                                 )
 
@@ -122,6 +122,9 @@ _LOGGER = logging.getLogger(__name__)
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 class iCloud3_v2v3ConfigMigration(object):
 
+    '''
+    THIS IS CALLED FROM CONFIG_FLOW WHEN THE ICLOUD3 INTEGRATION IS ADDED
+    '''
 
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #
@@ -299,7 +302,7 @@ class iCloud3_v2v3ConfigMigration(object):
                 continue
             self.devicename_list.append(devicename)
             conf_device = DEFAULT_DEVICE_CONF.copy()
-            conf_device[CONF_MOBILE_APP_DEVICE] = f"Search: {devicename}"
+            # conf_device[CONF_MOBILE_APP_DEVICE] = f"ScanFor: {devicename}"
             conf_device[CONF_TRACKING_MODE]= INACTIVE_DEVICE
 
             self.write_migration_log_msg(f"Extracted device: {devicename}")
@@ -312,8 +315,9 @@ class iCloud3_v2v3ConfigMigration(object):
                         fname, device_type = self._extract_name_device_type(pvalue)
                         conf_device[CONF_IC3_DEVICENAME]    = devicename
                         conf_device[CONF_FNAME]             = fname
-                        conf_device[CONF_APPLE_ACCOUNT]     = self.conf_parm_tracking[CONF_USERNAME]
-                        conf_device[CONF_FAMSHR_DEVICENAME] = devicename
+                        # conf_device[CONF_APPLE_ACCOUNT]     = self.conf_parm_tracking[CONF_USERNAME]
+                        # conf_device[CONF_FAMSHR_DEVICENAME] = devicename
+                        # conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
                         conf_device[CONF_DEVICE_TYPE]       = device_type
 
                     #You can track from multiple zones, cycle through zones and check each one
@@ -331,25 +335,25 @@ class iCloud3_v2v3ConfigMigration(object):
                     elif pname == CONF_NAME:
                         conf_device[CONF_FNAME] = pvalue
 
-                    elif pname == CONF_IOSAPP_SUFFIX:
-                        if pvalue.startswith('_') is False:
-                            pvalue = f"_{pvalue}"
-                        conf_device[CONF_MOBILE_APP_DEVICE] = f"{devicename}{pvalue}"
+                    # elif pname == CONF_IOSAPP_SUFFIX:
+                    #     if pvalue.startswith('_') is False:
+                    #         pvalue = f"_{pvalue}"
+                    #     conf_device[CONF_MOBILE_APP_DEVICE] = f"{devicename}{pvalue}"
 
-                    elif pname == CONF_IOSAPP_ENTITY:
-                            conf_device[CONF_MOBILE_APP_DEVICE] = pvalue
+                    # elif pname == CONF_IOSAPP_ENTITY:
+                    #         conf_device[CONF_MOBILE_APP_DEVICE] = pvalue
 
-                    elif pname == CONF_NO_IOSAPP and pvalue:
-                        conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
+                    # elif pname == CONF_NO_IOSAPP and pvalue:
+                    #     conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
 
-                    elif pname == CONF_IOSAPP_INSTALLED and pvalue is False:
-                        conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
+                    # elif pname == CONF_IOSAPP_INSTALLED and pvalue is False:
+                    #     conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
 
-                    elif pname == CONF_TRACKING_METHOD:
+                    # elif pname == CONF_TRACKING_METHOD:
                         # if pvalue == 'fmf':
                         #     conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
-                        if pvalue == 'iosapp':
-                            conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
+                        # if pvalue == 'iosapp':
+                        #     conf_device[CONF_FAMSHR_DEVICENAME] = 'None'
                             # conf_device[CONF_FMF_EMAIL] = 'None'
 
 
@@ -534,6 +538,12 @@ class iCloud3_v2v3ConfigMigration(object):
         Gb.conf_profile[CONF_EVLOG_CARD_PROGRAM]         = self.conf_parm_general.get(CONF_EVLOG_CARD_PROGRAM, EVLOG_CARD_WWW_JS_PROG)
 
         # Convert iCloud Account Parameters
+        conf_apple_account                               = DEFAULT_APPLE_ACCOUNTS_CONF.copy()
+        conf_apple_account[CONF_USERNAME]                = self.conf_parm_tracking[CONF_USERNAME]
+        conf_apple_account[CONF_PASSWORD]                = self.conf_parm_tracking[CONF_PASSWORD]
+        Gb.conf_apple_accounts                           = conf_apple_account
+        Gb.conf_tracking[CONF_APPLE_ACCOUNTS]            = conf_apple_account
+
         Gb.conf_tracking[CONF_USERNAME]                  = self.conf_parm_tracking[CONF_USERNAME]
         Gb.conf_tracking[CONF_PASSWORD]                  = self.conf_parm_tracking[CONF_PASSWORD]
         Gb.conf_devices                                  = self.conf_parm_devices

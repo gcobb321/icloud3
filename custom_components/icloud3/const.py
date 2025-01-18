@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.1.4.2'
+VERSION                         = '3.1.4.3'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -894,8 +894,6 @@ DEFAULT_DEVICE_CONF = {
         CONF_RAW_MODEL : '',
         CONF_MODEL: '',
         CONF_MODEL_DISPLAY_NAME: '',
-        #CONF_FMF_EMAIL: 'None',
-        #CONF_FMF_DEVICE_ID: '',
         CONF_MOBILE_APP_DEVICE: 'None',
         CONF_TRACK_FROM_BASE_ZONE: HOME,
         CONF_TRACK_FROM_ZONES: [HOME],

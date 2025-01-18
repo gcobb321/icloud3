@@ -3,24 +3,34 @@
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 **Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
 
-
-3.1.4.2
-### Release Notes - v3.1.4.2 (1/12/2024)
+3.1.4.3
+### Release Notes - v3.1.4.3 (1/18/2025)
 #### General Updates
-1. HACS (Updated) - Changed the method of launching the routine that checks HACS to see if there is an iCloud3 Update so HA won't complain.
-2. INTERNET CONNECTION ERROR (Updated) - Improved the handling of problems when the Internet is not available. If an error occurs when iCloud3 is starting, tasks related to connecting to Apple servers are bypassed. All device tracking will be Paused for 20-minutes. iCloud3 will restart ot tracking will resume to see if an internet connection can be established. If the internet is still down, tracking will be paused for another 20-minutes. The 'Home Assistant is Offline' messsage will be displayed in the HA Error Logs and as an alert on the Event Log screen.
-3. WAZE HISTORY DAILY MAINTENANCE (Update) - The Waze History Database end-of-day process includes updating the Waze Map Tracking sensor and other activities to tune the data base. Various activity messages were displayed on the first devices 'info' sensor. HA could not keep up with adding these update to the History Database. This was fixed by only displaying a progress counter to the Event Log instead.
-4. OTHER - Various message formatting improvements and other stuff I can not remember.
+1. Log File (Improved) -  Updated the methods used to filter email addresses and passwords from being displayed in the iCloud3 log files
 
 #### Configuration Screen Changes
-1. APPLE ACCOUNT LOGIN (Fixed)
+1. Update Apple Account Username Password screen (Fixed) - When adding a new Apple account or changing it's password would create an HA error when initializing the location of all devices in the account. This then caused a connection error message leading to tracking being paused and the the original login to be terminated.
+1. Tools (Fixed) - Fixed a problem where the `MENU > Return to the Menu screen' was not selected when the screen was displayed.
+
+
+
+3.1.4.2
+### Release Notes - v3.1.4.2 (1/12/2025)
+#### General Updates
+1. HACS (Updated) - Changed the method of launching the routine that checks HACS to see if there is an iCloud3 Update so HA won't complain.
+2. Internet Connection Error (Updated) - Improved the handling of problems when the Internet is not available. If an error occurs when iCloud3 is starting, tasks related to connecting to Apple servers are bypassed. All device tracking will be Paused for 20-minutes. iCloud3 will resume tracking to see if an internet connection can be established. If the internet is still down, tracking will be paused for another 20-minutes. The 'Home Assistant is Offline' message will be displayed in the HA Error Logs and as an alert on the Event Log screen.
+3. Waze History Nightly Maintenance (Update) - The Waze History Database end-of-day process includes updating the Waze Map Tracking sensor and other activities to tune the data base. Various activity messages were displayed on the first devices 'info' sensor. HA could not keep up with adding these update to the History Database. This was fixed by only displaying a progress counter to the Event Log instead.
+4. Other - Various message formatting improvements and other stuff I can not remember.
+
+#### Configuration Screen Changes
+1. Apple Account Login (Fixed)
     - Fixed a problem verifying the password before logging into the Apple account when iCloud3 was starting.
     - Fixed a problem where a valid password may fail the initial verification test and an invalid password may pass the validation test.
     - Fixed a problem where a password that failed the initial verification test could not be corrected on _Configure > Data Sources ... > Apple Username/Password_ screen.
-2. UPDATE ICLOUD3 DEVICE SCREEN (Fixed) - Fixed a problem where changing the Apple account and/or Mobile App device selection would be saved in the configuration file but not used when iCloud3 was restarted after the Configure update.
-3. SENSORS SCREEN (Updated) - Added an Action option to reset the sensor seletion values to their initial configuration.
-4. OTHER TRACKING PARAMETERS SCREEN (Fix) - Fixed an error when saving changes on this screen.
-5. TOOLS (New Items) - Added _HA Restart/Reload iCloud3_ and _Correct _2 Sensor Name Error_ correction tools.
+2. Update iCloud3 Device  (Fixed) - Fixed a problem where changing the Apple account and/or Mobile App device selection would be saved in the configuration file but not used when iCloud3 was restarted after the Configure update.
+3. Sensors (Updated) - Added an Action option to reset the sensor selection values to their initial configuration.
+4. Other Tracking Parameters (Fix) - Fixed an error when saving changes on this screen.
+5. Tools (New Items) - Added _HA Restart/Reload iCloud3_ and _Correct _2 Sensor Name Error_ correction tools.
 
 
 

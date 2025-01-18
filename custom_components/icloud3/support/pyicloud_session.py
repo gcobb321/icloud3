@@ -20,27 +20,18 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-# from ..const                import ()
 from ..helpers.common       import (instr, is_empty, isnot_empty, list_add, list_del, )
 from ..helpers.file_io      import (save_json_file, )
 from ..helpers.time_util    import (time_now,  time_now_secs, )
 from ..helpers.messaging    import (_log, _evlog,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_rawdata, log_exception, log_rawdata_unfiltered, filter_data_dict, )
-#from ..support              import pyicloud_srp as srp
 
-# from uuid       import uuid1
 from requests   import Session, adapters
 from os         import path
-# from re         import match
-# import hashlib
-# import srp
-# import base64
 import inspect
 import json
-import http.cookiejar as cookielib
-import logging
-LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
+# import http.cookiejar as cookielib
 
 HEADER_DATA = {
     "X-Apple-ID-Account-Country": "account_country",
@@ -122,30 +113,6 @@ app specific password notes
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   LOG FILE PASSWORD FILTER
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-class PyiCloudPasswordFilter(logging.Filter):
-    '''Password log hider.'''
-
-    def __init__(self, password):
-        super(PyiCloudPasswordFilter, self).__init__(password)
-        self.filter_disabled_msg_displayed = False
-
-    def filter(self, record):
-        # if self.filter_disabled_msg_displayed is False:
-        #     self.filter_disabled_msg_displayed = True
-        #     _log('PASSWORD FILTER DISABLED')
-        # return True
-        message = record.getMessage()
-        if self.name in message:
-            record.msg = message.replace(self.name, "*" * 8)
-            record.args = []
-
-        return True
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
 #   PYICLOUD SESSION
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -180,13 +147,7 @@ class PyiCloudSession(Session):
         if Gb.internet_connection_error:
             return {}
 
-        request_logger = logging.getLogger(module.__name__).getChild("http")
-
         try:
-            if (self.validate_aa_upw is False
-                    and self.PyiCloud.password_filter not in request_logger.filters):
-                request_logger.addFilter(self.PyiCloud.password_filter)
-
             # if data is a str, unconvert it from json format,
             # it will be reconverted  to json later
             if 'data' in kwargs and type(kwargs['data']) is str:
@@ -197,7 +158,7 @@ class PyiCloudSession(Session):
             if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
                 try:
                     log_hdr = ( f"{self.PyiCloud.username_base}, {method}, Request, "
-                                f"{callee.function}/{callee.lineno}")
+                                f"{callee.function}/{callee.lineno} ▲")
                     log_data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
                     log_data.update(kwargs)
                     log_rawdata(log_hdr, log_data, log_rawdata_flag=log_rawdata_flag)
@@ -270,7 +231,7 @@ class PyiCloudSession(Session):
         log_rawdata_flag = (url.endswith('refreshClient') is False) or response.status_code != 200
         if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
             log_hdr = ( f"{self.PyiCloud.username_base}, {method}, Response, "
-                        f"{callee.function}/{callee.lineno} ")
+                        f"{callee.function}/{callee.lineno} ▼")
             log_data = {'code': response.status_code, 'ok': response.ok, 'data': data}
 
             if retry_cnt >= 2 or Gb.log_rawdata_flag_unfiltered:
@@ -480,7 +441,6 @@ class PyiCloudSession(Session):
             if 'a' in prefiltered_data:
                 filtered_data['a'] = self._shrink(prefiltered_data['a'])
 
-            # filtered_dict = prefiltered_dict.copy()
             filtered_dict['data'] = filtered_data
 
             return filtered_dict
