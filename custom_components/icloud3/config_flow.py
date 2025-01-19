@@ -4377,7 +4377,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         username = user_input[CONF_USERNAME].lower()
         password = user_input[CONF_PASSWORD]
-        list_add(Gb.log_file_filter, password)
+
+        add_log_file_filter(username, hide_text=True)
+        add_log_file_filter(password)
+
         endpoint_suffix = user_input.get(CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
                                         Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX])
 
