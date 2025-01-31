@@ -310,7 +310,7 @@
         },
         "data_description": {
           "inzone_interval": "Time between location requests when in a zone",
-          "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less tnan 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
+          "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less than 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
           "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
         }
       },
