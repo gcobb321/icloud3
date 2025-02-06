@@ -197,14 +197,14 @@ async def update_lovelace_resource_event_log_js_entry(new_evlog_dir=None):
         generate a broadcast message.
 
     Resources are stored as part of the StorageCollection:
-        Resources object = Gb.hass.data["lovelace"]["resources"]
+        Resources object = Gb.hass.data["lovelace"].resources
         Add Resource    - Resources.async_create_item({'res_type': 'module', 'url': evlog_url})
         Append Resource - Resources.data.append({'type': 'module', 'url': evlog_url})
         Update Resource - Resources.async_update_item(evlog_resource_id, {'url': evlog_url})
         Delete Resource - Resources.async_delete_item((evlog_resource_id)
     '''
     try:
-        Resources = Gb.hass.data["lovelace"]["resources"]
+        Resources = Gb.hass.data["lovelace"].resources
         if Resources:
             if not Resources.loaded:
                 await Resources.async_load()
