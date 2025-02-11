@@ -44,7 +44,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 CONF_CENTER_IN_ZONE, CONF_DISCARD_POOR_GPS_INZONE,
                                 CONF_WAZE_USED, CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
                                 CONF_WAZE_REALTIME, CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
-                                CONF_WAZE_HISTORY_TRACK_DIRECTION,
+                                CONF_WAZE_HISTORY_TRACK_DIRECTION, 
                                 CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
                                 CONF_STAT_ZONE_BASE_LATITUDE,
                                 CONF_STAT_ZONE_BASE_LONGITUDE, CONF_DISPLAY_TEXT_AS,
@@ -352,6 +352,9 @@ def initialize_on_initial_load():
     if Gb.initial_icloud3_loading_flag is False:
         return
 
+    # Gb.internet_connection_error = True
+    # _evlog(f"{Gb.internet_connection_error=}")
+
     Gb.log_level = 'info'
     # Gb.username_valid_by_username = {}
 
@@ -515,8 +518,12 @@ def initialize_data_source_variables():
     Gb.internet_connection_error_secs = 0
     Gb.internet_connection_error      = False
 
-    Gb.conf_data_source_ICLOUD    = instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD) \
-                                        or instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'icloud')
+    if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'famshr'):
+        Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace('famshr', ICLOUD)
+    if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'mobapp'):
+        Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace('mobapp', MOBAPP)
+
+    Gb.conf_data_source_ICLOUD    = instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD)
     Gb.conf_data_source_ICLOUD    = Gb.conf_data_source_ICLOUD
     Gb.conf_data_source_MOBAPP    = instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP)
 
@@ -649,7 +656,7 @@ def set_log_level(log_level):
 #------------------------------------------------------------------------------
 def update_conf_file_log_level(log_level):
     Gb.conf_general[CONF_LOG_LEVEL] = log_level
-    config_file.write_storage_icloud3_configuration_file()
+    config_file.write_icloud3_configuration_file()
 
 #------------------------------------------------------------------------------
 #
@@ -813,7 +820,7 @@ def check_ic3_event_log_file_version():
 
             if Gb.evlog_version != www_version_text:
                 Gb.evlog_version = Gb.conf_profile['event_log_version'] = www_version_text
-                config_file.write_storage_icloud3_configuration_file()
+                config_file.write_icloud3_configuration_file()
 
             return
 
@@ -822,7 +829,7 @@ def check_ic3_event_log_file_version():
             copy_file(ic3_evlog_js_filename, www_evlog_js_filename)
 
             Gb.evlog_version = Gb.conf_profile['event_log_version'] = www_version_text
-            config_file.write_storage_icloud3_configuration_file()
+            config_file.write_icloud3_configuration_file()
 
             post_startup_alert('Event Log was updated. Browser refresh needed')
             event_msg =(f"{EVLOG_ALERT}"
@@ -1298,7 +1305,7 @@ def _verify_away_time_zone_devicenames():
             Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET] = 0
 
     if update_conf_file_flag:
-        config_file.write_storage_icloud3_configuration_file()
+        config_file.write_icloud3_configuration_file()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1331,7 +1338,7 @@ def setup_data_source_ICLOUD(retry=False):
             not_tracked = [Device.fname for Device in Gb.Devices
                                         if Device.conf_apple_acct_username == username]
             not_tracked_msg = 'None' if is_empty(not_tracked) else list_to_str(not_tracked)
-            post_event( f"{EVLOG_ALERT}Apple Acct > {username}, Login Failed, "
+            post_event( f"{EVLOG_ALERT}Apple Acct > {get_username_base(username)}, Login Failed, "
                         f"{CRLF_DOT}Devices-{not_tracked_msg}")
 
     # Now that all devices are set up, cycle through them again and display the
@@ -1440,7 +1447,7 @@ def _check_renamed_find_devices(PyiCloud):
             PyiCloud.device_id_by_icloud_dname[new_icloud_devicename] = conf_device[CONF_FAMSHR_DEVICE_ID]
             PyiCloud.device_id_by_icloud_dname.pop(old_icloud_devicename, None)
 
-        config_file.write_storage_icloud3_configuration_file()
+        config_file.write_icloud3_configuration_file()
 
     except Exception as err:
         log_exception(err)
@@ -1594,6 +1601,8 @@ def _set_any_Device_alerts():
 
     for Device in Gb.Devices:
         # Device's Apple acct error
+        if (Device.conf_apple_acct_username == ''  or Device.conf_icloud_dname == '' or Device.verified_flag is False):
+            continue
         if Device.conf_apple_acct_username not in Gb.PyiCloud_by_username:
             Device.set_fname_alert(YELLOW_ALERT)
             apple_acct_not_found_msg += (
@@ -1841,7 +1850,7 @@ def _find_icloud_conf_device(PyiCloud, pyicloud_dname, device_id):
 
         if update_config_flag:
             conf_device = _check_changed_apple_device_info(PyiCloud, pyicloud_dname, device_id, conf_device)
-            config_file.write_storage_icloud3_configuration_file()
+            config_file.write_icloud3_configuration_file()
             post_event( f"{EVLOG_ALERT}ICLOUD DEVICE NAME CHANGED > "
                         f"The configured name was not found in any Apple Accounts. A candidate was found"
                         f"{CRLF_DOT}{conf_device[CONF_IC3_DEVICENAME]} > "
@@ -1869,7 +1878,7 @@ def _check_changed_apple_device_info(PyiCloud, pyicloud_dname, device_id, conf_d
         conf_device[CONF_MODEL] = model
         conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
 
-        config_file.write_storage_icloud3_configuration_file()
+        config_file.write_icloud3_configuration_file()
 
     return conf_device
 
@@ -1961,7 +1970,7 @@ def _update_config_with_icloud_device_fields(conf_device, _RawData):
     conf_device[CONF_MODEL] = model
     conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
 
-    config_file.write_storage_icloud3_configuration_file()
+    config_file.write_icloud3_configuration_file()
 
     post_event( f"{EVLOG_NOTICE}Device Config Updated > {conf_device[CONF_FNAME]} "
                 f"({conf_device[CONF_IC3_DEVICENAME]}), "
@@ -2162,7 +2171,7 @@ def setup_tracked_devices_for_mobapp():
                         Device.model = conf_device[CONF_MODEL] = model
                     if model_display_name:
                         Device.model_display_name = conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
-                    config_file.write_storage_icloud3_configuration_file()
+                    config_file.write_icloud3_configuration_file()
                     break
 
         # Setup mobapp entities with data or to be monitored
@@ -2451,7 +2460,6 @@ def setup_trackable_devices():
             Gb.used_data_source_MOBAPP = True
 
             mobapp_attrs = mobapp_data_handler.get_mobapp_device_trkr_entity_attrs(Device)
-            # _log(f"{Device.devicename} {mobapp_attrs=}")
             if mobapp_attrs:
                 mobapp_data_handler.update_mobapp_data_from_entity_attrs(Device, mobapp_attrs)
 

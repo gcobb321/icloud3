@@ -325,7 +325,7 @@ def strip_lead_comma(text):
 #--------------------------------------------------------------------
 def get_username_base(username):
     return f"{username}@".split('@')[0]
-    
+
 #--------------------------------------------------------------------
 def format_cnt(desc, n):
     return f", {desc}(#{n})" if n > 1 else ''
@@ -389,7 +389,7 @@ def decode_password(password):
                     or password.endswith('»»') is False)):
             password = password.replace('«', '').replace('»', '')
             Gb.conf_tracking[CONF_PASSWORD] = password
-            #write_storage_icloud3_configuration_file()
+            #write_icloud3_configuration_file()
 
         # Decode password if it is encoded and has the '««password»»' format
         if (password.startswith('««') or password.endswith('»»')):

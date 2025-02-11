@@ -13,13 +13,12 @@ from .const             import (RED_ALERT, LINK, RLINK, RARROW,
                                 DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, MOBAPP, NO_MOBAPP,
                                 INACTIVE_DEVICE, HOME_DISTANCE,
                                 PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
-                                DEFAULT_DEVICE_CONF,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_BTNCONFIG_URL,
                                 CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_TOTP_KEY,
                                 CONF_DATA_SOURCE, CONF_VERIFICATION_CODE,
                                 CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
                                 CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
-                                CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
+                                CONF_PICTURE, CONF_ICON, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
                                 CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_MOBAPP_ALIVE_INTERVAL,
                                 CONF_GPS_ACCURACY_THRESHOLD, CONF_OLD_LOCATION_THRESHOLD, CONF_OLD_LOCATION_ADJUSTMENT,
@@ -30,7 +29,7 @@ from .const             import (RED_ALERT, LINK, RLINK, RARROW,
                                 CONF_DISTANCE_BETWEEN_DEVICES,
                                 CONF_WAZE_USED, CONF_WAZE_SERVER, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
                                 CONF_WAZE_REALTIME, CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
-                                CONF_WAZE_HISTORY_TRACK_DIRECTION,
+                                CONF_WAZE_HISTORY_TRACK_DIRECTION,  
                                 CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
                                 CONF_DISPLAY_TEXT_AS,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
@@ -331,9 +330,9 @@ def form_update_apple_acct(self):
         vol.Optional(CONF_PASSWORD ,
                     default=password):
                     password_selector,
-        vol.Optional(CONF_TOTP_KEY,
-                    default='For future use in supporting hardware keys (YubiKey)'):
-                    selector.TextSelector(),
+        # vol.Optional(CONF_TOTP_KEY,
+        #             default='For future use in supporting hardware keys (YubiKey)'):
+        #             selector.TextSelector(),
         vol.Optional('locate_all',
                     default=locate_all):
                     cv.boolean,
@@ -406,9 +405,20 @@ def form_reauth(self, reauth_username=None):
         self._build_apple_accounts_list()
 
         # No Apple accts are set up
-        if (is_empty(self.apple_acct_items_by_username)
-                or is_empty(Gb.conf_apple_accounts)):
-            self.apple_acct_reauth_username = ''
+        # No Apple acct is selected, get the first one or one that needs to be authenticated
+        if instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION'):
+            self.apple_acct_reauth_username = [username
+                            for username, acct_info in self.apple_acct_items_by_username.items()
+                            if instr(acct_info, 'AUTHENTICATION')][0]
+            self.conf_apple_acct, self.aa_idx = \
+                            config_file.conf_apple_acct(self.apple_acct_reauth_username)
+
+        elif (is_empty(self.apple_acct_items_by_username)
+                or is_empty(Gb.conf_apple_accounts)
+                or self.apple_acct_reauth_username not in self.apple_acct_items_by_username):
+            self.conf_apple_acct, self.aa_idx = \
+                            config_file.conf_apple_acct(0)
+            self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
 
         # Requesting a new code will set the selected acct. Use it to deselect the acct
         elif reauth_username is not None and reauth_username != '':
@@ -416,13 +426,6 @@ def form_reauth(self, reauth_username=None):
             self.conf_apple_acct, self.aa_idx = \
                             config_file.conf_apple_acct(reauth_username)
 
-        # No Apple acct is selected, get the first one or one that needs to be authenticated
-        elif instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION'):
-            self.apple_acct_reauth_username = [username
-                            for username, acct_info in self.apple_acct_items_by_username.items()
-                            if instr(acct_info, 'AUTHENTICATION')][0]
-            self.conf_apple_acct, self.aa_idx = \
-                            config_file.conf_apple_acct(self.apple_acct_reauth_username)
 
         elif isnot_empty(self.conf_apple_acct):
             self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
@@ -465,7 +468,7 @@ def form_reauth(self, reauth_username=None):
                         selector.SelectSelector(selector.SelectSelectorConfig(
                             options=dict_value_to_list(self.apple_acct_items_by_username),
                             mode='dropdown')),
-            vol.Optional(CONF_VERIFICATION_CODE, default=otp_code):
+            vol.Optional(CONF_VERIFICATION_CODE, default=' '):
                         selector.TextSelector(),
             vol.Optional('action_items',
                         default=self.action_default_text(action_list_default)):
@@ -588,6 +591,9 @@ def form_add_device(self):
                     default=default_picture_filename):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.picture_by_filename), mode='dropdown')),
+        vol.Required(CONF_ICON,
+                    default=self._parm_or_device(CONF_ICON)):
+                    selector.IconSelector(),
         vol.Required(CONF_TRACKING_MODE,
                     default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -696,11 +702,19 @@ def form_update_device(self):
                     default=default_picture_filename):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(_picture_by_filename), mode='dropdown')),
+        }
+    if self._parm_or_device(CONF_PICTURE) == 'None':
+        schema.update({
+            vol.Required(CONF_ICON,
+                    default=self._parm_or_device(CONF_ICON)):
+                    selector.IconSelector(),
+        })
+    schema.update({
         vol.Required(CONF_TRACKING_MODE,
                     default=self._option_parm_to_text(CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
-        }
+        })
 
     if self.display_rarely_updated_parms is False:
         schema.update({
@@ -829,21 +843,73 @@ def form_actions(self):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#              FORMAT SETTINGS
+#            TRACKING PARAMETERS
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def form_tracking_parameters(self):
+    self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
+
+    return vol.Schema({
+        vol.Required(CONF_DISTANCE_BETWEEN_DEVICES,
+                    default=Gb.conf_general[CONF_DISTANCE_BETWEEN_DEVICES]):
+                    selector.BooleanSelector(),
+        vol.Optional(CONF_DISCARD_POOR_GPS_INZONE,
+                    default=Gb.conf_general[CONF_DISCARD_POOR_GPS_INZONE]):
+                    selector.BooleanSelector(),
+        vol.Required(CONF_GPS_ACCURACY_THRESHOLD,
+                    default=Gb.conf_general[CONF_GPS_ACCURACY_THRESHOLD]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=5, max=300, step=5, unit_of_measurement='m')),
+        vol.Required(CONF_OLD_LOCATION_THRESHOLD,
+                    default=Gb.conf_general[CONF_OLD_LOCATION_THRESHOLD]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=1, max=60, step=1, unit_of_measurement='minutes')),
+        vol.Required(CONF_OLD_LOCATION_ADJUSTMENT,
+                    default=Gb.conf_general[CONF_OLD_LOCATION_ADJUSTMENT]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=0, max=60, step=1, unit_of_measurement='minutes')),
+        vol.Required(CONF_MAX_INTERVAL,
+                    default=Gb.conf_general[CONF_MAX_INTERVAL]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=15, max=480, step=5, unit_of_measurement='minutes')),
+        vol.Required(CONF_EXIT_ZONE_INTERVAL,
+                    default=Gb.conf_general[CONF_EXIT_ZONE_INTERVAL]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=.5, max=10, step=.5, unit_of_measurement='minutes')),
+        vol.Required(CONF_MOBAPP_ALIVE_INTERVAL,
+                    default=Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=15, max=240, step=5, unit_of_measurement='minutes')),
+        vol.Required(CONF_OFFLINE_INTERVAL,
+                    default=Gb.conf_general[CONF_OFFLINE_INTERVAL]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=5, max=240, step=5, unit_of_measurement='minutes')),
+        vol.Required(CONF_TFZ_TRACKING_MAX_DISTANCE,
+                    default=Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]):
+                    selector.NumberSelector(selector.NumberSelectorConfig(
+                        min=1, max=100, unit_of_measurement='Km')),
+        vol.Required(CONF_TRAVEL_TIME_FACTOR,
+                    default=self._option_parm_to_text(CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT), mode='dropdown')),
+
+        vol.Required('action_items',
+                    default=self.action_default_text('save')):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=self.actions_list, mode='list')),
+        })
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#              FORMAT SETTINGS & ICLOUD3 DIRECTORIES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_format_settings(self):
     self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
     self._set_example_zone_name()
-    self._build_log_level_devices_list()
+
+    self.picture_by_filename = {}
+    if PICTURE_WWW_STANDARD_DIRS in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+        Gb.conf_profile[CONF_PICTURE_WWW_DIRS] = []
 
     return vol.Schema({
-        vol.Required(CONF_LOG_LEVEL_DEVICES,
-                    default=Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-                    cv.multi_select(six_item_dict(self.log_level_devices_key_text)),
-        vol.Required(CONF_LOG_LEVEL,
-                    default=self._option_parm_to_text(CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(LOG_LEVEL_OPTIONS), mode='dropdown')),
         vol.Required(CONF_DISPLAY_ZONE_FORMAT,
                     default=self._option_parm_to_text(CONF_DISPLAY_ZONE_FORMAT, DISPLAY_ZONE_FORMAT_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -860,10 +926,26 @@ def form_format_settings(self):
                     default=self._option_parm_to_text(CONF_TIME_FORMAT, TIME_FORMAT_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(TIME_FORMAT_OPTIONS), mode='dropdown')),
+        vol.Required(CONF_PICTURE_WWW_DIRS,
+                    default=Gb.conf_profile[CONF_PICTURE_WWW_DIRS] or self.www_directory_list):
+                    cv.multi_select(six_item_list(self.www_directory_list)),
         vol.Required(CONF_DISPLAY_GPS_LAT_LONG,
                     default=Gb.conf_general[CONF_DISPLAY_GPS_LAT_LONG]):
                     # cv.boolean,
                     selector.BooleanSelector(),
+
+        vol.Required('evlog_header',
+                    default=IC3_DIRECTORY_HEADER):
+                    # cv.multi_select([IC3_DIRECTORY_HEADER]),
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=[IC3_DIRECTORY_HEADER], mode='list')),
+        vol.Required(CONF_EVLOG_CARD_DIRECTORY,
+                    default=self._parm_or_error_msg(CONF_EVLOG_CARD_DIRECTORY, conf_group=CF_PROFILE)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(self.www_directory_list), mode='dropdown')),
+        vol.Optional(CONF_EVLOG_BTNCONFIG_URL,
+                    default=f"{self._parm_or_error_msg(CONF_EVLOG_BTNCONFIG_URL, conf_group=CF_PROFILE)} "):
+                    selector.TextSelector(),
 
         vol.Required('action_items',
                     default=self.action_default_text('save')):
@@ -892,6 +974,83 @@ def form_change_device_order(self):
                         options=self.actions_list, mode='list')),
         })
 
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#           PICTURE IMAGE FILTER
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def form_picture_dir_filter(self):
+    self.actions_list = [
+            ACTION_LIST_OPTIONS['save'],
+            ACTION_LIST_OPTIONS['goto_previous']]
+
+    # self.picture_by_filename = {}
+    if PICTURE_WWW_STANDARD_DIRS in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+        Gb.conf_profile[CONF_PICTURE_WWW_DIRS] = []
+
+    www_group_1 = {}
+    www_group_2 = {}
+    www_group_3 = {}
+    www_group_4 = {}
+    www_group_5 = {}
+    conf_www_group_1 = []
+    conf_www_group_2 = []
+    conf_www_group_3 = []
+    conf_www_group_4 = []
+    conf_www_group_5 = []
+    for dir in self.www_directory_list:
+        if len(www_group_1) < 5:
+            www_group_1[dir] = dir
+            if dir in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+                list_add(conf_www_group_1, dir)
+        elif len(www_group_2) < 5:
+            www_group_2[dir] = dir
+            if dir in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+                list_add(conf_www_group_2, dir)
+        elif len(www_group_3) < 5:
+            www_group_3[dir] = dir
+            if dir in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+                list_add(conf_www_group_3, dir)
+        elif len(www_group_4) < 5:
+            www_group_4[dir] = dir
+            if dir in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+                list_add(conf_www_group_4, dir)
+        elif len(www_group_5) < 5:
+            www_group_5[dir] = dir
+            if dir in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
+                list_add(conf_www_group_5, dir)
+
+    schema = {
+        vol.Required('www_group_1',
+                    default=conf_www_group_1):
+                    cv.multi_select(www_group_1)}
+
+    if isnot_empty(www_group_2):
+        schema.update({
+            vol.Required('www_group_2',
+                    default=conf_www_group_2):
+                    cv.multi_select(www_group_2),})
+    if isnot_empty(www_group_3):
+        schema.update({
+            vol.Required('www_group_3',
+                    default=conf_www_group_3):
+                    cv.multi_select(www_group_3),})
+    if isnot_empty(www_group_4):
+        schema.update({
+            vol.Required('www_group_4',
+                    default=conf_www_group_4):
+                    cv.multi_select(www_group_4),})
+    if isnot_empty(www_group_5):
+        schema.update({
+            vol.Required('www_group_5',
+                    default=conf_www_group_5):
+                    cv.multi_select(www_group_5),})
+
+    schema.update({
+        vol.Required('action_items',
+                default=self.action_default_text('save')):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=self.actions_list, mode='list')),})
+
+    return vol.Schema(schema)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            AWAY TIME ZONE
@@ -988,76 +1147,6 @@ def form_display_text_as_update(self):
                         options=self.actions_list, mode='list')),
         })
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            TRACKING PARAMETERS
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_tracking_parameters(self):
-    self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
-
-    self.picture_by_filename = {}
-    if PICTURE_WWW_STANDARD_DIRS in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
-        Gb.conf_profile[CONF_PICTURE_WWW_DIRS] = []
-
-    return vol.Schema({
-        vol.Required(CONF_DISTANCE_BETWEEN_DEVICES,
-                    default=Gb.conf_general[CONF_DISTANCE_BETWEEN_DEVICES]):
-                    selector.BooleanSelector(),
-        vol.Required(CONF_GPS_ACCURACY_THRESHOLD,
-                    default=Gb.conf_general[CONF_GPS_ACCURACY_THRESHOLD]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=300, step=5, unit_of_measurement='m')),
-        vol.Required(CONF_OLD_LOCATION_THRESHOLD,
-                    default=Gb.conf_general[CONF_OLD_LOCATION_THRESHOLD]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=1, max=60, step=1, unit_of_measurement='minutes')),
-        vol.Required(CONF_OLD_LOCATION_ADJUSTMENT,
-                    default=Gb.conf_general[CONF_OLD_LOCATION_ADJUSTMENT]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=0, max=60, step=1, unit_of_measurement='minutes')),
-        vol.Required(CONF_MAX_INTERVAL,
-                    default=Gb.conf_general[CONF_MAX_INTERVAL]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=15, max=480, step=5, unit_of_measurement='minutes')),
-        vol.Required(CONF_EXIT_ZONE_INTERVAL,
-                    default=Gb.conf_general[CONF_EXIT_ZONE_INTERVAL]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=.5, max=10, step=.5, unit_of_measurement='minutes')),
-        vol.Required(CONF_MOBAPP_ALIVE_INTERVAL,
-                    default=Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=15, max=240, step=5, unit_of_measurement='minutes')),
-        vol.Required(CONF_OFFLINE_INTERVAL,
-                    default=Gb.conf_general[CONF_OFFLINE_INTERVAL]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=240, step=5, unit_of_measurement='minutes')),
-        vol.Required(CONF_TFZ_TRACKING_MAX_DISTANCE,
-                    default=Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=1, max=100, unit_of_measurement='Km')),
-        vol.Optional(CONF_DISCARD_POOR_GPS_INZONE,
-                    default=Gb.conf_general[CONF_DISCARD_POOR_GPS_INZONE]):
-                    selector.BooleanSelector(),
-        vol.Required(CONF_TRAVEL_TIME_FACTOR,
-                    default=self._option_parm_to_text(CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT), mode='dropdown')),
-        vol.Required(CONF_PICTURE_WWW_DIRS,
-                    default=Gb.conf_profile[CONF_PICTURE_WWW_DIRS] or self.www_directory_list):
-                    cv.multi_select(six_item_list(self.www_directory_list)),
-        vol.Required(CONF_EVLOG_CARD_DIRECTORY,
-                    default=self._parm_or_error_msg(CONF_EVLOG_CARD_DIRECTORY, conf_group=CF_PROFILE)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(self.www_directory_list), mode='dropdown')),
-        vol.Optional(CONF_EVLOG_BTNCONFIG_URL,
-                    default=f"{self._parm_or_error_msg(CONF_EVLOG_BTNCONFIG_URL, conf_group=CF_PROFILE)} "):
-                    selector.TextSelector(),
-
-        vol.Required('action_items',
-                    default=self.action_default_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
-
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            INZONE INTERVALS
@@ -1143,7 +1232,9 @@ def form_waze_main(self):
                         options=self.actions_list, mode='list')),
         })
 
-#------------------------------------------------------------------------
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            SPECIAL ZONES
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_special_zones(self):
     self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
 

@@ -757,6 +757,7 @@ class WazeRouteHistory(object):
 
         self.wazehist_recalculate_time_dist_running_flag = False
         self.wazehist_recalculate_time_dist_abort_flag   = False
+        Gb.wazehist_recalculate_time_dist_flag           = False
 
 #--------------------------------------------------------------------
     def _cycle_through_wazehist_records(self, zone_id, zone_dname, zone_from_loc):

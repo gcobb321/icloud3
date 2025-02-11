@@ -63,7 +63,7 @@ def create_all_PyiCloudServices():
             Gb.username_valid_by_username[username] = username_password_valid
 
         if Gb.username_valid_by_username[username]:
-            log_into_apple_account(username, password, locate_all_devices)
+            PyiCloud = log_into_apple_account(username, password, locate_all_devices)
         else:
             event_msg =(f"Apple Acct > "
                         f"{username.split('@')[0]}, Invalid Username or Password")
@@ -111,9 +111,6 @@ def check_all_apple_accts_valid_upw():
 
     This is done when iCloud3 starts in __init__
     '''
-    # if Gb.PyiCloudValidateAppleAcct is None:
-    #     Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
-
     results_msg = ''
     cnt = -1
     alert_symb = ''
@@ -124,7 +121,6 @@ def check_all_apple_accts_valid_upw():
         password = Gb.PyiCloud_password_by_username[username]
 
         if is_empty(username) or is_empty(password):
-            # Gb.username_valid_by_username[f"AppleAcctNoUserPW-#{cnt}"] = False
             continue
 
         # Validate username/password so we know all future login attempts will be with valid apple accts
@@ -132,7 +128,6 @@ def check_all_apple_accts_valid_upw():
 
         Gb.username_valid_by_username[username]= valid_upw
 
-        # if valid_apple_acct is False: alert_symb = EVLOG_ALERT
         crlf_symb = CRLF_DOT if valid_upw else f"{CRLF_RED_ALERT}"
         results_msg += f"{crlf_symb}{username}, Valid-{valid_upw}"
 
@@ -263,14 +258,16 @@ def log_into_apple_account(username, password, locate_all_devices=None):
                             f"{PyiCloud.auth_method}")
             else:
                 retry_at = secs_to_time(time_now_secs() + 900)
-                post_event( f"Apple Acct > {username_base}, Login Failed, "
-                        f"{PyiCloud.response_code_desc}, "
-                        f"Retry At-{retry_at}")
+                post_event( f"{EVLOG_ALERT}Apple Acct > {username_base}, Login Failed, "
+                        f"{CRLF_DOT}{PyiCloud.response_code_desc}")
 
         verify_icloud_device_info_received(PyiCloud)
         is_authentication_2fa_code_needed(PyiCloud, initial_setup=True)
 
         #display_authentication_msg(PyiCloud)
+
+        # _log(f"PyiCloud.trusted_devices=")
+        # _log(f"{PyiCloud.trusted_devices=}")
 
         return PyiCloud
 

@@ -100,6 +100,7 @@ def isnot_valid(secs):
 def s2t(secs_utc):
     return secs_to_time(secs_utc)
 
+#--------------------------------------------------------------------
 def secs_to_time(secs_utc):
     ''' secs --> 10:23:45/h:mm:ssa  '''
 
@@ -107,10 +108,41 @@ def secs_to_time(secs_utc):
 
     return time_to_12hrtime(time_local(secs_utc))
 
+#--------------------------------------------------------------------
 def secs_to_datetime(secs_utc, format_ymd=False):
     ''' secs --> 2024-03-16 12:55:03 '''
 
     return datetime_local(secs_utc)
+
+#--------------------------------------------------------------------
+def secs_to_even_min_secs(secs_utc_or_min, min=None):
+    '''
+    secs --> secs for next even min interval
+
+    Parameters:
+        secs_utc_or_min - utc_secs to adjust from
+        min             - adjustment minutes (+ or -)
+    or:
+        secs_utc_or_min - adjustment minutes (+ or -) from utc time now
+        min             - Not specified
+    '''
+
+    if min is None:
+        secs_utc = int(time.time())
+        min_secs = secs_utc_or_min * 60
+    else:
+        secs_utc = secs_utc_or_min
+        min_secs = min * 60
+
+    if min_secs > 0:
+        prev_secs_adj = 0
+    else:
+        prev_secs_adj = min_secs
+        if prev_secs_adj <= -3600:
+            prev_secs_adj -= 3600
+        min_secs = abs(min_secs)
+
+    return secs_utc - (secs_utc % min_secs) + min_secs + prev_secs_adj
 
 #--------------------------------------------------------------------
 def secs_to_hhmm(secs_utc):
@@ -218,7 +250,7 @@ def format_timer(secs):
 
     try:
         if secs < 1:
-            return '0 min'
+            return '0 secs'
 
         if secs >= 86400:
             time_str = f"{secs/86400:.1f} days"
@@ -292,7 +324,7 @@ def format_age_hrs(secs):
     return f"{format_timer_hrs(secs_since(secs))} ago"
 
 #--------------------------------------------------------------------
-def format_time_age(secs):
+def format_time_age(secs, xago=None):
     ''' secs --> 10:23:45 or h:mm:ssa/p (4.5 sec/mins/hrs ago) '''
 
     if isnot_valid(secs): return 'Unknown'
@@ -304,8 +336,9 @@ def format_time_age(secs):
         else:
             return f"{age_secs/86400:.1f} days ago"
 
+    ago = ' ago' if xago is None else ''
     return (f"{secs_to_time(secs)} "
-            f"({format_timer(age_secs)} ago)")
+            f"({format_timer(age_secs)}{ago})")
 
 #--------------------------------------------------------------------
 def format_secs_since(secs):

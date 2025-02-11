@@ -94,6 +94,7 @@
       "icloud_acct_no_data_source": "❌ No Data Source has been selected (Apple iCloud Account or Mobile App)",
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id and name on the device (Settings > General > About) can not be exactly the same (letters & case)",
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
+      "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
 
       "verification_code_requested": "The Apple Account Verification Code was requested, BROWSER REFRESH MAY BE NEEDED",
       "verification_code_requested2": "The Apple Account Verification Code was requested",
@@ -132,6 +133,9 @@
       "unknown_icloud_mobapp": "Check the iCloud and Mobile App parameter values (Not found or Invalid)",
       "unknown_icloud_mobapp_picture": "Check the iCloud, Mobile App and Picture parameter values (Not found or Invalid)",
       "unknown_icloud_picture": "Check the iCloud and Picture parameter values (Not found or Invalid)",
+
+      "internet_connection_err": "Home Asst is Offline, No Internet Connection is Available",
+      "apple_acct_connection_err": "Internet is available but could not connect to Apple. Try again in a few minutes",
 
       "tfz_selection_invalid": "The value must be a zone that is being tracked from",
       "time_factor_invalid_range": "The 'Travel Time Multiplier' must be between .1 and .9",
@@ -280,6 +284,7 @@
           "famshr_devicename": "APPLE ACCOUNT iCLOUD DEVICE  - Apple iCloud device providing location data",
           "mobile_app_device": "MOBILE APP DEVICE_TRACKER ENTITY - Mobile App device providing location data & zone triggers",
           "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
+          "icon": "ICON - Icon to display when the Picture has not been selected (=None)",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
           "tracking_mode": "TRACKING MODE - Location request method (Tracked, Monitored, Inactive)",
           "mobapp": "MOBILE APP INSTALLED - HA Mobile App is installed on this device",
@@ -298,6 +303,7 @@
           "famshr_devicename": "APPLE ACCOUNT iCLOUD DEVICE  - Apple iCloud device providing location data",
           "mobile_app_device": "MOBILE APP DEVICE_TRACKER ENTITY - Mobile App device providing location data & zone triggers",
           "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
+          "icon": "ICON - Icon to display when the Picture has not been selected (=None)",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "inzone_interval": "INZONE INTERVAL",
@@ -337,6 +343,18 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+      "picture_dir_filter": {
+        "title": "Set up Picture Directory Filter",
+        "description": "Select the \\www directorys to be searched for image (png, jpg) files",
+        "data": {
+          "www_group_1": "Group 1 - Directory 1-5",
+          "www_group_2": "Group 2 - Directory 6-10",
+          "www_group_3": "Group 3 - Directory 11-15",
+          "www_group_4": "Group 4 - Directory 16-20",
+          "www_group_5": "Group 5 - Directory 21-25",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        }
+      },
       "away_time_zone": {
         "title": "Display Location Time Zone when Away",
         "description": "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location.\n\nThis screen lets you display time events using your current location's time zone.",
@@ -364,23 +382,56 @@
         "data_description": {
         }
       },
+      "tracking_parameters": {
+        "title": "Tracking Parameters",
+        "description": "Many parameters are used when tracking a device and displaying the results. These include how poor GPS Accuracy should be handled, various polling interval values and zone distances used to set the time to locate the device. They are customized on this screen.",
+        "data": {
+          "gps_accuracy_threshold": "GPS ACCURACY THRESHOLD",
+          "old_location_threshold": "OLD LOCATION THRESHOLD",
+          "old_location_adjustment": "OLD LOCATION ADJUSTMENT",
+          "distance_between_devices": "USE LOCATION RESULTS FROM A NEAR-BY DEVICE",
+          "max_interval": "MAXIMUM INTERVAL",
+          "exit_zone_interval": "EXIT ZONE INTERVAL",
+          "mobapp_alive_interval": "REQUEST MOBILE APP LOCATION INTERVAL",
+          "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
+          "offline_interval": "DEVICE OFFLINE INTERVAL",
+          "travel_time_factor": "TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER",
+          "discard_poor_gps_inzone": "DISCARD POOR RESULTS - Discard Location Updates with Poor GPS Accuracy when in a Zone",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "old_location_threshold": "Locations older than this value will be discarded",
+          "old_location_adjustment": "Add this to the time that determines if a location is old",
+          "distance_between_devices": "When tracking results are updated, any nearby devices are identified. When tracking results for those devices are updated, the tracking results of the one originally updated can be used instead. This improves performance since the Waze route time and distance are not requested again",
+          "gps_accuracy_threshold": "Locations with GPS Accuracy above this value will be discarded",
+          "tfz_tracking_max_distance": "Normally the Home zone's time and distance data is displayed on the Device's device_tracker and sensor entities. Display the Track-from-Zone instead when the Device is within this distance of the Track-from-Zone",
+          "max_interval": "The maximum time between location requests",
+          "exit_zone_interval": "The time to the first location request after exiting a zone",
+          "mobapp_alive_interval": "Send a location request to the Mobile App if there has been no contact after this amount of time. This will check to see if the Mobile App is responding to location requests or is asleep and not running.",
+          "offline_interval": "Location request interval when offline (Airplane mode, dead cell area, etc.)",
+          "travel_time_factor": "This is used to calculate the Interval and Next Location Time when going towards Home. A smaller value will reduce the interval time and increase the location requests, a larger value will increase the interval and reduce the location requests."
+        }
+      },
       "format_settings": {
-        "title": "Format Settings",
+        "title": "FIELD FORMATS & EVENT LOG  OVERRIDES",
         "description": "Tracking activity, results and information messages are displayed in the Event log, sensors and device_tracker entities for tracked and monitored devices.\n\nThis screen us used to specify how these results should be displayed.",
         "data": {
-          "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",
-          "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud RawData to the log file for only these devices",
           "display_zone_format": "EVENT LOG ZONE DISPLAY NAME - How the Zone name is displayed in sensors and the Event Log",
           "device_tracker_state_source": "DEVICE TRACKER STATE VALUE - How the device's device_tracker entity state value is determined",
           "time_format": "TIME FORMAT - How time fields are displayed in sensors and in the Event Log",
           "unit_of_measurement": "UNIT OF MEASUREMENT - How distance fields are displayed in sensors and in the Event Log",
           "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
           "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display GPS-(22.32771, -76.33073/±35m) instead of GPS-/±35m in the Event Log",
+          "evlog_header": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EVENT LOG SYSTEM OVERRIDES",
+          "picture_www_dirs": "PICTURE DIRECTORY FILTER - Select the directories containg Device image files (.png, .jpg)",
+          "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
+          "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-          "log_level": "iCloud3 can log configuration parameters, startup activity and errors, tracking activity, error messages and the Apple Account requests for iCloud Device location RawData information (request and response). Log levels specify the type of records that should be written to the iCloud3 log file (`icloud3-0.log`) from basic (Info) to more detailed (Debug) to extremely detailed (RawData).",
-          "device_tracker_state_source": "HA uses the device's gps coordinates to determine the zone. The gps accuracy is not considered so the zone may be exited when the gps wanders out of the zone. iCloud3 does consider the gps accuracy and will not exit the zone when this occurs. iCloud3 will display the Zone's Friendly Name or zone name displayed on the Event Log."
+          "picture_www_dirs": "iCloud3 scans the /www for all picture files (.png, .jpg) to build a table for selecting the picture for a device. The picture can be hard to find if you have many image files in many directories. Specify the directories with your device image files here",
+          "device_tracker_state_source": "HA uses the device's gps coordinates to determine the zone. The gps accuracy is not considered so the zone may be exited when the gps wanders out of the zone. iCloud3 does consider the gps accuracy and will not exit the zone when this occurs. iCloud3 will display the Zone's Friendly Name or zone name displayed on the Event Log",
+          "event_log_btnconfig_url": "Normally, this is blank and iCloud3 will determine the URL for it's Configure Settings screen. However, if there is a problem caused by running HA in a virtual environment, docker or on another device and the actual URL can not be detemined, a 404 not found error may be encountered. If that happens, select it the normal way (HA Devices & Services > Integration > iCloud3 > Configure Settings gear) and copy the URL from the browser into this field."
         }
       },
       "display_text_as": {
@@ -399,15 +450,6 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-        }
-      },
-      "actions": {
-        "title": "iCloud3 Action Commands",
-        "data": {
-          "ic3_actions": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ICLOUD3 GENERAL CONTROL ACTIONS",
-          "debug_actions": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DEBUG LOG ACTIONS",
-          "other_actions": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER ACTIONS",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "inzone_intervals": {
@@ -494,41 +536,6 @@
           "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
           "filtered_sensors": "ICLOUD3 SENSORS - A list of Sensors that are created when iCloud3 starts",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
-      },
-      "tracking_parameters": {
-        "title": "Tracking & Other Parameters",
-        "description": "Some parameters do not fall into any of the other general categories and are rarely changed.\n\nThis screen is used to specify those parameters.",
-        "data": {
-          "log_level": "LOG LEVEL - The type of messages that are added to the HA log file during iCloud3 operations",
-          "gps_accuracy_threshold": "GPS ACCURACY THRESHOLD",
-          "old_location_threshold": "OLD LOCATION THRESHOLD",
-          "old_location_adjustment": "OLD LOCATION ADJUSTMENT",
-          "distance_between_devices": "USE LOCATION RESULTS FROM A NEAR-BY DEVICE",
-          "max_interval": "MAXIMUM INTERVAL",
-          "exit_zone_interval": "EXIT ZONE INTERVAL",
-          "mobapp_alive_interval": "REQUEST MOBILE APP LOCATION INTERVAL",
-          "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
-          "offline_interval": "DEVICE OFFLINE INTERVAL",
-          "travel_time_factor": "TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER",
-          "discard_poor_gps_inzone": "DISCARD POOR RESULTS - Discard Location Updates with Poor GPS Accuracy when in a Zone",
-          "picture_www_dirs": "WWW DIRECTORIES WITH PICTURE IMAGES - Filter for `Update Devices > Pictures` file locations",
-          "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
-          "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        },
-        "data_description": {
-          "old_location_threshold": "Locations older than this value will be discarded",
-          "old_location_adjustment": "Add this to the time that determines if a location is old",
-          "distance_between_devices": "When tracking results are updated, any nearby devices are identified. When tracking results for those devices are updated, the tracking results of the one originally updated can be used instead. This improves performance since the Waze route time and distance are not requested again",
-          "gps_accuracy_threshold": "Locations with GPS Accuracy above this value will be discarded",
-          "tfz_tracking_max_distance": "Normally the Home zone's time and distance data is displayed on the Device's device_tracker and sensor entities. Display the Track-from-Zone instead when the Device is within this distance of the Track-from-Zone",
-          "max_interval": "The maximum time between location requests",
-          "exit_zone_interval": "The time to the first location request after exiting a zone",
-          "mobapp_alive_interval": "Send a location request to the Mobile App if there has been no contact after this amount of time. This will check to see if the Mobile App is responding to location requests or is asleep and not running.",
-          "offline_interval": "Location request interval when offline (Airplane mode, dead cell area, etc.)",
-          "travel_time_factor": "This is used to calculate the Interval and Next Location Time when going towards Home. A smaller value will reduce the interval time and increase the location requests, a larger value will increase the interval and reduce the location requests.",
-          "event_log_btnconfig_url": "Normally, this is blank and iCloud3 will determine the URL for it's Configure Settings screen. However, if there is a problem caused by running HA in a virtual environment, docker or on another device and the actual URL can not be detemined, a 404 not found error may be encountered. If that happens, select it the normal way (HA Devices & Services > Integration > iCloud3 > Configure Settings gear) and copy the URL from the browser into this field."
         }
       }
     }

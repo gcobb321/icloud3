@@ -12,8 +12,8 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.1.4.4'
-VERSION_BETA                    = ''
+VERSION                         = '3.1.5'
+VERSION_BETA                    = 'b3'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 PLATFORMS                       = ['sensor', 'device_tracker']
@@ -294,7 +294,7 @@ Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• �
 ↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗✳🞺🞴🞸🞳
   ═ ⎯ — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
   ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
- ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 ⲶⲼ+≈⟣⟢⟡
+ ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 ⲶⲼ+≈⟣⟢⟡⯌
  ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
  https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
  https://www.htmlsymbols.xyz/unit-symbols
@@ -739,6 +739,7 @@ CONF_FMF_DEVICE_ID              = 'fmf_device_id'
 CONF_IOSAPP_DEVICE              = 'iosapp_device'
 CONF_MOBILE_APP_DEVICE          = 'mobile_app_device'
 CONF_PICTURE                    = 'picture'
+CONF_ICON                       = 'icon'
 CONF_TRACKING_MODE              = 'tracking_mode'
 CONF_TRACK_FROM_BASE_ZONE_USED  = 'track_from_base_zone_used'   # Primary Zone a device is tracking from, normally Home
 CONF_TRACK_FROM_BASE_ZONE       = 'track_from_base_zone'        # Primary Zone a device is tracking from, normally Home
@@ -872,7 +873,7 @@ DEFAULT_TRACKING_CONF = {
         CONF_DEVICES: [],
 }
 
-DEFAULT_APPLE_ACCOUNTS_CONF = {
+DEFAULT_APPLE_ACCOUNT_CONF = {
         CONF_USERNAME: '',
         CONF_PASSWORD: '',
         CONF_TOTP_KEY: '',
@@ -883,6 +884,7 @@ DEFAULT_DEVICE_CONF = {
         CONF_IC3_DEVICENAME: ' ',
         CONF_FNAME: '',
         CONF_PICTURE: 'None',
+        CONF_ICON: 'mdi:account',
         CONF_UNIQUE_ID: '',
         CONF_DEVICE_TYPE: 'iPhone',
         CONF_INZONE_INTERVAL: 120,

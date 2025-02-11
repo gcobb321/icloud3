@@ -24,7 +24,7 @@ from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3, RARROW,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
                                 NAME, FNAME, BADGE, FROM_ZONE, ZONE,
                                 ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
-                                HOME_DISTANCE,
+                                HOME_DISTANCE, ICON,
                                 BATTERY, BATTERY_STATUS,
                                 WAZE_DISTANCE, WAZE_DISTANCE_ATTR, WAZE_METHOD, WAZE_USED,
                                 CALC_DISTANCE, CALC_DISTANCE_ATTR,
@@ -80,8 +80,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     try:
         if Gb.conf_file_data == {}:
             start_ic3.initialize_directory_filenames()
-            # start_ic3.load_storage_icloud3_configuration_file()
-            await config_file.async_load_storage_icloud3_configuration_file()
+            # start_ic3.load_icloud3_configuration_file()
+            await config_file.async_load_icloud3_configuration_file()
 
 
         NewSensors = []
@@ -906,6 +906,10 @@ class Sensor_Badge(DeviceSensor_Base, SensorEntity):
             return badge_attrs
         else:
             return None
+
+    @property
+    def icon(self):
+        return self._get_sensor_value(ICON)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

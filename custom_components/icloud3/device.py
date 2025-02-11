@@ -18,7 +18,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 TRACKING_NORMAL, TRACKING_PAUSED, TRACKING_RESUMED,
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME, LAST_UPDATED_SECS, LAST_UPDATED_TIME,
                                 STATE,
-                                ICLOUD, MOBAPP,
+                                ICLOUD, MOBAPP, DEVICE_TYPE_ICONS,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE, TRACKING_MODE_FNAME,
                                 NAME, DEVICE_TYPE_FNAME,
                                 ICLOUD_HORIZONTAL_ACCURACY, ICLOUD_VERTICAL_ACCURACY, ICLOUD_BATTERY_STATUS,
@@ -44,7 +44,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 DEVICE_STATUS_CODES, DEVICE_STATUS_OFFLINE, DEVICE_STATUS_PENDING,
                                 CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
                                 CONF_FNAME, FRIENDLY_NAME, PICTURE, ICON, BADGE,
-                                CONF_PICTURE, CONF_STAT_ZONE_FNAME,
+                                CONF_PICTURE, CONF_ICON,  CONF_STAT_ZONE_FNAME,
                                 CONF_DEVICE_TYPE, CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME,
                                 CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT, CONF_FAMSHR_DEVICENAME, CONF_USERNAME,
                                 CONF_MOBILE_APP_DEVICE,
@@ -379,6 +379,7 @@ class iCloud3_Device(TrackerEntity):
         self.sensors[DEVICE_TRACKER_STATE] = None
         self.sensors[NAME]               = ''
         self.sensors[PICTURE]            = ''
+        self.sensors[ICON]               = 'mdi:account'
         self.sensors[BADGE]              = ''
         self.sensors[LOW_POWER_MODE]     = ''
         self.sensors[INFO]               = ''
@@ -567,13 +568,21 @@ class iCloud3_Device(TrackerEntity):
         self.sensors['host_name'] = self.fname
 
         self.sensor_badge_attrs[FRIENDLY_NAME] = self.fname
-        self.sensor_badge_attrs[ICON]          = 'mdi:account-circle-outline'
+        # self.sensor_badge_attrs[ICON]          = conf_device.get(CONF_ICON, 'mdi:account-circle-outline')
+        self.sensor_badge_attrs[ICON]          = conf_device.get(CONF_ICON, 'mdi:account')
 
-        if conf_device.get(CONF_PICTURE, 'None') != 'None':
-            picture = conf_device.get(CONF_PICTURE, 'None').replace('www/', '/local/')
-            self.sensors[PICTURE] = picture if instr(picture, '/') else (f"/local/{picture}")
-            self.sensor_badge_attrs[PICTURE] = self.sensors[PICTURE]
+        picture = conf_device.get(CONF_PICTURE, 'None')
+        if picture == 'None':
+            self.sensors[PICTURE] = ''
 
+        else:
+            picture = picture.replace('www/', '/local/')
+            if picture.startswith('/local') is False:
+                picture = f"/local/{picture}"
+            self.sensors[PICTURE] = picture
+            self.sensor_badge_attrs[PICTURE] = picture
+
+        self.sensors[ICON]        = conf_device.get(CONF_ICON, 'mdi:account')
         self.inzone_interval_secs = conf_device.get(CONF_INZONE_INTERVAL, 30) * 60
         self.statzone_inzone_interval_secs = min(self.inzone_interval_secs, Gb.statzone_inzone_interval_secs)
         self.fixed_interval_secs  = conf_device.get(CONF_FIXED_INTERVAL, 0) * 60
@@ -616,12 +625,6 @@ class iCloud3_Device(TrackerEntity):
                 self.tracking_mode = TRACK_DEVICE
         else:
             self.primary_data_source = None
-        # if self.conf_icloud_dname:
-        #     self.primary_data_source = ICLOUD
-        # elif self.mobapp[DEVICE_TRACKER]:
-        #     self.primary_data_source = MOBAPP
-        # else:
-        #     self.primary_data_source = None
 
 #--------------------------------------------------------------------
     def initialize_track_from_zones(self):
@@ -726,7 +729,7 @@ class iCloud3_Device(TrackerEntity):
             self.conf_device[CONF_TRACK_FROM_BASE_ZONE] = HOME
 
         if lza_zones or tfz_zones or tfbz_zone:
-            config_file.write_storage_icloud3_configuration_file()
+            config_file.write_icloud3_configuration_file()
 
             self.set_fname_alert(RED_ALERT)
 
@@ -801,7 +804,7 @@ class iCloud3_Device(TrackerEntity):
                 self.conf_device[CONF_TRACK_FROM_BASE_ZONE] = HOME
 
             if conf_file_updated_flag:
-                config_file.write_storage_icloud3_configuration_file()
+                config_file.write_icloud3_configuration_file()
 
         except Exception as err:
             log_exception(err)
@@ -1315,8 +1318,10 @@ class iCloud3_Device(TrackerEntity):
         try:
             self.tracking_status = TRACKING_PAUSED
 
-            self.write_ha_sensor_state(NEXT_UPDATE, PAUSED)
-            self.display_info_msg(PAUSED)
+            msg = f'{RED_ALERT}OFFLINE' if Gb.internet_connection_error else PAUSED
+
+            self.write_ha_sensor_state(NEXT_UPDATE, msg)
+            self.display_info_msg(msg)
 
         except Exception as err:
             log_exception(err)
@@ -1336,6 +1341,9 @@ class iCloud3_Device(TrackerEntity):
     def resume_tracking(self, interval_secs=0):
         ''' Resume tracking '''
         try:
+            self.write_ha_sensor_state(NEXT_UPDATE, RESUMING)
+            self.display_info_msg(RESUMING)
+
             self.tracking_status             = TRACKING_RESUMED
             Gb.all_tracking_paused_flag      = False
             Gb.any_device_was_updated_reason = ''
@@ -1347,9 +1355,6 @@ class iCloud3_Device(TrackerEntity):
                 return
 
             self.reset_tracking_fields(interval_secs)
-
-            self.write_ha_sensor_state(NEXT_UPDATE, RESUMING)
-            self.display_info_msg(RESUMING)
 
         except Exception as err:
             log_exception(err)
@@ -1681,7 +1686,7 @@ class iCloud3_Device(TrackerEntity):
         for from_zone, FromZone in self.FromZones_by_zone.items():
             Gb.restore_state_devices[self.devicename]['from_zone'][from_zone] = copy.deepcopy(FromZone.sensors)
 
-        restore_state.write_storage_icloud3_restore_state_file()
+        restore_state.write_icloud3_restore_state_file()
 
 #--------------------------------------------------------------------
     def _restore_state_save_mobapp_items(self):
@@ -2457,8 +2462,14 @@ class iCloud3_Device(TrackerEntity):
 
             elif self.zone_change_secs > 0:
                 if self.isin_zone:
-                    info_msg +=( f"{zone_dname(self.loc_data_zone)}-"
-                                f"{self.sensors[ARRIVAL_TIME]}, ")
+                    info_msg +=f"At {zone_dname(self.loc_data_zone)}-"
+                    if self.sensors[ARRIVAL_TIME].startswith('@'):
+                        info_msg += f"(Since-{self.sensors[ARRIVAL_TIME][1:]}), "
+                    elif self.sensors[ARRIVAL_TIME].startswith('~'):
+                        info_msg += f"(About-{self.sensors[ARRIVAL_TIME][1:]}), "
+                    else:
+                        info_msg += f"(Before-{secs_to_hhmm(Gb.started_secs)}), "
+
                 elif self.mobapp_zone_exit_zone != '':
                     info_msg +=(f"Left-{zone_dname(self.mobapp_zone_exit_zone)}-"
                                 f"{format_time_age(self.mobapp_zone_exit_secs)}, ")

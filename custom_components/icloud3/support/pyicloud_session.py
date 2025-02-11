@@ -22,15 +22,19 @@ used by iCloud3.
 from ..global_variables     import GlobalVariables as Gb
 from ..helpers.common       import (instr, is_empty, isnot_empty, list_add, list_del, )
 from ..helpers.file_io      import (save_json_file, )
-from ..helpers.time_util    import (time_now,  time_now_secs, )
+from ..helpers.time_util    import (time_now,  time_now_secs, secs_to_time, format_time_age, )
 from ..helpers.messaging    import (_log, _evlog,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_rawdata, log_exception, log_rawdata_unfiltered, filter_data_dict, )
 
 from requests   import Session, adapters
+import requests
+from requests.exceptions import ConnectionError
 from os         import path
 import inspect
 import json
+import random
+import time
 # import http.cookiejar as cookielib
 
 HEADER_DATA = {
@@ -144,15 +148,16 @@ class PyiCloudSession(Session):
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
 
-        if Gb.internet_connection_error:
+        if 'retry_cnt' in kwargs:
+            pass
+        elif Gb.internet_connection_error:
             return {}
 
         try:
-            # if data is a str, unconvert it from json format,
-            # it will be reconverted  to json later
+            # If data is a str, unconvert it from json format, it will be reconverted  to json later
             if 'data' in kwargs and type(kwargs['data']) is str:
                 kwargs['data'] = json.loads(kwargs['data'])
-            retry_cnt = kwargs.get("retry_cnt", 0)
+            retry_cnt = kwargs.get('retry_cnt', 0)
 
             log_rawdata_flag = (url.endswith('refreshClient') is False)
             if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
@@ -179,6 +184,10 @@ class PyiCloudSession(Session):
             response = None
 
             #++++++++++++++++ REQUEST ICLOUD DATA ++++++++++++++++
+            Gb.last_PyiCloud_request_secs = time_now_secs()
+
+            if Gb.internet_connection_test:
+                raise requests.exceptions.ConnectionError
 
             response = Session.request(self, method, url, **kwargs)
 
@@ -189,34 +198,43 @@ class PyiCloudSession(Session):
                 # log_exception(err)
                 data = {}
 
+            Gb.last_PyiCloud_request_secs = 0
             #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
 
-            test_err = 'connection'
-            # if a == b:
-            #     c = True
+
+        except (requests.exceptions.RetryError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.HTTPError,
+                requests.exceptions.Timeout,
+                OSError,
+                requests.exceptions.SSLError,
+                requests.exceptions.ProxyError,
+                requests.exceptions.ConnectTimeout,
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.URLRequired,
+                requests.exceptions.TooManyRedirects,
+                requests.exceptions.InvalidURL,
+                requests.exceptions.InvalidHeader,
+                requests.exceptions.InvalidProxyURL,
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.StreamConsumedError,
+                requests.exceptions.RetryError,
+                requests.exceptions.UnrewindableBodyError,
+                ) as err:
+
+            log_error_msg(  f"iCloud3 Error > An error occurred connecting to the Internet, "
+                            f"Home Assistant may be Offline > "
+                            f"Error-{err}")
+
+            Gb.internet_connection_error = True
+
+            self.response_code = -3
+            self.PyiCloud.response_code = -3
+            self.response_ok = False
+            return {}
 
         except Exception as err:
-            # log_exception(err)
-
-            # Connection Error Message:
-            # "HTTPSConnectionPool(host='setup.icloud.com', port=443):
-            # Max retries exceeded with url: /setup/ws/1/accountLogin?clientBuildNumber=2021Project52
-            # &clientMasteringNumber=2021B29&ckjsBuildVersion=17DProjectDev77
-            # &clientId=3f97e836-b581-11ef-8115-2ccf674e40a8
-            # (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f832a9940>:
-            # Failed to establish a new connection: [Errno -3] Try again'))"
-
-            # if instr(err, 'connection') or instr(test_err, 'connection'):
-            if instr(str(err), 'connection'):
-                log_error_msg("iCloud3 encountered an error connecting to the Internet, Home Assistant is Offline > HTTPSConnectionPool Error: Failed to establish a new connection: [Errno -3]")
-
-                Gb.internet_connection_error = True
-                # Gb.internet_connection_error_secs = time_now_secs()
-
-                self.response_code = -3
-                self.PyiCloud.response_code = -3
-                self.response_ok = False
-                return {}
+            log_exception(err)
 
             self._raise_error(-3, f"Error setting up iCloud Server Connection ({err})")
             return {}
@@ -224,9 +242,10 @@ class PyiCloudSession(Session):
         content_type = response.headers.get("Content-Type", "").split(";")[0]
         json_mimetypes = ["application/json", "text/json"]
 
-        self.response_code = response.status_code
-        self.PyiCloud.response_code = response.status_code
-        self.response_ok = response.ok
+        self.PyiCloud.last_response_code = self.PyiCloud.response_code
+        self.PyiCloud.response_code      = response.status_code
+        self.response_code          = response.status_code
+        self.response_ok            = response.ok
 
         log_rawdata_flag = (url.endswith('refreshClient') is False) or response.status_code != 200
         if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
@@ -237,6 +256,8 @@ class PyiCloudSession(Session):
             if retry_cnt >= 2 or Gb.log_rawdata_flag_unfiltered:
                 log_data['headers'] = response.headers
             logged = log_rawdata(log_hdr, log_data, log_rawdata_flag=log_rawdata_flag)
+            # _log(f"noYK-{log_hdr=}")
+            # _log(f"noYK-{data=}")
 
         # Validating the username/password, code=409 is valid, code=401 is invalid
         if (response.status_code in [401, 409]
@@ -307,25 +328,71 @@ class PyiCloudSession(Session):
             log_exception(err)
 
         if content_type not in json_mimetypes:
-            # return response
             return data
-
-        # try:
-        #     data = response.json()
-
-        # except:
-        #     if not response.ok:
-        #         msg = (f"Error handling data returned from iCloud, {response}")
-        #         request_logger.warning(msg)
-        #     return response
 
         error_code, error_reason = self._resolve_error_code_reason(data)
 
         if error_reason:
             self._raise_error(error_code, error_reason)
 
-        # return response
         return data
+
+#------------------------------------------------------------------
+    def is_internet_available(self):
+        '''
+        Try to connect to Google servers to determine if the internet is really down
+        or there is an error connecting to Apple servers
+        '''
+
+        try:
+            # Prevent a new status check being requested while waiting for a response
+            if Gb.internet_connection_status_waiting_for_response:
+                return False
+
+            Gb.internet_connection_status_waiting_for_response = True
+
+            log_debug_msg(  f"Request  Internet Connection status "
+                            f"(#{Gb.internet_connection_status_request_cnt}), "
+                            f"Sent-{time_now()}")
+
+            # Use TestCode in service_handler > Show Tracking Monitor
+            if Gb.internet_connection_test:
+                ri = random.randint(1, 61)
+                time.sleep(ri)
+                raise requests.exceptions.ConnectionError
+
+            # Connect to google.com
+            Session.request(self, 'get', "https://8.8.8.8")
+            Gb.internet_connection_status_waiting_for_response = False
+            return True
+
+        except (requests.exceptions.RetryError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.HTTPError,
+                requests.exceptions.Timeout,
+                OSError,
+                requests.exceptions.SSLError,
+                requests.exceptions.ProxyError,
+                requests.exceptions.ConnectTimeout,
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.URLRequired,
+                requests.exceptions.TooManyRedirects,
+                requests.exceptions.InvalidURL,
+                requests.exceptions.InvalidHeader,
+                requests.exceptions.InvalidProxyURL,
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.StreamConsumedError,
+                requests.exceptions.RetryError,
+                requests.exceptions.UnrewindableBodyError,
+                ) as err:
+            pass
+
+        except Exception as err:
+            log_exception(err)
+            pass
+
+        Gb.internet_connection_status_waiting_for_response = False
+        return False
 
 #------------------------------------------------------------------
     @staticmethod

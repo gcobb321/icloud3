@@ -72,8 +72,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     # has set up the integration
                     start_ic3.initialize_directory_filenames()
                     await Gb.hass.async_add_executor_job(
-                                        config_file.load_storage_icloud3_configuration_file)
-                    # await config_file.async_load_storage_icloud3_configuration_file()
+                                        config_file.load_icloud3_configuration_file)
+                    # await config_file.async_load_icloud3_configuration_file()
 
                     if Gb.conf_profile[CONF_VERSION] == 1:
                         Gb.HALogger.warning(f"Starting iCloud3 v{VERSION}{VERSION_BETA} > "
@@ -135,16 +135,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.entry_id       = entry.entry_id
         Gb.operating_mode = MODE_INTEGRATION
         Gb.PyiCloud       = None
+
         ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
-
         start_ic3.initialize_directory_filenames()
-
-        await Gb.hass.async_add_executor_job(
-                            config_file.load_storage_icloud3_configuration_file)
-
+        await Gb.hass.async_add_executor_job( config_file.load_icloud3_configuration_file)
         start_ic3.set_log_level(Gb.log_level)
-
-        # Setup iCloud Log File (icloud3.log)
         await Gb.hass.async_add_executor_job(open_ic3log_file_init)
 
         Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
@@ -163,10 +158,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return False
 
         await async_get_ha_location_info(hass)
-
         start_ic3.initialize_data_source_variables()
-        await Gb.hass.async_add_executor_job(
-                            restore_state.load_storage_icloud3_restore_state_file)
+        await Gb.hass.async_add_executor_job(restore_state.load_icloud3_restore_state_file)
 
 
         # config_file.count_lines_of_code(Gb.icloud3_directory)
@@ -183,10 +176,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
         Gb.username_valid_by_username = {}
         if Gb.use_data_source_ICLOUD:
-            await Gb.hass.async_add_executor_job(
-                            move_icloud_cookies_to_icloud3_apple_acct)
-            await Gb.hass.async_add_executor_job(
-                            pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
+            # v3.0 --> v3.1 file location change
+            await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
+            await Gb.hass.async_add_executor_job(pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
 
         # set_up_default_area_id()
 

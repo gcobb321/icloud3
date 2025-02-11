@@ -39,7 +39,7 @@ from ..const            import (
                                 CONF_TRACK_FROM_ZONES, CONF_DEVICE_TYPE, CONF_INZONE_INTERVAL,
                                 CONF_NAME,
                                 NAME, BADGE, BATTERY, BATTERY_STATUS, INFO,
-                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF, DEFAULT_APPLE_ACCOUNTS_CONF,
+                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF, DEFAULT_APPLE_ACCOUNT_CONF,
                                 WAZE_SERVERS_BY_COUNTRY_CODE,
                                 )
 
@@ -189,7 +189,7 @@ class iCloud3_v2v3ConfigMigration(object):
 
         log_warning_msg('iCloud3 - Migration Complete')
 
-        config_file.write_storage_icloud3_configuration_file()
+        config_file.write_icloud3_configuration_file()
         self.migration_log_file.close()
 
         log_info_msg(f"Profile:\n{DEBUG_LOG_LINE_TABS}{Gb.conf_profile}")
@@ -538,7 +538,7 @@ class iCloud3_v2v3ConfigMigration(object):
         Gb.conf_profile[CONF_EVLOG_CARD_PROGRAM]         = self.conf_parm_general.get(CONF_EVLOG_CARD_PROGRAM, EVLOG_CARD_WWW_JS_PROG)
 
         # Convert iCloud Account Parameters
-        conf_apple_account                               = DEFAULT_APPLE_ACCOUNTS_CONF.copy()
+        conf_apple_account                               = DEFAULT_APPLE_ACCOUNT_CONF.copy()
         conf_apple_account[CONF_USERNAME]                = self.conf_parm_tracking[CONF_USERNAME]
         conf_apple_account[CONF_PASSWORD]                = self.conf_parm_tracking[CONF_PASSWORD]
         Gb.conf_apple_accounts                           = conf_apple_account

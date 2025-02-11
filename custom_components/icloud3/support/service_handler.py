@@ -10,7 +10,7 @@ import asyncio
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (DOMAIN,
-                                    RED_ALERT, EVLOG_ALERT, EVLOG_ERROR,
+                                    RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT, 
                                     CMD_RESET_PYICLOUD_SESSION,
                                     LOCATION, NEXT_UPDATE_TIME, NEXT_UPDATE, INTERVAL,
                                     CONF_DEVICENAME, CONF_ZONE, CONF_COMMAND, CONF_LOG_LEVEL,
@@ -192,7 +192,7 @@ def resolve_action_devicename_values(action, devicename):
     if action in ACTION_FNAME_TO_ACTION:
         action = ACTION_FNAME_TO_ACTION[action]
     if devicename == 'startup_log':
-         return action, devicename
+        return action, devicename
 
     if devicename in Gb.Devices_by_ha_device_id:
         devicename = Gb.Devices_by_ha_device_id[devicename].devicename
@@ -386,9 +386,9 @@ def _handle_global_action(global_action, action_option):
         # This will be handled in the 5-second ic3 loop
         # Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
         post_event(f"{EVLOG_ERROR}The `Action > Request Apple Verification Code` "
-                       f"is no longer available. This must be done using the "
-                       f"`Configuration > Enter/Request An Apple Account Verification "
-                       f"Code` screen")
+                        "is no longer available. This must be done using the "
+                        "`Configuration > Enter/Request An Apple Account Verification "
+                        "Code` screen")
         return
 
     elif global_action == CMD_LOG_LEVEL:
@@ -396,15 +396,21 @@ def _handle_global_action(global_action, action_option):
         return
 
     elif global_action == CMD_WAZEHIST_MAINTENANCE:
-        event_msg = f"{EVLOG_ALERT}Waze History > Recalculate Route Time/Dist. "
-        if Gb.wazehist_recalculate_time_dist_flag:
-            event_msg += "Starting Immediately"
+        event_msg = f"{EVLOG_ALERT}Waze History > Recalculate Route Time/Dist, "
+        if Gb.WazeHist.wazehist_recalculate_time_dist_running_flag:
+            Gb.WazeHist.wazehist_recalculate_time_dist_abort_flag = True
+            event_msg+="Stopped"
             post_event(event_msg)
+        elif Gb.wazehist_recalculate_time_dist_flag:
+            event_msg+=("Starting Immediately"
+                        f"{CRLF_DOT}SELECT AGAIN TO STOP")
+            post_event(event_msg)
+            Gb.wazehist_recalculate_time_dist_flag = False
             Gb.WazeHist.wazehist_recalculate_time_dist_all_zones()
         else:
             Gb.wazehist_recalculate_time_dist_flag = True
-            event_msg+=(f"Scheduled to run tonight at Midnight. "
-                        "SELECT AGAIN TO RUN IMMEDIATELY")
+            event_msg+=(f"Scheduled to run tonight at Midnight "
+                        f"{CRLF_DOT}SELECT AGAIN TO RUN IMMEDIATELY")
             post_event(event_msg)
 
     elif global_action == CMD_WAZEHIST_TRACK:
@@ -417,13 +423,15 @@ def _handle_global_action(global_action, action_option):
 #--------------------------------------------------------------------
 def handle_action_log_level(action_option, change_conf_log_level=True):
 
-    # Shor/Hide Tracking Monitors
+    # Show/Hide Tracking Monitors
     if instr(action_option, 'monitor'):
-        Gb.evlog_trk_monitors_flag = (not Gb.evlog_trk_monitors_flag)
+        Gb.evlog_trk_monitors_flag = not Gb.evlog_trk_monitors_flag
 
         # Test trigger for Internet  connection error
-        # Gb.internet_connection_error = Gb.evlog_trk_monitors_flag
-        # _evlog(f"{RED_ALERT}Internet Connection Error-{Gb.internet_connection_error}")
+        # Gb.internet_connection_error = not Gb.internet_connection_error
+        # Gb.internet_connection_test  = not Gb.internet_connection_test
+        # Gb.evlog_trk_monitors_flag   = False
+        # _evlog(f"{RED_ALERT}TEST INTERNET CONNECTION ERROR-{Gb.internet_connection_error}")
         return
 
     new_log_debug_flag   = Gb.log_debug_flag

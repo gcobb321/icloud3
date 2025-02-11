@@ -29,28 +29,28 @@ _LOGGER = logging.getLogger(f"icloud3")
 #   .STORAGE/ICLOUD3.RESTORE_STATE FILE ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def load_storage_icloud3_restore_state_file():
+def load_icloud3_restore_state_file():
 
     try:
         if file_exists(Gb.icloud3_restore_state_filename) is False:
             build_initial_restore_state_file_structure()
-            write_storage_icloud3_restore_state_file()
+            write_icloud3_restore_state_file()
 
-        success = read_storage_icloud3_restore_state_file()
+        success = read_icloud3_restore_state_file()
 
         if success is False:
             log_info_msg(f"Invalid icloud3.restore_state File-{Gb.icloud3_restore_state_filename}")
             build_initial_restore_state_file_structure()
-            write_storage_icloud3_restore_state_file()
-            read_storage_icloud3_restore_state_file()
+            write_icloud3_restore_state_file()
+            read_icloud3_restore_state_file()
 
         return
 
     except Exception as err:
         log_exception(err)
         build_initial_restore_state_file_structure()
-        write_storage_icloud3_restore_state_file()
-        read_storage_icloud3_restore_state_file()
+        write_icloud3_restore_state_file()
+        read_icloud3_restore_state_file()
 
 #--------------------------------------------------------------------
 def build_initial_restore_state_file_structure():
@@ -81,7 +81,7 @@ def clear_devices():
     Gb.restore_state_devices = {}
 
 #-------------------------------------------------------------------------------------------
-def read_storage_icloud3_restore_state_file():
+def read_icloud3_restore_state_file():
     '''
     Read the config/.storage/.icloud3.restore_state file.
         - Extract the data into the Global Variables.
@@ -123,7 +123,7 @@ def read_storage_icloud3_restore_state_file():
     return False
 
 #--------------------------------------------------------------------
-def write_storage_icloud3_restore_state_file():
+def write_icloud3_restore_state_file():
     '''
     Update the config/.storage/.icloud3.restore_state file when the sensors for
     a device have changed. Since the multiple sensors are updated on one tracking
@@ -144,12 +144,12 @@ def write_storage_icloud3_restore_state_file():
         Gb.restore_state_commit_cnt  = 0
 
         async_track_point_in_time(Gb.hass,
-                            _async_commit_storage_icloud3_restore_state_file_changes,
+                            _async_commit_icloud3_restore_state_file_changes,
                             datetime_plus(utcnow(), secs=10))
 
 #--------------------------------------------------------------------
 @callback
-async def _async_commit_storage_icloud3_restore_state_file_changes(callback_datetime_struct):
+async def _async_commit_icloud3_restore_state_file_changes(callback_datetime_struct):
     try:
         Gb.restore_state_profile['last_commit'] = datetime_now()
         Gb.restore_state_profile['recds_changed']  = Gb.restore_state_commit_cnt

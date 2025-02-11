@@ -9,25 +9,24 @@ MENU_PAGE_TITLE = [
         'Parameters Menu'
         ]
 MENU_KEY_TEXT = {
-        'data_source':          'DATA SOURCES > APPLE ACCOUNT & MOBILE APP > Select Location Data Sources; Apple Account Username/Password',
-        'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete  Tracked and Monitored Devices',
+        'data_source':          'DATA SOURCES > APPLE ACCOUNT & MOBILE APP > Select Location Data Sources, Apple Account Username/Password',
+        'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
         'verification_code':    'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter or Request the 6-digit Apple Account Verification Code',
         'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
         'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
-        'sensors':              'SENSORS > Set Sensors created by iCloud3; Exclude Specific Sensors from being created',
-        'actions':              'ACTION COMMANDS > Restart/Pause/Resume Polling; Debug Logging; Export Event Log; Waze Utilities',
-        'tools':                'TOOLS > Set Log Level, Reset Device Apple Acct config, Delete Apple Accts & Devices, Delete Apple Acct Cookie and iCloud3 Config files, Repair sensor ‘_2’ entity name error',
+        'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
+        'tools':                'TOOLS > Log Level, Delete Apple Acct & Device Assignment, Delete Apple Acct Cookie & iCloud3 Config files, Repair sensor ‘_2’ entity name errors, Restart HA/Reload iCloud3',
 
-        'format_settings':      'FORMAT SETTINGS > Log Level; Zone Display Format; Device Tracker State; Unit of Measure; Time & Distance, Display GPS Coordinates',
-        'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement, etc',
-        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Route Server and Parameters; Waze History Database Parameters and Controls',
-        'inzone_intervals':     'INZONE INTERVALS > inZone Interval assigned to new devices',
-        'special_zones':        'SPECIAL ZONES > Enter Zone Delay Time; Stationary Zone; Primary Track-from-Home Zone Override',
-        'tracking_parameters':  'TRACKING & OTHER PARAMETERS > Set Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals; Picture Image Directories; Event Log Custom Card Directory',
+        'tracking_parameters':  'TRACKING PARAMETERS > Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals',
+        'format_settings':      'FIELD FORMATS & EVENT LOG CONGUG OVERRIDES > Zone Display & Device Tracker State format, Unit of Measure/Time & Distance format, Picture Dir Filters',
+        'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement',
+        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Route Server and Parameters, Waze History Database Parameters and Controls',
+        'special_zones':        'SPECIAL ZONES > Enter Zone Delay Time. Stationary Zone. Primary Track-from-Home Zone Override',
+        'inzone_intervals':     'DEFAULT INZONE INTERVALS > inZone Interval assigned to new devices',
 
         'select':               'SELECT > Select the parameter update form',
-        'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App; iCloud3 Devices; Enter & Request Verification Code; Change Device Order; Sensors; Action Commands',
-        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Format Parameters; Display Text As; Waze Route Distance, Time & History; inZone Intervals; Special Zones;  Other Parameters',
+        'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request Verification Code; Change Device Order; Sensors; Action Commands',
+        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Field Formats & Directories, Display Text As, Waze Route Distance/Time & History, Special Zones, Default inZone Intervals',
         'exit':                 f'EXIT AND RESTART/RELOAD ICLOUD3 (Current version is v{Gb.version})'
 }
 
@@ -41,11 +40,11 @@ MENU_KEY_TEXT_PAGE_0 = [
         ]
 MENU_PAGE_1_INITIAL_ITEM = 0
 MENU_KEY_TEXT_PAGE_1 = [
+        MENU_KEY_TEXT['tracking_parameters'],
         MENU_KEY_TEXT['format_settings'],
         MENU_KEY_TEXT['display_text_as'],
         MENU_KEY_TEXT['waze'],
         MENU_KEY_TEXT['special_zones'],
-        MENU_KEY_TEXT['tracking_parameters'],
         MENU_KEY_TEXT['inzone_intervals'],
         ]
 MENU_ACTION_ITEMS = [
@@ -62,7 +61,7 @@ ACTION_LIST_OPTIONS = {
         'select_form':              'SELECT > Select the parameter update form',
 
         'update_apple_acct':        'SELECT APPLE ACCOUNT > Update the Username/Password of the selected Apple Account, Add a new Apple Account, Remove the Apple Account',
-        'save_log_into_apple_acct': 'LOG INTO APPLE ACCT, SAVE ANY CHANGES > Log into the Apple Account, Save any configuration changes',
+        'save_log_into_apple_acct': 'SAVE CHANGES, LOG INTO APPLE ACCT > Save any configuration changes, Log into the Apple Account',
         'log_into_apple_acct':      'LOG INTO APPLE ACCT > Log into the Apple Account, Save any configuration changes',
         'stop_using_apple_acct':    'STOP USING AN APPLE ACCOUNT > Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it',
         'verification_code':        'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter (or Request) the 6-digit Apple Account Verification Code',
@@ -104,7 +103,7 @@ ACTION_LIST_OPTIONS = {
         'cancel_goto_select_device': 'BACK TO DEVICE SELECTION > Return to the Device Selection screen. Cancel any unsaved changes',
 
         'exit':                     'EXIT > Exit the iCloud3 Configure Parameters Settings, Return to HA',
-        'save':                     'SAVE > Update Configuration File, Return to the Menu screen',
+        'save':                     'SAVE > Update Configuration File, Return to the Previous screen',
         'save_stay':                'SAVE > Update Configuration File',
 
         'confirm_action_yes':       'YES > Complete the requested action',
@@ -218,6 +217,7 @@ ICLOUD_SERVER_ENDPOINT_SUFFIX_OPTIONS = {
         'cn':       'China - Use Apple iCloud Servers located in China'
         }
 MOBAPP_DEVICE_NONE_OPTIONS = {'None': 'None - The Mobile App is not installed on this device'}
+PICTURE_NONE_KEY_TEXT = {'None': 'None - Display the Device’s Icon instead of a picture'}
 LOG_ZONES_KEY_TEXT = {
         'name-zone':        ' → [year]-[zone].csv',
         'name-device':      ' → [year]-[device].csv',
@@ -403,6 +403,7 @@ TRK_FROM_HOME_ZONE_HEADER =("Normally, the Home zone is used as the primary trac
                             "location (vacation house, second home, parent's house, etc.). This is a global setting "
                             "that overrides the Primary Track-from-Home Zone assigned to an individual Device on the Update "
                             "Devices screen.")
+IC3_DIRECTORY_HEADER   =   ("Change the directory containing the Event Log Custom Card File (event-log-card.js). Set the `Gear` URL for the `HA Devices & Svcs > iCloud3 Config screen`")
 DATA_SOURCE_ICLOUD_HDR =   ("APPLE ACCOUNT > Location data is provided by devices in the Family Sharing list")
 DATA_SOURCE_MOBAPP_HDR =   ("HA MOBILE APP > Location data and zone Enter/Exit triggers are provided by the Mobile App")
 

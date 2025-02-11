@@ -58,7 +58,7 @@ def stage_1_setup_variables():
         Gb.reinitialize_icloud_devices_flag = False     # Set when no devices are tracked and iC3 needs to automatically restart
         Gb.reinitialize_icloud_devices_cnt  = 0
 
-        config_file.load_storage_icloud3_configuration_file()
+        config_file.load_icloud3_configuration_file()
         write_config_file_to_ic3log()
         start_ic3.initialize_global_variables()
         start_ic3.set_global_variables_from_conf_parameters()
@@ -176,8 +176,8 @@ def stage_3_setup_configured_devices():
 
         for username, valid_upw in Gb.username_valid_by_username.items():
             if valid_upw is False:
-                post_event( f"{EVLOG_ALERT}Apple Acct > {username}, Login failed, "
-                            f"INVALID USERNAME/PASSWORD")
+                post_event( f"{EVLOG_ALERT}Apple Acct > {get_username_base(username)}, Login failed, "
+                            f"{CRLF_DOT}INVALID USERNAME/PASSWORD")
 
         if Gb.config_track_devices_change_flag:
             pass
@@ -268,7 +268,7 @@ def stage_4_setup_data_sources():
                                         for username in Gb.username_pyicloud_503_connection_error]
             retry_at = secs_to_time(time_now_secs() + 900)
             post_event( f"{EVLOG_ALERT}Apple Acct > {list_to_str(username_base)}, Login Failed, "
-                        f"Error-503 (Apple Server Refused SRP Password Validation Request), "
+                        f"{CRLF_DOT}Error-503 (Apple Server Refused SRP Password Validation Request), "
                         f"Retry At-{retry_at}")
 
     except Exception as err:

@@ -67,8 +67,8 @@ FILTER_FIELDS = [
         'familyEligible', 'findme', 'requestInfo',
         'invitationSentToEmail', 'invitationAcceptedByEmail', 'invitationFromHandles',
         'invitationFromEmail', 'invitationAcceptedHandles',
-        'items', 'userInfo', 'prsId', 'dsid', 'dsInfo', 'webservices', 'locations',
-        'devices', 'content', 'followers', 'following', 'contactDetails',
+        'items', 'userInfo', 'prsId', 'dsid', 'dsInfo', 'webservices', 'locations', 'dslang',
+        'devices', 'content', 'followers', 'following', 'contactDetails', 'countryCode',
         'dsWebAuthToken', 'accountCountryCode', 'extended_login', 'trustToken', 'trustTokens',
         'data', 'json', 'headers', 'params', 'url', 'retry_cnt', 'retried', 'retry', '#',
         'code', 'ok', 'method', 'securityCode', 'fmly', 'shouldLocate', 'selectedDevice',
@@ -325,6 +325,8 @@ def open_ic3log_file(new_log_file=False):
         handler.addFilter(LoggerFilter)
 
         Gb.iC3Logger.addHandler(handler)
+
+    if isnot_empty(Gb.conf_general):
         Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
 
 #--------------------------------------------------------------------
@@ -424,8 +426,8 @@ def write_config_file_to_ic3log():
 
     conf_tracking_recd = Gb.conf_tracking.copy()
     # conf_tracking_recd[CONF_PASSWORD] = obscure_field(conf_tracking_recd[CONF_PASSWORD])
-    conf_tracking_recd[CONF_APPLE_ACCOUNTS] = len(Gb.conf_apple_accounts)
-    conf_tracking_recd[CONF_DEVICES] = len(Gb.conf_devices)
+    # conf_tracking_recd[CONF_APPLE_ACCOUNTS] = len(Gb.conf_apple_accounts)
+    # conf_tracking_recd[CONF_DEVICES] = len(Gb.conf_devices)
 
     Gb.trace_prefix = '_INIT_'
     indent = SP(44) if Gb.log_debug_flag else SP(26)

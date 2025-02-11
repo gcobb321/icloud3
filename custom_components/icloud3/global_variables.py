@@ -94,18 +94,20 @@ class GlobalVariables(object):
     HALogger            = None
     iC3Logger           = None
     iC3Logger_last_check_exist_secs = 0
-    log_file_filter_items = []  # items to be filtered from the log file (passwords, etc)
-    log_file_hide_items = []  # email extensions filter from apple accounts to remove in the icloud3-0.log file (messaging.py)
     prestartup_log      = ''
-    disable_log_filter  = False
 
     iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
     PyiCloud            = None    # iCloud Account service
     PyiCloudLoggingInto = None    # PyiCloud being set up  that can be used if the login fails
     PyiCloud_needing_reauth_via_ha = {} # Reauth needed sent to ha for notify msg display
     PyiCloudValidateAppleAcct = None    # A session that can be used to verify the username/password
+    PyiCloud_by_username        = {}
     PyiCloudSession_by_username = {}    # Session object for a username, set in Session so exists on an error
+
     username_pyicloud_503_connection_error = [] # Session object for a username, set in Session so exists on an error
+    log_file_filter_items = []  # items to be filtered from the log file (passwords, etc)
+    log_file_hide_items = []  # email extensions filter from apple accounts to remove in the icloud3-0.log file (messaging.py)
+    disable_log_filter  = False
 
     Waze                = None
     WazeHist            = None
@@ -158,8 +160,15 @@ class GlobalVariables(object):
     owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
     username_valid_by_username        = {}  # The username/password validation status
 
-    internet_connection_error_secs    = 0       # Time https connection error received
+    internet_connection_test          = False   # Raise ConnectionError in PyiCloud_session, set in service_handler - Show/Hide Tracking Monitors
     internet_connection_error         = False   # Set in PyiCloud_session from an http connection error. Shuts down all PyiCloud requests
+    internet_connection_error_secs    = 0       # Time https connection error received
+    internet_connection_progress_cnt  = 0       # Progress display counter
+    internet_connection_status_request_cnt  = 0       # Recheck counter
+    internet_connection_status_request_secs = 0
+    internet_connection_status_requested = False
+
+    last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
     PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename
     PyiCloud_by_username              = {}  # PyiCloud object for each Apple acct username
     PyiCloud_password_by_username     = {}  # Password for each Apple acct username

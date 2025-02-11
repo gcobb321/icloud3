@@ -7,7 +7,7 @@ from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3, ICLOUD3
                                 DEVICE_TYPE_ICONS,
                                 BLANK_SENSOR_FIELD, DEVICE_TRACKER_STATE,
                                 INACTIVE_DEVICE,
-                                NAME, FNAME, PICTURE, ALERT,
+                                NAME, FNAME, PICTURE, ICON, ALERT,
                                 DEVICE_TRACKER, LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
                                 ZONE, ZONE_DATETIME,  LAST_ZONE, FROM_ZONE, ZONE_FNAME,
                                 BATTERY, BATTERY_LEVEL,
@@ -65,8 +65,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     try:
         if Gb.conf_file_data == {}:
             start_ic3.initialize_directory_filenames()
-            # config_file.load_storage_icloud3_configuration_file()
-            await config_file.async_load_storage_icloud3_configuration_file()
+            # config_file.load_icloud3_configuration_file()
+            await config_file.async_load_icloud3_configuration_file()
 
         try:
             Gb.conf_devicenames = [conf_device[CONF_IC3_DEVICENAME]
@@ -330,7 +330,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
     @property
     def icon(self):
         """Return an icon based on the type of the device."""
-        return DEVICE_TYPE_ICONS.get(self.device_type, "mdi:cellphone")
+        return self._get_sensor_value(ICON)
 
     @property
     def extra_state_attributes(self):
@@ -385,11 +385,14 @@ class iCloud3_DeviceTracker(TrackerEntity):
 
             extra_attrs[NAME]                    = self._get_sensor_value(NAME)
             picture                              = self._get_sensor_value(PICTURE)
-            if instr(picture,'None'):
+            if picture in ['', 'None', BLANK_SENSOR_FIELD]:
                 extra_attrs['picture_file']      = 'None'
+                extra_attrs.pop(PICTURE, None)
             else:
                 extra_attrs[PICTURE]             = picture
                 extra_attrs['picture_file']      = self._get_sensor_value(PICTURE)
+
+            extra_attrs['icon_mdi:imagename']    = self._get_sensor_value(ICON)
             extra_attrs['track_from_zones']      = self.extra_attrs_track_from_zones
             extra_attrs['primary_home_zone']     = self.extra_attrs_primary_home_zone
             extra_attrs['away_time_zone_offset'] = self.extra_attrs_away_time_zone_offset
@@ -408,7 +411,6 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs[WAZE_DISTANCE]  = self._get_sensor_value(WAZE_DISTANCE)
             extra_attrs[DISTANCE_TO_DEVICES] = self._get_sensor_value(DISTANCE_TO_DEVICES)
             extra_attrs[ZONE_DATETIME]  = self._get_sensor_value(ZONE_DATETIME)
-            #extra_attrs[LAST_UPDATE]    = self._get_sensor_value(LAST_UPDATE_DATETIME)
             extra_attrs[NEXT_UPDATE]    = self._get_sensor_value(NEXT_UPDATE_DATETIME)
             extra_attrs['last_timestamp']= f"{self._get_sensor_value(LAST_LOCATED_SECS)}"
 
