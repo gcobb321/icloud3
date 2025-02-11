@@ -203,10 +203,6 @@ class iCloud3:
         if Gb.last_PyiCloud_request_secs > 0 and secs_since(Gb.last_PyiCloud_request_secs) > 60:
             Gb.internet_connection_error = True
 
-        # if (Gb.internet_connection_error is False
-        #         and Gb.internet_connection_error_secs == 0):
-        #     pass
-        # else:
         if (Gb.internet_connection_error
                 or Gb.internet_connection_error_secs > 0):
             self._handle_internet_connection_error()
@@ -1061,9 +1057,11 @@ class iCloud3:
 
         if (Device.isin_zone
                 and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
-            return (f"Arrived {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
-                    f"at {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
-                    f"Update {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
+            special_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} "
+                    f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}")
+            #if Device.away_time_zone_offset == 0:
+            special_msg += f", Update {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}"
+            return special_msg
 
         if Device.FromZone_TrackFrom.dir_of_travel != AWAY_FROM:
             if Device.FromZone_TrackFrom.waze_time > 0:

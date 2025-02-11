@@ -1634,7 +1634,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         Update the configuration parameters and write to the icloud3.configuration file
 
         This is used for updating the devices, Apple account, and some profile items
-        in the config file That requires a n iCloud3 restart
+        in the config file That requires an iCloud3 restart
 
         Parameters:
             update_config_flag - The config_tracking, conf_devices or conf_apple_accounts
@@ -1692,6 +1692,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if (Gb.display_zone_format != user_input[CONF_DISPLAY_ZONE_FORMAT]):
             list_add(self.config_parms_update_control, 'special_zone')
 
+        if Gb.conf_general[CONF_TIME_FORMAT] != user_input[CONF_TIME_FORMAT]:
+            self.away_time_zone_hours_key_text = {}
+            Gb.time_format_12_hour = user_input[CONF_TIME_FORMAT].startswith('12')
+            Gb.time_format_24_hour = not Gb.time_format_12_hour
+
+
         return user_input
 
 #-------------------------------------------------------------------------------------------
@@ -1734,6 +1740,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         dup_devices = [devicename   for devicename in user_input[CONF_AWAY_TIME_ZONE_2_DEVICES]
                                     if devicename in user_input[CONF_AWAY_TIME_ZONE_1_DEVICES] and devicename != 'none']
         if dup_devices != [] : self.errors[CONF_AWAY_TIME_ZONE_2_DEVICES] = 'away_time_zone_dup_devices_2'
+
+        list_add(self.config_parms_update_control, user_input[CONF_AWAY_TIME_ZONE_1_DEVICES])
+        list_add(self.config_parms_update_control, user_input[CONF_AWAY_TIME_ZONE_2_DEVICES])
 
         return user_input
 
@@ -3292,7 +3301,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         self.header_msg = 'conf_updated'
         if only_non_tracked_field_updated:
-            list_add(self.config_parms_update_control, 'devices')
+            list_add(self.config_parms_update_control, ['devices', devicename])
         else:
             list_add(self.config_parms_update_control, ['tracking', 'restart'])
 

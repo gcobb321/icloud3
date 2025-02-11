@@ -21,7 +21,7 @@ from ..helpers.common       import (instr, is_empty, isnot_empty, list_to_str, l
                                     get_username_base, )
 from ..helpers.messaging    import (broadcast_info_msg,
                                     post_event, post_error_msg, log_error_msg, post_startup_alert,
-                                    post_monitor_msg, post_internal_error,
+                                    post_monitor_msg, post_internal_error, post_evlog_greenbar_msg,
                                     write_ic3log_recd,
                                     log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_rawdata,
                                     _evlog, _log, more_info, format_filename,
@@ -547,6 +547,7 @@ def stage_7_initial_locate():
     post_event(f"{EVLOG_IC3_STARTING}{ICLOUD3_VERSION_MSG} > Start up Complete")
 
     for Device in Gb.Devices:
+        post_evlog_greenbar_msg(f"Initial Locate > {Device.fname_devicename}")
         Device.update_sensors_flag = True
         Device.icloud_initial_locate_done = True
 

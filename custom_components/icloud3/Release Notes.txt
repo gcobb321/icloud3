@@ -7,18 +7,21 @@ v3.1.5b1 Removed, Replaced with v3.1.5b2 [here](https://github.com/gcobb321/iclo
 
 
 
-### Release Notes - v3.1.5b3 (1/31/2025)
-#### 🐛 Bug Fixes
-- A location request was sent incorrectly to Apple when logging into or adding a new Apple Account. This caused an incorrect _Invalid Username/Password_ message to be displayed and communication with the Apple account stopped.
-- The _Enter/Request Verification Code_ screen was not displaying correctly if there were no Apple accounts that needed to be verified or the Apple account was deleted.
-- Waze History time/distance recalculation will no longer run again at midnight if it was run immediately.  An update that is running can now be terminated.
-- Fixed a problem creating a 'Server Error 500' loading the iCloud3 integration for the first time. 
-
+### Release Notes - v3.1.5 (2/11/2025)
 #### 🎉 Improvements and New Features
 - Improved - Internet connections errors are now detected and monitored. iCloud3 will pause all tracking until the Internet is back up. A status message is displayed in the Event log and a message will be sent to an iCloud3 device using the Mobile App that Home Assistant is Offline.
 - Improved - Renamed and reorganized the _Configure > Tracking Parameters_ screen and _Field Formats & Event Log Parmaeters_ screens.
 - New - The _Picture Directory Filter_ can now be updated from the _Update Device_ screen _Picture Selection List_.
 - New - If no picture is selected for the Device (=None), the Device's icon that will be displayed can now be selected from Home Assistant's 'mdi:' icon image list (default=mdi:account).
+
+#### 🐛 Bug Fixes
+- A location request was sent incorrectly to Apple when logging into or adding a new Apple Account. This caused an incorrect _Invalid Username/Password_ message to be displayed and communication with the Apple account stopped.
+- The _Enter/Request Verification Code_ screen was not displaying correctly if there were no Apple accounts that needed to be verified or the Apple account was deleted.
+- Waze History time/distance recalculation will no longer run again at midnight if it was run immediately.  An update that is running can now be terminated.
+- Fixed a problem creating a 'Server Error 500' loading the iCloud3 integration for the first time.
+- Fixed a problem with the 'Away Time Zone' where the times displayed in the Event Log were were off by 12-hours. A Clock was also added to the device's name at the top of the Event Log when it is in an Away Time Zone.
+
+
 
 
 

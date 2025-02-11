@@ -1,7 +1,7 @@
 {
   "domain": "icloud3",
   "name": "iCloud3 v3",
-  "after_dependencies": ["recorder", "ios"],
+  "after_dependencies": ["lovelace", "recorder", "ios"],
   "codeowners": ["@gcobb321"],
   "config_flow": true,
   "dependencies": [],

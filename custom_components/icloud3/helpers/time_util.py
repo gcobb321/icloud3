@@ -587,43 +587,42 @@ def adjust_time_hour_value(hhmmss, hh_adjustment):
     Return:
         new time value in the same format as the Input hhmmss time
     '''
-
-    if hh_adjustment == 0 or hhmmss == HHMMSS_ZERO or hhmmss == HHMM_ZERO:
-        return hhmmss
-
-    hhmm_colon = hhmmss.find(':')
-    if hhmm_colon == -1: return hhmmss
-
     try:
+        if hh_adjustment == 0 or hhmmss == HHMMSS_ZERO or hhmmss == HHMM_ZERO:
+            return hhmmss
+
+        if hhmmss.find(':') == -1: return hhmmss
+
+        if Gb.time_format_24_hour:
+            hh = int(hhmmss[0:2]) + hh_adjustment
+            if hh <= 0:  hh += 24
+            elif hh >= 24: hh -=24
+            return f"{hh:0>2}{hhmmss[2:]}"
+
+        has_ap_flag = instr('apAP', hhmmss[-1])
+        ap = hhmmss[-1].lower() if has_ap_flag else ''
+
+        if hhmmss[1:2] == ':': hhmmss = f"0{hhmmss}"
         hhmm_flag = len(hhmmss) < 7
-        if hhmm_flag:
-            _hhmmss = f"{hhmmss}:00" if Gb.time_format_24_hour else f"{hhmmss[:5]}:00{_ap(hhmmss)}"
-        else:
-            _hhmmss = hhmmss
+        _hhmmss = f"{hhmmss[:5]}:99{ap}" if hhmm_flag else hhmmss
+        hhmmss24 = time_to_24hrtime(_hhmmss)
+
+        hh = int(hhmmss24[0:2]) + hh_adjustment
+        if   hh <= 0:  hh += 24
+        elif hh >= 24: hh -=24
+        ap = '' if has_ap_flag is False else 'a' if hh < 12 or hh == 24 else 'p'
+
+        adj_hhmmss24 = f"{hh:0>2}{hhmmss24[2:8]}"
+        adj_hhmmss   = time_to_12hrtime(adj_hhmmss24).replace(':99', '')
+        if has_ap_flag is False: adj_hhmmss = adj_hhmmss.replace('a', '').replace('p', '')
+
+        return adj_hhmmss
+
     except Exception as err:
-        log_exception(err)
+        pass
+        # log_exception(err)
 
-    hhmmss24 = time_to_24hrtime(_hhmmss)
-    if hhmmss24[1:2] == ':':
-        hhmmss24 = f"0{hhmmss24}"
-    hh = int(hhmmss24[0:2]) + hh_adjustment
-    if hh <= 0:
-        hh += 24
-    elif hh >= 24:
-        hh -=24
-    if hh > 12 and Gb.time_format_12_hour:
-        hh -= 12
-
-    hhmmss24 = f"{hh:0>2}{hhmmss24[2:8]}"
-    adj_hhmmss = time_to_12hrtime(hhmmss24)
-
-    try:
-        if hhmm_flag:
-            adj_hhmmss = f"{adj_hhmmss[:-4]}{_ap(adj_hhmmss)}"
-    except Exception as err:
-        log_exception(err)
-
-    return adj_hhmmss
+        return hhmmss
 
 #--------------------------------------------------------------------
 def timestamp_to_time_utcsecs(utc_timestamp) -> int:
@@ -640,9 +639,9 @@ def timestamp_to_time_utcsecs(utc_timestamp) -> int:
     return hhmmss
 
 #--------------------------------------------------------------------
-def _has_ap(hhmmss):
-    ''' See if  the time ends in a or p (12-hour time) '''
-    return hhmmss[-1].lower() in ['a', 'p']
+# def _has_ap(hhmmss):
+#     ''' See if  the time ends in a or p (12-hour time) '''
+#     return hhmmss[-1].lower() in ['a', 'p']
 
-def _ap(hhmmss):
-    return hhmmss[-1].lower() if _has_ap(hhmmss) else ''
+# def _ap(hhmmss):
+#     return hhmmss[-1].lower() if _has_ap(hhmmss) else ''

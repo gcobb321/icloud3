@@ -44,7 +44,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 CONF_CENTER_IN_ZONE, CONF_DISCARD_POOR_GPS_INZONE,
                                 CONF_WAZE_USED, CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
                                 CONF_WAZE_REALTIME, CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
-                                CONF_WAZE_HISTORY_TRACK_DIRECTION, 
+                                CONF_WAZE_HISTORY_TRACK_DIRECTION,
                                 CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
                                 CONF_STAT_ZONE_BASE_LATITUDE,
                                 CONF_STAT_ZONE_BASE_LONGITUDE, CONF_DISPLAY_TEXT_AS,
@@ -175,7 +175,7 @@ def handle_config_parms_update():
         Gb.EvLog.setup_event_log_trackable_device_info()
 
         _refresh_all_devices_sensors()
-        _display_all_devices_config_info()
+        _display_all_devices_config_info(config_parms_update_control)
 
         stage_title = f'Device Configuration Summary'
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
@@ -197,14 +197,20 @@ async def update_lovelace_resource_event_log_js_entry(new_evlog_dir=None):
         generate a broadcast message.
 
     Resources are stored as part of the StorageCollection:
-        Resources object = Gb.hass.data["lovelace"]["resources"]
+        Resources object = Gb.hass.data["lovelace"].resources
         Add Resource    - Resources.async_create_item({'res_type': 'module', 'url': evlog_url})
         Append Resource - Resources.data.append({'type': 'module', 'url': evlog_url})
         Update Resource - Resources.async_update_item(evlog_resource_id, {'url': evlog_url})
         Delete Resource - Resources.async_delete_item((evlog_resource_id)
     '''
+    Resources = None
     try:
+        # Changed in HA 2025.2
+        Resources = Gb.hass.data['lovelace'].resources
+    except:
         Resources = Gb.hass.data["lovelace"]["resources"]
+
+    try:
         if Resources:
             if not Resources.loaded:
                 await Resources.async_load()
@@ -264,7 +270,8 @@ async def update_lovelace_resource_event_log_js_entry(new_evlog_dir=None):
                             f'<br>4. Select the Home Assistant tab, then Refresh the display')
                 service_handler.set_ha_notification(title, message, issue=False)
 
-    except:
+    except Exception as err:
+        log_exception(err)
         log_error_msg(  "iCloud3 > An unknown error was encountered updating the Lovelace "
                         "Resources. Lovelace probably has not finished loading or is not "
                         "available. The Lovelace for the iCloud3 Event Log card will have to "
@@ -2473,8 +2480,25 @@ def setup_trackable_devices():
         post_event("Data Source > Mobile App not used")
 
 #------------------------------------------------------------------------------
-def _display_all_devices_config_info():
+def _display_all_devices_config_info(selected_devicenames=None):
+    '''
+    Display the devices configuration in the Event Log.
+
+    selected_devicenames:
+        - A list of devices to display in the Event Log
+        - If updating devices in config_flow, the updated devicename is in config_parms_update_control field that is
+            controlling the iCloud3 update/restart. Only display the updated device
+        - 'all' or None - Display all devices
+    '''
+
     for devicename, Device in Gb.Devices_by_devicename.items():
+        if (selected_devicenames is None
+                or 'all' in selected_devicenames
+                or devicename in selected_devicenames):
+            pass
+        else:
+            continue
+
         Device.display_info_msg(f"Set Trackable Devices > {devicename}")
         if Device.verified_flag:
             tracking_mode = ''

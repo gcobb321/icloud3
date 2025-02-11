@@ -227,8 +227,9 @@ class EventLog(object):
     def format_evlog_device_fname(self, Device):
         # verified = Gb.evlog_alert_by_devicename.get(Device.devicename, '')
         # verified = f"{RED_X} " if Device.verified_flag is False else ''
+        tz_offset = '' if Device.away_time_zone_offset == 0 else f" {CLOCK_FACE}"
         tracked  = '' if Device.is_tracked else f" {circle_letter('m')}"
-        return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}"
+        return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}{tz_offset}"
 
 #------------------------------------------------------
     def post_event(self, devicename_or_Device, event_text='+'):
@@ -829,10 +830,6 @@ class EventLog(object):
     def _apply_home_to_away_time_zone_update(elr_time_text, device_away_time_zone_offset):
         '''
         Change the Home zone time in the elr_text to the Away Zone time if needed.
-        A clock face 🕓 is added to the end of the 'Results >' in icloud3_main at the end of
-        the tracking update with the HA-Time: offset to show an Away Time Zone is being displayed.
-        Remove it from the event recd if it is being reset.
-
         Return [elr_time, elr_text]
         '''
         if device_away_time_zone_offset == 0:
@@ -840,8 +837,6 @@ class EventLog(object):
 
         elr_time, elr_text = elr_time_text
         if device_away_time_zone_offset == 0:
-            if instr(elr_text, CLOCK_FACE):
-                elr_text = elr_text.split(CLOCK_FACE)[0]
             return [elr_time, elr_text]
 
         elr_time = adjust_time_hour_value(elr_time, device_away_time_zone_offset)
@@ -850,9 +845,8 @@ class EventLog(object):
 
         # Add a note that the Away Time is displayed
         if elr_text.startswith(EVLOG_UPDATE_END):
-            plus_sign = '+' if device_away_time_zone_offset > 0 else '-'
-            elr_text += (  f"{NBSP4}{CLOCK_FACE} "
-                            f"{plus_sign}{abs(device_away_time_zone_offset)}h")
+            plus_minus_sign = '+' if device_away_time_zone_offset > 0 else '-'
+            elr_text += f" ({plus_minus_sign}{abs(device_away_time_zone_offset)}hrs)"
 
         return [elr_time, elr_text]
 
