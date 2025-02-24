@@ -7,6 +7,7 @@
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "An error occurred logging into the Apple Account. Verify the username and password.",
       "reauth_successful": "The reauthentication has been successfully completed",
+      "verification_code_requested": "A New Apple ID Verification Code was requested",
       "verification_code_accepted": "✅ The Apple ID Verification Code was accepted. Reauthentication is complete",
       "verification_code_cancelled": "The Apple ID Verification was cancelled",
       "update_cancelled": "Update Cancelled",
@@ -17,7 +18,7 @@
     "error": {
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
       "verification_code_send_error": "Failed to send the Apple ID Verification Code",
-      "verification_code_requested2": "The Apple ID Verification Code was requested",
+      "verification_code_requested": "A New Apple ID Verification Code was requested",
       "verification_code_accepted": "The Apple ID Verification Code was accepted. Reauthentication is complete",
       "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
       "verification_code_needed": "The Apple Account Verification Code is needed",
@@ -82,22 +83,24 @@
       "icloud_acct_login_error_user_pw": "❌ Could not log into the Apple Account, Invalid Username or Password",
       "icloud_acct_login_error_other": "❌ Login Error, Other Error or iCloud is not Available",
       "icloud_acct_login_error_503": "🍎 Apple is delaying displaying a new Verification code to prevent Suspicious Activity, probably due to too many requests. It should be displayed in about 20-30 minutes. Restart HA if it is not displayed",
+      "icloud_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
+      "icloud_acct_login_error_302_cn": "Apple Acct Server may be China but CHINA was not selected",
+      "icloud_acct_login_error_302_usa": "China was selected but Apple Server Location may be USA",
       "icloud_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into.",
       "icloud_acct_dup_username_error": "Error: Username is being used by another Data Source entry",
       "icloud_acct_username_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
       "icloud_acct_not_available": "❌ Login Failed, Apple Account is not Available",
-      "icloud_acct_not_logged_into": "Not logged into the Apple Account",
+      "icloud_acct_not_logged_into": "The Apple Account(s) are not logged into",
       "icloud_acct_updated_not_logged_into": "Apple Acct info was saved, Login Error, Will Complete Login Later",
-      "icloud_acct_data_source_warning": "Apple Acct is not selected as a data source, username/password are setup",
+      "icloud_acct_data_source_warning": "Warning: Apple Accts have been set up but are not used as a data source",
       "icloud_acct_not_set_up": "No Apple Accts are set up. See `Data Sources > Apple Acct & Mobile App` screen",
       "icloud_acct_parm_error": "Apple Account parameter error. Update it on the `Data Sources > Apple Account & Mobile App` screen",
-      "icloud_acct_no_data_source": "❌ No Data Source has been selected (Apple iCloud Account or Mobile App)",
+      "icloud_acct_no_data_source": "❌ No Data Sources have been selected (Apple Account or Mobile App)",
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id and name on the device (Settings > General > About) can not be exactly the same (letters & case)",
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
       "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
 
-      "verification_code_requested": "The Apple Account Verification Code was requested, BROWSER REFRESH MAY BE NEEDED",
-      "verification_code_requested2": "The Apple Account Verification Code was requested",
+      "verification_code_requested": "A New Apple ID Verification Code was requested",
       "verification_code_needed": "One of the Apple Accounts has requested a Verification Code",
       "verification_code_accepted": "✅ The Apple Account Verification Code was accepted",
       "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
@@ -217,13 +220,13 @@
         }
       },
       "data_source": {
-        "title": "Data Source - Apple Account, Mobile App",
+        "title": "Apple Account & Mobile App - Data Source",
         "description": "The data sources provide location and other information iCloud3 uses to track the iDevice.",
         "data": {
-          "data_source": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DATA SOURCES",
-          "data_source_icloud": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DATA SOURCES",
-          "data_source_mobapp": "",
-          "apple_accts": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ICLOUD ACCOUNTS",
+          "data_source": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DATA SOURCE",
+          "data_source_mobapp": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MOBILE APP INTEGRATION",
+          "data_source_apple_acct": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ICLOUD ACCOUNTS",
+          "apple_accts": " ",
           "action_items":       "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
@@ -235,13 +238,14 @@
           "account_selected": "ACCOUNT SELECTED",
           "username": "USERNAME - Email address/username used to sign in to the Apple Account",
           "password": "PASSWORD - Account Password",
+          "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
           "totp_key": "TOTP KEY - Time Based One-Time Password Key used to generate the 6-digit authentication code",
-          "locate_all": "ALWAYS LOCATE ALL DEVICES - Locate all the devices in the Apple Account, including those in the Family list. Unchecked will only locate the Family list devices when they are being updated (default)",
-          "url_suffix_china": "CHINA USERS - Use Apple iCloud Web Servers located in China (.cn URL suffix)",
+          "locate_all": "LOCATE ALL DEVICES (Only applies with multiple Apple Accounts)",
+          "url_suffix_china": "CHINA USERS - Use Apple iCloud Servers located in China (.cn URL suffix)",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-          "locate_all": "Devices fall into two categories, your devices and  everything else. Locating all devices will get their location with fewer internet calls that might take slightly longer while Apple locates them, especially if you have a lot of devices. Not doing this results in more internet calls that are faster."
+          "locate_all": "ENABLED→Locate the Owner's & other Family members devices in the Apple Acct. DISABLED→Locate the Owner's devices. Do not locate other Family members devices."
         }
       },
       "delete_apple_acct": {
@@ -413,7 +417,7 @@
         }
       },
       "format_settings": {
-        "title": "FIELD FORMATS & EVENT LOG  OVERRIDES",
+        "title": "FIELD FORMATS & OTHER PARAMETERS",
         "description": "Tracking activity, results and information messages are displayed in the Event log, sensors and device_tracker entities for tracked and monitored devices.\n\nThis screen us used to specify how these results should be displayed.",
         "data": {
           "display_zone_format": "EVENT LOG ZONE DISPLAY NAME - How the Zone name is displayed in sensors and the Event Log",
@@ -422,6 +426,7 @@
           "unit_of_measurement": "UNIT OF MEASUREMENT - How distance fields are displayed in sensors and in the Event Log",
           "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
           "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display GPS-(22.32771, -76.33073/±35m) instead of GPS-/±35m in the Event Log",
+          "apple_server_location_needed": "APPLE SERVER LOCATION - Display Apple Server Location Selection field on Apple Acct Username/Password screen (China, Hong Kong)",
           "evlog_header": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EVENT LOG SYSTEM OVERRIDES",
           "picture_www_dirs": "PICTURE DIRECTORY FILTER - Select the directories containg Device image files (.png, .jpg)",
           "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",

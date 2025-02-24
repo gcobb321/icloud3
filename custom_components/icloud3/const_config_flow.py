@@ -9,7 +9,7 @@ MENU_PAGE_TITLE = [
         'Parameters Menu'
         ]
 MENU_KEY_TEXT = {
-        'data_source':          'DATA SOURCES > APPLE ACCOUNT & MOBILE APP > Select Location Data Sources, Apple Account Username/Password',
+        'data_source':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
         'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
         'verification_code':    'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter or Request the 6-digit Apple Account Verification Code',
         'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
@@ -18,7 +18,7 @@ MENU_KEY_TEXT = {
         'tools':                'TOOLS > Log Level, Delete Apple Acct & Device Assignment, Delete Apple Acct Cookie & iCloud3 Config files, Repair sensor ‘_2’ entity name errors, Restart HA/Reload iCloud3',
 
         'tracking_parameters':  'TRACKING PARAMETERS > Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals',
-        'format_settings':      'FIELD FORMATS & EVENT LOG CONGUG OVERRIDES > Zone Display & Device Tracker State format, Unit of Measure/Time & Distance format, Picture Dir Filters',
+        'format_settings':      'FIELD FORMATS & OTHER PARAMETERS > Zone Display & Device Tracker State formats, Unit of Measure/Time & Distance formats, Picture Dir Filters, Event Log Overrides, etc',
         'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement',
         'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Route Server and Parameters, Waze History Database Parameters and Controls',
         'special_zones':        'SPECIAL ZONES > Enter Zone Delay Time. Stationary Zone. Primary Track-from-Home Zone Override',
@@ -207,14 +207,16 @@ DATA_SOURCE_OPTIONS = {
         'iCloud':   'APPLE ACCOUNT - Location data is provided for devices in the Family Sharing List',
         'MobApp':   'HA MOBILE APP - Location data and zone enter/exit triggers from devices with the Mobile App'
         }
+
+# Apple Server Endpoint value - Add onto the Server URL in PyiCloud_ic3 if this starts with a period ('.')
+APPLE_SERVER_LOCATION_OPTIONS = {
+        'usa':   'USA/OTHER - The Apple Server does not require a URL Endpoint suffix',
+        '.cn':   'CHINA - Add `.cn` to the Apple Server URL Endpoint'
+        }
 DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS = {
         'reassign_devices': 'REASSIGN DEVICES > Search for another Apple Account with this device device and reassign it to that Apple Account. Set it to  Inactive if one is not found',
         'delete_devices':   'DELETE DEVICES > Delete all devices that are using this Apple Account',
         'set_devices_inactive': 'SET DEVICES TO INACTIVE >  Set the devices using this Apple Account to Inactive. They will be assigned to another Apple Account later'
-        }
-ICLOUD_SERVER_ENDPOINT_SUFFIX_OPTIONS = {
-        'none':     'Use normal Apple iCloud Servers',
-        'cn':       'China - Use Apple iCloud Servers located in China'
         }
 MOBAPP_DEVICE_NONE_OPTIONS = {'None': 'None - The Mobile App is not installed on this device'}
 PICTURE_NONE_KEY_TEXT = {'None': 'None - Display the Device’s Icon instead of a picture'}
@@ -382,6 +384,10 @@ ACTIONS_ACTION_ITEMS = {
         "restart_ha":       "RESTART HA, RELOAD ICLOUD3 > Restart HA or Reload iCloud3",
         "return":           "MAIN MENU > Return to the Main Menu"
 }
+
+# Section Headers used on various forms
+MOBILE_APP_USED_HEADER      = 'Monitor the Mobile App Integration devices location data and zone enter/exit triggers'
+APPLE_ACCT_USED_HEADER      = 'Request location data from the devices in the Apple Account`s Family Sharing List'
 RARELY_UPDATED_PARMS        = 'rarely_updated_parms'
 RARELY_UPDATED_PARMS_HEADER = ("➤ RARELY USED PARAMETERS - Display inZone & Fixed Interval, Track-from-Zone and Track-from-Home Zone Override parameters the parameters")
 WAZE_USED_HEADER =         ("The Waze Route Service provides the travel time and distance information from your "

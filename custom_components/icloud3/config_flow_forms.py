@@ -3,7 +3,7 @@ from homeassistant.helpers          import (selector, entity_registry as er, dev
                                             area_registry as ar,)
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-import pyotp
+# import pyotp
 import time
 from datetime           import datetime
 
@@ -16,6 +16,7 @@ from .const             import (RED_ALERT, LINK, RLINK, RARROW,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_BTNCONFIG_URL,
                                 CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_TOTP_KEY,
                                 CONF_DATA_SOURCE, CONF_VERIFICATION_CODE,
+                                CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                 CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
                                 CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                                 CONF_PICTURE, CONF_ICON, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
@@ -29,7 +30,7 @@ from .const             import (RED_ALERT, LINK, RLINK, RARROW,
                                 CONF_DISTANCE_BETWEEN_DEVICES,
                                 CONF_WAZE_USED, CONF_WAZE_SERVER, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
                                 CONF_WAZE_REALTIME, CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
-                                CONF_WAZE_HISTORY_TRACK_DIRECTION,  
+                                CONF_WAZE_HISTORY_TRACK_DIRECTION,
                                 CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
                                 CONF_DISPLAY_TEXT_AS,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
@@ -226,11 +227,12 @@ def form_data_source(self):
     self.actions_list = []
     self.actions_list.extend(APPLE_ACCOUNT_ACTIONS)
     self.actions_list.extend(ACTION_LIST_ITEMS_BASE)
-    if self.username != '' and self.password != '' and instr(self.data_source, ICLOUD) is False:
-        self.errors['base'] = 'icloud_acct_data_source_warning'
 
     default_action = self.actions_list_default if self.actions_list_default else 'save'
     self.actions_list_default = ''
+
+    mobile_app_used_default = [MOBILE_APP_USED_HEADER] if instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP) else []
+    apple_acct_used_default = [APPLE_ACCT_USED_HEADER] if instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD) else []
 
     # Build list of all apple accts
     self.apple_acct_items_list= [apple_acct_item
@@ -248,15 +250,22 @@ def form_data_source(self):
     if default_item not in self.apple_acct_items_displayed:
         default_item = self.apple_acct_items_displayed[0]
 
-    if is_empty(Gb.devicenames_x_mobapp_dnames):
-        mobapp_interface.get_mobile_app_integration_device_info()
-    if is_empty(Gb.devicenames_x_mobapp_dnames):
-        self.errors['data_source_mobapp'] = 'mobile_app_error'
+    if instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP):
+        if is_empty(Gb.devicenames_x_mobapp_dnames):
+            mobapp_interface.get_mobile_app_integration_device_info()
+        # if is_empty(Gb.devicenames_x_mobapp_dnames):
+        #     self.errors['data_source_mobapp'] = 'mobile_app_error'
 
     return vol.Schema({
-        vol.Optional('data_source',
-                    default=Gb.conf_tracking[CONF_DATA_SOURCE].replace(' ', '').split(',')):
-                    cv.multi_select(DATA_SOURCE_OPTIONS),
+        vol.Optional('data_source_mobapp',
+                    default=mobile_app_used_default):
+                    cv.multi_select([MOBILE_APP_USED_HEADER]),
+        # vol.Optional('data_source',
+        #             default=Gb.conf_tracking[CONF_DATA_SOURCE].replace(' ', '').split(',')):
+        #             cv.multi_select(DATA_SOURCE_OPTIONS),
+        vol.Optional('data_source_apple_acct',
+                    default=apple_acct_used_default):
+                    cv.multi_select([APPLE_ACCT_USED_HEADER]),
         vol.Optional('apple_accts',
                     default=default_item):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -307,8 +316,6 @@ def form_update_apple_acct(self):
     else:
         password_selector = selector.TextSelector(selector.TextSelectorConfig(type='password'))
 
-    url_suffix_china = (Gb.icloud_server_endpoint_suffix == 'cn')
-
     if (self.add_apple_acct_flag is False
             and username not in Gb.PyiCloud_by_username):
         self.errors['base'] = 'icloud_acct_not_logged_into'
@@ -333,19 +340,21 @@ def form_update_apple_acct(self):
         # vol.Optional(CONF_TOTP_KEY,
         #             default='For future use in supporting hardware keys (YubiKey)'):
         #             selector.TextSelector(),
-        vol.Optional('locate_all',
-                    default=locate_all):
-                    cv.boolean,
+
         })
 
-    if self.aa_idx == 0:
+    if Gb.country_code in ['cn', 'hk'] or Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED]:
         schema.update({
-            vol.Optional('url_suffix_china',
-                    default=url_suffix_china):
-                    cv.boolean,
+            vol.Required(CONF_SERVER_LOCATION,
+                    default=self._option_parm_to_text(CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(APPLE_SERVER_LOCATION_OPTIONS), mode='dropdown')),
         })
 
     schema.update({
+        vol.Optional('locate_all',
+                    default=locate_all):
+                    cv.boolean,
         vol.Required('action_items',
                     default=self.action_default_text('save_log_into_apple_acct')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -931,6 +940,10 @@ def form_format_settings(self):
                     cv.multi_select(six_item_list(self.www_directory_list)),
         vol.Required(CONF_DISPLAY_GPS_LAT_LONG,
                     default=Gb.conf_general[CONF_DISPLAY_GPS_LAT_LONG]):
+                    # cv.boolean,
+                    selector.BooleanSelector(),
+        vol.Required(CONF_SERVER_LOCATION_NEEDED,
+                    default=Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED]):
                     # cv.boolean,
                     selector.BooleanSelector(),
 

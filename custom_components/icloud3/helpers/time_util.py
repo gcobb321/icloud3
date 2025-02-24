@@ -20,6 +20,12 @@ def time_now_secs():
     return int(time.time())
 
 #--------------------------------------------------------------------
+
+def time_now_utc_secs():
+    ''' now ==> utc time zone (secs)'''
+    return time_now_secs() - Gb.time_zone_offset_secs
+
+#--------------------------------------------------------------------
 def time_now():
     ''' now --> epoch/unix 10:23:45 '''
     return str(datetime.fromtimestamp(int(time.time())))[11:19]
@@ -55,6 +61,7 @@ def datetime_now(datetime_struct=False):
         return datetime.fromtimestamp(int(time.time()))
     else:
         return str(datetime.fromtimestamp(int(time.time())))
+
 
 #--------------------------------------------------------------------
 def smh_time(time):
@@ -500,10 +507,11 @@ def calculate_time_zone_offset():
         Gb.time_zone_offset_str  = f"{local_zone_offset[0:3]}:{local_zone_offset[3:]}"
         Gb.time_zone_offset_secs = local_zone_offset_secs
 
-        post_event( f"Local Time Zone Offset > "
-                    f"UTC{Gb.time_zone_offset_str} hrs, "
-                    f"{local_zone_name}, "
-                    f"Country Code-{Gb.country_code.upper()}")
+        post_event( f"Local Time Zone > "
+                    f"{local_zone_name} "
+                    f"(UTC{Gb.time_zone_offset_str} hrs), "
+                    f"Country Code-{Gb.country_code.upper()}, "
+                    f"Apple Server Time-{apple_server_time()}")
 
     except Exception as err:
         internal_error_msg(err, 'CalcTimeOffset')
@@ -637,6 +645,21 @@ def timestamp_to_time_utcsecs(utc_timestamp) -> int:
         hhmmss = hhmmss[1:]
 
     return hhmmss
+
+#--------------------------------------------------------------------
+def apple_server_time():
+    '''
+    Return the Apple Server PST Time
+        - Feb 17, 2025, 8:19 AM PST
+        - Feb 17, 2025, 08:19 PST
+    '''
+    pst_secs = time_now_utc_secs() + Gb.time_zone_offset_secs_PST
+    time_struct = time.localtime(pst_secs)
+
+    if Gb.time_format_12_hour:
+        return time.strftime("%b %d, %Y, %-I:%M %p PST", time_struct)
+    else:
+        return time.strftime("%b %d, %Y, %H:%M PST", time_struct)
 
 #--------------------------------------------------------------------
 # def _has_ap(hhmmss):

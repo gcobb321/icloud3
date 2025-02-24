@@ -23,7 +23,7 @@ from ..global_variables     import GlobalVariables as Gb
 from ..helpers.common       import (instr, is_empty, isnot_empty, list_add, list_del, )
 from ..helpers.file_io      import (save_json_file, )
 from ..helpers.time_util    import (time_now,  time_now_secs, secs_to_time, format_time_age, )
-from ..helpers.messaging    import (_log, _evlog,
+from ..helpers.messaging    import (_log, _evlog, post_error_msg,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_rawdata, log_exception, log_rawdata_unfiltered, filter_data_dict, )
 
@@ -201,13 +201,25 @@ class PyiCloudSession(Session):
             Gb.last_PyiCloud_request_secs = 0
             #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
 
+        except (requests.exceptions.SSLError,) as err:
+            post_error_msg( f"iCloud3 Error > An SSL error occurred connecting to Apple Servers, "
+                            f"You may not be authorized access > "
+                            f"iCloudServerSuffix-`{Gb.icloud_server_suffix}`, "
+                            f"Error-{err}")
+
+            Gb.internet_connection_error_msg = err
+            Gb.internet_connection_error_code = self.response_code
+
+            self.response_code = -3
+            self.PyiCloud.response_code = -3
+            self.response_ok = False
+            return {}
 
         except (requests.exceptions.RetryError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.HTTPError,
                 requests.exceptions.Timeout,
                 OSError,
-                requests.exceptions.SSLError,
                 requests.exceptions.ProxyError,
                 requests.exceptions.ConnectTimeout,
                 requests.exceptions.ReadTimeout,
@@ -222,11 +234,13 @@ class PyiCloudSession(Session):
                 requests.exceptions.UnrewindableBodyError,
                 ) as err:
 
-            log_error_msg(  f"iCloud3 Error > An error occurred connecting to the Internet, "
+            post_error_msg( f"iCloud3 Error > An error occurred connecting to the Internet, "
                             f"Home Assistant may be Offline > "
                             f"Error-{err}")
 
             Gb.internet_connection_error = True
+            Gb.internet_connection_error_msg = err
+            Gb.internet_connection_error_code = self.response_code
 
             self.response_code = -3
             self.PyiCloud.response_code = -3

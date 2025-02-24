@@ -6,7 +6,7 @@ from ..const                import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERS
                                     EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_VERSION, ICLOUD, ZONE_DISTANCE,
-                                    CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
+                                    CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION,
                                     ICLOUD, MOBAPP, DISTANCE_TO_DEVICES,
                                     )
 
@@ -27,7 +27,7 @@ from ..helpers.messaging    import (broadcast_info_msg,
                                     _evlog, _log, more_info, format_filename,
                                     write_config_file_to_ic3log,
                                     open_ic3log_file, )
-from ..helpers.time_util    import (time_now, time_now_secs, secs_to_time, calculate_time_zone_offset, )
+from ..helpers.time_util    import (time_now, time_now_secs, secs_to_time, )
 
 import homeassistant.util.dt as dt_util
 
@@ -97,7 +97,6 @@ def stage_1_setup_variables():
 
         post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
 
-        calculate_time_zone_offset()
         start_ic3.set_event_recds_max_cnt()
 
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
@@ -323,6 +322,10 @@ def stage_4_setup_data_sources_retry(final_retry=False):
             PyiCloud = Gb.PyiCloud_by_username.get(username)
 
             if PyiCloud:
+                # If Connection was refused, do not retry logging into apple acct
+                if PyiCloud.response_code == 302:
+                    continue
+
                 post_event(f"Verify Apple Acct > {PyiCloud.account_owner_username}, Verified")
                 start_ic3.setup_data_source_ICLOUD(retry=True)
                 start_ic3.set_devices_verified_status()
@@ -384,6 +387,7 @@ def _log_into_apple_accounts(retry=False):
             PyiCloud = pyicloud_ic3_interface.log_into_apple_account(
                                         username,
                                         Gb.PyiCloud_password_by_username[username],
+                                        apple_server_location=conf_apple_acct[CONF_SERVER_LOCATION],
                                         locate_all_devices=conf_apple_acct[CONF_LOCATE_ALL])
 
             if PyiCloud:

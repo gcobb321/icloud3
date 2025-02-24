@@ -7,6 +7,7 @@ from ..const                import (HIGH_INTEGER,
                                     ICLOUD,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY, CONF_LOCATE_ALL,
+                                    CONF_SERVER_LOCATION,
                                     CONF_TRACKING_MODE, INACTIVE_DEVICE,
                                     )
 
@@ -85,9 +86,10 @@ def retry_apple_acct_login():
     for username in Gb.username_pyicloud_503_connection_error:
         conf_apple_acct, apple_acct_id = config_file.conf_apple_acct(username)
         password = conf_apple_acct[CONF_PASSWORD]
+        apple_server_location = conf_apple_acct[CONF_SERVER_LOCATION]
         locate_all_devices = conf_apple_acct[CONF_LOCATE_ALL]
 
-        PyiCloud = log_into_apple_account(username, password, locate_all_devices)
+        PyiCloud = log_into_apple_account(username, password, apple_server_location, locate_all_devices)
 
         if PyiCloud and PyiCloud.is_authenticated:
             post_event(f"{EVLOG_ERROR}Apple Acct > {PyiCloud.account_owner}, Login Successful")
@@ -136,7 +138,7 @@ def check_all_apple_accts_valid_upw():
     Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
 
 #--------------------------------------------------------------------
-def log_into_apple_account(username, password, locate_all_devices=None):
+def log_into_apple_account(username, password, apple_server_location, locate_all_devices=None):
     '''
     Log in and Authenticate the Apple Account via pyicloud
 
@@ -171,7 +173,7 @@ def log_into_apple_account(username, password, locate_all_devices=None):
         log_debug_msg(f"{debug_msg_hdr}0, Login Started, {pyicloud_msg}")
 
         if Gb.internet_connection_error:
-            post_event( f"{EVLOG_ALERT}HOME ASST SERVER IS OFFLINE > "
+            post_event( f"{EVLOG_ALERT}INTERNET CONNECTION ERROR > "
                         f"Apple Acct not available:"
                         f"{CRLF_DOT}{username_base}")
             return None
@@ -213,7 +215,9 @@ def log_into_apple_account(username, password, locate_all_devices=None):
         else:
             try:
                 PyiCloud = None
-                PyiCloud = PyiCloudService( username, password,
+                PyiCloud = PyiCloudService( username,
+                                            password,
+                                            apple_server_location=apple_server_location,
                                             locate_all_devices=locate_all_devices,
                                             cookie_directory=Gb.icloud_cookie_directory,
                                             session_directory=Gb.icloud_session_directory)
@@ -230,9 +234,9 @@ def log_into_apple_account(username, password, locate_all_devices=None):
                 log_exception(err)
 
             if Gb.internet_connection_error:
-                post_event( f"{EVLOG_ALERT}HOME ASST SERVER IS OFFLINE > "
-                        f"Apple Acct unavailable:"
-                        f"{CRLF_DOT}{username_base}")
+                post_event( f"{EVLOG_ALERT}INTERNET CONNECTION ERROR > "
+                            f"Apple Acct unavailable:"
+                            f"{CRLF_DOT}{username_base}")
                 return None
 
             if PyiCloud.DeviceSvc:
@@ -258,8 +262,10 @@ def log_into_apple_account(username, password, locate_all_devices=None):
                             f"{PyiCloud.auth_method}")
             else:
                 retry_at = secs_to_time(time_now_secs() + 900)
-                post_event( f"{EVLOG_ALERT}Apple Acct > {username_base}, Login Failed, "
-                        f"{CRLF_DOT}{PyiCloud.response_code_desc}")
+                post_event( f"{EVLOG_ALERT}Apple Acct > {PyiCloud.account_owner}, Login Failed"
+                            f"{CRLF_DOT}Apple Server Location-`{PyiCloud.apple_server_location}`"
+                            f"{CRLF_DOT}{PyiCloud.response_code_desc}")
+                post_startup_alert(f"Apple Acct {PyiCloud.account_owner}, Login Failed")
 
         verify_icloud_device_info_received(PyiCloud)
         is_authentication_2fa_code_needed(PyiCloud, initial_setup=True)

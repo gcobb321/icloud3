@@ -13,17 +13,18 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP,
-                                    RED_X, YELLOW_ALERT, CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
+                                    RED_X, RED_ALERT, YELLOW_ALERT,
+                                    CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
                                     NL, NL_DOT, LDOT2,
                                     CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT, DASH_50,
                                     NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CLOCK_FACE,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_BTN_URLS,
                                     EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR, EVLOG_TRACE,
-                                    EVLOG_ERROR, EVLOG_ALERT, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
+                                    EVLOG_INIT_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
+                                    EVLOG_ALERT, EVLOG_WARNING, EVLOG_ERROR, EVLOG_NOTICE,
+                                    EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     CONF_EVLOG_BTNCONFIG_URL,
-                                    EVLOG_ERROR, EVLOG_ALERT, EVLOG_WARNING, EVLOG_INIT_HDR,
-                                    EVLOG_HIGHLIGHT,EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
                                     )
 
 from ..helpers.common       import instr, circle_letter, str_to_list, list_to_str, isbetween
@@ -44,6 +45,7 @@ ELR_DEVICENAME = 0
 ELR_TIME = 1
 ELR_TEXT = 2
 MAX_EVLOG_RECD_LENGTH = 2000
+
 # The text starts with a special character:
 # ^1^ - LightSeaGreen
 # ^2^ - BlueViolet
@@ -51,11 +53,17 @@ MAX_EVLOG_RECD_LENGTH = 2000
 # ^4^ - DeepPink
 # ^5^ - MediumVioletRed
 # ^6^ - --dark-primary-color
-# EVLOG_NOTICE      = "^2^"
-# EVLOG_ERROR       = "^3^"
-# EVLOG_ALERT       = "^4^"
-# EVLOG_TRACE       = "^5^"
-# EVLOG_MONITOR     = "^6^"
+# EVLOG_TIME_RECD   = '^t^'       # MobileApp State, ic3 Zone, interval, travel time, distance event
+# EVLOG_UPDATE_HDR  = '^u^'       # update start-to-complete highlight and edge bar block
+# EVLOG_UPDATE_START= '^s^'       # update start-to-complete highlight and edge bar block
+# EVLOG_UPDATE_END  = '^c^'       # update start-to-complete highlight and edge bar block
+# EVLOG_ERROR       = '^e^'
+# EVLOG_ALERT       = '^a^'
+# EVLOG_WARNING     = '^w^'
+# EVLOG_INIT_HDR    = '^i^'       # iC3 initialization start/complete event
+# EVLOG_HIGHLIGHT   = '^h^'       # Display item in green highlight bar
+# EVLOG_IC3_STARTING  = '^i^'
+# EVLOG_IC3_STAGE_HDR = '^g^'
 
 MONITORED_DEVICE_EVENT_FILTERS = [
     'iCloud Acct Auth',
@@ -359,14 +367,31 @@ class EventLog(object):
 
                 self._add_recd_to_event_recds(event_recd)
 
-            if (self.startup_event_save_recd_flag
-                    or (event_text.startswith(EVLOG_ALERT)
-                        and instr(event_text, '> Old') is False)
-                    or instr(event_text, 'Acct Auth')):
+            if self._startup_error_log_filter(event_text):
                 self._save_startup_log_recd(Device, event_recd)
 
         except Exception as err:
             log_exception(err)
+
+#......................................................
+    def _startup_error_log_filter(self, event_text):
+
+
+        evlog_alert_type = event_text[:3]
+        if (self.startup_event_save_recd_flag
+                or evlog_alert_type in [EVLOG_NOTICE, EVLOG_ERROR, EVLOG_WARNING]
+                or evlog_alert_type == EVLOG_ALERT and instr(event_text, '> Old') is False):
+            save_recd_flag = True
+        else:
+            save_recd_flag = False
+
+        if save_recd_flag:
+            if (event_text.startswith('DistTo')
+                    or event_text.startswith('Battery Info')
+                    or event_text.startswith('iCloud Trigger')):
+                save_recd_flag = False
+
+        return save_recd_flag
 
 #------------------------------------------------------
     def _break_up_event_text(self, devicename, this_update_time, event_text, MAX_EVLOG_RECD_LENGTH):
@@ -577,10 +602,25 @@ class EventLog(object):
 #------------------------------------------------------
     def _save_startup_log_recd(self, Device, event_recd):
         # Add the startup and alert events to a non-clearable table (reset on a restart)
-        if Device and event_recd[ELR_TEXT].startswith(EVLOG_UPDATE_END):
-            event_text=(f"{EVLOG_IC3_STAGE_HDR}{Device.fname} > "
-                        f"{event_recd[ELR_TEXT][3:]}")
-            event_recd = [event_recd[ELR_DEVICENAME], event_recd[ELR_TIME], event_text]
+
+        event_text = event_recd[ELR_TEXT]
+        if Device:
+            if event_text.startswith(EVLOG_UPDATE_END):
+                event_text=(f"{EVLOG_IC3_STARTING}{Device.fname} > "
+                            f"{event_text[3:]}")
+                if instr(event_text, ','):
+                    event_text = event_text.split(',')[0]
+                event_recd = [event_recd[ELR_DEVICENAME], event_recd[ELR_TIME], event_text]
+
+            # Add device name  on front of text
+            elif (event_text.startswith(EVLOG_ALERT)
+                    or instr(event_text, RED_X)
+                    or instr(event_text, RED_ALERT)):
+                if event_text.startswith('^'):
+                    event_text = event_text[3:]
+                event_text=(f"{ Device.fname} > {event_text}")
+                event_recd = [event_recd[ELR_DEVICENAME], event_recd[ELR_TIME], event_text]
+
 
         self.startup_event_recds.insert(0, event_recd)
 
@@ -700,8 +740,11 @@ class EventLog(object):
         Select the items for the device or '*' and return the string of
         the resulting list to be passed to the Event Log
         '''
-        if devicename == 'startup_log':
-            self.greenbar_alert_msg=(   f"Start up log, alerts and èrrors are displayed"
+
+        # The evlog_startup_log_flag is set in the service_handler when Show
+        # Startup Log, Errors & Alerts is selected on the EvLog screen
+        if Gb.evlog_startup_log_flag:
+            self.greenbar_alert_msg=(   f"Start up log, alerts and èrrors"
                                         f"{RARROW}Refresh to close")
             el_recds = [el_recd[1:3] for el_recd in self.startup_event_recds
                                         if (el_recd[ELR_TEXT].startswith(EVLOG_MONITOR) is False

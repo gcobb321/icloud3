@@ -1053,7 +1053,7 @@ def _called_from(trace=False):
 #   LOG FILE PASSWORD FILTER
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def add_log_file_filter(item, hide_text=None):
+def add_log_file_filter(item, replacement_text=None):
     '''
     Set up  log file filter to replace the items value with *'s or prevent it
     from displaying in the log file. If item contains an '@' and it is being hidden,
@@ -1064,13 +1064,27 @@ def add_log_file_filter(item, hide_text=None):
 
     Note
     '''
-    if item is not None:
-        if hide_text is None:
-            list_add(Gb.log_file_filter_items, item)
+    if item is None:
+        return
+
+    # username/email address - reformat useremailname@gmail.com --> us****me@
+    if instr(item, '@'):
+        email_parts = item.split('@')
+        Gb.log_file_filter_items[email_parts[1]] = ''
+
+        item = email_parts[0]
+        if replacement_text is None:
+            replacement_text = f"{item[:2]}{'*'*4}{item[-2:]}@"
         else:
-            if instr(item, '@'):
-                item = item.split('@')[1]
-            list_add(Gb.log_file_hide_items, item)
+            replacement_text = f"{item[:2]}{replacement_text}{item[-2:]}@"
+        Gb.log_file_filter_items[f"{item}@"] = replacement_text
+        Gb.log_file_filter_items[item] = replacement_text
+
+    elif replacement_text is not None:
+        Gb.log_file_filter_items[item] = replacement_text
+
+    else:
+        Gb.log_file_filter_items[item] = '*'*8
 
 #--------------------------------------------------------------------
 class LoggerFilter(logging.Filter):
@@ -1083,13 +1097,9 @@ class LoggerFilter(logging.Filter):
             return True
 
         message = record.msg
-        for filtered_item in Gb.log_file_filter_items:
+        for filtered_item, replacement_text in Gb.log_file_filter_items.items():
             if instr(message, filtered_item):
-                message = message.replace(filtered_item, '*'*8)
-
-        for filtered_item in Gb.log_file_hide_items:
-            if instr(message, filtered_item):
-                message = message.replace(filtered_item, '')
+                message = message.replace(filtered_item, replacement_text)
 
         record.msg  = message
         record.args = []

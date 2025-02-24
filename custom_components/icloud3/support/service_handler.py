@@ -318,12 +318,14 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
         if action == CMD_PAUSE:
             if devicename is None:
                 Gb.all_tracking_paused_flag = True
+                Gb.all_tracking_paused_secs = time_now_secs()
                 # Gb.EvLog.display_user_message('Tracking is Paused', alert=True)
             for Device in Devices:
                 Device.pause_tracking()
 
         elif action == CMD_RESUME:
             Gb.all_tracking_paused_flag = False
+            Gb.all_tracking_paused_secs = 0
             Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
             for Device in Devices:
                 Device.resume_tracking()
@@ -340,12 +342,22 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
             return
 
 
+    # Display the startup log selected
     if devicename == 'startup_log':
+        Gb.evlog_startup_log_flag = True
         pass
+
+    # Another option selected, startup log already displayed
+    # Keep Startup log display but also display other selection 
     elif (Gb.EvLog.evlog_attrs['fname'] == 'Startup Events'
             and action == 'log_level'
             and action_option == 'monitor'):
         devicename = 'startup_log'
+        Gb.evlog_startup_log_flag = True
+
+    # Regular event log displayed
+    else:
+        Gb.evlog_startup_log_flag = False
 
     Gb.EvLog.update_event_log_display(devicename)
 

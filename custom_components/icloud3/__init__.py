@@ -23,11 +23,11 @@ from .const import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG,
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
 from .global_variables              import GlobalVariables as Gb
-from .helpers.messaging             import (_evlog, _log, open_ic3log_file_init, post_monitor_msg,
+from .helpers.messaging             import (_evlog, _log, open_ic3log_file_init, open_ic3log_file, post_monitor_msg,
                                             post_evlog_greenbar_msg, post_startup_alert,
                                             log_info_msg, log_debug_msg, log_error_msg,
                                             log_exception_HA, log_exception)
-from .helpers.time_util             import (time_now_secs, )
+from .helpers.time_util             import (time_now_secs, calculate_time_zone_offset, )
 from .helpers.file_io               import (async_make_directory, async_directory_exists, async_copy_file,
                                             read_json_file, save_json_file,
                                             async_rename_file, async_delete_directory,
@@ -138,9 +138,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
         start_ic3.initialize_directory_filenames()
+
         await Gb.hass.async_add_executor_job( config_file.load_icloud3_configuration_file)
+
         start_ic3.set_log_level(Gb.log_level)
         await Gb.hass.async_add_executor_job(open_ic3log_file_init)
+
+        # new_log_file = Gb.log_debug_flag
+        # await Gb.hass.async_add_executor_job(open_ic3log_file, new_log_file)
 
         Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
         Gb.evlog_version       = Gb.conf_profile['event_log_version']
@@ -173,12 +178,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         Gb.EvLog.display_user_message(f"Starting {ICLOUD3_VERSION_MSG}")
+        calculate_time_zone_offset()
         Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
         Gb.username_valid_by_username = {}
         if Gb.use_data_source_ICLOUD:
             # v3.0 --> v3.1 file location change
-            await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
-            await Gb.hass.async_add_executor_job(pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
+            if Gb.conf_tracking['setup_icloud_session_early']:
+                await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
+                await Gb.hass.async_add_executor_job(pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
 
         # set_up_default_area_id()
 

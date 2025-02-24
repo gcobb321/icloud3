@@ -20,13 +20,14 @@ from homeassistant.core     import callback
 
 from ..global_variables  import GlobalVariables as Gb
 from ..const             import (HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW,
-                                GPS, HOME_DISTANCE, ENTER_ZONE, EXIT_ZONE, ZONE, LATITUDE, )
+                                GPS, HOME_DISTANCE, ENTER_ZONE, EXIT_ZONE, ZONE, LATITUDE,
+                                EVLOG_ALERT, )
 
 from ..zone               import iCloud3_Zone
 from ..support           import stationary_zone as statzone
 from ..support           import determine_interval as det_interval
 from ..helpers           import entity_io
-from ..helpers.file_io   import (file_size, )
+from ..helpers.file_io   import (file_size, file_exists, set_write_permission, )
 from ..helpers.common    import (instr, is_zone, is_statzone, isnot_statzone, isnot_zone, zone_dname,
                                 list_to_str, list_add, list_del, )
 from ..helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
@@ -389,18 +390,23 @@ def log_zone_enter_exit_activity(Device):
     the zone, the distance to Home, etc. It can be imported into a spreadsheet and used
     at year end for expense calculations.
     '''
-    # Uncomment the following for testing
+    # Start - Uncomment the following for testing
+    # Also Uncomment icloud3_main UPDATE TRACKED DEVICES routine ~line 280 to run this
     # if Gb.this_update_time.endswith('0:00') or Gb.this_update_time.endswith('5:00'):
     #     Device.mobapp_zone_exit_secs = time_now_secs()
     #     Device.mobapp_zone_exit_time = time_now()
     #     Device.last_zone = HOME
     #     pass
     # elif 'none' in Device.log_zones:
+    #     return
+    # End - Uncomment the following for testing
 
+    # Start - Comment the following for testing
     if ('none' in Device.log_zones
             or Device.log_zone == Device.loc_data_zone
             or (Device.log_zone == '' and Device.loc_data_zone not in Device.log_zones)):
         return
+    # End - Comment the following for testing
 
     if Device.log_zone == '':
         Device.log_zone = Device.loc_data_zone
@@ -412,10 +418,13 @@ def log_zone_enter_exit_activity(Device):
     if mins_since(Device.log_zone_enter_secs) < 4:
         return
 
-    try:
-        Gb.hass.async_add_executor_job(write_log_zone_recd, Device)
-    except:
-        write_log_zone_recd(Device)
+    # try:
+    #     Gb.hass.async_add_executor_job(write_log_zone_recd, Device)
+
+    # except Exception as err:
+    #     # log_exception(err)
+
+    write_log_zone_recd(Device)
 
     if Device.loc_data_zone in Device.log_zones:
         Device.log_zone = Device.loc_data_zone
@@ -430,16 +439,21 @@ def write_log_zone_recd(Device):
     Write the record to the .csv file. Add a header record if the file is new
     '''
 
-    filename = (f"zone-log-{dt_util.now().strftime('%Y')}-"
+    if Device.log_zone == NOT_SET:
+        return
+
+    csv_filename = (f"zone-log-{dt_util.now().strftime('%Y')}-"
                 f"{Device.log_zones_filename}.csv")
+    csv_filename = Gb.hass.config.path(csv_filename)
+    new_file_flag = not file_exists(csv_filename)
 
-    with open(filename, 'a', encoding='utf8') as f:
-        if file_size(filename) == 0:
-            header = "Date,Zone Enter Time,Zone Exit Time,Time (Mins),Time (Hrs),Distance (Home),Zone,Device\n"
-        else:
-            header = ''
+    with open(csv_filename, 'a', encoding='utf8') as f:
+        if new_file_flag:
+            set_write_permission(csv_filename)
+            header = "Date,Zone Enter Time,Zone Exit Time,Time (Mins),Time (Hrs),Distance (Home),Zone,Device"
+            f.write(header)
 
-        recd = (f"{header}"
+        recd = (f"\n"
                 f"{datetime_now()[:10]},"
                 f"{secs_to_datetime(Device.log_zone_enter_secs)},"
                 f"{secs_to_datetime(Gb.this_update_secs)},"
@@ -447,13 +461,13 @@ def write_log_zone_recd(Device):
                 f"{mins_since(Device.log_zone_enter_secs)/60:.2f},"
                 f"{Device.sensors[HOME_DISTANCE]:.2f},"
                 f"{Device.log_zone},"
-                f"{Device.devicename}"
-                "\n")
+                f"{Device.devicename}")
         f.write(recd)
+        recd=f"{Device.devicename} CLEARED"
 
         post_event(Device,  f"Log Zone Activity > Logging Ended, "
                             f"{zone_dname(Device.log_zone)}, "
-                            f"Time-{mins_since(Device.log_zone_enter_secs)/60}h")
+                            f"Time-{mins_since(Device.log_zone_enter_secs)/60:.2f}h")
 
 #------------------------------------------------------------------------------
 def request_update_devices_no_mobapp_same_zone_on_exit(Device):

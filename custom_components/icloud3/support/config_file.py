@@ -1,7 +1,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (
-                                    ICLOUD3, APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE,
+                                    ICLOUD3,
                                     RARROW, RARROW2, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE_DEVICE,
                                     ICLOUD, MOBAPP, NO_MOBAPP, NO_IOSAPP, HOME,
                                     CONF_PARAMETER_TIME_STR,
@@ -11,7 +11,7 @@ from ..const                import (
                                     CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
                                     CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_TOTP_KEY,
-                                    CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX,
+                                    CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                     CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                     CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
                                     CONF_DATA_SOURCE, CONF_LOG_ZONES,
@@ -33,7 +33,8 @@ from ..const                import (
 from ..support              import start_ic3
 from ..support              import waze
 from ..helpers              import file_io
-from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, list_add, is_empty, )
+from ..helpers.common       import (instr, ordereddict_to_dict, isbetween, list_add, is_empty,
+                                    list_to_str, )
 from ..helpers.messaging    import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
                                     open_ic3log_file_init, )
 from ..helpers.time_util    import (datetime_now, )
@@ -117,7 +118,7 @@ def read_icloud3_configuration_file(filename_suffix=''):
     return False
 
 #--------------------------------------------------------------------
-def write_icloud3_configuration_file(filename_suffix=None):
+def write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
     '''
     Update the config/.storage/.icloud3.configuration file
 
@@ -132,6 +133,9 @@ def write_icloud3_configuration_file(filename_suffix=None):
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
 
         success = file_io.save_json_file(filename, Gb.conf_file_data)
+
+        if new_file_flag is not None:
+            file_io.set_write_permission(filename)
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -228,7 +232,7 @@ def _restore_config_file_from_backup():
 def initialize_icloud3_configuration_file():
     build_initial_config_file_structure()
     Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
-    write_icloud3_configuration_file()
+    write_icloud3_configuration_file(new_file_flag=True)
     read_icloud3_configuration_file()
 
 #--------------------------------------------------------------------
@@ -239,6 +243,7 @@ def _add_parms_and_check_config_file():
         update_config_file_flag = False
         update_config_file_flag = _config_file_check_new_ic3_version() or update_config_file_flag
         update_config_file_flag = _update_tracking_parameters()        or update_config_file_flag
+        update_config_file_flag = _update_apple_acct_parameters()      or update_config_file_flag
         update_config_file_flag = _update_device_parameters()          or update_config_file_flag
         update_config_file_flag = _update_general_parameters()         or update_config_file_flag
 
@@ -299,11 +304,13 @@ async def async_load_icloud3_ha_config_yaml(ha_config_yaml):
 def build_log_file_filters():
 
     try:
+        aa_idx = 0
         for conf_apple_acct in Gb.conf_apple_accounts:
+            aa_idx += 1
             if conf_apple_acct[CONF_USERNAME] == '':
                 continue
 
-            add_log_file_filter(conf_apple_acct[CONF_USERNAME], hide_text=True)
+            add_log_file_filter(conf_apple_acct[CONF_USERNAME], f"**{aa_idx}**")
             add_log_file_filter(conf_apple_acct[CONF_PASSWORD])
             add_log_file_filter(decode_password(conf_apple_acct[CONF_PASSWORD]))
 
@@ -342,8 +349,8 @@ def build_initial_config_file_structure():
 
     # Verify general parameters and make any necessary corrections
     try:
-        if Gb.country_code in APPLE_SPECIAL_ICLOUD_SERVER_COUNTRY_CODE:
-            Gb.conf_tracking[CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX] = Gb.country_code
+        if Gb.country_code in ['cn', 'hk']:
+            Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED] = True
 
         if Gb.config and Gb.config.units['name'] != 'Imperial':
             Gb.conf_general[CONF_UNIT_OF_MEASUREMENT] = 'km'
@@ -610,12 +617,10 @@ def _update_tracking_parameters():
     new_items = [item   for item in DEFAULT_TRACKING_CONF
                         if item not in Gb.conf_tracking]
 
-    log_info_msg(f"{new_items=}")
-    for item in DEFAULT_TRACKING_CONF:
-        log_info_msg(f"{item=} {item in Gb.conf_tracking=} {Gb.conf_tracking.get(item)=}")
-
     if is_empty(new_items):
         return False
+
+    log_info_msg("Updating Configuration File with New items (Tracking) > ")
 
     for item in new_items:
         Gb.conf_tracking = _insert_into_conf_dict_parameter(
@@ -629,6 +634,35 @@ def _update_tracking_parameters():
         conf_apple_acct[CONF_USERNAME] = Gb.conf_tracking[CONF_USERNAME]
         conf_apple_acct[CONF_PASSWORD] = Gb.conf_tracking[CONF_PASSWORD]
         Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = Gb.conf_apple_accounts = [conf_apple_acct]
+
+    return True
+
+#--------------------------------------------------------------------
+def _update_apple_acct_parameters():
+    '''
+    Update Gb.conf_apple_account with new fields
+    '''
+
+    cd_idx = -1
+    conf_apple_accts = Gb.conf_apple_accounts.copy()
+    for conf_apple_acct in conf_apple_accts:
+        cd_idx += 1
+
+        new_items = [item   for item in DEFAULT_APPLE_ACCOUNT_CONF
+                            if item not in conf_apple_acct]
+
+        if is_empty(new_items):
+            return False
+
+        log_info_msg("Updating Configuration File with New items (Apple Acct) > ")
+
+        for item in new_items:
+            conf_apple_acct = _insert_into_conf_dict_parameter(
+                                    conf_apple_acct, item,
+                                    DEFAULT_APPLE_ACCOUNT_CONF[item],
+                                    before=CONF_DATA_SOURCE)
+
+        Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
 
     return True
 
@@ -648,6 +682,8 @@ def _update_device_parameters():
         if is_empty(new_items):
             return False
 
+        log_info_msg("Updating Configuration File with New items (Device) > ")
+
         for item in new_items:
             # v3.1.0 'apple_account' and other fields
             if item == CONF_APPLE_ACCOUNT:
@@ -655,8 +691,8 @@ def _update_device_parameters():
 
             else:
                 conf_device = _insert_into_conf_dict_parameter(
-                                            conf_device,
-                                            item, DEFAULT_DEVICE_CONF[item],
+                                            conf_device, item,
+                                            DEFAULT_DEVICE_CONF[item],
                                             before=CONF_TRACK_FROM_BASE_ZONE)
 
         Gb.conf_devices[cd_idx] = conf_device
@@ -668,8 +704,8 @@ def _v310_device_parameter_updates(conf_device):
     # v3.1 - Add Apple account parameter
     if CONF_APPLE_ACCOUNT not in conf_device:
         conf_device = _insert_into_conf_dict_parameter(
-                                conf_device,
-                                CONF_APPLE_ACCOUNT, Gb.conf_tracking[CONF_USERNAME],
+                                conf_device, CONF_APPLE_ACCOUNT,
+                                Gb.conf_tracking[CONF_USERNAME],
                                 before=CONF_FAMSHR_DEVICENAME)
 
 
@@ -699,13 +735,15 @@ def _update_general_parameters():
     if is_empty(new_items):
         return False
 
+    log_info_msg("Updating Configuration File with New items (General) > ")
+
     for item in new_items:
         before_item = _place_item_before(item, DEFAULT_GENERAL_CONF, CONF_DISPLAY_TEXT_AS)
 
         Gb.conf_data[CF_GENERAL][item] = DEFAULT_GENERAL_CONF[item]
         Gb.conf_general = _insert_into_conf_dict_parameter(
-                                            Gb.conf_general,
-                                            item, DEFAULT_GENERAL_CONF[item],
+                                            Gb.conf_general, item,
+                                            DEFAULT_GENERAL_CONF[item],
                                             before= before_item)
 
     return True
@@ -742,6 +780,8 @@ def _insert_into_conf_dict_parameter(dict_parameter,
         before - Insert it before this argument
         after - Insert it after this argument
     '''
+    log_info_msg(f" - Parameter-{new_item}, Initial Value-{initial_value}")
+
     if isinstance(dict_parameter, dict) is False or not new_item:
         return dict_parameter
     if initial_value is None: initial_value = ''
@@ -760,7 +800,7 @@ def _insert_into_conf_dict_parameter(dict_parameter,
         return dict(items)
 
     except Exception as err:
-        _LOGGER.exception(err)
+        # _LOGGER.exception(err)
         dict_parameter[new_item] = initial_value
         return dict_parameter
 

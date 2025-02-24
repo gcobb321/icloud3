@@ -102,6 +102,20 @@ def save_json_file(filename, data):
 def file_exists(filename):
     return _os(os.path.exists, filename)
 
+def set_write_permission(filename):
+    '''
+    Set the file permissions to Read/Write
+    '''
+    try:
+        if os.access(filename, os.W_OK):
+            os.chmod(filename, 0o666)
+    except FileNotFoundError:
+        pass
+    except Exception as err:
+        # log_exception(err)
+        pass
+
+
 def delete_file(filename):
     try:
         return _os(os.remove, filename)
