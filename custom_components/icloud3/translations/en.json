@@ -324,6 +324,27 @@
           "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
         }
       },
+      "update_other_device_parameters": {
+        "title": "Update Other Device Parameters",
+        "description": "This screen updates device parameters that are rearely updated",
+        "data": {
+          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
+          "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
+          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
+          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
+          "inzone_interval": "INZONE INTERVAL",
+          "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
+          "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
+          "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
+          "fixed_interval": "FIXED INTERVAL",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "inzone_interval": "Time between location requests when in a zone",
+          "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less than 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
+          "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
+        }
+      },
       "delete_device": {
         "title": "Delete iCloud3 Device",
         "data": {
@@ -372,6 +393,16 @@
         "data_description": {
           "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
           "time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
+        }
+      },
+      "dashboard_builder": {
+        "title": "iCloud3 Dashboard Builder",
+        "description": "This will create a Dashboard for iCloud3 tracked devices and the Event Log in several formats. The dashboard that is created is a normal HA Dashboard that you can customize using the HA Dashboard tools. There are 5 tabs with different styles that you can use as-is or as a source to build your own.",
+        "data": {
+          "styles":"\nThe styles are:\n1. Left > Device Info (#1, #2) as a complete sensor group, Right > Event Log\n2. Left > Badge Sensor, Device Tracking Results (#1, #2), Battery, Right > Event Log\n3. Left > Device Info as a individual sensor groups; Right > Event Log\n4.  Left > Device Info  (#1, #2) as a complete sensor group; Right >  Device Info (#3, #4) as a complete sensor group\n\n5. Event Log by itself",
+          "device_desc": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DASHBOARD BUILDER",
+          "under_construction": "UNDER CONSTRUCTION ",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "tools": {

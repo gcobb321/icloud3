@@ -12,6 +12,8 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
+//  v3.1.1 - Fixed problem creating btnConfig url.
+//
 /////////////////////////////////////////////////////////////////////////////
 
 class iCloud3EventLogCard extends HTMLElement {
@@ -22,7 +24,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version = "3.1"
+        const version = "3.1.1"
         const cardTitle = "iCloud3 v3 - Event Log"
 
         const root = this.shadowRoot
@@ -1997,10 +1999,14 @@ class iCloud3EventLogCard extends HTMLElement {
         // const evlogBtnUrlsListKeys   = Object.keys(evlogBtnUrlsList)
         // const evlogBtnUrlsListValues = Object.values(evlogBtnUrlsList)
 
-        if (evlogBtnUrlsList["btnHelp"] != "")       { btnHelp.setAttribute('href', evlogBtnUrlsList["btnHelp"]) }
-        if (evlogBtnUrlsList["btnIssues"] != "")       { btnIssues.setAttribute('href', evlogBtnUrlsList["btnIssues"]) }
-        if (evlogBtnUrlsList["btnBuyMeACoffee"] != "") { btnBuyMeACoffee.setAttribute('href', evlogBtnUrlsList["btnBuyMeACoffee"]) }
-        if (evlogBtnUrlsList["btnConfig"] != "") { btnConfig.setAttribute('href', evlogBtnUrlsList["btnConfig"]) }
+        if (evlogBtnUrlsList["btnHelp"] != "") {
+            btnHelp.setAttribute('href', evlogBtnUrlsList["btnHelp"]) }
+        if (evlogBtnUrlsList["btnIssues"] != "") {
+            btnIssues.setAttribute('href', evlogBtnUrlsList["btnIssues"]) }
+        if (evlogBtnUrlsList["btnBuyMeACoffee"] != "") {
+            btnBuyMeACoffee.setAttribute('href', evlogBtnUrlsList["btnBuyMeACoffee"]) }
+        if (evlogBtnUrlsList["btnConfig"] != "") {
+            btnConfig.setAttribute('href', evlogBtnUrlsList["btnConfig"]) }
     }
 
     //---------------------------------------------------------------------------
@@ -2017,18 +2023,23 @@ class iCloud3EventLogCard extends HTMLElement {
             return
         }
 
+        /// v3.1.1 - Fixed problem creating btnConfig url.
         var targetUrl = ''
         var winLocUrl = window.location.href
-        if (winLocUrl.indexOf(":8123"))      { targetUrl = winLocUrl.split(':8123', 1)[0] + ':8123' }
-        if (winLocUrl.indexOf("/lovelace"))  { targetUrl = winLocUrl.split('/lovelace', 1)[0] }
-        if (winLocUrl.indexOf("/dashboard")) { targetUrl = winLocUrl.split('/dashboard', 1)[0] }
-        if (targetUrl == "") { return }
+        if (winLocUrl.indexOf(":8123")) {
+            targetUrl = winLocUrl.split(':8123', 1)[0] + ':8123'
+        } else if (winLocUrl.indexOf("/lovelace")) {
+            targetUrl = winLocUrl.split('/lovelace', 1)[0]
+        } else if (winLocUrl.indexOf("/dashboard")) {
+            targetUrl = winLocUrl.split('/dashboard', 1)[0]
+        } else if (targetUrl == "") {
+            return }
 
         targetUrl = targetUrl + '/config/integrations/integration/icloud3'
 
         btnConfig.setAttribute('href', targetUrl)
 
-        // alert("1679 winLocUrl="+winLocUrl+', configUrl='+configUrl+', targetUrl='+targetUrl+'|')
+        // alert("2039 winLocUrl="+winLocUrl+', configUrl='+configUrl+', targetUrl='+targetUrl+'|')
     }
     //---------------------------------------------------------------------------
     _btnClassMouseOverName(buttonId) {

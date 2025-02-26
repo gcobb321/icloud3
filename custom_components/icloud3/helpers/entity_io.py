@@ -367,11 +367,12 @@ def change_entity_id(from_entity_id, to_entity_id):
     except Exception as err:
         log_exception(err)
 
-def update_entity(entity_id, kwargs):
+def update_entity(entity_id, **kwargs):
     try:
         entity_reg = er.async_get(Gb.hass)
         entity_reg.async_update_entity(entity_id, **kwargs)
-    except:
+    except Exception as err:
+        # log_exception(err)
         return False
 
 def is_entity_available(entity_id):

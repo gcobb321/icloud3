@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.1.6'
+VERSION                         = '3.1.6.1'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'

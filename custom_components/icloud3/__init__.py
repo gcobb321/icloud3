@@ -170,6 +170,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # config_file.count_lines_of_code(Gb.icloud3_directory)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
+            # _log(f"{Gb.hass.data['lovelace']=}")
+            # dashboard = Gb.hass.data['lovelace'].dashboards['icloud3']
+            # #_log(f"{dashboard.__dict__=}")
+            # _log(f"{dashboard.config=}")
+            # _log(f"{dashboard._data=}")
 
             pass
 

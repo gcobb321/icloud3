@@ -643,6 +643,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_reauth()
         elif menu_item == 'device_list':
             return await self.async_step_device_list()
+        elif menu_item == 'sensors':
+            return await self.async_step_sensors()
+        elif menu_item == 'dashboard_builder':
+            return await self.async_step_dashboard_builder()
+        elif menu_item == 'tools':
+            return await self.async_step_tools()
         elif menu_item == 'away_time_zone':
             return await self.async_step_away_time_zone()
         elif menu_item == 'format_settings':
@@ -657,10 +663,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_waze_main()
         elif menu_item == 'special_zones':
             return await self.async_step_special_zones()
-        elif menu_item == 'sensors':
-            return await self.async_step_sensors()
-        elif menu_item == 'tools':
-            return await self.async_step_tools()
 
         self._set_inactive_devices_header_msg()
         self._set_header_msg()
@@ -3203,7 +3205,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.step_id = 'update_device'
         self.errors = errors or {}
         self.errors_user_input = {}
-        # self.multi_form_user_input = {}
 
         await self._build_update_device_selection_lists(self.conf_device[CONF_IC3_DEVICENAME])
         log_debug_msg(f"{self.step_id.upper()} ( > UserInput-{user_input}, Errors-{errors}")
@@ -3215,27 +3216,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input, action_item = self._action_text_to_item(user_input)
         self.log_step_info(user_input, action_item)
-
-        # Add rarely updated parameters to user input from their current values
-        # If rarely used parms is not in user_input (it is True and not displayed) or
-        # is True, display the fields, otherwise do not display them and fill in there
-        # values in the display selection field. Sisplay them when adding a device.
-        if (RARELY_UPDATED_PARMS not in user_input
-                or isnot_empty(user_input[RARELY_UPDATED_PARMS])):
-            ui_rarely_updated_parms = True
-        else:
-            ui_rarely_updated_parms = False
-        user_input.pop(RARELY_UPDATED_PARMS, None)
-
-        if self.display_rarely_updated_parms is False:
-            user_input[CONF_DEVICE_TYPE]          = self.conf_device[CONF_DEVICE_TYPE]
-            user_input[CONF_INZONE_INTERVAL]      = self.conf_device[CONF_INZONE_INTERVAL]
-            user_input[CONF_FIXED_INTERVAL]       = self.conf_device[CONF_FIXED_INTERVAL]
-            user_input[CONF_LOG_ZONES]            = self.conf_device[CONF_LOG_ZONES]
-            user_input[CONF_TRACK_FROM_ZONES]     = self.conf_device[CONF_TRACK_FROM_ZONES]
-            user_input[CONF_TRACK_FROM_BASE_ZONE] = self.conf_device[CONF_TRACK_FROM_BASE_ZONE]
-        ui_rarely_used_parms_changed = (ui_rarely_updated_parms != self.display_rarely_updated_parms)
-        self.display_rarely_updated_parms = ui_rarely_updated_parms
 
         if self.add_device_flag is False:
             self.dev_page_item[self.dev_page_no] = self.conf_device[CONF_IC3_DEVICENAME]
@@ -3255,8 +3235,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         user_input = self._option_text_to_parm(user_input, CONF_PICTURE, self.picture_by_filename)
 
         user_input = self._option_text_to_parm(user_input, CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)
-        user_input = self._option_text_to_parm(user_input, CONF_DEVICE_TYPE, DEVICE_TYPE_FNAMES)
-        user_input = self._option_text_to_parm(user_input, CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)
         self.log_step_info(user_input, action_item)
 
         user_input = self._validate_ic3_devicename(user_input)
@@ -3282,10 +3260,14 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_picture_dir_filter()
 
         if change_flag is False:
-            if ui_rarely_used_parms_changed and self.display_rarely_updated_parms:
-                return await self.async_step_update_device()
+            if action_item == 'update_other_device_parameters':
+                return await self.async_step_update_other_device_parameters()
 
             return await self.async_step_device_list()
+
+        # Device fname was changed --> change name on all of it's sensors
+        if user_input[CONF_FNAME] != self.conf_device[CONF_FNAME]:
+            self.update_device_ha_sensor_entity[CONF_FNAME] = user_input[CONF_FNAME]
 
         # Picture was changed to None, display Icon mdi: selector later on
         picture_changed_to_none = (user_input[CONF_PICTURE] == 'None' \
@@ -3327,8 +3309,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if self.add_device_flag is False:
             self._update_changed_sensor_entities()
 
-            if ui_rarely_used_parms_changed:
-                return await self.async_step_update_device()
+        if action_item == 'update_other_device_parameters':
+            return await self.async_step_update_other_device_parameters()
 
         # Picture was changed to None, display Icon mdi: selector
         if picture_changed_to_none:
@@ -3444,7 +3426,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             # Already used if the new ic3_devicename is in the ic3 devicename list
             if ui_devicename in self.device_items_by_devicename:
                 self.errors[CONF_IC3_DEVICENAME] = 'duplicate_ic3_devicename'
-                # self.errors_user_input[CONF_IC3_DEVICENAME] = ui_devicename
                 self.errors_user_input[CONF_IC3_DEVICENAME] = ( f"{ui_devicename}{DATA_ENTRY_ALERT}"
                                                                 f"Assigned to another iCloud3 device")
 
@@ -3546,34 +3527,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             user_input[CONF_MODEL]              = model
             user_input[CONF_MODEL_DISPLAY_NAME] = model_display_name
 
-        # Build 'log_zones' list
-        if ('none' in user_input[CONF_LOG_ZONES]
-                and 'none' not in self.conf_device[CONF_LOG_ZONES]):
-            log_zones = []
-        else:
-            log_zones = [zone   for zone in self.zone_name_key_text.keys()
-                                if zone in user_input[CONF_LOG_ZONES] and zone != '.' ]
-        if log_zones == []:
-            log_zones = ['none']
-        else:
-            user_input[CONF_LOG_ZONES].append('name-zone')
-            log_zones.append([item  for item in user_input[CONF_LOG_ZONES]
-                                    if item.startswith('name')][0])
-        user_input[CONF_LOG_ZONES] = log_zones
-
-        # Build 'track_from_zones' list
-        track_from_zones = [zone    for zone in self.zone_name_key_text.keys()
-                                    if (zone in user_input[CONF_TRACK_FROM_ZONES]
-                                        and zone not in ['.',
-                                            self.conf_device[CONF_TRACK_FROM_BASE_ZONE]])]
-        # track_from_zones.append(self.conf_device[CONF_TRACK_FROM_BASE_ZONE])
-        list_add(track_from_zones, user_input[CONF_TRACK_FROM_BASE_ZONE])
-        user_input[CONF_TRACK_FROM_ZONES] = track_from_zones
-
-        if isbetween(user_input[CONF_FIXED_INTERVAL], 1, 2):
-            user_input[CONF_FIXED_INTERVAL] = 3
-            self.errors[CONF_FIXED_INTERVAL] = 'fixed_interval_invalid_range'
-
         return user_input
 
 #-------------------------------------------------------------------------------------------
@@ -3590,33 +3543,28 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return False
 
         change_flag = False
-        self.update_device_ha_sensor_entity[CONF_IC3_DEVICENAME]  = self.conf_device[CONF_IC3_DEVICENAME]
-        self.update_device_ha_sensor_entity['new_ic3_devicename'] = user_input[CONF_IC3_DEVICENAME]
-        self.update_device_ha_sensor_entity[CONF_TRACKING_MODE]   = self.conf_device[CONF_TRACKING_MODE]
-        self.update_device_ha_sensor_entity['new_tracking_mode']  = user_input[CONF_TRACKING_MODE]
+        if CONF_IC3_DEVICENAME in user_input:
+            self.update_device_ha_sensor_entity[CONF_IC3_DEVICENAME]  = self.conf_device[CONF_IC3_DEVICENAME]
+            self.update_device_ha_sensor_entity['new_ic3_devicename'] = user_input[CONF_IC3_DEVICENAME]
+        if CONF_TRACKING_MODE in user_input:
+            self.update_device_ha_sensor_entity[CONF_TRACKING_MODE]   = self.conf_device[CONF_TRACKING_MODE]
+            self.update_device_ha_sensor_entity['new_tracking_mode']  = user_input[CONF_TRACKING_MODE]
 
         for pname, pvalue in self.conf_device.items():
-            if pname in ['evlog_display_order', 'unique_id', 'fmf_device_id']:
+            if pname not in user_input:
                 continue
 
-            if pname not in user_input or user_input[pname] != pvalue:
+            if user_input[pname] != pvalue:
                 change_flag = True
 
-            if pname == CONF_FNAME and user_input[CONF_FNAME] != pvalue:
-                self.update_device_ha_sensor_entity[CONF_FNAME] = user_input[CONF_FNAME]
-
-            if pname == CONF_TRACK_FROM_ZONES and user_input[CONF_TRACK_FROM_ZONES] != pvalue:
-                new_tfz_zones_list, remove_tfz_zones_list = \
-                            self._devices_form_identify_new_and_removed_tfz_zones(user_input)
-
-                self.update_device_ha_sensor_entity['new_tfz_zones']    = new_tfz_zones_list
-                self.update_device_ha_sensor_entity['remove_tfz_zones'] = remove_tfz_zones_list
+            # if pname == CONF_FNAME and user_input[CONF_FNAME] != pvalue:
+            #     self.update_device_ha_sensor_entity[CONF_FNAME] = user_input[CONF_FNAME]
 
         return change_flag
 
 #-------------------------------------------------------------------------------------------
     def _update_changed_sensor_entities(self):
-        """ Update the track_fm_zone and device_tracker sensors if needed"""
+        """ Update the device_tracker sensors if needed"""
 
         # Use the current ic3_devicename since that is how the Device & DeviceTracker objects with the
         # device_tracker and sensor entities are stored. If the devicename was also changed, the
@@ -3627,16 +3575,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         tracking_mode     = self.update_device_ha_sensor_entity[CONF_TRACKING_MODE]
         new_tracking_mode = self.update_device_ha_sensor_entity['new_tracking_mode']
 
-        # Remove the new track_fm_zone sensors just unchecked
-        if 'remove_tfz_zones' in self.update_device_ha_sensor_entity:
-            remove_tfz_zones_list = self.update_device_ha_sensor_entity['remove_tfz_zones']
-            self.remove_track_fm_zone_sensor_entity(devicename, remove_tfz_zones_list)
-
-        # Create the new track_fm_zone sensors just checked
-        if 'new_tfz_zones' in self.update_device_ha_sensor_entity:
-            new_tfz_zones_list = self.update_device_ha_sensor_entity['new_tfz_zones']
-            self._create_track_fm_zone_sensor_entity(devicename, new_tfz_zones_list)
-
         # fname was changed - change the fname of device_tracker and all sensors to the new fname
         # Inactive devices were not created so they are not in Gb.DeviceTrackers_by_devicename
         if (devicename == new_devicename
@@ -3645,18 +3583,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
             DeviceTracker.update_entity_attribute(new_fname=self.conf_device[CONF_FNAME])
 
-            try:
-                for sensor, Sensor in Gb.Sensors_by_devicename[devicename].items():
+            for sensor, Sensor in Gb.Sensors_by_devicename[devicename].items():
+                try:
                     Sensor.update_entity_attribute(new_fname=self.conf_device[CONF_FNAME])
-            except:
-                pass
-
-            # check to see if device has tfz sensors
-            try:
-                for sensor, Sensor in Gb.Sensors_by_devicename_from_zone[devicename].items():
-                    Sensor.update_entity_attribute(new_fname=self.conf_device[CONF_FNAME])
-            except:
-                pass
+                except  Exception as err:
+                    # log_exception(err)
+                    pass
 
         # devicename was changed - delete device_tracker and all sensors for
         # devicename and add them for new_devicename
@@ -3671,6 +3603,121 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 and new_tracking_mode != INACTIVE_DEVICE
                 and new_devicename not in Gb.DeviceTrackers_by_devicename):
             self._create_device_tracker_and_sensor_entities(new_devicename, self.conf_device)
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            UPDATE OTHER DEVICE PARAMETERS
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_update_other_device_parameters(self, user_input=None, errors=None):
+        self.step_id = 'update_other_device_parameters'
+        user_input, action_item = self._action_text_to_item(user_input)
+
+        if user_input is None:
+            return self.async_show_form(step_id='update_other_device_parameters',
+                                        data_schema=form_update_other_device_parameters(self),
+                                        errors=self.errors)
+
+        self.log_step_info(user_input, action_item)
+
+        if action_item == 'cancel_goto_previous':
+            return await self.async_step_update_device()
+
+        user_input = self._option_text_to_parm(user_input, CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)
+        user_input = self._option_text_to_parm(user_input, CONF_DEVICE_TYPE, DEVICE_TYPE_FNAMES)
+        user_input = self._option_text_to_parm(user_input, CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)
+
+        user_input = self._finalize_other_parameters_selections(user_input)
+        change_flag = self._was_device_data_changed(user_input)
+
+        if self._any_errors():
+            self.errors['action_items'] = 'update_aborted'
+
+        elif change_flag is False:
+            return await self.async_step_update_device()
+
+        elif action_item == 'save':
+            list_add(self.config_parms_update_control, ['devices', self.conf_device[CONF_IC3_DEVICENAME]])
+            tfz_changed = (user_input[CONF_TRACK_FROM_ZONES] != self.conf_device[CONF_TRACK_FROM_ZONES])
+
+            self.conf_device.update(user_input)
+            self._update_config_file_tracking(update_config_flag=True)
+            if tfz_changed:
+                self._update_track_from_zones_sensors(user_input)
+            return await self.async_step_update_device()
+
+        return self.async_show_form(step_id='async_step_update_other_device_parameters',
+                        data_schema=form_update_other_device_parameters(self),
+                        errors=self.errors)
+
+#-------------------------------------------------------------------------------------------
+    def _finalize_other_parameters_selections(self, user_input):
+        '''
+        Check the devicenames in device's configuration for any errors in the iCloud and
+        Mobile App fields.
+
+        Parameters:
+            - user_input - the conf_device or user_input item for the device
+
+        Return:
+            - self.errors[xxx] will be set if any errors are found
+            - user_input
+        '''
+        # Build 'log_zones' list
+        if ('none' in user_input[CONF_LOG_ZONES]
+                and 'none' not in self.conf_device[CONF_LOG_ZONES]):
+            log_zones = []
+        else:
+            log_zones = [zone   for zone in self.zone_name_key_text.keys()
+                                if zone in user_input[CONF_LOG_ZONES] and zone != '.' ]
+        if log_zones == []:
+            log_zones = ['none']
+        else:
+            user_input[CONF_LOG_ZONES].append('name-zone')
+            log_zones.append([item  for item in user_input[CONF_LOG_ZONES]
+                                    if item.startswith('name')][0])
+        user_input[CONF_LOG_ZONES] = log_zones
+
+        # See if there are any track_from_zone changes that will be processed after the
+        # device is updated
+        new_tfz_zones_list, remove_tfz_zones_list = \
+                    self._devices_form_identify_new_and_removed_tfz_zones(user_input)
+
+        self.update_device_ha_sensor_entity['new_tfz_zones']    = new_tfz_zones_list
+        self.update_device_ha_sensor_entity['remove_tfz_zones'] = remove_tfz_zones_list
+
+        # Build 'track_from_zones' list
+        track_from_zones = [zone    for zone in self.zone_name_key_text.keys()
+                                    if (zone in user_input[CONF_TRACK_FROM_ZONES]
+                                        and zone not in ['.',
+                                            self.conf_device[CONF_TRACK_FROM_BASE_ZONE]])]
+
+        track_from_zones.append(self.conf_device[CONF_TRACK_FROM_BASE_ZONE])
+        list_add(track_from_zones, user_input[CONF_TRACK_FROM_BASE_ZONE])
+        user_input[CONF_TRACK_FROM_ZONES] = track_from_zones
+
+        if isbetween(user_input[CONF_FIXED_INTERVAL], 1, 2):
+            user_input[CONF_FIXED_INTERVAL] = 3
+            self.errors[CONF_FIXED_INTERVAL] = 'fixed_interval_invalid_range'
+
+        return user_input
+
+#-------------------------------------------------------------------------------------------
+    def _update_track_from_zones_sensors(self, user_input):
+
+
+
+        devicename = self.conf_device[CONF_IC3_DEVICENAME]
+        self.conf_device[CONF_TRACK_FROM_ZONES] = user_input[CONF_TRACK_FROM_ZONES]
+
+        # Remove the new track_fm_zone sensors just unchecked
+        if 'remove_tfz_zones' in self.update_device_ha_sensor_entity:
+            remove_tfz_zones_list = self.update_device_ha_sensor_entity['remove_tfz_zones']
+            self.remove_track_fm_zone_sensor_entity(devicename, remove_tfz_zones_list)
+
+        # Create the new track_fm_zone sensors just checked
+        if 'new_tfz_zones' in self.update_device_ha_sensor_entity:
+            new_tfz_zones_list = self.update_device_ha_sensor_entity['new_tfz_zones']
+            self._create_track_fm_zone_sensor_entity(devicename, new_tfz_zones_list)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -3730,6 +3777,24 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             data_schema=form_change_device_order(self),
                             errors=self.errors)
 
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            DASHBOARD BUILDER
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_dashboard_builder(self, user_input=None, errors=None):
+        self.step_id = 'dashboard_builder'
+        user_input, action_item = self._action_text_to_item(user_input)
+
+
+        if self.common_form_handler(user_input, action_item, errors):
+            return await self.async_step_menu()
+
+        if self._any_errors():
+                self.errors['action_items'] = 'update_aborted'
+
+        return self.async_show_form(step_id= 'dashboard_builder',
+                            data_schema=form_dashboard_builder(self),
+                            errors=self.errors)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            AWAY TIME ZONE
@@ -4881,7 +4946,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             This must be done after the devices user_input parameters have been updated
         """
-
         if new_tfz_zones_list == []:
             return
 
@@ -5125,6 +5189,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         action_item = ACTION_LIST_ITEMS_KEY_BY_TEXT.get(action_text)
 
+        # Action item was not found in the list of action items and may include
+        # special text updated at run time. The special text iss inserted by replacing
+        # a text string starting with a ^. Cycle back through the action items looking
+        # for one that starts with the text before the ^.
         if action_item is None:
             action_item = [action_item_key
                             for action_item_key, action_item_text in ACTION_LIST_OPTIONS.items()

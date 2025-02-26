@@ -7,19 +7,30 @@ v3.1.5b1 Removed, Replaced with v3.1.5b2 [here](https://github.com/gcobb321/iclo
 
 
 
-### Release Notes - v3.1.6
+### Release Notes - v3.1.7
 #### 🎉 Improvements and New Features
-1. When the password is used to authenticate the Apple Account, Apple sends an email to the account owner that a login/authentication was done. An entry has been added to the Event Log when iCloud3 doe this. The authentication date/time (PST) in the Event Log message is, hopefully, the same as on the email. View on _Event Log > Show Startup log, Errors & Alerts_. Note: The times the _Event Log_ and email may not match.
+1. _Configure > Update Devices_ screen - Added an Action option to open a new screen to update the rarely updated parameters (inzone interval, log zone, track-from-zone, etc).
+
+#### 🐛 Bug Fixes
+1. Fixed a problem restarting after an Internet Connection Error occurred. iCloud3 would get stuck in a loop displaying a 'Paused/Resumed' message on the Event Log and tracking would stop.
+2. Event Log - Fixed a problem building the Configure Button URL (THIS CAUSES A BROWSER REFRESH MSG ON ALL DEVICES).
+3. Fixed a problem sending a notification to an iPhone that no data has been received from the Mobile App for over 6-hours.
+4. Fixed a problem where changes to a device's Friendly Name were not updating the sensors Friendly Name correctly.
+
+
+### Release Notes - v3.1.6 (2/22/2025)
+#### 🎉 Improvements and New Features
+1. Apple sends an email to the account owner that a login/authentication was done when the password is used to authenticate the Apple Account. A note is now added to the Event Log when this occurs showing the authentication date/time (PST) in the Event Log message. Hopefully, the time on the email is the same as the login (but it probably will not be). All password logins can be viewed on _Event Log > Show Startup log, Errors & Alerts_.
 2. The Apple Account username is now obscured in the iCloud3 log files.
 3. The _Data Sources_ ... screen name was changed to _Apple Accounts & Mobile App_ for clarity.
-4. Formatting improvements to the _Apple Accounts & Mobile App screen.
+4. Formatting improvements to the _Apple Accounts & Mobile App_ screen.
 5. The Apple Server Location can now be selected by Apple Account (Applies to China users).
 6. Messages are no longer sent to a phone when there is an Internet Connection error. Phones were being hammered with messages when the Internet connection would cycle between an offline and online state.
 7. When Pausing all tracking, the time paused and age is now displayed in the Event Log.
 
 #### 🐛 Bug Fixes
 1. When iCloud3 started and was setting up the tracked devices, if the Mobile App device parameter was set to 'ScanFor a device' and that device was not found in the list of Mobile App devices, an error was aborting the setup process. This resulted in no Apple account or Mobile App devices being set up correctly. This has been fixed.
-2. Fixed some problems with accessing Apple Servers in China where the .cn URL suffix was not being appended correctly.
+2. Fixed some problems accessing Apple Servers in China where the .cn URL suffix was not being appended correctly.
 3. Fixed a problem displaying all of the Apple Accounts when multiple Apple Accounts were set up and the first one was not logged into.
 
 #### ☕ Buy me a Coffee

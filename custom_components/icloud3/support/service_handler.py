@@ -324,6 +324,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
                 Device.pause_tracking()
 
         elif action == CMD_RESUME:
+            start_ic3.initialize_internet_connection_fields()
             Gb.all_tracking_paused_flag = False
             Gb.all_tracking_paused_secs = 0
             Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
@@ -536,6 +537,7 @@ def _handle_action_device_locate(Device, action_option):
         Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
         Device.resume_tracking()
 
+    start_ic3.initialize_internet_connection_fields()
     Gb.icloud_force_update_flag = True
     Device.icloud_force_update_flag = True
     Device.reset_tracking_fields(interval_secs)

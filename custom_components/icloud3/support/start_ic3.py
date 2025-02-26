@@ -207,6 +207,7 @@ async def update_lovelace_resource_event_log_js_entry(new_evlog_dir=None):
     try:
         # Changed in HA 2025.2
         Resources = Gb.hass.data['lovelace'].resources
+        
     except:
         Resources = Gb.hass.data["lovelace"]["resources"]
 
@@ -377,6 +378,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         config_evlog_msg += f"{CRLF_DOT}Load configuration parameters"
 
         initialize_data_source_variables()
+        initialize_internet_connection_fields()
 
         Gb.www_evlog_js_directory       = Gb.conf_profile[CONF_EVLOG_CARD_DIRECTORY]
         Gb.www_evlog_js_filename        = Gb.conf_profile[CONF_EVLOG_CARD_PROGRAM]
@@ -517,8 +519,6 @@ def initialize_data_source_variables():
     Gb.PyiCloud_logging_in_usernames= []
 
     Gb.username_pyicloud_503_connection_error = []
-    Gb.internet_connection_error_secs = 0
-    Gb.internet_connection_error      = False
 
     if instr(Gb.conf_tracking[CONF_DATA_SOURCE], 'famshr'):
         Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace('famshr', ICLOUD)
@@ -610,6 +610,19 @@ def set_event_recds_max_cnt():
     if event_recds_max_cnt > Gb.EvLog.event_recds_max_cnt:
         Gb.EvLog.event_recds_max_cnt = event_recds_max_cnt
     return Gb.EvLog.event_recds_max_cnt
+
+#------------------------------------------------------------------------------
+def initialize_internet_connection_fields():
+    Gb.internet_connection_error         = False
+    Gb.internet_connection_error_secs    = 0
+    Gb.internet_connection_error_code    = 0
+    Gb.internet_connection_error_msg     = ''
+    Gb.internet_connection_progress_cnt  = 0
+    Gb.internet_connection_status_request_cnt  = 0
+    Gb.internet_connection_status_request_secs = 0
+    Gb.internet_connection_status_requested = False
+    Gb.internet_connection_status_waiting_for_response = False
+    Gb.last_PyiCloud_request_secs = 0
 
 #------------------------------------------------------------------------------
 #

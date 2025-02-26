@@ -176,6 +176,7 @@ class GlobalVariables(object):
     internet_connection_status_request_cnt  = 0       # Recheck counter
     internet_connection_status_request_secs = 0
     internet_connection_status_requested = False
+    internet_connection_status_waiting_for_response = False # Status request was sent to 8.8.8.8 and waiting
 
     last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
     PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename

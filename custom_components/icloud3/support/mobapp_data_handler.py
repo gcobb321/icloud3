@@ -17,7 +17,7 @@ from ..helpers.common       import (instr, is_statzone, is_zone, zone_dname,
 from ..helpers.messaging    import (post_event, post_monitor_msg, more_info,
                                     log_debug_msg, log_exception, log_error_msg, log_rawdata,
                                     _evlog, _log, )
-from ..helpers.time_util    import (secs_to_time, secs_since, mins_since,
+from ..helpers.time_util    import (secs_to_time, secs_since, mins_since, time_now, time_now_secs,
                                     format_time_age, format_age,  )
 from ..helpers.dist_util    import (format_dist_km, format_dist_m, )
 from ..helpers              import entity_io
@@ -322,6 +322,7 @@ def new_mobapp_data_data_available(Device, after_secs):
     if device_trkr_attrs is None:
         return False
 
+    entity_id = Device.mobapp[TRIGGER]
     mobapp_data_trigger_secs = entity_io.get_last_changed_time(entity_id)
     return mobapp_data_trigger_secs > after_secs
 

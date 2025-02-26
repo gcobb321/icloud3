@@ -12,11 +12,12 @@ MENU_KEY_TEXT = {
         'data_source':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
         'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
         'verification_code':    'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter or Request the 6-digit Apple Account Verification Code',
-        'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
         'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
         'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
+        'dashboard_builder':   'DASHBOARD BUILDER > Build a Lovelace Dashboard with tracked devices and the Event Log',
         'tools':                'TOOLS > Log Level, Delete Apple Acct & Device Assignment, Delete Apple Acct Cookie & iCloud3 Config files, Repair sensor ‘_2’ entity name errors, Restart HA/Reload iCloud3',
 
+        'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
         'tracking_parameters':  'TRACKING PARAMETERS > Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals',
         'format_settings':      'FIELD FORMATS & OTHER PARAMETERS > Zone Display & Device Tracker State formats, Unit of Measure/Time & Distance formats, Picture Dir Filters, Event Log Overrides, etc',
         'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement',
@@ -36,10 +37,12 @@ MENU_KEY_TEXT_PAGE_0 = [
         MENU_KEY_TEXT['verification_code'],
         MENU_KEY_TEXT['away_time_zone'],
         MENU_KEY_TEXT['sensors'],
+        # MENU_KEY_TEXT['dashboard_builder'],
         MENU_KEY_TEXT['tools'],
         ]
 MENU_PAGE_1_INITIAL_ITEM = 0
 MENU_KEY_TEXT_PAGE_1 = [
+        # MENU_KEY_TEXT['away_time_zone'],
         MENU_KEY_TEXT['tracking_parameters'],
         MENU_KEY_TEXT['format_settings'],
         MENU_KEY_TEXT['display_text_as'],
@@ -75,6 +78,7 @@ ACTION_LIST_OPTIONS = {
         'add_device':               'ADD DEVICE > Continue to the `‘Update Devices`’ screen to finish setting up the new device',
         'delete_device':            'DELETE DEVICE > Delete the selected device',
         'change_device_order':      'CHANGE DEVICE ORDER > Change the tracking order of the Devices and their display sequence on the Event Log',
+        'update_other_device_parameters': 'UPDATE OTHER DEVICE PARAMETERS > (^otp_msg)',
 
         'inactive_to_track':        'TRACK ALL OR SELECTED > Change the `Tracking Mode‘ of all of the devices (or the selected devices) from `Inactive‘ to `Tracked‘',
         'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE > None of these devices should be `Tracked‘ and should remain `Inactive‘',

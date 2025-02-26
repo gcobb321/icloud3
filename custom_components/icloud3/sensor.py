@@ -776,7 +776,11 @@ class DeviceSensor_Base():
 
         # entity_registry = er.async_get(Gb.hass)
         # entity_registry.async_update_entity(self.entity_id, **kwargs)
-        entity_io.update_entity(self.entity_id, **kwargs)
+        try:
+            entity_io.update_entity(self.entity_id, **kwargs)
+        except Exception as err:
+            # log_exception(err)
+            pass
 
         """
             Typically used:

@@ -201,8 +201,8 @@ class iCloud3:
             start_ic3.handle_config_parms_update()
 
         # An internet request was made more than 1-minute ago, assume it is down
-        if Gb.last_PyiCloud_request_secs > 0 and secs_since(Gb.last_PyiCloud_request_secs) > 60:
-            Gb.internet_connection_error = True
+        #if Gb.last_PyiCloud_request_secs > 0 and secs_since(Gb.last_PyiCloud_request_secs) > 60:
+        #    Gb.internet_connection_error = True
 
         if (Gb.internet_connection_error
                 or Gb.internet_connection_error_secs > 0):
@@ -1355,7 +1355,10 @@ class iCloud3:
             False   > 0         Internet is back up, resume tracking
         '''
         # Internet just went down. Pause tracking and set timer
-        if Gb.internet_connection_error_secs == 0:
+        Gb.last_PyiCloud_request_secs = 0
+
+        if (Gb.internet_connection_error
+                and Gb.internet_connection_error_secs == 0):
             Gb.internet_connection_error_secs = time_now_secs()
             Gb.internet_connection_status_waiting_for_response = False
             Gb.internet_connection_status_request_cnt = 0
@@ -1394,8 +1397,6 @@ class iCloud3:
             return
 
         # See if internet is back up
-        # Gb.internet_connection_status_request_cnt += 1
-        # Gb.internet_connection_status_request_secs = time_now_secs()
 
         is_internet_available = Gb.PyiCloudValidateAppleAcct.is_internet_available()
         if is_internet_available:
@@ -1404,12 +1405,7 @@ class iCloud3:
 #...............................................................................
     @staticmethod
     def reset_internet_connection_error():
-        Gb.internet_connection_error        = False
-        Gb.internet_connection_error_secs   = 0
-        Gb.internet_connection_error_msg    = ''
-        Gb.internet_connection_error_code   = 0
-        Gb.internet_connection_progress_cnt = 0
-        Gb.internet_connection_status_request_cnt = 0
+        start_ic3.initialize_internet_connection_fields()
 
         data_source_not_set_Devices = [Device
                                     for Device in Gb.Devices
@@ -1424,11 +1420,11 @@ class iCloud3:
         else:
             post_event(f"{EVLOG_ALERT} Internet Connection Available > Tracking Resumed")
 
-            # for Device in Gb.Devices:
-            #     Device.resume_tracking()
-            #     if (notify_Device is None
-            #             and Device.mobapp[NOTIFY] != ''):
-            #         notify_Device = Device
+            for Device in Gb.Devices:
+                Device.resume_tracking()
+                # if (notify_Device is None
+                #         and Device.mobapp[NOTIFY] != ''):
+                #     notify_Device = Device
 
         # If the Mobile App is set up, send a message to the 1st Device that can use
         # the notify service
@@ -1443,7 +1439,7 @@ class iCloud3:
         Display the offline message. Show a progress bar that refreshes on 5-sec
         interval while checking the status
         '''
-        if Gb.internet_connection_progress_cnt > 11:
+        if Gb.internet_connection_progress_cnt > 10:
             Gb.internet_connection_progress_cnt = 1
         else:
             Gb.internet_connection_progress_cnt += 1

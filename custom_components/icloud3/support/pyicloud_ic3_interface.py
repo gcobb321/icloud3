@@ -152,10 +152,16 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
             or password == ''):
         return
 
-    locate_all_devices = locate_all_devices \
-                            if   locate_all_devices is not None \
-                            else PyiCloud.locate_all_devices if PyiCloud.locate_all_devices is not None \
-                            else True
+    if locate_all_devices is not None:
+        locate_all_devices = locate_all_devices
+    elif PyiCloud and PyiCloud.locate_all_devices is not None:
+        locate_all_devices = PyiCloud.locate_all_devices
+    else:
+        True
+    # locate_all_devices = locate_all_devices \
+    #                         if   locate_all_devices is not None \
+    #                         else PyiCloud.locate_all_devices if PyiCloud.locate_all_devices is not None \
+    #                         else True
 
     login_err = 0
     post_evlog_greenbar_msg(f"Apple Acct > Setting up {username.split('@')[0]}")
