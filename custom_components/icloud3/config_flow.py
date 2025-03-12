@@ -3157,6 +3157,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         # Get device_type from iCloud device info
         device_type = ''
+        model = 'iphone'
         if user_input[CONF_FAMSHR_DEVICENAME] != 'None':
             icloud_dname = user_input[CONF_FAMSHR_DEVICENAME]
             username = user_input[CONF_APPLE_ACCOUNT]
