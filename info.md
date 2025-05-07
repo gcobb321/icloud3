@@ -6,7 +6,7 @@
 [![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3_v3)  [![Released](https://img.shields.io/badge/Released-May,_2025-forestgreen.svg)](https://github.com/gcobb321/icloud3_v3)
 
 
------
+
 
 iCloud3 is a device tracker custom component that tracks your iPhones, iPads and Apple Watches. Devices in the Family Sharing List and the HA Mobile App Integration are trackable. The device requests location data from from Apple's iCloud  Location Services and monitors various Mobile App sensors and triggers to determine the device's  battery level, location, distance, travel time and arrival to Home. 
 
