@@ -1,12 +1,12 @@
 # iCloud3 v3
 
-------
 
 [![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.2-blue.svg)](https://github.com/gcobb321/icloud3_v3)  [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3_v3)  [![HACS](https://img.shields.io/badge/HACS-Custom_Repository-orange.svg)](https://github.com/gcobb321/icloud3_v3)
 
-[![ProjectStage](https://img.shields.io/badge/Project_Stage-Development_Version-forestgreen.svg)](https://github/gcobb321/icloud3_v3)  [![Released](https://img.shields.io/badge/Released-May, 2025-forestgreen.svg)](https://github.com/gcobb321/icloud3_v3)
+[![ProjectStage](https://img.shields.io/badge/Project_Stage-Development_Version-forestgreen.svg)](https://github/gcobb321/icloud3_v3)  [![Released](https://img.shields.io/badge/Released-May,_2025-forestgreen.svg)](https://github.com/gcobb321/icloud3_v3)
 
 
+-----
 
 iCloud3 is a device tracker custom component that tracks your iPhones, iPads and Apple Watches. Devices in the Family Sharing List and the HA Mobile App Integration are trackable. The device requests location data from from Apple's iCloud  Location Services and monitors various Mobile App sensors and triggers to determine the device's  battery level, location, distance, travel time and arrival to Home. 
 
@@ -66,8 +66,12 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 #### And ...
 
 - **Event Log** - The current status and event history of every tracked and monitored device is displayed on the iCloud3 Event Log custom Lovelace card. Information about device configuration, errors and alerts, nearby devices, tracking results, debug information and location request results is displayed.
+
 - **Extensive Documentation** - The iCloud3 User Guide explains the three main components, hot to get started, how to migrate from v2, how to install the integration, each of the screens and special features, the service calls that can request updates, locate iPhones and send notification alerts, examples of how to automate opening your garage door when you arrive home, etc.
+
 - **And More** - Review the following documentation to see if it will help you track and monitor the locations of your iPhones, iPads and Apple Watches.
+
+  
 
 ### Tracking Information Screens with Event Log
 
@@ -91,7 +95,7 @@ The screens below are an example of how the many tracking sensors can be display
 
 
 
-<a href="https://www.buymeacoffee.com/gcobb321" target="_blank"><img src="images/buymeacoffee-sidebar-button.png"/></a>
+<a href="https://www.buymeacoffee.com/gcobb321" target="_blank"><img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button.png"/></a>
 
 
 -----
