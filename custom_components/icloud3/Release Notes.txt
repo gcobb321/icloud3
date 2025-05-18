@@ -3,13 +3,51 @@
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 **Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
 
-v3.1.5b1 Removed, Replaced with v3.1.5b2 [here](https://github.com/gcobb321/icloud3_v3/issues/399#issuecomment-2620099037)
+
+
+### Release Notes - v3.2
+### 🎉 Improvements and New Features
+1. **Reinstalling the iCloud3 Integraion** - When the iCloud3 integration is deleted and then readded, a check is made to see if any Apple accounts or Devices have been configured. If any are found, an option is now available to erase the Apple account and Device configuration during the reinstallation.
+2. **China GPS Coordinate Conversion (GCJ02, BD09)** - The Apple acount server location in China normally reports GPS coordinates (latitude, longitude) in GCJ02 values. An option to convert these to WGS84 coordinates has been added to the Apple Server Location on the _Update Apple Account Username/Password_ screen.
+
+### ✨ The Dashboard Builder
+The Dashboard Builder is a tool that will create and update dashboards showing iCloud3 tracking results and other device information provided by iCloud3. It is added to the HA Sidebar panel when it is created and can be edited using the HA Dashboard Editor in the same manner as other dashboards. It's name starts with *iCloud3-#* and can be changed to meet your needs. There is no limit to the number of iCloud3 dashboards that can be created.
+
+It is found on the *Configure Settings > iCloud3 Devices & Sensors* menu.
+
+- When the iCloud3 Integration is install the first time, the *iCloud3* is created and added to the HA Sidebar panel.
+- When new devices are added on the *Update iCloud3 Devices* screen, they are added to all iCloud3 dashboards *All Info, *Track Results and *Badge, Battery view tabs.*
+
+Each dashboard has six view tabs. The *Main* and *Other Devices* view tabs are built for the selected devices when the dashboard is created. The other view tabs (their name starts with a '*') are recreated for all devices whenever a dashboard is updated. The type of elements that are created are:
+
+- All tracking information (tracking results sensors + tracking status sensors  + device information sensors) as one item
+- All tracking information (tracking results sensors, tracking status sensors, device information sensors) as separate items
+- Device Badge sensors and Battery sensor as one item in several formats
+- Device Battery sensors in several formats
+
+See the *iCloud3 User Guide - Dashboard Builder* [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/1cs-dashboard-builder) for more information, example screens and instructions on using it.
+
+![Image](https://github.com/user-attachments/assets/de758663-e6cf-4fa1-8f8a-73e46ed04dc0)
+
+### 🐛 Bug Fixes
+1. **Event Log** - Fixed a problem where the *Configure Settings* menu was not being displayed when using an the Home Assistant Mobile App on an iPad or iPhone logged in using an External Link.  A browser Refresh message will be displayed.
+2.  **Stationary Zones** - Fixed a problem where the Device wants to move into a Stationary Zone but couldn't because it was too close (< 200m) to a real zone and 'Too Close' messages were added to the Event Log every 5-seconds. This could happen if you were at the house next door for a long time. Now, a small Stationary Zone is created that can overlap the zone it is close to. The inZone time is set to 5-mins.
+3. **Waze** - Fixed a problem doing End-of-Day Waze History file maintenance when the Internet was down.
+4. **iCloud3 v2** - Removed all messages related to iCloud3 v2 since v3 has been out for about 2-years.
+
+### iCloud3 Directory Structure
+A lot of modules have been added to iCloud3 during the past few years and the directory structure in the *custom_components/icloud3* directory was becoming very large. So I reorganized it. What this means to you:
+- **HACS Installation** - If you install using HACS, HACS will take care of everything and you do not have to do anything special.
+-  **Manual unzip icloud3.zip file installation** -  If you install iCloud3 by unzipping the icloud3.zip file on the GitHub Releases page, all directories and program modules in the *custom_components/ icloud3* directory should be deleted. Do not delete the *icloud3* directory itself. Then unzip the *icloud3.zip* file into the *icloud3* directory. iCloud3 will still work if you  do not do this, but obsolete program modules will be left in the icloud3 directory.
 
 
 
-### Release Notes - v3.1.7
+
+
+### Release Notes - v3.1.6.1 (2/26/2025)
 #### 🎉 Improvements and New Features
 1. _Configure > Update Devices_ screen - Added an Action option to open a new screen to update the rarely updated parameters (inzone interval, log zone, track-from-zone, etc).
+
 
 #### 🐛 Bug Fixes
 1. Fixed a problem restarting after an Internet Connection Error occurred. iCloud3 would get stuck in a loop displaying a 'Paused/Resumed' message on the Event Log and tracking would stop.

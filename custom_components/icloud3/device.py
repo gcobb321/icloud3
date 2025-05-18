@@ -52,27 +52,28 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
 
 from .const_sensor      import (SENSOR_LIST_ZONE_NAME, SENSOR_ICONS, )
 from .                  import device_fm_zone
-from .support           import determine_interval as det_interval
-from .support           import restore_state
-from .support           import config_file
-from .helpers           import entity_io
+from .tracking          import determine_interval as det_interval
+from .startup           import restore_state
+from .startup           import config_file
+from .utils             import entity_io
 
-from .helpers.common    import (instr, is_zone, isnot_zone, is_statzone, list_add, list_del,
+from .utils.utils       import (instr, is_zone, isnot_zone, is_statzone, list_add, list_del,
                                 circle_letter, format_gps, zone_dname, )
-from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
+from .utils.messaging   import (post_event, post_error_msg, post_monitor_msg,
                                 post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                 log_exception, log_debug_msg, log_error_msg, log_rawdata,
                                 post_startup_alert,
                                 post_internal_error, _evlog, _log, )
-from .helpers.time_util import (time_now_secs, secs_to_time, s2t, time_now, datetime_now,
+from .utils.time_util   import (time_now_secs, secs_to_time, s2t, time_now, datetime_now,
                                 secs_since, mins_since, secs_to, mins_to, secs_to_hhmm,
                                 format_timer, format_secs_since, time_to_12hrtime,
                                 secs_to_datetime,
                                 format_age, format_time_age, format_age_hrs, )
-from .helpers.dist_util import (gps_distance_m, gps_distance_km,
+from .utils.dist_util   import (gps_distance_m, gps_distance_km,
                                 km_to_um, m_to_um, m_to_um_ft, )
-from .helpers.format    import (icon_circle, icon_box, )
+from .utils.format      import (icon_circle, icon_box, )
 
+#--------------------------------------------------------------------
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.util import slugify
 from collections        import OrderedDict
@@ -1303,10 +1304,10 @@ class iCloud3_Device(TrackerEntity):
             log_msg =  (f"StatZone Movement > "
                         f"TotalMoved-{km_to_um(self.statzone_dist_moved_km)}")
             if self.is_statzone_timer_set:
-                log_msg += (f", Timer-{secs_to_time(self.statzone_timer)}"
+                log_msg += (f", Timer-{secs_to_time(self.statzone_timer)}, "
                             f"UnderMoveLimit-"
                             f"{self.statzone_dist_moved_km <= Gb.statzone_dist_move_limit_km}, "
-                            f"TimerLeft- {self.statzone_timer_left} secs, "
+                            f"TimerLeft-{self.statzone_timer_left/60:1f} mins, "
                             f"TimerExpired-{self.is_statzone_timer_reached}")
             post_monitor_msg(self.devicename, log_msg)
 

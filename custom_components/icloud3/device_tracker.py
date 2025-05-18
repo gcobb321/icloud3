@@ -23,15 +23,16 @@ from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3, ICLOUD3
                                 CONF_IC3_DEVICENAME,
                                 )
 
-from .helpers.common    import (instr, isnumber, is_statzone, zone_dname)
-from .helpers.messaging import (post_event,
+from .utils.utils       import (instr, isnumber, is_statzone, zone_dname)
+from .utils.messaging   import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 log_exception_HA, log_info_msg_HA,
                                 _evlog, _log, )
-from .helpers.time_util import (adjust_time_hour_values, datetime_now, )
-from .support           import start_ic3
-from .support           import config_file
+from .utils.time_util   import (adjust_time_hour_values, datetime_now, )
+from .startup           import start_ic3
+from .startup           import config_file
 
+#--------------------------------------------------------------------
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.components.device_tracker import device_trigger
 from homeassistant.config_entries       import ConfigEntry
@@ -42,9 +43,13 @@ from homeassistant.helpers              import (entity_registry as er, device_re
 #                                                 CONF_PLATFORM, CONF_TYPE, CONF_ZONE, )
 
 # PLATFORM    = PLATFORM_DEVICE_TRACKER
+
+#--------------------------------------------------------------------
 EVENT_ENTER = "enter"
 EVENT_LEAVE = "leave"
 EVENT_DESCRIPTION = {EVENT_ENTER: "entering", EVENT_LEAVE: "leaving"}
+
+
 #-------------------------------------------------------------------------------------------
 async def async_setup_scanner(hass: HomeAssistant, config, see, discovery_info=None):
     """Old way of setting up the iCloud tracker with platform: icloud3 statement."""

@@ -4,15 +4,15 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#       Translations:
-#               en      - @gcobb321 (Gary Cobb, iCloud3 author)
-#               zh-Hans - @MagicStarTrace (Magic)
+#       Contributors:
+#       @DuncanIdahoCT - iCloud Display Message Alert service call
+#                        This service will send a message to the selected device
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.1.6.1'
+VERSION                         = '3.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -205,10 +205,10 @@ EVENT_RECDS_MAX_CNT_ZONE = 2000         # Used to calculate the max recds to sto
 EVENT_LOG_CLEAR_SECS     = 900          # Clear event log data interval
 EVENT_LOG_CLEAR_CNT      = 50           # Number of recds to display when clearing event log
 
-EVLOG_BTN_URLS           =     {'btnConfig': '',
-                                'btnBuyMeACoffee': '',
-                                'btnIssues': '',
-                                'btnHelp': ''}
+EVLOG_URL_LIST           =     {'urlConfig': '',
+                                'urlBuyMeACoffee': '',
+                                'urlIssues': '',
+                                'urlHelp': ''}
 
 #Devicename config parameter file extraction
 DI_DEVICENAME           = 0
@@ -300,7 +300,7 @@ Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• �
 ↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗✳🞺🞴🞸🞳
   ═ ⎯ — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
   ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
- ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 ⲶⲼ+≈⟣⟢⟡⯌
+ ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢⟡⯌. 🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
  ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
  https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
  https://www.htmlsymbols.xyz/unit-symbols
@@ -858,7 +858,7 @@ CF_SENSORS         = 'sensors'
 
 #--------------------------------------------------------
 DEFAULT_PROFILE_CONF = {
-        CONF_VERSION: -1,
+        CONF_VERSION: 0,
         CONF_IC3_VERSION: VERSION,
         CONF_VERSION_INSTALL_DATE: DATETIME_ZERO,
         CONF_UPDATE_DATE: DATETIME_ZERO,
@@ -1012,7 +1012,7 @@ RANGE_GENERAL_CONF = {
 DEFAULT_SENSORS_CONF = {
         CONF_SENSORS_MONITORED_DEVICES: [
                 'md_badge',
-                'md_battery', ],
+                BATTERY, ],
         CONF_SENSORS_DEVICE: [
                 NAME,
                 BADGE,

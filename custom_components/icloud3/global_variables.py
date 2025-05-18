@@ -77,9 +77,9 @@ class GlobalVariables(object):
     async_add_entities_device_tracker = None    # Initial add_entities link passed to device_tracker during ha startup
     async_executor_call_parameters = None
 
-    ha_location_info= {'country_code': 'us', 'use_metric': False}
-    country_code = 'us'
-    use_metric   = False
+    ha_location_info    = {'country_code': 'us', 'use_metric': False}
+    country_code        = 'us'
+    use_metric          = False
 
     iCloud3             = None   # iCloud3 Platform object
     OptionsFlowHandler  = None   # config_flow OptionsFlowHandler
@@ -116,7 +116,7 @@ class GlobalVariables(object):
 
     operating_mode          = 0         # Platform (Legacy using configuration.yaml) or Integration
     ha_config_platform_stmt = False     # a platform: icloud3 stmt is in the configurationyaml file that needs to be removed
-    v2v3_config_migrated    = False     # Th v2 configuration parameters were migrated to v3
+    # v2v3_config_migrated    = False     # Th v2 configuration parameters were migrated to v3
     add_entities            = None
     ha_started              = False     # Set to True in start_ic3.ha_startup_completed from listener in __init__
 
@@ -412,7 +412,7 @@ class GlobalVariables(object):
     monitored_devices_location_sensors_flag = False
 
     # Initialize Stat Zone size based on Home zone size
-    statzone_min_dist_from_zone_km = .2
+    statzone_min_dist_from_zone_km = .05         # Changed from .2km v3.2.0, .05km=165ft
     statzone_dist_move_limit_km    = .125
     statzone_radius_m              = 100
 

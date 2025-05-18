@@ -31,8 +31,8 @@ from .const             import (HOME, NOT_SET,
                                 LAST_UPDATE, LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
                                 NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
                                 )
-from .helpers.dist_util import (gps_distance_km, km_to_um,)
-from .helpers.messaging import (log_exception, post_internal_error, _evlog, _log, )
+from .utils.dist_util import (gps_distance_km, km_to_um,)
+from .utils.messaging import (log_exception, post_internal_error, _evlog, _log, )
 
 import homeassistant.util.dt as dt_util
 import traceback

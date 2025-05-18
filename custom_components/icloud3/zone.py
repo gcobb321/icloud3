@@ -19,15 +19,16 @@ from .global_variables  import GlobalVariables as Gb
 from .const             import (HOME, NOT_HOME, STATIONARY, HIGH_INTEGER,
                                 ZONE, TITLE, FNAME, NAME, ID, FRIENDLY_NAME, ICON,
                                 LATITUDE, LONGITUDE, RADIUS, PASSIVE,
-                                STATZONE_RADIUS_1M, ZONE, NON_ZONE_ITEM_LIST, )
-# from .support           import mobapp_interface
-from .helpers           import entity_io
-from .helpers.common    import (instr, is_statzone, format_gps, zone_dname,
+                                STATZONE_RADIUS_1M,
+                                ZONE, NON_ZONE_ITEM_LIST, )
+
+from .utils             import entity_io
+from .utils.utils       import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
-from .helpers.messaging import (post_event, post_error_msg, post_monitor_msg,
+from .utils.messaging   import (post_event, post_error_msg, post_monitor_msg,
                                 log_exception, log_rawdata,_evlog, _log, )
-from .helpers.time_util import (time_now_secs, )
-from .helpers.dist_util import (gps_distance_m, gps_distance_km, )
+from .utils.time_util   import (time_now_secs, )
+from .utils.dist_util   import (gps_distance_m, gps_distance_km, )
 
 
 MDI_NAME_LETTERS = {'circle-outline': '', 'box-outline': '', 'circle': '', 'box': ''}
@@ -297,7 +298,8 @@ class iCloud3_StationaryZone(iCloud3_Zone):
                         FNAME: self.fname,
                         LATITUDE: self.zero_latitude,
                         LONGITUDE: self.zero_longitude,
-                        RADIUS: STATZONE_RADIUS_1M, PASSIVE: True}
+                        RADIUS: STATZONE_RADIUS_1M,
+                        PASSIVE: True}
 
         super().__init__(self.zone, zone_data=statzone_data)
 
@@ -318,7 +320,7 @@ class iCloud3_StationaryZone(iCloud3_Zone):
 
 #--------------------------------------------------------------------
     def initialize_zone_attrs(self):
-        # base_attrs is used to set up the stationary zone  and to reset it to passive
+        # base_attrs is used to set up the stationary zone and to reset it to passive
 
         self.attrs            = {}
         self.attrs[NAME]      = self.zone
@@ -363,6 +365,10 @@ class iCloud3_StationaryZone(iCloud3_Zone):
     @property
     def device_distance_m(self):
         return self.distance_m(self.Device.loc_data_latitude, self.Device.loc_data_longitude)
+
+    @property
+    def is_small_statzone(self):
+        return self.radius_m != Gb.statzone_radius_m
 
 #--------------------------------------------------------------------
     def write_ha_zone_state(self, attrs):

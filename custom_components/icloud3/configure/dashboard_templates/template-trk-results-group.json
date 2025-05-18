@@ -1,0 +1,38 @@
+[
+  {
+    "type": "horizontal-stack",
+    "cards": [
+      {
+        "type": "vertical-stack",
+        "cards": [
+          {
+            "type": "glance",
+            "entities": [
+              {
+                "entity": "device_tracker.^devicename",
+                "name": "^fname"
+              },
+              {
+                "entity": "sensor.^devicename_arrival_time",
+                "name": "Arrive"
+              },
+              {
+                "entity": "sensor.^devicename_home_distance",
+                "name": "Distance"
+              },
+              {
+                "entity": "sensor.^devicename_travel_time",
+                "name": "TravTime"
+              },
+              {
+                "entity": "sensor.^devicename_next_update",
+                "name": "NextUpdt"
+              }
+            ],
+            "state_color": true
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,4 +1,35 @@
-"""GitHub Custom Component."""
+
+
+from .global_variables  import GlobalVariables as Gb
+from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG,
+                                PLATFORMS, ICLOUD3, MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
+                                CONF_SETUP_ICLOUD_SESSION_EARLY, CONF_EVLOG_BTNCONFIG_URL,
+                                SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
+                                EVLOG_IC3_STARTING, VERSION, VERSION_BETA,)
+
+
+from .utils.messaging   import (_evlog, _log, open_ic3log_file_init, open_ic3log_file, post_monitor_msg,
+                                            post_evlog_greenbar_msg, post_startup_alert,
+                                            log_info_msg, log_debug_msg, log_error_msg,
+                                            log_exception_HA, log_exception)
+from .utils.time_util   import (time_now_secs, calculate_time_zone_offset, )
+from .utils.file_io     import (async_make_directory, async_directory_exists, async_copy_file,
+                                            read_json_file, save_json_file,
+                                            async_rename_file, async_delete_directory,
+                                            make_directory, directory_exists, copy_file, file_exists,
+                                            rename_file, move_files, )
+
+from .apple_acct        import pyicloud_ic3_interface
+from .apple_acct.pyicloud_ic3 import (PyiCloudValidateAppleAcct, )
+from .icloud3_main      import iCloud3
+from .startup           import start_ic3
+from .startup           import config_file
+from .                  import device_tracker as ic3_device_tracker
+from .startup           import restore_state
+from .tracking.service_handler import register_icloud3_services
+from .tracking          import event_log
+
+#--------------------------------------------------------------------
 import asyncio
 from re         import match
 
@@ -11,38 +42,10 @@ from homeassistant.helpers                import (area_registry as ar, )
 import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 import homeassistant.util.location  as ha_location_info
-import logging
 
-
-from .const import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG,
-                    PLATFORMS, ICLOUD3, MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
-                    CONF_SETUP_ICLOUD_SESSION_EARLY, CONF_EVLOG_BTNCONFIG_URL,
-                    SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
-                    EVLOG_IC3_STARTING, VERSION, VERSION_BETA,)
 
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
-
-from .global_variables              import GlobalVariables as Gb
-from .helpers.messaging             import (_evlog, _log, open_ic3log_file_init, open_ic3log_file, post_monitor_msg,
-                                            post_evlog_greenbar_msg, post_startup_alert,
-                                            log_info_msg, log_debug_msg, log_error_msg,
-                                            log_exception_HA, log_exception)
-from .helpers.time_util             import (time_now_secs, calculate_time_zone_offset, )
-from .helpers.file_io               import (async_make_directory, async_directory_exists, async_copy_file,
-                                            read_json_file, save_json_file,
-                                            async_rename_file, async_delete_directory,
-                                            make_directory, directory_exists, copy_file, file_exists,
-                                            rename_file, move_files, )
-from .support                       import start_ic3
-from .support                       import config_file
-from .                              import device_tracker as ic3_device_tracker
-from .support                       import restore_state
-from .support.service_handler       import register_icloud3_services
-from .support                       import pyicloud_ic3_interface
-from .support                       import event_log
-from .icloud3_main                  import iCloud3
-from .support.pyicloud_ic3          import (PyiCloudValidateAppleAcct, )
-
+import logging
 Gb.HARootLogger = logging.getLogger("")
 Gb.HALogger     = logging.getLogger(__name__)
 
@@ -64,22 +67,24 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         device_trackers = config.get('device_tracker')
         if device_trackers:
             for tracker in device_trackers:
-                if tracker['platform'] == DOMAIN:
-                    Gb.ha_config_platform_stmt = True
-                    Gb.operating_mode = MODE_PLATFORM
+                if tracker['platform'] != DOMAIN:
+                    continue
 
-                    # Initialize the config/.storage/icloud3/configuration file before the config_flow
-                    # has set up the integration
-                    start_ic3.initialize_directory_filenames()
-                    await Gb.hass.async_add_executor_job(
+                Gb.ha_config_platform_stmt = True
+                Gb.operating_mode = MODE_PLATFORM
+
+                # Initialize the config/.storage/icloud3/configuration file before the config_flow
+                # has set up the integration
+                start_ic3.initialize_directory_filenames()
+                await Gb.hass.async_add_executor_job(
                                         config_file.load_icloud3_configuration_file)
-                    # await config_file.async_load_icloud3_configuration_file()
+                # await config_file.async_load_icloud3_configuration_file()
 
-                    if Gb.conf_profile[CONF_VERSION] == 1:
-                        Gb.HALogger.warning(f"Starting iCloud3 v{VERSION}{VERSION_BETA} > "
-                                            "Detected a `platform: icloud3` statement in the "
-                                            "configuration.yaml file. This is depreciated and "
-                                            "should be removed.")
+                if Gb.conf_profile[CONF_VERSION] == 1:
+                    Gb.HALogger.warning(f"Starting iCloud3 v{VERSION}{VERSION_BETA} > "
+                                        "Detected a `platform: icloud3` statement in the "
+                                        "configuration.yaml file. This is depreciated and "
+                                        "should be removed.")
 
     except Exception as err:
         # log_exception(err)
@@ -139,7 +144,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
         start_ic3.initialize_directory_filenames()
 
-        await Gb.hass.async_add_executor_job( config_file.load_icloud3_configuration_file)
+        await Gb.hass.async_add_executor_job(config_file.load_icloud3_configuration_file)
 
         start_ic3.set_log_level(Gb.log_level)
         await Gb.hass.async_add_executor_job(open_ic3log_file_init)
@@ -151,8 +156,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.evlog_version       = Gb.conf_profile['event_log_version']
         Gb.EvLog               = event_log.EventLog(Gb.hass)
 
-        Gb.EvLog.post_event(f"{EVLOG_IC3_STARTING}{ICLOUD3_VERSION_MSG} > Loading, "
-                            f"{dt_util.now().strftime('%A, %b %d')}")
+        Gb.EvLog.post_event(
+                f"{EVLOG_IC3_STARTING}Loading > {ICLOUD3_VERSION_MSG}, "
+                f"{dt_util.now().strftime('%A, %b %d')}")
 
         Gb.HALogger.info(f"Setting up {ICLOUD3_VERSION_MSG}{VERSION_BETA}")
         log_info_msg(f"Setting up {ICLOUD3} v{VERSION}{VERSION_BETA}")
@@ -171,11 +177,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
             # _log(f"{Gb.hass.data['lovelace']=}")
-            # dashboard = Gb.hass.data['lovelace'].dashboards['icloud3']
-            # #_log(f"{dashboard.__dict__=}")
-            # _log(f"{dashboard.config=}")
-            # _log(f"{dashboard._data=}")
-
             pass
 
         except Exception as err:
@@ -192,8 +193,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
                 await Gb.hass.async_add_executor_job(pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
 
-        # set_up_default_area_id()
-
         # Create device_tracker entities if devices have been configure
         # Otherwise, this is done in config_flow when the first device is set up
         if Gb.conf_devices != []:
@@ -205,18 +204,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await Gb.hass.config_entries.async_forward_entry_setups(
                                 entry,
                                 ['sensor'])
-        # await Gb.hass.async_add_executor_job(
-        #                     rename_all_entity_id_x_to_entity_id_base)
 
         # Do not start if loading/initialization failed
         if successful_startup is False:
-            log_error_msg(f"iCloud3 Initialization Failed, configuration file "
-                            f"{Gb.icloud3_config_filename} failed to load.")
+            log_error_msg(
+                    f"iCloud3 Initialization Failed, configuration file "
+                    f"{Gb.icloud3_config_filename} failed to load.")
             log_error_msg("Verify the configuration file and delete it manually if necessary")
             return False
 
-        Gb.EvLog.post_event(f"{EVLOG_IC3_STARTING}{ICLOUD3_VERSION_MSG} > Starting, "
-                        f"{dt_util.now().strftime('%A, %b %d')}")
+        Gb.EvLog.post_event(
+                f"{EVLOG_IC3_STARTING}Starting > {ICLOUD3_VERSION_MSG}, "
+                f"{dt_util.now().strftime('%A, %b %d')}")
 
         # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
         unsub_options_update_listener = entry.add_update_listener(options_update_listener)
@@ -243,14 +242,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             EVENT_HOMEASSISTANT_STOP, start_ic3.ha_stopping)
 
     Gb.EvLog.post_event('Start iCloud3 Services Executor Job')
-    Gb.hass.async_add_executor_job(
-                    register_icloud3_services)
+    Gb.hass.async_add_executor_job(register_icloud3_services)
 
     Gb.initial_icloud3_loading_flag = True
     log_debug_msg('START iCloud3 Initial Load Executor Job (iCloud3.start_icloud3)')
 
-    icloud3_started = await Gb.hass.async_add_executor_job(
-                                            Gb.iCloud3.start_icloud3)
+    icloud3_started = await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3)
 
     if icloud3_started:
         log_info_msg(f"{ICLOUD3_VERSION_MSG} Startup Complete")

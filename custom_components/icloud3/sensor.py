@@ -35,24 +35,26 @@ from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3, RARROW,
                                 )
 from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
-                                SENSOR_ATTRS, SENSOR_DEFAULT, ICLOUD3_SENSORS,
+                                SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
                                 SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS, )
 
-from .helpers.common    import (instr, is_empty, isnot_empty, round_to_zero, isnumber,
+from .utils.utils       import (instr, is_empty, isnot_empty, round_to_zero, isnumber,
                                 list_add, )
-from .helpers.messaging import (post_event, log_info_msg, log_debug_msg, log_error_msg,
+from .utils.format      import (icon_circle, icon_box, )
+from .utils.messaging   import (post_event, log_info_msg, log_debug_msg, log_error_msg,
                                 log_exception, log_info_msg_HA, log_exception_HA,
                                 _evlog, _log, )
-from .helpers.time_util import (time_to_12hrtime, time_remove_am_pm, format_timer,
+from .utils.time_util   import (time_to_12hrtime, time_remove_am_pm, format_timer,
                                 format_mins_timer, time_now_secs, datetime_now,
                                 secs_to_datetime, secs_to_datetime, datetime_struct_to_secs,
                                 adjust_time_hour_values, adjust_time_hour_value)
-from .helpers.dist_util import (km_to_mi, m_to_ft, m_to_um, set_precision, reformat_um, )
-from .helpers.format    import (icon_circle, icon_box, )
-from .helpers           import entity_io
-from .support           import config_file
-from .support           import start_ic3
+from .utils.dist_util   import (km_to_mi, m_to_ft, m_to_um, set_precision, reformat_um, )
 
+from .startup           import config_file
+from .startup           import start_ic3
+from .utils             import entity_io
+
+#--------------------------------------------------------------------
 from collections        import OrderedDict
 from homeassistant      import config_entries, core
 from homeassistant.const                import MATCH_ALL
@@ -65,7 +67,7 @@ from homeassistant.helpers.icon         import icon_for_battery_level
 from homeassistant.helpers              import entity_registry as er, device_registry as dr
 
 import homeassistant.util.dt as dt_util
-# from homeassistant.helpers.entity       import Entity
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
@@ -162,7 +164,7 @@ def create_tracked_device_sensors(devicename, conf_device, new_sensors_list=None
 
         # The sensor group is a group of sensors combined under one conf_sensor item
         # Build sensors to be created from the the sensor or the sensor's group
-        sensors_list_set = set()
+        sensors_list_set = set(SENSOR_LIST_ALWAYS)
         for sensor in new_sensors_list:
             if sensor in SENSOR_GROUPS:
                 sensors_list_set.update(SENSOR_GROUPS[sensor])
@@ -304,12 +306,19 @@ def create_monitored_device_sensors(devicename, conf_device, new_sensors_list=No
 
         # The sensor group is a group of sensors combined under one conf_sensor item
         # Build sensors to be created from the the sensor or the sensor's group
-        sensors_list = []
+        sensors_list = SENSOR_LIST_ALWAYS
+        # for sensor in new_sensors_list:
+        #     if sensor in SENSOR_GROUPS:
+        #         sensors_list.extend(SENSOR_GROUPS[sensor])
+        #     else:
+        #         sensors_list.append(sensor)
+
+        sensors_list_set = set(SENSOR_LIST_ALWAYS)
         for sensor in new_sensors_list:
             if sensor in SENSOR_GROUPS:
-                sensors_list.extend(SENSOR_GROUPS[sensor])
+                sensors_list_set.update(SENSOR_GROUPS[sensor])
             else:
-                sensors_list.append(sensor)
+                sensors_list_set.add(sensor)
 
         devicename_sensors = Gb.Sensors_by_devicename.get(devicename, {})
 
@@ -318,7 +327,8 @@ def create_monitored_device_sensors(devicename, conf_device, new_sensors_list=No
         # The sensor_def name is the conf_sensor name set up in the Sensor_definition table.
         # The table contains the actual ha Sensor entity name. That permits support for track-from-zone
         # suffixes.
-        for sensor in sensors_list:
+        # for sensor in sensors_list:
+        for sensor in sensors_list_set:
             Sensor = None
 
             devicename_sensor = f"{devicename}_{sensor}"
@@ -858,10 +868,6 @@ class DeviceSensor_Base():
             self.Device.Sensors.pop(self.sensor)
 
 #-------------------------------------------------------------------------------------------
-    def x_remove_entity():
-        entity_io.remove_entity(self.entity_id)
-
-#-------------------------------------------------------------------------------------------
     async def async_will_remove_from_hass(self):
         '''Clean up after entity before removal.'''
 
@@ -1357,7 +1363,7 @@ class iCloud3Sensor_Base():
         """Return information about the device """
         return DeviceInfo(  identifiers = {(DOMAIN, DOMAIN)},
                             manufacturer = 'gcobb321',
-                            model        = 'Intergration',
+                            model        = 'Integration',
                             name         = 'iCloud3 Integration'
                         )
 

@@ -1,0 +1,19 @@
+[
+  {
+    "type": "vertical-stack",
+    "cards": [
+      {
+        "type": "tile",
+        "entity": "sensor.^devicename_badge",
+        "name": "^fname",
+        "features_position": "bottom",
+        "vertical": false,
+        "show_entity_picture": true
+      }
+    ],
+    "grid_options": {
+      "columns": 4,
+      "rows": "auto"
+    }
+  }
+]

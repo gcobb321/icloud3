@@ -12,7 +12,8 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  v3.1.1 - Fixed problem creating btnConfig url.
+//  v3.1.1 - Fixed problem creating btnConfig url
+//  v3.2.0 - Removed references to v2 -> v3 conversion
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -24,7 +25,7 @@ class iCloud3EventLogCard extends HTMLElement {
     }
     //---------------------------------------------------------------------------
     setConfig(config) {
-        const version = "3.1.1"
+        const version = "3.2.0"
         const cardTitle = "iCloud3 v3 - Event Log"
 
         const root = this.shadowRoot
@@ -1109,24 +1110,21 @@ class iCloud3EventLogCard extends HTMLElement {
             }
             tblEvlog.style.setProperty('visibility', 'hidden')
             const msgStarting = '<p>iCloud3 is Starting<br><hr><br>Please wait</p>'
-            const msgNotRunning = '<p>iCloud3 Start up Warning/Error:<br><hr><br>\
-            iCloud3 is starting but there may be a problem. iCloud3 is now a HA Integration and probably has not been added \
-            to Home Assistant on the Devices & Services screen. Other reasons may be \
-            it is restarting, not running, not installed, has not been set up or there are other errors.<br><br><hl>\
-            BE SURE YOU HAVE SET UP THE ICLOUD3 INTEGRATION:<br>\
-            1. HA Configuration > Devices & Services > Integrations,<br>\
-            2. Select `+Add Integration`<br>\
-            3. Type `iCloud3` in the Search integrations field and select iCloud3 Device Tracker<br>\
-            4. Restart Home Assistant. iCloud3 will start up and your configuration parameters will be migrated to the new format<br>\
-            5. Select HA Configuration > Devices & Services > Integrations > iCloud3 > Configure and review the parameters on each of \
-            the screens. Verify that the parameters were migrated correctly. Make any changes that are needed.<br>\
-            7. Remove the iCloud3 configuration parameters from the `/config/configuration.yaml` file<br><br><hl>\
-            CHECK FOR ICLOUD3 LOAD ERRORS IN THE HA LOG FILE:<br>\
-            • HA Configuration > System > Logs > Load Full Logs, or<br>\
-            • View `/config/home-assistant.log` file in a text editor<br><br>\
+            const msgNotRunning = '<br><br><hr><br><b>iCLOUD3 RAN INTO A PROBLEM STARTING UP</b>\
+            <p>iCloud3 is an HA Integration and probably has not been added \
+            to Home Assistant on the <i>Devices & Services</i> screen. Other reasons may be \
+            it is restarting, not running, not installed, has not been set up or there are other errors.<br><br><br>\
+            <b>BE SURE YOU HAVE SET UP THE ICLOUD3 INTEGRATION</b><br>\
+            <p>1. HA Settings > Devices & Services > Integrations,<br>\
+            2. Select <i>+ ADD INTEGRATION</i><br>\
+            3. Type <i>iCloud3</i> in the Search integrations field and select <i>iCloud3 v3</i><br>\
+            4. iCloud3 will be installed. Review the instructions on the iCloud3 v3 Integration Installer screen and select SUBMIT to continue.<br>\
+            5. Select <i>CONFIGURE</i> to load the <i>iCloud3 Configure</i> screens and begin setting up iCloud3.<br><br><br>\
+            <b>CHECK FOR ICLOUD3 LOAD ERRORS IN THE HA LOG FILE</b><br>\
+            <p>• HA Configuration > System > Logs > Load Full Logs, or<br>\
+            • View <i>/config/home-assistant.log</i> file in a text editor<br><br>\
             You can also review the iCloud3 documentation by selecting the Question Mark (?) in the upper right corner of the Event Log. \
-            Then go to the Trouble Shooting section.<br><br>\
-            Error: '+ err.name + ', ' + err.message + '</p>'
+            Then go to the Trouble Shooting section.<br><br></p>'
 
             if (err.name == 'TypeError') {
                 if (err.message.indexOf('attributes') > -1) {
@@ -1995,18 +1993,18 @@ class iCloud3EventLogCard extends HTMLElement {
         const btnIssues        = root.getElementById("btnIssues")
         const btnBuyMeACoffee  = root.getElementById("btnBuyMeACoffee")
         const btnConfig        = root.getElementById("btnConfig")
-        const evlogBtnUrlsList = hass.states['sensor.icloud3_event_log'].attributes['evlog_btn_urls']
+        const evlogBtnUrlsList = hass.states['sensor.icloud3_event_log'].attributes['evlog_url_list']
         // const evlogBtnUrlsListKeys   = Object.keys(evlogBtnUrlsList)
         // const evlogBtnUrlsListValues = Object.values(evlogBtnUrlsList)
 
-        if (evlogBtnUrlsList["btnHelp"] != "") {
-            btnHelp.setAttribute('href', evlogBtnUrlsList["btnHelp"]) }
-        if (evlogBtnUrlsList["btnIssues"] != "") {
-            btnIssues.setAttribute('href', evlogBtnUrlsList["btnIssues"]) }
-        if (evlogBtnUrlsList["btnBuyMeACoffee"] != "") {
-            btnBuyMeACoffee.setAttribute('href', evlogBtnUrlsList["btnBuyMeACoffee"]) }
-        if (evlogBtnUrlsList["btnConfig"] != "") {
-            btnConfig.setAttribute('href', evlogBtnUrlsList["btnConfig"]) }
+        if (evlogBtnUrlsList["urlHelp"] != "") {
+            btnHelp.setAttribute('href', evlogBtnUrlsList["urlHelp"]) }
+        if (evlogBtnUrlsList["urlIssues"] != "") {
+            btnIssues.setAttribute('href', evlogBtnUrlsList["urlIssues"]) }
+        if (evlogBtnUrlsList["urlBuyMeACoffee"] != "") {
+            btnBuyMeACoffee.setAttribute('href', evlogBtnUrlsList["urlBuyMeACoffee"]) }
+        if (evlogBtnUrlsList["urlConfig"] != "") {
+            btnConfig.setAttribute('href', evlogBtnUrlsList["urlConfig"]) }
     }
 
     //---------------------------------------------------------------------------
@@ -2014,32 +2012,33 @@ class iCloud3EventLogCard extends HTMLElement {
         const hass             = this._hass
         const root             = this.shadowRoot
         const btnConfig        = root.getElementById("btnConfig")
-        const evlogBtnUrlsList = hass.states['sensor.icloud3_event_log'].attributes['evlog_btn_urls']
+        const evlogBtnUrlsList = hass.states['sensor.icloud3_event_log'].attributes['evlog_url_list']
 
-        // Example: 'http://localhost:8123/config/integrations/integration/icloud3'
+        // local Url: 'http://10.0.2.200:8123/icloud3-yaml/0'
+        // External url: 'https://ms12345abcd.ui.nabu.case/dashboard-icloud3/0/'
+        // Replace icloud3 dashboard name ('dashboard-icloud3/0') with 'config/integrations/integration/icloud3'
+        // Replace icloud3 dashboard name ('ic3db-icloud3-2/0') with 'config/integrations/integration/icloud3'
 
-        if (evlogBtnUrlsList["btnConfig"] != "") {
-            btnConfig.setAttribute('href', evlogBtnUrlsList["btnConfig"])
+        if (evlogBtnUrlsList["urlConfig"] != "") {
+            btnConfig.setAttribute('href', evlogBtnUrlsList["urlConfig"])
             return
         }
 
         /// v3.1.1 - Fixed problem creating btnConfig url.
         var targetUrl = ''
         var winLocUrl = window.location.href
-        if (winLocUrl.indexOf(":8123")) {
-            targetUrl = winLocUrl.split(':8123', 1)[0] + ':8123'
-        } else if (winLocUrl.indexOf("/lovelace")) {
-            targetUrl = winLocUrl.split('/lovelace', 1)[0]
-        } else if (winLocUrl.indexOf("/dashboard")) {
-            targetUrl = winLocUrl.split('/dashboard', 1)[0]
-        } else if (targetUrl == "") {
-            return }
+        var baseUrl = ''
+        const slashCnt = (winLocUrl.match(new RegExp("/", "g")) || []).length
 
-        targetUrl = targetUrl + '/config/integrations/integration/icloud3'
+        // Extract url string up to the dashboard name, then add the 'config/...' string
+        for (let i = 0; i <= slashCnt-2; i++) {
+            baseUrl = baseUrl + winLocUrl.split('/')[i] + '/'
+        }
+        targetUrl = baseUrl + 'config/integrations/integration/icloud3'
 
         btnConfig.setAttribute('href', targetUrl)
 
-        // alert("2039 winLocUrl="+winLocUrl+', configUrl='+configUrl+', targetUrl='+targetUrl+'|')
+        // alert('2041 baseUrl='+baseUrl+' targetUrl='+targetUrl)
     }
     //---------------------------------------------------------------------------
     _btnClassMouseOverName(buttonId) {

@@ -1,9 +1,8 @@
 # iCloud3 v3
 
+[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.2-orange.svg)](https://github.com/gcobb321/icloud3)   [![Released](https://img.shields.io/badge/Released-May,_2025-orange.svg)](https://github.com/gcobb321/icloud3) [![HACS](https://img.shields.io/badge/HACS-Standard_Installation-darkorange.svg)](https://github.com/gcobb321/icloud3)
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.2-blue.svg)](https://github.com/gcobb321/icloud3_v3)  [![Type](https://img.shields.io/badge/Type-Custom_Component-orange.svg)](https://github.com/gcobb321/icloud3_v3)  [![HACS](https://img.shields.io/badge/HACS-Custom_Repository-orange.svg)](https://github.com/gcobb321/icloud3_v3)
-
-[![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3_v3)  [![Released](https://img.shields.io/badge/Released-May,_2025-forestgreen.svg)](https://github.com/gcobb321/icloud3_v3)
+ [![Type](https://img.shields.io/badge/Type-Custom_Component-forestgreen.svg)](https://github.com/gcobb321/icloud3)   [![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3) 
 
 
 
@@ -47,7 +46,6 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 - **Stationary Zone** - A dynamic *Stationary Zone* is created when the device has not moved for a while (doctors office, store, friend's house). This helps conserve battery life.
 - **Zone monitoring** - The number of devices in each zone is displayed when a device is updated. 
 - **Zone Distance Sensor Attributes** - Shows the distance to the center and edge of the Home zone, distance to other zones and distance to other devices. 
-
 - **Track from multiple zones** - Tracking results (location, travel time, distance, arrival time, etc.) are reported from the Home zone or another zone (office, second home, parents, etc.). 
 - **Enter Zone delay** - Delay processing Zone Enter triggers in case you are just driving through it.
 - **Zone Exits for devices not using the Mobile App** - Devices that do not or can not (Apple Watch) use the Mobile App respond to a zone exit when it detects another nearby device has left a zone.
@@ -66,9 +64,7 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 #### And ...
 
 - **Event Log** - The current status and event history of every tracked and monitored device is displayed on the iCloud3 Event Log custom Lovelace card. Information about device configuration, errors and alerts, nearby devices, tracking results, debug information and location request results is displayed.
-
 - **Extensive Documentation** - The iCloud3 User Guide explains the three main components, hot to get started, how to migrate from v2, how to install the integration, each of the screens and special features, the service calls that can request updates, locate iPhones and send notification alerts, examples of how to automate opening your garage door when you arrive home, etc.
-
 - **And More** - Review the following documentation to see if it will help you track and monitor the locations of your iPhones, iPads and Apple Watches.
 
   

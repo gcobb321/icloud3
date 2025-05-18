@@ -15,13 +15,8 @@ Special Note: I want to thank Walt Howd, (iCloud2 fame) who inspired me to
 Thanks to all
 """
 
-import time
-import traceback
-from re import match
-import homeassistant.util.dt        as dt_util
-from   homeassistant.helpers.event  import track_utc_time_change
 
-# =================================================================
+#--------------------------------------------------------------------
 
 from .global_variables  import GlobalVariables as Gb
 from .const             import (VERSION, VERSION_BETA,
@@ -41,33 +36,39 @@ from .const             import (VERSION, VERSION_BETA,
                                 CONF_LOG_LEVEL, STATZONE_RADIUS_1M,
                                 )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
-from .support           import hacs_ic3
-from .support           import start_ic3
-from .support           import start_ic3_control
-from .support           import stationary_zone as statzone
-from .support           import mobapp_data_handler
-from .support           import mobapp_interface
-from .support           import pyicloud_ic3_interface
-from .support           import icloud_data_handler
-from .support           import service_handler
-from .support           import zone_handler
-from .support           import determine_interval as det_interval
-from .helpers.file_io   import (is_event_loop_running,  is_event_loop_running2,)
-from .helpers.common    import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone,
+from .startup           import hacs_ic3
+from .startup           import start_ic3
+from .startup           import start_ic3_control
+from .tracking          import stationary_zone as statzone
+from .mobile_app        import mobapp_data_handler
+from .mobile_app        import mobapp_interface
+from .apple_acct        import pyicloud_ic3_interface
+from .apple_acct        import icloud_data_handler
+from .tracking          import service_handler
+from .tracking          import zone_handler
+from .tracking          import determine_interval as det_interval
+from .utils.file_io     import (is_event_loop_running,  is_event_loop_running2,)
+from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone,
                                 list_to_str, isbetween, get_username_base, )
-from .helpers.file_io   import (file_exists, directory_exists, make_directory, extract_filename, )
-from .helpers.messaging import (broadcast_info_msg,
+from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
+from .utils.messaging   import (broadcast_info_msg,
                                 post_event, post_error_msg, post_monitor_msg, post_internal_error,
                                 post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
                                 log_debug_msg, archive_ic3log_file,
                                 _evlog, _log, )
-from .helpers.time_util import (time_now, time_now_secs, secs_to, secs_since, mins_since,
+from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mins_since,
                                 secs_to_time, secs_to_hhmm, secs_to_datetime,
                                 calculate_time_zone_offset, secs_to_even_min_secs,
                                 format_timer, format_age, format_time_age, format_secs_since, )
-from .helpers.dist_util import (km_to_um, m_to_um_ft, )
+from .utils.dist_util   import (km_to_um, m_to_um_ft, )
 
+#--------------------------------------------------------------------
+import time
+import traceback
+from re import match
+import homeassistant.util.dt        as dt_util
+from   homeassistant.helpers.event  import track_utc_time_change
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class iCloud3:
@@ -1505,17 +1506,21 @@ class iCloud3:
         log_start_finish_update_banner('start', 'End-of-Day Maintenance', 'Started', '')
 
         if instr(Gb.conf_general[CONF_LOG_LEVEL], 'auto-reset'):
-                start_ic3.set_log_level('info')
-                start_ic3.update_conf_file_log_level('info')
+            start_ic3.set_log_level('info')
+            start_ic3.update_conf_file_log_level('info')
 
         for username, PyiCloud in Gb.PyiCloud_by_username.items():
-            PyiCloud.auth_cnt  = 0
+            PyiCloud.auth_cnt = 0
 
-        if Gb.WazeHist and Gb.WazeHist.is_historydb_USED:
+        if (Gb.WazeHist
+                and Gb.WazeHist.is_historydb_USED
+                and Gb.internet_connection_error is False):
             Gb.WazeHist.end_of_day_maintenance()
 
         log_start_finish_update_banner('finish', 'End-of-Day Maintenance', 'Complete', '')
-        post_event(f"{EVLOG_IC3_STAGE_HDR}End of Day File Maintenance")
+        post_event( f"{EVLOG_IC3_STAGE_HDR}End of Day File Maintenance > "
+                    f"iCloud3 v{Gb.version}, "
+                    f"{dt_util.now().strftime('%A, %b %d')}")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

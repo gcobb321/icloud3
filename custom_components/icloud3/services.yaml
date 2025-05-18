@@ -76,3 +76,31 @@ find_iphone_alert:
         device:
           filter:
             integration: icloud3
+
+display_message_alert:
+  name: "Display Message Alert"
+  description: "This service will display a message on the device and can also play an alert tone"
+  fields:
+    device_name:
+      name: "Device Name"
+      description: "Device the message should be displayed on"
+      required: true
+      example: "Duncan (duncan_iphone)"
+      selector:
+        device:
+          filter:
+            integration: icloud3
+    message:
+      name: "Message"
+      description: "The message to be sent"
+      example: "Back door is unlocked"
+      required: true
+      selector:
+        text:
+    sounds:
+      name: "Sounds"
+      description: "If a sound is to be played along with message"
+      example: "True"
+      required: true
+      selector:
+        text:

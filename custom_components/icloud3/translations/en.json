@@ -30,11 +30,15 @@
     "step": {
       "user": {
         "data": {
-          "continue": "Select to continue iCloud3 installation (and parameter migration)",
-          "continue_restart_ha": "Select to continue iCloud3 installation. Then RESTART HOME ASSISTANT."
+          "continue": "CONTINUE > Select SUBMIT to complete the iCloud3 installation",
+          "reset_tracking": "PREVIOUS ICLOUD3 CONFIG WAS FOUND. DO YOU WANT TO REINITIALIZE THE APPLE ACCOUNTS & DEVICES?",
+          "continue_restart_ha": "Select to continue iCloud3 installation. Then RESTART HOME ASSISTANT"
         },
-        "description": "CONGRATULATIONS! The iCloud3 v3 Integration has been added to Home Assistant. The next step is to configure the devices you want to track. If you are running iCloud3 v2, your configuration will be migrated from v2 to v3\n\nSelect SUBMIT below, then select CONFIGURE to configure iCloud3.\n\n\n-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\nThe iCloud3 User Guide will help you get started:\n• ICLOUD3 DOCUMENTATION - Select the question mark (?) in the upper-right\n&nbsp;&nbsp;corner of this screen to open the “iCloud User Guide”\n• MIGRATING FROM v2 - Follow the steps in the “Installing iCloud3 > Migrating\n&nbsp;&nbsp;from v2 to v3” chapter\n• NEW INSTALLATION - Follow the steps in the “Installing iCloud3 > As a new\n&nbsp;&nbsp;Installation” chapter\n-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --",
-        "title": "iCloud3 v3 Integration Installer"
+        "description": "CONGRATULATIONS! The iCloud3 v3 Integration has been added to Home Assistant. The next step is to configure the devices you want to track.\n\nSelect SUBMIT below, then select CONFIGURE to configure iCloud3.\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\nThe iCloud3 User Guide will help you get started. Select the question mark (?) in the upper-right corner of this screen to open the “iCloud User Guide”. The following chapters will be helpful:\n&nbsp;&nbsp;• ICLOUD COMPONENTS - Provides an overview of the Device Tracker screen,\n&nbsp;&nbsp;&nbsp;&nbsp;the Event Logand the Configure screens that are used to set up iCloud3\n&nbsp;&nbsp;• APPLE ACCOUNT - Covers setting up and logging into your Apple Account.\n&nbsp;&nbsp;&nbsp;&nbsp;It will provide information about your devices including their location.\n&nbsp;&nbsp;• MOBILE APP INTEGRATION - Covers setting up and configuring the Mobile App. \n&nbsp;&nbsp;&nbsp;&nbsp;It will provide zone enter/exit triggers and location data.\n&nbsp;&nbsp;• EVENT LOG - Provides information on iCloud3 activities to include startup status, \n&nbsp;&nbsp;&nbsp;&nbsp;errors, alerts, device tracking results, battery information, shortcuts for\n&nbsp;&nbsp;&nbsp;&nbsp;configuring iCloud3 and Actions that can control iCloud3 operations.\n&nbsp;&nbsp;• DASHBOARD BUILDER - Builds an iCloud3 Dashboard showing Device\n&nbsp;&nbsp;&nbsp;&nbsp;Tracking Results and the Event log.\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n🕓 After you click Submit, be patient. HA will scan for your iCloud Devices. It may take up to 30-seconds to discover them all.",
+        "title": "iCloud3 v3 Integration Installer",
+        "data_description": {
+          "reset_tracking": "The iCloud3 Configuration has been previously set up and is normally used when adding the iCloud3 Integration again. Check this option if you want to remove the Apple account and Devices configuration and start over"
+        }
       },
       "reauth": {
         "title": "Apple ID Verification Code (HA Notifications)",
@@ -158,7 +162,16 @@
       "excluded_sensors_ha_restart": "Excluded Sensors were Updated. An HA restart is required",
 
       "fix_entity_name_complete": "Sensor Entity Name Corrected completed",
-      "fix_entity_name_not_needed": "No Sensor Entity Name Errors were found"
+      "fix_entity_name_not_needed": "No Sensor Entity Name Errors were found",
+
+      "dashboard_device_keyword_error": "Could not update dashboard. Device Keyword not available",
+      "dashboard_created_initial": "The Initial iCloud3 Dashboard was created",
+      "dashboard_created": "The Dashboard was created",
+      "dashboard_updated": "The Dashboard was updated",
+      "dashboard_name_used": "This Dashboard Name is assigned to another Dashboard",
+      "dashboard_main_2_devices": "Only 2 Devices can be selected for the Main view screen",
+      "dashboard_error": "An error occurred updating the Dashboard",
+      "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code."
 
     },
     "step": {
@@ -397,11 +410,11 @@
       },
       "dashboard_builder": {
         "title": "iCloud3 Dashboard Builder",
-        "description": "This will create a Dashboard for iCloud3 tracked devices and the Event Log in several formats. The dashboard that is created is a normal HA Dashboard that you can customize using the HA Dashboard tools. There are 5 tabs with different styles that you can use as-is or as a source to build your own.",
+        "description": "This screen will create and update iCloud3 Dashboards for tracked devices (up to 4) with different styles and views. The Dashboards can then be customized using the HA Dashboard tools or used as-is.",
         "data": {
-          "styles":"\nThe styles are:\n1. Left > Device Info (#1, #2) as a complete sensor group, Right > Event Log\n2. Left > Badge Sensor, Device Tracking Results (#1, #2), Battery, Right > Event Log\n3. Left > Device Info as a individual sensor groups; Right > Event Log\n4.  Left > Device Info  (#1, #2) as a complete sensor group; Right >  Device Info (#3, #4) as a complete sensor group\n\n5. Event Log by itself",
           "device_desc": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DASHBOARD BUILDER",
-          "under_construction": "UNDER CONSTRUCTION ",
+          "selected_dashboard": "ICLOUD3 DASHBOARDS",
+          "main_view_devices": "MAIN VIEW DEVICES - Devices to display on the Main view of a new dashboard",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -624,6 +637,24 @@
         "message": {
           "name": "Message",
           "description": "The message to be sent"
+        }
+      }
+    },
+    "display_message_alert": {
+      "name": "Display Message Alert",
+      "description": "This service will display a message on the device and can also play an alert tone",
+      "fields": {
+        "device_name": {
+          "name": "Device Name",
+          "description": "Device the message should be displayed on"
+        },
+        "message": {
+          "name": "Message",
+          "description":  "The message to be sent"
+        },
+        "sounds": {
+          "name": "Sounds",
+          "description": "If a sound is to be played along with message"
         }
       }
     }
