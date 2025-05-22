@@ -99,6 +99,26 @@ import voluptuous as vol
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+def get_options_flow_handler():
+    config_entries = Gb.hass.config_entries.async_entries('icloud3')
+    config_entry   = config_entries[0]
+
+    Gb.config_entry_id = config_entry.entry_id
+    if Gb.config_entry_id in Gb.OptionsFlowHandler_by_entry_id:
+        Gb.OptionsFlowHandler = Gb.OptionsFlowHandler_by_entry_id[Gb.config_entry_id]
+    else:
+        Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+        Gb.OptionsFlowHandler_by_entry_id[Gb.config_entry_id] = Gb.OptionsFlowHandler
+
+    _log("iCloud3 ConfigFlow/OptionsFlow Setup")
+    _log(f"{config_entries=}")
+    # _log(f"{config_entry.entry_id=}")
+    _log(f"{Gb.config_entry_id=}")
+    _log(f"{Gb.OptionsFlowHandler_by_entry_id=}")
+    _log(f"{Gb.OptionsFlowHandler=}")
+
+    return Gb.OptionsFlowHandler
+
 class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
     '''iCloud3 config flow Handler'''
 
@@ -124,10 +144,10 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         Create the options flow handler for iCloud3. This is called when the iCloud3 > Configure
         is selected on the Devices & Services screen, not when HA or iCloud3 is loaded
         '''
-        Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
-
+        if Gb.OptionsFlowHandler is None:
+            Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         return Gb.OptionsFlowHandler
-
+        # return get_options_flow_handler()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            USER
@@ -135,6 +155,8 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         '''
         Invoked when a user initiates a '+ Add Integration' on the Integerations screen
+
+        self.handler = 'icloud3' from domain name in manifest.json
         '''
         disabled_by = added_datetime = None
 
@@ -183,9 +205,13 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
             _CF_LOGGER.info(f"Added iCloud3 Integration")
 
             if user_input.get('reset_tracking', False):
-                _OptFlow = iCloud3_OptionsFlowHandler()
+                if Gb.OptionsFlowHandler is None:
+                    Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+                _OptFlow = Gb.OptionsFlowHandler
+                # _OptFlow = iCloud3_OptionsFlowHandler()
+                # _OptFlow = get_options_flow_handler()
 
-                _CF_LOGGER.info(f"Reinitialize Apple Accounts and Devices")
+                _CF_LOGGER.info(f"iCloud3 Reinstallation, Initialize Apple Accounts and Device Configuration")
                 _OptFlow.reset_icloud3_config_file_tracking()
                 await _OptFlow.delete_all_files_and_remove_directory(Gb.icloud_cookie_directory)
 
@@ -232,9 +258,22 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         '''
         # Config_flow is only set up on the initial add. This reauth uses some of the OptionsFlowHandler
         # functions so we need to set up that link when a reauth is needed
+        # config_entries = Gb.hass.config_entries.async_entries('icloud3')
+        # config_entry   = config_entries[0]
+        # _log(f"{config_entries=}")
+        # _log(f"{config_entry.entry_id=}")
+        # _log(f"{Gb.OptionsFlowHandler=}")
+        # if Gb.OptionsFlowHandler is None:
+        #     Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+        # _log(f"{Gb.config_entry_id=}")
+        # _log(f"{Gb.OptionsFlowHandler_by_entry_id=}")
+
+        # _log(f"{Gb.OptionsFlowHandler=}")
+        # _OptFlow = Gb.OptionsFlowHandler
         if Gb.OptionsFlowHandler is None:
             Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         _OptFlow = Gb.OptionsFlowHandler
+        # _OptFlow = get_options_flow_handler()
 
         self.step_id = 'reauth'
         self.errors = errors or {}
@@ -319,8 +358,8 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         '''
         if Gb.OptionsFlowHandler is None:
             Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
-
         _OptFlow = Gb.OptionsFlowHandler
+        # _OptFlow = get_options_flow_handler()
 
         self.step_id = 'restart_ha'
         self.errors = errors or {}
@@ -576,9 +615,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_menu_0(self, user_input=None, errors=None):
 
         # If the initial config file was just installed:
+        #   - Check master_dashboard to only do this once
         #   - Add 'local.icloud3.event-log-card.js to the Lovelace Resources
         #   - Build and add the lovelace.ic3db-icloud3 dashboard panel to the Lovelace dashboards
-        if Gb.conf_profile[CONF_VERSION] <= 0:
+        if (Gb.conf_profile[CONF_VERSION] <= 0
+                and is_empty(self.master_dashboard)):
             await start_ic3.update_lovelace_resource_event_log_js_entry(silent=True)
 
             icloud3_dashboard_status = await dbb.install_initial_icloud3_dashboard(self)
@@ -982,7 +1023,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if action_item == 'save':
                 Gb.picture_www_dirs = Gb.conf_profile[CONF_PICTURE_WWW_DIRS].copy()
                 self.picture_by_filename = {}
-                await lists.build_picture_filename_selection_list()
+                await lists.build_picture_filename_selection_list(self)
             return await self.async_step_menu()
 
         if self.errors != {} and self.errors.get('base') != 'conf_updated':

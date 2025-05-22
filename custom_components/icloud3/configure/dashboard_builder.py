@@ -59,26 +59,43 @@ async def install_initial_icloud3_dashboard(self):
     '''
     This is run when iCloud3 is being installed
     '''
-    await build_existing_dashboards_selection_list(self)
+    try:
+        await build_existing_dashboards_selection_list(self)
+    except Exception as err:
+        return False
+
     if self.selected_dbname != 'add':
         return False
 
     dbname = self.dbname = 'ic3db-icloud3'
-    await _load_templates(self)
-    master_dashboard_str  = _build_master_dashboard(self)
-    master_dashboard_str  = master_dashboard_str.replace('ic3db_template_master', dbname)
-    master_dashboard_json = file_io.str_to_json_str(self, master_dashboard_str)
-    master_dashboard_json = _replace_json_text_items(self, master_dashboard_json)
 
-    if file_io.is_valid_json_str(master_dashboard_json) is False:
-        log_debug_msg(f"Error Preparing Initial Dashboard, Invalid Json string > {master_dashboard_json}")
-        return False
+    try:
+        await _load_templates(self)
 
-    await _add_dashboard_to_lovelace_dashboards(self, dbname)
-    await _write_lovelace_dashboard_layout_file(self, dbname, master_dashboard_json)
-    await _update_lovelace_dashboard_layout_ha_data(self, dbname, master_dashboard_json)
-    log_debug_msg(f"Created Dashboard-{dbname}, Devices-{self.main_view_devices}")
-    return True
+        master_dashboard_str  = _build_master_dashboard(self)
+        master_dashboard_str  = master_dashboard_str.replace('ic3db_template_master', dbname)
+        master_dashboard_json = file_io.str_to_json_str(self, master_dashboard_str)
+        master_dashboard_json = _replace_json_text_items(self, master_dashboard_json)
+
+        master_dashboard_layout = file_io.json_str_to_dict(master_dashboard_json)
+        new_dashboard_dict = await _prepare_selected_from_master_dashboard(
+                                                dbname, '', master_dashboard_layout)
+
+        if file_io.is_valid_json_str(master_dashboard_json) is False:
+            log_debug_msg(f"Error Preparing Initial Dashboard, Invalid Json string > {master_dashboard_json}")
+            return False
+
+        await _add_dashboard_to_lovelace_dashboards(self, dbname)
+        await _write_lovelace_dashboard_layout_file(self, dbname, new_dashboard_dict)
+        await _update_lovelace_dashboard_layout_ha_data(self, dbname, new_dashboard_dict)
+        log_debug_msg(f"Created Dashboard-{dbname}, Devices-{self.main_view_devices}")
+        return True
+
+    except Exception as err:
+        pass
+        # log_exception(err)
+
+    return False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -94,25 +111,32 @@ async def update_dashboard_ic3db_views_new_deleted_devices(self):
     current devices.
     '''
 
-    _load_ic3db_Dashboards_by_dbname(self)
+    try:
+        _load_ic3db_Dashboards_by_dbname(self)
+    except Exception as err:
+        return
+
     if is_empty(self.ic3db_Dashboards_by_dbname):
         return
 
-    await _load_templates(self)
-    master_dashboard_str    = _build_master_dashboard(self)
-    master_dashboard_json   = file_io.str_to_json_str(self, master_dashboard_str)
-    master_dashboard_layout = file_io.json_str_to_dict(master_dashboard_json)
-    master_views            = master_dashboard_layout['data']['config']['views']
+    try:
+        await _load_templates(self)
+        master_dashboard_str    = _build_master_dashboard(self)
+        master_dashboard_json   = file_io.str_to_json_str(self, master_dashboard_str)
+        master_dashboard_layout = file_io.json_str_to_dict(master_dashboard_json)
+        master_views            = master_dashboard_layout['data']['config']['views']
 
-    if file_io.is_valid_json_str(master_dashboard_json) is False:
-        log_debug_msg(f"Error Preparing Initial Dashboard, Invalid Json string > {master_dashboard_json}")
+        if file_io.is_valid_json_str(master_dashboard_json) is False:
+            log_debug_msg(f"Error Preparing Initial Dashboard, Invalid Json string > {master_dashboard_json}")
+            return False
+
+        for dbname, Dashboard in self.ic3db_Dashboards_by_dbname.items():
+            selected_dashboard_dict = await _update_selected_views_from_master_dashboard(dbname, master_views)
+            await _write_lovelace_dashboard_layout_file(self, dbname, selected_dashboard_dict)
+            await _update_lovelace_dashboard_layout_ha_data(self, dbname, selected_dashboard_dict)
+            log_debug_msg(f"Updated Dashboard with Added/Deleted Devices-{dbname}")
+    except Exception as err:
         return False
-
-    for dbname, Dashboard in self.ic3db_Dashboards_by_dbname.items():
-        selected_dashboard_dict = await _update_selected_views_from_master_dashboard(dbname, master_views)
-        await _write_lovelace_dashboard_layout_file(self, dbname, selected_dashboard_dict)
-        await _update_lovelace_dashboard_layout_ha_data(self, dbname, selected_dashboard_dict)
-        log_debug_msg(f"Updated Dashboard-{dbname}")
 
     return True
 
@@ -151,8 +175,6 @@ async def update_or_create_dashboard(self, user_input):
     dbname = self.dbname = self.selected_dbname
 
     master_dashboard_layout = file_io.json_str_to_dict(master_dashboard_json)
-
-
     selected_dashboard_dict = await _prepare_selected_from_master_dashboard(
                                                 dbname, action_item, master_dashboard_layout)
 
@@ -184,7 +206,6 @@ async def _prepare_selected_from_master_dashboard(dbname, action_item, master_da
     end and serve as a backup view in case the user just meant to update it
     '''
     master_views = master_dashboard_layout['data']['config']['views']
-
     if action_item == 'update_dashboard':
         return await _update_selected_views_from_master_dashboard(dbname, master_views)
 
@@ -847,6 +868,8 @@ async def _add_dashboard_to_lovelace_dashboards(self, dbname):
     Create a new dashboard object and add it to the internal Lovelace tables
     Send the dashboard config to the front_end
     '''
+    if dbname in self.ic3db_Dashboards_by_dbname:
+        return
 
     url_path = dbname
     title    = dbname.replace('ic3db-', '').replace('icloud3', 'iCloud3')

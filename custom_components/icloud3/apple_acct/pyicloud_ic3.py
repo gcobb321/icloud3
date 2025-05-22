@@ -22,7 +22,7 @@ used by iCloud3.
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (AIRPODS_FNAME, NONE_FNAME,
                                 EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS,
-                                HHMMSS_ZERO, RARROW, PDOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
+                                HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                 ICLOUD, NAME, ID,
                                 APPLE_SERVER_ENDPOINT,
                                 ICLOUD_HORIZONTAL_ACCURACY,
@@ -52,12 +52,12 @@ from ..apple_acct       import pyicloud_srp as srp
 # import srp
 
 #--------------------------------------------------------------------
+
 from uuid               import uuid1
 from os                 import path
 from re                 import match
 import hashlib
 import base64
-import json
 import http.cookiejar as cookielib
 import logging
 LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
@@ -193,8 +193,6 @@ class PyiCloudValidateAppleAcct():
 
         self.response_code       = 0
         self.last_response_code  = 0
-
-
 
 #----------------------------------------------------------------------------
     def is_internet_available(self):
@@ -1775,11 +1773,14 @@ class PyiCloud_DeviceSvc():
                     _Device.loc_time_updates_icloud.append(_RawData.location_time)
 
                 event_msg =(f"Located > iCloud-"
-                                    f"{last_loc_time_msg}"
-                                    f"{_RawData.location_time}, ")
+                            f"{last_loc_time_msg}"
+                            f"{_RawData.location_time}, ")
 
                 if secs_since(_RawData.location_secs) > _Device.old_loc_threshold_secs + 5:
                     event_msg += f", Old, {format_age(_RawData.location_secs)}"
+
+                elif _RawData.battery_level is None:
+                    _RawData.battery_level = 0
 
                 elif _RawData.battery_level > 0:
                     if _RawData.battery_level != _Device.dev_data_battery_level:

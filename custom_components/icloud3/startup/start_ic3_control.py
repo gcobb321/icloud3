@@ -22,6 +22,7 @@ from ..utils.messaging  import (broadcast_info_msg,
                                 open_ic3log_file, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, )
 
+from ..apple_acct       import connection_error as conn_error
 from ..apple_acct       import pyicloud_ic3_interface
 from ..mobile_app       import mobapp_interface
 from ..startup          import hacs_ic3
@@ -35,6 +36,7 @@ import homeassistant.util.dt as dt_util
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def stage_1_setup_variables():
+
 
     Gb.trace_prefix = 'STAGE1'
     stage_title = f'Stage 1 > Initial Preparations'
@@ -50,6 +52,7 @@ def stage_1_setup_variables():
 
     broadcast_info_msg(stage_title)
 
+    Gb.EvLog.post_event(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
     Gb.EvLog.display_user_message(f'iCloud3 v{Gb.version} > Initializiing')
 
     try:
@@ -77,28 +80,23 @@ def stage_1_setup_variables():
                 #        pyicloud_ic3_interface.create_all_PyiCloudServices)
                 pyicloud_ic3_interface.create_all_PyiCloudServices()
 
-        start_ic3.define_tracking_control_fields()
 
+        post_event(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
         if Gb.ha_config_directory != '/config':
-            post_event( f"Base Config Directory > "
-                        f"{CRLF_DOT}{Gb.ha_config_directory}")
-        post_event( f"iCloud3 Directory > "
-                    f"{CRLF_DOT}{Gb.icloud3_directory}")
-        if Gb.conf_profile[CONF_VERSION] == 0:
-            post_event( f"iCloud3 Configuration File > "
-                        f"{CRLF_DOT}{format_filename(Gb.config_ic3_yaml_filename)}")
-        else:
-            post_event( f"iCloud3 Configuration File > "
-                        f"{CRLF_DOT}{format_filename(Gb.icloud3_config_filename)}")
+            post_event(f"Base Config Directory > {CRLF_DOT}{Gb.ha_config_directory}")
+        post_event(f"iCloud3 Directory > {CRLF_DOT}{Gb.icloud3_directory}")
+        post_event(f"iCloud3 Configuration File >{CRLF_DOT}{format_filename(Gb.icloud3_config_filename)}")
 
         start_ic3.display_platform_operating_mode_msg()
         Gb.hass.loop.create_task(start_ic3.update_lovelace_resource_event_log_js_entry())
         Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available(Gb.this_update_time))
+        # Gb.hass.loop.create_task(conn_error.identify_available_internet_ping_ips())
         start_ic3.check_ic3_event_log_file_version()
 
         post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
 
         start_ic3.set_event_recds_max_cnt()
+        start_ic3.define_tracking_control_fields()
 
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.update_event_log_display("")

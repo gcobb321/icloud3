@@ -536,7 +536,8 @@ def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
     devicename, log_msg = _resolve_devicename_log_msg(devicename_or_Device, log_msg)
 
     dn_str = '' if devicename == '*' else f"{devicename} > "
-    log_msg = f"{dn_str}{str(log_msg).replace(CRLF, ', ')}"
+    log_msg = f"{dn_str}{str(log_msg)}"
+    # log_msg = f"{dn_str}{str(log_msg).replace(CRLF, ', ')}"
     log_msg = format_msg_line(log_msg)
 
     write_ic3log_recd(log_msg)

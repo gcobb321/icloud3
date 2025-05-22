@@ -24,7 +24,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 ZONE, ID,
                                 BATTERY_LEVEL, BATTERY_STATUS,
                                 CONF_ENCODE_PASSWORD,
-                                CONF_VERSION,  CONF_VERSION_INSTALL_DATE,
+                                CONF_VERSION,  CONF_VERSION_INSTALL_DATE, CONF_EXTERNAL_IP_ADDRESS,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_EVLOG_BTNCONFIG_URL,
                                 PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
                                 CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD,
@@ -132,6 +132,7 @@ def handle_config_parms_update():
     if is_empty(Gb.config_parms_update_control):
         return
 
+
     # Make copy and Reinitialize so it will not be run again from the 5-secs loop
     config_parms_update_control = Gb.config_parms_update_control.copy()
     Gb.config_parms_update_control = []
@@ -140,6 +141,7 @@ def handle_config_parms_update():
                 f"Type-{list_to_str(config_parms_update_control).title()}")
 
     if 'restart' in config_parms_update_control:
+        post_event(f"{EVLOG_IC3_STARTING}Restart Requested > {ICLOUD3_VERSION_MSG}")
         initialize_data_source_variables()
         Gb.restart_icloud3_request_flag = True
         return
@@ -382,6 +384,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.evlog_btnconfig_url          = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
         Gb.evlog_version                = Gb.conf_profile['event_log_version']
         Gb.picture_www_dirs             = Gb.conf_profile[CONF_PICTURE_WWW_DIRS]
+        Gb.external_ip_name, Gb.external_ip_address = Gb.conf_profile[CONF_EXTERNAL_IP_ADDRESS].split(',')
         Gb.um                           = Gb.conf_general[CONF_UNIT_OF_MEASUREMENT]
         Gb.time_format_12_hour          = Gb.conf_general[CONF_TIME_FORMAT].startswith('12')
         Gb.time_format_24_hour          = not Gb.time_format_12_hour

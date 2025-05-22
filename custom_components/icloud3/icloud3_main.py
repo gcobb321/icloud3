@@ -68,7 +68,7 @@ import time
 import traceback
 from re import match
 import homeassistant.util.dt        as dt_util
-from   homeassistant.helpers.event  import track_utc_time_change
+from   homeassistant.helpers.event  import (track_utc_time_change, async_track_time_change)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class iCloud3:
@@ -98,7 +98,7 @@ class iCloud3:
         self.initialize_5_sec_loop_control_flags()
 
         #initialize variables configuration.yaml parameters
-        start_ic3.set_global_variables_from_conf_parameters()
+        # start_ic3.set_global_variables_from_conf_parameters()
 
 
     def __repr__(self):
@@ -172,8 +172,14 @@ class iCloud3:
             if Gb.polling_5_sec_loop_running is False:
                 broadcast_info_msg("Set Up 5-sec Polling Cycle")
                 Gb.polling_5_sec_loop_running = True
-                track_utc_time_change(Gb.hass, self._polling_loop_5_sec_device,
+                track_utc_time_change(Gb.hass, self.polling_loop_5_sec_device,
                         second=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
+                # async_track_time_change(Gb.hass, self.async_timer_hour,
+                #                 minute=[0,10,20,30,40,50],second=0)
+                # async_track_time_change(Gb.hass, self.async_timer_hour,
+                #         hour=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                #                 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+                #                 minute=0,second=0)
 
 
             return True
@@ -191,7 +197,7 @@ class iCloud3:
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    def _polling_loop_5_sec_device(self, ha_timer_secs):
+    def polling_loop_5_sec_device(self, ha_timer_secs):
         Gb.this_update_secs = time_now_secs()
         Gb.this_update_time = time_now()
 
@@ -634,9 +640,9 @@ class iCloud3:
 
         # Every 30-seconds:
         #   - See if a device needs a 2fa request via a otp token
-        if time_now_ss in ['00', '30']:
-            self._check_apple_acct_2fa_totp_key_request()
-            pass
+        # if time_now_ss in ['00', '30']:
+        #     self._check_apple_acct_2fa_totp_key_request()
+        #     pass
 
         # Every minute:
         #   - Update the device's info msg
@@ -1457,6 +1463,10 @@ class iCloud3:
 #   Perform tasks on a regular time schedule
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_timer_hour(self, timer):
+        post_event(f"Timer {timer}")
+
+#--------------------------------------------------------------------
     def _timer_tasks_every_hour(self):
         # See if there is a new iCloud3 version on HACS
         # Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available(Gb.this_update_timr))

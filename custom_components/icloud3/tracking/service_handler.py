@@ -6,7 +6,8 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOMAIN,
-                                RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT,
+                                RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT, EVLOG_IC3_STARTING,
+                                ICLOUD3_VERSION_MSG,
                                 CMD_RESET_PYICLOUD_SESSION,
                                 LOCATION, NEXT_UPDATE_TIME, NEXT_UPDATE, INTERVAL,
                                 CONF_DEVICENAME, CONF_ZONE, CONF_COMMAND, CONF_LOG_LEVEL,
@@ -324,6 +325,9 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
     if action_fname not in NO_EVLOG_ACTION_POST_EVENT:
         _post_device_event_msg(devicename_msg, event_msg)
+
+    if action_msg == 'Restart iCloud3':
+        post_event(f"{EVLOG_IC3_STARTING}Restart Requested > {ICLOUD3_VERSION_MSG}")
 
     if action in GLOBAL_ACTIONS:
         _handle_global_action(action, action_option)

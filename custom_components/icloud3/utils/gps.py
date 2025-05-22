@@ -27,8 +27,11 @@ def decimal_to_dms(decimal):
 #
 #       CONVERT STANDARD GPS WGS-84 COORDINATES TO CHINESE GCJ-02 AND BD-09
 #
-#       Based on XYCONVERT.PY, https://github.com/cyang-kth/xyconvert
-#       Can Yang, Nov 16, 2020
+#       Based on XYCONVERT.PY, Can Yang, Nov 16, 2020
+#           https://github.com/cyang-kth/xyconvert
+#
+#       Online converter for various formats:
+#           https://www.ufreetools.com/en/tool/coordinate-converter
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

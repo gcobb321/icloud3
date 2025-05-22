@@ -5,17 +5,91 @@ from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
 from .messaging             import (log_exception, _evlog, _log, )
 
 from collections            import OrderedDict
+import asyncio
+import json
+import logging
+import os
+import requests
+import shutil
+
 from homeassistant.util     import json as json_util
 from homeassistant.helpers  import json as json_helpers
-import os
-import shutil
-import asyncio
-import logging
-import json
+from homeassistant.helpers.httpx_client import get_async_client
+from httpx                  import HTTPError, InvalidURL
 
 _LOGGER = logging.getLogger(__name__)
 #_LOGGER = logging.getLogger(f"icloud3")
 
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#            HTTPX & REQUESTS URL UTILITIES
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+async def httpx_request_url_data(url):
+    '''
+    Set up and request data from a url using the httpx requests process.
+
+    Returns:
+        - data dictionary with the returned json data, the url and status_code
+        - error dictionary with the url, error and status_code if a connection or other error
+            occurred
+    '''
+    try:
+        if Gb.httpx_Client is None:
+            Gb.httpx_Client = get_async_client(Gb.hass)
+
+        response = await Gb.httpx_Client.get(url)
+        response.raise_for_status()
+
+    except (HTTPError, InvalidURL) as err:
+        data = {'url': url,
+                'error': err,
+                'status_code': response.status_code}
+
+        return data
+
+    except Exception as err:
+        log_exception(err)
+        data = {'url': url,
+                'error': err,
+                'status_code': -1}
+
+        return data
+
+    data = response.json()
+    data['url'] = url
+    data['status_code'] = response.status_code
+
+    return data
+
+
+#----------------------------------------------------------------------------
+def request_url_data(url):
+    try:
+        response = requests.get(url, timeout=3)
+
+    except requests.RequestException as err:
+        data = {'url': url,
+                'error': err,
+                'status_code': response.status_code}
+
+        return data
+
+    except Exception as err:
+        log_exception(err)
+        data = {'url': url,
+                'error': err,
+                'status_code': -1}
+
+        return data
+
+    data = response.json()
+    data['url'] = url
+    data['status_code'] = response.status_code
+
+
+    return data
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -142,6 +216,9 @@ def is_valid_json_str(json_str):
         json.loads(json_str)
     except ValueError as err:
         return False
+    except Exception as err:
+        log_exception(err)
+        return False
     return True
 
 #--------------------------------------------------------------------
@@ -204,12 +281,16 @@ def set_write_permission(filename):
     '''
     try:
         if os.access(filename, os.W_OK):
-            os.chmod(filename, 0o666)
+            os.chmod(filename, 0o777)
+
+        return True
     except FileNotFoundError:
         pass
     except Exception as err:
         # log_exception(err)
         pass
+
+    return False
 
 
 def delete_file(filename):
@@ -257,6 +338,35 @@ def rename_file(from_filename, to_filename):
 
 #--------------------------------------------------------------------
 def _os(os_module, filename):
+    try:
+        # if instr(filename, 'gmail'):
+        #     file_info = os.stat(filename)
+        #     mode = file_info.st_mode
+        #     _log(f"BEF Permission set to 444 {mode=} {os.access(filename, os.W_OK)=}")
+        #     os.chmod(filename, 0o444)
+        #     file_info = os.stat(filename)
+        #     mode = file_info.st_mode
+        #     _log(f"BEF Permission set to 444 {mode=} {os.access(filename, os.W_OK)=}")
+        #     # raise PermissionError
+        #     file_info = os.stat(filename)
+        #     mode = file_info.st_mode
+        #     _log(f"BEF Permission set to 777 {mode=} {os.access(filename, os.W_OK)=}")
+        #     os.chmod(filename, 0o777)
+        #     file_info = os.stat(filename)
+        #     mode = file_info.st_mode
+        #     _log(f"AFT Permission set to 777 {mode=}  {os.access(filename, os.W_OK)=}")
+        results = os_module(filename)
+        return results
+
+    except PermissionError:
+        file_info = os.stat(filename)
+        mode = file_info.st_mode
+        _log(f"BEF Permission set to 777 {mode=} {os.access(filename, os.W_OK)=}")
+        os.chmod(filename, 0o777)
+        file_info = os.stat(filename)
+        mode = file_info.st_mode
+        _log(f"AFT Permission set to 777 {mode=}  {os.access(filename, os.W_OK)=}")
+
     results = os_module(filename)
     return results
 

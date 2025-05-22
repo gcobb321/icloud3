@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.2'
+VERSION                         = '3.2.1'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -169,6 +169,19 @@ DEVICE_TYPE_INZONE_INTERVALS = {
         AIRPODS: 15,
         NO_MOBAPP: 15,
         OTHER: 120,
+}
+
+INTERNET_STATUS_PING_IPS = {
+        'Google/P': '8.8.8.8',
+        'Google/S': '8.8.4.4',
+        'CloudFlare/P': '1.1.1.1',
+        'CloudFlare/S': '1.0.0.1',
+        'OpenDNS/P': '208.67.222.222',
+        'OpenDNS/S': '208.67.220.220',
+        'ChinaAlibaba/P1': '116.251.64.1',
+        'ChinaAlibaba/P2': '43.33.76.1',
+        'ChinaAlibaba/S': '65.22.132.9',
+        'ChinaOpen114/S': '114.114.115.115',
 }
 
 UM_FNAME        = {'mi': 'Miles', 'km': 'Kilometers'}
@@ -654,6 +667,7 @@ CONF_EVLOG_CARD_PROGRAM         = 'event_log_card_program'
 CONF_EVLOG_VERSION              = 'event_log_version'
 CONF_EVLOG_VERSION_RUNNING      = 'event_log_version_running'
 CONF_PICTURE_WWW_DIRS           = 'picture_www_dirs'
+CONF_EXTERNAL_IP_ADDRESS        = 'external_ip_address'
 
 # Account, Devices, Tracking Parameters
 CONF_USERNAME                   = 'username'
@@ -867,6 +881,7 @@ DEFAULT_PROFILE_CONF = {
         CONF_EVLOG_CARD_DIRECTORY: EVLOG_CARD_WWW_DIRECTORY,
         CONF_EVLOG_CARD_PROGRAM: EVLOG_CARD_WWW_JS_PROG,
         CONF_EVLOG_BTNCONFIG_URL: '',
+        CONF_EXTERNAL_IP_ADDRESS: '',
         CONF_PICTURE_WWW_DIRS: []
 }
 

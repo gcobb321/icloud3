@@ -4,7 +4,7 @@ from ..global_variables     import GlobalVariables as Gb
 from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE, DEVICE_TYPES,
                                     CRLF_DOT, CRLF, NBSP6,RED_X, YELLOW_ALERT, RARROW,
                                     CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE)
-from ..utils.utils        import (instr, list_add, list_to_str, )
+from ..utils.utils        import (instr, is_empty, list_add, list_to_str, )
 from ..utils                 import file_io
 from ..utils.messaging    import (post_event, post_error_msg, post_evlog_greenbar_msg,
                                     log_info_msg, log_exception, log_rawdata, log_debug_msg,
@@ -171,7 +171,7 @@ def _get_mobile_app_notify_devices():
                     'Gary-iPad-app': '7f8496d4c94b958b7d091e5438353ac5795323b1b261815b4573f690f1b7b7ff'}
 
     '''
-
+    notify_targets = {}
     Gb.mobile_app_notify_devicenames = []
     try:
         notify_targets = mobile_app_notify.push_registrations(Gb.hass)
@@ -182,9 +182,12 @@ def _get_mobile_app_notify_devices():
         return notify_targets   #Gb.mobile_app_notify_devicenames
 
     except Exception as err:
-        log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
+        notify_targets = {}
         # log_exception(err)
         pass
+
+    if is_empty(notify_targets):
+        log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
 
     return notify_targets   #Gb.mobile_app_notify_devicenames
 

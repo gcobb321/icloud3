@@ -5,7 +5,7 @@ from ..const            import (
                                 RARROW, RARROW2, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE_DEVICE,
                                 ICLOUD, MOBAPP, NO_MOBAPP, NO_IOSAPP, HOME,
                                 CONF_PARAMETER_TIME_STR,
-                                CONF_INZONE_INTERVALS,
+                                CONF_PICTURE_WWW_DIRS,
                                 CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
                                 CONF_IC3_VERSION, VERSION, VERSION_BETA,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
@@ -244,6 +244,7 @@ def _add_parms_and_check_config_file():
         #Add new parameters, check  parameter settings
         update_config_file_flag = False
         update_config_file_flag = _config_file_check_new_ic3_version() or update_config_file_flag
+        update_config_file_flag = _update_profile()                    or update_config_file_flag
         update_config_file_flag = _update_tracking_parameters()        or update_config_file_flag
         update_config_file_flag = _update_apple_acct_parameters()      or update_config_file_flag
         update_config_file_flag = _update_device_parameters()          or update_config_file_flag
@@ -611,6 +612,31 @@ def _hhmmss_to_minutes(hhmmss):
 #   Add parameters to the configuration file
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _update_profile():
+    '''
+    Update Gb.conf_profile with new fields
+    '''
+
+    new_items = [item   for item in DEFAULT_PROFILE_CONF
+                        if item not in Gb.conf_profile]
+
+    if is_empty(new_items):
+        return False
+
+    log_info_msg("Updating Configuration File with New items (Profile) > ")
+
+    for item in new_items:
+        before_item = _place_item_before(item, DEFAULT_PROFILE_CONF, CONF_PICTURE_WWW_DIRS)
+
+        Gb.conf_file_data[CF_PROFILE][item] = DEFAULT_PROFILE_CONF[item]
+        Gb.conf_profile = _insert_into_conf_dict_parameter(
+                                            Gb.conf_profile, item,
+                                            DEFAULT_PROFILE_CONF[item],
+                                            before= before_item)
+
+    return True
+
+#-------------------------------------------------------------------
 def _update_tracking_parameters():
     '''
     Update Gb.conf_tracking with new fields

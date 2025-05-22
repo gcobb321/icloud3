@@ -82,11 +82,14 @@ class GlobalVariables(object):
     use_metric          = False
 
     iCloud3             = None   # iCloud3 Platform object
-    OptionsFlowHandler  = None   # config_flow OptionsFlowHandler
-    ActionsFlow         = None
-    ActionsOptionsFlow  = None
+    #ActionsFlow         = None
+    #ActionsOptionsFlow  = None
     MobileApp_data      = {}     # mobile_app Integration data dict from hass.data['mobile_app']
     MobileApp_devices   = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
+
+    config_entry_id     = None
+    OptionsFlowHandler_by_entry_id = {}   # config_flow OptionsFlowHandler
+    OptionsFlowHandler  = None   # config_flow OptionsFlowHandler
 
 
     EvLog               = None
@@ -177,6 +180,14 @@ class GlobalVariables(object):
     internet_connection_status_request_secs = 0
     internet_connection_status_requested = False
     internet_connection_status_waiting_for_response = False # Status request was sent to 8.8.8.8 and waiting
+    internet_connection_ping_ip_status = {}  # Ping IPS Status Check Results
+    external_ip_name                   = None   # External IP name and address of the users newtowrk (connection_error)
+    external_ip_address                = None
+    apple_com_ip_address               = None
+    pingable_ip_name                   = None   # Pingable  P name and address to use to test the internet status (connection_error)
+    pingable_ip_address                = None
+    pingable_ip_Ping                   = None   # Ping object from the Ping helpers routined (connection_error)
+    httpx_Client                       = None   # HTTPX Client from the HA httpx.client (setup & used in file_io.py)
 
     last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
     PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename

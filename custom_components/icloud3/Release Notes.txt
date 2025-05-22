@@ -3,12 +3,28 @@
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 **Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
 
+➤
+
+
+
+### Release Notes - v3.2.1
+### 🎉 Improvements and New Features
+1. External IP Address - Add the detection of the External IP Address in preparation for changes to handling Internet Connection Errors. You should notice an entry in the Event Log (_External IP Address > 73.1.225.32 (ipify.org)_) in Stage1 during the iCloud3 startup process. Let me know if this is not displayed or creates an error message.
+### 🐛 Bug Fixes
+1. Configure Error 400: Bad Request - When iCloud3 had been reinstalled, this error would be generated the next time the Configure Parameters update was requested.
+2. Configure Field Parameters screen - Fixed a problem changing the unit-of-measure or time display format.
+3. File Permissions Error when requesting a new verification code - Added a test to ensure the file permissions were correct.
+4. MobApp Notifications - Fixed an error adding a message to the Event Log when trying to set up Mobile App Notifications and the Mobile App Integration had not been installed.
+
+
+
+
 
 
 ### Release Notes - v3.2
 ### 🎉 Improvements and New Features
-1. **Reinstalling the iCloud3 Integraion** - When the iCloud3 integration is deleted and then readded, a check is made to see if any Apple accounts or Devices have been configured. If any are found, an option is now available to erase the Apple account and Device configuration during the reinstallation.
-2. **China GPS Coordinate Conversion (GCJ02, BD09)** - The Apple acount server location in China normally reports GPS coordinates (latitude, longitude) in GCJ02 values. An option to convert these to WGS84 coordinates has been added to the Apple Server Location on the _Update Apple Account Username/Password_ screen.
+1. **Reinstalling the iCloud3 Integration** - When the iCloud3 integration is deleted and then reinstalled, a check is made to see if any Apple accounts or Devices have been configured. If any are found, an option is now available to erase the Apple account and Device configuration during the reinstallation.
+2. **China GPS Coordinate Conversion (GCJ02, BD09)** - The Apple account server location in China normally reports GPS coordinates (latitude, longitude) in GCJ02 values. An option to convert these to WGS84 coordinates has been added to the Apple Server Location on the _Update Apple Account Username/Password_ screen.
 
 ### ✨ The Dashboard Builder
 The Dashboard Builder is a tool that will create and update dashboards showing iCloud3 tracking results and other device information provided by iCloud3. It is added to the HA Sidebar panel when it is created and can be edited using the HA Dashboard Editor in the same manner as other dashboards. It's name starts with *iCloud3-#* and can be changed to meet your needs. There is no limit to the number of iCloud3 dashboards that can be created.
