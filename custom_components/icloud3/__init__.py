@@ -151,7 +151,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await Gb.hass.async_add_executor_job(open_ic3log_file_init)
 
         # Get/Update the users External IP Address
-        # await Gb.hass.async_add_executor_job(conn_error.get_external_ip_address)
         await conn_error.get_external_ip_address()
         await conn_error.scan_for_pingable_ip()
 

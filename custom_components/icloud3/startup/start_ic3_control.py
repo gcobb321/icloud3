@@ -52,7 +52,9 @@ def stage_1_setup_variables():
 
     broadcast_info_msg(stage_title)
 
-    Gb.EvLog.post_event(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
+    post_event(f"Pingable IP Address > {Gb.pingable_ip_address} ({Gb.pingable_ip_name})")
+    post_event(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
+
     Gb.EvLog.display_user_message(f'iCloud3 v{Gb.version} > Initializiing')
 
     try:
@@ -81,7 +83,6 @@ def stage_1_setup_variables():
                 pyicloud_ic3_interface.create_all_PyiCloudServices()
 
 
-        post_event(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
         if Gb.ha_config_directory != '/config':
             post_event(f"Base Config Directory > {CRLF_DOT}{Gb.ha_config_directory}")
         post_event(f"iCloud3 Directory > {CRLF_DOT}{Gb.icloud3_directory}")

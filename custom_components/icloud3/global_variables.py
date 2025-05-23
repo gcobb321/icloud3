@@ -187,7 +187,7 @@ class GlobalVariables(object):
     pingable_ip_name                   = None   # Pingable  P name and address to use to test the internet status (connection_error)
     pingable_ip_address                = None
     pingable_ip_Ping                   = None   # Ping object from the Ping helpers routined (connection_error)
-    httpx_Client                       = None   # HTTPX Client from the HA httpx.client (setup & used in file_io.py)
+    httpx                              = None   # HTTPX Client from the HA httpx.client (setup & used in file_io.py)
 
     last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
     PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename

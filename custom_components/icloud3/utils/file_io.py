@@ -2,7 +2,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (CRLF_DOT,  )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
-from .messaging             import (log_exception, _evlog, _log, )
+from .messaging             import (log_exception, _evlog, _log, log_error_msg, )
 
 from collections            import OrderedDict
 import asyncio
@@ -15,7 +15,7 @@ import shutil
 from homeassistant.util     import json as json_util
 from homeassistant.helpers  import json as json_helpers
 from homeassistant.helpers.httpx_client import get_async_client
-from httpx                  import HTTPError, InvalidURL
+from httpx                  import HTTPError, RequestError, HTTPStatusError, InvalidURL
 
 _LOGGER = logging.getLogger(__name__)
 #_LOGGER = logging.getLogger(f"icloud3")
@@ -36,33 +36,36 @@ async def httpx_request_url_data(url):
             occurred
     '''
     try:
-        if Gb.httpx_Client is None:
-            Gb.httpx_Client = get_async_client(Gb.hass)
+        try:
+            if Gb.httpx is None:
+                Gb.httpx = get_async_client(Gb.hass, verify_ssl=False)
 
-        response = await Gb.httpx_Client.get(url)
-        response.raise_for_status()
+            response = await Gb.httpx.get(url)
+            response.raise_for_status()
 
-    except (HTTPError, InvalidURL) as err:
-        data = {'url': url,
-                'error': err,
-                'status_code': response.status_code}
+        except (HTTPError, RequestError, HTTPStatusError, InvalidURL) as err:
+            data = {'url': url, 'error': err, 'status_code': -9}
+            log_error_msg(f"iCloud3 Error > Error requesting data from Internet Httpx Component {data}")
+
+            return data
+
+        except Exception as err:
+            data = {'url': url, 'error': err, 'status_code': -1}
+            # log_exception(err)
+
+            return data
+
+        data = response.json()
+        data['url'] = url
+        data['status_code'] = response.status_code
 
         return data
 
     except Exception as err:
-        log_exception(err)
-        data = {'url': url,
-                'error': err,
-                'status_code': -1}
+        data = {'url': url, 'error': err, 'status_code': -2}
+        log_error_msg(f"iCloud3 Error > Error requesting data from Internet Httpx Component {data}")
 
         return data
-
-    data = response.json()
-    data['url'] = url
-    data['status_code'] = response.status_code
-
-    return data
-
 
 #----------------------------------------------------------------------------
 def request_url_data(url):
@@ -70,17 +73,13 @@ def request_url_data(url):
         response = requests.get(url, timeout=3)
 
     except requests.RequestException as err:
-        data = {'url': url,
-                'error': err,
-                'status_code': response.status_code}
+        data = {'url': url, 'error': err, 'status_code': -2}
 
         return data
 
     except Exception as err:
         log_exception(err)
-        data = {'url': url,
-                'error': err,
-                'status_code': -1}
+        data = {'url': url, 'error': err, 'status_code': -1}
 
         return data
 

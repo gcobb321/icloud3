@@ -37,18 +37,20 @@ async def scan_for_pingable_ip():
         scan_ip_addresses[Gb.external_ip_name] = Gb.external_ip_address
     scan_ip_addresses.update(INTERNET_STATUS_PING_IPS)
 
+    _log(f"Check Pingable IP Address > {scan_ip_addresses=})")
     for ip_name, ip_address in scan_ip_addresses.items():
         if ip_address is None:
             continue
+        _log(f"Check Pingable IP Address > {ip_address} ({ip_name})")
 
         try:
             is_pingable = await async_is_ip_address_pingable(ip_address, ip_name)
-            # is_pingable = is_ip_address_pingable(ip_address, ip_name)
+
         except Exception as err:
             log_exception(err)
 
         if is_pingable:
-            # _log(f"Pingable IP Address > {Gb.pingable_ip_address} ({Gb.pingable_ip_name})")
+            _log(f"Pingable IP Address > {Gb.pingable_ip_address} ({Gb.pingable_ip_name})")
             return
 
 #----------------------------------------------------------------------------
@@ -129,6 +131,7 @@ async def request_external_ip_address(ip_name, ip_url):
                         'readme': 'https://ipinfo.io/missingauth'}
     '''
     data = await httpx_request_url_data(ip_url)
+    log_debug_msg(f"Get External IP Address, {data}")
 
     ip_address  = data.get('ip', None)
     if ip_address:
@@ -136,8 +139,10 @@ async def request_external_ip_address(ip_name, ip_url):
         Gb.external_ip_address = ip_address
         # _log(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
 
-        if instr(Gb.conf_profile[CONF_EXTERNAL_IP_ADDRESS], ip_address) is False:
-            Gb.conf_profile[CONF_EXTERNAL_IP_ADDRESS] = f"{Gb.external_ip_name},{ip_address}"
+        # Update the configuration file if the current ip name/address has changed
+        ip_name_address = f"{Gb.external_ip_name},{ip_address}"
+        if Gb.conf_profile[CONF_EXTERNAL_IP_ADDRESS] != ip_name_address:
+            Gb.conf_profile[CONF_EXTERNAL_IP_ADDRESS] = ip_name_address
             config_file.write_icloud3_configuration_file()
 
     return ip_address
