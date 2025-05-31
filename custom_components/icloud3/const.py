@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.2.2.2'
+VERSION                         = '3.2.2.3'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -1027,7 +1027,7 @@ RANGE_GENERAL_CONF = {
 DEFAULT_SENSORS_CONF = {
         CONF_SENSORS_MONITORED_DEVICES: [
                 'md_badge',
-                BATTERY, ],
+                'md_battery', ],
         CONF_SENSORS_DEVICE: [
                 NAME,
                 BADGE,

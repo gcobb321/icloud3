@@ -13,7 +13,7 @@ from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_l
                                 _log, _evlog, )
 
 from ..utils              import entity_io
-from ..utils              import file_io
+# from ..utils              import file_io
 from ..                  import sensor as ic3_sensor
 from ..                  import device_tracker as ic3_device_tracker
 
@@ -196,6 +196,8 @@ def sensor_form_identify_new_and_removed_sensors(self, user_input):
     if user_input[CONF_EXCLUDED_SENSORS] == []:
         user_input[CONF_EXCLUDED_SENSORS] = ['None']
 
+    _log(f"{user_input=}")
+    _log(f"{Gb.conf_sensors=}")
     for sensor_group, sensor_list in user_input.items():
         if (sensor_group not in Gb.conf_sensors
                 or user_input[sensor_group] == Gb.conf_sensors[sensor_group]
@@ -207,24 +209,34 @@ def sensor_form_identify_new_and_removed_sensors(self, user_input):
         # Cycle thru the sensors now in the user_input sensor_group
         # Get list of sensors to be added
         for sensor in sensor_list:
-            if sensor not in Gb.conf_sensors[sensor_group]:
+            if sensor not in SENSOR_GROUPS['default']:
+                new_sensors_list.append(sensor)
+                _log(f"{sensor_group} {sensor} {new_sensors_list=}")
+            elif sensor not in Gb.conf_sensors[sensor_group]:
                 if sensor == 'last_zone':
                     if 'zone'       in Gb.conf_sensors[sensor_group]: new_sensors_list.append('last_zone')
                     if 'zone_name'  in Gb.conf_sensors[sensor_group]: new_sensors_list.append('last_zone_name')
                     if 'zone_fname' in Gb.conf_sensors[sensor_group]: new_sensors_list.append('last_zone_fname')
                 else:
                     new_sensors_list.append(sensor)
+                _log(f"{sensor_group} {sensor} {new_sensors_list=}")
 
         # Get list of sensors to be removed
+        # _log(f"{sensor_group=} {Gb.conf_sensors[sensor_group]=}")
         for sensor in Gb.conf_sensors[sensor_group]:
-            if sensor not in sensor_list:
+            if sensor in SENSOR_GROUPS['default']:
+                pass
+            elif sensor not in sensor_list:
                 if sensor == 'last_zone':
                     if 'zone'       in sensor_list: remove_sensors_list.append('last_zone')
                     if 'zone_name'  in sensor_list: remove_sensors_list.append('last_zone_name')
                     if 'zone_fname' in sensor_list: remove_sensors_list.append('last_zone_fname')
                 else:
                     remove_sensors_list.append(sensor)
+                _log(f"{sensor_group} {sensor} {remove_sensors_list=}")
 
+    _log(f"236 {new_sensors_list=}")
+    _log(f"237 {remove_sensors_list=}")
     return new_sensors_list, remove_sensors_list
 
 #-------------------------------------------------------------------------------------------
@@ -237,13 +249,14 @@ def remove_sensor_entity(remove_sensors_list, select_devicename=None):
                 specified       - only delete this devicename's sensors
                 not_specified   - delete the sensors in the remove_sensors_list from all devices
     """
-
+    _log(f"{remove_sensors_list=}")
     if remove_sensors_list == []:
         return
 
     # Remove regular sensors
     device_tracking_mode = {k['ic3_devicename']: k['tracking_mode'] for k in Gb.conf_devices}
     for devicename, devicename_sensors in Gb.Sensors_by_devicename.items():
+        _log(f"{devicename} {devicename_sensors=}")
         if (devicename not in device_tracking_mode
                 or select_devicename and select_devicename != devicename):
             continue
@@ -255,16 +268,18 @@ def remove_sensor_entity(remove_sensors_list, select_devicename=None):
             sensors_list = [k for k in remove_sensors_list if k.startswith('md_') is True]
         else:
             sensors_list = []
+        _log(f"{devicename} {device_tracking_mode[devicename]} {sensors_list=}")
 
         # The sensor group is a group of sensors combined under one conf_sensor item
         # Build sensors to be removed from the the sensor or the sensor's group
-        device_sensors_list = SENSOR_GROUPS['default']
+        device_sensors_list = []
         for sensor in sensors_list:
             if sensor in SENSOR_GROUPS:
                 device_sensors_list.extend(SENSOR_GROUPS[sensor])
             else:
                 device_sensors_list.append(sensor)
 
+        _log(f"{devicename} {device_sensors_list=}")
         Sensors_list = [v for k, v in devicename_sensors.items() if k in device_sensors_list]
         for Sensor in Sensors_list:
             if Sensor.entity_removed_flag is False:

@@ -308,37 +308,37 @@ SENSORS_EXCLUDE_ACTIONS_= [
         ACTION_LIST_OPTIONS['cancel_goto_previous']]
 
 CONF_SENSORS_DEFAULT = {
-        BATTERY:            '_battery, _battery_status > Create Battery Level (65%) and Battery Status (Charging, Low, etc)',
-        'arrival_time':     '_arrival_time > Home Zone arrival time based on Waze Travel time',
-        'travel_time':      '_travel_time > Waze Travel time to Home or closest Track-from-Zone zone',
-        'home_distance':    '_home_distance > Distance to the Home zone',
-        'next_update':      '_next_update > Next time the location will be updated',
+        BATTERY:            '_battery, _battery_status > Create Battery Level (65%) and Battery Status (Charging, Low, etc) (ALWAYS CREATED)',
+        'arrival_time':     '_arrival_time > Home Zone arrival time based on Waze Travel time (ALWAYS CREATED)',
+        'travel_time':      '_travel_time > Waze Travel time to Home or closest Track-from-Zone zone (ALWAYS CREATED)',
+        'home_distance':    '_home_distance > Distance to the Home zone (ALWAYS CREATED)',
+        'next_update':      '_next_update > Next time the location will be updated (ALWAYS CREATED)',
         }
 CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT = {
         'md_badge':         '_badge > Badge sensor - A badge showing the Zone Name or distance from the Home zone. Attributes include location related information',
-        'md_battery':       '_battery, battery_status > Create Battery (65%) and Battery Status (Charging, Low, etc) sensors',
+        'md_battery':       '_battery, battery_status > Create Battery (65%) and Battery Status (Charging, Low, etc) sensors (ALWAYS CREATED)',
         'md_location_sensors': 'Location related sensors > Name, zone, distance, travel_time, etc. (_name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update)',
         }
 CONF_SENSORS_DEVICE_KEY_TEXT = {
         NAME:               '_name > iCloud3 Device Name',
         'badge':            '_badge > A badge showing the Zone Name or distance from the Home zone',
-        BATTERY:            '_battery, _battery_status > Create Battery Level (65%) and Battery Status (Charging, Low, etc) sensors',
+        BATTERY:            '_battery, _battery_status > Create Battery Level (65%) and Battery Status (Charging, Low, etc) sensors (ALWAYS CREATED)',
         'info':             '_info > An information message containing status, alerts and errors related to device location updates, data accuracy, etc',
         }
 CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT = {
         'interval':         '_interval > Time between location requests',
         'last_update':      '_last_update > Last time the location was updated',
-        'next_update':      '_next_update > Next time the location will be updated',
+        'next_update':      '_next_update > Next time the location will be updated (ALWAYS CREATED)',
         'last_located':     '_last_located > Last time the was located using iCloud or Mobile App location',
         }
 CONF_SENSORS_TRACKING_TIME_KEY_TEXT = {
-        'travel_time':      '_travel_time > Waze Travel time to Home or closest Track-from-Zone zone',
+        'travel_time':      '_travel_time > Waze Travel time to Home or closest Track-from-Zone zone (ALWAYS CREATED)',
         'travel_time_min':  '_travel_time_min > Waze Travel time to Home or closest Track-from-Zone zone in minutes',
         'travel_time_hhmm': '_travel_time_hhmm > Waze Travel time to a Zone in hours:minutes',
-        'arrival_time':     '_arrival_time > Home Zone arrival time based on Waze Travel time',
+        'arrival_time':     '_arrival_time > Home Zone arrival time based on Waze Travel time (ALWAYS CREATED)',
         }
 CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT = {
-        'home_distance':    '_home_distance > Distance to the Home zone',
+        'home_distance':    '_home_distance > Distance to the Home zone (ALWAYS CREATED)',
         'zone_distance':    '_zone_distance > Distance to the Home or closest Track-from-Zone zone',
         'dir_of_travel':    '_dir_of_travel > Direction of Travel for the Home zone or closest Track-from-Zone zone (Towards, AwayFrom, inZone, etc)',
         'moved_distance':   '_moved_distance > Distance moved from the last location',
