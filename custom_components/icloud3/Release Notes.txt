@@ -4,15 +4,53 @@
 **Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
 
 
+### iCloud3 ➤ v3.2.3 (7/13/2025)
+### 🎉 New and Updated Features
+1. **_icloud3_alerts_ sensor**:
+Errors and Alerts are displayed in the Event log as they are found and summarized in a green bar at the top of the Event Log. These may include device configuration errors, Apple account login errors, Apple account authentication is needed, Internet Connection Errors, etc. The _sensor.icloud3_alerts_ has been also report these errors. This sensor entity can be used to notify a device that an error or alert has occurred.
 
-iCloud3 ➤ v3.2.2 (5/23/2025)
+     Errors are prioritized based on the following - critical (Internet Connection Errors), Apple Account errors (account not found, login errors, authentication needed alert), devices (configuration errors), and other.
+     - State Value - The highest priority error.
+     - Attributes - The Apple account or Device that encountered the error.
+     - Attribute 'message_text' - A text summary of all errors that can be sent to a device using the notify.devicename service.
+2. **Internet Connection Errors**:
+    - Improved the detection of Internet Connection Errors
+    - Improved the method used to determine when the Interned was restored
+    - Improved the progress bar notification on the Event Log to better show that the internet is being checked on a regular basis
+    - Added a check to see if apple.com was available after the Internet Connection is restored
+    - Added a notification to the _icloud3.alerts_ sensor when the Internet Connection is lost (after 3-minutes) and when it is restored
+3. **Apple Username/Password Verification** - When iCloud3 starts, the Apple account username/password is validated to insure it is correct and a successful login will be done. The method of doing this has been improved and now included several fallback methods if one method is rejected by Apple.
+4. Added Simplified Chinese Translation - Thanks @lo3612
+
 ### 🎉 Improvements
-1. External & Pingable IP Addresses - These will be used in future Internet Connection Error notifications and recovery and are now displayed in Stage 1 of the Event Log when iCloud3 starts.
+1. **Time Zone** - The Time Zone and UTC offset are now determined from the time zone selected on the Home Assistant user settings screen. Previously the time zone configured for the computer/docker container running Home Assistant was used.
+2. **Request Apple Verification Code** - Reduced the time it takes between requesting the new code and then being able to enter it.
+3. **Apple Account Username** - Improved hiding the Apple account username in the Event Log and log files.
+4. **Optimization** - Continued to reorganize and optimize the iCloud3 code.
+5. **Module Structure** - Updated the module and directory names to improve the module file organization.
+
+#### 🐛 Bug Fixes
+1. **Configure iCloud3** - Fixed a problem preventing the Apple devices list to be refreshed when the Verification Code was entered the first time on a new installation.
+2. **Tracking** - Fixed a problem displaying the number of devices in a stationary zone when a location update was being processed.
+
+
+
+### iCloud3 ➤ v3.2.2.3 (5/31/2025)
 ### 🐛 Bug Fixes
-1. iCloud3 Startup Aborted - If an error was encountered getting the External IP Address during startup, another error generating the message for the Event Log would stop iCloud3 from starting. This has been fixed.
+1. **Configure > Sensors** - Fixed a bug on a new install or when resetting the sensors to the default value would cause a '?Battery - not in list'_ error message and any changes would not be saved.
 
 
-iCloud3 ➤ v3.2.1 (5/22/2025)
+
+### iCloud3 ➤ v3.2.2 (5/24/2025)
+### 🎉 Improvements
+1. **External & Pingable IP Addresses** - These will be used in future Internet Connection Error notifications and recovery and are now displayed in Stage 1 of the Event Log when iCloud3 starts.
+### 🐛 Bug Fixes
+1. **iCloud3 Startup Aborted** - Introduced in v3.2.1 - If an error was encountered getting the External IP Address during startup, another error generating the message for the Event Log would stop iCloud3 from starting. This has been fixed.
+
+*Note: iCloud3 v3.2.2.2 was rereleased on 5/24/2025. The v3.2.2 release on 5/23/2025 was still displaying v3.2.1. There were no other changes.*
+
+
+### iCloud3 ➤ v3.2.1 (5/22/2025)
 ### 🎉 Improvements and New Features
 1. **External IP Address** - Added the detection of the External IP Address in preparation for changes to handling Internet Connection Errors. You should notice an entry in the Event Log (_External IP Address > 73.1.225.32 (ipify.org)_) in Stage1 during the iCloud3 startup process. Let me know if this is not displayed or creates an error message.
 ### 🐛 Bug Fixes
@@ -22,7 +60,7 @@ iCloud3 ➤ v3.2.1 (5/22/2025)
 4. **MobApp Notifications** - Fixed an error adding a message to the Event Log when trying to set up Mobile App Notifications and the Mobile App Integration had not been installed.
 
 
-### Release Notes - v3.2
+### iCloud3 ➤ v3.2.0 (5/18/2025)
 ### 🎉 Improvements and New Features
 1. **Reinstalling the iCloud3 Integration** - When the iCloud3 integration is deleted and then reinstalled, a check is made to see if any Apple accounts or Devices have been configured. If any are found, an option is now available to erase the Apple account and Device configuration during the reinstallation.
 2. **China GPS Coordinate Conversion (GCJ02, BD09)** - The Apple account server location in China normally reports GPS coordinates (latitude, longitude) in GCJ02 values. An option to convert these to WGS84 coordinates has been added to the Apple Server Location on the _Update Apple Account Username/Password_ screen.
@@ -59,7 +97,7 @@ A lot of modules have been added to iCloud3 during the past few years and the di
 
 
 
-
+----------------------------------------------------------------------------------------------------------------------------
 
 ### Release Notes - v3.1.6.1 (2/26/2025)
 #### 🎉 Improvements and New Features

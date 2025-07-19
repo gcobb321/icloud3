@@ -74,6 +74,10 @@ def list_del(list_value, del_value):
     return list_value
 
 #--------------------------------------------------------------------
+def list_keys(list_value):
+    return list(list_value.keys())
+
+#--------------------------------------------------------------------
 def str_to_list(str_value):
     '''
     Create a list of a comma separated strings
@@ -324,8 +328,13 @@ def strip_lead_comma(text):
         return text.strip()
 
 #--------------------------------------------------------------------
-def get_username_base(username):
-    return f"{username}@".split('@')[0]
+def username_id(username):
+    username_base = f"{username}@".split('@')[0]
+
+    if username_base in Gb.upw_filter_items:
+        return Gb.upw_filter_items[username_base]
+    else:
+        return f"{username_base}@"
 
 #--------------------------------------------------------------------
 def format_cnt(desc, n):

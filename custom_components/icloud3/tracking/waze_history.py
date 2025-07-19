@@ -5,7 +5,7 @@ from ..const            import (EVLOG_NOTICE, EVLOG_ALERT, CRLF_DOT, CRLF, RARRO
 
 from ..utils.utils      import (list_to_str, zone_dname,)
 from ..utils.messaging  import (broadcast_info_msg, format_filename,
-                                post_event, post_internal_error, post_monitor_msg, post_startup_alert,
+                                post_event, post_internal_error, post_monitor_msg,
                                 post_evlog_greenbar_msg,
                                 refresh_event_log, log_info_msg, log_error_msg, log_exception,
                                 _evlog, _log, )
@@ -663,7 +663,7 @@ class WazeRouteHistory(object):
                                             f"{format_dist_km(zone_distance_check)} and will be removed "
                                             f"from the Waze History Database")
                     post_event(event_msg)
-                    post_startup_alert(evlog_alert_msg)
+                    post_evlog_greenbar_msg(evlog_alert_msg)
 
                 self._update_sensor_ic3_wazehist_track(Zone.latitude5, Zone.longitude5)
 

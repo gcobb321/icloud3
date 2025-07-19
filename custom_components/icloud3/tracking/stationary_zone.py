@@ -13,9 +13,10 @@ from ..const            import (HIGH_INTEGER, NOT_SET, RARROW,
                                 STATZONE_RADIUS_1M,
                                 ENTER_ZONE, EXIT_ZONE, NEXT_UPDATE, INTERVAL, )
 
-from ..utils.utils      import (isbetween, is_statzone, format_gps, zone_dname, )
+from ..utils.utils      import (isbetween, is_statzone, format_gps, zone_dname,
+                                is_empty, isnot_empty, )
 from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg,
-                                log_debug_msg, log_exception, log_rawdata, _evlog, _log, )
+                                log_debug_msg, log_exception, log_data, _evlog, _log, )
 from ..utils.time_util  import (datetime_now, )
 from ..utils.dist_util  import (format_dist_m, gps_distance_km, )
 
@@ -74,8 +75,9 @@ def move_device_into_statzone(Device):
     longitude = Device.loc_data_longitude
 
     # ''' Start of commented out code to test of moving device into a statzone while home
+
     # See if there is an existing zone this device can move into (real & statzones) when
-    # the zone is selected
+    # the zone is selected. Real zones use radius, StatZones use radius*1.5
     available_zones = [Zone
                         for Zone in Gb.HAZones
                         if (Zone.passive is False
@@ -122,6 +124,13 @@ def move_device_into_statzone(Device):
     _trigger_monitored_device_update(StatZone, Device, ENTER_ZONE)
 
     return True
+
+#....................................................................
+def _within_radius(Zone):
+    if Zone.isnot_statzone:
+        return Zone.radius_m
+    else:
+        return Zone.radius_m * 1.5
 
 #--------------------------------------------------------------------
 def create_StationaryZones_object():
@@ -234,9 +243,6 @@ def move_statzone_to_device_location(Device, latitude=None, longitude=None):
     latitude  = Device.loc_data_latitude  if latitude  is None else latitude
     longitude = Device.loc_data_longitude if longitude is None else longitude
 
-    # if _get_statzone_radius(Device):
-    #     return
-
     clear_statzone_timer_distance(Device)
 
     StatZone.attrs[LATITUDE]  = latitude
@@ -344,15 +350,11 @@ def _get_statzone_radius(Device):
                 if (Zone.passive is False
                     and Zone.distance_m(Device.loc_data_latitude, Device.loc_data_longitude) <= \
                         (Zone.radius_m*1.5 + Device.loc_data_gps_accuracy))]
-                    # and Zone.distance_m(Device.loc_data_latitude, Device.loc_data_longitude) <= \
-                    #     (Zone.radius_m + Gb.statzone_radius_m + 25 + Device.loc_data_gps_accuracy))]
-    if CloseZones == []:
+
+    if is_empty(CloseZones):
         return Gb.statzone_radius_m
 
     CloseZone = CloseZones[0]
-
-    if is_statzone(CloseZone.zone):
-        return CloseZone.attrs[RADIUS]
 
     statzone_radius = int(CloseZone.radius_m/2)
     edge_dist_m = (CloseZone.distance_m(Device.loc_data_latitude, Device.loc_data_longitude) -

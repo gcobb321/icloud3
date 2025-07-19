@@ -53,9 +53,9 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg,
                                 post_event, post_monitor_msg, )
 from ..utils.time_util  import (format_timer, )
 
-from .                  import utils
+from .                  import utils_configure as utils
 from .                  import selection_lists as lists
-from .form_lists_def    import *
+from .const_form_lists  import *
 from ..mobile_app       import mobapp_interface
 from ..startup          import config_file
 
@@ -88,6 +88,7 @@ def form_config_option_user(self):
 def form_menu(self):
     menu_title = MENU_PAGE_TITLE[self.menu_page_no]
     menu_action_items = MENU_ACTION_ITEMS.copy()
+    _log(f"IN form_menu  {self.step_id=} {self=} {self.menu_page_no=}")
 
     if self.menu_page_no == 0:
         menu_key_text  = MENU_KEY_TEXT_PAGE_0
@@ -299,10 +300,14 @@ def _build_apple_accts_displayed_over_5(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_update_apple_acct(self):
     self.actions_list = USERNAME_PASSWORD_ACTIONS.copy()
+    if Gb.internet_error:
+        action_default = 'cancel_goto_previous'
+    else:
+        action_default = 'save_log_into_apple_acct'
 
     errs_ui = self.errors_user_input
-    username   = errs_ui.get(CONF_USERNAME)   or self.conf_apple_acct[CONF_USERNAME] or ' ' #f"{self.username}"
-    password   = errs_ui.get(CONF_PASSWORD)   or self.conf_apple_acct[CONF_PASSWORD] or ' ' #f"{self.password}"
+    username   = errs_ui.get(CONF_USERNAME)   or self.conf_apple_acct[CONF_USERNAME] or ' '
+    password   = errs_ui.get(CONF_PASSWORD)   or self.conf_apple_acct[CONF_PASSWORD] or ' '
     password   = decode_password(password)
     locate_all = errs_ui.get(CONF_LOCATE_ALL) or self.conf_apple_acct[CONF_LOCATE_ALL]
     totp_key   = errs_ui.get(CONF_TOTP_KEY)   or self.conf_apple_acct[CONF_TOTP_KEY] or ' '
@@ -314,7 +319,7 @@ def form_update_apple_acct(self):
 
     if (self.add_apple_acct_flag is False
             and username not in Gb.PyiCloud_by_username):
-        self.errors['base'] = 'icloud_acct_not_logged_into'
+        self.errors['base'] = 'apple_acct_not_logged_into'
 
     if self.add_apple_acct_flag:
         acct_info = '➤ ADD A NEW APPLE ACCOUNT'
@@ -352,7 +357,7 @@ def form_update_apple_acct(self):
                     default=locate_all):
                     cv.boolean,
         vol.Required('action_items',
-                    default=utils.action_default_text('save_log_into_apple_acct')):
+                    default=utils.action_default_text(action_default)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -402,8 +407,11 @@ def form_delete_apple_acct(self):
 def form_reauth(self, reauth_username=None):
 
     try:
-        action_list_default = 'send_verification_code'
         self.actions_list = REAUTH_ACTIONS.copy()
+        if Gb.internet_error:
+            action_list_default = 'goto_previous'
+        else:
+            action_list_default = 'send_verification_code'
 
         # account_selected = account_selected if acount_selected is not None else None
 
@@ -448,23 +456,15 @@ def form_reauth(self, reauth_username=None):
         elif is_empty(self.apple_acct_items_by_username):
             default_acct_selected = 'No Apple Accounts have been set up'
             self.apple_acct_items_by_username = {'.noacctssetup': default_acct_selected}
-            self.errors['base'] = 'icloud_acct_not_set_up'
+            self.errors['base'] = 'apple_acct_not_set_up'
             action_list_default = 'goto_previous'
 
         else:
             # Apple accts but the selected one is not logged into
             default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
-            self.errors['base'] = 'icloud_acct_not_logged_into'
+            self.errors['base'] = 'apple_acct_not_logged_into'
             action_list_default = 'goto_previous'
 
-        # try:
-        #     if self.conf_apple_acct[CONF_TOTP_KEY]:
-        #         _log(f"{self.conf_apple_acct[CONF_TOTP_KEY].replace('-', '')=}")
-        #         otp = pyotp.TOTP(self.conf_apple_acct[CONF_TOTP_KEY].replace('-', ''))
-        #         otp_code = otp.now()
-        # except Exception as err:
-        #     log_exception(err)
-        # else:
         otp_code = ' '
 
         return vol.Schema({
@@ -689,7 +689,9 @@ def form_update_device(self):
 
     _picture_by_filename.update(self.picture_by_filename)
 
-    if self.errors != {}:
+    if Gb.internet_error:
+            self.errors['base'] = 'internet_error'
+    elif self.errors != {}:
         self.errors['base'] = 'unknown_value'
 
     if utils.parm_or_device(self, CONF_TRACKING_MODE) == INACTIVE_DEVICE:
@@ -855,7 +857,7 @@ def form_actions(self):
         debug_OPTIONS.pop('debug_start')
     else:
         debug_OPTIONS.pop('debug_stop')
-    if Gb.log_rawdata_flag:
+    if Gb.log_data_flag:
         debug_OPTIONS.pop('rawdata_start')
     else:
         debug_OPTIONS.pop('rawdata_stop')

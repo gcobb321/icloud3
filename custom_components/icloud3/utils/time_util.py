@@ -8,6 +8,7 @@ from .utils                     import instr
 
 import homeassistant.util.dt    as dt_util
 import time
+from zoneinfo                   import ZoneInfo
 from datetime                   import datetime, timedelta, timezone
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -357,6 +358,29 @@ def format_secs_since(secs):
     return f"{format_timer(secs_since(secs))}"
 
 #--------------------------------------------------------------------
+def format_now():
+    ''' 12-hour time now '''
+    return secs_to_time(time_now_secs())
+
+#--------------------------------------------------------------------
+def format_day_date_time_now():
+    ''' Sat, 06/14, 02:11:33 '''
+
+    return f"{dt_util.now().strftime('%a, %m/%d, %H:%M:%S')}"
+
+#--------------------------------------------------------------------
+def format_day_date():
+    ''' Saturday, June 14'''
+
+    return f"{dt_util.now().strftime('%a, %b %-d')}"
+
+#--------------------------------------------------------------------
+def format_day_date_now():
+    ''' Saturday, June 14, 4:30p '''
+
+    return f"{format_day_date()}, {secs_to_hhmm(time_now_secs())}"
+
+#--------------------------------------------------------------------
 def format_age_hrs(secs):
     ''' secs --> 4.5 hrs ago '''
 
@@ -496,28 +520,59 @@ def calculate_time_zone_offset():
     Calculate time zone offset seconds
     '''
     try:
+        # Get time_zone from HA and determine local xone offsets
+        local_zone_name = Gb.ha_location_info.get('time_zone', None)
+
+        if local_zone_name is not None:
+            # Extract offset (+08:00 part of 2025-05-28 06:12:01.718366+08:00)
+            local_zone_offset = str(datetime.now(ZoneInfo(local_zone_name)))[-6:]
+            local_zone_offset_secs = (int(local_zone_offset[1:3])*3600 +
+                                        int(local_zone_offset[4:])*60)
+    except Exception as err:
+        local_zone_name = None
+
+    # HA time zone is not available or eeor getting Zone Info (internet down),
+    # determine time_zone from hardware time
+    if local_zone_name is None:
         local_zone_name        = dt_util.now().strftime('%Z')
         local_zone_offset      = dt_util.now().strftime('%z')
         local_zone_offset_secs = int(local_zone_offset[1:3])*3600 + \
-                                    int(local_zone_offset[3:])*60
+                                        int(local_zone_offset[3:])*60
+
+    try:
+        if local_zone_offset.startswith("-"):
+            local_zone_offset_secs = -1*local_zone_offset_secs
 
         if local_zone_offset.startswith("-"):
             local_zone_offset_secs = -1*local_zone_offset_secs
 
-        Gb.time_zone_offset_str  = f"{local_zone_offset[0:3]}:{local_zone_offset[3:]}"
+        Gb.time_zone_offset_str  = local_zone_offset
         Gb.time_zone_offset_secs = local_zone_offset_secs
 
         post_event( f"Local Time Zone > "
-                    f"{local_zone_name} "
-                    f"(UTC{Gb.time_zone_offset_str} hrs), "
+                    f"{local_zone_name}, "
+                    f"(UTC {Gb.time_zone_offset_str} hrs) "
                     f"Country Code-{Gb.country_code.upper()}, "
                     f"Apple Server Time-{apple_server_time()}")
 
-    except Exception as err:
-        internal_error_msg(err, 'CalcTimeOffset')
-        local_zone_offset_secs = 0
+        return local_zone_offset_secs
 
-    return local_zone_offset_secs
+    except Exception as err:
+        log_exception(err)
+        Gb.time_zone_offset_str  = 'UTC'
+        Gb.time_zone_offset_secs = 0
+
+    return 0
+
+#--------------------------------------------------------------------------------
+def apple_server_time():
+    # Get Apple Server Time that displays when password authentication is done
+    apple_zone_datetime = datetime.now(ZoneInfo('America/Los_Angeles'))
+    apple_time_structure = '%b %d, %Y, %H:%M PST'
+    if Gb.time_format_12_hour:
+        apple_time_structure.replace('H', '-I')
+
+    return apple_zone_datetime.strftime(apple_time_structure)
 
 #--------------------------------------------------------------------------------
 def adjust_time_hour_values(text_str, hh_adjustment):
@@ -645,21 +700,6 @@ def timestamp_to_time_utcsecs(utc_timestamp) -> int:
         hhmmss = hhmmss[1:]
 
     return hhmmss
-
-#--------------------------------------------------------------------
-def apple_server_time():
-    '''
-    Return the Apple Server PST Time
-        - Feb 17, 2025, 8:19 AM PST
-        - Feb 17, 2025, 08:19 PST
-    '''
-    pst_secs = time_now_utc_secs() + Gb.time_zone_offset_secs_PST
-    time_struct = time.localtime(pst_secs)
-
-    if Gb.time_format_12_hour:
-        return time.strftime("%b %d, %Y, %-I:%M %p PST", time_struct)
-    else:
-        return time.strftime("%b %d, %Y, %H:%M PST", time_struct)
 
 #--------------------------------------------------------------------
 # def _has_ap(hhmmss):

@@ -49,6 +49,7 @@ from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
 
                             CONF_STAT_ZONE_STILL_TIME,
                             CONF_STAT_ZONE_INZONE_INTERVAL,
+                            ALERTS_SENSOR_ATTRS,
                             )
 
 
@@ -82,44 +83,42 @@ class GlobalVariables(object):
     use_metric          = False
 
     iCloud3             = None   # iCloud3 Platform object
-    #ActionsFlow         = None
-    #ActionsOptionsFlow  = None
     MobileApp_data      = {}     # mobile_app Integration data dict from hass.data['mobile_app']
     MobileApp_devices   = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
 
     config_entry_id     = None
-    OptionsFlowHandler_by_entry_id = {}   # config_flow OptionsFlowHandler
-    OptionsFlowHandler  = None   # config_flow OptionsFlowHandler
+    OptionsFlowHandler  = None  # OptionsFlowHandler (config_flow)
 
+    EvLog               = None   # Event Log
+    EvLogSensor         = None   # Event Log Sensor
+    IntConnTest         = None   # Internet Connection Test Availabile Handler
+    InternetError          = None   # Internet Connection Error Handler
+    Waze                = None   # Waze Route ttime & distance handler
+    WazeHist            = None   # Waze History Database handler
+    WazeHistTrackSensor = None   # Sensor for updating the lat/long values for the WazeHist Map display
 
-    EvLog               = None
-    EvLogSensor         = None
-    HARootLogger        = None
-    HALogger            = None
-    iC3Logger           = None
+    HARootLogger        = None   # HA Root Logger (used in messaging.py during initialization)
+    HALogger            = None   # HA Log
+    iC3Logger           = None   # iCloud3 Log
     iC3Logger_last_check_exist_secs = 0
-    prestartup_log      = ''
+    prestartup_log      = ''     # _log calls made before the IC3Logger is set up will be stored here
 
-    iC3EntityPlatform   = None    # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
-    PyiCloud            = None    # iCloud Account service
-    PyiCloudLoggingInto = None    # PyiCloud being set up  that can be used if the login fails
+    iC3EntityPlatform   = None   # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
+    PyiCloud            = None   # iCloud Account service
+    PyiCloudLoggingInto = None   # PyiCloud being set up  that can be used if the login fails
     PyiCloud_needing_reauth_via_ha = {} # Reauth needed sent to ha for notify msg display
-    PyiCloudValidateAppleAcct = None    # A session that can be used to verify the username/password
+    ValidateAppleAcctUPW = None    # A session that can be used to verify the username/password
     PyiCloud_by_username        = {}
     PyiCloudSession_by_username = {}    # Session object for a username, set in Session so exists on an error
 
-    username_pyicloud_503_connection_error = [] # Session object for a username, set in Session so exists on an error
-    log_file_filter_items = {}  # items to be filtered from the log file (passwords, etc)
-    log_file_hide_items = []  # email extensions filter from apple accounts to remove in the icloud3-0.log file (messaging.py)
-    disable_log_filter  = False
-
-    Waze                = None
-    WazeHist            = None
-    WazeHistTrackSensor = None    # Sensor for updating the lat/long values for the WazeHist Map display
+    username_pyicloud_503_internet_error = [] # Session object for a username, set in Session so exists on an error
+    upw_filter_items        = {}    # username/passwords to be filtered from the EvLog and log file
+    upw_unfilter_items      = {}    # username/passwords that are filtered that need to be unfiltered (icloud3_alerts items)
+    upw_hide_items          = []    # username/passwords that should be hidded instead of filtered
+    disable_upw_filter      = False # Disable the filtering
 
     operating_mode          = 0         # Platform (Legacy using configuration.yaml) or Integration
     ha_config_platform_stmt = False     # a platform: icloud3 stmt is in the configurationyaml file that needs to be removed
-    # v2v3_config_migrated    = False     # Th v2 configuration parameters were migrated to v3
     add_entities            = None
     ha_started              = False     # Set to True in start_ic3.ha_startup_completed from listener in __init__
 
@@ -170,42 +169,35 @@ class GlobalVariables(object):
     owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
     username_valid_by_username        = {}  # The username/password validation status
 
-    internet_connection_test          = False   # Raise ConnectionError in PyiCloud_session, set in service_handler - Show/Hide Tracking Monitors
-    internet_connection_error         = False   # Set in PyiCloud_session from an http connection error. Shuts down all PyiCloud requests
-    internet_connection_error_secs    = 0       # Time https connection error received
-    internet_connection_error_code    = 0       # Error msg returned from http handler
-    internet_connection_error_msg     = ''      # Error msg returned from http handler
-    internet_connection_progress_cnt  = 0       # Progress display counter
-    internet_connection_status_request_cnt  = 0       # Recheck counter
-    internet_connection_status_request_secs = 0
-    internet_connection_status_requested = False
-    internet_connection_status_waiting_for_response = False # Status request was sent to 8.8.8.8 and waiting
-    internet_connection_ping_ip_status = {}  # Ping IPS Status Check Results
-    external_ip_name                   = None   # External IP name and address of the users newtowrk (connection_error)
+    InternetPingIP                    = None    # Internet Connection Test Availabile Handler
+    InternetError                     = None    # Internet Connection Error Handler
+    internet_error                    = False   # Internet Connection Error Flag (set in PyiCloud_Session)
+    last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
+
+    external_ip_name                   = None   # External IP name and address of the users newtowrk (internet_error)
     external_ip_address                = None
     apple_com_ip_address               = None
-    pingable_ip_name                   = None   # Pingable  P name and address to use to test the internet status (connection_error)
+    pingable_ip_name                   = None   # Pingable  P name and address to use to test the internet status (internet_error)
     pingable_ip_address                = None
-    pingable_ip_Ping                   = None   # Ping object from the Ping helpers routined (connection_error)
+    pingable_ip_Ping                   = None   # Ping object from the Ping helpers routined (internet_error)
     httpx                              = None   # HTTPX Client from the HA httpx.client (setup & used in file_io.py)
 
-    last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
     PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename
     PyiCloud_by_username              = {}  # PyiCloud object for each Apple acct username
     PyiCloud_password_by_username     = {}  # Password for each Apple acct username
-    PyiCloud_logging_in_usernames     = []  # A list of usernames that are currently logging in. Used to prevent another login
-    usernames_setup_error_retry_list  = []  # A list of usernames that failed to set up in Stage 4 and need to be retried
-    devicenames_setup_error_retry_list= []  # A list of devices that failed to set up in Stage 4 and need to be retried
-
+    PyiCloud_logging_in_usernames     = []  # usernames that are currently logging in. Used to prevent another login
+    usernames_setup_error_retry_list  = []  # usernames that failed to set up in Stage 4 and need to be retried
+    devicenames_setup_error_retry_list= []  # devices that failed to set up in Stage 4 and need to be retried
+    startup_alerts_by_source          = {}  # alerts during startup by devicename/apple_acct/mobapp device
 
     # iCloud Device information - These is used verify the device, display on the EvLog and in the Config Flow
     # device selection list on the iCloud3 Devices screen
     devices_not_set_up                = []
-    device_id_by_icloud_dname         = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
-    icloud_dname_by_device_id         = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
-    device_info_by_icloud_dname       = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
-    device_model_info_by_fname        = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
-    dup_icloud_dname_cnt              = {}       # Used to create a suffix for duplicate devicenames
+    device_id_by_icloud_dname         = {}  # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+    icloud_dname_by_device_id         = {}  # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+    device_info_by_icloud_dname       = {}  # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
+    device_model_info_by_fname        = {}  # {'Gary-iPhone': [raw_model,model,model_display_name]}
+    dup_icloud_dname_cnt              = {}  # Used to create a suffix for duplicate devicenames
     devices_without_location_data     = []
 
     devicenames_by_icloud_dname       = {}  # All ic3_devicenames by conf_find_devices
@@ -230,42 +222,47 @@ class GlobalVariables(object):
     battery_level_sensors_by_mobapp_dname = {}
     battery_state_sensors_by_mobapp_dname = {}
 
-    devicenames_x_famshr_devices      = {}  # All ic3_devicenames by conf_famshr_devices (both ways)
-    devicenames_x_mobapp_dnames       = {}  # All ic3_devicenames by conf_mobapp_dname (both ways)
+    devicenames_x_famshr_devices    = {}  # All ic3_devicenames by conf_famshr_devices (both ways)
+    devicenames_x_mobapp_dnames     = {}  # All ic3_devicenames by conf_mobapp_dname (both ways)
 
     # Mobile App Integration info from hass_data['mobile_app'], Updated in start_ic3.check_mobile_app_integration
-    MobileApp_data                    = {}  # data dict from hass.data['mobile_app']
-    MobileApp_device_fnames           = []  # fname = name_by_user or name in mobile_app device entry
-    MobileApp_fnames_x_mobapp_id      = {}  # All mobapp_fnames by mobapp_deviceid (both ways)
-    MobileApp_fnames_disabled         = []
+    MobileApp_data                  = {}  # data dict from hass.data['mobile_app']
+    MobileApp_device_fnames         = []  # fname = name_by_user or name in mobile_app device entry
+    MobileApp_fnames_x_mobapp_id    = {}  # All mobapp_fnames by mobapp_deviceid (both ways)
+    MobileApp_fnames_disabled       = []
 
-    Zones                             = []  # Zones object list
-    Zones_by_zone                     = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
-    HAZones                           = []  # Zones object list for only valid HA Zones
-    HAZones_by_zone                   = {}  # Zone object by zone name for only valid HA Zones
-    HAZones_by_zone_deleted           = {}  # Zone object by zone name for Zones deleted from HA
-    ha_zone_settings_check_secs       = 0   # Last time the ha.states Zone config was checked for changes
-    zones_dname                       = {}   # Zone display_as by zone distionary to ease displaying zone fname
-    TrackedZones_by_zone              = {HOME, None}  # Tracked zones object by zone name set up with Devices.DeviceFmZones object
-    StatZones                         = []  # Stationary Zone objects
-    StatZones_to_delete               = []  # Stationary Zone  to delete after the devices that we're in it have  been updated
-    StatZones_by_zone                 = {}  # Stationary Zone objects by their id number (1-10 --> ic3_#_stationary)
-    HomeZone                          = None # Home Zone object
+    Zones                           = []  # Zones object list
+    Zones_by_zone                   = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
+    HAZones                         = []  # Zones object list for only valid HA Zones
+    HAZones_by_zone                 = {}  # Zone object by zone name for only valid HA Zones
+    HAZones_by_zone_deleted         = {}  # Zone object by zone name for Zones deleted from HA
+    ha_zone_settings_check_secs     = 0   # Last time the ha.states Zone config was checked for changes
+    zones_dname                     = {}   # Zone display_as by zone distionary to ease displaying zone fname
+    TrackedZones_by_zone            = {HOME, None}  # Tracked zones object by zone name set up with Devices.DeviceFmZones object
+    StatZones                       = []  # Stationary Zone objects
+    StatZones_to_delete             = []  # Stationary Zone  to delete after the devices that we're in it have  been updated
+    StatZones_by_zone               = {}  # Stationary Zone objects by their id number (1-10 --> ic3_#_stationary)
+    HomeZone                        = None # Home Zone object
 
     # HA device_tracker and sensor entity info
-    DeviceTrackers_by_devicename      = {}  # HA device_tracker.[devicename] entity objects
-    Sensors_by_devicename             = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
-    Sensors_by_devicename_from_zone   = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
-    Sensor_EventLog                   = None    # Event Log sensor object
-    ha_device_id_by_devicename        = {}  # HA device_registry device_id
-    ha_area_id_by_devicename          = {}  # HA device_registry area_id
+    DeviceTrackers_by_devicename    = {}  # HA device_tracker.[devicename] entity objects
+    Sensors_by_devicename           = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
+    Sensors_by_devicename_from_zone = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
+    Sensor_EventLog                 = None    # Event Log sensor object
+    ha_device_id_by_devicename      = {}  # HA device_registry device_id
+    ha_area_id_by_devicename        = {}  # HA device_registry area_id
 
     # Event Log operational fields
-    evlog_card_directory              = ''
-    evlog_card_program                = ''
-    evlog_disable_refresh_flag        = False
-    evlog_action_request              = ''
-    evlog_version                     = ''  # EvLog version reported back from the EvLog via the event_log_version svc call
+    evlog_card_directory            = ''
+    evlog_card_program              = ''
+    evlog_disable_refresh_flag      = False
+    evlog_action_request            = ''
+    evlog_version                   = ''  # EvLog version reported back from the EvLog via the event_log_version svc call
+
+    # iCloud3 Alerts Sensor
+    AlertsSensor                    = None   # icloud3_alerts Sensor
+    alerts_sensor           = 'none' # Alerts sensor State value (last alert encountered)
+    alerts_sensor_attrs             = {}     # Alerts Attributes by alert type
 
     # System Wide variables control iCloud3 start/restart procedures
     ic3_timer_events_are_setup      = False     # Indicates the 5-sec polling loop is set up
@@ -274,8 +271,6 @@ class GlobalVariables(object):
     restart_icloud3_request_flag    = False     # iC3 needs to be restarted
     restart_ha_flag                 = False     # HA needs to be restarted
     any_device_was_updated_reason   = ''
-    startup_alerts                  = []
-    startup_alerts_str              = ''
     startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
     startup_lists                   = {}        # Log variable and dictionsry field/values to icloud3-0.log file
 
@@ -285,10 +280,10 @@ class GlobalVariables(object):
 
     # Debug and trace flags
     log_debug_flag               = False
-    log_rawdata_flag             = False
-    log_rawdata_flag_unfiltered  = False
+    log_data_flag                = False
+    log_data_flag_unfiltered     = False
     log_debug_flag_restart       = None
-    log_rawdata_flag_restart     = None
+    log_data_flag_restart        = None
     evlog_trk_monitors_flag      = False
     evlog_startup_log_flag       = False
     info_notification            = ''
@@ -351,7 +346,6 @@ class GlobalVariables(object):
     conf_sensors      = {}
     conf_devicenames  = []
     conf_icloud_dnames = []
-    conf_startup_errors_by_devicename = {}        # device config apple acct & mobapp devicename errors
     conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter
     conf_icloud_device_cnt  = 0                   # Number of devices with iCloud tracking set up
     conf_fmf_device_cnt     = 0                   # Number of devices with FmF tracking set up

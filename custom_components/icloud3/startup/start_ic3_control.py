@@ -4,6 +4,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CRLF_RED_ALERT,
                                 NL, NL_DOT, LINK, YELLOW_ALERT, RED_ALERT,
                                 EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
+                                ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                 CONF_VERSION, ICLOUD, ZONE_DISTANCE,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION,
@@ -11,18 +12,17 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 )
 
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_to_str, list_add, list_del,
-                                get_username_base, )
+                                username_id, )
 from ..utils.messaging  import (broadcast_info_msg,
-                                post_event, post_error_msg, log_error_msg, post_startup_alert,
+                                post_event, post_error_msg, log_error_msg, post_alert,
                                 post_monitor_msg, post_internal_error, post_evlog_greenbar_msg,
                                 write_ic3log_recd,
-                                log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_rawdata,
+                                log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_data,
                                 _evlog, _log, more_info, format_filename,
                                 write_config_file_to_ic3log,
                                 open_ic3log_file, )
-from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, )
+from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, format_day_date_now, )
 
-from ..apple_acct       import connection_error as conn_error
 from ..apple_acct       import pyicloud_ic3_interface
 from ..mobile_app       import mobapp_interface
 from ..startup          import hacs_ic3
@@ -52,13 +52,9 @@ def stage_1_setup_variables():
 
     broadcast_info_msg(stage_title)
 
-    post_event(f"Pingable IP Address > {Gb.pingable_ip_address} ({Gb.pingable_ip_name})")
-    post_event(f"External IP Address > {Gb.external_ip_address} ({Gb.external_ip_name})")
-
     Gb.EvLog.display_user_message(f'iCloud3 v{Gb.version} > Initializiing')
 
     try:
-        Gb.startup_alerts               = []
         Gb.EvLog.alert_message          = ''
         Gb.config_track_devices_change_flag = False
         Gb.reinitialize_icloud_devices_flag = False     # Set when no devices are tracked and iC3 needs to automatically restart
@@ -79,8 +75,8 @@ def stage_1_setup_variables():
             if (Gb.use_data_source_ICLOUD):
                 # Can not run this as an executor job to avoid 'no running event loop' error
                 # Gb.hass.async_add_executor_job(
-                #        pyicloud_ic3_interface.create_all_PyiCloudServices)
-                pyicloud_ic3_interface.create_all_PyiCloudServices()
+                #        pyicloud_ic3_interface.log_into_apple_acct_restart_icloud3)
+                pyicloud_ic3_interface.log_into_apple_acct_restart_icloud3()
 
 
         if Gb.ha_config_directory != '/config':
@@ -89,9 +85,10 @@ def stage_1_setup_variables():
         post_event(f"iCloud3 Configuration File >{CRLF_DOT}{format_filename(Gb.icloud3_config_filename)}")
 
         start_ic3.display_platform_operating_mode_msg()
+        # start_ic3.update_lovelace_resource_event_log_js_entry()
+        # hacs_ic3.check_hacs_icloud3_update_available()
         Gb.hass.loop.create_task(start_ic3.update_lovelace_resource_event_log_js_entry())
-        Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available(Gb.this_update_time))
-        # Gb.hass.loop.create_task(conn_error.identify_available_internet_ping_ips())
+        Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available())
         start_ic3.check_ic3_event_log_file_version()
 
         post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
@@ -101,6 +98,9 @@ def stage_1_setup_variables():
 
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.update_event_log_display("")
+
+        if Gb.InternetError.internet_error_test:
+            Gb.internet_error = True
 
     except Exception as err:
         log_exception(err)
@@ -142,7 +142,7 @@ def stage_2_prepare_configuration():
             configuration_needed_msg = 'ICLOUD3 APPLE ACCT OR DEVICES HAVE NOT BEEN SETUP '
 
         if configuration_needed_msg:
-            post_startup_alert('iCloud3 Configuration not set up')
+            post_evlog_greenbar_msg('iCloud3 Configuration not set up')
             event_msg =(f"{EVLOG_ALERT}{configuration_needed_msg}{CRLF}"
                         f"{more_info('configure_icloud3')}")
             post_event(event_msg)
@@ -166,17 +166,28 @@ def stage_3_setup_configured_devices():
 
         # Make sure a full restart is done if all of the devices were not found in the iCloud data
         data_sources = ''
-        Gb.conf_startup_errors_by_devicename = {}
+        Gb.startup_alerts_by_source = {}
 
         if Gb.conf_data_source_ICLOUD: data_sources += f"{ICLOUD}, "
         if Gb.conf_data_source_MOBAPP: data_sources += f"{MOBAPP}, "
         data_sources = data_sources[:-2] if data_sources else 'NONE'
         post_event(f"Data Sources > {data_sources}")
 
-        for username, valid_upw in Gb.username_valid_by_username.items():
-            if valid_upw is False:
-                post_event( f"{EVLOG_ALERT}Apple Acct > {get_username_base(username)}, Login failed, "
-                            f"{CRLF_DOT}INVALID USERNAME/PASSWORD")
+        # Recheck paswords and validate ones that failed
+        Gb.ValidateAppleAcctUPW.validate_all_apple_accts_upw()
+
+        # # valid_upw is False if there was no internet connection
+        # for username, valid_upw in Gb.username_valid_by_username.items():
+        #     if valid_upw:
+        #         continue
+
+        #     error_msg = f"{EVLOG_ALERT}Apple Acct > {username_id(username)}, Login Failed, "
+        #     if Gb.internet_error is False:
+        #         error_msg += f"{CRLF_DOT}INVALID USERNAME/PASSWORD"
+        #     else:
+        #         error_msg += f"INTERNET ERROR"
+        #     post_event(error_msg)
+        #     post_alert(username_id(username), "Apple Acct Login Failed")
 
         if Gb.config_track_devices_change_flag:
             pass
@@ -199,15 +210,10 @@ def stage_3_setup_configured_devices():
 def stage_4_setup_data_sources():
 
     Gb.trace_prefix = 'STAGE4'
-    stage_title = f"Stage 4 > Data Source Device Assignment"
+    stage_title = f"Stage 4 > Connect to Apple Accounts"
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message(stage_title)
     broadcast_info_msg(stage_title)
-
-    # Remove any device related errors so a retry will not show previous alerts
-    _startup_alerts = [_startup_alert   for _startup_alert in Gb.startup_alerts
-                                        if instr(_startup_alert.lower(), 'device') is False]
-    Gb.startup_alerts = _startup_alerts
 
     for Device in Gb.Devices:
         Device.set_fname_alert('')
@@ -226,7 +232,6 @@ def stage_4_setup_data_sources():
     post_event(f"Data Source > {apple_acct_used_msg}")
     post_event(f"Data Source > {mobapp_used_msg}")
 
-
     try:
         # Get list of all unique Apple Acct usernames in config
         Gb.conf_usernames = [apple_account[CONF_USERNAME]
@@ -234,14 +239,7 @@ def stage_4_setup_data_sources():
                                     if (apple_account[CONF_USERNAME] in Gb.username_valid_by_username
                                             and apple_account[CONF_USERNAME] != '')]
 
-        if Gb.internet_connection_error:
-            usernames_base = [username.split('@')[0] for username in Gb.conf_usernames]
-            post_event( f"{EVLOG_ALERT}{RED_ALERT}Internet Connection Error > "
-                        f"Apple Acct data is not available:"
-                        f"{CRLF_DOT}{list_to_str(usernames_base)} > "
-                        f"Retry at {secs_to_time(Gb.internet_connection_error_secs + 1200)}")
-
-        elif Gb.use_data_source_ICLOUD:
+        if Gb.use_data_source_ICLOUD:
             _log_into_apple_accounts(retry=True)
 
             start_ic3.setup_data_source_ICLOUD()
@@ -251,7 +249,11 @@ def stage_4_setup_data_sources():
                     post_error_msg( f"{EVLOG_ERROR}Apple Account {PyiCloud.account_owner} "
                                     f"is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
-                    post_startup_alert(f"Apple Account {PyiCloud.account_owner} is Locked")
+                    post_alert(PyiCloud.username_id, "Apple Acct is Locked")
+
+        stage_title = f"Stage 4 > Connect to Mobile App Integration"
+        log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+        Gb.EvLog.display_user_message(stage_title)
 
         mobapp_interface.get_entity_registry_mobile_app_devices()
         mobapp_interface.get_mobile_app_integration_device_info()
@@ -259,12 +261,16 @@ def stage_4_setup_data_sources():
         if Gb.conf_data_source_MOBAPP:
             start_ic3.setup_tracked_devices_for_mobapp()
 
+        stage_title = f"Stage 4 > Finalize Date Source Connections"
+        log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+        Gb.EvLog.display_user_message(stage_title)
+
         start_ic3.set_devices_verified_status()
         all_verified_flag = _are_all_devices_verified()
 
-        if isnot_empty(Gb.username_pyicloud_503_connection_error):
-            username_base = [get_username_base(username)
-                                        for username in Gb.username_pyicloud_503_connection_error]
+        if isnot_empty(Gb.username_pyicloud_503_internet_error):
+            username_base = [username_id(username)
+                                        for username in Gb.username_pyicloud_503_internet_error]
             retry_at = secs_to_time(time_now_secs() + 900)
             post_event( f"{EVLOG_ALERT}Apple Acct > {list_to_str(username_base)}, Login Failed, "
                         f"{CRLF_DOT}Error-503 (Apple Server Refused SRP Password Validation Request), "
@@ -288,8 +294,6 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     will be retried here if necessary. This is a shortened version of the full Stage 4
     where all devices for all data sources are set up.
     '''
-    if Gb.internet_connection_error:
-        return
 
     Gb.trace_prefix = 'STAGE4'
     stage_title = f"Stage 4 > Data Source Device Assignment (Retry)"
@@ -300,10 +304,6 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     post_event(f"{EVLOG_ALERT}Apple Acct setup will be retried to resolve Missing Devices:"
                 f"{CRLF_DOT}Apple Account > {list_to_str(Gb.usernames_setup_error_retry_list)}")
 
-    # Remove any device related errors so a retry will not show previous alerts
-    _startup_alerts = [_startup_alert   for _startup_alert in Gb.startup_alerts
-                                        if instr(_startup_alert.lower(), 'device') is False]
-    Gb.startup_alerts = _startup_alerts
     for Device in Gb.Devices:
         Device.set_fname_alert('')
 
@@ -317,6 +317,9 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     try:
         all_verified_flag = True
         for username in Gb.usernames_setup_error_retry_list:
+            if username not in Gb.conf_usernames:
+                continue
+
             _log_into_apple_accounts(retry=True)
 
             PyiCloud = Gb.PyiCloud_by_username.get(username)
@@ -326,23 +329,24 @@ def stage_4_setup_data_sources_retry(final_retry=False):
                 if PyiCloud.response_code == 302:
                     continue
 
-                post_event(f"Verify Apple Acct > {PyiCloud.account_owner_username}, Verified")
+                post_event(f"Verify Apple Acct > {PyiCloud.username_id}, Verified")
                 start_ic3.setup_data_source_ICLOUD(retry=True)
-                start_ic3.set_devices_verified_status()
 
                 if PyiCloud.account_locked:
-                    post_error_msg( f"{EVLOG_ERROR}Apple Acct > {PyiCloud.account_owner}, "
+                    post_error_msg( f"{EVLOG_ERROR}Apple Acct > {PyiCloud.username_id}, "
                                     f"Acct is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
-                    post_startup_alert(f"Apple Account {PyiCloud.account_owner_USERNAME} is Locked")
+                    post_alert(PyiCloud.username_id, "Apple Acct is Locked")
             else:
-                post_event(f"{EVLOG_ALERT}APPLE ACCT LOGIN ALERT > {username}, Login Unsuccessful")
+                post_event(f"{EVLOG_ALERT}APPLE ACCT LOGIN FAILED > {username_id(username)}, Unavailable")
+                post_alert(username_id(username), "Apple Acct Login Failed")
 
+            start_ic3.set_devices_verified_status()
             all_verified_flag = _are_all_devices_verified(retry=True)
 
             if all_verified_flag:
                 Gb.usernames_setup_error_retry_list = \
-                    list_del(Gb.usernames_setup_error_retry_list, PyiCloud.account_owner_username)
+                    list_del(Gb.usernames_setup_error_retry_list, PyiCloud.username)
 
     except Exception as err:
         log_exception(err)
@@ -351,11 +355,13 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     post_event(f"{EVLOG_IC3_STAGE_HDR} {stage_title}")
     Gb.EvLog.update_event_log_display("")
 
-    if final_retry:
-        if is_empty(Gb.usernames_setup_error_retry_list):
-            post_event(f"{EVLOG_ALERT}ALL ICLOUD STARTUP ERRORS RESOLVED")
-        else:
-            post_startup_alert(f"Apple Acct Login Error-{list_to_str(Gb.usernames_setup_error_retry_list)}")
+    # if final_retry:
+    #     if is_empty(Gb.usernames_setup_error_retry_list):
+    #         post_event(f"{EVLOG_ALERT}ALL ICLOUD STARTUP ERRORS RESOLVED")
+    #     else:
+    #         apple_acct_list = [username_id(username)
+    #                             for username in Gb.usernames_setup_error_retry_list]
+    #         post_alert(apple_acct_list[0], "Apple Acct Device Setup Issue")
 
     return all_verified_flag
 
@@ -364,8 +370,7 @@ def _log_into_apple_accounts(retry=False):
     '''
     Verify that all Apple Account PyiCloud objects have been created
     '''
-    if (Gb.use_data_source_ICLOUD is False
-            or Gb.internet_connection_error):
+    if Gb.use_data_source_ICLOUD is False:
         return False
 
     if Gb.initial_icloud3_loading_flag is False:
@@ -380,7 +385,7 @@ def _log_into_apple_accounts(retry=False):
     for username in Gb.conf_usernames:
         PyiCloud = Gb.PyiCloud_by_username.get(username)
         if (PyiCloud is None
-                or PyiCloud.RawData_by_device_id == {}):
+                or PyiCloud.AADevData_by_device_id == {}):
 
             conf_apple_acct, _idx = config_file.conf_apple_acct(username)
 
@@ -396,11 +401,11 @@ def _log_into_apple_accounts(retry=False):
                     if aa_login_error: aa_login_error += ', '
                     aa_login_error += f"{PyiCloud.account_owner} (503)"
 
-    if Gb.internet_connection_error:
+    if Gb.internet_error:
         return False
 
     if (aa_login_error
-            or is_empty(PyiCloud.RawData_by_device_id)):
+            or is_empty(PyiCloud.AADevData_by_device_id)):
         pass
 
     elif is_empty(Gb.devices_without_location_data):
@@ -433,7 +438,8 @@ def _are_all_devices_verified(retry=False):
                             if Device.verified_flag is False and Device.isnot_inactive]
     unverified_device_usernames = [Device.conf_apple_acct_username
                             for devicename, Device in Gb.Devices_by_devicename.items()
-                            if Device.verified_flag is False and Device.isnot_inactive]
+                            if (Device.verified_flag is False
+                                    and Device.isnot_inactive)]
 
     Gb.usernames_setup_error_retry_list   = list(set(unverified_device_usernames))
     Gb.devicenames_setup_error_retry_list = list(set(unverified_devices))
@@ -445,7 +451,7 @@ def _are_all_devices_verified(retry=False):
         return True
 
     if retry:
-        post_startup_alert("Some Tracked Devices could not be verified. Restart may be needed.")
+        post_evlog_greenbar_msg("Some Tracked Devices could not be verified. Restart may be needed.")
         event_msg = (f"{EVLOG_ALERT}Some Tracked Devices could not be verified. Review and correct "
                     f"any configuration errors. Then restart iCloud3")
     else:
@@ -463,6 +469,7 @@ def stage_5_configure_tracked_devices():
     stage_title = f'Stage 5 > Device Configuration Summary'
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
 
+
     for username, PyiCloud in Gb.PyiCloud_by_username.items():
         log_debug_msg(f"PyiCloud Finialized > {PyiCloud.account_owner}")
 
@@ -472,15 +479,16 @@ def stage_5_configure_tracked_devices():
 
         # start_ic3.remove_unverified_untrackable_devices()
         start_ic3.identify_tracked_monitored_devices()
-        Gb.EvLog.setup_event_log_trackable_device_info()
 
         start_ic3.setup_trackable_devices()
         start_ic3.display_inactive_devices()
-        Gb.EvLog.update_event_log_display("")
+        start_ic3.display_all_devices_config_info()
+        Gb.EvLog.setup_event_log_trackable_device_info()
 
     except Exception as err:
         log_exception(err)
 
+    Gb.EvLog.update_event_log_display("")
     post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message('')
 
@@ -502,19 +510,10 @@ def stage_6_initialization_complete():
     try:
         start_ic3.display_object_lists()
         start_ic3.dump_startup_lists_to_log()
-
-        if Gb.startup_alerts:
-            item_no = 1
-            alert_msg = ''
-            for alert in Gb.startup_alerts:
-                alert_msg += f"{CRLF}{item_no}. {alert}"
-                item_no += 1
-
-            # Build alert msg for the evlog.attrs['alert_startup'] attribute for display
-            alerts_str = alert_msg.replace(CRLF_HDOT, NL_DOT)
-            alerts_str = alerts_str.replace(CRLF_X, NL_DOT)
-            alerts_str = alerts_str.replace(CRLF, NL)
-            Gb.startup_alerts_str = alerts_str
+        alert_msg = ''
+        if Gb.alerts_sensor_attrs:
+            for source, msg in Gb.alerts_sensor_attrs.items():
+                alert_msg += f"{CRLF_DOT}{source} > {msg}"
 
             Gb.EvLog.alert_message = 'Problems occured during startup up that should be reviewed'
             post_event( f"{EVLOG_ALERT}The following issues were detected when starting iCloud3. "
@@ -536,8 +535,7 @@ def stage_7_initial_locate():
 
     # The restart will be requested if using iCloud as a data source and no data was returned
     # from PyiCloud
-    if (Gb.PyiCloud_by_username == {}
-            or Gb.internet_connection_error):
+    if Gb.PyiCloud_by_username == {}:
         return
 
     if Gb.reinitialize_icloud_devices_flag and Gb.conf_icloud_device_cnt > 0:
@@ -549,20 +547,16 @@ def stage_7_initial_locate():
     Gb.this_update_time = time_now()
     post_event("Requesting Initial Locate")
     post_event( f"{EVLOG_IC3_STARTING}Start up Complete > {ICLOUD3_VERSION_MSG}, "
-                f"{dt_util.now().strftime('%A, %b %d')}")
+                f"{format_day_date_now()}")
+                # f"{dt_util.now().strftime('%A, %b %d')}")
 
     for Device in Gb.Devices:
         post_evlog_greenbar_msg(f"Initial Locate > {Device.fname_devicename}")
         Device.update_sensors_flag = True
         Device.icloud_initial_locate_done = True
 
-        # if Gb.internet_connection_error:
-        #     Device.pause_tracking()
-        #     _log(f"{Device.devicename=} {Device.tracking_status=}")
-        #     continue
-
-        if Device.PyiCloud_RawData_icloud:
-            Device.update_dev_loc_data_from_raw_data_ICLOUD(Device.PyiCloud_RawData_icloud)
+        if Device.AADevData_icloud:
+            Device.update_dev_loc_data_from_raw_data_ICLOUD(Device.AADevData_icloud)
         else:
             continue
 

@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.2.2.3'
+VERSION                         = '3.2.3'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -191,6 +191,33 @@ HHMMSS_ZERO     = '00:00:00'
 HHMM_ZERO       = '00:00'
 HIGH_INTEGER    = 9999999999
 
+# iCloud3 Alerts Sensor (icloud3_alerts)
+SENSOR_ALERTS_NAME = f'{DOMAIN}_alerts'
+ALERT_CRITICAL   = 'critical'
+ALERT_APPLE_ACCT = 'apple_acct'
+ALERT_DEVICE     = 'device'
+ALERT_STARTUP    = 'startup'
+ALERT_OTHER      = 'other'
+ALERTS_SENSOR_ATTRS = {}
+
+'''
+data_template:
+  title: iCloud3 Alert Summary
+  message: "{{ state_attr('sensor.icloud3_alerts', 'apple_account') }}"
+   message: >-
+iCloud3 Error: {{ states('sensor.icloud3_alerts') }}
+{% if is_state_attr("sensor.icloud3_alerts", "apple_account", "") %}{% else %}
+ • AppleAcct: {{ state_attr('sensor.icloud3_alerts', 'apple_account') }},  {% endif -%}
+{% if is_state_attr("sensor.icloud3_alerts", "device", "") %}{% else %}
+ • Device: {{ state_attr('sensor.icloud3_alerts', 'device') }},  {% endif -%}
+{% if is_state_attr("sensor.icloud3_alerts", "startup", "") %}{% else %}
+ • StartUp: {{ state_attr('sensor.icloud3_alerts', 'startup') }},  {% endif -%}
+{% if is_state_attr("sensor.icloud3_alerts", "critical", "") %}{% else %}
+ • Critical: {{ state_attr('sensor.icloud3_alerts', 'critical') }},  {% endif -%}
+---
+Distance: {{ states('sensor.gary_iphone_zone_distance') }}
+'''
+
 # Device Tracking Status
 TRACKING_NORMAL  = 0
 TRACKING_PAUSED  = 1
@@ -275,6 +302,14 @@ ICLOUD_UPDATE     = "ICLOUD"
 # ^4^ - DeepPink
 # ^5^ - MediumVioletRed
 # ^6^ - --dark-primary-color
+# EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE
+EVLOG_GREEN       = '^1^'
+EVLOG_VIOLET      = '^2^'
+EVLOG_ORANGE      = '^3^'
+EVLOG_PINK        = '^4^'
+EVLOG_RED         = '^5^'
+EVLOG_BLUE        = '^6^'       # DO NOT USE - EventLog uses ^6^
+
 EVLOG_TIME_RECD   = '^t^'       # MobileApp State, ic3 Zone, interval, travel time, distance event
 EVLOG_UPDATE_HDR  = '^u^'       # update start-to-complete highlight and edge bar block
 EVLOG_UPDATE_START= '^s^'       # update start-to-complete highlight and edge bar block
@@ -286,12 +321,14 @@ EVLOG_INIT_HDR    = '^i^'       # iC3 initialization start/complete event
 EVLOG_HIGHLIGHT   = '^h^'       # Display item in green highlight bar
 EVLOG_IC3_STARTING  = '^i^'
 EVLOG_IC3_STAGE_HDR = '^g^'
+EVLOG_BROWN_BAR     = '^i^'
 
 
 EVLOG_NOTICE      = '^5^'
 EVLOG_TRACE       = '^3^'
 EVLOG_DEBUG       = '^6^'
-EVLOG_MONITOR     = '^6^'
+EVLOG_MONITOR     = '^m^'
+
 # SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
 SETTINGS_INTEGRATIONS_MSG   = '`Settings > Devices & Services > Integrations`'
 INTEGRATIONS_IC3_CONFIG_MSG = '`iCloud3 > Configuration`'
@@ -308,12 +345,13 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
-Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔✅❎☑️☁️🍎🔻⏭️⏮️🍏🅰️⮽➕
+Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔✅❎☑️☁️🍎🔻⏭️⏮️🍏🅰️⮽➕⚙️
 🔵🔴🟠🟡🟢🟣🟤🟦🟥🟧🟨🟩🟪🟫🛑🔶🔷🔸🔹🔺🔻
-↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗✳🞺🞴🞸🞳
-  ═ ⎯ — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
+↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗
+●•✶✹✽♦✱✥❄✪⬥⨳✫✡  ﹡✱*⨯⧫♦⚙⚹⚙️✳🞺🞴🞸🞳
+  ═ ⎯ — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆aak◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
   ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
- ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⯌⯏⯍✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢⟡⯌. 🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
+ ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⟡⯌✦⯌⯏⯍aak✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢aak. 🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
  ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
  https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
  https://www.htmlsymbols.xyz/unit-symbols
@@ -333,7 +371,7 @@ CLOCK_FACE        = '🕓'
 INFO              = '🛈'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
-YELLOW_ALERT      = '⚠️'
+YELLOW_ALERT      = '❎ '      #'⚠️'
 RED_ALERT         = '⛔ '
 RED_STOP          = '🛑'
 RED_CIRCLE        = '⭕'
@@ -354,22 +392,35 @@ LTE               = '≤'
 GTE               = '≥'
 DOTS              = '…'
 PLUS_MINUS        = '±'
-LDOT2             = f'•{NBSP2}'
+
 CRLF_DOT          = f'{CRLF}{NBSP2}•{NBSP2}'
-CRLF_LDOT         = f'{CRLF}•{NBSP}'
+CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
+CRLF_HDOT2        = f'{CRLF}{NBSP2}◦{NBSP2}'
 NL_DOT            = f'{NL} • '
+CRLF_X            = f'{CRLF}{NBSP2}×{NBSP}'
 CRLF_XD           = f'{CRLF}{NBSP}×{NBSP2}'
-CRLF_X            = f'{CRLF}{NBSP2}×{NBSP2}'
 CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⊗{NBSP}'
+
+LDOT2             = f'•{NBSP2}'
+CRLF_LDOT         = f'{CRLF}•{NBSP}'
+CRLF_LHDOT        = f'{CRLF}◦{NBSP}'
+CRLF_LBDOT        = f'{CRLF}●{NBSP2}'
+CRLF_LASTERISK    = f'{CRLF}🞳{NBSP}'
+CRLF_LCIRCLE_X    = f'{CRLF}⊗{NBSP}'
+CRLF_LX           = f'{CRLF}×{NBSP}'
+CRLF_LCHK         = f'{CRLF}✓{NBSP}'
+CRLF_LDIAMOND     = f'{CRLF}✦{NBSP}'
+
 CRLF_RED_X        = f'{CRLF}❌{NBSP}'
 CRLF_RED_ALERT    = f'{CRLF}⛔{NBSP2}'
-CRLF_HDOT         = f'{CRLF}{NBSP6}◦{NBSP2}'
+CRLF_LRED_ALERT    = f'{CRLF}⛔{NBSP}'
 CRLF_CHK          = f'{CRLF}{NBSP2}✓{NBSP}'
 CRLF_STAR         = f'{CRLF}{NBSP}✪{NBSP}'
 CRLF_YELLOW_ALERT = f'{CRLF}⚠️{NBSP}'
 CRLF_RED_MARK     = f'{CRLF}{NBSP}❗{NBSP}'
 CRLF_RED_STOP     = f'{CRLF}{NBSP}{RED_STOP}'
 CRLF_RED_ALERT    = f'{CRLF}{NBSP}{RED_ALERT}'
+
 CRLF_SP3_DOT      = f'{CRLF}{NBSP3}•{NBSP}'
 CRLF_SP5_DOT      = f'{CRLF}{NBSP5}•{NBSP}'
 CRLF_SP8_DOT      = f'{CRLF}{NBSP4}{NBSP4}•{NBSP}'
@@ -1197,5 +1248,5 @@ LOG_RAWDATA_FIELDS = [
         NAME, 'emails', 'firstName', 'laststName',
         'prsId', 'batteryLevel', 'isOld', 'isInaccurate', 'phones',
         'invitationAcceptedByEmail', 'invitationFromEmail', 'invitationSentToEmail', 'data',
-        'original_name',
+        'original_name', 'name_by_user',
         ]

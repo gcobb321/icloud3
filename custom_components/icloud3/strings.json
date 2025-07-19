@@ -374,7 +374,7 @@
         "title": "Maintenance Tools",
         "description": "Maintenance Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
         "data": {
-          "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud RawData to the log file for only these devices",
+          "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud AADevData to the log file for only these devices",
           "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",
           "tools": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT TOOLS",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TOOLS"

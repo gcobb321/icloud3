@@ -9,7 +9,7 @@ from ..const            import (PLATFORM_SENSOR, DOMAIN, SENSOR,
                                 LAST_UPDATED_SECS, LAST_UPDATED_TIME,
                                 STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
 from .utils             import (instr,  is_empty, isnot_empty, list_add, list_del,)
-from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_rawdata,
+from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_data,
                                 _evlog, _log, )
 from .time_util         import (secs_to_time)
 
@@ -453,7 +453,7 @@ def trace_device_attributes(Device, description, fct_name, attrs):
         log_msg = (f"{description} Attrs-{trace_attrs}{trace_attrs_in_attrs}")
         log_debug_msg(Device.devicename, log_msg)
 
-        log_rawdata(f"iCloud Rawdata - <{Device.devicename}> {description}", attrs)
+        log_data(f"iCloud Rawdata - <{Device.devicename}> {description}", attrs)
 
     except Exception as err:
         pass

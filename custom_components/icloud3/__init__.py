@@ -9,7 +9,6 @@ from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG,
 
 
 from .utils.messaging   import (_evlog, _log, open_ic3log_file_init, open_ic3log_file, post_monitor_msg,
-                                            post_evlog_greenbar_msg, post_startup_alert,
                                             log_info_msg, log_debug_msg, log_error_msg,
                                             log_exception_HA, log_exception)
 from .utils.time_util   import (time_now_secs, calculate_time_zone_offset, )
@@ -19,9 +18,9 @@ from .utils.file_io     import (async_make_directory, async_directory_exists, as
                                             make_directory, directory_exists, copy_file, file_exists,
                                             rename_file, move_files, )
 
-from .apple_acct        import connection_error as conn_error
+from .apple_acct.internet_error import InternetConnection_ErrorHandler
 from .apple_acct        import pyicloud_ic3_interface
-from .apple_acct.pyicloud_ic3 import (PyiCloudValidateAppleAcct, )
+from .apple_acct.apple_acct_upw import ValidateAppleAcctUPW
 from .icloud3_main      import iCloud3
 from .startup           import start_ic3
 from .startup           import config_file
@@ -79,7 +78,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 start_ic3.initialize_directory_filenames()
                 await Gb.hass.async_add_executor_job(
                                         config_file.load_icloud3_configuration_file)
-                # await config_file.async_load_icloud3_configuration_file()
 
                 if Gb.conf_profile[CONF_VERSION] == 1:
                     Gb.HALogger.warning(f"Starting iCloud3 v{VERSION}{VERSION_BETA} > "
@@ -140,7 +138,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.config_entry   = entry
         Gb.entry_id       = entry.entry_id
         Gb.operating_mode = MODE_INTEGRATION
-        Gb.PyiCloud       = None
 
         ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
         start_ic3.initialize_directory_filenames()
@@ -150,23 +147,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         start_ic3.set_log_level(Gb.log_level)
         await Gb.hass.async_add_executor_job(open_ic3log_file_init)
 
-        # Get/Update the users External IP Address
-        await conn_error.get_external_ip_address()
-        await conn_error.scan_for_pingable_ip()
-
         # Set up the Event Log
         Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
         Gb.evlog_version       = Gb.conf_profile['event_log_version']
         Gb.EvLog               = event_log.EventLog(Gb.hass)
 
-
         Gb.EvLog.post_event(
                 f"{EVLOG_IC3_STARTING}Loading > {ICLOUD3_VERSION_MSG}, "
-                f"{dt_util.now().strftime('%A, %b %d')}")
+                f"{dt_util.now().strftime('%A, %b %d')}     ")
 
         Gb.HALogger.info(f"Setting up {ICLOUD3_VERSION_MSG}{VERSION_BETA}")
         log_info_msg(f"Setting up {ICLOUD3} v{VERSION}{VERSION_BETA}")
 
+        # Set up PyiCloud & internet error handler, Set Gb.internet_error
+        Gb.PyiCloud       = None
+        Gb.InternetError  = InternetConnection_ErrorHandler()
+        is_internet_available = await Gb.InternetError.check_internet_status_httpx_request()
+#
         if Gb.restart_ha_flag:
             log_error_msg("iCloud3 > Waiting for HA restart to remove legacy \
                             devices before continuing")
@@ -182,6 +179,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
             # _log(f"{Gb.hass.data['lovelace']=}")
+            # instance = Gb.hass.data['recorder_instance']
+            # _log(f"{instance.entity_filter=}")
             pass
 
         except Exception as err:
@@ -191,13 +190,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         Gb.EvLog.display_user_message(f"Starting {ICLOUD3_VERSION_MSG}")
         calculate_time_zone_offset()
 
-        Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
-        Gb.username_valid_by_username = {}
-        if Gb.use_data_source_ICLOUD:
-            if Gb.conf_tracking['setup_icloud_session_early']:
-                await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
-                await Gb.hass.async_add_executor_job(pyicloud_ic3_interface.check_all_apple_accts_valid_upw)
-
         # Create device_tracker entities if devices have been configure
         # Otherwise, this is done in config_flow when the first device is set up
         if Gb.conf_devices != []:
@@ -205,6 +197,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # Create sensor entities
         await Gb.hass.config_entries.async_forward_entry_setups(entry, ['sensor'])
+
+        # Validate Apple account username/password
+        Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
+        Gb.username_valid_by_username = {}
+        if (Gb.use_data_source_ICLOUD
+                and Gb.internet_error is False
+                and Gb.conf_tracking['setup_icloud_session_early']):
+            await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
+            await Gb.ValidateAppleAcctUPW.async_validate_all_apple_accts_upw_httpx()
+            # await Gb.hass.async_add_executor_job(Gb.ValidateAppleAcctUPW.validate_all_apple_accts_upw)
 
         # Do not start if loading/initialization failed
         if successful_startup is False:
@@ -258,26 +260,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
-async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
-    """Handle options update."""
-    await hass.config_entries.async_reload(config_entry.entry_id)
-
-#-------------------------------------------------------------------------------------------
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Unload a config entry."""
-    unload_ok = all(await asyncio.gather(
-            *[hass.config_entries.async_forward_entry_unload(entry, "sensor")]))
-
-    # Remove options_update_listener.
-    hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
-
-    # Remove config entry from domain.
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-
-    return unload_ok
-
-#-------------------------------------------------------------------------------------------
 async def async_get_ha_location_info(hass):
     if location_info := await ha_location_info.async_detect_location_info(
             async_get_clientsession(hass)):
@@ -295,6 +277,7 @@ async def async_get_ha_location_info(hass):
         }
 
         try:
+            log_debug_msg(f"HA Location Data > {Gb.ha_location_info}")
             Gb.country_code = Gb.ha_location_info['country_code'].lower()
             Gb.use_metric   = Gb.ha_location_info['use_metric']
         except Exception as err:
@@ -380,3 +363,23 @@ def move_icloud_cookies_to_icloud3_apple_acct():
     # else:
     #     area_data = area_reg.async_get_area_by_name('Personal Device')
     # Gb.area_id_personal_device = area_data.id if area_data else None
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
+async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
+    """Handle options update."""
+    await hass.config_entries.async_reload(config_entry.entry_id)
+
+#-------------------------------------------------------------------------------------------
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
+    unload_ok = all(await asyncio.gather(
+            *[hass.config_entries.async_forward_entry_unload(entry, "sensor")]))
+
+    # Remove options_update_listener.
+    hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
+
+    # Remove config entry from domain.
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok

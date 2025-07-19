@@ -24,15 +24,16 @@ from .const     import (DISTANCE_TO_DEVICES,
                         TFZ_ZONE_INFO, TFZ_DISTANCE, TFZ_ZONE_DISTANCE,  TFZ_DIR_OF_TRAVEL,
                         TFZ_TRAVEL_TIME,TFZ_TRAVEL_TIME_MIN, TFZ_TRAVEL_TIME_HHMM, TFZ_ARRIVAL_TIME,
                         TOWARDS, AWAY_FROM, TOWARDS_HOME, AWAY_FROM_HOME, INZONE, INZONE_HOME, INZONE_STATZONE,
-                        SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
+                        SENSOR_EVENT_LOG_NAME, SENSOR_ALERTS_NAME, SENSOR_WAZEHIST_TRACK_NAME,
                         )
 
-HA_EXCLUDE_SENSORS =    [SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME, ]
+HA_EXCLUDE_SENSORS =    [SENSOR_EVENT_LOG_NAME, SENSOR_ALERTS_NAME, SENSOR_WAZEHIST_TRACK_NAME, ]
                         # '*_zone_datetime', '*_trigger', '*_info',
                         # '*_next_update', '*_last_update', '*_last_located', '*_interval',
                         # ]
 
 ICLOUD3_SENSORS    =    {SENSOR_EVENT_LOG_NAME: 'iCloud3 Event Log',
+                        SENSOR_ALERTS_NAME: 'iCloud3 Alerts',
                         SENSOR_WAZEHIST_TRACK_NAME: 'iCloud3 Waze History Track',}
 
 SENSOR_LIST_DEVICE =    [NAME, BADGE, BATTERY, BATTERY_STATUS,
@@ -116,8 +117,9 @@ The Sensor Definition dictionary defines all sensors created by iCloud3.
         Index 4:
                 List of attributes that should be added to the sensor
 
-        Sesors excluded from the recorder:
+        Sensors excluded from the recorder:
                 - icloud3_event_log
+                - icloud3_alert
                 - icloud3_wazehist_track
                 - *_info
                 - *_last_located
@@ -479,5 +481,8 @@ SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS = {
                         'user_message', 'devicename', 'fname', 'fnames', 'filtername',
                         'version_ic3', 'version_evlog', 'versionEvLog',
                         'log_level_debug', 'run_mode', 'evlog_btn_urls',
-                        'name', 'names', 'logs',]
+                        'name', 'names', 'logs',],
+        'alerts':       ['integration', 'sensor_updated', ICON, FRIENDLY_NAME,
+                        'update_time', 'apple_account', 'device', 'general', 'operational', 'startup',
+                        ]
 }

@@ -44,7 +44,7 @@ from ..utils.utils        import (instr, isbetween, round_to_zero, is_zone, is_s
                                     zone_dname, )
 from ..utils.messaging    import (post_event, post_error_msg,
                                     post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
-                                    post_internal_error, post_monitor_msg, log_debug_msg, log_rawdata,
+                                    post_internal_error, post_monitor_msg, log_debug_msg, log_data,
                                     log_info_msg, log_info_msg_HA, log_exception, _evlog, _log, )
 from ..utils.time_util    import (secs_to_time, format_timer, format_time_age, format_secs_since,
                                     secs_since, mins_since, time_to_12hrtime, secs_to_datetime, secs_to, format_age,
@@ -1188,6 +1188,10 @@ def _get_interval_for_error_retry_cnt(Device, counter=OLD_LOCATION_CNT, pause_co
             interval_secs = v
 
     if pause_control_flag is False: interval_secs = abs(interval_secs)
+    if Device.isin_statzone:
+        interval_secs = min(interval_secs, Device.statzone_inzone_interval_secs)
+    elif Device.isin_zone:
+        interval_secs = min(interval_secs, Device.inzone_interval_secs)
     interval_secs = interval_secs * 60
 
     return interval_secs
@@ -1337,7 +1341,7 @@ def copy_near_device_results(Device, FromZone):
     Device.statzone_dist_moved_km  = NearDevice.statzone_dist_moved_km
     Device.mobapp_request_loc_sent_secs = Gb.this_update_secs
 
-    log_rawdata(f"{Device.data_source} - <{Device.devicename}> - {from_zone}", FromZone.sensors)
+    log_data(f"{Device.data_source} - <{Device.devicename}> - {from_zone}", FromZone.sensors)
 
     return FromZone.sensors
 
@@ -1452,22 +1456,7 @@ def _build_dist_apart_msg(Device, dist_to_other_devices):
 
         dist_apart_m, min_gps_accuracy, loc_data_secs, display_text = dist_apart_data
 
-        # if one device is a watch and the device have the same person_id (they are paired)
-        # and the watch is close to the device, the watch may use the devices
-        # location info. Don't use the watch as nearby
-        # ⦾×⌘⛒♺⚯⚠︎⚮∞
-        # if ((Device.device_type == WATCH or _Device.device_type == WATCH)
-        #         and Device.PyiCloud.username
-        #         and _Device.PyiCloud.username):
-        #     _log(f"{Device.device_type=} {_Device.device_type=}"
-        #             f"{Device.icloud_device_id in Gb.owner_device_ids_by_username[Device.PyiCloud.username]} {_Device.icloud_device_id in Gb.owner_device_ids_by_username[_Device.PyiCloud.username]}")
-
         if (Device.device_type == WATCH or _Device.device_type == WATCH):
-                # and Device.PyiCloud.username
-                # and _Device.PyiCloud.username
-                # and Device.icloud_device_id in Gb.owner_device_ids_by_username[Device.PyiCloud.username]
-                # and _Device.icloud_device_id in Gb.owner_device_ids_by_username[_Device.PyiCloud.username]
-                # and dist_apart_m < NEAR_DEVICE_DISTANCE):
             useable_symbol = '×'
 
         elif dist_apart_m > NEAR_DEVICE_DISTANCE:

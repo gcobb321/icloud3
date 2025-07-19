@@ -7,7 +7,7 @@ from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE, DEVICE_TY
 from ..utils.utils        import (instr, is_empty, list_add, list_to_str, )
 from ..utils                 import file_io
 from ..utils.messaging    import (post_event, post_error_msg, post_evlog_greenbar_msg,
-                                    log_info_msg, log_exception, log_rawdata, log_debug_msg,
+                                    log_info_msg, log_exception, log_data, log_debug_msg,
                                     _evlog, _log, )
 from ..utils.time_util    import (secs_to_time, secs_since, mins_since, secs_to_time, format_time_age,
                                     format_timer, time_now_secs)
@@ -73,7 +73,7 @@ def get_entity_registry_mobile_app_devices():
                 device_reg_data = device_registry.async_get(device_id)
 
                 log_title = (f"MobApp device_registry entry - <{mobapp_dname}>)")
-                log_rawdata(log_title, str(device_reg_data), log_rawdata_flag=True)
+                log_data(log_title, str(device_reg_data), log_data_flag=True)
 
                 raw_model = device_reg_data.model
 
@@ -96,7 +96,7 @@ def get_entity_registry_mobile_app_devices():
                     [mobapp_fname, raw_model, device_type, model_display_name]    # Gary-iPhone, iPhone15,2; iPhone; iPhone 14 Pro
 
             log_title = (f"MobApp entity_registry entry - <{mobapp_dname}>)")
-            log_rawdata(log_title, dev_trkr_entity, log_rawdata_flag=True)
+            log_data(log_title, dev_trkr_entity, log_data_flag=True)
 
         last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities, '_last_update_trigger')
         battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_level')
@@ -166,30 +166,21 @@ def _get_mobile_app_notify_devices():
     Get the mobile_app_[devicename] notify services entries from ha that are used to
     send notifications to a device.
 
-    notify_targets={'Lillian-iPhone-app': '7ada3fe77c0db7b47703d27452bd7cce324afe731ea9cdf76c7b11905528a4dd',
-                    'Gary-iPhone-app': 'fc79dc30d9d8da0f726228caf6c575fc96dae7255d526d3654efbb35465bdd6e',
-                    'Gary-iPad-app': '7f8496d4c94b958b7d091e5438353ac5795323b1b261815b4573f690f1b7b7ff'}
+    notify_targets={
+        'Lillian-iPhone-app': '7ada3fe77c0db7b47703d27452bd7cce324afe731ea9cdf76c7b11905528a4dd',
+        'Gary-iPhone-app': 'fc79dc30d9d8da0f726228caf6c575fc96dae7255d526d3654efbb35465bdd6e',
+        'Gary-iPad-app': '7f8496d4c94b958b7d091e5438353ac5795323b1b261815b4573f690f1b7b7ff'}
 
     '''
-    notify_targets = {}
-    Gb.mobile_app_notify_devicenames = []
-    try:
-        notify_targets = mobile_app_notify.push_registrations(Gb.hass)
-
-        for notify_target in notify_targets.keys():
-            list_add(Gb.mobile_app_notify_devicenames)
-
-        return notify_targets   #Gb.mobile_app_notify_devicenames
-
-    except Exception as err:
-        notify_targets = {}
-        # log_exception(err)
-        pass
+    mobapp_notify_service = Gb.hass.data['mobile_app']['notify']
+    notify_targets = mobapp_notify_service.registered_targets
+    mobapp_fname_targets = mobapp_notify_service.targets
+    Gb.mobile_app_notify_devicenames = list(mobapp_fname_targets.keys())
 
     if is_empty(notify_targets):
         log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
 
-    return notify_targets   #Gb.mobile_app_notify_devicenames
+    return mobapp_fname_targets
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -311,6 +302,7 @@ def setup_notify_service_name_for_mobapp_devices(post_evlog_msg=False):
     for mobapp_fname, mobapp_id in notify_devices.items():
         notify_devicename = slugify(mobapp_fname)
         Gb.mobapp_fnames_by_mobapp_id[mobapp_id] = mobapp_fname
+
         for devicename, Device in Gb.Devices_by_devicename.items():
             if (Device.mobapp_monitor_flag is False
                     or Gb.conf_data_source_MOBAPP is False):

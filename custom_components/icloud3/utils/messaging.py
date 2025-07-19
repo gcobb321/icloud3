@@ -1,10 +1,26 @@
 
+'''
+set reject_attr = [ 'integration', 'icon', 'sensor_updated', 'friendly_name' ] %}
+{% for k,v in states.sensor.icloud3_alerts.attributes.items() -%}
+{{ k }}: {{ v }}
+{% endfor %}
+
+
+{% set reject_attr = [ 'integration', 'icon', 'sensor_updated', 'friendly_name' ] %}
+{% for k,v in states.sensor.icloud3_alerts.attributes.items() -%}
+{% if k not in reject_attr %}
+{{ k }}: {{ v }}
+{% endif %}
+{% endfor %}
+'''
+
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
                                 DOT, ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR, EVLOG_INIT_HDR, EVLOG_MONITOR,
                                 EVLOG_TIME_RECD, EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
                                 EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING,EVLOG_IC3_STAGE_HDR,
+                                ALERT_CRITICAL, ALERT_OTHER,
                                 IC3LOG_FILENAME, EVLOG_TIME_RECD, EVLOG_TRACE,
                                 CRLF, CRLF_DOT, NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CRLF_INDENT, LINK,
                                 DASH_50, DASH_DOTTED_50, TAB_11, RED_ALERT, RED_STOP, RED_CIRCLE, YELLOW_ALERT,
@@ -255,11 +271,75 @@ def clear_evlog_greenbar_msg():
     Gb.EvLog.clear_evlog_greenbar_msg()
     Gb.EvLog.display_user_message(Gb.EvLog.user_message)
 
-#--------------------------------------------------------------------
-def post_startup_alert(alert_msg):
+#-------------------------------------------------------------------------------------------
+def post_alert(type=None, alert_msg=None, update_sensor=False, replace_alert_msg=False):
+    '''
+    Update the Gb.alerts_sensor_attrs dictionary
+    Critical alerts (ALERT_CRITICAL) will replace any previous critical alerts instead of appending it
 
-    if alert_msg not in Gb.startup_alerts:
-        Gb.startup_alerts.append(alert_msg)
+    Type: Attribute to add or update
+    '''
+
+    if type is None and alert_msg is None:
+        Gb.AlertsSensor.async_update_sensor()
+        return
+
+    if type is None:
+        type = ALERT_OTHER
+
+    update_sensor = False
+
+    # Clear this message
+    if alert_msg == '':
+        Gb.alerts_sensor_attrs.pop(type, None)
+        update_sensor = True
+
+    # Not critical alert - Only keep first alert for acct or device
+    elif (type != ALERT_CRITICAL
+            and type in Gb.alerts_sensor_attrs):
+        return
+
+    # Add the alert
+    else:
+        if type in Gb.alerts_sensor_attrs:
+            alert_msg = f"{Gb.alerts_sensor_attrs[type]}; {alert_msg}"
+        else:
+            Gb.alerts_sensor_attrs[type] = alert_msg
+
+        if Gb.start_icloud3_inprocess_flag is False or update_sensor:
+            update_sensor = True
+
+    # Rebuild list so importing alerts are at the top
+    if len(Gb.alerts_sensor_attrs) > 1:
+        new_alerts_sensor_attrs = {}
+        # Critical alerts
+        new_alerts_sensor_attrs.update(
+            {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
+                            if _source == ALERT_CRITICAL})
+
+
+        # Apple Acct alerts (-source will be the filter value, change it back to the real value)
+        new_alerts_sensor_attrs.update(
+            {_source: _msg
+                            for _source, _msg in Gb.alerts_sensor_attrs.items()
+                            if instr(_source, '@')})
+
+        # Device alerts
+        new_alerts_sensor_attrs.update(
+            {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
+                            if _source in Gb.Devices_by_devicename})
+
+        # Other alerts
+        new_alerts_sensor_attrs.update(
+            {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
+                            if _source not in new_alerts_sensor_attrs})
+        Gb.alerts_sensor_attrs = new_alerts_sensor_attrs
+
+    if update_sensor:
+        Gb.AlertsSensor.async_update_sensor()
+
+    log_debug_msg(  f"Alerts Sensor > Sensor-{Gb.alerts_sensor}, "
+                    f"Attrs-{Gb.alerts_sensor_attrs}")
 
 #-------------------------------------------------------------------------------------------
 def ha_notification(msg_line1, msg_line2=None) -> None:
@@ -663,7 +743,7 @@ def format_header_box(log_msg, indent=None, start_finish=None, evlog_export=Fals
     if start_pos == -1: start_pos = 0
 
     # Default indent for icloud3-0.log file is 43
-    if indent is None: indent = 43
+    if indent is None: indent = 44
 
     top_char = bot_char = DASH_50
     if start_finish == 'start':
@@ -702,7 +782,7 @@ def _resolve_module_name_log_msg(module_name, log_msg):
 #   RAWDATA LOGGING ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def log_rawdata_unfiltered(title, rawdata, data_source=None, filter_id=None):
+def log_data_unfiltered(title, rawdata, data_source=None, filter_id=None):
     try:
         rawdata_copy = rawdata['raw'].copy() if 'raw' in rawdata else rawdata.copy()
 
@@ -726,7 +806,7 @@ def log_rawdata_unfiltered(title, rawdata, data_source=None, filter_id=None):
         log_info_msg(log_msg)
 
 #--------------------------------------------------------------------
-def log_rawdata(title, rawdata, log_rawdata_flag=False, data_source=None, filter_id=None):
+def log_data(title, rawdata, log_data_flag=False, data_source=None, filter_id=None):
     '''
     Add raw data records to the HA log file for debugging purposes.
 
@@ -742,7 +822,7 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False, data_source=None, filter
 
     if rawdata is None:
         return False
-    elif Gb.log_rawdata_flag is False and log_rawdata_flag is False:
+    elif Gb.log_data_flag is False and log_data_flag is False:
         return False
 
     if (Gb.start_icloud3_inprocess_flag
@@ -775,7 +855,7 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False, data_source=None, filter
 
         rawdata_data['filter'] = {k: _shrink_value(k, v)
                                 for k, v in rawdata['filter'].items()
-                                if k in FILTER_FIELDS or Gb.log_rawdata_flag_unfiltered}
+                                if k in FILTER_FIELDS or Gb.log_data_flag_unfiltered}
     except:
         rawdata_items = {k: _shrink_value(k, v)
                                 for k, v in rawdata.items()
@@ -783,7 +863,7 @@ def log_rawdata(title, rawdata, log_rawdata_flag=False, data_source=None, filter
 
         rawdata_data['filter'] = {k: _shrink_value(k, v)
                                         for k, v in rawdata.items()
-                                        if (k in FILTER_FIELDS or Gb.log_rawdata_flag_unfiltered)}
+                                        if (k in FILTER_FIELDS or Gb.log_data_flag_unfiltered)}
 
     rawdata_data['filter']['items'] = rawdata_items
     if rawdata_data['filter']:
@@ -831,7 +911,7 @@ def filter_data_dict(rawdata_data, data_dict):
 
         filter_results = {k: _shrink_value(k, v)
                             for k, v in rawdata_data[data_dict].items()
-                            if (k in FILTER_FIELDS or Gb.log_rawdata_flag_unfiltered)}
+                            if (k in FILTER_FIELDS or Gb.log_data_flag_unfiltered)}
 
         return filter_results
 
@@ -848,10 +928,10 @@ def _filter_data_list(rawdata_data_list):
 
             filter_results = {k: _shrink_value(k, v)
                                 for k, v in list_item.items()
-                                if (k in FILTER_FIELDS or Gb.log_rawdata_flag_unfiltered)}
+                                if (k in FILTER_FIELDS or Gb.log_data_flag_unfiltered)}
 
             if 'location' in filter_results and filter_results['location']:
-                if Gb.log_rawdata_flag_unfiltered:
+                if Gb.log_data_flag_unfiltered:
                     filter_results['location'] = {k: v for k, v in filter_results['location'].items()}
                 else:
                     filter_results['location'] = {k: v for k, v in filter_results['location'].items()
@@ -869,7 +949,7 @@ def _filter_data_list(rawdata_data_list):
 #--------------------------------------------------------------------
 def _shrink_value(k, v):
     if (k in DO_NOT_SHRINK
-            or Gb.log_rawdata_flag_unfiltered):
+            or Gb.log_data_flag_unfiltered):
         return v
 
     if type(v) is str:
@@ -1071,25 +1151,30 @@ def add_log_file_filter(item, replacement_text=None):
     '''
     if item is None:
         return
+    elif Gb.disable_upw_filter:
+        return item
 
-    # username/email address - reformat useremailname@gmail.com --> us****me@
+    # username/email address - reformat useremailname@gmail.com --> use**#**me@ or use**1**@ (set in config_file)
     if instr(item, '@'):
         email_parts = item.split('@')
-        Gb.log_file_filter_items[email_parts[1]] = ''
+        Gb.upw_filter_items[email_parts[1]] = ''
 
-        item = email_parts[0]
+        email_id = email_parts[0]
         if replacement_text is None:
-            replacement_text = f"{item[:2]}{'*'*4}{item[-2:]}@"
+            replacement_text = f"{email_id[:3]}****{email_id[-2:]}@"
         else:
-            replacement_text = f"{item[:2]}{replacement_text}{item[-2:]}@"
-        Gb.log_file_filter_items[f"{item}@"] = replacement_text
-        Gb.log_file_filter_items[item] = replacement_text
+            replacement_text = f"{email_id[:3]}{replacement_text}{email_id[-2:]}@"
+
+        Gb.upw_filter_items[f"{email_id}@"] = Gb.upw_filter_items[email_id] = replacement_text
+        Gb.upw_unfilter_items[replacement_text] = f"{email_id}@"
+        item = item.upper()
+        Gb.upw_filter_items[f"{email_id}@"] = Gb.upw_filter_items[email_id] = replacement_text
 
     elif replacement_text is not None:
-        Gb.log_file_filter_items[item] = replacement_text
+        Gb.upw_filter_items[item] = replacement_text
 
     else:
-        Gb.log_file_filter_items[item] = '*'*8
+        Gb.upw_filter_items[item] = '*'*8
 
 #--------------------------------------------------------------------
 class LoggerFilter(logging.Filter):
@@ -1098,11 +1183,11 @@ class LoggerFilter(logging.Filter):
     '''
     @staticmethod
     def filter(record):
-        if Gb.disable_log_filter:
+        if Gb.disable_upw_filter:
             return True
 
         message = record.msg
-        for filtered_item, replacement_text in Gb.log_file_filter_items.items():
+        for filtered_item, replacement_text in Gb.upw_filter_items.items():
             if instr(message, filtered_item):
                 message = message.replace(filtered_item, replacement_text)
 

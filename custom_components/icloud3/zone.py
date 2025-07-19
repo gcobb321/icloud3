@@ -26,7 +26,7 @@ from .utils             import entity_io
 from .utils.utils       import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
 from .utils.messaging   import (post_event, post_error_msg, post_monitor_msg,
-                                log_exception, log_rawdata,_evlog, _log, )
+                                log_exception, log_data,_evlog, _log, )
 from .utils.time_util   import (time_now_secs, )
 from .utils.dist_util   import (gps_distance_m, gps_distance_km, )
 
@@ -69,9 +69,9 @@ class iCloud3_Zone(object):
             Gb.HAZones_by_zone[self.zone] = self
 
         if zone_data:
-            log_rawdata(f"Zone Data - <{zone} > ", self.zone_data, log_rawdata_flag=True)
+            log_data(f"Zone Data - <{zone} > ", self.zone_data, log_data_flag=True)
         if self.ha_zone_attrs:
-            log_rawdata(f"Zone Attrs - <{zone} > ", self.ha_zone_attrs, log_rawdata_flag=True)
+            log_data(f"Zone Attrs - <{zone} > ", self.ha_zone_attrs, log_data_flag=True)
 
         if zone == HOME:
             Gb.HomeZone = self

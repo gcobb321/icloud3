@@ -284,9 +284,9 @@ LOG_LEVEL_OPTIONS = {
         'debug':    'Debug - Info + Other Internal Tracking Monitors',
         'debug-ha': 'Debug (HALog) - Also add log records to the `home-assistant.log` file',
         'debug-auto-reset': 'Debug (AutoReset) - Debug logging that resets to Info at midnight',
-        'rawdata':  'Rawdata - Debug + Raw Data (filtered) received from iCloud Location Servers',
+        'rawdata':  'Rawdata - Debug + Device Data (filtered) received from iCloud Location Servers',
         'rawdata-auto-reset':  'Rawdata (AutoReset) - RawData logging that resets to Info at midnight',
-        'unfiltered':  'Rawdata (Unfiltered) - Raw Data (everything) received from iCloud Location Servers',
+        'unfiltered':  'Rawdata (Unfiltered) - Device Data fields (everything) received from iCloud Location Servers',
         }
 DISTANCE_METHOD_OPTIONS = {
         'waze':     'Waze - Waze Route Service provides travel time & distance information',

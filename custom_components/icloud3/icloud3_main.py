@@ -21,8 +21,10 @@ Thanks to all
 from .global_variables  import GlobalVariables as Gb
 from .const             import (VERSION, VERSION_BETA,
                                 HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, LT, NBSP3, CLOCK_FACE, LINK,
-                                CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_HDOT, CRLF_X, NL, NL_DOT,
+                                CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_LBDOT, CRLF_LHDOT, CRLF_HDOT2, CRLF_LX, CRLF_LRED_ALERT, CRLF_LDIAMOND, CRLF_LASTERISK,
                                 EVLOG_IC3_STAGE_HDR, RED_ALERT,
+                                EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
+                                ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 ICLOUD, TRACKING_NORMAL, FNAME,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY,
                                 IPHONE, IPAD, WATCH, AIRPODS, IPOD, ALERT,
@@ -34,33 +36,34 @@ from .const             import (VERSION, VERSION_BETA,
                                 ICLOUD, MOBAPP,
                                 ENTER_ZONE, EXIT_ZONE, INTERVAL, NEXT_UPDATE, NOTIFY,
                                 CONF_LOG_LEVEL, STATZONE_RADIUS_1M,
+                                ALERTS_SENSOR_ATTRS
                                 )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
-from .startup           import hacs_ic3
+from .apple_acct        import pyicloud_ic3_interface
+from .apple_acct        import icloud_data_handler
+from .mobile_app        import mobapp_data_handler
+from .mobile_app        import mobapp_interface
 from .startup           import start_ic3
 from .startup           import start_ic3_control
 from .tracking          import stationary_zone as statzone
-from .mobile_app        import mobapp_data_handler
-from .mobile_app        import mobapp_interface
-from .apple_acct        import pyicloud_ic3_interface
-from .apple_acct        import icloud_data_handler
 from .tracking          import service_handler
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
 from .utils.file_io     import (is_event_loop_running,  is_event_loop_running2,)
 from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone,
-                                list_to_str, isbetween, get_username_base, )
+                                list_to_str, isbetween, username_id, )
 from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
 from .utils.messaging   import (broadcast_info_msg,
                                 post_event, post_error_msg, post_monitor_msg, post_internal_error,
-                                post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
+                                post_evlog_greenbar_msg, clear_evlog_greenbar_msg, post_alert,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
                                 log_debug_msg, archive_ic3log_file,
                                 _evlog, _log, )
 from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mins_since,
                                 secs_to_time, secs_to_hhmm, secs_to_datetime,
                                 calculate_time_zone_offset, secs_to_even_min_secs,
-                                format_timer, format_age, format_time_age, format_secs_since, )
+                                format_timer, format_age, format_time_age, format_secs_since,
+                                format_day_date, format_now, format_day_date_now, )
 from .utils.dist_util   import (km_to_um, m_to_um_ft, )
 
 #--------------------------------------------------------------------
@@ -99,7 +102,6 @@ class iCloud3:
 
         #initialize variables configuration.yaml parameters
         # start_ic3.set_global_variables_from_conf_parameters()
-
 
     def __repr__(self):
         return (f"<iCloud3: {Gb.version}>")
@@ -148,17 +150,21 @@ class iCloud3:
 
             start_ic3_control.stage_1_setup_variables()
             start_ic3_control.stage_2_prepare_configuration()
-
             start_ic3_control.stage_3_setup_configured_devices()
-            stage_4_success = start_ic3_control.stage_4_setup_data_sources()
-            if stage_4_success is False or Gb.reinitialize_icloud_devices_flag:
-                stage_4_success = start_ic3_control.stage_4_setup_data_sources_retry()
-                if stage_4_success is False or Gb.reinitialize_icloud_devices_flag:
-                    stage_4_success = start_ic3_control.stage_4_setup_data_sources_retry(final_retry=True)
 
-            start_ic3_control.stage_5_configure_tracked_devices()
-            start_ic3_control.stage_6_initialization_complete()
-            start_ic3_control.stage_7_initial_locate()
+            if Gb.internet_error:
+                start_ic3_control.stage_6_initialization_complete()
+                Gb.InternetError.start_internet_error_handler()
+            else:
+                stage_4_success = start_ic3_control.stage_4_setup_data_sources()
+                if stage_4_success is False or Gb.reinitialize_icloud_devices_flag:
+                    stage_4_success = start_ic3_control.stage_4_setup_data_sources_retry()
+                    if stage_4_success is False or Gb.reinitialize_icloud_devices_flag:
+                        stage_4_success = start_ic3_control.stage_4_setup_data_sources_retry(final_retry=True)
+
+                start_ic3_control.stage_5_configure_tracked_devices()
+                start_ic3_control.stage_6_initialization_complete()
+                start_ic3_control.stage_7_initial_locate()
 
             Gb.trace_prefix = '------'
             Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
@@ -169,18 +175,14 @@ class iCloud3:
             Gb.startup_stage_status_controls = []
             Gb.broadcast_info_msg = None
 
+            Gb.AlertsSensor.async_update_sensor()
+            self._display_device_alert_evlog_greenbar_msg()
+
             if Gb.polling_5_sec_loop_running is False:
                 broadcast_info_msg("Set Up 5-sec Polling Cycle")
                 Gb.polling_5_sec_loop_running = True
                 track_utc_time_change(Gb.hass, self.polling_loop_5_sec_device,
                         second=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
-                # async_track_time_change(Gb.hass, self.async_timer_hour,
-                #                 minute=[0,10,20,30,40,50],second=0)
-                # async_track_time_change(Gb.hass, self.async_timer_hour,
-                #         hour=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-                #                 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
-                #                 minute=0,second=0)
-
 
             return True
 
@@ -207,13 +209,19 @@ class iCloud3:
         if Gb.config_parms_update_control != {''}:
             start_ic3.handle_config_parms_update()
 
-        # An internet request was made more than 1-minute ago, assume it is down
-        #if Gb.last_PyiCloud_request_secs > 0 and secs_since(Gb.last_PyiCloud_request_secs) > 60:
-        #    Gb.internet_connection_error = True
+        # Handle internet connection errors
+        if (Gb.last_PyiCloud_request_secs > 0
+                and Gb.internet_error is False
+                and secs_since(Gb.last_PyiCloud_request_secs > 60)):
+            Gb.last_PyiCloud_request_secs = 0
+            Gb.internet_error = True
+            post_event(f"{EVLOG_ALERT}Internet Connection Error Detected > "
+                        "More than 1-min since last location request. "
+                        "www.apple.com may be down")
 
-        if (Gb.internet_connection_error
-                or Gb.internet_connection_error_secs > 0):
-            self._handle_internet_connection_error()
+        if (Gb.internet_error
+                and Gb.InternetError.internet_error_secs == 0):
+            Gb.InternetError.start_internet_error_handler()
 
         # Restart iCloud via service call from EvLog or config_flow
         if Gb.restart_icloud3_request_flag:
@@ -600,7 +608,7 @@ class iCloud3:
             post_monitor_msg(Device.devicename, "iCloud Location Requested (prefetch)")
 
             Device.icloud_devdata_useable_flag = \
-                icloud_data_handler.update_PyiCloud_RawData_data(Device,
+                icloud_data_handler.update_AADevData_data(Device,
                         results_msg_flag=Device.is_location_old_or_gps_poor)
 
             log_start_finish_update_banner('finish', Device.devicename, 'icloud prefetch', '')
@@ -612,72 +620,67 @@ class iCloud3:
         Various functions that are run based on the time-of-day
         '''
 
-        time_now_mmss = Gb.this_update_time[-5:]
-        time_now_ss   = Gb.this_update_time[-2:]
-        time_now_mm   = Gb.this_update_time[3:5] if time_now_ss == '00' else ''
+        time_now_hh, time_now_mm, time_now_ss = Gb.this_update_time.split(':')
+        time_ss = int(time_now_ss)
+        if time_ss != 0:
+            return
 
-        # Every hour:
-        #   - Check for iCloud3 update in HACS data
-        #   - Clean up lingering Stat Zones
-        if time_now_mmss == '00:00':
-            self._timer_tasks_every_hour()
+        time_hh = int(time_now_hh)
+        time_mm = int(time_now_mm)
+        # Every minute:
+        #   - Update the device's info msg
+        #   - Check to see if a MobApp location refresh has been requested
+        self._check_mobappp_location_request()
+        if (Gb.this_update_secs >= Gb.EvLog.clear_secs):
+            Gb.EvLog.update_event_log_display(show_one_screen=True)
 
-        # At midnight:
+        # At 12:15a:
         #   - Reset auto-reset log levels
         #   - Reset daily counts
         #   - Compress the WazeHist database
         #   - Cycle the iCloud3 log files
-        if Gb.this_update_time == '00:15:00':
+        if time_hh == 0 and time_mm == 15:
             self._timer_tasks_midnight()
 
-        # At 1am:
-        #   - Check for daylight savings time change
-        elif Gb.this_update_time == '01:00:00':
-            calculate_time_zone_offset()
+        # Every 5-minutes
+        #   - Check for devices that monitor the mobapp that are not in the HA MobApp Integrations
+        #     devices list. Rebuild the list and try again. The MobApp Integration may not have been
+        #     set when iCloud3 started.
+        if time_mm % 5 == 0:
+            if Gb.device_mobapp_verify_retry_needed:
+                mobapp_data_handler.unverified_devices_mobapp_handler()
 
-        if (Gb.this_update_secs >= Gb.EvLog.clear_secs):
-            Gb.EvLog.update_event_log_display(show_one_screen=True)
-
-        # Every 30-seconds:
-        #   - See if a device needs a 2fa request via a otp token
-        # if time_now_ss in ['00', '30']:
-        #     self._check_apple_acct_2fa_totp_key_request()
-        #     pass
-
-        # Every minute:
-        #   - Update the device's info msg
-        #   - Check to see if a MobApp location refresh has been requested
-        if time_now_ss == '00':
-            self._check_mobappp_location_request()
+            if is_empty(Gb.mobile_app_notify_devicenames):
+                mobapp_interface._get_mobile_app_notify_devices()
 
         # Every 15-minutes:
         #   - Refresh a device's distance to the other devices
-        if time_now_mm in ['00', '15', '30', '45']:
+        if time_mm % 15 == 0:
             det_interval.set_dist_to_devices(post_event_msg=True)
 
             if Gb.log_debug_flag:
                 for devicename, Device in Gb.Devices_by_devicename_tracked.items():
                     Device.log_data_fields()
 
-            if isnot_empty(Gb.username_pyicloud_503_connection_error):
-                pyicloud_ic3_interface.retry_apple_acct_login()
+            if isnot_empty(Gb.username_pyicloud_503_internet_error):
+                pyicloud_ic3_interface.log_into_apple_acct_retry()
 
-        # Every 5-minutes
-        if time_now_mmss[1:] in ['0:00', '5:00']:
-            # There are some Devices that monitor the mobapp that are not in the HA MobApp Integrations
-            # devices list. Rebuild the list and try again. The MobApp Integrations may not have been
-            # set up on the first try when iCloud3 started.
-            if Gb.device_mobapp_verify_retry_needed:
-                mobapp_data_handler.unverified_devices_mobapp_handler()
+        if time_mm != 0:
+            return
 
+        # Every hour:
+        #   - Check for iCloud3 update in HACS data
+        #   - Clean up lingering Stat Zones
+        self._timer_tasks_every_hour()
 
-        # Every 10-minutes
-        # if time_now_mm in ['00', '10', '20', '30', '40', '50']:
-        #     pass
+        # At 1am:
+        #   - Check for daylight savings time change
+        if time_hh == 1:
+            calculate_time_zone_offset()
 
-        # Every 1/2-hour
-        # if time_now_mm in ['00', '30']:
-        #     pass
+        # Every 4-hours
+        if time_hh % 4 == 0:
+            post_event(f"{EVLOG_BLUE}Current Time > {format_day_date_now()}")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1056,6 +1059,7 @@ class iCloud3:
                                         f"CurrZone-{Device.sensor_zone}")
 
         self._post_after_update_monitor_msg(Device)
+
 #...............................................................................
     def _results_special_msg(self, Device):
         if Device.is_offline:
@@ -1069,9 +1073,8 @@ class iCloud3:
         if (Device.isin_zone
                 and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
             special_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} "
-                    f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}")
-            #if Device.away_time_zone_offset == 0:
-            special_msg += f", Update {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}"
+                    f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
+                    f"Update at {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
             return special_msg
 
         if Device.FromZone_TrackFrom.dir_of_travel != AWAY_FROM:
@@ -1198,46 +1201,20 @@ class iCloud3:
         general_alert_msg = startup_alert_attr = ''
         tracked_alert_attr = monitored_alert_attr = ''
 
-        if (Gb.internet_connection_error
-                or Gb.internet_connection_error_secs > 0):
+        if (Gb.internet_error
+                or Gb.InternetError.internet_error_secs > 0):
             return
 
         if Gb.version_hacs:
-            general_alert_msg += (  f"{CRLF_LDOT}iCloud3 {Gb.version_hacs} is available on HACS, "
+            general_alert_msg += (  f"{CRLF_LHDOT}iCloud3 {Gb.version_hacs} is available on HACS, "
                                     f"you are running v{Gb.version}")
 
-        if Gb.disable_log_filter:
-            general_alert_msg += f"{RED_ALERT}PASSWORD LOG FILTER DISABLED (Gb.disable_log_filter)"
+        if Gb.disable_upw_filter:
+            general_alert_msg += f"{RED_ALERT}PASSWORD LOG FILTER DISABLED (Gb.disable_upw_filter)"
 
-        if (Gb.startup_alerts
-                # and is_empty(Gb.username_pyicloud_503_connection_error)
-                and is_empty(Gb.usernames_setup_error_retry_list)):
-            Gb.startup_alerts = []
-
-        if isnot_empty(Gb.startup_alerts):
-            startup_alert_attr = Gb.startup_alerts_str
-            general_alert_msg += f"{CRLF_LDOT}Alerts starting iCloud3{RARROW}Review Event Log for more info"
-
-            for devicename, error_msg in Gb.conf_startup_errors_by_devicename.items():
-                general_alert_msg += f"{CRLF_LDOT}{devicename} > {error_msg}"
-
-        for username, PyiCloud in Gb.PyiCloud_by_username.items():
-            if PyiCloud:
-                if PyiCloud.login_successful is False:
-                    general_alert_msg += (  f"{CRLF_LDOT}Apple Acct > {PyiCloud.account_owner_short}, "
-                                            f"Login Failed")
-                if PyiCloud.requires_2fa:
-                    general_alert_msg += (  f"{CRLF_LDOT}Apple Acct > {PyiCloud.account_owner_short}, "
-                                            f"Authentication Needed")
-
-        if (Gb.icloud_acct_error_cnt > 5
-                and instr(general_alert_msg, 'errors accessing') is False):
-            general_alert_msg += f"{CRLF_LDOT}Internet or Apple may be down, errors accessing Apple Acct"
-
-        apple_acct_errors = [username.split('@')[0] for username in Gb.username_valid_by_username
-                                                    if Gb.username_valid_by_username[username] is False]
-        if isnot_empty(apple_acct_errors):
-            general_alert_msg += f"{CRLF_LDOT}Apple Acct Login Errors-{list_to_str(apple_acct_errors)}"
+        if Gb.alerts_sensor_attrs:
+            for source, msg in Gb.alerts_sensor_attrs.items():
+                general_alert_msg += f"{CRLF_LDIAMOND}{source} > {msg}"
 
         verified_msg = poor_location_msg = offline_msg =''
         paused_msg = mobapp_unavailable_msg = ''
@@ -1245,14 +1222,14 @@ class iCloud3:
         for Device in Gb.Devices:
             device_alert_msg = ''
             if (Device.verified_flag is False
-                    or (Device.is_data_source_ICLOUD is False and Device.is_data_source_MOBAPP is False)):
+                    or (Device.is_data_source_ICLOUD is False
+                        and Device.is_data_source_MOBAPP is False)):
                 verified_msg += f"{Device.fname}, "
             elif Device.is_tracking_paused:
                 paused_msg += f"{Device.fname}, "
             elif Device.is_tracked:
                 if Device.mobapp_device_unavailable_flag:
-                    mobapp_unavailable_msg += (  f"{Device.fname} "
-                                                f"({Device.conf_mobapp_fname}), ")
+                    mobapp_unavailable_msg += f"{Device.fname} ({Device.conf_mobapp_fname}), "
 
                 if Device.is_offline:
                     offline_msg += f"{Device.fname}, "
@@ -1265,29 +1242,33 @@ class iCloud3:
                 device_alert_msg = f"{Device.fname} > Low Battery ({Device.dev_data_battery_level}%)"
 
             if device_alert_msg:
-                general_alert_msg += f"{CRLF_LDOT}{device_alert_msg}"
+                general_alert_msg += f"{CRLF_LBDOT}{device_alert_msg}"
 
             if device_alert_msg != Device.alert:
                 Device.alert = Device.sensors[ALERT] = device_alert_msg
                 Device.write_ha_device_tracker_state()
 
         if paused_msg:
-            general_alert_msg += f"{CRLF_LDOT}Paused-{paused_msg[:-2]}"
+            general_alert_msg += f"{CRLF_LBDOT}Paused-{paused_msg[:-2]}"
         if verified_msg:
-            general_alert_msg += f"{CRLF_LDOT}Setup Errors-{verified_msg[:-2]}"
+            general_alert_msg += f"{CRLF_LBDOT}Not Tracked-{verified_msg[:-2]}"
         if poor_location_msg:
-            general_alert_msg += f"{CRLF_LDOT}Poor Location-{poor_location_msg[:-2]}"
+            general_alert_msg += f"{CRLF_LBDOT}Poor Location-{poor_location_msg[:-2]}"
         if offline_msg:
-            general_alert_msg += f"{CRLF_LDOT}Offline-{offline_msg[:-2]}"
+            general_alert_msg += f"{CRLF_LBDOT}Offline-{offline_msg[:-2]}"
         if mobapp_unavailable_msg:
-            general_alert_msg += f"{CRLF_LDOT}MobApp Device Unavailable-{mobapp_unavailable_msg[:-2]}"
+            general_alert_msg += f"{CRLF_LBDOT}MobApp Device Unavailable-{mobapp_unavailable_msg[:-2]}"
 
-        if Gb.EvLog.alert_attr_filter(startup_alert_attr) != startup_alert_attr:
-            Gb.EvLog.evlog_attrs['alert_startup'] = Gb.EvLog.alert_attr_filter(startup_alert_attr)
-        if Gb.EvLog.alert_attr_filter(tracked_alert_attr) != tracked_alert_attr:
-            Gb.EvLog.evlog_attrs['alert_tracked'] = Gb.EvLog.alert_attr_filter(tracked_alert_attr)
-        if Gb.EvLog.alert_attr_filter(monitored_alert_attr) != monitored_alert_attr:
-            Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(monitored_alert_attr)
+        if (Gb.InternetError.internet_error_test
+                or Gb.InternetError.internet_error_test_after_startup):
+            general_alert_msg += f"{CRLF_LRED_ALERT}InternetConnection Error Test > True"
+
+        # if Gb.EvLog.alert_attr_filter(startup_alert_attr) != startup_alert_attr:
+        #     Gb.EvLog.evlog_attrs['alert_startup'] = Gb.EvLog.alert_attr_filter(startup_alert_attr)
+        # if Gb.EvLog.alert_attr_filter(tracked_alert_attr) != tracked_alert_attr:
+        #     Gb.EvLog.evlog_attrs['alert_tracked'] = Gb.EvLog.alert_attr_filter(tracked_alert_attr)
+        # if Gb.EvLog.alert_attr_filter(monitored_alert_attr) != monitored_alert_attr:
+        #     Gb.EvLog.evlog_attrs['alert_monitored'] = Gb.EvLog.alert_attr_filter(monitored_alert_attr)
 
         if general_alert_msg.startswith(CRLF):
             general_alert_msg = general_alert_msg[1:]
@@ -1332,7 +1313,6 @@ class iCloud3:
 #--------------------------------------------------------------------
     def _post_after_update_monitor_msg(self, Device):
         """ Post a monitor event after the update with the result """
-        #device_monitor_msg = (f"Device Monitor > {Device.data_source}, "
         device_monitor_msg = (f"Device Monitor > {Device.dev_data_source}, "
                             f"{Device.icloud_update_reason}, "
                             f"AttrsZone-{Device.sensor_zone}, "
@@ -1348,115 +1328,6 @@ class iCloud3:
                         replace('%tage', Device.loc_data_time_age)
             post_monitor_msg(Device.devicename, device_monitor_msg)
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#   Internet Connection Error Handler
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def _handle_internet_connection_error(self):
-        '''
-        Handle all internet connection issues
-
-            error   time(secs)  meaning
-            True    = 0         Internet just went down - pause tracking
-            False   > 0         Internet is back up, resume tracking
-        '''
-        # Internet just went down. Pause tracking and set timer
-        Gb.last_PyiCloud_request_secs = 0
-
-        if (Gb.internet_connection_error
-                and Gb.internet_connection_error_secs == 0):
-            Gb.internet_connection_error_secs = time_now_secs()
-            Gb.internet_connection_status_waiting_for_response = False
-            Gb.internet_connection_status_request_cnt = 0
-            self._internet_connection_status_msg()
-
-            for Device in Gb.Devices:
-                Device.pause_tracking()
-
-            post_event( f"{EVLOG_ALERT}Internet Connection Error > Tracking Paused, "
-                        f"{Gb.internet_connection_error_msg} "
-                        f"({Gb.internet_connection_error_code})")
-
-            # If the Mobile App is set up, send a message to the 1st Device that can use
-            # the notify service
-            # if isnot_empty(Gb.mobapp_id_by_mobapp_dname):
-            #     Devices = [Device   for Device in Gb.Devices
-            #                         if Device.is_tracked and Device.mobapp[NOTIFY] != '']
-            #     if isnot_empty(Devices):
-            #         message =  {"message":  "Internet Connection Error > iCloud3 Tracking Paused, "
-            #                                 f"{secs_to_time(time_now_secs())}, "
-            #                                 f"{Gb.internet_connection_error_msg} "
-            #                                 f"({Gb.internet_connection_error_code})"}
-            #         mobapp_interface.send_message_to_device(Devices[0], message)
-
-            return
-
-        self._internet_connection_status_msg()
-
-        if Gb.internet_connection_error is False:
-            self.reset_internet_connection_error()
-            return
-
-        if Gb.internet_connection_status_request_cnt == 0:
-            pass
-        elif Gb.this_update_time[-2:] not in ['00' ,'15', '30', '45']:
-            return
-
-        # See if internet is back up
-
-        is_internet_available = Gb.PyiCloudValidateAppleAcct.is_internet_available()
-        if is_internet_available:
-            self.reset_internet_connection_error()
-
-#...............................................................................
-    @staticmethod
-    def reset_internet_connection_error():
-        start_ic3.initialize_internet_connection_fields()
-
-        data_source_not_set_Devices = [Device
-                                    for Device in Gb.Devices
-                                    if (Device.dev_data_source == NOT_SET)]
-
-        # If no connection during startup, restart. Otherwiae, resume all tracking
-        #if isnot_empty(devices_not_setup):
-        notify_Device = None
-        if isnot_empty(data_source_not_set_Devices):
-            post_event(f"{EVLOG_ALERT}Internet Connection Available > iCloud3 Restarting")
-            Gb.restart_icloud3_request_flag = True
-        else:
-            post_event(f"{EVLOG_ALERT} Internet Connection Available > Tracking Resumed")
-
-            for Device in Gb.Devices:
-                Device.resume_tracking()
-                # if (notify_Device is None
-                #         and Device.mobapp[NOTIFY] != ''):
-                #     notify_Device = Device
-
-        # If the Mobile App is set up, send a message to the 1st Device that can use
-        # the notify service
-        # if notify_Device:
-        #     message =  {"message":  "Internet Connection Available > iCloud3 Tracking Resumed, "
-        #                             f"{secs_to_time(time_now_secs())}"}
-        #     mobapp_interface.send_message_to_device(notify_Device, message)
-
-#...............................................................................
-    def _internet_connection_status_msg(self):
-        '''
-        Display the offline message. Show a progress bar that refreshes on 5-sec
-        interval while checking the status
-        '''
-        if Gb.internet_connection_progress_cnt > 10:
-            Gb.internet_connection_progress_cnt = 1
-        else:
-            Gb.internet_connection_progress_cnt += 1
-        progress_bar = '🟡'*Gb.internet_connection_progress_cnt
-        evlog_msg =(f"INTERNET CONNECTION ERROR > Since "
-                    f"{format_time_age(Gb.internet_connection_error_secs, xago=True)}"
-                    f"{CRLF}Checking-{secs_to_time(Gb.internet_connection_status_request_secs)} "
-                    f"(#{Gb.internet_connection_status_request_cnt}) "
-                    f"{progress_bar}")
-        post_evlog_greenbar_msg(evlog_msg)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1487,8 +1358,6 @@ class iCloud3:
 
         if is_empty(conf_apple_accts):
             return
-
-        pyicloud_ic3_interface.send_totp_key(conf_apple_accts)
 
 #--------------------------------------------------------------------
     def _check_mobappp_location_request(self):
@@ -1524,11 +1393,11 @@ class iCloud3:
 
         if (Gb.WazeHist
                 and Gb.WazeHist.is_historydb_USED
-                and Gb.internet_connection_error is False):
+                and Gb.internet_error is False):
             Gb.WazeHist.end_of_day_maintenance()
 
         log_start_finish_update_banner('finish', 'End-of-Day Maintenance', 'Complete', '')
-        post_event( f"{EVLOG_IC3_STAGE_HDR}End of Day File Maintenance > "
+        post_event( f"{EVLOG_IC3_STAGE_HDR}End-of-Day Maintenance > "
                     f"iCloud3 v{Gb.version}, "
                     f"{dt_util.now().strftime('%A, %b %d')}")
 

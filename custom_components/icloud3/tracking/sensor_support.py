@@ -355,29 +355,16 @@ def  _create_sensor_by_type(devicename, sensor, conf_device, from_zone=None):
 #--------------------------------------------------------------------
 def rename_all_entity_id_x_to_entity_id_base():
 
-    # _log(f"{Gb.Sensors_by_devicename=}")
-    # _log(f"{Gb.Sensors_by_devicename_from_zone=}")
-
     eid_x_Sensors = []
     for devicename, device_sensors in Gb.Sensors_by_devicename.items():
         for sensor_name, Sensor in device_sensors.items():
-            # _log(f"{devicename} {sensor_name} {Sensor} {Sensor.entity_id=} {Sensor.entity_id_base=}")
             if Sensor.entity_id != Sensor.entity_id_base:
                 list_add(eid_x_Sensors, Sensor)
-    # _log(f"{eid_x_Sensors=}")
 
     if isnot_empty(eid_x_Sensors):
-        # entity_reg = er.async_get(Gb.hass)
         for Sensor in eid_x_Sensors:
-        #     _log(f"RENAME  {Sensor.entity_id=} --> {Sensor.entity_id_base}")
-        #     new_entity_id = Sensor.entity_id_base
             try:
-                # _log(f"DELETE  {Sensor.entity_id_base=}")
-
-                # entity_reg.async_remove(Sensor.entity_id_base)
-                # entity_reg._unindex_entry(Sensor.entity_id_base, None)
                 entity_io.remove_entity(Sensor.entity_id_base)
-                # _log(f"DELETED {Sensor.entity_id_base=}")
             except KeyError as err:
                 pass
             except Exception as err:
@@ -385,11 +372,7 @@ def rename_all_entity_id_x_to_entity_id_base():
                 pass
 
             try:
-                # _log(f"DELETE  {Sensor.entity_id=}")
-                # entity_reg.async_remove(Sensor.entity_id)
-                # entity_reg._unindex_entry(Sensor.entity_id, None)
                 entity_io.remove_entity(Sensor.entity_id)
-                # _log(f"DELETED {Sensor.entity_id=}")
             except KeyError as err:
                 pass
             except Exception as err:
@@ -397,16 +380,3 @@ def rename_all_entity_id_x_to_entity_id_base():
                 pass
 
     return eid_x_Sensors
-
-        #     # Gb.hass.async_add_executor_job(
-        #     #                     entity_reg.async_update_entity,
-        #     #                     Sensor.entity_id,
-        #     #                     new_entity_id)
-        #     try:
-        #         entity_reg.async_update_entity(Sensor.entity_id, new_entity_id=new_entity_id)
-        #     except Exception as err:
-        #         log_exception(err)
-
-        #     _log(f"RENAMED {Sensor.entity_id=} --> {Sensor.entity_id_base}")
-        #     Sensor.entity_id = Sensor.entity_id_base
-        # Gb.async_add_entities_sensor(eid_x_Sensors, True)

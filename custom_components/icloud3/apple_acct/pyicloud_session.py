@@ -20,22 +20,22 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-from ..utils.utils        import (instr, is_empty, isnot_empty, list_add, list_del, )
-from ..utils.file_io      import (save_json_file, )
-from ..utils.time_util    import (time_now,  time_now_secs, secs_to_time, format_time_age, )
-from ..utils.messaging    import (_log, _evlog, post_error_msg,
+from ..const                import (EVLOG_ALERT, )
+from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del, )
+from ..utils.file_io        import (save_json_file, )
+from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
+from ..utils.messaging      import (_log, _evlog, post_event, post_error_msg,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                    log_rawdata, log_exception, log_rawdata_unfiltered, filter_data_dict, )
+                                    log_data, log_exception, log_data_unfiltered, filter_data_dict, )
 
-from requests   import Session, adapters
+from requests               import Session, adapters
 import requests
-from requests.exceptions import ConnectionError
-from os         import path
+from requests.exceptions    import ConnectionError
+from os                     import path
 import inspect
 import json
 import random
 import time
-# import http.cookiejar as cookielib
 
 HEADER_DATA = {
     "X-Apple-ID-Account-Country": "account_country",
@@ -150,7 +150,7 @@ class PyiCloudSession(Session):
 
         if 'retry_cnt' in kwargs:
             pass
-        elif Gb.internet_connection_error:
+        elif Gb.internet_error:
             return {}
 
         try:
@@ -159,14 +159,14 @@ class PyiCloudSession(Session):
                 kwargs['data'] = json.loads(kwargs['data'])
             retry_cnt = kwargs.get('retry_cnt', 0)
 
-            log_rawdata_flag = (url.endswith('refreshClient') is False)
-            if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
+            log_data_flag = (url.endswith('refreshClient') is False)
+            if Gb.log_data_flag or log_data_flag or Gb.initial_icloud3_loading_flag:
                 try:
-                    log_hdr = ( f"{self.PyiCloud.username_base}, {method}, Request, "
+                    _hdr = ( f"{self.PyiCloud.username_base}, {method}, Request, "
                                 f"{callee.function}/{callee.lineno} ▲")
-                    log_data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
-                    log_data.update(kwargs)
-                    log_rawdata(log_hdr, log_data, log_rawdata_flag=log_rawdata_flag)
+                    _data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
+                    _data.update(kwargs)
+                    log_data(_hdr, _data, log_data_flag=log_data_flag)
 
                 except Exception as err:
                     log_exception(err)
@@ -186,7 +186,9 @@ class PyiCloudSession(Session):
             #++++++++++++++++ REQUEST ICLOUD DATA ++++++++++++++++
             Gb.last_PyiCloud_request_secs = time_now_secs()
 
-            if Gb.internet_connection_test:
+            if (Gb.InternetError.internet_error_test
+                    and Gb.InternetError.status_check_cnt < Gb.InternetError.internet_error_test_counter+3):
+                post_event(f"{EVLOG_ALERT}Internet Connection Error > Test Started, Error Generated")
                 raise requests.exceptions.ConnectionError
 
             response = Session.request(self, method, url, **kwargs)
@@ -208,12 +210,14 @@ class PyiCloudSession(Session):
                             f"iCloudServerSuffix-`{Gb.icloud_server_suffix}`, "
                             f"Error-{err}")
 
-            Gb.internet_connection_error_msg  = err
-            Gb.internet_connection_error_code = self.response_code
+            Gb.InternetError.PyiCloud_error_msg  = err
+            Gb.InternetError.PyiCloud_error_code = self.response_code
 
-            self.response_code = -3
-            self.PyiCloud.response_code = -3
-            self.response_ok = False
+            self.response_code = -31
+            self.response_ok   = False
+            self.PyiCloud.response_code = -31
+            self.PyiCloud.response_ok   = False
+            Gb.last_PyiCloud_request_secs = 0
             return {}
 
         except (requests.exceptions.ChunkedEncodingError,
@@ -243,30 +247,33 @@ class PyiCloudSession(Session):
             # clientMasteringNumber=2021B29&ckjsBuildVersion=17DProjectDev77&
             # clientId=5f2a1a22-ee4b-11ef-a8b2-2ccf674e40a8&dsid=186297810 (Caused by NewConnectionError
             # ('<urllib3.connection.HTTPSConnection object at 0x7f6458f750>: Failed to establish a new
-            # connection: [Errno -3] Try again'
+            # connection: [Errno -30] Try again'
             #
             # Result - HTTPSConnectionPool(host='p123-fmipweb.icloud.com', port=443): Max retries exceeded
             # with url: /fmipservice/client/web/refreshClient, Failed to establish a new
-            # connection: [Errno -3] Try again'
+            # connection: [Errno -30] Try again'
             err_msg = str(err)
             url_parm = err_msg.find('?')    # Beginning of URL parameters
             obj_end  = err_msg.find('>:')   # End of 'object at 0x...>:
             if url_parm > 0:
                 err_msg = f"{err_msg[0:url_parm]},{err_msg[obj_end+2:]}" if obj_end > 0 else err_msg[0:url_parm]
             post_error_msg( f"iCloud3 Error > An error occurred connecting to the Internet, "
-                            f"Home Assistant may be Offline > "
+                            f"apple.com may be Offline > "
                             f"Error-{err_msg}")
 
-            Gb.internet_connection_error = True
-            Gb.internet_connection_error_msg = err_msg
-            Gb.internet_connection_error_code = self.response_code
+            Gb.internet_error = True
+            Gb.InternetError.internet_error_msg  = err_msg
+            Gb.InternetError.internet_error_code = self.response_code
+            Gb.last_PyiCloud_request_secs = 0
 
-            self.response_code = -3
-            self.PyiCloud.response_code = -3
-            self.response_ok = False
+            self.response_code = -30
+            self.response_ok   = False
+            self.PyiCloud.response_code = -30
+            self.PyiCloud.response_ok   = False
             return {}
 
         except Exception as err:
+            Gb.last_PyiCloud_request_secs = 0
             log_exception(err)
 
             self._raise_error(-3, f"Error setting up iCloud Server Connection ({err})")
@@ -277,20 +284,20 @@ class PyiCloudSession(Session):
 
         self.PyiCloud.last_response_code = self.PyiCloud.response_code
         self.PyiCloud.response_code      = response.status_code
-        self.response_code          = response.status_code
-        self.response_ok            = response.ok
+        self.PyiCloud.response_ok        = response.ok
+        self.response_code               = response.status_code
+        self.response_ok                 = response.ok
+        Gb.last_PyiCloud_request_secs    = 0
 
-        log_rawdata_flag = (url.endswith('refreshClient') is False) or response.status_code != 200
-        if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
-            log_hdr = ( f"{self.PyiCloud.username_base}, {method}, Response, "
+        log_data_flag = (url.endswith('refreshClient') is False) or response.status_code != 200
+        if Gb.log_data_flag or log_data_flag or Gb.initial_icloud3_loading_flag:
+            _hdr = ( f"{self.PyiCloud.username_base}, {method}, Response, "
                         f"{callee.function}/{callee.lineno} ▼")
-            log_data = {'code': response.status_code, 'ok': response.ok, 'data': data}
+            _data = {'code': response.status_code, 'ok': response.ok, 'data': data}
 
-            if retry_cnt >= 2 or Gb.log_rawdata_flag_unfiltered:
+            if retry_cnt >= 2 or Gb.log_data_flag_unfiltered:
                 log_data['headers'] = response.headers
-            logged = log_rawdata(log_hdr, log_data, log_rawdata_flag=log_rawdata_flag)
-            # _log(f"noYK-{log_hdr=}")
-            # _log(f"noYK-{data=}")
+            log_data(_hdr, _data, log_data_flag=log_data_flag)
 
         # Validating the username/password, code=409 is valid, code=401 is invalid
         if (response.status_code in [401, 409]
@@ -339,7 +346,7 @@ class PyiCloudSession(Session):
                             self.PyiCloud.authenticate(refresh_session=True)
 
                     except PyiCloudAPIResponseException:
-                        log_debug_msg(f"{self.username_base}, Authentication failed")
+                        log_debug_msg(f"{self.username_base}, Authentication Failed")
                         return self.request(method, url, **kwargs)
 
                     #if retry_cnt == 0 and response.status_code in AUTHENTICATION_NEEDED_421_450_500:
@@ -370,61 +377,6 @@ class PyiCloudSession(Session):
 
         return data
 
-#------------------------------------------------------------------
-    def is_internet_available(self):
-        '''
-        Try to connect to Google servers to determine if the internet is really down
-        or there is an error connecting to Apple servers
-        '''
-
-        try:
-            # Prevent a new status check being requested while waiting for a response
-            if Gb.internet_connection_status_waiting_for_response:
-                return False
-
-            Gb.internet_connection_status_waiting_for_response = True
-
-            log_debug_msg(  f"Request  Internet Connection status "
-                            f"(#{Gb.internet_connection_status_request_cnt}), "
-                            f"Sent-{time_now()}")
-
-            # Use TestCode in service_handler > Show Tracking Monitor
-            if Gb.internet_connection_test:
-                ri = random.randint(1, 61)
-                time.sleep(ri)
-                raise requests.exceptions.ConnectionError
-
-            # Connect to google.com
-            Session.request(self, 'get', "https://8.8.8.8")
-            Gb.internet_connection_status_waiting_for_response = False
-            return True
-
-        except (requests.exceptions.ChunkedEncodingError,
-                requests.exceptions.ConnectionError,
-                requests.exceptions.ConnectTimeout,
-                requests.exceptions.HTTPError,
-                requests.exceptions.InvalidURL,
-                requests.exceptions.InvalidHeader,
-                requests.exceptions.InvalidProxyURL,
-                requests.exceptions.ProxyError,
-                requests.exceptions.ReadTimeout,
-                requests.exceptions.RetryError,
-                requests.exceptions.SSLError,
-                requests.exceptions.StreamConsumedError,
-                requests.exceptions.Timeout,
-                requests.exceptions.TooManyRedirects,
-                requests.exceptions.UnrewindableBodyError,
-                requests.exceptions.URLRequired,
-                OSError,
-                ) as err:
-            pass
-
-        except Exception as err:
-            log_exception(err)
-            pass
-
-        Gb.internet_connection_status_waiting_for_response = False
-        return False
 
 #------------------------------------------------------------------
     @staticmethod
@@ -464,7 +416,7 @@ class PyiCloudSession(Session):
         if reason in ("ZONE_NOT_FOUND", "AUTHENTICATION_FAILED"):
             reason = ("Please log into https://icloud.com/ to manually "
                     "finish setting up your iCloud service")
-            api_error = PyiCloudServiceNotActivatedException(reason, code)
+            api_error = PyiCloudManagerNotActivatedException(reason, code)
 
         elif code in AUTHENTICATION_NEEDED_421_450_500: #[204, 421, 450, 500]:
             # log_info_msg(f"Apple Account Verification Code may be needed ({code})")
@@ -473,7 +425,6 @@ class PyiCloudSession(Session):
         elif reason ==  'Missing X-APPLE-WEBAUTH-TOKEN cookie':
             log_info_msg(f"Apple Account Verification Code may be needed, No WebAuth Token")
             return
-            # api_error = PyiCloud2FARequiredException()
 
         # 2fa needed that has already been requested and processed
         elif reason == '2fa Already Processed':
@@ -516,7 +467,7 @@ class PyiCloudSession(Session):
 #------------------------------------------------------------------
     def _shrink_items(self, prefiltered_dict):
         '''
-        Obscure account name and password in rawdata
+        Obscure account name and password in apple aadevdata
         '''
 
 
@@ -586,7 +537,7 @@ class PyiCloudAPIResponseException(PyiCloudException):
         super(PyiCloudAPIResponseException, self).__init__(message)
 
 #----------------------------------------------------------------------------
-class PyiCloudServiceNotActivatedException(PyiCloudAPIResponseException):
+class PyiCloudManagerNotActivatedException(PyiCloudAPIResponseException):
     '''iCloud service not activated exception.'''
     pass
 

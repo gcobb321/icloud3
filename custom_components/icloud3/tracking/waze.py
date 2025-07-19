@@ -47,7 +47,7 @@ class Waze(object):
         WAZE_STATUS_FNAME[Waze_UNDER_MIN] = f"×Under{waze_min_distance}km"
         WAZE_STATUS_FNAME[Waze_OVER_MAX] = f"×Over{waze_max_distance}km"
 
-        self.connection_error_displayed = False
+        self.internet_error_displayed = False
 
         self.waze_manual_pause_flag        = False  #If Paused via iCloud command
         self.waze_close_to_zone_pause_flag = False  #pause if dist from zone < 1 flag
@@ -350,7 +350,7 @@ class Waze(object):
                     route_time    = round(route_time, 2)
                     route_dist_km = route_dist_km
 
-                    self.connection_error_displayed = False
+                    self.internet_error_displayed = False
                     return (WAZE_USED, route_time, route_dist_km)
 
                 except Exception as err:
@@ -389,9 +389,9 @@ class Waze(object):
     def _set_waze_not_available_error(self, err):
         ''' Turn Waze off if connection error '''
 
-        if self.connection_error_displayed:
+        if self.internet_error_displayed:
             return
-        self.connection_error_displayed = True
+        self.internet_error_displayed = True
 
         error_msg = f"Waze Server Connection Error-{err}"
         # log_error_msg(error_msg)

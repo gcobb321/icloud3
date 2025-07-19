@@ -4,19 +4,18 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (CRLF_DOT, EVLOG_NOTICE, EVLOG_ERROR, EVLOG_ALERT,
                                 CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
                                 CONF_SERVER_LOCATION, CONF_VERIFICATION_CODE,
+                                ALERT_APPLE_ACCT,
                                 )
 
 from ..utils.utils      import (instr, isnumber, is_empty, isnot_empty, list_add, list_del,
-                                encode_password, decode_password, )
-from ..utils.messaging  import (post_event, post_monitor_msg,
+                                encode_password, decode_password, username_id, )
+from ..utils.messaging  import (post_event, post_monitor_msg, post_error_msg, post_alert,
                                 log_exception, log_debug_msg, log_info_msg, _log, _evlog,
                                 add_log_file_filter, )
 
-from .                  import utils
 from .                  import selection_lists as lists
-from ..apple_acct.pyicloud_ic3  import (PyiCloudService, PyiCloudValidateAppleAcct,
-                                PyiCloudException, PyiCloudFailedLoginException,
-                                PyiCloudServiceNotActivatedException, PyiCloudNoDevicesException, )
+
+from ..apple_acct.pyicloud_ic3  import (PyiCloudManager, PyiCloudFailedLoginException, )
 from ..startup          import start_ic3
 from ..utils            import file_io
 
@@ -48,7 +47,7 @@ async def log_into_apple_account(self, user_input, called_from_step_id=None):
 
     Returns:
         self.Pyicloud object
-        self.PyiCloud_DeviceSvc object
+        self.PyiCloud_AppleAcctDevices object
         self.PyiCloud_FindMyFriends object
         self.opt_icloud_dname_list & self.device_form_icloud_famf_list =
                 A dictionary with the devicename and identifiers
@@ -82,17 +81,21 @@ async def log_into_apple_account(self, user_input, called_from_step_id=None):
         self.PyiCloud = PyiCloud
         self.username = username
         self.password = password
-        self.header_msg = 'icloud_acct_logged_into'
+        self.header_msg = 'apple_acct_logged_into'
 
         log_info_msg(f"Apple Acct > {username}, Already Logged in, {self.PyiCloud}")
         return True
 
     # Validate the account before actually logging in
-    username_password_valid = await async_validate_username_password(username, password)
-    if username_password_valid is False:
-        self.errors['base'] = 'icloud_acct_login_error_user_pw'
+    valid_upw = await Gb.ValidateAppleAcctUPW.async_validate_username_password(username, password)
+
+    if valid_upw is False:
+        if username in Gb.username_valid_by_username:
+            del Gb.username_valid_by_username[username]
+        self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
         log_info_msg(f"Apple Acct > {username}, Invalid Username/password")
         return False
+
 
     event_msg =(f"{EVLOG_NOTICE}Configure Settings > Logging into Apple Account {username}")
     if apple_server_location != 'usa':
@@ -104,7 +107,7 @@ async def log_into_apple_account(self, user_input, called_from_step_id=None):
 
         PyiCloud = None
         PyiCloud = await Gb.hass.async_add_executor_job(
-                                    create_PyiCloudService_config_flow,
+                                    create_PyiCloudManager_config_flow,
                                     username,
                                     password,
                                     apple_server_location)
@@ -117,20 +120,13 @@ async def log_into_apple_account(self, user_input, called_from_step_id=None):
         Gb.username_valid_by_username[username] = True
         log_info_msg(f"Apple Acct > {username}, Login successful, {self.PyiCloud}")
 
-        # try:
-        #     await Gb.hass.async_add_executor_job(PyiCloud.refresh_icloud_data)
-        #     log_info_msg(f"Apple Acct > {username}, Data Refreshed for all devices")
-        # except Exception as err:
-        #     log_info_msg(   f"Apple Acct > {username}, An error occurred refreshing the device data, "
-        #                     f"Error-{err}")
-
         start_ic3.dump_startup_lists_to_log()
 
         if PyiCloud.requires_2fa or called_from_step_id is None:
             log_info_msg(f"Apple Acct > {username}, 2fa Verification Needed, {self.PyiCloud}")
             return True
 
-        self.header_msg = 'icloud_acct_logged_into'
+        self.header_msg = 'apple_acct_logged_into'
 
         if called_from_step_id is None:
             return True
@@ -147,37 +143,36 @@ async def log_into_apple_account(self, user_input, called_from_step_id=None):
         # if called_from_step_id == 'update_apple_acct':
         response_code = Gb.PyiCloudLoggingInto.response_code
         if Gb.PyiCloudLoggingInto.response_code_pwsrp_err == 503:
-            list_add(Gb.username_pyicloud_503_connection_error, username)
-            error_msg = 'icloud_acct_login_error_503'
+            list_add(Gb.username_pyicloud_503_internet_error, username)
+            error_msg = 'apple_acct_login_error_503'
         elif response_code == 302:
-            error_msg = 'icloud_acct_login_error_302'
+            error_msg = 'apple_acct_login_error_302'
 
             if Gb.PyiCloudLoggingInto is not None:
                 country_code = Gb.PyiCloudLoggingInto.account_country_code
                 apple_server_location = Gb.PyiCloudLoggingInto.apple_server_location
 
                 if (country_code == 'CHN' and apple_server_location == 'usa'):
-                    self.errors[CONF_SERVER_LOCATION] = 'icloud_acct_login_error_302_cn'
+                    self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302_cn'
                 elif (country_code != 'CHN' and apple_server_location == '.cn'):
-                    self.errors[CONF_SERVER_LOCATION] = 'icloud_acct_login_error_302_usa'
+                    self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302_usa'
 
         elif response_code == 400:
-            error_msg = 'icloud_acct_login_error_user_pw'
+            self.errors['base'] = 'apple_acct_invalid_upw'
         elif response_code == 401 and instr(err, 'Python SRP'):
-            error_msg = 'icloud_acct_login_error_srp_401'
+            self.errors['base'] = 'apple_acct_login_error_srp_401'
         elif response_code == 401:
-            error_msg = 'icloud_acct_login_error_user_pw'
+            self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
         else:
-            error_msg = 'icloud_acct_login_error_other'
+            self.errors['base'] = 'apple_acct_login_error_other'
 
-        self.errors['base'] = error_msg
         log_info_msg(   f"Apple Acct > {username}, Login Failed, "
                         f"Error-{err}/{error_msg}, Code-{response_code}")
 
     except Exception as err:
         log_exception(err)
         Gb.HALogger.error(f"Error logging into Apple Account: {err}")
-        self.errors['base'] = 'icloud_acct_login_error_other'
+        self.errors['base'] = 'apple_acct_login_error_other'
 
     start_ic3.dump_startup_lists_to_log()
     return False
@@ -186,31 +181,13 @@ async def log_into_apple_account(self, user_input, called_from_step_id=None):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            CREATE PYICLOUD SERVICE OBJECTS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-@staticmethod
-async def async_validate_username_password(username, password):
+def create_PyiCloudManager_config_flow(username, password, apple_server_location):
     '''
-    Verify the username and password are valid using the Apple Acct validate
-    routine before logging into the Apple Acct. This uses one PyiCloud call to
-    validate instead of logging in and having it fail later in the process.
-    '''
-    if Gb.PyiCloudValidateAppleAcct is None:
-        Gb.PyiCloudValidateAppleAcct = PyiCloudValidateAppleAcct()
-
-    valid_apple_acct = await Gb.hass.async_add_executor_job(
-                                    Gb.PyiCloudValidateAppleAcct.validate_username_password,
-                                    username,
-                                    password)
-
-    return valid_apple_acct
-
-#--------------------------------------------------------------------
-def create_PyiCloudService_config_flow(username, password, apple_server_location):
-    '''
-    Create the PyiCloudService object without going through the error checking and
+    Create the PyiCloudManager object without going through the error checking and
     authentication test routines. This is used by config_flow to open a second
     PyiCloud session
     '''
-    PyiCloud = PyiCloudService( username,
+    PyiCloud = PyiCloudManager( username,
                                 password,
                                 apple_server_location=apple_server_location,
                                 cookie_directory=Gb.icloud_cookie_directory,
@@ -229,12 +206,12 @@ def create_PyiCloudService_config_flow(username, password, apple_server_location
 
 #--------------------------------------------------------------------
 @staticmethod
-def create_DeviceSvc_config_flow(PyiCloud):
+def create_AADevices_config_flow(PyiCloud):
 
-    _DeviceSvc = PyiCloud.create_DeviceSvc_object(config_flow_login=True)
+    _AADevices = PyiCloud.create_AADevices_object(config_flow_login=True)
 
     start_ic3.dump_startup_lists_to_log()
-    return _DeviceSvc
+    return _AADevices
 
 
 #..............................................................................................
@@ -259,25 +236,36 @@ async def reauth_send_verification_code_handler(caller_self, user_input):
         - user_input = user_input dictionary
     '''
     try:
+        PyiCloud = caller_self.PyiCloud
         valid_code = await Gb.hass.async_add_executor_job(
-                                    caller_self.PyiCloud.validate_2fa_code,
+                                    PyiCloud.validate_2fa_code,
                                     user_input[CONF_VERIFICATION_CODE])
 
         # Do not restart iC3 right now if the username/password was changed on the
         # iCloud setup screen. If it was changed, another account is being logged into
         # and it will be restarted when exiting the configurator.
         if valid_code:
-            post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {caller_self.PyiCloud.account_owner}, "
+            post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {PyiCloud.account_owner}, "
                         f"Code accepted, Verification completed")
+
+            # Refresh the device list if the apple acct is being setup for the first time
+            # If PyiCloud.device_id_by_icloud_dname is empty, a verification code was needed
+            # when first logged in and the apple acct data was not authenticated and it's
+            # device data was never loaded/initialized by refreshed_icloud_data. This
+            # prevents the device's list tables to never be initialized and location data
+            # is not available. Do this now.
+            if is_empty(PyiCloud.device_id_by_icloud_dname):
+                await async_finish_authentication_and_data_refresh(caller_self)
 
             await lists.build_icloud_device_selection_list(caller_self)
 
             Gb.EvLog.clear_evlog_greenbar_msg()
             Gb.icloud_force_update_flag = True
-            caller_self.PyiCloud.new_2fa_code_already_requested_flag = False
+            PyiCloud.new_2fa_code_already_requested_flag = False
             lists.build_apple_accounts_list(caller_self)
 
             caller_self.errors['base'] = caller_self.header_msg = 'verification_code_accepted'
+            post_alert(PyiCloud.username_id, '')
 
         else:
             post_event( f"{EVLOG_NOTICE}Configure Apple Acct > Verification Code is invalid "
@@ -289,6 +277,35 @@ async def reauth_send_verification_code_handler(caller_self, user_input):
     except Exception as err:
         log_exception(err)
 
+
+#--------------------------------------------------------------------
+async def async_finish_authentication_and_data_refresh(caller_self):
+    '''
+    Refresh the device list if the apple acct is being setup for the first time
+    If PyiCloud.device_id_by_icloud_dname is empty, a verification code was needed
+    when first logged in and the apple acct data was not authenticated and it's
+    device data was never loaded/initialized by refreshed_icloud_data. This
+    prevents the device's list tables to never be initialized and location data
+    is not available. Do this now.
+    '''
+    PyiCloud = caller_self.PyiCloud
+    PyiCloud.login_successful = await Gb.hass.async_add_executor_job(
+                                PyiCloud.authenticate)
+
+    if PyiCloud.login_successful is False:
+        err_msg = ( f"Apple Acct > {caller_self.username_base}, Authentication Failed, "
+                            f"{caller_self.response_code_desc}, "
+                            f"AppleServerLocation-`{caller_self.apple_server_location}`, "
+                            "Location Data not Refreshed")
+        post_error_msg(err_msg)
+        return
+
+    locate_all_devices = True
+    Gb.start_icloud3_inprocess_flag = True
+    await Gb.hass.async_add_executor_job(
+                            PyiCloud.refresh_icloud_data,
+                            locate_all_devices)
+    Gb.start_icloud3_inprocess_flag = False
 
 #--------------------------------------------------------------------
 async def async_pyicloud_reset_session(self, username, password):
@@ -304,30 +321,26 @@ async def async_pyicloud_reset_session(self, username, password):
         if PyiCloud:
             pyicloud_username = PyiCloud.username or self.username
 
-            post_event(f"{EVLOG_NOTICE}Configure Apple Acct > {PyiCloud.account_owner}, Authentication needed")
+            post_event(f"{EVLOG_NOTICE}Configure Apple Acct > {PyiCloud.username_id}, Authentication Needed")
 
-            await async_delete_pyicloud_cookies_session_files(pyicloud_username)
-            # await async_delete_pyicloud_cookies_session_files(PyiCloud.username)
+            await async_delete_pyicloud_session_file(pyicloud_username)
+            # await async_delete_pyicloud_session_file(PyiCloud.username)
 
             if PyiCloud.authentication_alert_displayed_flag is False:
                 PyiCloud.authentication_alert_displayed_flag = True
 
-            await Gb.hass.async_add_executor_job(PyiCloud.__init__,
-                                                PyiCloud.username,
-                                                PyiCloud.password,
-                                                Gb.icloud_cookie_directory,
-                                                Gb.icloud_session_directory)
+            await Gb.hass.async_add_executor_job(PyiCloud.setup_new_apple_account_session)
 
             # Initialize PyiCloud object to force a new one that will trigger the 2fa process
             PyiCloud.verification_code = None
 
         # The Apple acct is not logged into. There may have been some type Of error.
-        # Delete the session files four the username selected on the request form and
+        # Delete the session files for the username selected on the request form and
         # try to login
         elif username and password:
-            post_event(f"{EVLOG_NOTICE}Configure Apple Acct > {username}, Authentication needed")
+            post_event(f"{EVLOG_NOTICE}Configure Apple Acct > {username_id(username)}, Authentication Needed")
 
-            await self.async_delete_pyicloud_cookies_session_files(username)
+            await self.async_delete_pyicloud_session_file(username)
 
             user_input = {}
             user_input[CONF_USERNAME] = username
@@ -338,7 +351,7 @@ async def async_pyicloud_reset_session(self, username, password):
             PyiCloud = self.PyiCloud
 
         if PyiCloud:
-            post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {PyiCloud.account_owner}, "
+            post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {PyiCloud.username_id}, "
                         f"Waiting for the 6-digit Verification Code to be entered")
             return
 
@@ -353,8 +366,8 @@ async def async_pyicloud_reset_session(self, username, password):
     if instr(login_err, '-200') is False:
         PyiCloudSession = Gb.PyiCloudSession_by_username.get(username)
         if PyiCloudSession and PyiCloudSession.response_code == 503:
-            list_add(Gb.username_pyicloud_503_connection_error, username)
-            self.errors['base'] = 'icloud_acct_login_error_503'
+            list_add(Gb.username_pyicloud_503_internet_error, username)
+            self.errors['base'] = 'apple_acct_login_error_503'
 
         if PyiCloudSession.response_code == 503:
             post_event( f"{EVLOG_ERROR}Configure Apple Acct > {username}, "
@@ -370,11 +383,10 @@ async def async_pyicloud_reset_session(self, username, password):
 
 
 #--------------------------------------------------------------------
-async def async_delete_pyicloud_cookies_session_files(username=None):
+async def async_delete_pyicloud_session_file(username=None):
     '''
     Delete the cookies and session files as part of the reset_session and request_verification_code
     This is called from config_flow/setp_reauth and pyicloud_reset_session
-
     '''
 
     if username is None:
@@ -421,60 +433,3 @@ async def async_delete_all_pyicloud_cookies_session_files():
 
     except Exception as err:
         log_exception(err)
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            TRUSTED DEVICES
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_step_trusted_device(self, user_input=None, errors=None):
-    """We need a trusted device."""
-    return {}
-
-    if errors is None:
-        errors = {}
-
-    trusted_devices_key_text = await self._build_trusted_devices_list()
-    trusted_devices = await(Gb.hass.async_add_executor_job(
-                                    self.PyiCloud.trusted_devices)
-    )
-    trusted_devices_for_form = {}
-    for i, device in enumerate(trusted_devices):
-        trusted_devices_for_form[i] = device.get(
-            "deviceName", f"SMS to {device.get('phoneNumber')}"
-        )
-
-    # if user_input is None:
-    #     return await self._show_trusted_device_form(
-    #         trusted_devices_for_form, user_input, errors
-    #     )
-
-    # self._trusted_device = trusted_devices[int(user_input[CONF_TRUSTED_DEVICE])]
-
-    # if not await self.hass.async_add_executor_job(
-    #     self.api.send_verification_code, self._trusted_device
-    # ):
-    #     _LOGGER.error("Failed to send verification code")
-    #     self._trusted_device = None
-    #     errors[CONF_TRUSTED_DEVICE] = "send_verification_code"
-
-    #     return await self._show_trusted_device_form(
-    #         trusted_devices_for_form, user_input, errors
-    #     )
-
-    # return await self.async_step_verification_code()
-
-# async def _show_trusted_device_form(
-#     self, trusted_devices, user_input=None, errors=None
-# ):
-#     """Show the trusted_device form to the user."""
-
-#     return self.async_show_form(
-#         step_id=CONF_TRUSTED_DEVICE,
-#         data_schema=vol.Schema(
-#             {
-#                 vol.Required(CONF_TRUSTED_DEVICE): vol.All(
-#                     vol.Coerce(int), vol.In(trusted_devices)
-#                 )
-#             }
-#         ),
-#         errors=errors or {},
-#     )

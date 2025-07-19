@@ -32,7 +32,7 @@ HACS_FNAME_ICLOUD3_DEV = 'update.icloud3_v3_development_version_update'
 #   .STORAGE/ICLOUD3.RESTORE_STATE FILE ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def check_hacs_icloud3_update_available(event_time):
+async def check_hacs_icloud3_update_available():
 
     if Gb.version_hacs == '0.0.0':
         return

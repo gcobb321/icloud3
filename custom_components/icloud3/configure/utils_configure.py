@@ -5,13 +5,18 @@ from ..const             import (DEVICE_TYPE_FNAME, CONF_FAMSHR_DEVICENAME, CONF
                                 CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
                                 CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                 )
+
 from ..utils.utils     import (instr, isnumber, is_empty, isnot_empty,
                                 encode_password, decode_password, )
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
 
-from .form_lists_def     import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
+from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
+
+VALID_ERROR_MSG = [ 'conf_updated',
+                    'internet_error',
+                    'internet_error_no_change']
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -19,7 +24,8 @@ from .form_lists_def     import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, A
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def any_errors(self):
-    return isnot_empty(self.errors) and self.errors.get('base') != 'conf_updated'
+    return (isnot_empty(self.errors)
+                and self.errors.get('base') not in VALID_ERROR_MSG)
 
 #--------------------------------------------------------------------
 def menu_text_to_item(self, user_input, selection_list):

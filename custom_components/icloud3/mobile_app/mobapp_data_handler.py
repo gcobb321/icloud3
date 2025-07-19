@@ -15,7 +15,7 @@ from ..const            import (DEVICE_TRACKER, NOTIFY,
 from ..utils.utils      import (instr, is_statzone, is_zone, zone_dname,
                                     list_add, list_to_str, )
 from ..utils.messaging  import (post_event, post_monitor_msg, more_info,
-                                    log_debug_msg, log_exception, log_error_msg, log_rawdata,
+                                    log_debug_msg, log_exception, log_error_msg, log_data,
                                     _evlog, _log, )
 from ..utils.time_util  import (secs_to_time, secs_since, mins_since, time_now, time_now_secs,
                                     format_time_age, format_age,  )
@@ -110,8 +110,8 @@ def check_mobapp_state_trigger_change(Device):
         if mobapp_data_state == NOT_SET:
             change_msg += 'NotSet, '
 
-        if Gb.log_rawdata_flag and change_msg:
-            log_rawdata(f"MobApp Data - Changed - <{Device.devicename}> {change_msg}", device_trkr_attrs, log_rawdata_flag=True)
+        if Gb.log_data_flag and change_msg:
+            log_data(f"MobApp Data - Changed - <{Device.devicename}> {change_msg}", device_trkr_attrs, log_data_flag=True)
 
         mobapp_data_change_flag = (Device.mobapp_data_trigger != mobapp_data_trigger
                                 or Device.mobapp_data_secs != mobapp_data_secs
@@ -457,7 +457,7 @@ def get_mobapp_device_trkr_entity_attrs(Device):
             Device.write_ha_sensor_state(
                         NEXT_UPDATE, Device.FromZone_NextToUpdate.sensors[NEXT_UPDATE])
 
-        # log_rawdata(f"MobApp Data - {entity_id}", device_trkr_attrs)
+        # log_data(f"MobApp Data - {entity_id}", device_trkr_attrs)
 
         return device_trkr_attrs
 
@@ -571,7 +571,7 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     if Device.mobapp_data_secs >= mobapp_data_secs or gps_accuracy > Gb.gps_accuracy_threshold:
         return
 
-    log_rawdata(f"MobApp Attrs - Updated - <{Device.devicename}>", device_trkr_attrs)
+    log_data(f"MobApp Attrs - Updated - <{Device.devicename}>", device_trkr_attrs)
 
     Device.mobapp_data_state             = device_trkr_attrs.get(DEVICE_TRACKER, NOT_SET)
     Device.mobapp_data_state_secs        = device_trkr_attrs.get(f"state_{TIMESTAMP_SECS}", 0)
@@ -663,7 +663,8 @@ def build_mobapp_integration_device_tables():
                 if device_entry.disabled_by is None:
                     list_add(Gb.mobile_app_device_fnames, device_entry.name_by_user)
                     list_add(Gb.mobile_app_device_fnames, device_entry.name)
-                    Gb.mobapp_fnames_by_mobapp_id[device_entry.id] = device_entry.name_by_user or device_entry.name
+                    Gb.mobapp_fnames_by_mobapp_id[device_entry.id] = \
+                            device_entry.name_by_user or device_entry.name
                     Gb.mobapp_ids_by_mobapp_fname[device_entry.name] = device_entry.id
                     Gb.mobapp_ids_by_mobapp_fname[device_entry.name_by_user] = device_entry.id
                 else:
@@ -675,10 +676,10 @@ def build_mobapp_integration_device_tables():
                 post_event( f"Checking Mobile App Integration > Loaded, "
                             f"Devices-{list_to_str(Gb.mobile_app_device_fnames)}")
 
-        Gb.startup_lists['Gb.mobile_app_device_fnames']  = Gb.mobile_app_device_fnames
+        Gb.startup_lists['Gb.mobile_app_device_fnames']   = Gb.mobile_app_device_fnames
         Gb.startup_lists['Gb.mobapp_fnames_by_mobapp_id'] = Gb.mobapp_fnames_by_mobapp_id
         Gb.startup_lists['Gb.mobapp_ids_by_mobapp_fname'] = Gb.mobapp_ids_by_mobapp_fname
-        Gb.startup_lists['Gb.mobapp_fnames_disabled']    = Gb.mobapp_fnames_disabled
+        Gb.startup_lists['Gb.mobapp_fnames_disabled']     = Gb.mobapp_fnames_disabled
 
         return True
 

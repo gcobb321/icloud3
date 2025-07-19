@@ -23,9 +23,9 @@ from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg,
 from ..utils.time_util  import (secs_to_time, time_str_to_secs, datetime_now, secs_since,
                                 time_now_secs, time_now, )
 
+from ..mobile_app        import mobapp_interface
 from ..startup           import config_file
 from ..startup           import start_ic3
-from ..mobile_app        import mobapp_interface
 from ..tracking          import determine_interval as det_interval
 
 #--------------------------------------------------------------------
@@ -49,7 +49,6 @@ CMD_RESET_PYICLOUD_SESSION = 'reset_session'
 CMD_LOG_LEVEL              = 'log_level'
 CMD_REFRESH_EVENT_LOG      = 'refresh_event_log'
 CMD_RESTART                = 'restart'
-CMD_CONFIG_FLOW            = 'config_flow'
 CMD_FIND_DEVICE_ALERT      = 'find_alert'
 CMD_DISPLAY_MESSAGE_ALERT  = 'message_alert'
 CMD_LOCATE                 = 'locate'
@@ -65,7 +64,6 @@ GLOBAL_ACTIONS =  [CMD_EXPORT_EVENT_LOG,
                     CMD_WAZE,
                     CMD_REFRESH_EVENT_LOG,
                     CMD_RESTART,
-                    CMD_CONFIG_FLOW,
                     CMD_LOG_LEVEL,
                     CMD_WAZEHIST_MAINTENANCE,
                     CMD_WAZEHIST_TRACK,
@@ -132,9 +130,9 @@ def process_update_service_request(call):
 def process_restart_icloud3_service_request(call):
     """ icloud3.restart service call request  """
 
-    Gb.restart_icloud3_request_flag   = True
-    Gb.internet_connection_error      = False
-    Gb.internet_connection_error_secs = 0
+    Gb.InternetError.reset_internet_error_fields()
+    Gb.InternetErro.internet_error_test = False
+    Gb.InternetError.internet_error_test_after_startup = False
 
 #--------------------------------------------------------------------
 def process_find_iphone_alert_service_request(call):
@@ -168,9 +166,9 @@ def process_lost_device_alert_service_request(call):
             result_msg = (  f"Required field missing, device_name-{devicename}, "
                             f"number-{number}, message-{message}")
 
-        elif (Device.PyiCloud_RawData_icloud
-                and Device.PyiCloud_RawData_icloud.device_data
-                and Device.PyiCloud_RawData_icloud.device_data.get(ICLOUD_LOST_MODE_CAPABLE, False)):
+        elif (Device.AADevData_icloud
+                and Device.AADevData_icloud.device_data
+                and Device.AADevData_icloud.device_data.get(ICLOUD_LOST_MODE_CAPABLE, False)):
 
             lost_device_alert_service_handler(devicename, number, message)
 
@@ -345,12 +343,12 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
             if devicename is None:
                 Gb.all_tracking_paused_flag = True
                 Gb.all_tracking_paused_secs = time_now_secs()
-                # Gb.EvLog.display_user_message('Tracking is Paused', alert=True)
             for Device in Devices:
                 Device.pause_tracking()
 
         elif action == CMD_RESUME:
-            start_ic3.initialize_internet_connection_fields()
+            Gb.InternetError.reset_internet_error_fields()
+
             Gb.all_tracking_paused_flag = False
             Gb.all_tracking_paused_secs = 0
             Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
@@ -398,24 +396,24 @@ def _handle_global_action(global_action, action_option):
 
     if global_action == CMD_RESTART:
         Gb.log_debug_flag_restart         = Gb.log_debug_flag
-        Gb.log_rawdata_flag_restart       = Gb.log_rawdata_flag
+        Gb.log_data_flag_restart       = Gb.log_data_flag
         Gb.restart_icloud3_request_flag   = True
-        Gb.internet_connection_error      = False
-        Gb.internet_connection_error_secs = 0
+        Gb.InternetError.reset_internet_error_fields()
         Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_evlog_greenbar_msg=True)
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
         return
 
     elif global_action == CMD_EXPORT_EVENT_LOG:
-        Gb.EvLog.export_event_log()
+        if Gb.InternetError.internet_error_test_after_startup:
+            Gb.InternetError.internet_error_test = True
+            # Gb.InternetError.internet_error_test = False      #False to test www.icloud.com
+            Gb.last_PyiCloud_request_secs = time_now_secs() + 70
+        else:
+            Gb.EvLog.export_event_log()
         return
 
     elif global_action == CMD_REFRESH_EVENT_LOG:
-        return
-
-    elif global_action == CMD_CONFIG_FLOW:
-        _handle_action_config_flow_settings()
         return
 
     elif global_action == CMD_DISPLAY_STARTUP_EVENTS:
@@ -465,32 +463,26 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
     # Show/Hide Tracking Monitors
     if instr(action_option, 'monitor'):
         Gb.evlog_trk_monitors_flag = not Gb.evlog_trk_monitors_flag
-
-        # Test trigger for Internet  connection error
-        # Gb.internet_connection_error = not Gb.internet_connection_error
-        # Gb.internet_connection_test  = not Gb.internet_connection_test
-        # Gb.evlog_trk_monitors_flag   = False
-        # _evlog(f"{RED_ALERT}TEST INTERNET CONNECTION ERROR-{Gb.internet_connection_error}")
         return
 
     new_log_debug_flag   = Gb.log_debug_flag
-    new_log_rawdata_flag = Gb.log_rawdata_flag
+    new_log_data_flag = Gb.log_data_flag
 
     # Log Level Debug
     if instr(action_option, 'debug'):
         new_log_debug_flag   = (not Gb.log_debug_flag)
-        new_log_rawdata_flag = False
+        new_log_data_flag = False
 
     # Log Level Rawdata
     if instr(action_option, 'rawdata'):
-        new_log_rawdata_flag = (not Gb.log_rawdata_flag)
-        new_log_debug_flag   = new_log_rawdata_flag
+        new_log_data_flag = (not Gb.log_data_flag)
+        new_log_debug_flag   = new_log_data_flag
 
-    if new_log_rawdata_flag is False:
-        Gb.log_rawdata_flag_unfiltered = False
+    if new_log_data_flag is False:
+        Gb.log_data_flag_unfiltered = False
 
     # Log Level Rawdata Auto Reset at midnight
-    new_log_level = 'rawdata-auto-reset' if new_log_rawdata_flag \
+    new_log_level = 'rawdata-auto-reset' if new_log_data_flag \
         else 'debug-auto-reset' if new_log_debug_flag \
         else 'info'
 
@@ -502,18 +494,6 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
 
 def _on_off_text(condition):
     return 'On' if condition else 'Off'
-
-#--------------------------------------------------------------------
-def _handle_action_config_flow_settings():
-    '''
-    Handle displaying and updating the parameters using the config_flow screens
-    '''
-    try:
-        if Gb.SettingsFlowManager is not None:
-            Gb.hass.loop.create_task(Gb.SettingsFlowManager.async_show_menu_handler())
-
-    except Exception as err:
-        log_exception(err)
 
 #--------------------------------------------------------------------
 def _handle_action_device_location_mobapp(Device):
@@ -563,7 +543,7 @@ def _handle_action_device_locate(Device, action_option):
         Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
         Device.resume_tracking()
 
-    start_ic3.initialize_internet_connection_fields()
+    Gb.InternetError.reset_internet_error_fields()
     Gb.icloud_force_update_flag = True
     Device.icloud_force_update_flag = True
     Device.reset_tracking_fields(interval_secs)
@@ -604,10 +584,8 @@ def find_iphone_alert_service_handler(devicename):
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
-        if device_id and Device.PyiCloud and Device.PyiCloud.DeviceSvc:
-            Device.PyiCloud.DeviceSvc.play_sound(device_id, subject="Find My iPhone Alert")
-        # if device_id and Gb.PyiCloud and Gb.PyiCloud.DeviceSvc:
-        #     Gb.PyiCloud.DeviceSvc.play_sound(device_id, subject="Find My iPhone Alert")
+        if device_id and Device.PyiCloud and Device.PyiCloud.AADevices:
+            Device.PyiCloud.AADevices.play_sound(device_id, subject="Find My iPhone Alert")
 
             post_event(devicename, "iCloud Find My iPhone Alert sent")
             return
@@ -646,10 +624,8 @@ def lost_device_alert_service_handler(devicename, number, message=None):
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
-        if device_id and Device.PyiCloud and Device.PyiCloud.DeviceSvc:
-            Device.PyiCloud.DeviceSvc.lost_device(device_id, number=number, message=message)
-        # if device_id and Gb.PyiCloud and Gb.PyiCloud.DeviceSvc:
-        #     Gb.PyiCloud.DeviceSvc.lost_device(device_id, number=number, message=message)
+        if device_id and Device.PyiCloud and Device.PyiCloud.AADevices:
+            Device.PyiCloud.AADevices.lost_device(device_id, number=number, message=message)
 
             post_event(devicename, "iCloud Lost Device Alert sent")
             return
@@ -665,8 +641,8 @@ def display_message_alert_service_handler(devicename, message, sounds=False):
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
-        if device_id and Device.PyiCloud and Device.PyiCloud.DeviceSvc:
-            Device.PyiCloud.DeviceSvc.display_message(device_id, message=message, sounds=sounds)
+        if device_id and Device.PyiCloud and Device.PyiCloud.AADevices:
+            Device.PyiCloud.AADevices.display_message(device_id, message=message, sounds=sounds)
 
             post_event(devicename, "iCloud Display Message Alert sent")
             return

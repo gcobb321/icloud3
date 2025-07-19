@@ -62,6 +62,7 @@ def load_icloud3_configuration_file():
 
     # Make the .storage/icloud3 directory if it does not exist
     file_io.make_directory(Gb.ha_storage_icloud3)
+    file_io.make_directory(Gb.icloud_cookie_directory)
 
     if file_io.file_exists(Gb.icloud3_config_filename) is False:
         _LOGGER.info(f"Creating Configuration File-{Gb.icloud3_config_filename}")
@@ -244,6 +245,7 @@ def _add_parms_and_check_config_file():
         #Add new parameters, check  parameter settings
         update_config_file_flag = False
         update_config_file_flag = _config_file_check_new_ic3_version() or update_config_file_flag
+        update_config_file_flag = _delete_obsolete_parameters()        or update_config_file_flag
         update_config_file_flag = _update_profile()                    or update_config_file_flag
         update_config_file_flag = _update_tracking_parameters()        or update_config_file_flag
         update_config_file_flag = _update_apple_acct_parameters()      or update_config_file_flag
@@ -612,6 +614,15 @@ def _hhmmss_to_minutes(hhmmss):
 #   Add parameters to the configuration file
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _delete_obsolete_parameters():
+    update_config_file_flag = False
+    if 'external_ip_address' in Gb.conf_profile:
+        Gb.conf_profile.pop('external_ip_address')
+        update_config_file_flag = update_config_file_flag or True
+
+    return update_config_file_flag
+
+#--------------------------------------------------------------------
 def _update_profile():
     '''
     Update Gb.conf_profile with new fields

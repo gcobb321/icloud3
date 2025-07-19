@@ -23,8 +23,8 @@ from ..utils.utils      import (instr, isnumber, is_empty, isnot_empty, list_to_
 from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
 
-from .                  import icloud
-from .form_lists_def    import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, )
+from .                  import apple_acct_support as aas
+from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, )
 from ..startup          import config_file
 from ..utils            import file_io
 
@@ -66,7 +66,7 @@ def build_apple_accounts_list(self):
         else:
             valid_upw = Gb.username_valid_by_username.get(username)
             PyiCloud = Gb.PyiCloud_by_username.get(username)
-            if PyiCloud is None or PyiCloud.is_DeviceSvc_setup_complete is False:
+            if PyiCloud is None or PyiCloud.is_AADevices_setup_complete is False:
                 aa_text = f"{username}{RARROW}{RED_ALERT}"
                 if valid_upw is False:
                     aa_text += 'NOT LOGGED IN, INVALID USERNAME/PASSWORD'
@@ -79,7 +79,10 @@ def build_apple_accounts_list(self):
                 self.apple_acct_items_by_username[username] = aa_text
                 continue
 
-        aa_text = f"{PyiCloud.account_owner_username.split('@')[0]}{RARROW}"
+        # PyiCloud.username_id is the filtered text (geekstergary=gee**2**ry)
+        # Convert it back to the real username_id text for displaying on the screen
+        username_id = Gb.upw_unfilter_items.get(PyiCloud.username_id, PyiCloud.username_id)
+        aa_text = f"{username_id}{RARROW}"
         if PyiCloud.requires_2fa:
             self.is_verification_code_needed = True
             aa_text += f"{RED_ALERT} AUTHENTICATION NEEDED, "
@@ -289,9 +292,9 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
         if PyiCloud is None:
             continue
 
-        if PyiCloud.DeviceSvc is None or PyiCloud.is_DeviceSvc_setup_complete is False:
+        if PyiCloud.AADevices is None or PyiCloud.is_AADevices_setup_complete is False:
             _AppleDev = await Gb.hass.async_add_executor_job(
-                                    icloud.create_DeviceSvc_config_flow,
+                                    aas.create_AADevices_config_flow,
                                     PyiCloud)
 
         if PyiCloud:
@@ -381,10 +384,10 @@ def get_icloud_devices_list_avail_used_this(aa_idx, PyiCloud, apple_acct_owner,
     try:
         for icloud_dname, device_model in PyiCloud.device_model_name_by_icloud_dname.items():
             device_id = PyiCloud.device_id_by_icloud_dname[icloud_dname]
-            _RawData  = PyiCloud.RawData_by_device_id[device_id]
+            _AADevData  = PyiCloud.AADevData_by_device_id[device_id]
             conf_apple_acct, conf_aa_idx = config_file.conf_apple_acct(PyiCloud.username)
             locate_all_sym = '' if conf_apple_acct[CONF_LOCATE_ALL] else 'ⓧ '
-            family_device = ', FamilyDevice' if _RawData.family_share_device else ''
+            family_device = ', FamilyDevice' if _AADevData.family_share_device else ''
             if family_device  and locate_all_sym:
                 family_device = 'FamilyDevice, APPLE ACCT NOT LOCATING ALL DEVICES'
 
@@ -645,7 +648,7 @@ def build_away_time_zone_devices_list(self):
 def build_log_level_devices_list(self):
 
     self.log_level_devices_key_text = {
-            'all': 'All Devices - Add RawData for all devices to the `icloud.log` log file'}
+            'all': 'All Devices - Log RawData for all devices'}
     self.log_level_devices_key_text.update(devices_selection_list())
 
 #-------------------------------------------------------------------------------------------
@@ -655,35 +658,3 @@ def devices_selection_list():
                     f"({DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])})")
                 for conf_device in Gb.conf_devices
                 if conf_device[CONF_TRACKING_MODE] != INACTIVE_DEVICE}
-
-
-
-
-#----------------------------------------------------------------------
-async def build_trusted_devices_list(self):
-    return
-#     '''
-#     Build a list of the trusted devices for the Apple account
-#     '''
-#     try:
-#         return {}
-#         _log(f"BUILD BEF TRUSTED DEVICES")
-#         trusted_devices = await self.hass.async_add_executor_job(
-#                         getattr, self.PyiCloud, "trusted_devices")
-#         # trusted_devices = trusted_devices_json.json()
-#         _log(f"BUILD AFT TRUSTED DEVICES")
-#         _log(f"{trusted_devices=}")
-
-#         trusted_devices_key_text = {}
-#         for i, device in enumerate(trusted_devices):
-#             trusted_devices_key_text[i] = self.PyiCloud.device.get(
-#                 "deviceName", f"SMS to {device.get('phoneNumber')}")
-
-#         _log(f"{trusted_devices_key_text=}")
-
-#         return trusted_devices_key_text
-
-#     except Exception as err:
-#         log_exception(err)
-
-#     return {}

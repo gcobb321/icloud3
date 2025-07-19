@@ -15,8 +15,8 @@ from ..utils.utils     import (instr, isnumber, is_empty, isnot_empty, list_to_s
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, _log,  _evlog, )
 from ..utils              import file_io
 
-from .form_lists_def     import *
-from .                   import utils
+from .const_form_lists   import *
+from .                   import utils_configure as utils
 from .                   import selection_lists as lists
 
 #-------------------------------------------------------------------------------------------
