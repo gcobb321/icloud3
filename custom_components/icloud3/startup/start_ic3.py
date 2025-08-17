@@ -66,7 +66,7 @@ from ..utils.utils          import (instr, is_empty, isnot_empty, circle_letter,
                                     username_id, )
 from ..utils.messaging      import (broadcast_info_msg,
                                     post_event, post_evlog_greenbar_msg,
-                                    post_error_msg, post_monitor_msg, post_alert,
+                                    post_error_msg, post_monitor_msg, update_alert_sensor,
                                     post_internal_error,
                                     log_info_msg, log_debug_msg, log_error_msg, log_warning_msg,
                                     log_data, log_exception, format_filename,
@@ -81,8 +81,8 @@ from ..device               import iCloud3_Device
 from ..mobile_app           import mobapp_interface
 from ..mobile_app           import mobapp_data_handler
 from ..startup              import config_file
+from ..support              import service_handler
 from ..tracking             import zone_handler
-from ..tracking             import service_handler
 from ..tracking.waze        import Waze
 from ..tracking.waze_history import WazeRouteHistory as WazeHist
 from ..zone                 import iCloud3_Zone
@@ -496,6 +496,7 @@ def ha_startup_completed(dummy_parameter):
 
 def ha_stopping(dummy_parameter):
     post_event("HA Shutting Down")
+    Gb.EvLog.display_user_message("HA Shutting Down, Waiting for HA Startup to Finish")
 
 def ha_restart(dummp_parameter):
     Gb.hass.services.call("homeassistant", "restart")
@@ -1023,14 +1024,14 @@ def create_Zones_object():
         zone_msg +=(f"{crlf_dot_x}{Zone.zone}, "
                     f"{Zone.dname} (r{Zone.radius_m}m{r_ft})")
 
-    log_msg =  f"Set up Zones > zone, Display ({Gb.display_zone_format})"
+    log_msg =  f"Setting up Zones > zone, Display ({Gb.display_zone_format})"
     post_event(f"{log_msg}{zone_msg}")
 
     if Gb.is_track_from_base_zone_used and Gb.track_from_base_zone != HOME:
         post_event( f"Primary 'Home' Zone > {zone_dname(Gb.track_from_base_zone)} "
                     f"{circle_letter(Gb.track_from_base_zone)}")
 
-    evlog_msg = "Special Zone Setup >"
+    evlog_msg = "Setting up Special Zone Parameters >"
     if Gb.is_passthru_zone_used:
         evlog_msg += f"{CRLF_DOT}Enter Zone Delay > DelayTime-{format_timer(Gb.passthru_zone_interval_secs)}"
     else:
@@ -1156,7 +1157,7 @@ def create_Devices_object():
                 if _idx < 0:
                     error_msg = f"Unknown Apple Acct ({apple_acct})"
                     post_event( f"{EVLOG_ALERT}{device_fname} > {error_msg}")
-                    post_alert(device_fname, error_msg)
+                    update_alert_sensor(device_fname, error_msg)
 
                 else:
                     password = conf_apple_acct[CONF_PASSWORD]
@@ -1172,7 +1173,7 @@ def create_Devices_object():
                 continue
 
             Gb.conf_icloud_dnames.append(icloud_dname)
-            broadcast_info_msg(f"Set up Device > {devicename}")
+            broadcast_info_msg(f"Setting up Device > {devicename}")
 
             # Do not set up inactive device
             if conf_device[CONF_TRACKING_MODE] ==  INACTIVE_DEVICE:
@@ -1208,7 +1209,7 @@ def create_Devices_object():
                 apple_acct_msg = '✪ NONE'
 
             elif Gb.internet_error:
-                apple_acct_msg =f"{Device.conf_apple_acct_username_id}"
+                apple_acct_msg =f"{Device.conf_apple_acct_username_id}, INTERNERT UNAVAILABLE"
 
             elif Device.conf_apple_acct_username not in Gb.username_valid_by_username:
                 apple_acct_msg =f"{RED_ALERT}{Device.conf_apple_acct_username}, UNKNOWN APPLE ACCT"
@@ -1604,7 +1605,7 @@ def _set_any_Device_alerts():
             apple_acct_not_found_msg += (
                     f"{CRLF_DOT}Apple Acct-{Device.conf_apple_acct_username_id} > "
                     f"{Device.fname_devicename}")
-            post_alert(Device.fname, (
+            update_alert_sensor(Device.fname, (
                     f"{Device.conf_icloud_dname} "
                     f"Apple Acct Login Problem ({Device.conf_apple_acct_username_id})"))
 
@@ -1617,7 +1618,7 @@ def _set_any_Device_alerts():
                     f"{Device.conf_icloud_dname} "
                     f"Not in Apple Acct ({Device.PyiCloud.username_base})")
             device_not_found_msg += (f"{CRLF_DOT}{Device.fname_devicename} > {error_msg}")
-            post_alert(Device.fname, error_msg)
+            update_alert_sensor(Device.fname, error_msg)
 
             log_error_msg(f"iCloud3 Device Configuration Error > "
                         f"{Device.fname_devicename}, {error_msg}")
@@ -2089,7 +2090,7 @@ def setup_tracked_devices_for_mobapp():
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
 
             else:
-                post_alert(Device.fname, f"Unknown MobApp Device ({conf_mobapp_dname})")
+                update_alert_sensor(Device.fname, f"Unknown MobApp Device ({conf_mobapp_dname})")
                 Device.set_fname_alert(RED_ALERT)
                 mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_dname} > "
                                                 f"Assigned to {Device.fname_devicename}")
@@ -2099,7 +2100,7 @@ def setup_tracked_devices_for_mobapp():
                 Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
             else:
-                post_alert(Device.fname, f"Unknown ScanFor MobApp Device ({conf_mobapp_dname})")
+                update_alert_sensor(Device.fname, f"Unknown ScanFor MobApp Device ({conf_mobapp_dname})")
                 Device.set_fname_alert(RED_ALERT)
                 mobapp_error_search_msg += (f"{CRLF_X}{conf_mobapp_dname}_??? > "
                                             f"Assigned to {Device.fname_devicename}")
@@ -2130,7 +2131,7 @@ def setup_tracked_devices_for_mobapp():
 
         # device_tracker entity is disabled
         if mobapp_id in Gb.MobileApp_fnames_disabled:
-            post_alert(Device.fname, f"MobApp Device Disabled ({mobapp_dname})")
+            update_alert_sensor(Device.fname, f"MobApp Device Disabled ({mobapp_dname})")
             Device.set_fname_alert(RED_ALERT)
             Device.mobapp_device_unavailable_flag = True
             mobapp_error_disabled_msg += (  f"{CRLF_DOT}{mobapp_dname} > "
@@ -2210,7 +2211,7 @@ def setup_tracked_devices_for_mobapp():
         except Exception as err:
             log_exception(err)
             mobapp_fname = f"{RED_ALERT}{mobapp_dname} (UNKNOWN DEVICE)"
-            post_alert(mobapp_dname, "Unknown Mobile App Device")
+            update_alert_sensor(mobapp_dname, "Unknown Mobile App Device")
             mobapp_model = ''
 
         crlf_sym = CRLF_X
@@ -2467,7 +2468,7 @@ def setup_trackable_devices():
             if (icloud_dname not in _PyiCloud.device_id_by_icloud_dname
                     and Gb.internet_error is False):
                 Device.verified_ICLOUD = False
-                post_alert(Device.fname, (
+                update_alert_sensor(Device.fname, (
                         f"{icloud_dname} Not in Apple Acct ({apple_acct})"))
 
     if Gb.use_data_source_ICLOUD is False:
@@ -2543,7 +2544,7 @@ def display_all_devices_config_info(selected_devicenames=None):
 
         else:
             apple_acct_err_msg = f", {RED_ALERT}APPLE ACCT ERROR"
-            post_alert(Device.fname, f"Unknown Apple Acct ({apple_acct})")
+            update_alert_sensor(Device.fname, f"Unknown Apple Acct ({apple_acct})")
             log_error_msg(  f"iCloud3 Device Configuration Error > "
                             f"{Device.fname_devicename}, "
                             f"Unknown Apple Acct ({apple_acct})")

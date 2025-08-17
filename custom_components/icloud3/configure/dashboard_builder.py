@@ -579,7 +579,8 @@ async def _load_templates(self):
 
     for template_filename in template_filenames:
         filename      = f"{directory}/{template_filename}"
-        template_json = await file_io.read_json_file(filename)
+        template_json = await file_io.async_read_json_file(filename)
+
         template_name = template_filename.split('.')[0]
 
         if template_name == 'master-dashboard':
@@ -649,6 +650,9 @@ async def build_existing_dashboards_selection_list(self):
     await _load_dashboard_layout_files(self)
 
     for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items():
+        if instr(ll_dashboards_file_configs_str, _dbname) is False:
+            continue
+
         self.AllDashboards_by_dashboard[_dbname] = _Dashboard
         # self.ic3db_Dashboards_by_dbname[_dbname]    = _Dashboard
 
@@ -676,14 +680,14 @@ async def build_existing_dashboards_selection_list(self):
         # is because the file was not updated. If it is not in _the file, it was probably
         # deleted. But maybe not if the icloud3 configure was exited and then reentered
         # and dbnames_just_added is empty.
-        if (instr(ll_dashboards_file_configs_str, _dbname)
-                or _dbname in self.dbnames_just_added):
-            maybe_deleted_msg = ''
-        else:
-            maybe_deleted_msg = 'MAYBE DELETED(?), '
+        # if instr(ll_dashboards_file_configs_str, _dbname) is False:
+        #         #or _dbname in self.dbnames_just_added):
+        #     deleted_msg = 'DELETE PENDING, '
+        # else:
+        deleted_msg = ''
 
         dashboard_msg =(f"{_Dashboard.config['title']} > "
-                        f"{maybe_deleted_msg}"
+                        f"{deleted_msg}"
                         f"MainView-({main_view_devices_msg})")
         if self.main_view_template_style_by_dashboard[_dbname] == 'result-summary':
             dashboard_msg += ', Results Summary displayed'
@@ -809,7 +813,7 @@ async def _read_dashboard_layout_file(dbname):
     '''
     try:
         dashboard_file = f"{Gb.ha_storage_directory}/lovelace.{dbname.replace('-', '_')}"
-        dashboard_layout_dict = await file_io.read_json_file(dashboard_file)
+        dashboard_layout_dict = await file_io.async_read_json_file(dashboard_file)
 
         return dashboard_layout_dict
 
@@ -848,6 +852,7 @@ def _load_ic3db_Dashboards_by_dbname(self):
     Returns:
         dictionary of {_dbname: _Dashboard object}
     '''
+
 
     self.ic3db_Dashboards_by_dbname = {_dbname: _Dashboard
                     for _dbname, _Dashboard in Gb.hass.data[LOVELACE_DATA].dashboards.items()
@@ -964,7 +969,8 @@ async def _read_lovelace_dashboards_file():
     '''
     try:
         dashboards_file = f"{Gb.ha_storage_directory}/lovelace_dashboards"
-        dashboards_config = await file_io.read_json_file(dashboards_file)
+        dashboards_config = await file_io.async_read_json_file(dashboards_file)
+
         if is_empty(dashboards_config):
             return []
 

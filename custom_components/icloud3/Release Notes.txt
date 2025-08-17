@@ -3,17 +3,24 @@
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 **Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
 
+-----
+*Thanks to all of you who clicked the coffee cup icon on the Event Log and bought me a coffee.*
+Gary
+
+<a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
+<img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
+
+
 
 ### iCloud3 ➤ v3.2.3 (7/13/2025)
 ### 🎉 New and Updated Features
-1. **_icloud3_alerts_ sensor**:
-Errors and Alerts are displayed in the Event log as they are found and summarized in a green bar at the top of the Event Log. These may include device configuration errors, Apple account login errors, Apple account authentication is needed, Internet Connection Errors, etc. The _sensor.icloud3_alerts_ has been also report these errors. This sensor entity can be used to notify a device that an error or alert has occurred.
+1. **_icloud3_alerts_ sensor** - Errors and Alerts are displayed in the Event log as they are found and summarized in a green bar at the top of the Event Log. These may include device configuration errors, Apple account login errors, Apple account authentication is needed, Internet Connection Errors, etc. The _sensor.icloud3_alerts_ has been also report these errors. This sensor entity can be used to notify a device that an error or alert has occurred.
 
      Errors are prioritized based on the following - critical (Internet Connection Errors), Apple Account errors (account not found, login errors, authentication needed alert), devices (configuration errors), and other.
      - State Value - The highest priority error.
      - Attributes - The Apple account or Device that encountered the error.
      - Attribute 'message_text' - A text summary of all errors that can be sent to a device using the notify.devicename service.
-2. **Internet Connection Errors**:
+2. **Internet Connection Errors** - Redesigned the Internet Connection Error Handler to:
     - Improved the detection of Internet Connection Errors
     - Improved the method used to determine when the Interned was restored
     - Improved the progress bar notification on the Event Log to better show that the internet is being checked on a regular basis
@@ -32,6 +39,25 @@ Errors and Alerts are displayed in the Event log as they are found and summarize
 #### 🐛 Bug Fixes
 1. **Configure iCloud3** - Fixed a problem preventing the Apple devices list to be refreshed when the Verification Code was entered the first time on a new installation.
 2. **Tracking** - Fixed a problem displaying the number of devices in a stationary zone when a location update was being processed.
+
+
+### iCloud3 ➤ v3.2.4 (8/10/2025)
+### 🐛 Bug Fixes
+1. Dashboard Builder - Fixed an error reading the base template and dashboard files that are used to construct new dashboards.
+2. iCloud3 Log File - Fixed a problem when the log-level was set to 'unfiltered'.
+
+### 🎉 Improvements
+1. Internet Connection Error - Added the following:
+    - The Event Log error description message and alerts are addedafter the internet has been down for 1-minute to prevent very short dropouts from creating a lot of unnecessary messages.
+    - Improved the error detection and testing done when verifying that Apple (icloud.com) can be connected to after the Internet is back online.
+    - Added a 1-minute timeout to catch Apple location requests that have not been responded to. This is usually caused by IPv6 being enabled in HA. Appropriate tests and error messages explain that it is probably an IPv6 issue with instructions on how to disable it.
+    - Improved the status message display messages.
+2. iCloud3 Startup - iCloud3 starts after HA has finished loading to prevent HA from locking up due to any iCloud3 errors. The status messages in the Event Log were improved to provide more information on the startup delay.
+3. Device Tracking - Devices not using the Mobile App (Watches) that are near other devices will be located 1-minute after the other devices have left a zone. This is not perfect and relies on Apple providing updated location data when it is relocated.
+4. Device Setup - Added Device Type categories to indicate if the iPad and Watch is WiFi only or Wifi+Cell.
+5. Tracking Results - The source of the GPS is displayed on the Event Log when a device's location is updated (GPS, WiFi, Cell, Unknown).
+
+
 
 
 

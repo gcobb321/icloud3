@@ -158,6 +158,7 @@ REAUTH_CONFIG_FLOW_ACTIONS = [
 REAUTH_ACTIONS = [
         ACTION_LIST_OPTIONS['send_verification_code'],
         ACTION_LIST_OPTIONS['request_verification_code'],
+        ACTION_LIST_OPTIONS['log_into_apple_acct'],
         ACTION_LIST_OPTIONS['goto_previous']]
 DEVICE_LIST_ACTIONS = [
         ACTION_LIST_OPTIONS['update_device'],

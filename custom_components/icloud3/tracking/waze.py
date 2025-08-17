@@ -66,7 +66,7 @@ class Waze(object):
         if self.distance_method_waze_flag:
             self.waze_status = WAZE_USED
             config_server_fname = WAZE_SERVERS_FNAME.get(self.waze_region.lower(), self.waze_region.lower())
-            event_msg = (f"Set Up Waze > Server-{config_server_fname} ({self.waze_region.upper()}), "
+            event_msg = (f"Setting Up Waze > Server-{config_server_fname} ({self.waze_region.upper()}), "
                         f"CountryCode-{Gb.country_code.upper()}, "
                         f"MinDist-{self.waze_min_distance}km, "
                         f"MaxDist-{self.waze_max_distance}km, "

@@ -30,6 +30,9 @@ from .pyicloud_session      import PyiCloudSession
 from .pyicloud_ic3          import PyiCloudManager
 
 #--------------------------------------------------------------------
+from urllib.parse import urlparse
+import socket
+import errno
 from uuid               import uuid1
 import base64
 import logging
@@ -60,8 +63,9 @@ class ValidateAppleAcctUPW():
         self.response_code      = 0
         self.last_response_code = 0
 
-        self.PyiCloudSession = None
-        self.PyiCloud = None
+        self.PyiCloudSession    = None
+        self.PyiCloud           = None
+        self.config_flow_login  = False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -104,7 +108,7 @@ class ValidateAppleAcctUPW():
             crlf_symb = CRLF_CHK if valid_upw else CRLF_RED_ALERT
             results_msg += f"{crlf_symb}{_username_id}, Valid-{valid_upw}, Method-URL/httpx"
 
-        post_event(f"{alert_symb}Verify Apple Account Username/Password{results_msg}")
+        post_event(f"{alert_symb}Verifing Apple Account Username/Password{results_msg}")
 
         Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
 
@@ -153,9 +157,13 @@ class ValidateAppleAcctUPW():
             return
 
         valid_upw = await Gb.hass.async_add_executor_job(
-                                        Gb.ValidateAppleAcctUPW.validate_username_password,
+                                        self.validate_username_password,
                                         username,
                                         password)
+        # valid_upw = await Gb.hass.async_add_executor_job(
+        #                                 Gb.ValidateAppleAcctUPW.validate_username_password,
+        #                                 username,
+        #                                 password)
 
         return valid_upw
 
@@ -200,7 +208,7 @@ class ValidateAppleAcctUPW():
             log_debug_msg(  f"{_username_id}, Validate Username/Password, "
                             f" Valid-{valid_upw}, Method-{self.method}")
 
-        post_event(f"{alert_symb}Verify Apple Account Username/Password{results_msg}")
+        post_event(f"{alert_symb}Verifing Apple Account Username/Password{results_msg}")
 
         Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
 
@@ -291,6 +299,7 @@ class ValidateAppleAcctUPW():
         return f"{password[:4]}{DOTS}{password[4:]}"
 
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   SUPPORT FUNCTIONS
@@ -299,7 +308,7 @@ class ValidateAppleAcctUPW():
 
     def b64encode_username_passsword(self, username, password):
         '''
-       Return the b64 encoded the password used for url password validation
+        Return the b64 encoded the password used for url password validation
         '''
 
         username_password = f"{username}:{password}"

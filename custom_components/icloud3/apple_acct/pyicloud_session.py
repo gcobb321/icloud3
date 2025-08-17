@@ -20,7 +20,7 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (EVLOG_ALERT, )
+from ..const                import (EVLOG_ALERT, CRLF_DOT, )
 from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del, )
 from ..utils.file_io        import (save_json_file, )
 from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
@@ -34,8 +34,15 @@ from requests.exceptions    import ConnectionError
 from os                     import path
 import inspect
 import json
-import random
+import datetime as dt
+
+from homeassistant.helpers.event import async_track_time_interval
+
 import time
+
+from urllib.parse import urlparse
+import socket
+import errno
 
 HEADER_DATA = {
     "X-Apple-ID-Account-Country": "account_country",
@@ -135,7 +142,10 @@ class PyiCloudSession(Session):
             self.username = 'validate_upw'
 
         self.response_code = 0
-        self.response_ok = True
+        self.response_ok   = True
+        self.host_ip_addr_by_hostname = {}
+        self.cancel_request_timeout_fct = None
+        self.request_timeout_time = dt.timedelta(seconds=60)
 
         super().__init__()
 
@@ -153,71 +163,64 @@ class PyiCloudSession(Session):
         elif Gb.internet_error:
             return {}
 
+        # If data is a str, unconvert it from json format, it will be reconverted  to json later
+        if 'data' in kwargs and type(kwargs['data']) is str:
+            kwargs['data'] = json.loads(kwargs['data'])
+        retry_cnt = kwargs.get('retry_cnt', 0)
+
+        log_data_flag = (url.endswith('refreshClient') is False)
+        if Gb.log_data_flag or log_data_flag or Gb.initial_icloud3_loading_flag:
+            _hdr = ( f"{self.PyiCloud.username_base}, {method}, Request, "
+                        f"{callee.function}/{callee.lineno} ▲")
+            _data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
+            _data.update(kwargs)
+            log_data(_hdr, _data, log_data_flag=log_data_flag)
+
+        kwargs.pop("retried", False)
+        kwargs.pop("retry_cnt", 0)
+
+        if 'data' in kwargs and type(kwargs['data']) is dict:
+            kwargs['data'] = json.dumps(kwargs['data'])
+
+        response = None
+
+
+        #++++++++++++++++ REQUEST ICLOUD DATA ++++++++++++++++
         try:
-            # If data is a str, unconvert it from json format, it will be reconverted  to json later
-            if 'data' in kwargs and type(kwargs['data']) is str:
-                kwargs['data'] = json.loads(kwargs['data'])
-            retry_cnt = kwargs.get('retry_cnt', 0)
-
-            log_data_flag = (url.endswith('refreshClient') is False)
-            if Gb.log_data_flag or log_data_flag or Gb.initial_icloud3_loading_flag:
-                try:
-                    _hdr = ( f"{self.PyiCloud.username_base}, {method}, Request, "
-                                f"{callee.function}/{callee.lineno} ▲")
-                    _data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
-                    _data.update(kwargs)
-                    log_data(_hdr, _data, log_data_flag=log_data_flag)
-
-                except Exception as err:
-                    log_exception(err)
-
-            kwargs.pop("retried", False)
-            kwargs.pop("retry_cnt", 0)
-
-            if 'data' in kwargs and type(kwargs['data']) is dict:
-                kwargs['data'] = json.dumps(kwargs['data'])
-
-        except Exception as err:
-            log_exception(err)
-
-        try:
-            response = None
-
-            #++++++++++++++++ REQUEST ICLOUD DATA ++++++++++++++++
-            Gb.last_PyiCloud_request_secs = time_now_secs()
-
             if (Gb.InternetError.internet_error_test
                     and Gb.InternetError.status_check_cnt < Gb.InternetError.internet_error_test_counter+3):
                 post_event(f"{EVLOG_ALERT}Internet Connection Error > Test Started, Error Generated")
                 raise requests.exceptions.ConnectionError
 
+            self.schedule_request_timeout()
+
+
             response = Session.request(self, method, url, **kwargs)
+
+            self.cancel_request_timeout_timer()
+
 
             try:
                 data = response.json()
-
             except Exception as err:
-                # log_exception(err)
                 data = {}
-
-            Gb.last_PyiCloud_request_secs = 0
-            #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
+        #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
 
         except (requests.exceptions.SSLError) as err:
-            log_exception(err)
+            self.cancel_request_timeout_timer()
+            Gb.InternetError.PyiCloud_error_msg  = err
+            Gb.InternetError.PyiCloud_error_code = self.response_code
+
+            self.response_code = 403.9
+            self.response_ok   = False
+            self.PyiCloud.response_code = 403.9
+            self.PyiCloud.response_ok   = False
+
             post_error_msg( f"iCloud3 Error > An SSL error occurred connecting to Apple Servers, "
                             f"You may not be authorized access > "
                             f"iCloudServerSuffix-`{Gb.icloud_server_suffix}`, "
                             f"Error-{err}")
 
-            Gb.InternetError.PyiCloud_error_msg  = err
-            Gb.InternetError.PyiCloud_error_code = self.response_code
-
-            self.response_code = -31
-            self.response_ok   = False
-            self.PyiCloud.response_code = -31
-            self.PyiCloud.response_ok   = False
-            Gb.last_PyiCloud_request_secs = 0
             return {}
 
         except (requests.exceptions.ChunkedEncodingError,
@@ -239,42 +242,30 @@ class PyiCloudSession(Session):
                 OSError,
                 ) as err:
 
-            log_exception(err)
+            self.cancel_request_timeout_timer()
+            self.response_code = self.PyiCloud.response_code = 104.9
+            self.response_ok   = self.PyiCloud.response_ok   = False
 
             # Err may be a long message with url parameters and python object info. If so, remove it
-            # Example - HTTPSConnectionPool(host='p123-fmipweb.icloud.com', port=443): Max retries exceeded
-            # with url: /fmipservice/client/web/refreshClient?clientBuildNumber=2021Project52&
-            # clientMasteringNumber=2021B29&ckjsBuildVersion=17DProjectDev77&
-            # clientId=5f2a1a22-ee4b-11ef-a8b2-2ccf674e40a8&dsid=186297810 (Caused by NewConnectionError
-            # ('<urllib3.connection.HTTPSConnection object at 0x7f6458f750>: Failed to establish a new
-            # connection: [Errno -30] Try again'
-            #
-            # Result - HTTPSConnectionPool(host='p123-fmipweb.icloud.com', port=443): Max retries exceeded
-            # with url: /fmipservice/client/web/refreshClient, Failed to establish a new
-            # connection: [Errno -30] Try again'
             err_msg = str(err)
             url_parm = err_msg.find('?')    # Beginning of URL parameters
             obj_end  = err_msg.find('>:')   # End of 'object at 0x...>:
             if url_parm > 0:
                 err_msg = f"{err_msg[0:url_parm]},{err_msg[obj_end+2:]}" if obj_end > 0 else err_msg[0:url_parm]
-            post_error_msg( f"iCloud3 Error > An error occurred connecting to the Internet, "
-                            f"apple.com may be Offline > "
-                            f"Error-{err_msg}")
+            # post_error_msg( f"iCloud3 Error > An error occurred connecting to the Internet, "
+            #                 f"apple.com may be Offline > "
+            #                 f"Error-{err_msg}")
 
             Gb.internet_error = True
-            Gb.InternetError.internet_error_msg  = err_msg
+            _evlog(f"{Gb.internet_error=}")
+            Gb.InternetError.internet_error_msg  = err
             Gb.InternetError.internet_error_code = self.response_code
-            Gb.last_PyiCloud_request_secs = 0
 
-            self.response_code = -30
-            self.response_ok   = False
-            self.PyiCloud.response_code = -30
-            self.PyiCloud.response_ok   = False
             return {}
 
         except Exception as err:
-            Gb.last_PyiCloud_request_secs = 0
             log_exception(err)
+            self.cancel_request_timeout_timer()
 
             self._raise_error(-3, f"Error setting up iCloud Server Connection ({err})")
             return {}
@@ -283,11 +274,8 @@ class PyiCloudSession(Session):
         json_mimetypes = ["application/json", "text/json"]
 
         self.PyiCloud.last_response_code = self.PyiCloud.response_code
-        self.PyiCloud.response_code      = response.status_code
-        self.PyiCloud.response_ok        = response.ok
-        self.response_code               = response.status_code
-        self.response_ok                 = response.ok
-        Gb.last_PyiCloud_request_secs    = 0
+        self.response_code = self.PyiCloud.response_code = response.status_code
+        self.response_ok   = self.PyiCloud.response_ok   = response.ok
 
         log_data_flag = (url.endswith('refreshClient') is False) or response.status_code != 200
         if Gb.log_data_flag or log_data_flag or Gb.initial_icloud3_loading_flag:
@@ -295,9 +283,11 @@ class PyiCloudSession(Session):
                         f"{callee.function}/{callee.lineno} ▼")
             _data = {'code': response.status_code, 'ok': response.ok, 'data': data}
 
+
             if retry_cnt >= 2 or Gb.log_data_flag_unfiltered:
-                log_data['headers'] = response.headers
+                _data['headers'] = response.headers
             log_data(_hdr, _data, log_data_flag=log_data_flag)
+
 
         # Validating the username/password, code=409 is valid, code=401 is invalid
         if (response.status_code in [401, 409]
@@ -377,6 +367,44 @@ class PyiCloudSession(Session):
 
         return data
 
+
+#------------------------------------------------------------------
+    def schedule_request_timeout(self):
+        '''
+        Schedule a 1-min Timeout to detect Internet Connection Errors. It is detected:
+        1. In the 5-sec tracking loop when iCloud3 is running.
+        2. via an HA track_time_interval call if iCloud3 is just starting up
+        3. via an HA track_time_interval call if an Apple acct is logged into in config_flow
+            apple_acct_support.def create_PyiCloudManager_config_flow function
+        '''
+        if Gb.internet_error:
+            return
+
+        Gb.last_PyiCloud_request_secs = time_now_secs()
+        if (Gb.polling_5_sec_loop_running is False
+                or self.PyiCloud.config_flow_login):
+            self.cancel_request_timeout_fct = async_track_time_interval(Gb.hass,
+                                        self.request_timed_out,
+                                        self.request_timeout_time,
+                                        cancel_on_shutdown=True)
+
+#----------------------------------------------------------------------------
+    def request_timed_out(self, timeout_time=None):
+        Gb.internet_error = True
+        _evlog(f"{Gb.internet_error=}")
+        post_event(f"{EVLOG_ALERT}Internet Connection Error Detected (www.icloud.com) > "
+                        "More than 1-min since last location request with no response. "
+                        "Possible causes:"
+                        f"{CRLF_DOT}An Internet Connection Error (Internet, WiFi, Router is down)"
+                        f"{CRLF_DOT}Apple is not available (`www.icloud.com` is down)"
+                        f"{CRLF_DOT}IPv6 is enabled and being used (IPv6 is not supported)")
+        self.cancel_request_timeout_timer()
+
+#------------------------------------------------------------------
+    def cancel_request_timeout_timer(self):
+        Gb.last_PyiCloud_request_secs = 0
+        if self.cancel_request_timeout_fct is not None:
+            self.cancel_request_timeout_fct()
 
 #------------------------------------------------------------------
     @staticmethod
@@ -496,7 +524,6 @@ class PyiCloudSession(Session):
             return filtered_dict
 
         except Exception as err:
-            log_exception(err)
             pass
 
         return prefiltered_dict
@@ -509,6 +536,17 @@ class PyiCloudSession(Session):
     @staticmethod
     def _shrink(value):
         return  f"{value[:6]}………{value[-6:]}"
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#       UTILITY FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

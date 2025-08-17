@@ -8,7 +8,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 NOTIFY, DISTANCE_TO_DEVICES, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 HOME, HOME_FNAME, NOT_HOME, NOT_SET, UNKNOWN, NOT_HOME_ZONES,
-                                DOT, RED_X, RARROW, RARROW2, INFO_SEPARATOR, RED_ALERT, CRLF_DOT, CRLF_HDOT,
+                                DOT, RED_X, RARROW, RED_STOP, RED_ALERT, CRLF_DOT, CRLF_HDOT,
                                 EVLOG_ALERT, BLANK_SENSOR_FIELD,
                                 TOWARDS, AWAY, AWAY_FROM, INZONE, STATIONARY, STATIONARY_FNAME,
                                 TOWARDS_HOME, AWAY_FROM_HOME, INZONE_HOME, INZONE_STATZONE,
@@ -21,10 +21,10 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 ICLOUD, MOBAPP, DEVICE_TYPE_ICONS,
                                 TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE, TRACKING_MODE_FNAME,
                                 NAME, DEVICE_TYPE_FNAME,
-                                ICLOUD_HORIZONTAL_ACCURACY, ICLOUD_VERTICAL_ACCURACY, ICLOUD_BATTERY_STATUS,
+                                ICLOUD_HORIZONTAL_ACCURACY, ICLOUD_VERTICAL_ACCURACY, ICLOUD_POSITION_TYPE,
                                 ICLOUD_BATTERY_LEVEL, ICLOUD_DEVICE_CLASS, ICLOUD_DEVICE_STATUS, ICLOUD_LOW_POWER_MODE, ID,
                                 FRIENDLY_NAME, PICTURE, ICON, BADGE, ALERT,
-                                LATITUDE, LONGITUDE,
+                                LATITUDE, LONGITUDE, POSITION_TYPE,
                                 LOCATION, LOCATION_SOURCE, TRIGGER, TRACKING, NEAR_DEVICE_USED,
                                 FROM_ZONE, INTERVAL,
                                 ZONE, ZONE_DNAME, ZONE_NAME, ZONE_FNAME, ZONE_DATETIME,
@@ -142,7 +142,8 @@ class iCloud3_Device(TrackerEntity):
         self.log_zones_filenames          = []              # Log Zone activity to a .csv file
         self.info_msg                     = ''              # results of last format_info_msg
         self.went_3km                     = False
-        self.near_device_distance         = 0.0               # Distance to the NearDevice device
+        self.near_device_group            = 0               # Devices witin 50m are in the same  tracking sync group
+        self.near_device_distance         = 0.0             # Distance to the NearDevice device
         self.near_device_checked_secs     = 0               # When the nearby devices were last updated
         self.near_device_used             = ''
         self.dist_apart_msg               = ''              # Distance to all other devices msg set in icloud3_main
@@ -285,6 +286,7 @@ class iCloud3_Device(TrackerEntity):
         self.loc_data_zone           = NOT_SET
         self.loc_data_latitude       = 0.0
         self.loc_data_longitude      = 0.0
+        self.loc_data_position_type  = ''
         self.loc_data_gps_accuracy   = 0
         self.loc_data_secs           = 0
         self.loc_data_time           = HHMMSS_ZERO
@@ -307,7 +309,7 @@ class iCloud3_Device(TrackerEntity):
         self.debug_save_dict              = {}
 
     def __repr__(self):
-        return (f"<Device: {self.setup_time}-{self.devicename}>")
+        return (f"<{self.devicename}>")
 
 #------------------------------------------------------------------------------
     def initialize_on_initial_load(self):
@@ -329,6 +331,7 @@ class iCloud3_Device(TrackerEntity):
         self.mobapp_data_state             = NOT_SET
         self.mobapp_data_latitude          = 0.0
         self.mobapp_data_longitude         = 0.0
+        self.mobapp_data_source_type       = ''
         self.mobapp_data_state_secs        = 0
         self.mobapp_data_state_time        = HHMMSS_ZERO
         self.mobapp_data_trigger_secs      = 0
@@ -417,7 +420,7 @@ class iCloud3_Device(TrackerEntity):
         self.sensors[MODEL]              = ''
         self.sensors[MODEL_DISPLAY_NAME] = ''
         self.sensors['host_name']        = ''
-        self.sensors['source_type']      = GPS
+        self.sensors[POSITION_TYPE]      = ''
         self.sensors[DEVICE_STATUS]      = UNKNOWN
         self.sensors[TRACKING]           = ''
         self.sensors[DISTANCE_TO_DEVICES]= ''
@@ -927,7 +930,9 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def loc_data_fgps(self):
-        return format_gps(self.loc_data_latitude, self.loc_data_longitude, self.loc_data_gps_accuracy)
+        gps_msg = format_gps(self.loc_data_latitude, self.loc_data_longitude, self.loc_data_gps_accuracy)
+        position_type = f" ({self.loc_data_position_type})" if self.loc_data_position_type else ''
+        return f"{gps_msg}{position_type}"
 
     @property
     def mobapp_data_fgps(self):
@@ -1308,6 +1313,8 @@ class iCloud3_Device(TrackerEntity):
         ''' Pause tracking the device '''
         try:
             self.tracking_status = TRACKING_PAUSED
+            # self.xx = RED_STOP
+            # Device.set_fname_alert('')
 
             msg = f'{RED_ALERT}OFFLINE' if Gb.internet_error else PAUSED
 
@@ -1359,13 +1366,15 @@ class iCloud3_Device(TrackerEntity):
             interval_secs - Next Update interval value
         '''
         for FromZone in self.FromZones_by_zone.values():
-            FromZone.next_update_secs = interval_secs
+            # FromZone.next_update_secs = interval_secs
+            FromZone.next_update_secs = Gb.this_update_secs + interval_secs
             FromZone.next_update_time = HHMMSS_ZERO if interval_secs == 0 \
                                                     else secs_to_time(Gb.this_update_secs + interval_secs)
 
         self.FromZone_NextToUpdate        = self.FromZone_Home
         self.next_update_secs             = self.FromZone_Home.next_update_secs
         self.next_update_time             = self.FromZone_Home.next_update_time
+        self.icloud_force_update_flag     = True
 
         self.old_loc_cnt                  = 0
         if max_error_cnt_reached is False:
@@ -1377,7 +1386,6 @@ class iCloud3_Device(TrackerEntity):
         self.dev_data_device_status_code  = 200
         self.icloud_update_reason         = 'Trigger > Resume/Relocate'
         self.icloud_no_update_reason      = ''
-        self.icloud_initial_locate_done   = False
 
         self.mobapp_request_loc_first_secs = 0
         self.mobapp_request_loc_last_secs  = 0
@@ -1523,17 +1531,17 @@ class iCloud3_Device(TrackerEntity):
             True    Next update time reached
             False   Next update time not reached
         '''
-        if self.icloud_initial_locate_done is False or self.is_tracking_resumed:
-            return True
 
         if self.FromZone_NextToUpdate is None:
-            FromZone = self.FromZone_Home
-            self.FromZone_LastIn       = FromZone
-            self.FromZone_BeingUpdated = FromZone
-            self.FromZone_NextToUpdate = FromZone
-            self.FromZone_TrackFrom    = FromZone
-            self.TrackFromBaseZone     = FromZone
-            self.last_track_from_zone  = FromZone.from_zone
+            self.FromZone_LastIn       = self.FromZone_Home
+            self.FromZone_BeingUpdated = self.FromZone_Home
+            self.FromZone_NextToUpdate = self.FromZone_Home
+            self.FromZone_TrackFrom    = self.FromZone_Home
+            self.TrackFromBaseZone     = self.FromZone_Home
+            self.last_track_from_zone  = self.FromZone_Home.from_zone
+
+        if self.icloud_initial_locate_done is False:    # or self.is_tracking_resumed:
+            return True
 
         return Gb.this_update_secs >= self.FromZone_NextToUpdate.next_update_secs
 
@@ -1629,19 +1637,22 @@ class iCloud3_Device(TrackerEntity):
     def write_ha_sensors_state(self, sensors=None):
         ''' Update the sensors for the Device that are in the sensor_list '''
 
-        if sensors:
-            update_sensors_list = {k:v  for sensor in sensors
-                                        for k, v in self.Sensors.items()
-                                        if k == sensor}
-        else:
-            update_sensors_list = self.Sensors.copy()
+        try:
+            if sensors:
+                update_sensors_list = {k:v  for sensor in sensors
+                                            for k, v in self.Sensors.items()
+                                            if k == sensor}
+            else:
+                update_sensors_list = self.Sensors.copy()
 
-        update_sensors_list = self._update_battery_sensors(update_sensors_list)
+            update_sensors_list = self._update_battery_sensors(update_sensors_list)
 
-        for sensor, Sensor in update_sensors_list.items():
-            Sensor.write_ha_sensor_state()
+            for sensor, Sensor in update_sensors_list.items():
+                Sensor.write_ha_sensor_state()
 
-        self._update_restore_state_values()
+            self._update_restore_state_values()
+        except Exception as err:
+            log_exception(err)
 
 #--------------------------------------------------------------------
     def write_ha_device_from_zone_sensors_state(self, sensors=None):
@@ -1688,6 +1699,7 @@ class iCloud3_Device(TrackerEntity):
         mobapp_items['state']          = self.mobapp_data_state
         mobapp_items['latitude']       = self.mobapp_data_latitude
         mobapp_items['longitude']      = self.mobapp_data_longitude
+        mobapp_items['source_type']    = self.mobapp_data_source_type
         mobapp_items['state_secs']     = self.mobapp_data_state_secs
         mobapp_items['state_time']     = self.mobapp_data_state_time
         mobapp_items['trigger_secs']   = self.mobapp_data_trigger_secs
@@ -1710,6 +1722,7 @@ class iCloud3_Device(TrackerEntity):
             self.mobapp_data_state          = mobapp_items['state']
             self.mobapp_data_latitude       = mobapp_items['latitude']
             self.mobapp_data_longitude      = mobapp_items['longitude']
+            self.mobapp_data_source_type    = mobapp_items['source_type']
             self.mobapp_data_state_secs     = mobapp_items['state_secs']
             self.mobapp_data_state_time     = mobapp_items['state_time']
             self.mobapp_data_trigger_secs   = mobapp_items['trigger_secs']
@@ -2117,6 +2130,7 @@ class iCloud3_Device(TrackerEntity):
 
         self.loc_data_latitude          = self.mobapp_data_latitude
         self.loc_data_longitude         = self.mobapp_data_longitude
+        self.loc_data_position_type     = self.mobapp_data_source_type
         self.loc_data_gps_accuracy      = self.mobapp_data_gps_accuracy
         self.loc_data_vertical_accuracy = self.mobapp_data_vertical_accuracy
         self.loc_data_altitude          = self.mobapp_data_altitude
@@ -2182,6 +2196,7 @@ class iCloud3_Device(TrackerEntity):
 
         self.loc_data_latitude       = location.get(LATITUDE, 0)
         self.loc_data_longitude      = location.get(LONGITUDE, 0)
+        self.loc_data_position_type  = location.get(ICLOUD_POSITION_TYPE, '')
         self.loc_data_gps_accuracy   = round(location.get(ICLOUD_HORIZONTAL_ACCURACY, 0))
         self.loc_data_secs           = location_secs
         self.loc_data_time           = secs_to_time(location_secs)
@@ -2191,7 +2206,7 @@ class iCloud3_Device(TrackerEntity):
         self.loc_data_isold          = location.get('isOld', False)
         self.loc_data_ispoorgps      = location.get('isInaccurate', False)
 
-        # rc3 Check old location when data is set
+        if self.loc_data_position_type == 'Wifi': self.loc_data_position_type = 'WiFi'
         if self.is_location_gps_good: self.old_loc_cnt = 0
         self.calculate_distance_moved()
         self.update_distance_to_other_devices()

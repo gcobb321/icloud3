@@ -15,7 +15,7 @@ from ..const            import (DEVICE_TRACKER, NOTIFY,
 from ..utils.utils      import (instr, is_statzone, is_zone, zone_dname,
                                     list_add, list_to_str, )
 from ..utils.messaging  import (post_event, post_monitor_msg, more_info,
-                                    log_debug_msg, log_exception, log_error_msg, log_data,
+                                    log_debug_msg, log_exception, log_error_msg, log_data, log_data_unfiltered,
                                     _evlog, _log, )
 from ..utils.time_util  import (secs_to_time, secs_since, mins_since, time_now, time_now_secs,
                                     format_time_age, format_age,  )
@@ -109,9 +109,6 @@ def check_mobapp_state_trigger_change(Device):
             change_msg += f'Time ({Device.mobapp_data_time}{RARROW}{mobapp_data_time}), '
         if mobapp_data_state == NOT_SET:
             change_msg += 'NotSet, '
-
-        if Gb.log_data_flag and change_msg:
-            log_data(f"MobApp Data - Changed - <{Device.devicename}> {change_msg}", device_trkr_attrs, log_data_flag=True)
 
         mobapp_data_change_flag = (Device.mobapp_data_trigger != mobapp_data_trigger
                                 or Device.mobapp_data_secs != mobapp_data_secs
@@ -426,14 +423,12 @@ def get_mobapp_device_trkr_entity_attrs(Device):
         None -  error or no data is available
     '''
     try:
-        if (Device.mobapp_monitor_flag is False
-                or Gb.conf_data_source_MOBAPP is False):
+        if Device.mobapp_monitor_flag is False or Gb.conf_data_source_MOBAPP is False:
             return None
 
         entity_id = Device.mobapp[DEVICE_TRACKER]
 
         device_trkr_attrs = get_and_verify_device_trkr_data(Device, entity_id)
-        # _log(f"{device_trkr_attrs=}")
 
         Device.mobapp_device_unavailable_flag = (device_trkr_attrs is None)
         if Device.mobapp_device_unavailable_flag:
@@ -457,7 +452,10 @@ def get_mobapp_device_trkr_entity_attrs(Device):
             Device.write_ha_sensor_state(
                         NEXT_UPDATE, Device.FromZone_NextToUpdate.sensors[NEXT_UPDATE])
 
-        # log_data(f"MobApp Data - {entity_id}", device_trkr_attrs)
+        device_trkr_attrs['source_type'] = str(device_trkr_attrs.get('source_type', ''))
+        if device_trkr_attrs['source_type'] == 'gps': device_trkr_attrs['source_type'] = 'GPS'
+
+        # log_data_unfiltered(f"MobApp Data - {entity_id}", device_trkr_attrs)
 
         return device_trkr_attrs
 
@@ -484,7 +482,6 @@ def get_and_verify_device_trkr_data(Device, entity_id):
         device_trkr_attrs[DEVICE_TRACKER] = entity_io.get_state(entity_id)
 
         # Display an 'unknown' device msg every 2-hrs
-        # _log(f"{device_trkr_attrs=}")
         if device_trkr_attrs[DEVICE_TRACKER] in ['unavailable', 'unknown', NOT_SET]:
             if (Device.mobapp_data_invalid_error_cnt % 1440) == 0:
                 Device.mobapp_data_invalid_error_cnt += 1
@@ -571,8 +568,6 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     if Device.mobapp_data_secs >= mobapp_data_secs or gps_accuracy > Gb.gps_accuracy_threshold:
         return
 
-    log_data(f"MobApp Attrs - Updated - <{Device.devicename}>", device_trkr_attrs)
-
     Device.mobapp_data_state             = device_trkr_attrs.get(DEVICE_TRACKER, NOT_SET)
     Device.mobapp_data_state_secs        = device_trkr_attrs.get(f"state_{TIMESTAMP_SECS}", 0)
     Device.mobapp_data_state_time        = device_trkr_attrs.get(f"state_{TIMESTAMP_TIME}", HHMMSS_ZERO)
@@ -582,9 +577,13 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     Device.mobapp_data_time              = mobapp_data_time
     Device.mobapp_data_latitude          = device_trkr_attrs.get(LATITUDE, 0)
     Device.mobapp_data_longitude         = device_trkr_attrs.get(LONGITUDE, 0)
+    Device.mobapp_data_source_type       = str(device_trkr_attrs.get('source_type', ''))
     Device.mobapp_data_gps_accuracy      = gps_accuracy
     Device.mobapp_data_vertical_accuracy = device_trkr_attrs.get(VERT_ACCURACY, 99999)
     Device.mobapp_data_altitude          = device_trkr_attrs.get(ALTITUDE, 0)
+
+    _hdr = f"{Device.devicename}, MobApp Data, {Device.mobapp_data_trigger}, Response, "
+    log_data_unfiltered(_hdr, device_trkr_attrs)
 
     if Device.FromZone_Home:
         home_dist = format_dist_km(Device.FromZone_Home.distance_km_mobapp)

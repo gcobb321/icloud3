@@ -96,7 +96,7 @@ class EventLog(object):
         self.clear_secs              = HIGH_INTEGER
         self.trk_monitors_flag       = False
         self.log_debug_flag          = False
-        self.log_data_flag        = False
+        self.log_data_flag           = False
         self.last_refresh_secs       = 0
         self.last_refresh_devicename = ''
         self.dist_to_devices_recd_found_flag = False    # Display only the last DistTo Devices > stmt
@@ -136,7 +136,7 @@ class EventLog(object):
         self.evlog_attrs["user_message"]    = self.user_message
         self.evlog_attrs["devicename"]      = ''
         self.evlog_attrs["fname"]           = ''
-        self.evlog_attrs["fnames"]          = {'Setup': 'Initializing iCloud3'}
+        self.evlog_attrs["fnames"]          = {'Setup': 'Waiting for HA to Finish Loading'}
         self.evlog_attrs["filtername"]      = 'Initialize'
         self.evlog_attrs["version_ic3"]     = Gb.version
         self.evlog_attrs["version_evlog"]   = Gb.version_evlog
@@ -295,16 +295,18 @@ class EventLog(object):
         try:
             if (event_text.startswith(EVLOG_UPDATE_START)
                     or event_text.startswith(EVLOG_UPDATE_END)
-                    or event_text.startswith(EVLOG_IC3_STARTING)
+                    # or event_text.startswith(EVLOG_IC3_STARTING)
                     or event_text.startswith(EVLOG_IC3_STAGE_HDR)):
+                this_update_time = ''
                 if len(event_text) <= 5:
-                    this_update_time = ''
+                    pass
+                # elif instr(event_text, 'Internet'):
+                #     this_update_time = dt_util.now().strftime('%H:%M:%S')
+                #     this_update_time = time_to_12hrtime(this_update_time)
                 elif Gb.log_data_flag:
                     this_update_time = 'Rawdata'
                 elif Gb.log_debug_flag:
                     this_update_time = 'Debug'
-                else:
-                    this_update_time = ''
 
             else:
                 this_update_time = dt_util.now().strftime('%H:%M:%S')
@@ -451,7 +453,7 @@ class EventLog(object):
             log_attr_text = ""
             if Gb.evlog_trk_monitors_flag: log_attr_text += 'monitor,'
             if Gb.log_debug_flag:          log_attr_text += 'debug,'
-            if Gb.log_data_flag:        log_attr_text += 'rawdata,'
+            if Gb.log_data_flag:           log_attr_text += 'rawdata,'
 
             self.evlog_attrs['log_level_debug'] = log_attr_text
 

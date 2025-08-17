@@ -221,6 +221,7 @@ class PyiCloud_AppleAcctDevices():
             for device_data in devices_data:
 
                 # TEST CODE - Create duplicate device
+                # _log("TEST CODE ENABLED")
                 # if device_data[NAME] == 'Gary-iPad':
                 #     device_data[NAME] = 'Lillian-iPad'
                 #     device_data[LOCATION] = {}

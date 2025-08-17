@@ -25,7 +25,7 @@ from ..const            import (
                                 DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF, DEFAULT_DEVICE_CONF,
                                 DEFAULT_SENSORS_CONF, DEFAULT_DATA_CONF,
                                 RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
-                                CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS,
+                                CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS, CF_DEVICE_SENSORS,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
                                 IC3LOG_FILENAME,
                                 )
@@ -101,14 +101,15 @@ def read_icloud3_configuration_file(filename_suffix=''):
         if Gb.conf_file_data == {}:
             return False
 
-        Gb.conf_profile   = Gb.conf_file_data[CF_PROFILE]
-        Gb.conf_data      = Gb.conf_file_data[CF_DATA]
+        Gb.conf_profile        = Gb.conf_file_data[CF_PROFILE]
+        Gb.conf_data           = Gb.conf_file_data[CF_DATA]
 
-        Gb.conf_tracking  = Gb.conf_data[CF_TRACKING]
+        Gb.conf_tracking       = Gb.conf_data[CF_TRACKING]
         Gb.conf_apple_accounts = Gb.conf_tracking.get(CONF_APPLE_ACCOUNTS, [])
-        Gb.conf_devices   = Gb.conf_tracking.get(CONF_DEVICES, [])
-        Gb.conf_general   = Gb.conf_data[CF_GENERAL]
-        Gb.conf_sensors   = Gb.conf_data[CF_SENSORS]
+        Gb.conf_devices        = Gb.conf_tracking.get(CONF_DEVICES, [])
+        Gb.conf_general        = Gb.conf_data[CF_GENERAL]
+        Gb.conf_sensors        = Gb.conf_data[CF_SENSORS]
+        Gb.conf_device_sensors = Gb.conf_data.get(CF_DEVICE_SENSORS, {})
 
         Gb.log_level      = Gb.conf_general[CONF_LOG_LEVEL]
         _add_parms_and_check_config_file()
@@ -203,6 +204,7 @@ def _reconstruct_conf_file():
     Gb.conf_data[CF_TRACKING]             = Gb.conf_tracking
     Gb.conf_data[CF_GENERAL]              = Gb.conf_general
     Gb.conf_data[CF_SENSORS]              = Gb.conf_sensors
+    Gb.conf_data[CF_DEVICE_SENSORS]       = Gb.conf_device_sensors
 
     Gb.conf_file_data[CF_PROFILE]         = Gb.conf_profile
     Gb.conf_file_data[CF_DATA]            = Gb.conf_data
@@ -334,20 +336,27 @@ def build_initial_config_file_structure():
         |---general
             |---parameters
         |---sensors
+            |---sensor_groups
+        |---device_sensors
+            |---devices
+                |----base
+                |----from_zone
 
     '''
 
-    Gb.conf_profile   = DEFAULT_PROFILE_CONF.copy()
-    Gb.conf_tracking  = DEFAULT_TRACKING_CONF.copy()
+    Gb.conf_profile        = DEFAULT_PROFILE_CONF.copy()
+    Gb.conf_tracking       = DEFAULT_TRACKING_CONF.copy()
     Gb.conf_apple_accounts = []
-    Gb.conf_devices   = []
-    Gb.conf_general   = DEFAULT_GENERAL_CONF.copy()
-    Gb.conf_sensors   = DEFAULT_SENSORS_CONF.copy()
-    Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
+    Gb.conf_devices        = []
+    Gb.conf_general        = DEFAULT_GENERAL_CONF.copy()
+    Gb.conf_sensors        = DEFAULT_SENSORS_CONF.copy()
+    Gb.conf_device_sensors = {}
+    Gb.conf_file_data      = CF_DEFAULT_IC3_CONF_FILE.copy()
 
-    Gb.conf_data[CF_TRACKING] = Gb.conf_tracking
-    Gb.conf_data[CF_GENERAL]  = Gb.conf_general
-    Gb.conf_data[CF_SENSORS]  = Gb.conf_sensors
+    Gb.conf_data[CF_TRACKING]       = Gb.conf_tracking
+    Gb.conf_data[CF_GENERAL]        = Gb.conf_general
+    Gb.conf_data[CF_SENSORS]        = Gb.conf_sensors
+    Gb.conf_data[CF_DEVICE_SENSORS] = Gb.conf_device_sensors
 
     Gb.conf_file_data[CF_PROFILE]  = Gb.conf_profile
     Gb.conf_file_data[CF_DATA]     = Gb.conf_data
@@ -634,7 +643,7 @@ def _update_profile():
     if is_empty(new_items):
         return False
 
-    log_info_msg("Updating Configuration File with New items (Profile) > ")
+    log_info_msg(f"Updating Configuration File with New items (Profile) > {new_items}")
 
     for item in new_items:
         before_item = _place_item_before(item, DEFAULT_PROFILE_CONF, CONF_PICTURE_WWW_DIRS)
@@ -659,7 +668,7 @@ def _update_tracking_parameters():
     if is_empty(new_items):
         return False
 
-    log_info_msg("Updating Configuration File with New items (Tracking) > ")
+    log_info_msg(f"Updating Configuration File with New items (Tracking) > {new_items}")
 
     for item in new_items:
         Gb.conf_tracking = _insert_into_conf_dict_parameter(
@@ -693,7 +702,7 @@ def _update_apple_acct_parameters():
         if is_empty(new_items):
             return False
 
-        log_info_msg("Updating Configuration File with New items (Apple Acct) > ")
+        log_info_msg(f"Updating Configuration File with New items (Apple Acct) > {new_items}")
 
         for item in new_items:
             conf_apple_acct = _insert_into_conf_dict_parameter(
@@ -721,7 +730,7 @@ def _update_device_parameters():
         if is_empty(new_items):
             return False
 
-        log_info_msg("Updating Configuration File with New items (Device) > ")
+        log_info_msg(f"Updating Configuration File with New items (Device) > {new_items}")
 
         for item in new_items:
             # v3.1.0 'apple_account' and other fields
@@ -774,7 +783,7 @@ def _update_general_parameters():
     if is_empty(new_items):
         return False
 
-    log_info_msg("Updating Configuration File with New items (General) > ")
+    log_info_msg(f"Updating Configuration File with New items (General) > {new_items}")
 
     for item in new_items:
         before_item = _place_item_before(item, DEFAULT_GENERAL_CONF, CONF_DISPLAY_TEXT_AS)

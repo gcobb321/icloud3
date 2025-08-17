@@ -314,22 +314,24 @@ def format_mins_timer(mins):
     return time_str
 
 #--------------------------------------------------------------------
-def format_age(secs):
+def format_age(secs, xago=None):
     ''' secs --> 4.5 sec/mins/hrs ago '''
 
     if isnot_valid(secs): return 'Never'
     if secs < 1577854800: return 'Unknown'
+    ago = ' ago' if xago is None else ''
 
-    return f"{format_timer(secs_since(secs))} ago"
+    return f"{format_timer(secs_since(secs))}{ago}"
 
 #--------------------------------------------------------------------
-def format_age_hrs(secs):
+def format_age_hrs(secs, xago=None):
     ''' secs --> 4.5 hrs ago '''
 
     if isnot_valid(secs): return 'Never'
     if secs < 1577854800: return 'Unknown'
+    ago = ' ago' if xago is None else ''
 
-    return f"{format_timer_hrs(secs_since(secs))} ago"
+    return f"{format_timer_hrs(secs_since(secs))}{ago}"
 
 #--------------------------------------------------------------------
 def format_time_age(secs, xago=None):
@@ -381,13 +383,14 @@ def format_day_date_now():
     return f"{format_day_date()}, {secs_to_hhmm(time_now_secs())}"
 
 #--------------------------------------------------------------------
-def format_age_hrs(secs):
+def format_age_hrs(secs, xago=None):
     ''' secs --> 4.5 hrs ago '''
 
     if isnot_valid(secs): return 'Never'
     if secs < 1577854800: return 'Unknown'
+    ago = ' ago' if xago is None else ''
 
-    return f"{format_timer_hrs(secs_since(secs))} ago"
+    return f"{format_timer_hrs(secs_since(secs))}{ago}"
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

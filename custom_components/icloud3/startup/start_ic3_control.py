@@ -14,7 +14,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_to_str, list_add, list_del,
                                 username_id, )
 from ..utils.messaging  import (broadcast_info_msg,
-                                post_event, post_error_msg, log_error_msg, post_alert,
+                                post_event, post_error_msg, log_error_msg, update_alert_sensor,
                                 post_monitor_msg, post_internal_error, post_evlog_greenbar_msg,
                                 write_ic3log_recd,
                                 log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_data,
@@ -25,7 +25,6 @@ from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, format_da
 
 from ..apple_acct       import pyicloud_ic3_interface
 from ..mobile_app       import mobapp_interface
-from ..startup          import hacs_ic3
 from ..startup          import start_ic3
 from ..startup          import config_file
 from ..tracking         import determine_interval as det_interval
@@ -70,11 +69,10 @@ def stage_1_setup_variables():
             Gb.EvLog.startup_event_recds = []
             Gb.EvLog.startup_event_save_recd_flag = True
             post_event( f"{EVLOG_IC3_STARTING}Restarting > {ICLOUD3_VERSION_MSG}, "
-                        f"{dt_util.now().strftime('%A, %b %d')}")
+                        f"{format_day_date_now()}")
 
             if (Gb.use_data_source_ICLOUD):
                 # Can not run this as an executor job to avoid 'no running event loop' error
-                # Gb.hass.async_add_executor_job(
                 #        pyicloud_ic3_interface.log_into_apple_acct_restart_icloud3)
                 pyicloud_ic3_interface.log_into_apple_acct_restart_icloud3()
 
@@ -85,10 +83,11 @@ def stage_1_setup_variables():
         post_event(f"iCloud3 Configuration File >{CRLF_DOT}{format_filename(Gb.icloud3_config_filename)}")
 
         start_ic3.display_platform_operating_mode_msg()
+
         # start_ic3.update_lovelace_resource_event_log_js_entry()
-        # hacs_ic3.check_hacs_icloud3_update_available()
-        Gb.hass.loop.create_task(start_ic3.update_lovelace_resource_event_log_js_entry())
-        Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available())
+        # Gb.hass.loop.create_task(start_ic3.update_lovelace_resource_event_log_js_entry())
+        # Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available())
+
         start_ic3.check_ic3_event_log_file_version()
 
         post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
@@ -99,6 +98,7 @@ def stage_1_setup_variables():
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.update_event_log_display("")
 
+        # If the internet_error handler is in test mode, force an internet_error condition
         if Gb.InternetError.internet_error_test:
             Gb.internet_error = True
 
@@ -187,7 +187,7 @@ def stage_3_setup_configured_devices():
         #     else:
         #         error_msg += f"INTERNET ERROR"
         #     post_event(error_msg)
-        #     post_alert(username_id(username), "Apple Acct Login Failed")
+        #     update_alert_sensor(username_id(username), "Apple Acct Login Failed")
 
         if Gb.config_track_devices_change_flag:
             pass
@@ -249,7 +249,7 @@ def stage_4_setup_data_sources():
                     post_error_msg( f"{EVLOG_ERROR}Apple Account {PyiCloud.account_owner} "
                                     f"is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
-                    post_alert(PyiCloud.username_id, "Apple Acct is Locked")
+                    update_alert_sensor(PyiCloud.username_id, "Apple Acct is Locked")
 
         stage_title = f"Stage 4 > Connect to Mobile App Integration"
         log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
@@ -307,9 +307,11 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     for Device in Gb.Devices:
         Device.set_fname_alert('')
 
-        # Test code for invalid apple_account value. Set config value for dev #2 to invalid@gmail.com
+        # TEST CODE - for invalid apple_account value. Set config value for dev #2 to invalid@gmail.com
         # Then set it to the valid apple_account value here. It will fail in Stage 4 & retry #1
         # but pass in the last_retry
+        #
+        # _log("TEST CODE ENABLED")
         # if final_retry and Device.conf_apple_acct_username == 'invalid@gmail.com':
         #     Device.conf_apple_acct_username = 'valid@gmail.com'
         #     Gb.conf_devices[1]['apple_account'] = 'valid@gmail.com'
@@ -336,10 +338,10 @@ def stage_4_setup_data_sources_retry(final_retry=False):
                     post_error_msg( f"{EVLOG_ERROR}Apple Acct > {PyiCloud.username_id}, "
                                     f"Acct is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
-                    post_alert(PyiCloud.username_id, "Apple Acct is Locked")
+                    update_alert_sensor(PyiCloud.username_id, "Apple Acct is Locked")
             else:
                 post_event(f"{EVLOG_ALERT}APPLE ACCT LOGIN FAILED > {username_id(username)}, Unavailable")
-                post_alert(username_id(username), "Apple Acct Login Failed")
+                update_alert_sensor(username_id(username), "Apple Acct Login Failed")
 
             start_ic3.set_devices_verified_status()
             all_verified_flag = _are_all_devices_verified(retry=True)
@@ -361,7 +363,7 @@ def stage_4_setup_data_sources_retry(final_retry=False):
     #     else:
     #         apple_acct_list = [username_id(username)
     #                             for username in Gb.usernames_setup_error_retry_list]
-    #         post_alert(apple_acct_list[0], "Apple Acct Device Setup Issue")
+    #         update_alert_sensor(apple_acct_list[0], "Apple Acct Device Setup Issue")
 
     return all_verified_flag
 
@@ -401,6 +403,7 @@ def _log_into_apple_accounts(retry=False):
                     if aa_login_error: aa_login_error += ', '
                     aa_login_error += f"{PyiCloud.account_owner} (503)"
 
+    # Check if the pyicloud_ic3_interface detected the internet is down
     if Gb.internet_error:
         return False
 
@@ -469,6 +472,10 @@ def stage_5_configure_tracked_devices():
     stage_title = f'Stage 5 > Device Configuration Summary'
     log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
 
+    if is_empty(Gb.conf_devices):
+        post_event(f"No Devices have been set up")
+    if is_empty(Gb.conf_apple_accounts):
+        post_event(f"No Apple Accounts have been set up")
 
     for username, PyiCloud in Gb.PyiCloud_by_username.items():
         log_debug_msg(f"PyiCloud Finialized > {PyiCloud.account_owner}")
@@ -546,9 +553,9 @@ def stage_7_initial_locate():
     Gb.this_update_secs = time_now_secs()
     Gb.this_update_time = time_now()
     post_event("Requesting Initial Locate")
-    post_event( f"{EVLOG_IC3_STARTING}Start up Complete > {ICLOUD3_VERSION_MSG}, "
-                f"{format_day_date_now()}")
-                # f"{dt_util.now().strftime('%A, %b %d')}")
+    # post_event( f"{EVLOG_IC3_STARTING}Start up Complete > {ICLOUD3_VERSION_MSG}, "
+    #             f"{format_day_date_now()}")
+    #             # f"{dt_util.now().strftime('%A, %b %d')}")
 
     for Device in Gb.Devices:
         post_evlog_greenbar_msg(f"Initial Locate > {Device.fname_devicename}")

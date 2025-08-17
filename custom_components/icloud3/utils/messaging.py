@@ -77,7 +77,7 @@ FILTER_FIELDS = [
         'deviceStatus', 'batteryStatus', 'batteryLevel', 'membersInfo',
         'deviceModel', 'rawDeviceModel', 'deviceDisplayName', 'modelDisplayName', 'deviceClass',
         'isOld', 'isInaccurate', 'timeStamp', 'altitude', 'location', 'latitude', 'longitude',
-        'horizontalAccuracy', 'verticalAccuracy',
+        'horizontalAccuracy', 'verticalAccuracy', 'positionType',
         'hsaVersion', 'hsaEnabled', 'hsaTrustedBrowser', 'hsaChallengeRequired',
         'locale', 'appleIdEntries', 'statusCode',
         'familyEligible', 'findme', 'requestInfo',
@@ -272,7 +272,7 @@ def clear_evlog_greenbar_msg():
     Gb.EvLog.display_user_message(Gb.EvLog.user_message)
 
 #-------------------------------------------------------------------------------------------
-def post_alert(type=None, alert_msg=None, update_sensor=False, replace_alert_msg=False):
+def update_alert_sensor(type=None, alert_msg=None, update_sensor=False, replace_alert_msg=False):
     '''
     Update the Gb.alerts_sensor_attrs dictionary
     Critical alerts (ALERT_CRITICAL) will replace any previous critical alerts instead of appending it
@@ -422,6 +422,7 @@ def write_ic3log_recd(log_msg):
     and renames while iCloud3 is running
     '''
     try:
+        # _log(f"{Gb.iC3Logger=} {Gb.HALogger=}")
         if Gb.iC3Logger is None:
             Gb.HALogger.info(log_msg)
             return
@@ -622,8 +623,8 @@ def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
 
     write_ic3log_recd(log_msg)
 
-    log_msg = log_msg.replace(' > +', f" > ……\n{SP(22)}+")
-    Gb.HALogger.debug(log_msg)
+    # log_msg = log_msg.replace(' > +', f" > ……\n{SP(22)}+")
+    # Gb.HALogger.debug(log_msg)
 
 #--------------------------------------------------------------------
 def log_start_finish_update_banner(start_finish, devicename,
@@ -830,16 +831,15 @@ def log_data(title, rawdata, log_data_flag=False, data_source=None, filter_id=No
             or Gb.log_level_devices == []):
         pass
 
-    elif (Gb.log_level_devices
-            and (instr(title, ICLOUD)
-                or instr(title, MOBAPP)
-                or instr(title, 'iCloud')
-                or instr(title, 'Mobile'))):
+    # elif (Gb.log_level_devices
+    #         and (instr(title, ICLOUD) or instr(title, MOBAPP))):
+                # or instr(title, 'iCloud')
+                # or instr(title, 'Mobile'))):
 
-        if True is True or instr(title,'iCloud Data'):
-            log_level_devices = [devicename for devicename in Gb.log_level_devices if instr(title, devicename)]
-            if log_level_devices == []:
-                return
+    elif instr(title,'iCloud Data'):
+        log_level_devices = [devicename for devicename in Gb.log_level_devices if instr(title, devicename)]
+        if log_level_devices == []:
+            return
 
     rawdata_data   = {}
     log_msg        = ''
@@ -856,6 +856,7 @@ def log_data(title, rawdata, log_data_flag=False, data_source=None, filter_id=No
         rawdata_data['filter'] = {k: _shrink_value(k, v)
                                 for k, v in rawdata['filter'].items()
                                 if k in FILTER_FIELDS or Gb.log_data_flag_unfiltered}
+
     except:
         rawdata_items = {k: _shrink_value(k, v)
                                 for k, v in rawdata.items()

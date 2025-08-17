@@ -544,8 +544,8 @@ def _handle_action_device_locate(Device, action_option):
         Device.resume_tracking()
 
     Gb.InternetError.reset_internet_error_fields()
-    Gb.icloud_force_update_flag = True
-    Device.icloud_force_update_flag = True
+    # Gb.icloud_force_update_flag = True
+    # Device.icloud_force_update_flag = True
     Device.reset_tracking_fields(interval_secs)
     det_interval.update_all_device_fm_zone_sensors_interval(Device, interval_secs)
     Device.icloud_update_reason = f"Location Requested@{time_now()}"

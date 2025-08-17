@@ -188,7 +188,9 @@ class PyiCloudManager():
         pyicloud.iphone.location()
     '''
 
-    def __init__(   self, username, password=None,
+    def __init__(   self,
+                    username,
+                    password=None,
                     apple_server_location=None,
                     locate_all_devices=None,
                     cookie_directory=None,
@@ -452,23 +454,25 @@ class PyiCloudManager():
 
             self.auth_method = "ValidToken"
             login_successful = self._validate_token()
-            # if login_successful: self.auth_method = "Token"
+            log_debug_msg(f"{self.username_base}, {self.auth_method}, {login_successful=}")
 
         # Authenticate - Sign into Apple Account (POST=/signin)
         if login_successful is False:
             log_info_msg(f"{self.username_base}, Authenticate with Token")
-
             self.auth_method = "GetNewToken"
             login_successful = self._authenticate_with_token()
+            log_debug_msg(f"{self.username_base}, {self.auth_method}, {login_successful=}")
 
         if login_successful is False:
             log_info_msg(f"{self.username_base}, Authenticate with Password")
             self.auth_method = 'Password'
             login_successful = self.authenticate_with_password()
+            log_debug_msg(f"{self.username_base}, {self.auth_method}, {login_successful=}")
 
             # The Auth with Token is necessary to fill in the findme_url
             if login_successful:
                 login_successful = self._authenticate_with_token()
+                log_debug_msg(f"{self.username_base}, {self.auth_method}, {login_successful=}")
 
         # if login_successful is False:
         #     log_info_msg(f"{self.username_base}, Authenticate with Password SRP")
@@ -530,7 +534,6 @@ class PyiCloudManager():
                 # raise PyiCloudFailedLoginException(err_msg)
 
         self.requires_2fa = self.requires_2fa or self._check_2fa_needed
-
         self._update_token_pw_file(CONF_PASSWORD, encode_password(self.token_password))
 
         time_between_token_auth    = format_age(self.last_token_auth_secs)
@@ -560,26 +563,36 @@ class PyiCloudManager():
 #----------------------------------------------------------------------------
     def _authenticate_with_token(self):
         '''Authenticate using session token. Return True if successful.'''
+        try:
 
-        this_fct_error_flag = True
+            this_fct_error_flag = True
 
-        if "session_token" in self.session_data:
-            self.account_country_code = self.session_data.get("account_country", "")
-            data = {"accountCountryCode": self.session_data.get("account_country"),
-                    "dsWebAuthToken": self.session_data.get("session_token"),
-                    "extended_login": True,
-                    "trustToken": self.session_data.get("trust_token", ""),
-                    "appName": "iCloud3"}
-        else:
-            self.response_code = 421
-            log_debug_msg(  f"{self.username_base}, "
-                            f"Authenticate with Token > Failed, Invalid Session Data")
-            return False
+            if "session_token" in self.session_data:
+                self.account_country_code = self.session_data.get("account_country", "")
+                data = {"accountCountryCode": self.session_data.get("account_country"),
+                        "dsWebAuthToken": self.session_data.get("session_token"),
+                        "extended_login": True,
+                        "trustToken": self.session_data.get("trust_token", ""),
+                        "appName": "iCloud3"}
+            else:
+                self.response_code = 421
+                log_debug_msg(  f"{self.username_base}, "
+                                f"Authenticate with Token > Failed, Invalid Session Data")
+                return False
+
+        except Exception as err:
+            log_exception(err)
 
         try:
             url = f"{self.SETUP_ENDPOINT}/accountLogin"
 
             self.data = self.PyiCloudSession.post(url, params=self.params, data=data)
+
+            if self.data is None:
+                log_debug_msg( f"{self.username_base}, "
+                                "Authenticate with Token > Failed, "
+                                "No data received from Apple (icloud.com)")
+                return False
 
             if 'items' in self.data:
                 if 'hsaTrustedBrowser' in self.data['items']:
@@ -657,7 +670,8 @@ class PyiCloudManager():
             data["trustTokens"] = [self.session_data_token.get("trust_token")]
 
         try:
-            self.data = self.PyiCloudSession.post(url, params=params, data=data, headers=headers,)
+            self.data = self.PyiCloudSession.post(url, params=params,
+                                                    data=data, headers=headers,)
 
             return ('session_token' in self.session_data)
 

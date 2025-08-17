@@ -19,7 +19,7 @@ from .pyicloud_ic3      import (PyiCloudManager,
 from ..startup          import start_ic3_control
 from ..startup          import config_file
 from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg,
-                                post_evlog_greenbar_msg, post_alert,
+                                post_evlog_greenbar_msg, update_alert_sensor,
                                 log_debug_msg, log_info_msg, log_exception, log_error_msg, log_warning_msg,
                                 internal_error_msg2, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_age,
@@ -63,117 +63,41 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
     post_evlog_greenbar_msg(f"Apple Acct > Setting up {username_id(username)}")
 
     try:
+        if Gb.internet_error:
+            post_event( f"{EVLOG_ALERT}INTERNET CONNECTION ERROR > "
+                        f"Apple Acct not available:"
+                        f"{CRLF_DOT}{username_id(username)}")
+            return None
+
         PyiCloud = Gb.PyiCloud_by_username.get(username)
 
         # Make sure the Device Service set up was completed. It will not be
         # if there was a connection error during startup
         if PyiCloud and PyiCloud.is_AADevices_setup_complete is False:
             PyiCloud.create_AADevices_object()
+            setup_status_msg(PyiCloud, "0, Setup Devices", username)
 
-        pyicloud_msg = (f"{PyiCloud=}")
-        if PyiCloud:
-            pyicloud_msg += f"{PyiCloud.is_AADevices_setup_complete=} {PyiCloud.AADevices=}"
-            if PyiCloud.AADevices:
-                pyicloud_msg += f"{PyiCloud.AADevData_by_device_id.values()=}"
-        username_base = username_id(username)
-        debug_msg_hdr =f"APPLE ACCT SETUP > {username_base}, Step-"
-        log_debug_msg(f"{debug_msg_hdr}0, Login Started, {pyicloud_msg}")
-
-        if Gb.internet_error:
-            post_event( f"{EVLOG_ALERT}INTERNET CONNECTION ERROR > "
-                        f"Apple Acct not available:"
-                        f"{CRLF_DOT}{username_base}")
-            return None
-
-        if (PyiCloud
-                and PyiCloud.is_AADevices_setup_complete
+        if (PyiCloud and PyiCloud.is_AADevices_setup_complete
                 and PyiCloud.AADevices):
             PyiCloud.dup_icloud_dname_cnt = {}
-
-
-            PyiCloud.refresh_icloud_data(locate_all_devices=True)
-
-            pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_AADevices_setup_complete=} {PyiCloud.AADevices=}"
-            if PyiCloud.AADevices:
-                pyicloud_msg += f"{PyiCloud.AADevData_by_device_id.values()=}"
-            log_debug_msg(f"{debug_msg_hdr}1, Request iCloud Refresh, {pyicloud_msg}")
-            post_event(f"Apple Acct > {PyiCloud.account_owner}, Device Data Refreshed")
+            refresh_PyiCloud_AADdevices_data(PyiCloud)
 
         # Setup iCloud
-        elif (PyiCloud
-                and PyiCloud.is_AADevices_setup_complete):
-
-            try:
-                PyiCloud.create_AADevices_object()
-                Gb.PyiCloud_by_username[username] = PyiCloud
-
-                pyicloud_msg = f"{PyiCloud=} {PyiCloud.is_AADevices_setup_complete=} {PyiCloud.AADevices=}"
-                if PyiCloud.AADevices:
-                    pyicloud_msg += f"{PyiCloud.AADevData_by_device_id.values()=}"
-                log_debug_msg(f"{debug_msg_hdr}2, Create AADevices, {pyicloud_msg}")
-                post_event(f"Apple Acct > {PyiCloud.account_owner}, iCloud Created & Refreshed")
-
-                return PyiCloud
-
-            except Exception as err:
-                log_exception(err)
+        elif (PyiCloud and PyiCloud.is_AADevices_setup_complete):
+            create_PyiCloud_AADevices(PyiCloud)
 
         # Setup PyiCloud and iCloud
         else:
-            try:
-                PyiCloud = None
-                PyiCloud = PyiCloudManager( username,
-                                            password,
-                                            apple_server_location=apple_server_location,
-                                            locate_all_devices=locate_all_devices,
-                                            cookie_directory=Gb.icloud_cookie_directory,
-                                            session_directory=Gb.icloud_session_directory)
+            PyiCloud = create_PyiCloud(username, password, apple_server_location, locate_all_devices)
 
-                # Stage 4 checks to see if PyiCloud exists and it has AADevData device info. These values exists
-                # if the __init__ login was completed. However, if it was not completed and they do not exist,
-                # Stage 4 will do another login and set these values when it finishes, which is before the
-                # __init__ is complete. Do not set them again when __init__ login finially completes.
-
-                pyicloud_msg = (f"{PyiCloud.account_owner_username}, "
-                                f"Complete={PyiCloud.is_AADevices_setup_complete}, ")
-
-            except Exception as err:
-                log_exception(err)
-
-            if Gb.internet_error:
-                post_event( f"{EVLOG_ALERT}INTERNET CONNECTION ERROR > "
-                            f"Apple Acct unavailable:"
-                            f"{CRLF_DOT}{username_base}")
-                return None
-
-            if PyiCloud.AADevices:
-                if is_empty(PyiCloud.AADevData_by_device_id):
-                    PyiCloud.refresh_icloud_data(locate_all_devices=True)
-
-                aadevdata_items = [_AADevData.fname_device_id
-                                        for _AADevData in PyiCloud.AADevData_by_device_id.values()]
-
-                if is_empty(aadevdata_items):
-                    PyiCloud.refresh_icloud_data(locate_all_devices=True)
-
-                    aadevdata_items = [_AADevData.fname_device_id
-                                            for _AADevData in PyiCloud.AADevData_by_device_id.values()]
-
-                pyicloud_msg += f"AADevDataItems-({list_to_str(aadevdata_items)})"
-
-            log_debug_msg(f"{debug_msg_hdr}3, Setup PyiCloud, {pyicloud_msg}")
-            code_msg = f" ({PyiCloud.response_code})"
+        if PyiCloud:
             if PyiCloud.is_authenticated:
                 post_event(f"Apple Acct > {PyiCloud.account_owner}, "
-                            f"Login Successful, "
-                            f"{PyiCloud.auth_method}")
-            else:
-                retry_at = secs_to_time(time_now_secs() + 900)
-                post_event( f"{EVLOG_ALERT}Apple Acct > {PyiCloud.username_id}, Login Failed"
-                            f"{CRLF_DOT}Apple Server Location-`{PyiCloud.apple_server_location}`"
-                            f"{CRLF_DOT}{PyiCloud.response_code_desc}")
-                post_alert(PyiCloud.username_id, "Apple Acct Login Failed")
-
+                            f"Login Successful, {PyiCloud.auth_method}")
+        else:
+            post_event( f"{EVLOG_ALERT}Apple Acct > {username_id(username)}, Login Failed"
+                        f"{CRLF_DOT}Apple Server Location-{apple_server_location}`")
+            update_alert_sensor(username_id(username), "Apple Acct Login Failed")
 
         verify_icloud_device_info_received(PyiCloud)
         is_authentication_2fa_code_needed(PyiCloud, initial_setup=True)
@@ -207,11 +131,104 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
     else:
         list_add(Gb.usernames_setup_error_retry_list, username)
 
-    # list_del(Gb.PyiCloud_by_username, username)
     post_error_msg( f"{EVLOG_ALERT}{login_err}")
-    post_alert(username_base, "Apple Acct Login Failed")
+    update_alert_sensor(username_id(username), "Apple Acct Login Failed")
 
     return PyiCloud
+
+#....................................................................
+def refresh_PyiCloud_AADdevices_data(PyiCloud):
+    '''
+    Refresh the device data for an existing Apple acct
+    '''
+    PyiCloud.refresh_icloud_data(locate_all_devices=True)
+
+    setup_status_msg(PyiCloud, "1, Refresh iCloud Devices")
+
+#....................................................................
+def create_PyiCloud_AADevices(PyiCloud):
+    '''
+    The PyiCloud Apple acct object exists but the devices do not. Create them.
+    '''
+    try:
+        PyiCloud.create_AADevices_object()
+
+        Gb.PyiCloud_by_username[PyiCloud.username] = PyiCloud
+
+    except Exception as err:
+        log_exception(err)
+
+    setup_status_msg(PyiCloud, "2, Create AADevices")
+
+#....................................................................
+def create_PyiCloud(username, password, apple_server_location, locate_all_devices):
+    try:
+        PyiCloud = None
+        PyiCloud = PyiCloudManager( username,
+                                    password,
+                                    apple_server_location=apple_server_location,
+                                    locate_all_devices=locate_all_devices,
+                                    cookie_directory=Gb.icloud_cookie_directory,
+                                    session_directory=Gb.icloud_session_directory)
+
+        # Stage 4 checks to see if PyiCloud exists and it has AADevData device info. These values exists
+        # if the __init__ login was completed. However, if it was not completed and they do not exist,
+        # Stage 4 will do another login and set these values when it finishes, which is before the
+        # __init__ is complete. Do not set them again when __init__ login finially completes.
+
+    except Exception as err:
+        log_exception(err)
+
+    # TEST CODE -Test Internet error and PyiCloud login failure
+    # _log("TEST CODE ENABLED")
+    # PyiCloud = None
+    # Gb.internet_error = True
+
+    if Gb.internet_error:
+        post_event( f"{EVLOG_ALERT}INTERNET CONNECTION ERROR > "
+                    f"Apple Acct unavailable:"
+                    f"{CRLF_DOT}{username_id(username)}")
+        return None
+
+    if PyiCloud is None:
+        post_event( f"{EVLOG_ALERT}Apple Acct > Apple Acct unavailable"
+                    f"{CRLF_DOT}{username_id(username)}")
+        return None
+
+    if PyiCloud.AADevices:
+        if is_empty(PyiCloud.AADevData_by_device_id):
+            PyiCloud.refresh_icloud_data(locate_all_devices=True)
+
+        aadevdata_items = [_AADevData.fname_device_id
+                                for _AADevData in PyiCloud.AADevData_by_device_id.values()]
+
+        # Refresh devices if none returned
+        if is_empty(aadevdata_items):
+            PyiCloud.refresh_icloud_data(locate_all_devices=True)
+
+            aadevdata_items = [_AADevData.fname_device_id
+                                    for _AADevData in PyiCloud.AADevData_by_device_id.values()]
+
+    setup_status_msg(PyiCloud, "3, Create PyiCloud & Devices", username)
+
+    return PyiCloud
+
+#....................................................................
+def setup_status_msg(PyiCloud, setup_method, username=None):
+
+    if PyiCloud is None:
+        post_event(f"Apple Acct > Error setting up {username}, ")
+        log_debug_msg(  f"APPLE ACCT SETUP > Step-{setup_method}")
+        return
+
+    dev_data = list(PyiCloud.AADevData_by_device_id.values()) if PyiCloud.AADevices else []
+    aadevdata_items = [_AADevData.fname_device_id
+                                    for _AADevData in PyiCloud.AADevData_by_device_id.values()]
+    # post_event(f"Apple Acct > {PyiCloud.account_owner}, iCloud Data Handler Setup")
+    log_debug_msg(  f"APPLE ACCT SETUP > {PyiCloud.username_id} ({PyiCloud.account_owner}), "
+                    f"Method-{setup_method}, "
+                    f"SetupComplete-{PyiCloud.is_AADevices_setup_complete}, "
+                    f"Devices-{list_to_str(aadevdata_items)}")
 
 #--------------------------------------------------------------------
 def log_into_apple_acct_restart_icloud3():
@@ -237,7 +254,6 @@ def log_into_apple_acct_restart_icloud3():
         if valid_upw is False:
             valid_upw = Gb.ValidateAppleAcctUPW.validate_username_password(username, password)
 
-        # Fix to original v2.3.2
         if valid_upw:
             log_into_apple_account(username, password, apple_server_location, locate_all_devices)
 
@@ -245,7 +261,7 @@ def log_into_apple_acct_restart_icloud3():
 
         else:
             results_msg += f"{RED_ALERT}{username_id(username)}, Login Failed, Invalid Username or Password"
-            post_alert(f"Apple Acct Error > {username_id(username)}, Login Failed")
+            update_alert_sensor(f"Apple Acct Error > {username_id(username)}, Login Failed")
 
     post_event(f"Log into Apple Accounts{results_msg}")
     post_evlog_greenbar_msg('')
@@ -324,7 +340,7 @@ def is_authentication_2fa_code_needed(PyiCloud, initial_setup=False):
 
     if new_2fa_authentication_code_requested(PyiCloud, initial_setup):
         alert_msg =(f"{PyiCloud.username_id} > Apple Acct Authentication Needed")
-        post_alert(PyiCloud.username_id, "Apple Acct Authentication Needed")
+        update_alert_sensor(PyiCloud.username_id, "Apple Acct Authentication Needed")
 
         log_warning_msg(alert_msg)
 

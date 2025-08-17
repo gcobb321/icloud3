@@ -88,7 +88,6 @@ def form_config_option_user(self):
 def form_menu(self):
     menu_title = MENU_PAGE_TITLE[self.menu_page_no]
     menu_action_items = MENU_ACTION_ITEMS.copy()
-    _log(f"IN form_menu  {self.step_id=} {self=} {self.menu_page_no=}")
 
     if self.menu_page_no == 0:
         menu_key_text  = MENU_KEY_TEXT_PAGE_0
@@ -317,9 +316,21 @@ def form_update_apple_acct(self):
     else:
         password_selector = selector.TextSelector(selector.TextSelectorConfig(type='password'))
 
-    if (self.add_apple_acct_flag is False
-            and username not in Gb.PyiCloud_by_username):
-        self.errors['base'] = 'apple_acct_not_logged_into'
+    if Gb.internet_error:
+            self.errors['base'] = 'internet_error_no_change'
+
+    if username in self.apple_acct_items_by_username:
+        apple_acct_info = self.apple_acct_items_by_username[username].lower()
+        if CONF_USERNAME in self.errors:
+            pass
+        elif instr(apple_acct_info, 'invalid username/password'):
+            self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
+        elif instr(apple_acct_info, 'not logged in'):
+            self.errors[CONF_USERNAME] = 'apple_acct_not_logged_into'
+        elif instr(apple_acct_info, 'authentication needed'):
+            self.errors[CONF_USERNAME] = 'verification_code_needed'
+        self.errors.pop('account_selected', None)
+        self.header_nsg = ''
 
     if self.add_apple_acct_flag:
         acct_info = '➤ ADD A NEW APPLE ACCOUNT'
@@ -413,6 +424,7 @@ def form_reauth(self, reauth_username=None):
         else:
             action_list_default = 'send_verification_code'
 
+
         # account_selected = account_selected if acount_selected is not None else None
 
         lists.build_apple_accounts_list(self)
@@ -439,7 +451,6 @@ def form_reauth(self, reauth_username=None):
             self.conf_apple_acct, self.aa_idx = \
                             config_file.conf_apple_acct(reauth_username)
 
-
         elif isnot_empty(self.conf_apple_acct):
             self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
 
@@ -456,13 +467,16 @@ def form_reauth(self, reauth_username=None):
         elif is_empty(self.apple_acct_items_by_username):
             default_acct_selected = 'No Apple Accounts have been set up'
             self.apple_acct_items_by_username = {'.noacctssetup': default_acct_selected}
-            self.errors['base'] = 'apple_acct_not_set_up'
+            self.errors[CONF_USERNAME] = 'apple_acct_not_set_up'
             action_list_default = 'goto_previous'
+
+        # elif instr(self.apple_acct_items_by_username[self.apple_acct_reauth_username], 'AUTHENTICATION'):
+        #     self.errors[CONF_USERNAME] = 'verification_code_needed'
 
         else:
             # Apple accts but the selected one is not logged into
-            default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
-            self.errors['base'] = 'apple_acct_not_logged_into'
+            # default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
+            # self.errors[CONF_USERNAME] = 'apple_acct_not_logged_into'
             action_list_default = 'goto_previous'
 
         otp_code = ' '

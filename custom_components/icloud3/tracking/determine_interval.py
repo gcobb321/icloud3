@@ -40,16 +40,16 @@ from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONE
                                     LAST_LOCATED,
                                     )
 
-from ..utils.utils        import (instr, isbetween, round_to_zero, is_zone, is_statzone, isnot_zone,
-                                    zone_dname, )
-from ..utils.messaging    import (post_event, post_error_msg,
+from ..utils.utils          import (instr, isbetween, round_to_zero, is_zone, is_statzone, isnot_zone,
+                                    zone_dname, list_add, )
+from ..utils.messaging      import (post_event, post_error_msg,
                                     post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                     post_internal_error, post_monitor_msg, log_debug_msg, log_data,
                                     log_info_msg, log_info_msg_HA, log_exception, _evlog, _log, )
-from ..utils.time_util    import (secs_to_time, format_timer, format_time_age, format_secs_since,
+from ..utils.time_util      import (secs_to_time, format_timer, format_time_age, format_secs_since,
                                     secs_since, mins_since, time_to_12hrtime, secs_to_datetime, secs_to, format_age,
                                     datetime_now, time_now, time_now_secs, secs_to_hhmm, secs_to_hhmm, )
-from ..utils.dist_util    import (km_to_mi, km_to_um, format_dist_km,  format_dist_m,
+from ..utils.dist_util      import (km_to_mi, km_to_um, format_dist_km,  format_dist_m,
                                     km_to_um, m_to_um, m_to_um_ft, )
 
 
@@ -147,7 +147,7 @@ def determine_interval(Device, FromZone):
     dir_of_travel_awayfrom_override = location_data[LD_AWAYFROM_OVERRIDE]
 
     awayfrom_override_star = '*' if dir_of_travel_awayfrom_override else ''
-    log_msg = ( f"DistFmZome-{dist_from_zone_km}, "
+    log_msg = ( f"DistFmZone-{dist_from_zone_km}, "
                 f"Moved-{dist_moved_km}, "
                 f"Waze-{waze_dist_from_zone_km}, "
                 f"Calc-{calc_dist_from_zone_km}, "
@@ -1382,6 +1382,11 @@ def update_near_device_info(Device):
 #--------------------------------------------------------------------------------
 def set_dist_to_devices(post_event_msg=False):
 
+        # for Device in Gb.Devices:
+        #     Device.nearby_device_group = 0
+        # dev_group = 0
+        # ndg_msg = ''
+
         for devicename_from, Device_from in Gb.Devices_by_devicename.items():
             dist_to_devices_data = []
 
@@ -1393,6 +1398,16 @@ def set_dist_to_devices(post_event_msg=False):
                         continue
 
                     dist_to_m = Device_from.distance_m(Device_to.loc_data_latitude, Device_to.loc_data_longitude)
+                    # if (dist_to_m <= 50
+                    #         and Device_to.nearby_device_group == 0):
+                    #     if Device_from.nearby_device_group > 0:
+                    #         Device_to.nearby_device_group = Device_from.nearby_device_group
+                    #     else:
+                    #         dev_group += 1
+                    #         Device_from.nearby_device_group = dev_group
+                    #         Device_to.nearby_device_group   = dev_group
+                    #     ndg_msg += f"{Device_from}-{Device_to} {int(dist_to_m)}m {Device_from.nearby_device_group}/{Device_to.nearby_device_group}, "
+
                     if dist_to_m == 0:
                         continue
                     loc_time_secs = min(Device_from.loc_data_secs, Device_to.loc_data_secs)
@@ -1401,23 +1416,31 @@ def set_dist_to_devices(post_event_msg=False):
                     dist_to_devices_data.append(dist_to_device_data)
 
             except Exception as err:
-                # log_exception(err)
+                log_exception(err)
                 pass
 
             try:
                 # dist_to_devices_data.sort()
                 Device_from.dist_to_devices_data = dist_to_devices_data
-                Device_from.dist_to_devices_secs = Device_from.loc_data_secs
+                Device_from.dist_to_devices_secs = Device_from.loc_data_sec
 
                 if post_event_msg and dist_to_devices_data != []:
                     event_msg =(f"DistTo Devices > "
                                 f"{format_dist_to_devices_msg(Device_from)}")
-
                     post_event(devicename_from, event_msg)
 
             except Exception as err:
                 # log_exception(err)
                 pass
+
+        # Gb.Devices_by_nearby_group = {}
+        # for Device in Gb.Devices:
+        #     dev_group = Device.nearby_device_group
+        #     nearby_Devices = Gb.Devices_by_nearby_group.get(dev_group, [])
+        #     list_add(nearby_Devices, Device)
+        #     Gb.Devices_by_nearby_group[dev_group] = nearby_Devices
+
+        # _evlog(f"DIST_TO {ndg_msg}")
 
 #...............................................................................
 def format_dist_to_devices_msg(Device, max_dist_to_m=HIGH_INTEGER, time=False, age=True):
@@ -1562,3 +1585,44 @@ def _check_near_device_circular_loop(_Device, Device):
                 f"{near_devices_msg}")
     log_debug_msg(Device.devicename, log_msg)
     return can_use_device
+
+#--------------------------------------------------------------------------------
+def set_nearby_devices_group():
+
+        for Device in Gb.Devices:
+            Device.nearby_device_group = 0
+        dev_group = 0
+        ndg_msg = ''
+
+        # for Device_from in Gb.Devices:
+        #     for dist_to_device_data in Device_from.dist_to_devices_data:
+        #         dist_to_m, Device_to, loc_time_secs = dist_to_device_data
+
+
+        for devicename_from, Device_from in Gb.Devices_by_devicename.items():
+            for devicename_to, Device_to in Gb.Devices_by_devicename.items():
+                if (Device_to.nearby_device_group > 0
+                        or devicename_from == devicename_to
+                        or Device_from.loc_data_secs == 0
+                        or Device_to.loc_data_secs == 0):
+                    continue
+
+                dist_to_m = Device_from.distance_m(Device_to.loc_data_latitude, Device_to.loc_data_longitude)
+                if (dist_to_m > NEAR_DEVICE_DISTANCE
+                        or Device_to.nearby_device_group > 0):
+                    continue
+
+                if Device_from.nearby_device_group > 0:
+                    Device_to.nearby_device_group = Device_from.nearby_device_group
+                else:
+                    dev_group += 1
+                    Device_from.nearby_device_group = dev_group
+                    Device_to.nearby_device_group   = dev_group
+                ndg_msg += f"{Device_from}-{Device_to} {int(dist_to_m)}m {Device_from.nearby_device_group}/{Device_to.nearby_device_group}, "
+
+        Gb.Devices_by_nearby_group = {}
+        for Device in Gb.Devices:
+            dev_group = Device.nearby_device_group
+            nearby_Devices = Gb.Devices_by_nearby_group.get(dev_group, [])
+            list_add(nearby_Devices, Device)
+            Gb.Devices_by_nearby_group[dev_group] = nearby_Devices

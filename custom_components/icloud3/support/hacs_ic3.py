@@ -62,11 +62,11 @@ async def check_hacs_icloud3_update_available():
 
         hacs_update_avail_msg = f", Hacs Update Available-{Gb.version_hacs}" if Gb.version_hacs else ""
 
-        log_info_msg(   f"Checking HACS for new iCloud3 Version, "
-                        f"{hacs_update_avail_msg}"
-                        f"Running-{Gb.version}, "
-                        f"HACS/iCloud3-{version_hacs_ic3}{hacs_ic3_newer_msg}, "
-                        f"HACS/iCloud3_Dev-{version_hacs_ic3dev}{hacs_ic3dev_newer_msg}")
+        post_event( f"Checking HACS for new iCloud3 Version, "
+                    f"{hacs_update_avail_msg}"
+                    f"Running-v{Gb.version}, "
+                    f"HACS/iCloud3-{version_hacs_ic3}{hacs_ic3_newer_msg}, "
+                    f"HACS/iCloud3_Dev-{version_hacs_ic3dev}{hacs_ic3dev_newer_msg}")
 
     except Exception as err:
         log_exception(err)

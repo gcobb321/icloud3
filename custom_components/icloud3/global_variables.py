@@ -74,7 +74,7 @@ class GlobalVariables(object):
     local_ip        = None      # from component/local_ip/async_get_source_ip in __init__
     network_url     = None      # from helpers/network/get_url in __init__
     evlog_btnconfig_url = ''
-    async_add_entities_sensor = None            # Initial add_entities link passed to sensor during ha startup
+    sensor_async_add_entities = None            # Initial add_entities link passed to sensor during ha startup
     async_add_entities_device_tracker = None    # Initial add_entities link passed to device_tracker during ha startup
     async_executor_call_parameters = None
 
@@ -160,6 +160,7 @@ class GlobalVariables(object):
     Devices_by_icloud_device_id       = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_ha_device_id           = {}  # Device by the device_id in the entity/device registry
     Devices_by_mobapp_dname           = {}  # All verified Devices by the  conf_mobapp_dname
+    Devices_by_nearby_group           = {}  # Devvic by group within  50mm of each other
     inactive_fname_by_devicename      = {}  # Devices with tracking_mode=inactive
 
     # PyiCloud objects by various categories
@@ -336,16 +337,16 @@ class GlobalVariables(object):
     config_parm_initial_load        = {}        # Config parms from HA config.yaml used to reset eveerything on restart
     ha_config_yaml_icloud3_platform = {}        # Config parms from HA config.yaml used during initial conversion to config_flow
 
-    conf_file_data    = {}
-    conf_profile      = {}
-    conf_data         = {}
-    conf_tracking     = {}
-    conf_devices      = []
-    conf_apple_accounts = []
-    conf_general      = {}
-    conf_sensors      = {}
-    conf_devicenames  = []
-    conf_icloud_dnames = []
+    conf_file_data          = {}
+    conf_profile            = {}
+    conf_data               = {}
+    conf_tracking           = {}
+    conf_devices            = []
+    conf_apple_accounts     = []
+    conf_general            = {}
+    conf_sensors            = {}
+    conf_devicenames        = []
+    conf_icloud_dnames      = []
     conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter
     conf_icloud_device_cnt  = 0                   # Number of devices with iCloud tracking set up
     conf_fmf_device_cnt     = 0                   # Number of devices with FmF tracking set up

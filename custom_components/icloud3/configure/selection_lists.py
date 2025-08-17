@@ -75,7 +75,7 @@ def build_apple_accounts_list(self):
                 elif valid_upw is None:
                     aa_text += 'NOT LOGGED INTO THIS APPLE ACCOUNT'
                 else:
-                    aa_text += 'NOT LOGGED IN DUE TO ANOTHER ERROR, SEE EVENT LOG'
+                    aa_text += 'NOT LOGGED IN DUE TO ANOTHER ERROR, RESTART ICLOUD3'
                 self.apple_acct_items_by_username[username] = aa_text
                 continue
 
