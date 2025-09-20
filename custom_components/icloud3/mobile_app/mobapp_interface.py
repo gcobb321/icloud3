@@ -73,7 +73,7 @@ def get_entity_registry_mobile_app_devices():
                 device_reg_data = device_registry.async_get(device_id)
 
                 log_title = (f"MobApp device_registry entry - <{mobapp_dname}>)")
-                log_data(log_title, str(device_reg_data), log_data_flag=True)
+                log_data(log_title, str(device_reg_data), log_rawdata_flag=True)
 
                 raw_model = device_reg_data.model
 
@@ -96,7 +96,7 @@ def get_entity_registry_mobile_app_devices():
                     [mobapp_fname, raw_model, device_type, model_display_name]    # Gary-iPhone, iPhone15,2; iPhone; iPhone 14 Pro
 
             log_title = (f"MobApp entity_registry entry - <{mobapp_dname}>)")
-            log_data(log_title, dev_trkr_entity, log_data_flag=True)
+            log_data(log_title, dev_trkr_entity, log_rawdata_flag=True)
 
         last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities, '_last_update_trigger')
         battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_level')

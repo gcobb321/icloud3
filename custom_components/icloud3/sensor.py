@@ -40,8 +40,8 @@ from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
                                 SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
                                 SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS, )
 
-from .utils.utils       import (instr, is_empty, isnot_empty, round_to_zero, isnumber,
-                                list_add, )
+from .utils.utils       import (instr, is_empty, isnot_empty, round_to_zero, is_number,
+                                list_add, list_to_str, )
 from .utils.format      import (icon_circle, icon_box, )
 from .utils.messaging   import (post_event, post_evlog_greenbar_msg, log_info_msg, log_debug_msg,
                                 log_error_msg,log_exception, log_info_msg_HA, log_exception_HA,
@@ -102,8 +102,6 @@ async def async_create_device_sensors():
 
     # Extract the list of sensor entities to be created during startup
 
-    # Gb.EvLog.display_user_message(f"Creating Sensors")
-
     try:
         NewSensors = []
         device_sensors_list = await _create_all_devices_sensors()
@@ -119,6 +117,9 @@ async def async_create_device_sensors():
         if NewSensors != []:
             Gb.sensor_async_add_entities(NewSensors, True)
             log_info_msg_HA(f'iCloud3 Sensor Entities: {len(NewSensors)}')
+
+        for devicename, sensors in Gb.sensors_added_by_devicename.items():
+            log_sensors_added_deleted('ADDED', devicename)
 
         correct_sensor_entity_ids_with_2_extension()
 
@@ -144,6 +145,10 @@ def _create_icloud3_internal_sensors():
     Gb.WazeHistTrackSensor = Sensor_WazeHistTrack(SENSOR_WAZEHIST_TRACK_NAME)
     NewSensors.append(Gb.WazeHistTrackSensor)
 
+    ic3_sensors_dict = {f"{NewSensor.entity_name.replace('_icloud3', '')}": NewSensor
+                                    for NewSensor in NewSensors}
+    log_sensors_added_deleted('ADDED', 'icloud3', ic3_sensors_dict)
+
     return NewSensors
 
 #--------------------------------------------------------------------
@@ -160,8 +165,8 @@ async def _create_all_devices_sensors():
             if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
                 continue
 
-            if devicename not in Gb.conf_device_sensors:
-                await config_sensors.update_configure_file_device_sensors(devicename, write_config_file=True)
+            # if devicename not in Gb.conf_device_sensors:
+            await config_sensors.update_configure_file_device_sensors(devicename, write_config_file=True)
 
             if devicename in Gb.conf_device_sensors:
                 SensorsFromConfigFile = create_device_sensor_from_config_file_list(devicename, conf_device)
@@ -189,7 +194,9 @@ def create_device_sensor_from_config_file_list(devicename, conf_device):
     and creating them from scratch
     '''
     SensorsFromConfigFile = []
-    devicename_sensors    = Gb.Sensors_by_devicename.get(devicename, {})
+    Gb.sensors_added_by_devicename[devicename]   = []
+    Gb.sensors_removed_by_devicename[devicename] = []
+    devicename_sensors = Gb.Sensors_by_devicename.get(devicename, {})
     devicename_from_zone_sensors = Gb.Sensors_by_devicename_from_zone.get(devicename, {})
 
     try:
@@ -199,9 +206,6 @@ def create_device_sensor_from_config_file_list(devicename, conf_device):
                     continue
 
             Sensor = _create_sensor_by_type(devicename, sensor, conf_device)
-
-            # if Sensor:
-            #     SensorsFromConfigFile.append(Sensor)
 
             if Sensor:
                 devicename_sensors[sensor] = Sensor
@@ -229,6 +233,41 @@ def create_device_sensor_from_config_file_list(devicename, conf_device):
 
     except Exception as err:
         return []
+
+#....................................................................
+def log_sensors_added_deleted(activity, devicename, sensors_list=None):
+    '''
+    Add an item to the log file showing the sensors that were added or removed during startup or
+    in config_flow when updating a devices parameters.
+
+    Parameters:
+        - activity = 'ADDED', 'REMOVED' or something else
+        - devicename = the devicename for the sensors
+        - sensors_list = a list of the sensors
+
+    if activity = ADDED, the Gb.sensors_added_by_devicename[devicename] is cleared
+    if activity = REMOVED, the Gb.sensors_removed_by_devicename[devicename] is cleared
+    '''
+    if sensors_list is None:
+        if activity == 'ADDED':
+            devicename_lists = Gb.sensors_added_by_devicename
+        elif activity == 'REMOVED':
+            devicename_lists = Gb.sensors_removed_by_devicename
+        else:
+            return
+        if devicename not in devicename_lists:
+            devicename_lists[devicename] = []
+        sensors_list = devicename_lists[devicename]
+        devicename_lists[devicename] = []
+
+    if is_empty(sensors_list):
+        return
+
+    _sensors = list(sensors_list.keys()) if type(sensors_list) is dict else sensors_list
+    _sensors_msg = {'BaseName': f"sensor.{devicename}_",
+                    'Count': len(sensors_list),
+                    'Entities': list_to_str(_sensors)}
+    log_info_msg(f"SENSORS {activity}: {_sensors_msg}")
 
 #--------------------------------------------------------------------
 def create_tracked_device_sensors(devicename, conf_device, new_sensors_list=None):
@@ -262,14 +301,6 @@ def create_tracked_device_sensors(devicename, conf_device, new_sensors_list=None
 
         NewSensors.extend(_create_device_sensors(devicename, conf_device, sensors_list_set))
         NewSensors.extend(_create_track_from_zone_sensors(devicename, conf_device, sensors_list_set))
-
-        # if devicename not in Gb.conf_device_sensors:
-        #     Gb.conf_device_sensors[devicename] = {}
-        # Gb.conf_device_sensors[devicename][SENSORS] = list(Gb.Sensors_by_devicename.get(devicename).keys())
-        # if Gb.Sensors_by_devicename_from_zone.get(devicename):
-        #     Gb.conf_device_sensors[devicename][FROM_ZONE] = list(Gb.Sensors_by_devicename_from_zone.get(devicename).keys())
-        # else:
-        #     Gb.conf_device_sensors[devicename][FROM_ZONE] = []
 
         return NewSensors
 
@@ -566,7 +597,7 @@ class DeviceSensor_Base():
             self.sensor_number  = 0
 
 
-            self.from_zone   = from_zone
+            self.from_zone      = from_zone
             if from_zone:
                 self.from_zone_fname = f" ({from_zone.title().replace('_', '').replace(' ', '')})"
                 self.sensor          = f"{sensor_base}_{from_zone}"
@@ -609,7 +640,7 @@ class DeviceSensor_Base():
             Gb.sensors_created_cnt += 1
             self.sensor_number = Gb.sensors_created_cnt
 
-            log_debug_msg(f"Sensor entity, Config: {self.entity_id}, #{self.sensor_number}")
+            # log_debug_msg(f"Sensor entity, Config: {self.entity_id}, #{self.sensor_number}")
 
         except Exception as err:
             log_exception(err)
@@ -692,7 +723,7 @@ class DeviceSensor_Base():
 
                 if Gb.um_MI:
                     zone_dist_m = self._get_sensor_value(ZONE_DISTANCE_M)
-                    if isnumber(zone_dist_m):
+                    if is_number(zone_dist_m):
                         sensor_value_mi = zone_dist_m*Gb.um_km_mi_factor/1000
                         extra_attrs['distance (miles)'] = set_precision(sensor_value_mi)
                         extra_attrs['distance_units (attributes)'] = 'mi'
@@ -881,6 +912,7 @@ class DeviceSensor_Base():
 
         kwargs = {}
         kwargs['original_name'] = self.sensor_fname
+        kwargs['disabled_by']   = None
 
         # entity_registry = er.async_get(Gb.hass)
         # entity_registry.async_update_entity(self.entity_id, **kwargs)
@@ -924,8 +956,15 @@ class DeviceSensor_Base():
         and rename the one HA created (with _2) to the one iC3 entity_id.
         '''
 
-        log_debug_msg(f"Sensor entity, Added:  {self.entity_id}, #{self.sensor_number}")
-        # Gb.EvLog.display_user_message(f"Adding Sensor {self.entity_id}")
+        # log_debug_msg(f"Sensor entity, Added:  {self.entity_id}, #{self.sensor_number}")
+
+        try:
+            list_add(Gb.sensors_added_by_devicename[self.devicename], self.sensor)
+        except KeyError:
+            Gb.sensors_added_by_devicename[self.devicename] = [self.sensor]
+            #list_add(Gb.sensors_added_by_devicename[self.devicename], self.sensor)
+        except Exception as err:
+            log_exception(err)
 
         if self.entity_id == self.entity_id_base:
             return
@@ -952,7 +991,12 @@ class DeviceSensor_Base():
         dictionary.
         """
 
-        log_info_msg(f"Sensor entity, Remove: {self.entity_id}, #{self.sensor_number}")
+        try:
+            list_add(Gb.sensors_removed_by_devicename[self.devicename], self.sensor)
+        except KeyError:
+            Gb.sensors_removed_by_devicename[self.devicename] = [self.sensor]
+        except Exception as err:
+            log_exception(err)
 
         entity_io.remove_entity(self.entity_id)
         self.entity_removed_flag = True
@@ -965,6 +1009,7 @@ class DeviceSensor_Base():
 
         if self.Device.Sensors and self.sensor in self.Device.Sensors:
             self.Device.Sensors.pop(self.sensor)
+
 
 #-------------------------------------------------------------------------------------------
     async def async_will_remove_from_hass(self):
@@ -979,8 +1024,7 @@ class DeviceSensor_Base():
         """Update the entity's state if the state value has changed."""
 
         try:
-            if self.hass is None:
-                self.hass = Gb.hass
+            if self.hass is None: self.hass = Gb.hass
             self.schedule_update_ha_state()
 
         except Exception as err:
@@ -990,7 +1034,7 @@ class DeviceSensor_Base():
     # async def async_added_to_hass(self):
     #     '''Register state update callback.'''
     #     self._unsub_dispatcher = async_dispatcher_connect(
-    #                                     self.hass,
+    #                                     Gb.hass,
     #                                     signal_device_update,
     #                                     self.async_write_ha_state)
 
@@ -1421,7 +1465,7 @@ class iCloud3Sensor_Base():
             extn_alert = f" {RED_ALERT} Added-`{extn_added}`"
         else:
             extn_alert = ''
-        log_debug_msg(  f"Sensor entity, Config: {self.entity_id}{extn_alert}, #{self.sensor_number}")
+        # log_debug_msg(  f"Sensor entity, Config: {self.entity_id}{extn_alert}, #{self.sensor_number}")
 
 #..........................................................................................
     @property
@@ -1466,8 +1510,9 @@ class iCloud3Sensor_Base():
 
 #-------------------------------------------------------------------------------------------
     async def async_added_to_hass(self):
+        pass
 
-        log_debug_msg(f"Sensor entity, Added:  {self.entity_id}, #{self.sensor_number}")
+        # log_debug_msg(f"Sensor entity, Added:  {self.entity_id}, #{self.sensor_number}")
 
 #-------------------------------------------------------------------------------------------
     def async_update_sensor(self):

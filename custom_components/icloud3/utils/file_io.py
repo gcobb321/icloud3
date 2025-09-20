@@ -1,8 +1,9 @@
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (CRLF_DOT,  )
+from ..const                import (CRLF_DOT, NL4, )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
-from .messaging             import (log_exception, _evlog, _log, log_error_msg, )
+from .messaging             import (log_exception, _evlog, _log, log_debug_msg,
+                                    log_data_unfiltered, write_ic3log_recd, )
 
 from collections            import OrderedDict
 import asyncio
@@ -213,15 +214,17 @@ def request_url_data(url):
 #            JSON FILE UTILITIES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def async_read_json_file(filename):
+async def async_read_json_file(filename):
 
     if file_exists(filename) is False:
+        log_debug_msg(f"Read Json File (async)-{filename}, File Not Found")
         return {}
 
     try:
-        data = Gb.hass.async_add_executor_job(
+        data = await Gb.hass.async_add_executor_job(
                             read_json_file,
-                            filename)
+                            filename,
+                            True)
         return data
 
     except Exception as err:
@@ -229,40 +232,37 @@ def async_read_json_file(filename):
         log_exception(err)
         pass
 
+    if instr(filename, 'dashboard') or True is True:
+        _log("async_read_json_file data={}")
     return {}
 
 #--------------------------------------------------------------------
-def read_json_file(filename):
+def read_json_file(filename, async_msg=False):
+
+    _async_msg = '' if async_msg is False else ' (async)'
+    filename_msg = f"{NL4}🔻 READ JSON FILE{_async_msg}--{filename}"
 
     if file_exists(filename) is False:
+        log_debug_msg(f"{filename_msg}❗ File Not Found")
         return {}
 
     try:
-        if Gb.initial_icloud3_loading_flag:
-            data = json_util.load_json(filename)
-
-        else:
-            data = Gb.hass.async_add_executor_job(
-                            json_util.load_json,
-                            filename)
-
-            if instr(str(data), 'future'):
-                data = json_util.load_json(filename)
-
-
-        return data
+        data = json_util.load_json(filename)
 
     except RuntimeError as err:
         # log_exception(err)
-        if str(err) == 'no running event loop':
-            data = json_util.load_json(filename)
-            return data
+        log_debug_msg(f"{filename_msg}{NL4}❗ NoEventLoop-`await` not needed")
+        data = {}
 
     except Exception as err:
         log_exception(err)
-        pass
+        data = {}
 
-    return {}
+    # _data = {str(data)} if Gb.log_rawdata_flag else {str(data)[:100]}
+    _data = {str(data)[:100]}
+    log_data_unfiltered(f"{filename_msg}", _data)
+
+    return data
 
 #--------------------------------------------------------------------
 async def async_save_json_file(filename, data):
@@ -283,7 +283,6 @@ async def async_save_json_file(filename, data):
 #--------------------------------------------------------------------
 def save_json_file(filename, data):
     try:
-        # The HA event loop has not been set up yet during initialization
         json_helpers.save_json(filename, data)
         return True
 
@@ -353,10 +352,12 @@ def json_str_to_dict(json_str):
         json_str = json_str.replace("'", '"')
         json_str = json_str.replace('True', 'true')
         json_str = json_str.replace('False', 'false')
-        # json_str = json_str.replace(' ', '')
-        return json.loads(json_str)
+        json_str_json = json.loads(json_str)
+
+        return json_str_json
 
     except Exception as err:
+        log_exception(err)
         pass
 
     return {}

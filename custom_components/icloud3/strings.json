@@ -3,7 +3,7 @@
   "config": {
     "abort": {
       "config_update_complete": "iCloud3 configuration updated successfully",
-      "already_configured": "iCloud3 is already installed and can not be installed again. \n\nTo configure iCloud3, select the Gear icon (⚙️) or CONFIGURE on the iCloud3 Integration Entries line.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
+      "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "The Apple account is not log into",
       "xlogin_error_upw": "Apple account login error - Verify the username and password",
@@ -11,7 +11,7 @@
       "login_error_other": "An unknown error occurred logging into the Apple Account.",
       "reauth_successful": "The reauthentication has been successfully completed",
       "verification_code_requested": "A New Apple ID Verification Code was requested",
-      "verification_code_accepted": "✅ The Apple ID Verification Code was accepted. Reauthentication is complete",
+      "verification_code_accepted": "The Apple ID Verification Code was accepted. Reauthentication is complete",
       "verification_code_cancelled": "The Apple ID Verification was cancelled",
       "update_cancelled": "Update Cancelled",
       "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3",
@@ -82,20 +82,19 @@
       "action_not_available": "Internet Connection Error > Action not Available",
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
-      "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "conf_updated": "iCloud3 Configuration Parameters were updated successfully",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
       "apple_acct_logging_into": "Logging into Apple Account",
-      "apple_acct_logged_into": "✅ Logged into the Apple Account",
+      "apple_acct_logged_into": "Logged into the Apple Account",
       "apple_acct_already_logged_into": "Already Logged into the Apple Account",
       "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
-      "xapple_acct_login_error_user_pw": "❌ An error was encountered logging into the Apple Account",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA.",
       "apple_acct_invalid_upw": "❌ Invalid Username or Password",
       "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
       "apple_acct_login_error_503": "🍎 Apple is delaying displaying a new Verification code to prevent Suspicious Activity, probably due to too many requests. It should be displayed in about 20-30 minutes. Restart HA if it is not displayed",
       "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
-      "apple_acct_login_error_302_cn": "Apple Acct Server may be China but CHINA was not selected",
-      "apple_acct_login_error_302_usa": "China was selected but Apple Server Location may be USA",
+      "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
+      "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
       "apple_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into.",
       "apple_acct_dup_username_error": "Error: Username is being used by another Data Source entry",
       "apple_acct_username_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
@@ -112,7 +111,7 @@
 
       "verification_code_requested": "A New Apple ID Verification Code was requested",
       "verification_code_needed": "The Apple Account needs to be authenticated",
-      "verification_code_accepted": "✅ The Apple Account Verification Code was accepted",
+      "verification_code_accepted": "The Apple Account Verification Code was accepted",
       "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
       "verification_code_send_error": "❌ Failed to send the Apple ID Verification Code",
 
@@ -183,31 +182,31 @@
     },
     "step": {
       "menu": {
-        "title": "iCloud3 Configure Settings",
+        "title": "Configure Devices & Sensors",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "menu_0": {
         "title": "Configure Devices & Sensors",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "menu_1": {
         "title": "Configure Parameters",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "restart_icloud3": {
         "title": "Confirm Restarting iCloud3",
         "description": "Note: Changes to tracked devices require restarting iCloud3",
         "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
       "restart_ha": {
@@ -418,10 +417,13 @@
         "title": "iCloud3 Dashboard Builder",
         "description": "This screen will create and update iCloud3 Dashboards for tracked devices (up to 4) with different styles and views. The Dashboards can then be customized using the HA Dashboard tools or used as-is.",
         "data": {
-          "device_desc": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DASHBOARD BUILDER",
-          "selected_dashboard": "ICLOUD3 DASHBOARDS",
-          "main_view_devices": "MAIN VIEW DEVICES - Devices to display on the Main view of a new dashboard",
+          "selected_dashboard": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ICLOUD3 DASHBOARDS",
+          "main_view_style": "MAIN VIEW STYLE FORMAT - How the device information should be presented",
+          "main_view_devices": "MAIN VIEW DEVICES - Devices to display on the Main view screen",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "selected_dashboard": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ \nCREATE/UPDATE DASHBOARD SPECIFICATIONS - The Style Format & Devices fields below specify how the Dashboard's Main View screen will be constructed when a dashboard is created or updated"
         }
       },
       "tools": {

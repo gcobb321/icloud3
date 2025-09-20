@@ -30,12 +30,12 @@ from ..const            import (
                                 IC3LOG_FILENAME,
                                 )
 
-# from ..startup          import start_ic3
+from ..startup          import start_ic3
 # from ..tracking         import waze
 from ..utils.utils      import (instr, ordereddict_to_dict, isbetween, list_add, is_empty,
                                 list_to_str, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
-                                open_ic3log_file_init, )
+                                open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, )
 
 from ..utils            import file_io
@@ -111,7 +111,9 @@ def read_icloud3_configuration_file(filename_suffix=''):
         Gb.conf_sensors        = Gb.conf_data[CF_SENSORS]
         Gb.conf_device_sensors = Gb.conf_data.get(CF_DEVICE_SENSORS, {})
 
-        Gb.log_level      = Gb.conf_general[CONF_LOG_LEVEL]
+        Gb.log_level           = Gb.conf_general[CONF_LOG_LEVEL]
+        start_ic3.set_log_level(Gb.log_level)
+
         _add_parms_and_check_config_file()
 
         return True

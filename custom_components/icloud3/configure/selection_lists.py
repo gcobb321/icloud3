@@ -16,7 +16,7 @@ from ..const            import (RARROW, PHDOT, CRLF_DOT, DOT, HDOT, PHDOT, CIRCL
                                 CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL,
                                 )
 
-from ..utils.utils      import (instr, isnumber, is_empty, isnot_empty, list_to_str, str_to_list,
+from ..utils.utils      import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                 is_statzone, zone_dname, isbetween, list_del, list_add,
                                 sort_dict_by_values,
                                 encode_password, decode_password, )
@@ -69,13 +69,13 @@ def build_apple_accounts_list(self):
             if PyiCloud is None or PyiCloud.is_AADevices_setup_complete is False:
                 aa_text = f"{username}{RARROW}{RED_ALERT}"
                 if valid_upw is False:
-                    aa_text += 'NOT LOGGED IN, INVALID USERNAME/PASSWORD'
+                    aa_text += 'Not logged in, Invalid Username/Password'
                 elif instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD) is False:
-                    aa_text += 'NOT LOGGED IN, APPLE DATA SOURCE DISABLED'
+                    aa_text += 'Not logged iIn, Apple data src is disabled'
                 elif valid_upw is None:
-                    aa_text += 'NOT LOGGED INTO THIS APPLE ACCOUNT'
+                    aa_text += 'Not logged into this Apple Account'
                 else:
-                    aa_text += 'NOT LOGGED IN DUE TO ANOTHER ERROR, RESTART ICLOUD3'
+                    aa_text += 'Not logged in, Unknown error, Restart iCloud3'
                 self.apple_acct_items_by_username[username] = aa_text
                 continue
 
@@ -256,7 +256,6 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
         if status_msg == '':
             continue
 
-        # if Gb.username_valid_by_username.get(conf_device[CONF_APPLE_ACCOUNT], False) is False:
         apple_acct = conf_device[CONF_APPLE_ACCOUNT] if conf_device[CONF_APPLE_ACCOUNT] != '' else 'NONE'
         device_list_item_key = f"{devicename}{LINK}{apple_acct}"
         all_devices_not_available[device_list_item_key] = (
@@ -273,8 +272,8 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
         aa_owner_msg = f"{_PyiCloud.account_owner} ({_PyiCloud.username_base})"
         if len(aa_owner_msg) > max_len_aa_owner_msg:
             max_len_aa_owner_msg = len(aa_owner_msg)
-    if max_len_aa_owner_msg < 26: max_len_aa_owner_msg = 26
-    final_dots_fixed = '⋯'*(max_len_aa_owner_msg - 27) if max_len_aa_owner_msg > 27 else ''
+    if max_len_aa_owner_msg < 19: max_len_aa_owner_msg = 19
+    final_line_fixed = '_'*(max_len_aa_owner_msg - 19) if max_len_aa_owner_msg > 19 else '?'
 
 
     # Get the list of devices with valid apple accounts
@@ -308,17 +307,16 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
             devices_cnt  = len(devices_used) + len(devices_available) + len(this_device)
             assigned_cnt = len(devices_used) + len(this_device)
             len_aa_owner_msg = len(f"{PyiCloud.account_owner} ({PyiCloud.username_base})")
-
-            final_dots       = f"{'⋯'*int((max_len_aa_owner_msg - len_aa_owner_msg)*.4)}"
+            final_line       = f"{'_'*int((max_len_aa_owner_msg - len_aa_owner_msg) + 6)}"
 
             username_hdr_available = {  f"{aa_idx_dots}hdr":
-                                        f"🍏 ⋯⋯⋯ AVAILABLE ⋯⋯⋯ {PyiCloud.account_owner} "
+                                        f"🍏 ________ AVAILABLE ______ {PyiCloud.account_owner} "
                                         f"({PyiCloud.username_base}), "
-                                        f"{assigned_cnt} of {devices_cnt} Assigned ⋯⋯⋯{final_dots} 🍏"}
-
+                                        f"{assigned_cnt} of {devices_cnt} Assigned) "
+                                        f"{final_line}"}
 
             if devices_available == {}:
-                devices_available = {f"{aa_idx_dots}nodev": f"{CIRCLE_STAR} All Apple account devices are assigned"}
+                devices_available ={f"{aa_idx_dots}nodev": "None, All Apple account devices are assigned"}
 
             all_devices_available.update(username_hdr_available)
             all_devices_available.update(devices_available)
@@ -327,16 +325,16 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
             all_devices_this_device.update(this_device)
 
     if isnot_empty(all_devices_this_device):
-        #self.icloud_list_text_by_fname2.update({f".thisdevice":
-        #               f"☑️ ⋯⋯⋯ APPLE DEVICE ASSIGNED TO THIS ICLOUD3 DEVICE ⋯⋯⋯ ☑️"})
         self.icloud_list_text_by_fname2.update(all_devices_this_device)
-        self.icloud_list_text_by_fname2.update({'.dashes': '═'*51})
+        self.icloud_list_text_by_fname2.update({'.dashes': '_'*76 + final_line_fixed})
+        # self.icloud_list_text_by_fname2.update({'.dashes': '═'*51})
 
     self.icloud_list_text_by_fname2.update(NONE_FAMSHR_DICT_KEY_TEXT)
 
     if isnot_empty(all_devices_not_available):
         self.icloud_list_text_by_fname2.update({".notavail":
-                        f"⛔ ⋯⋯⋯ ICLOUD3 DEVICES WITH APPLE CONFIGURATION ERRORS ⋯⋯⋯⋯{final_dots_fixed} ⛔"})
+                        f"⛔ ________ ICLOUD3 DEVICES WITH APPLE CONFIGURATION ERRORS _____"
+                        f"{final_line_fixed}"})
         self.icloud_list_text_by_fname2.update(sort_dict_by_values(all_devices_not_available))
 
     if isnot_empty(all_devices_available):
@@ -344,7 +342,9 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
 
     if isnot_empty(all_devices_used):
         self.icloud_list_text_by_fname2.update({".assigned":
-                        f"🅰️ ⋯⋯⋯ APPLE DEVICES ASSIGNED TO ANOTHER ICLOUD3 DEVICE ⋯⋯⋯{final_dots_fixed}⋯ 🅰️"})
+                        f"🍎 ______ APPLE DEVICES ASSIGNED TO ANOTHER ICLOUD3 DEVICE ______"
+                        f"{final_line_fixed}"})
+
         self.icloud_list_text_by_fname2.update(sort_dict_by_values(all_devices_used))
 
     self.icloud_list_text_by_fname = self.icloud_list_text_by_fname2.copy()
@@ -512,7 +512,7 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
         scan_for_mobapp_devices = {}
 
     if devices_available == {}:
-        devices_available = {f"nodev": f"{CIRCLE_STAR} All MobApp devices are assigned"}
+        devices_available = {f"nodev": "None, All MobApp devices are assigned"}
     if (selected_devicename
             and is_empty(devices_this_device)
             and self.conf_device[CONF_MOBILE_APP_DEVICE] != 'None'
@@ -525,11 +525,11 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
         self.mobapp_list_text_by_entity_id.update(devices_this_device)
         self.mobapp_list_text_by_entity_id.update({'.dashes': '═'*51})
     self.mobapp_list_text_by_entity_id.update(MOBAPP_DEVICE_NONE_OPTIONS)
-    self.mobapp_list_text_by_entity_id.update({'.available': f"✅ ⋯⋯⋯ AVAILABLE MOBILE APP DEVICES {'⋯'*17} ✅"})
+    self.mobapp_list_text_by_entity_id.update({'.available': f"✅ ______ AVAILABLE MOBILE APP DEVICES {'_'*40}"})
     self.mobapp_list_text_by_entity_id.update(sort_dict_by_values(devices_available))
-    self.mobapp_list_text_by_entity_id.update({'.assigned': f"🅰️ ⋯⋯⋯ ASSIGNED TO ANOTHER ICLOUD3 DEVICE {'⋯'*13} 🅰️"})
+    self.mobapp_list_text_by_entity_id.update({'.assigned': f"🅰️ ______ ASSIGNED TO ANOTHER ICLOUD3 DEVICE {'_'*32} "})
     self.mobapp_list_text_by_entity_id.update(sort_dict_by_values(devices_used))
-    self.mobapp_list_text_by_entity_id.update({'.scanfor': f"🔄 ⋯⋯⋯ SCAN FOR DEVICE TRACKER ENTITY {'⋯'*16} 🔄"})
+    self.mobapp_list_text_by_entity_id.update({'.scanfor': f"🔄 ______ SCAN FOR DEVICE TRACKER ENTITY {'_'*38}"})
     self.mobapp_list_text_by_entity_id.update(sort_dict_by_values(scan_for_mobapp_devices))
 
     return
@@ -570,7 +570,7 @@ async def build_picture_filename_selection_list(self):
             www_dir_idx += 1
             self.picture_by_filename[f".www_dirs{www_dir_idx}"] = over_25_warning_msg
 
-        self.picture_by_filename['.available'] = f"✅ ⋯⋯⋯ DEVICE PICTURE FILE NAMES {'⋯'*16} ✅"
+        self.picture_by_filename['.available'] = f"✅ ______ DEVICE PICTURE FILE NAMES {'_'*38}"
         self.picture_by_filename['setup_dir_filter'] = "➤ FILTER IMAGE DIRECTORIES > Select directories with the picture image files"
         self.picture_by_filename.update(self.picture_by_filename_base)
 

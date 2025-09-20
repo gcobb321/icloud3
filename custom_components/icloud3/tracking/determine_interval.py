@@ -20,15 +20,12 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONES, HIGH_INTEGER,
-                                    CRLF, CHECK_MARK, CIRCLE_X, LTE, LT, PLUS_MINUS, RED_X, CIRCLE_STAR2, CRLF_DOT,
-                                    RARROW,
-                                    STATIONARY, STATIONARY_FNAME, STATZONE, WATCH, MOBAPP, YELLOW_ALERT,
-                                    ICLOUD,
+                                    LT, RED_X, RARROW,
+                                    EVLOG_TIME_RECD, EVLOG_ALERT,
+                                    WATCH, DEVICE_TYPES_CELL_SVC,
                                     AWAY_FROM, FAR_AWAY, TOWARDS, PAUSED, INZONE, INZONE_STATZONE, INZONE_HOME,
                                     ERROR, UNKNOWN, VALID_DATA, NEAR_DEVICE_DISTANCE,
-                                    WAZE,
                                     WAZE_USED, WAZE_NOT_USED, WAZE_PAUSED, WAZE_OUT_OF_RANGE, WAZE_NO_DATA,
-                                    EVLOG_TIME_RECD, EVLOG_ALERT,
                                     NEAR_DEVICE_USEABLE_SYM, EXIT_ZONE,
                                     ZONE, ZONE_INFO, INTERVAL,
                                     DISTANCE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
@@ -41,7 +38,7 @@ from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONE
                                     )
 
 from ..utils.utils          import (instr, isbetween, round_to_zero, is_zone, is_statzone, isnot_zone,
-                                    zone_dname, list_add, )
+                                    zone_dname, list_add, list_to_str, )
 from ..utils.messaging      import (post_event, post_error_msg,
                                     post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
                                     post_internal_error, post_monitor_msg, log_debug_msg, log_data,
@@ -426,6 +423,11 @@ def determine_interval(Device, FromZone):
         except:
             pass
 
+        # Left a one, relocate non-mobapp devices that are nearby devices in 2-mins
+        # _evlog(Device, f"{isnotin_zone=} {wasin_zone=}")
+        if wasin_zone and isnotin_zone:
+            locate_nearby_device_after_zone_exit(Device)
+
         # Update all dates and other fields
         Device.loc_data_dist_moved_km = dist_moved_km
         FromZone.interval_secs    = interval_secs
@@ -629,6 +631,7 @@ def post_results_message_to_event_log(Device, FromZone):
                 f"Method-{FromZone.interval_method}")
     #log_info_msg(Device, log_msg)
     post_monitor_msg(Device, log_msg)
+
 
 #--------------------------------------------------------------------------------
 def post_zone_time_dist_event_msg(Device, FromZone):
@@ -1383,7 +1386,7 @@ def update_near_device_info(Device):
 def set_dist_to_devices(post_event_msg=False):
 
         # for Device in Gb.Devices:
-        #     Device.nearby_device_group = 0
+        #     Device.near_device_group = 0
         # dev_group = 0
         # ndg_msg = ''
 
@@ -1399,14 +1402,14 @@ def set_dist_to_devices(post_event_msg=False):
 
                     dist_to_m = Device_from.distance_m(Device_to.loc_data_latitude, Device_to.loc_data_longitude)
                     # if (dist_to_m <= 50
-                    #         and Device_to.nearby_device_group == 0):
-                    #     if Device_from.nearby_device_group > 0:
-                    #         Device_to.nearby_device_group = Device_from.nearby_device_group
+                    #         and Device_to.near_device_group == 0):
+                    #     if Device_from.near_device_group > 0:
+                    #         Device_to.near_device_group = Device_from.near_device_group
                     #     else:
                     #         dev_group += 1
-                    #         Device_from.nearby_device_group = dev_group
-                    #         Device_to.nearby_device_group   = dev_group
-                    #     ndg_msg += f"{Device_from}-{Device_to} {int(dist_to_m)}m {Device_from.nearby_device_group}/{Device_to.nearby_device_group}, "
+                    #         Device_from.near_device_group = dev_group
+                    #         Device_to.near_device_group   = dev_group
+                    #     ndg_msg += f"{Device_from}-{Device_to} {int(dist_to_m)}m {Device_from.near_device_group}/{Device_to.near_device_group}, "
 
                     if dist_to_m == 0:
                         continue
@@ -1435,7 +1438,7 @@ def set_dist_to_devices(post_event_msg=False):
 
         # Gb.Devices_by_nearby_group = {}
         # for Device in Gb.Devices:
-        #     dev_group = Device.nearby_device_group
+        #     dev_group = Device.near_device_group
         #     nearby_Devices = Gb.Devices_by_nearby_group.get(dev_group, [])
         #     list_add(nearby_Devices, Device)
         #     Gb.Devices_by_nearby_group[dev_group] = nearby_Devices
@@ -1587,10 +1590,41 @@ def _check_near_device_circular_loop(_Device, Device):
     return can_use_device
 
 #--------------------------------------------------------------------------------
+def locate_nearby_device_after_zone_exit(Device):
+    '''
+    If this Device is exiting via a mobile app Exit Zone trigger, check to see if there are
+    other nearby Devices that do not use the mobapp. If so, trigger a location update in
+    2-minss to see if they also exited the zone.
+    '''
+    # _evlog(Device, f"{Device.near_device_group=}")
+    if Device.near_device_group == 0:
+        return
+
+    nearby_non_mobapp_Devices = [_Device
+                for _Device in Gb.Devices_by_nearby_group[Device.near_device_group]
+                if (_Device.mobapp_monitor_flag is False
+                    and secs_to(_Device.next_update_secs) > 120
+                    and _Device.device_type in DEVICE_TYPES_CELL_SVC
+                    and _Device.is_tracked)]
+
+    # _evlog(Device, f"{Device.near_device_group=} {nearby_non_mobapp_Devices=}")
+    nearby_non_mobapp_device_fnames = ''
+    if nearby_non_mobapp_Devices:
+        for _Device in nearby_non_mobapp_Devices:
+            _Device.reset_tracking_fields(interval_secs=120)
+            nearby_non_mobapp_device_fnames += f"{_Device.fname}, "
+
+        post_event(Device, f"Zone Exit > "
+                    f"Locate Nearby Devices-"
+                    f"{nearby_non_mobapp_device_fnames[:-2]}")
+        post_event(_Device, f"Trigger > Nearby Device Zone Exit "
+                            f"({Device.fname})")
+
+#--------------------------------------------------------------------------------
 def set_nearby_devices_group():
 
         for Device in Gb.Devices:
-            Device.nearby_device_group = 0
+            Device.near_device_group = 0
         dev_group = 0
         ndg_msg = ''
 
@@ -1601,7 +1635,7 @@ def set_nearby_devices_group():
 
         for devicename_from, Device_from in Gb.Devices_by_devicename.items():
             for devicename_to, Device_to in Gb.Devices_by_devicename.items():
-                if (Device_to.nearby_device_group > 0
+                if (Device_to.near_device_group > 0
                         or devicename_from == devicename_to
                         or Device_from.loc_data_secs == 0
                         or Device_to.loc_data_secs == 0):
@@ -1609,20 +1643,43 @@ def set_nearby_devices_group():
 
                 dist_to_m = Device_from.distance_m(Device_to.loc_data_latitude, Device_to.loc_data_longitude)
                 if (dist_to_m > NEAR_DEVICE_DISTANCE
-                        or Device_to.nearby_device_group > 0):
+                        or Device_to.near_device_group > 0):
+                    # _evlog(f"{Device_from}-{Device_to} {int(dist_to_m)}>{NEAR_DEVICE_DISTANCE}, {Device_to.near_device_group}")
                     continue
 
-                if Device_from.nearby_device_group > 0:
-                    Device_to.nearby_device_group = Device_from.nearby_device_group
+                if Device_from.near_device_group > 0:
+                    Device_to.near_device_group = Device_from.near_device_group
                 else:
                     dev_group += 1
-                    Device_from.nearby_device_group = dev_group
-                    Device_to.nearby_device_group   = dev_group
-                ndg_msg += f"{Device_from}-{Device_to} {int(dist_to_m)}m {Device_from.nearby_device_group}/{Device_to.nearby_device_group}, "
+                    Device_from.near_device_group = dev_group
+                    Device_to.near_device_group   = dev_group
+                ndg_msg += f"{Device_from}-{Device_to} {int(dist_to_m)}m {Device_from.near_device_group}/{Device_to.near_device_group}, "
 
         Gb.Devices_by_nearby_group = {}
         for Device in Gb.Devices:
-            dev_group = Device.nearby_device_group
+            dev_group = Device.near_device_group
             nearby_Devices = Gb.Devices_by_nearby_group.get(dev_group, [])
             list_add(nearby_Devices, Device)
             Gb.Devices_by_nearby_group[dev_group] = nearby_Devices
+
+def log_near_device_groups():
+    for dev_group, devices in Gb.Devices_by_nearby_group.items():
+        _evlog(f"GROUPS {dev_group=} {devices=}")
+
+#--------------------------------------------------------------------------------
+def post_near_devices_msg(Device):
+    try:
+        # _evlog(f"{Device} {Device.near_device_group=}")
+        if Device.near_device_group > 0:
+            for dev_group, ndg_Devices in Gb.Devices_by_nearby_group.items():
+                # _evlog(f"{Device} {dev_group=} {ndg_Devices=}")
+                if Device not in ndg_Devices:
+                    continue
+
+                ndg_list = list_to_str([ndg_Device.fname for ndg_Device in ndg_Devices])
+                # _evlog(f"{Device} {ndg_list=}")
+                for ndg_Device in ndg_Devices:
+                    post_event(ndg_Device, f"Near Devices > {ndg_list}")
+    except Exception as err:
+        log_exception(err)
+        pass

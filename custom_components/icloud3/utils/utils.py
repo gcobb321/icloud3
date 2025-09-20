@@ -42,9 +42,11 @@ def list_to_str(list_value, separator=None):
     separator - Strig valut that separates each item (default = ', ')
     '''
     if list_value == [] or list_value is None: return ''
+
     separator_str = separator if separator else ', '
     if None in list_value or '' in list_value:
         list_value = [lv for lv in list_value if lv is not None and lv != '']
+
     list_str = separator_str.join(list_value) if list_value else 'None'
 
     if separator_str.startswith(CRLF):
@@ -162,7 +164,7 @@ def isnot_statzone(zone):
     return (instr(zone, STATIONARY) is False)
 
 #--------------------------------------------------------------------
-def isnumber(string):
+def is_number(string):
 
     try:
         test_number = float(string)
@@ -197,7 +199,7 @@ def isnot_empty(list_dict_str):
 
 #--------------------------------------------------------------------
 def round_to_zero(number):
-    if isnumber(number) is False:
+    if is_number(number) is False:
         return number
 
     int_number = int(number*100000000)

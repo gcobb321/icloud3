@@ -6,7 +6,7 @@ from ..const             import (DEVICE_TYPE_FNAME, CONF_FAMSHR_DEVICENAME, CONF
                                 CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                 )
 
-from ..utils.utils     import (instr, isnumber, is_empty, isnot_empty,
+from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
                                 encode_password, decode_password, )
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
@@ -332,7 +332,7 @@ def validate_numeric_field(self, user_input):
         if pname not in CONF_PARAMETER_FLOAT:
             continue
 
-        if isnumber(pvalue) is False:
+        if is_number(pvalue) is False:
             pvalue = pvalue.strip()
             if pvalue == '':
                 self.errors[pname] = "required_field"
@@ -360,7 +360,7 @@ def validate_time_str(self, user_input):
                 self.errors[pname] = "required_field"
                 self.errors_user_input[pname] = ''
                 continue
-            elif isnumber(str(time_parts[0])) is False:
+            elif is_number(str(time_parts[0])) is False:
                 self.errors[pname] = "not_numeric"
                 self.errors_user_input[pname] = user_input[pname]
                 continue

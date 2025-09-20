@@ -235,12 +235,12 @@ class InternetConnection_ErrorHandler:
                 Device.resume_tracking()
 
         if mins_since(last_internet_error_secs) <= 1:
-            event_msg =(f"Internet went down at "
+            event_msg =(f"Internet Connection issue at "
                         f"{secs_to_time(last_internet_error_secs)} "
                         f"for less than 1-min")
 
         post_event(f"{EVLOG_BROWN_BAR}{event_msg}")
-        log_error_msg(f"{EVLOG_ALERT}{event_msg}")
+        log_error_msg(f"iCloud3 Alert > {event_msg}")
 
         update_alert_sensor(ALERT_CRITICAL, f"Internet Connection restored at "
                                             f"{secs_to_time(time_now_secs())}")

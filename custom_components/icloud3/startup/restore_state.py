@@ -29,6 +29,10 @@ _LOGGER = logging.getLogger(f"icloud3")
 #   .STORAGE/ICLOUD3.RESTORE_STATE FILE ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+async def async_load_icloud3_restore_state_file():
+    return await Gb.hass.async_add_executor_job(load_icloud3_restore_state_file)
+
+
 def load_icloud3_restore_state_file():
 
     try:

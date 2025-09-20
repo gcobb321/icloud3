@@ -496,28 +496,6 @@ class iCloud3:
             else:
                 mobapp_data_handler.reset_statzone_on_enter_exit_trigger(Device)
 
-            # If this Device is exiting via a mobile app Exit Zone trigger, check to see if there are
-            # other nearby Devices that do not use the mobapp. If so, trigger a location update in
-            # 15-secs to see if they also exited the zone.
-            if (Device.got_exit_trigger_flag
-                    and Device.nearby_device_group > 0):
-                nearby_non_mobapp_Devices = [_Device
-                            for _Device in Gb.Devices_by_nearby_group[Device.nearby_device_group]
-                            if (_Device.mobapp_monitor_flag is False
-                                and _Device.device_type in DEVICE_TYPES_CELL_SVC
-                                and _Device.is_tracked)]
-
-                nearby_non_mobapp_device_fnames = ''
-                if nearby_non_mobapp_Devices:
-                    for _Device in nearby_non_mobapp_Devices:
-                        _Device.reset_tracking_fields(interval_secs=60)
-                        nearby_non_mobapp_device_fnames += f"{_Device.fname}, "
-
-                    post_event(devicename,
-                                f"Exited Zone ({zone_dname(Device.mobapp_zone_exit_zone)}) > "
-                                f"Locate Nearby Devices-"
-                                f"{nearby_non_mobapp_device_fnames}")
-
             self._validate_new_mobapp_data(Device)
             self.location_updated_by_Device[Device] = MOBAPP
 
@@ -1112,6 +1090,7 @@ class iCloud3:
                                         f"CurrZone-{Device.sensor_zone}")
 
         self._post_after_update_monitor_msg(Device)
+        det_interval.post_near_devices_msg(Device)
 
 #...............................................................................
     def _results_special_msg(self, Device):

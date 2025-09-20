@@ -3,8 +3,7 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (PLATFORM_SENSOR, DOMAIN, SENSOR,
                                 HIGH_INTEGER, NOT_SET,
                                 HOME, ZONE, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
-                                TRACE_ICLOUD_ATTRS_BASE, TRACE_ATTRS_BASE,
-                                BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
+                                TRACE_ATTRS_BASE, TRACE_ICLOUD_ATTRS_BASE,                                BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME,
                                 LAST_UPDATED_SECS, LAST_UPDATED_TIME,
                                 STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
@@ -16,6 +15,7 @@ from .time_util         import (secs_to_time)
 from homeassistant.helpers import entity_registry as er, device_registry as dr
 from datetime import datetime
 import json
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

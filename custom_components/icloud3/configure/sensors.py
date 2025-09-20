@@ -14,7 +14,7 @@ from ..const_sensor     import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
                                 SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
                                 SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS, )
 
-from ..utils.utils      import (instr, isnumber, is_empty, isnot_empty, list_add, list_del,
+from ..utils.utils      import (instr, is_number, is_empty, isnot_empty, list_add, list_del,
                                 encode_password, decode_password, )
 from ..utils.messaging  import (log_exception, log_debug_msg, log_error_msg, add_log_file_filter,
                                 _log, _evlog, )
@@ -26,6 +26,9 @@ from ..                  import device_tracker as ic3_device_tracker
 
 from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                     )
+
+from homeassistant.helpers  import (entity_registry as er,
+                                    device_registry as dr, )
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -50,6 +53,19 @@ def create_device_tracker_and_sensor_entities(self, devicename, conf_device):
 
         Create device_tracker.[devicename] and all sensor.[devicename]_[sensor_name]
         associated with the device.
+
+    # TESTCODE
+    def handle_deleted_device(device_id: str) -> None:
+        # Handle a deleted device.
+        dev_entry = device_registry.async_get_device(
+            identifiers={(DOMAIN, device_id)},
+        )
+        if dev_entry is not None:
+            device_registry.async_update_device(
+                dev_entry.id, remove_config_entry_id=entry.entry_id
+            )
+
+
     """
 
     if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
@@ -58,10 +74,13 @@ def create_device_tracker_and_sensor_entities(self, devicename, conf_device):
     NewDeviceTrackers = []
     DeviceTracker     = None
     ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
-    if devicename in Gb.DeviceTrackers_by_devicename:
-        DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
-    else:
+
+    try:
         DeviceTracker = ic3_device_tracker.iCloud3_DeviceTracker(devicename, conf_device)
+
+    except Exception as err:
+        log_exception(err)
+        return
 
     if DeviceTracker is None:
         return
@@ -70,11 +89,19 @@ def create_device_tracker_and_sensor_entities(self, devicename, conf_device):
     Gb.DeviceTrackers_by_devicename[devicename] = DeviceTracker
     NewDeviceTrackers.append(DeviceTracker)
 
-    Gb.async_add_entities_device_tracker(NewDeviceTrackers, True)
+    try:
+
+        Gb.async_add_entities_device_tracker(NewDeviceTrackers, True)
+        ic3_device_tracker.log_devices_added_deleted('', [devicename])
+
+    except Exception as err:
+        log_exception(err)
 
     sensors_list = build_all_sensors_list()
     create_sensor_entity(devicename, conf_device, sensors_list)
-    self.devices_added_deleted_flag = True
+    self.rebuild_ic3db_dashboards = True
+    ic3_sensor.log_sensors_added_deleted('ADDED', devicename)
+                                #devicename, Gb.sensors_added_by_devicename[devicename])
 
 #-------------------------------------------------------------------------------------------
 def remove_device_tracker_entity(self, devicename):
@@ -94,24 +121,32 @@ def remove_device_tracker_entity(self, devicename):
     try:
         for sensor, Sensor in Gb.Sensors_by_devicename[devicename].items():
             entity_io.remove_entity(Sensor.entity_id)
+            del Gb.Sensors_by_devicename[devicename]
+            del Sensor
     except:
         pass
 
     try:
         for sensor, Sensor in Gb.Sensors_by_devicename_from_zone[devicename].items():
             entity_io.remove_entity(Sensor.entity_id)
+            del Gb.Sensors_by_devicename[devicename]
+            del Sensor
     except:
         pass
 
     try:
         DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
         DeviceTracker.remove_device_tracker()
+        del Gb.DeviceTrackers_by_devicename[devicename]
+        del DeviceTracker
+
     except:
         pass
 
-    ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
+    ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 
-    self.devices_added_deleted_flag = True
+    ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
+    self.rebuild_ic3db_dashboards = True
 
 #-------------------------------------------------------------------------------------------
 def devices_form_identify_new_and_removed_tfz_zones(self, user_input):
@@ -152,11 +187,14 @@ def remove_track_fm_zone_sensor_entity(devicename, remove_tfz_zones_list):
     # Cycle through the zones that are no longer tracked from for the device, then cycle
     # through the Device's sensor list and remove all track_from_zone sensors ending with
     # that zone.
+    removed_sensors = []
     for zone in remove_tfz_zones_list:
         for sensor, Sensor in device_tfz_sensors.copy().items():
             if (sensor.endswith(f"_{zone}")
                     and Sensor.entity_removed_flag is False):
                 entity_io.remove_entity(Sensor.entity_id)
+
+    ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 
 #-------------------------------------------------------------------------------------------
 def create_track_fm_zone_sensor_entity(self, devicename, new_tfz_zones_list):
@@ -178,8 +216,18 @@ def create_track_fm_zone_sensor_entity(self, devicename, new_tfz_zones_list):
     if NewZones is not []:
         Gb.sensor_async_add_entities(NewZones, True)
 
+    tfz_sensors_list = [f"{sensor.replace('tfz_', '')}_{new_zone}"
+                                for sensor in sensors_list
+                                for new_zone in new_tfz_zones_list]
+
+    ic3_sensor.log_sensors_added_deleted('ADDED', devicename)
+
 #-------------------------------------------------------------------------------------------
 def update_track_from_zones_sensors(self, user_input):
+    '''
+    Update track_from zone sensors that were changed on the Update Devices screen.
+    Called from config_flow Update Devices Other fields screen
+    '''
 
     devicename = self.conf_device[CONF_IC3_DEVICENAME]
     self.conf_device[CONF_TRACK_FROM_ZONES] = user_input[CONF_TRACK_FROM_ZONES]
@@ -196,6 +244,9 @@ def update_track_from_zones_sensors(self, user_input):
     if 'new_tfz_zones' in self.update_device_ha_sensor_entity:
         new_tfz_zones_list = self.update_device_ha_sensor_entity['new_tfz_zones']
         create_track_fm_zone_sensor_entity(self, devicename, new_tfz_zones_list)
+
+    ic3_sensor.log_sensors_added_deleted('ADDED', devicename)
+    ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 
 #-------------------------------------------------------------------------------------------
 def sensor_form_identify_new_and_removed_sensors(self, user_input):
@@ -283,6 +334,8 @@ def remove_sensor_entity(remove_sensors_list, select_devicename=None):
             if Sensor.entity_removed_flag is False:
                 entity_io.remove_entity(Sensor.entity_id)
 
+        ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
+
     # Remove track_fm_zone sensors
     device_track_from_zones = {k['ic3_devicename']: k['track_from_zones'] for k in Gb.conf_devices}
     for devicename, devicename_sensors in Gb.Sensors_by_devicename_from_zone.items():
@@ -318,6 +371,7 @@ def create_sensor_entity(devicename, conf_device, new_sensors_list):
         return
 
     Gb.sensor_async_add_entities(NewSensors, True)
+    ic3_sensor.log_sensors_added_deleted('ADDED', devicename)#, sensors_list)
 
 #-------------------------------------------------------------------------------------------
 def build_all_sensors_list():

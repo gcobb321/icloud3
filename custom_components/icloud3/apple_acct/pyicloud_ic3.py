@@ -528,7 +528,7 @@ class PyiCloudManager():
                 err_msg += f"ErrorCode-{self.response_code}"
 
                 #log_info_msg(err_msg)
-                log_info_msg(f"{err_msg}")
+                post_error_msg(f"{err_msg}")
                 self.is_authenticated = False
                 return False
                 # raise PyiCloudFailedLoginException(err_msg)
@@ -1205,6 +1205,8 @@ class PyiCloudManager():
             self.AADevices.refresh_device(  locate_all_devices=locate_all_devices,
                                             requested_by_devicename=requested_by_devicename,
                                             device_id=device_id)
+
+            self.PyiCloudSession.cancel_request_timeout_timer()
 
             return
 

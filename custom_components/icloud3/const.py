@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.2.4'
+VERSION                         = '3.2.4.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -367,12 +367,14 @@ Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• �
 ✅❎☑️⏭️⏮️🍏🅰️
 ↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗
 ●•✶✹✽♦✱✥❄✪⬥⨳✫✡  ﹡✱*⨯⧫♦⚙⚹⚙️✳🞺🞴🞸🞳
-  ═ ⎯ — –ᗒ⋮… ⁃ » ━▶ ━➤🡺 —> > ❯↦ …⋯⋮ ⋱⋰🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆aak◈◉● ⟷•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
-  ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
- ⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⟡⯌✦⯌⯏⯍aak✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢aak. 🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
- ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
- https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
- https://www.htmlsymbols.xyz/unit-symbols
+═ ⎯ — –ᗒ ⁃ » ━▶ ━➤🡺 —> > ❯↦ 🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆aak◈◉● ⟷
+•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
+▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
+.…⋯⋮ ⋱⋰ ⠁⠂⠐⠄⠠⠈⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⟡⯌✦⯌⯏⯍aak✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢aak. 
+🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
+≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
+https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
+https://www.htmlsymbols.xyz/unit-symbols
 '''
 NBSP              = '⠈' #'&nbsp;'
 NBSP2             = '⠉' #'&nbsp;&nbsp;'
@@ -382,6 +384,10 @@ NBSP5             = '⠟' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 NBSP6             = '⠿' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 CRLF              = '⣇' #'<br>'
 NL                = '\n'
+NLSP4             = '\n⠂   '
+NL4               = '\n⠀⠀⠀'
+NL4_DATA          = '\n⠀⠀⠀❗ '
+BSP4              = '⠀⠀⠀⠀'  # Braille spaces
 LLINK             = ''
 RLINK             = ''
 LINK              = '⟢'
@@ -783,6 +789,7 @@ CONF_PASSTHRU_ZONE_TIME         = 'passthru_zone_time'
 CONF_LOG_LEVEL                  = 'log_level'
 CONF_LOG_LEVEL_DEVICES          = 'log_level_devices'
 CONF_DISPLAY_GPS_LAT_LONG       = 'display_gps_lat_long'
+CONF_RECREATE_MAIN_DASHBOARD    = 'recreate_main_dashboard'
 
 # Zone Parameters
 CONF_DEVICE_TRACKER_STATE_SOURCE= 'device_tracker_state_source'
@@ -810,7 +817,6 @@ CONF_STAT_ZONE_STILL_TIME       = 'stat_zone_still_time'
 CONF_STAT_ZONE_INZONE_INTERVAL  = 'stat_zone_inzone_interval'
 CONF_STAT_ZONE_BASE_LATITUDE    = 'stat_zone_base_latitude'
 CONF_STAT_ZONE_BASE_LONGITUDE   = 'stat_zone_base_longitude'
-
 
 # Display Text As Parameter
 CONF_DISPLAY_TEXT_AS            = 'display_text_as'
@@ -1038,6 +1044,7 @@ DEFAULT_GENERAL_CONF = {
         CONF_TRACK_FROM_BASE_ZONE_USED: True,
         CONF_TRACK_FROM_BASE_ZONE: HOME,
         CONF_TRACK_FROM_HOME_ZONE: True,
+        CONF_RECREATE_MAIN_DASHBOARD: False,
 
         # inZone Configuration Parameters
         CONF_CENTER_IN_ZONE: False,
@@ -1252,7 +1259,7 @@ FAMSHR_LOCATION_FIELDS = [
         ICLOUD_VERTICAL_ACCURACY,
         ICLOUD_BATTERY_STATUS, ]
 
-LOG_RAWDATA_FIELDS = [
+X_LOG_RAWDATA_FIELDS = [
         LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD, DATA_SOURCE, NEAR_DEVICE_USED,
         ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
         TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,

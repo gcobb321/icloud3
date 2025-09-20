@@ -13,7 +13,7 @@ from ..utils.messaging    import (log_info_msg, log_debug_msg, log_exception,
                                     post_event, post_evlog_greenbar_msg,
                                     _evlog, _log, )
 from ..utils.time_util    import (datetime_now, secs_to_datetime, )
-from ..utils.file_io      import (file_exists, async_read_json_file, )
+from ..utils.file_io      import (file_exists, async_read_json_file, read_json_file, )
 from ..utils                 import entity_io
 
 # import os
@@ -96,6 +96,9 @@ async def _async_get_hacs_ic3_data(hacs_repository_file):
 
     try:
         hacs_repository_file_data = await async_read_json_file(hacs_repository_file)
+        # hacs_repository_file_data = await Gb.hass.async_add_executor_job(
+        #                     read_json_file,
+        #                     hacs_repository_file)
 
         if hacs_repository_file_data != {}:
             hacs_ic3_items = {_component_name(hacs_item_data):

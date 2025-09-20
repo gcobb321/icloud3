@@ -252,6 +252,8 @@ class GlobalVariables(object):
     Sensor_EventLog                 = None    # Event Log sensor object
     ha_device_id_by_devicename      = {}  # HA device_registry device_id
     ha_area_id_by_devicename        = {}  # HA device_registry area_id
+    sensors_added_by_devicename     = {}  # Updated when a sensor is added in sensor.added_to-hass
+    sensors_removed_by_devicename   = {}  # Updated when a sensor is removed in sensor.after_removal_cleanup
 
     # Event Log operational fields
     evlog_card_directory            = ''
@@ -280,11 +282,11 @@ class GlobalVariables(object):
     reinitialize_icloud_devices_cnt = 0
 
     # Debug and trace flags
-    log_debug_flag               = False
-    log_data_flag                = False
-    log_data_flag_unfiltered     = False
+    log_debug_flag               = True
+    log_rawdata_flag                = False
+    log_rawdata_flag_unfiltered     = False
     log_debug_flag_restart       = None
-    log_data_flag_restart        = None
+    log_rawdata_flag_restart        = None
     evlog_trk_monitors_flag      = False
     evlog_startup_log_flag       = False
     info_notification            = ''

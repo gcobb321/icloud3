@@ -45,7 +45,7 @@ from ..const            import (RED_ALERT, LINK, RLINK, RARROW,
                                 CF_PROFILE,
                                 )
 
-from ..utils.utils      import (instr, isbetween, list_to_str, list_add, is_empty, isnot_empty,
+from ..utils.utils      import (instr, isbetween, list_to_str, list_add, list_del, is_empty, isnot_empty,
                                 zone_dname, decode_password, dict_value_to_list,
                                 six_item_list, six_item_dict, )
 from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg,
@@ -56,9 +56,9 @@ from ..utils.time_util  import (format_timer, )
 from .                  import utils_configure as utils
 from .                  import selection_lists as lists
 from .const_form_lists  import *
+from ..configure        import dashboard_builder as dbb
 from ..mobile_app       import mobapp_interface
 from ..startup          import config_file
-
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             USER - INITIAL ADD INTEGRATION
@@ -88,6 +88,12 @@ def form_config_option_user(self):
 def form_menu(self):
     menu_title = MENU_PAGE_TITLE[self.menu_page_no]
     menu_action_items = MENU_ACTION_ITEMS.copy()
+    if self.rebuild_ic3db_dashboards:
+        dbb.load_ic3db_dashboards_from_ha_data(self)
+
+        if isnot_empty(self.ic3db_Dashboards_by_dbname):
+            list_del(menu_action_items, MENU_KEY_TEXT['exit'])
+            list_add(menu_action_items, MENU_KEY_TEXT['exit_update_dashboards'])
 
     if self.menu_page_no == 0:
         menu_key_text  = MENU_KEY_TEXT_PAGE_0
@@ -808,27 +814,39 @@ def form_update_other_device_parameters(self):
 #           DASHBOARD BUILDER FORM
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_dashboard_builder(self):
+    dbname = self.ui_selected_dbname
     self.actions_list = []
-    action_default = 'update_dashboard'
-    if isnot_empty(self.dbf_dashboard_key_text):
-        self.actions_list.append(ACTION_LIST_OPTIONS['update_dashboard'])
+    action_default = 'create_dashboard'
     self.actions_list.append(ACTION_LIST_OPTIONS['create_dashboard'])
     self.actions_list.append(ACTION_LIST_OPTIONS['cancel_goto_menu'])
 
     # Set default dashboard to current dashboard, the previous dashboard or 'add'
-    default_dbname = self.dbf_dashboard_key_text[self.selected_dbname]
+    default_dbname = self.dbf_dashboard_key_text[dbname]
+
+    default_main_view_style = DASHBOARD_MAIN_VIEW_STYLE_OPTIONS[RESULT_SUMMARY]
 
     self.dbf_main_view_devices_key_text = {}
-    self.dbf_main_view_devices_key_text.update(DASHBOARD_MAIN_VIEW_STYLE_BASE)
+    self.dbf_main_view_devices_key_text.update(DASHBOARD_MAIN_VIEW_DEVICES_BASE)
     self.dbf_main_view_devices_key_text.update(lists.devices_selection_list())
+    # main_view_devices = self.main_view_info_dnames_by_dbname.get(dbname, ALL_DEVICES)
+
+    # if is_empty(self.ui_main_view_dnames):
+    self.ui_main_view_dnames = [ALL_DEVICES]
 
     return vol.Schema({
         vol.Required('selected_dashboard',
                     default=default_dbname):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.dbf_dashboard_key_text), mode='list')),
+        # vol.Optional('main_view_desc',
+        #             default=False):
+        #             selector.BooleanSelector(),
+        vol.Required('main_view_style',
+                    default=default_main_view_style):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(DASHBOARD_MAIN_VIEW_STYLE_OPTIONS), mode='dropdown')),
         vol.Required('main_view_devices',
-                    default=self.main_view_devices):
+                    default=self.ui_main_view_dnames):
                     cv.multi_select(six_item_dict(self.dbf_main_view_devices_key_text)),
 
         vol.Required('action_items',
@@ -871,7 +889,7 @@ def form_actions(self):
         debug_OPTIONS.pop('debug_start')
     else:
         debug_OPTIONS.pop('debug_stop')
-    if Gb.log_data_flag:
+    if Gb.log_rawdata_flag:
         debug_OPTIONS.pop('rawdata_start')
     else:
         debug_OPTIONS.pop('rawdata_stop')

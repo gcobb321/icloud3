@@ -3,6 +3,26 @@ from ..global_variables  import GlobalVariables as Gb
 from ..const             import (NAME, BATTERY, WAZE_SERVERS_FNAME, )
 
 #----------------------------------------------------------------------------------------
+# Dashboard constants
+RESULT_SUMMARY = 'result-summary'
+TRACK_DETAILS  = 'track-details'
+ALL_DEVICES    = 'all-devices'
+IPHONE_FIRST_2 = 'iphone-first-2'
+ALL_IPH2_DEVICES = [ALL_DEVICES, IPHONE_FIRST_2]
+
+DATA           = 'data'
+CONFIG         = 'config'
+ITEMS          = 'items'
+VIEWS          = 'views'
+TITLE          = 'title'
+PATH           = 'path'
+ADD            = 'add'
+IC3DB          = 'ic3db-'
+
+DATA_ENTRY_ALERT_CHAR = '⛔'
+DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
+
+#----------------------------------------------------------------------------------------
 MENU_PAGE_0_INITIAL_ITEM = 1
 MENU_PAGE_TITLE = [
         'Devices & Sensors Menu',
@@ -28,14 +48,14 @@ MENU_KEY_TEXT = {
         'select':               'SELECT > Select the parameter update form',
         'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request Verification Code; Change Device Order; Sensors; Action Commands',
         'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Field Formats & Directories, Display Text As, Waze Route Distance/Time & History, Special Zones, Default inZone Intervals',
-        'exit':                 f'EXIT AND RESTART/RELOAD ICLOUD3 (Current version is v{Gb.version})'
+        'exit':                 'EXIT AND RESTART ICLOUD3',
+        'exit_update_dashboards': 'EXIT AND RESTART ICLOUD3 - UPDATE DASHBOARDS WITH DEVICE CHANGES'
 }
 
 MENU_KEY_TEXT_PAGE_0 = [
         MENU_KEY_TEXT['data_source'],
         MENU_KEY_TEXT['device_list'],
         MENU_KEY_TEXT['verification_code'],
-        # MENU_KEY_TEXT['away_time_zone'],
         MENU_KEY_TEXT['sensors'],
         MENU_KEY_TEXT['dashboard_builder'],
         MENU_KEY_TEXT['tools'],
@@ -90,8 +110,7 @@ ACTION_LIST_OPTIONS = {
         'restart_ic3_later':        'RESTART LATER > The configuration changes have been saved. Load the updated configuration the next time iCloud3 is started',
         'review_inactive_devices':  'REVIEW INACTIVE DEVICES > Some Devices are `Inactive` and will not be located or tracked ^add-text^',
 
-        'update_dashboard':         'UPDATE A DASHBOARD > Update the *All Info, *Track Results & *Badge, Battery views with the current devices (Main and Other Devices views are not updated)',
-        'create_dashboard':         'RECREATE A DASHBOARD > Erase and recreate an existing Dashboard with current devices, Create a new Dashboard',
+        'create_dashboard':         'CREATE/UPDATE A DASHBOARD > Erase and recreate an existing Dashboard, Create a new Dashboard',
 
         'select_text_as':           'SELECT > Update selected `Display Text As‘ field',
         'clear_text_as':            'CLEAR > Remove `Display Text As‘ entry',
@@ -188,7 +207,6 @@ CONFIRM_ACTIONS =  [
         ACTION_LIST_OPTIONS['confirm_action_yes'],
         ACTION_LIST_OPTIONS['confirm_return_no']]
 DASHBOARD_BUILDER_ACTIONS = [
-        ACTION_LIST_OPTIONS['update_dashboard'],
         ACTION_LIST_OPTIONS['create_dashboard'],
         ACTION_LIST_OPTIONS['cancel_goto_menu']]
 TOOL_LIST = {
@@ -237,10 +255,17 @@ MOBAPP_DEVICE_NONE_OPTIONS = {
 PICTURE_NONE_KEY_TEXT = {
         'None': 'None - Display the Device’s Icon instead of a picture'
         }
-DASHBOARD_MAIN_VIEW_STYLE_BASE = {
-        'result-summary':   'Tracking Result Summary',
-        'iphone-first-2':   'Tracking Results & Status - 2 iPhones',
-        'iphone-all':       'Tracking Results & Status - All iPhones',
+DASHBOARD_MAIN_VIEW_STYLE_OPTIONS = {
+        'result-summary': 'Result Summary - Show Arrival Time, Distance Travel Time, Battery Info',
+        'track-details':  'Tracking Details - Show all results of a location update',
+        }
+DASHBOARD_MAIN_VIEW_STYLES = {
+        'result-summary': 'Result Summary',
+        'track-details':  'Tracking Details',
+        }
+DASHBOARD_MAIN_VIEW_DEVICES_BASE = {
+        'all-devices':    'All Devices',
+        'iphone-first-2': 'First 2 iPhones',
         }
 LOG_ZONES_KEY_TEXT = {
         'name-zone':        ' → [year]-[zone].csv',
@@ -454,6 +479,3 @@ DATA_SOURCE_MOBAPP_HDR = (
         "HA MOBILE APP > Location data and zone Enter/Exit triggers are provided by the Mobile App")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-DATA_ENTRY_ALERT_CHAR = '⛔'
-DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "

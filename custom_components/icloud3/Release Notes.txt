@@ -1,4 +1,4 @@
-### Important Links:
+### 📌 Important Links:
 **Installing for the first time_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.2-installing-and-configuring) for instructions on installing as a New Installation
 **iCloud3 v3 Documentation** - iCloud3 User Guide can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
 **Migrating from v2.4.7_** - See [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3.1-migrating-v2-to-v3) for instructions on migrating from from an older version.
@@ -7,8 +7,59 @@
 *Thanks to all of you who clicked the coffee cup icon on the Event Log and bought me a coffee.*
 Gary
 
+
+📢🚩🐛✨💥🚀🎁
+
+
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
+
+
+### iCloud3 ➤ v3.2.4.2 (9/20/2025)
+### 🐞 Bug Fixes
+- **Away Time Zone** - Fixed a problem where the time zone adjustment was reset to the Home zone server time zone when iCloud3 was restarted
+- **Apple Account Login** - Fixed a problem where the Apple account server in China was not displaying an error message because the HA server was logged into through a VPN in another country.
+- **Other Bugs** - A few other minor bugs were fixed
+### ✨ Improvements
+- **Dashboard Builder:**
+    - When a device is added or deleted, all dashboards are now automatically updated. The new device is added to the Main View when it is displaying Result Summary information or when All Devices are displayed. It is removed from all views when it is deleted.
+    - The Dashboard Builder screen has been reformatted
+
+
+### iCloud3 ➤ v3.2.4.1 (8/22/2025)
+### 🐞 Bug Fixes
+- **Dashboard Builder** - Fixed a problem where the Dashboard Builder would fail if 'All Devices' was selected from the _Main View Devices_ selection list.
+- **Apple Account Login** - Fixed a problem where the error message description was not being set correctly when logging into an Apple Account being added failed.
+### ✨ Improvements
+- **Dashboard Builder:**
+    - The Devices to be displayed on the Main View (All Devices, First 2 iPhones or specific devices) can now be selected for both of the Main View formats (Result Summary & Tracking Details).
+    - Changed the Action options description t better describe their functions.
+
+
+
+### iCloud3 ➤ v3.2.4 (8/15/2025)
+### 🐞 Bug Fixes
+1. Dashboard Builder:
+     - Fixed an error reading the base template and dashboard files that are used to construct new dashboards.
+     - Fixed a problem where all devices would be inserted into a dashboards instead of only the selected ones.
+2. iCloud3 Log File - Fixed a problem when the log-level was set to 'unfiltered'.
+
+### ✨ Improvements
+1. Internet Connection Error - Added the following:
+    - The Event Log error description message and alerts are added after the internet has been down for 1-minute to prevent very short dropouts from creating a lot of unnecessary messages.
+    - Improved the error detection and testing done when verifying that Apple (icloud.com) can be connected to after the Internet is back online.
+    - Added a 1-minute timeout to catch Apple location requests that have not been responded to. This is usually caused by IPv6 being enabled in HA. Appropriate tests and error messages explain that it is probably an IPv6 issue with instructions on how to disable it.
+    - Improved the status message display messages.
+2. iCloud3 Startup:
+    - iCloud3 starts after HA has finished loading to prevent HA from locking up due to any iCloud3 errors.
+    - Significantly reduced the startup time when the log_level was set to `debug` (4 devices with 15 sensors went from pver 10-secs to less than 1-sec).
+3. Device Tracking - Devices not using the Mobile App (Watches) that are near other devices will be located 1-minute after the other devices have left a zone. This is not perfect and relies on Apple providing updated location data when it is relocated.
+4. Device Setup - Added Device Type categories to indicate if the iPad and Watch is WiFi only or Wifi+Cell.
+5. Tracking Results - The source of the GPS is displayed on the Event Log when a device's location is updated (GPS, WiFi, Cell, Unknown).
+6. iCloud3 Log File:
+    - Configuration file records were added to the log file when the log_level is set to `info` or `debug`.
+    - Fixed some problems formatting the log_level `debug` records.
+
 
 
 
@@ -39,24 +90,6 @@ Gary
 #### 🐛 Bug Fixes
 1. **Configure iCloud3** - Fixed a problem preventing the Apple devices list to be refreshed when the Verification Code was entered the first time on a new installation.
 2. **Tracking** - Fixed a problem displaying the number of devices in a stationary zone when a location update was being processed.
-
-
-### iCloud3 ➤ v3.2.4 (8/10/2025)
-### 🐛 Bug Fixes
-1. Dashboard Builder - Fixed an error reading the base template and dashboard files that are used to construct new dashboards.
-2. iCloud3 Log File - Fixed a problem when the log-level was set to 'unfiltered'.
-
-### 🎉 Improvements
-1. Internet Connection Error - Added the following:
-    - The Event Log error description message and alerts are addedafter the internet has been down for 1-minute to prevent very short dropouts from creating a lot of unnecessary messages.
-    - Improved the error detection and testing done when verifying that Apple (icloud.com) can be connected to after the Internet is back online.
-    - Added a 1-minute timeout to catch Apple location requests that have not been responded to. This is usually caused by IPv6 being enabled in HA. Appropriate tests and error messages explain that it is probably an IPv6 issue with instructions on how to disable it.
-    - Improved the status message display messages.
-2. iCloud3 Startup - iCloud3 starts after HA has finished loading to prevent HA from locking up due to any iCloud3 errors. The status messages in the Event Log were improved to provide more information on the startup delay.
-3. Device Tracking - Devices not using the Mobile App (Watches) that are near other devices will be located 1-minute after the other devices have left a zone. This is not perfect and relies on Apple providing updated location data when it is relocated.
-4. Device Setup - Added Device Type categories to indicate if the iPad and Watch is WiFi only or Wifi+Cell.
-5. Tracking Results - The source of the GPS is displayed on the Event Log when a device's location is updated (GPS, WiFi, Cell, Unknown).
-
 
 
 

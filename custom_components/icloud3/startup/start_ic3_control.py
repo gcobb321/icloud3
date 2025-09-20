@@ -47,7 +47,7 @@ def stage_1_setup_variables():
     #     Gb.prestartup_log = ''
     #     write_ic3log_recd(f"$$$$$\n#####\n{_prestartup_log}")
 
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     broadcast_info_msg(stage_title)
 
@@ -111,7 +111,7 @@ def stage_2_prepare_configuration():
 
     Gb.trace_prefix = 'STAGE2'
     stage_title = f'Stage 2 > Prepare Support Services'
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     try:
         Gb.EvLog.display_user_message(stage_title)
@@ -158,7 +158,7 @@ def stage_3_setup_configured_devices():
 
     Gb.trace_prefix = 'STAGE3'
     stage_title = f'Stage 3 > Device Configuration'
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     try:
         Gb.EvLog.display_user_message(stage_title)
@@ -211,7 +211,7 @@ def stage_4_setup_data_sources():
 
     Gb.trace_prefix = 'STAGE4'
     stage_title = f"Stage 4 > Connect to Apple Accounts"
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message(stage_title)
     broadcast_info_msg(stage_title)
 
@@ -252,7 +252,7 @@ def stage_4_setup_data_sources():
                     update_alert_sensor(PyiCloud.username_id, "Apple Acct is Locked")
 
         stage_title = f"Stage 4 > Connect to Mobile App Integration"
-        log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+        log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.display_user_message(stage_title)
 
         mobapp_interface.get_entity_registry_mobile_app_devices()
@@ -262,7 +262,7 @@ def stage_4_setup_data_sources():
             start_ic3.setup_tracked_devices_for_mobapp()
 
         stage_title = f"Stage 4 > Finalize Date Source Connections"
-        log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+        log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.display_user_message(stage_title)
 
         start_ic3.set_devices_verified_status()
@@ -297,7 +297,7 @@ def stage_4_setup_data_sources_retry(final_retry=False):
 
     Gb.trace_prefix = 'STAGE4'
     stage_title = f"Stage 4 > Data Source Device Assignment (Retry)"
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message(stage_title)
     broadcast_info_msg(stage_title)
 
@@ -470,7 +470,7 @@ def stage_5_configure_tracked_devices():
 
     Gb.trace_prefix = 'STAGE5'
     stage_title = f'Stage 5 > Device Configuration Summary'
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     if is_empty(Gb.conf_devices):
         post_event(f"No Devices have been set up")
@@ -505,7 +505,7 @@ def stage_6_initialization_complete():
 
     Gb.trace_prefix = 'STAGE6'
     stage_title = f'{ICLOUD3} Initialization Complete'
-    log_info_msg(f"* > {EVLOG_IC3_STAGE_HDR}{stage_title}")
+    log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
     broadcast_info_msg(stage_title)
 

@@ -69,7 +69,7 @@ from ..utils.messaging      import (broadcast_info_msg,
                                     post_error_msg, post_monitor_msg, update_alert_sensor,
                                     post_internal_error,
                                     log_info_msg, log_debug_msg, log_error_msg, log_warning_msg,
-                                    log_data, log_exception, format_filename,
+                                    log_data, log_exception, format_filename, log_stack,
                                     internal_error_msg2,
                                     _evlog, _log, more_info, format_header_box,)
 from ..utils.dist_util      import (format_dist_km, m_to_um, )
@@ -637,10 +637,10 @@ def set_log_level(log_level):
     # level overrides on an iC3 restart
 
     Gb.log_debug_flag   = instr(log_level, 'debug')
-    Gb.log_data_flag = instr(log_level, 'rawdata')
-    Gb.log_data_flag_unfiltered = instr(log_level, 'unfiltered')
-    Gb.log_data_flag = Gb.log_data_flag or Gb.log_data_flag_unfiltered
-    Gb.log_debug_flag   = Gb.log_debug_flag or Gb.log_data_flag
+    Gb.log_rawdata_flag = instr(log_level, 'rawdata')
+    Gb.log_rawdata_flag_unfiltered = instr(log_level, 'unfiltered')
+    Gb.log_rawdata_flag = Gb.log_rawdata_flag or Gb.log_rawdata_flag_unfiltered
+    Gb.log_debug_flag   = Gb.log_debug_flag or Gb.log_rawdata_flag
     Gb.evlog_trk_monitors_flag = Gb.evlog_trk_monitors_flag or instr(log_level, 'eventlog')
 
     if Gb.iC3Logger:
@@ -1283,20 +1283,29 @@ def _verify_away_time_zone_devicenames():
     Verify the devicenames in the Away time zone fields
     '''
     update_conf_file_flag = False
-    if Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES] != 'none':
+
+    if ('none' in Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]
+            or 'all' in Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]):
+        pass
+    else:
         for devicename in Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]:
             if devicename not in Gb.Devices_by_devicename:
                 Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES].remove(devicename)
-                update_conf_file_flag = False
+                update_conf_file_flag = True
+
         if Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES] == []:
             Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES] = ['none']
             Gb.conf_general[CONF_AWAY_TIME_ZONE_1_OFFSET] = 0
 
-    if Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES] != 'none':
+    if ('none' in Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES]
+            or 'all' in Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES]):
+        pass
+    else:
         for devicename in Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES]:
             if devicename not in Gb.Devices_by_devicename:
                 Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES].remove(devicename)
-                update_conf_file_flag = False
+                update_conf_file_flag = True
+
         if Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES] == []:
             Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES] = ['none']
             Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET] = 0
@@ -1724,7 +1733,7 @@ def _post_evlog_apple_acct_tracked_devices_info(PyiCloud):
             # display no location exception msg in EvLog
             exception_msg = ''
 
-            if _AADevData and Gb.log_data_flag:
+            if _AADevData and Gb.log_rawdata_flag:
                 log_title = (   f"iCloud Data {PyiCloud.account_name}{LINK}"
                                 f"{devicename}/{pyicloud_icloud_dname} "
                                 f"({_AADevData.device_identifier})")

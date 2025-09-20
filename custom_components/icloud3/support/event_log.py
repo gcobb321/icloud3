@@ -79,8 +79,8 @@ MONITORED_DEVICE_EVENT_FILTERS = [
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class EventLog(object):
-    def __init__(self, hass):
-        self.hass = hass
+    def __init__(self):
+        self.hass = Gb.hass
         self.initialize()
 
     def initialize(self):
@@ -96,7 +96,7 @@ class EventLog(object):
         self.clear_secs              = HIGH_INTEGER
         self.trk_monitors_flag       = False
         self.log_debug_flag          = False
-        self.log_data_flag           = False
+        self.log_rawdata_flag           = False
         self.last_refresh_secs       = 0
         self.last_refresh_devicename = ''
         self.dist_to_devices_recd_found_flag = False    # Display only the last DistTo Devices > stmt
@@ -303,7 +303,7 @@ class EventLog(object):
                 # elif instr(event_text, 'Internet'):
                 #     this_update_time = dt_util.now().strftime('%H:%M:%S')
                 #     this_update_time = time_to_12hrtime(this_update_time)
-                elif Gb.log_data_flag:
+                elif Gb.log_rawdata_flag:
                     this_update_time = 'Rawdata'
                 elif Gb.log_debug_flag:
                     this_update_time = 'Debug'
@@ -453,7 +453,7 @@ class EventLog(object):
             log_attr_text = ""
             if Gb.evlog_trk_monitors_flag: log_attr_text += 'monitor,'
             if Gb.log_debug_flag:          log_attr_text += 'debug,'
-            if Gb.log_data_flag:           log_attr_text += 'rawdata,'
+            if Gb.log_rawdata_flag:           log_attr_text += 'rawdata,'
 
             self.evlog_attrs['log_level_debug'] = log_attr_text
 

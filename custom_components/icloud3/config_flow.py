@@ -48,12 +48,12 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DIR,
                                 )
 from .const_sensor      import (SENSOR_GROUPS )
 
-from .utils.utils       import (instr, isnumber, is_empty, isnot_empty, list_to_str, str_to_list,
+from .utils.utils       import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                 is_statzone, zone_dname, isbetween, list_del, list_add,
                                 sort_dict_by_values,
                                 encode_password, decode_password, )
 from .utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
-                                _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3_log_file,
+                                _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
                                 post_event, post_monitor_msg, update_alert_sensor, )
 
 from .configure         import forms
@@ -431,7 +431,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.logging_into_icloud_flag = False
 
         # Variables used for device selection and update on the device_list and device_update forms
-        self.devices_added_deleted_flag    = False    # Set when a devices is added or deleted. Used to update the Dashboards
+        self.rebuild_ic3db_dashboards    = False    # Set when a devices is added or deleted. Used to update the Dashboards
         self.device_items_by_devicename    = {}       # List of the apple_accts in the Gb.conf_tracking[apple_accts] parameter
         self.device_items_displayed        = []       # List of the apple_accts displayed on the device_list form
         self.dev_page_item                 = ['', '', '', '', ''] # Device's devicename last displayed on each page
@@ -486,29 +486,40 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.cdo_curr_idx      = 0
 
         # Dashboard Builder
-        self.db_templates               = {}    # iCloud3 device templates from icloud3/dashboard folder
-        self.db_templates_used          = []    # Templates used in master-dashboard template
-        self.db_templates_used_by_device = []   # Templates used in master-dashboard template to be built
-                                                # by device rather than by template. the names start with
-                                                # template-device
-        self.master_dashboard           = {}    # Master Dashboard dictionary (json str --> dict)
-        self.dashboards                 = []    # List of dashboards (lovelace.icloud3_xxx files) in conig./storage)
-        self.icloud3_dashboards         = []    # List of iCloud3 dashboards created by the Dashboard Builder
-        self.ic3db_Dashboards_by_dbname = {}    # HA Dashboard by dashboard name for Dashboards with Device-x available
-        self.AllDashboards_by_dashboard = {}    # All HA Dashboard objects by dashboard name
-        self.selected_dbname            = 'add' # Dashboard currently selected on Dashboard Builder screen
-        self.dbname                     = ''    # Dashboard  being created or updates
-        self.Dashboard                  = None
-        self.dbnames_just_added         = []    # The dbnames (url_path) added in this session. Used to see if the dashboard was deleted
-        self.dbf_main_view_devices_key_text = {}
-        self.main_view_template_style   = ''    # Template used to build main view iphone-fitst-2/all, result summary
-        self.main_view_devices          = ['result-summary']    # Devices to be inserted into the dashboard layout
-        self.dbf_dashboard_key_text     = {}    # db form device selection dictionary
+        self.db_templates                = {}    # iCloud3 device templates from icloud3/dashboard folder
+        self.db_templates_used           = []    # Templates used in master-dashboard template
+        self.db_templates_used_by_device = []    # Templates used in master-dashboard template to be built
+                                                    # by device rather than by template. the names start with
+                                                    # template-device
+        self.master_dashboard            = {}    # Master Dashboard dictionary (json str --> dict)
+        self.dashboards                  = []    # List of dashboards (lovelace.icloud3_xxx files) in conig./storage)
+        self.icloud3_dashboards          = []    # List of iCloud3 dashboards created by the Dashboard Builder
+        self.ic3db_Dashboards_by_dbname  = {}    # HA Dashboard by dashboard name for Dashboards with Device-x available
+        self.AllDashboards_by_dbname  = {}    # All HA Dashboard objects by dashboard name
+        self.dbname                      = ''    # Dashboard  being created or updates
+        self.Dashboard                   = None
 
-        self.main_view_device_fnames_by_dashboard  = {}    # Devices on the Main view of the dashboard
-        self.main_view_devicenames_by_dashboard    = {}    # Devicenames on the Main view of the dashboard
-        self.main_view_template_style_by_dashboard = {}    # Devices on the Main view of the dashboard
-        self.other_view_device_fnames_by_dashboard = {}    # Devices on the Other view of the dashboard
+        # These items are extracted from the main view when the dashboard is loaded. They are used to build to
+        # selection list on the dashboard form
+        self.main_view_extracted_dnames_by_dbname = {}  # Devicenames on the Main view of the dashboard
+        self.main_view_extracted_fnames_by_dbname = {}  # Devices on the Main view of the dashboard
+
+        # These items are set in config_flow dashboard form and passed to the dashboard functions when a dashboard
+        # is recreated
+        self.ui_main_view_style          = ''    #
+        self.ui_selected_dbname          = ADD   # Dashboard currently selected on Dashboard Builder screen
+        self.ui_main_view_dnames         = []    # Devices to be inserted into the dashboard layout
+        self.dbf_dashboard_key_text      = {}    # db form device selection dictionary
+
+        # Main View Info from the main_view_info_str on the Events Log view
+        # These items are loaded when the ic3db dashboards are loaded. They are used to set ui_xxx values when
+        # a device is added or deleted and the dashboards are recreated
+        self.main_view_info_style_by_dbname          = {}  # Devices on the Main view of the dashboard
+        self.main_view_info_dnames_by_dbname         = {}  # Devices on the Main view of the dashboard
+        self.main_view_dbfile_length_by_dbname  = {}  # Length of the main view str from the Lovelace db file
+        self.main_view_created_length_by_dbname = {}  # Length of the main view str right now
+        self.main_view_infomsg_length_by_dbname = {}  # Length of the main view str right now
+
 
         # away_time_zone_adjustment
         self.away_time_zone_hours_key_text   = {}
@@ -546,7 +557,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         if self.abort_flag:
             return await self.async_step_restart_ha()
-            # return await self.async_step_restart_ha_load_error()
 
         return await self.async_step_menu_0()
 
@@ -593,7 +603,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 and is_empty(self.master_dashboard)):
             await start_ic3.update_lovelace_resource_event_log_js_entry(silent=True)
 
-            icloud3_dashboard_status = await dbb.install_initial_icloud3_dashboard(self)
+            icloud3_dashboard_status = await dbb.build_initial_icloud3_dashboard(self)
             if icloud3_dashboard_status:
                 self.header_msg = 'dashboard_created_initial'
 
@@ -633,19 +643,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         user_input, menu_item = utils.menu_text_to_item(self, user_input, 'menu_items')
         user_input, menu_action_item = utils.menu_text_to_item(self, user_input, 'action_items')
 
-        if menu_action_item == 'exit':
-            Gb.config_flow_flag = False
-            self.initialize_options_required_flag = False
-
-            # If the initial config file was just installed, set it to 'has been reviewed'
-            if Gb.conf_profile[CONF_VERSION] <= 0:
-                Gb.conf_profile[CONF_VERSION] = 1
-                list_add(self.config_parms_update_control, 'restart')
-                self._update_config_file_tracking(user_input, update_config_flag=True)
-
-            # Update the *ic3db- dashboard views when devices have been added or deleted
-            if self.devices_added_deleted_flag:
-                await dbb.update_dashboard_ic3db_views_new_deleted_devices(self)
+        if menu_action_item.startswith('exit'):
+            await self.exit_configure_tasks()
 
             if ('restart' in self.config_parms_update_control
                     or self._set_inactive_devices_header_msg() in ['all', 'most']):
@@ -704,6 +703,25 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                             errors=self.errors,
                             last_step=False)
 
+#-------------------------------------------------------------------------------------------
+    async def exit_configure_tasks(self):
+        Gb.config_flow_flag = False
+        self.initialize_options_required_flag = False
+
+        # If the initial config file was just installed, set it to 'has been reviewed'
+        if Gb.conf_profile[CONF_VERSION] <= 0:
+            Gb.conf_profile[CONF_VERSION] = 1
+            list_add(self.config_parms_update_control, 'restart')
+            user_input = {CONF_VERSION: 1}
+            self._update_config_file_tracking(user_input, update_config_flag=True)
+
+        # Update the *ic3db- dashboard views when devices have been added or deleted
+        if self.rebuild_ic3db_dashboards:
+            dbb.load_ic3db_dashboards_from_ha_data(self)
+
+            if isnot_empty(self.ic3db_Dashboards_by_dbname):
+                await dbb.update_ic3db_dashboards_new_deleted_devices(self)
+                self.rebuild_ic3db_dashboards = False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             RESTART ICLOUD3
@@ -719,6 +737,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.errors_user_input = {}
         await config_sensors.update_configure_file_device_sensors()
         await self._async_write_icloud3_configuration_file()
+
+        for devicename in Gb.sensors_removed_by_devicename.keys():
+            ic3_sensor.log_sensors_added_deleted('ADDED', devicename)
+            ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 
         user_input, action_item = utils.action_text_to_item(self, user_input)
         utils.log_step_info(self, user_input, action_item)
@@ -743,6 +765,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     list_del(self.config_parms_update_control, 'restart')
                 Gb.config_parms_update_control = self.config_parms_update_control.copy()
                 self.config_parms_update_control = []
+
+            # Update the *ic3db- dashboard views when devices have been added or deleted
+            if self.rebuild_ic3db_dashboards:
+                await dbb.update_ic3db_dashboards_new_deleted_devices(self)
+                self.rebuild_ic3db_dashboards = False
 
             data = {}
             data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
@@ -1543,7 +1570,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         elif action_item == 'restart_icloud3':
             list_add(self.config_parms_update_control, 'restart')
 
-        elif action_item == 'exit':
+        elif action_item.startswith('exit'):
             return self.async_create_entry(title="iCloud3", data={})
 
         return await self.async_step_menu()
@@ -1573,7 +1600,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             post_event("RELOAD ICLOUD3")
             write_config_file_to_ic3log()
             await config_file.async_write_icloud3_configuration_file()
-            close_ic3_log_file()
+            close_ic3log_file()
 
             await Gb.hass.services.async_call(
                     "homeassistant",
@@ -1736,6 +1763,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.config_file_commit_updates = True
 
             Gb.sensor_names_by_devicename = {}
+
+            # if devicename := user_input.get(CONF_IC3_DEVICENAME):
+            #     ic3_sensor.log_sensors_added_deleted('ADDED',
+            #                             devicename, Gb.sensors_added_by_devicenames[devicename])
+            #     ic3_sensor.log_sensors_added_deleted('REMOVED',
+            #                             devicename, Gb.sensors_removed_by_devicenames[devicename])
 
 
 
@@ -3550,6 +3583,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             self.conf_device.update(user_input)
             self._update_config_file_tracking(update_config_flag=True)
+
             if tfz_changed:
                 config_sensors.update_track_from_zones_sensors(self, user_input)
 
@@ -3686,21 +3720,20 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                         data_schema=forms.form_dashboard_builder(self),
                                         errors=self.errors)
 
-        user_input = utils.option_text_to_parm(user_input,
-                                'selected_dashboard', self.dbf_dashboard_key_text)
+        user_input = utils.option_text_to_parm(user_input, 'selected_dashboard', self.dbf_dashboard_key_text)
+        user_input = utils.option_text_to_parm(user_input, 'main_view_style', DASHBOARD_MAIN_VIEW_STYLE_OPTIONS)
+
         utils.log_step_info(self, user_input, action_item)
 
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
-        # if 'selected_dashboard' not in user_input:
-        #     user_input['selected_dashboard'] = 'add'
-
-        self.selected_dbname = user_input.get('selected_dashboard', 'add')
-        if self.selected_dbname == 'add':
+        self.ui_selected_dbname = user_input.get('selected_dashboard', 'add')
+        if self.ui_selected_dbname == 'add':
             action_item == 'create_dashboard'
 
-        self.main_view_devices  = [devicename
+        self.ui_main_view_style  = user_input['main_view_style']
+        self.ui_main_view_dnames = [devicename
                                         for devicename in user_input['main_view_devices']
                                         if devicename.startswith('.') is False]
         self.errors = {}
@@ -3710,7 +3743,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input['action_item'] = action_item
 
-        await dbb.update_or_create_dashboard(self, user_input)
+        await dbb.update_or_create_dashboard(self)
         await dbb.build_existing_dashboards_selection_list(self)
         dbb.select_available_dashboard(self)
 
@@ -3720,8 +3753,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
 # #-------------------------------------------------------------------------------------------
     def _validate_dashboard_user_input(self, action_item, user_input):
-        if is_empty(self.main_view_devices):
-            self.errors['main_view_devices'] = 'required_field'
+        if is_empty(self.ui_main_view_dnames):
+            self.ui_main_view_dnames = ['Display All']
 
 
 

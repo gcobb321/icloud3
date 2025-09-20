@@ -4,7 +4,7 @@ from   homeassistant.util.location import distance
 
 from ..const            import (NEAR_DEVICE_DISTANCE, LT, )
 from ..global_variables import GlobalVariables as Gb
-from .utils             import (round_to_zero, isnumber, )
+from .utils             import (round_to_zero, is_number, )
 from .messaging         import (_evlog, _log, )
 from .time_util         import (format_secs_since, )
 
@@ -50,7 +50,7 @@ def set_precision(dist, um=None):
     Return the distance value as an integer or float value
     '''
     try:
-        if isnumber(dist) is False:
+        if is_number(dist) is False:
             return dist
 
         um = um if um else Gb.um
