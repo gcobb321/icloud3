@@ -15,6 +15,47 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
+### iCloud3 ➤ v3.3
+### ✨ New and Improved Features
+- **Apple Account 503 Login Error**
+    - Fixed the problem logging into the Apple Accounts
+    - Important Note:
+        - Condition 1 - This is a new login, the iCloud session files with the Trust Tokens and Cookies are being created.
+        - Condition 2 - You are using multiple Apple Accounts.
+        - What happens - One account may login in fine (usually the first one), the other will fail with a _Server/PW-503_ error. This is displayed in the Event Log, Stage 4, the greenbar at the top of the Event Log and in the _iCloud_Alerts_ sensor.
+        - What to do: Wait about 5-minutes, then restart iCloud3 using _Event Log > Actions > Restart_iCloud3`
+
+- **Apple Account**
+    - Added support for accepting updates to Apple's 'Terms of Use' documents.
+    - Added _Update Display/Run-Time Parameters_ screen to the _Update Apple Account_ screen
+- **Password SRP**
+    - Added support for using the PasswordSRP (Secure Remote Password Verification protocol) for verifying the password when logging into the Apple Account. Instead of sending the actual password over the internet, a 256-bit encrypted one-time key is sent to Apple.
+    - Special Notes:
+      - This may reduce the need for the 6-digit verification code entry (under long term review).
+      - There are times when Apple will issue the Verification code popup and iCloud3 has not detected that the code is needed. I have ignored it and have not seen any problems. I have entered it and it was accepted.
+    - Added option to enable/disable it on the _Update Apple Account > Update Display/Runtime Parameters_ screen. There may be times when a lot of logins to an Apple account will generate a 503 error and the Password will fail to be validated. Apple is refusing to handle it thinking it is a fraudulent transaction. After 20-30 (?) minutes, restart iCloud3 from the Event Log and it will usually validate and log into the account correctly.
+- **Internet Errors**
+    - Improved the operation of internet error detection and handling
+    - Improved the status messages displayed while monitoring the internet
+- **Security Keys (Yubikey) Support** (Incomplete and Currently Disabled)
+    - Changed error and status messages in the _Configure_ screens to support Verification Code and Security Key handling
+    - Added the ability to show the Security Key Names in the _Configure > Authenticate Apple Account Sign-in_ screen
+    - ToDo - Tie into HA to detect the Security Key Name used to authenticate the Apple Account sign-in
+- **iCloud Account I/O**
+    - *HA Event Loop Errors* - Moved the Internet Connection Error handler and the Apple Account Username/Password validate handler from the HA Event Loop to the iCloud3 thread that runs outside of the Event Loop. This simplified requesting data from the Apple Account, handling internet errors and avoids problems related to doing I/O outside of the Event Loop.
+    - *Docker Container* - iCloud3 should no longer have I/O issues related to running in a Docker container (hopefully).
+    - *Common icloud.com I/O handler* - Consolidated all internet data request calls through a central point for improved reliability, control and monitoring
+- **Startup**
+    - Logging into and verifying Apple accounts is now done in _Event Log/Stage 4_ to improve status monitoring
+    - Added status messages to the Event Log that show the Apple Account the results of each event during the authentication process
+- **Other Changes**
+    - Internal changes, module name changes, code cleanup and reorganization
+
+
+### 🐞 Bug Fixes
+- Fixed several 'NoneType' and unknown variable errors associated with verifying Apple username-password and Internet Errors.
+
+
 ### iCloud3 ➤ v3.2.4.2 (9/20/2025)
 ### 🐞 Bug Fixes
 - **Away Time Zone** - Fixed a problem where the time zone adjustment was reset to the Home zone server time zone when iCloud3 was restarted

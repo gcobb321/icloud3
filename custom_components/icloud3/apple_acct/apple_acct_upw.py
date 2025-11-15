@@ -15,19 +15,21 @@ from ..const                import (AIRPODS_FNAME, NONE_FNAME,
                                     CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
                                     CONF_FAMSHR_DEVICE_ID, CONF_LOG_LEVEL_DEVICES,
                                     )
-from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del,
-                                    encode_password, decode_password, username_id, )
+from ..utils.utils          import (instr, yes_no, is_empty, isnot_empty, list_add, list_del,
+                                    encode_password, decode_password, username_id, is_running_in_event_loop, )
 from ..utils                import file_io
 from ..utils.time_util      import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                     secs_since, format_secs_since, format_age, format_time_age )
-from ..utils.messaging      import (post_event, post_monitor_msg, post_error_msg,
+from ..utils.messaging      import (post_event, post_alert, post_monitor_msg, post_error_msg,
                                     _evlog, _log, more_info, add_log_file_filter,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                    log_data, log_exception, log_data_unfiltered, filter_data_dict, )
+                                    log_request_data, log_exception, log_data_unfiltered, )
 from ..utils                import gps
 
-from .pyicloud_session      import PyiCloudSession
-from .pyicloud_ic3          import PyiCloudManager
+from .icloud_session        import iCloudSession
+from .apple_acct            import HEADERS, AppleAcctManager
+from .                      import apple_acct_support as aas
+from .                      import icloud_requests_io  as icloud_io
 
 #--------------------------------------------------------------------
 from urllib.parse import urlparse
@@ -42,13 +44,13 @@ LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   CHECK APPLE ACCOUNT USERNAME/PASSWORD
+#   CHECK APPLE ACCOUNT Username-Password
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 class ValidateAppleAcctUPW():
     '''
-    Validation the Apple Account Username/Password
+    Validation the Apple Account Username-Password
     '''
 
     def __init__(self):
@@ -57,158 +59,61 @@ class ValidateAppleAcctUPW():
         self.password = 'validate_upw'
         self.method   = ''
 
-
         self.client_id = f"auth-{str(uuid1()).lower()}"
 
         self.response_code      = 0
-        self.last_response_code = 0
 
-        self.PyiCloudSession    = None
-        self.PyiCloud           = None
+        self.AppleAcct          = None
+        self.iCloudSession      = None
         self.config_flow_login  = False
+        self.valid_upw_results_msg = ''
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   VALIDATE USING HTTPX REQUEST
+#   VALIDATE Username-Password
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_validate_all_apple_accts_upw_httpx(self):
+    def validate_upw_all_apple_accts(self):
         '''
-        Cycle through the apple accounts, Validate the username/password for each one.
-        This is done when iCloud3 starts in __init__
-
-        Update:
-            - Gb.username_valid_by_username
-        '''
-        results_msg = ''
-        cnt = -1
-        alert_symb = ''
-        for conf_apple_acct in Gb.conf_apple_accounts:
-            cnt += 1
-
-            username     = conf_apple_acct[CONF_USERNAME]
-            _username_id = username_id(username)
-            password     = Gb.PyiCloud_password_by_username[username]
-            self.method  = 'URL/httpx'
-
-            if is_empty(username) or is_empty(password):
-                continue
-
-            if Gb.username_valid_by_username.get(username, False):
-                results_msg += f"{CRLF_CHK}{_username_id}, Valid-True"
-                continue
-
-            try:
-                valid_upw = await self.async_validate_username_password_via_url_httpx(username, password)
-            except Exception as err:
-                log_exception(err)
-
-            Gb.username_valid_by_username[username] = valid_upw
-
-            crlf_symb = CRLF_CHK if valid_upw else CRLF_RED_ALERT
-            results_msg += f"{crlf_symb}{_username_id}, Valid-{valid_upw}, Method-URL/httpx"
-
-        post_event(f"{alert_symb}Verifing Apple Account Username/Password{results_msg}")
-
-        Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
-
-
-#----------------------------------------------------------------------------
-    async def async_validate_username_password_via_url_httpx(self, username, password):
-        '''
-        Verify the username and password are valid using the apple auth-url via an httpx request
-
-        Return:
-            True/False
-        '''
-        username_password_b64 = self.b64encode_username_passsword(username,password)
-        url     = f"{APPLE_SERVER_ENDPOINT['auth_url']}/{username}"
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Apple-iCloud/9.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/605.1.15 (KHTML, like Gecko)',
-            'Authorization': f"Basic {username_password_b64}"}
-
-        _hdr = ( f"{username_id(username)}, HTTPX-REQUEST, VALIDATE USERNAME/PASSWORD VIA HTTPX ▲")
-        _data = {'url': url[8:], 'headers': headers}
-        log_data_unfiltered(_hdr, _data)
-
-
-        data = await file_io.async_httpx_request_url_data(url, headers)
-
-
-        _hdr = ( f"{username_id(username)}, HTTPX-RESPONSE, VALIDATE USERNAME/PASSWORD VIA HTTPX ▼")
-        _data = {'data': data}
-        log_data_unfiltered(_hdr, _data)
-
-        Gb.internet_error = data.get('error', '').startswith('InternetError')
-
-        valid_upw = True if data['status_code'] == 409 else False
-
-        return valid_upw
-
-#----------------------------------------------------------------------------
-    async def async_validate_username_password(self, username, password):
-        '''
-        Verify the username and password are valid using the apple auth-url via an httpx request
-        '''
-        valid_upw = \
-            await self.async_validate_username_password_via_url_httpx(username, password)
-        if valid_upw:
-            return
-
-        valid_upw = await Gb.hass.async_add_executor_job(
-                                        self.validate_username_password,
-                                        username,
-                                        password)
-        # valid_upw = await Gb.hass.async_add_executor_job(
-        #                                 Gb.ValidateAppleAcctUPW.validate_username_password,
-        #                                 username,
-        #                                 password)
-
-        return valid_upw
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#   VALIDATE USING PYICLOUD
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def validate_all_apple_accts_upw(self):
-        '''
-        Cycle through the apple accounts, Validate the username/password for each one
+        Cycle through the apple accounts, Validate the Username-Password for each one.
+        Do this so we know all future login attempts will be with valid apple accts
         This is run is startup Stage 3
 
         Update:
             - Gb.username_valid_by_username
+            - results_msg
         '''
+        if (Gb.use_data_source_ICLOUD is False
+                or Gb.internet_error):
+            return
+
+        cnt         = -1
         results_msg = ''
-        cnt = -1
-        alert_symb = ''
+        alert_msg   = ''
         for conf_apple_acct in Gb.conf_apple_accounts:
             cnt += 1
 
             username     = conf_apple_acct[CONF_USERNAME]
-            _username_id = username_id(username)
-            password     = Gb.PyiCloud_password_by_username[username]
+            password     = Gb.AppleAcct_password_by_username[username]
 
             if is_empty(username) or is_empty(password):
                 continue
 
-            if Gb.username_valid_by_username.get(username, False):
-                results_msg += f"{CRLF_CHK}{_username_id}, Valid-True"
-                continue
+            _username_id = username_id(username)
 
-            # Validate username/password so we know all future login attempts will be with valid apple accts
             valid_upw = self.validate_username_password(username, password)
 
             Gb.username_valid_by_username[username] = valid_upw
 
-            crlf_symb = CRLF_CHK if valid_upw else CRLF_RED_ALERT
-            results_msg += f"{crlf_symb}{_username_id}, Valid-{valid_upw}, Method-{self.method}"
+            if valid_upw:
+                crlf_symb = CRLF_CHK
+            else:
+                crlf_symb = CRLF_RED_ALERT
+                alert_msg = EVLOG_ALERT
+            results_msg += f"{crlf_symb}{_username_id}, Validated-{yes_no(valid_upw)}, {self.method}"
 
-            log_debug_msg(  f"{_username_id}, Validate Username/Password, "
-                            f" Valid-{valid_upw}, Method-{self.method}")
-
-        post_event(f"{alert_symb}Verifing Apple Account Username/Password{results_msg}")
+        self.results_msg = f"{alert_msg}Apple Acct > Verify Username-Password{results_msg}"
+        post_event(self.results_msg)
 
         Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
 
@@ -217,87 +122,166 @@ class ValidateAppleAcctUPW():
         '''
         Check if the username and password are still valid. Check using the following methods:
             - URL (Response-409 is valid, 401- is invalid)
-            - PyiCloud Authenticate
+            - AppleAcct Authenticate
         '''
         self.username = username
         self.password = password
         self.username_id = self.username_base = username_id(self.username)
 
-        self.session_data  = ''      #Dummy statement for PyiCloudSession
-        self.session_id    = ''      #Dummy statement for PyiCloudSession
-        self.instance      = ''      #Dummy statement for PyiCloudSession
+        # Validate the Username-Password using the 'auth_url/usernameurl endpoint
+        self.method = 'AuthURL'
+        valid_upw = self.validate_upw_via_auth_url(username, password)
 
-        if self.PyiCloudSession is None:
-            self.PyiCloudSession = PyiCloudSession(self, validate_aa_upw=True)
-            self.PyiCloud        = PyiCloudManager(username, password,
-                                                    apple_server_location='usa',
-                                                    validate_aa_upw=True)
-        else:
-            self.PyiCloud.__init__(username, password, validate_aa_upw=True)
+        #TESTCODE
+        # valid_upw = False
 
-        log_debug_msg(f"{self.username_base}, Validate Username/Password")
-        aa_cookie_files_exist = file_io.file_exists(self.PyiCloud.cookie_dir_filename)
-
-        self.method = 'URL'
-        valid_upw = self.validate_username_password_via_url_pyisession(username, password)
         log_debug_msg(f"{self.username_base}, Method-{self.method}, Results-{valid_upw}")
         if valid_upw:
             return valid_upw
 
-        self.method = 'Authenticate'
-        valid_upw = self.validate_with_authenticate(username, password)
-        log_debug_msg(f"{self.username_base}, Method-{self.method}, Results-{valid_upw}")
-        if valid_upw:
-            return valid_upw
+        # Validate the Username-Password by setting up the AppleAcct manager & session
+        # for the Username-Password and doing a full authentication and data refresh
+        try:
+            self.AppleAcct = Gb.AppleAcct_by_username.get(username)
+            if self.AppleAcct is None:
 
-        self.method = 'Failed'
+                self.AppleAcct = aas.create_AppleAcct(username, password, apple_server_location='usa', locate_all_devices=True)
+                # self.AppleAcct = AppleAcctManager(username, password,
+                #                                 apple_server_location='usa',
+                #                                 validate_aa_upw=False)
+
+                self.iCloudSession = self.AppleAcct.iCloudSession
+
+            else:
+                self.AppleAcct.__init__(username, password, validate_aa_upw=False)
+
+        except Exception as err:
+            log_exception(err)
+            log_error_msg(f"iCloud3 Error > Error setting up Apple Account I/O handler, "
+                            f"Password could not be validated, Error-{err}")
+            return False
+
+        log_debug_msg(f"{self.username_base}, Validate Username-Password")
+
+        self.method = 'Login/Authenticate'
+        log_debug_msg(  f"{self.username_base}, Method-{self.method}, "
+                        f"Results-{self.AppleAcct.login_successful}")
+        if self.AppleAcct.login_successful:
+            return True
+
+
+        # self.method = 'Authenticate'
+        # valid_upw = self._validate_via_authenticate(username, password)
+        # log_debug_msg(f"{self.username_base}, Method-{self.method}, Results-{valid_upw}")
+        # if valid_upw:
+        #     return valid_upw
+
+        # Authentication failed, do some cleanup
+        self.method = 'Invalid Username-Password'
+        Gb.aalogin_error_secs_by_username[username]   = time_now_secs()
+        Gb.aalogin_error_reason_by_username[username] = 'Username/Password'
+        aa_cookie_files_exist = file_io.file_exists(self.AppleAcct.cookie_dir_filename)
         if aa_cookie_files_exist is False:
-            file_io.delete_file(self.PyiCloud.cookie_dir_filename)
-            file_io.delete_file(self.PyiCloud.session_dir_filename)
+            file_io.delete_file(self.AppleAcct.cookie_dir_filename)
+            file_io.delete_file(self.AppleAcct.session_dir_filename)
 
         return valid_upw
 
-#----------------------------------------------------------------------------
-    def _validate_with_tokenpw_file(self, username, password):
+#............................................................................
+    def _validate_via_authenticate(self, username, password):
 
-        token_pw_data = self.PyiCloud.read_token_pw_file()
+        valid_upw = self.AppleAcct.authenticate()
 
-        if (isnot_empty(token_pw_data)
-                and decode_password(token_pw_data.get(CONF_PASSWORD, '')) == password
-                and 'session_token' in token_pw_data):
-            return True
+        return valid_upw
 
-        return False
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   VALIDATE Username-Password WITH SINGLE URL CALL
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-#----------------------------------------------------------------------------
-    def validate_username_password_via_url_pyisession(self, username, password):
+    def validate_upw_via_auth_url(self, username, password):
+        '''
+        Verify the username and password are valid using the apple auth-url
 
-        username_password_b64 = self.b64encode_username_passsword(username,password)
+        Return:
+            True/False
+        '''
+        url, headers = self._validate_upw_setup_url_headers(username, password)
 
+        log_request_data('Request HTTPX', 'Get', url, headers, username_id(username))
+
+        data = icloud_io.request(url, headers=headers)
+
+        valid_upw = self._validate_upw_check_results(data, username)
+
+        log_request_data('Response HTTPX', 'Get', url, data, username_id(username))
+
+        return valid_upw
+
+#............................................................................
+    async def async_validate_upw_via_auth_url_httpx(self, username, password):
+        '''
+        Verify the username and password are valid using the apple auth-url via an httpx request
+
+        Return:
+            True/False
+        '''
+        url, headers = self._validate_upw_setup_url_headers(username, password, 'HTTPX')
+
+        log_request_data('Request HTTPX', 'Get', url, headers, username_id(username))
+
+        data = await icloud_io.async_httpx_request(url, headers=headers)
+
+        log_request_data('Response HTTPX', 'Get', url, data, username_id(username))
+
+        valid_upw = self._validate_upw_check_results(data, username, 'HTTPX')
+
+        return valid_upw
+
+#............................................................................
+    def _validate_upw_setup_url_headers(self, username, password, httpx_msg=''):
+        '''
+        Prepare the url and headers for the request_io or https_io call to validate the
+        username and password
+        '''
+        username_password_b64 = self.b64encode_username_passsword(username, password)
         url     = f"{APPLE_SERVER_ENDPOINT['auth_url']}/{username}"
         headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'Apple-iCloud/9.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/605.1.15 (KHTML, like Gecko)',
             'Authorization': f"Basic {username_password_b64}"}
-        data = None
 
-        response_code = self.PyiCloudSession.post(url, data=data, headers=headers)
+        return url, headers
 
-        valid_upw = True if response_code == 409 else False
+#............................................................................
+    def _validate_upw_check_results(self, data, username, httpx_msg=''):
+        '''
+        Check to see if ups is valid or not vbalid
+        '''
+        Gb.internet_error = data.get('error', '').startswith('InternetError')
+
+        valid_upw = True if data['code'] == 409 else False
+
         return valid_upw
 
 #----------------------------------------------------------------------------
-    def validate_with_authenticate(self, username, password):
+    async def async_validate_username_password(self, username, password):
+        '''
+        Verify the username and password are valid using the apple auth-url via an httpx request
+        This is used in config_flow to validate the Username-Password
+        '''
+        valid_upw = \
+            await self.async_validate_upw_via_auth_url_httpx(username, password)
+        if valid_upw:
+            return
 
-        valid_upw = self.PyiCloud.authenticate()        #username, password)
+        valid_upw = await Gb.hass.async_add_executor_job(
+                                        self.validate_username_password,
+                                        username,
+                                        password)
 
         return valid_upw
-
-#............................................................................
-    @staticmethod
-    def _log_pw(password):
-        return f"{password[:4]}{DOTS}{password[4:]}"
-
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -305,12 +289,15 @@ class ValidateAppleAcctUPW():
 #   SUPPORT FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    @staticmethod
+    def _log_pw(password):
+        return f"{password[:4]}{DOTS}{password[4:]}"
 
+#............................................................................
     def b64encode_username_passsword(self, username, password):
         '''
         Return the b64 encoded the password used for url password validation
         '''
-
         username_password = f"{username}:{password}"
         upw = username_password.encode('ascii')
         username_password_b64 = base64.b64encode(upw)

@@ -2,27 +2,24 @@
 
 from .global_variables  import GlobalVariables as Gb
 NBSP              = '⠈' #'&nbsp;'
-from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG, NBSP, NBSP6,
-                                PLATFORMS, ICLOUD3, MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
-                                CONF_SETUP_ICLOUD_SESSION_EARLY, CONF_EVLOG_BTNCONFIG_URL,
-                                SENSOR_EVENT_LOG_NAME, SENSOR_WAZEHIST_TRACK_NAME,
+from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG,
+                                CRLF_DOT, CRLF_HDOT, NBSP, NBSP6,DOT, HDOT, NL3, NL4,
+                                MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
+                                CONF_EVLOG_BTNCONFIG_URL,
                                 EVLOG_IC3_STARTING, VERSION, VERSION_BETA,)
 
 
-from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init, open_ic3log_file, post_monitor_msg,
-                                post_evlog_greenbar_msg, log_info_msg, log_debug_msg, log_error_msg,
+from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init,
+                                post_monitor_msg,
+                                log_info_msg, log_debug_msg, log_error_msg, log_data_unfiltered,
                                 log_exception_HA, log_exception)
 from .utils.time_util   import (time_now_secs, calculate_time_zone_offset, format_day_date_now, )
-from .utils.file_io     import (async_make_directory, async_directory_exists, async_copy_file,
-                                            read_json_file, save_json_file,
-                                            async_rename_file, async_delete_directory,
-                                            make_directory, directory_exists, copy_file, file_exists,
-                                            rename_file, move_files, )
+from .utils.file_io     import (read_json_file, save_json_file,
+                                make_directory, directory_exists, )
 
 from .                  import device_tracker as ic3_device_tracker
 from .                  import sensor as ic3_sensor
 from .apple_acct.internet_error import InternetConnection_ErrorHandler
-from .apple_acct.apple_acct_upw import ValidateAppleAcctUPW
 from .icloud3_main      import iCloud3
 from .startup           import start_ic3
 from .startup           import config_file
@@ -179,15 +176,6 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
     try:
         #_log(f"{Gb.hass.data=}")
         # _log(f"{Gb.hass.data['hassio_network_info']=}")
-        # interfaces = Gb.hass.data['hassio_network_info']['interfaces']
-        # for interface in interfaces:
-        #     _log(f"{interface}")
-        #     if interface['ipv6']['method'] != 'disabled':
-        #         _log(f"name-{interface['interface']}, "
-        #                 f"type-{interface['type']}, "
-        #                 f"primary-{interface['primary']}, "
-        #                 f"enabled-{interface['enabled']}, "
-        #                 f"ipv6-{interface['ipv6']['method']}")
 
         # _log(f"{Gb.hass.data['lovelace']=}")
         # instance = Gb.hass.data['recorder_instance']
@@ -240,9 +228,10 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
         # Start the Internet Error handler, then see if it is available. If not, Gb.internet_error
         # will be set to True. This will stop the startup process in icloud3_main.start_ic3 at
         # Stage 3 and display the Internet Connection Error messages.
-        Gb.InternetError = InternetConnection_ErrorHandler()
-        await Gb.InternetError.is_internet_available()
-        Gb.PyiCloud = None
+        # Gb.InternetError = InternetConnection_ErrorHandler()
+        # await Gb.InternetError.async_is_internet_available()
+        # Gb.InternetError.is_internet_available()
+        #Gb.AppleAcct = None
 
         if Gb.restart_ha_flag:
             log_error_msg("iCloud3 > Waiting for HA restart to remove legacy "
@@ -254,18 +243,15 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
                 f"{format_day_date_now()}")
 
         # Validate Apple account username/password
-        Gb.EvLog.display_user_message("Validating Apple account username/password")
-        Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-        Gb.username_valid_by_username = {}
-        if (Gb.use_data_source_ICLOUD
-                and Gb.internet_error is False
-                and Gb.conf_tracking['setup_icloud_session_early']):
-            await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
-            await Gb.ValidateAppleAcctUPW.async_validate_all_apple_accts_upw_httpx()
+        # Gb.EvLog.display_user_message("Validating Apple account username/password")
+        # Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
+        # Gb.username_valid_by_username = {}
+        # if (Gb.use_data_source_ICLOUD
+        #         and Gb.internet_error is False
+        #         and Gb.conf_tracking['setup_icloud_session_early']):
+        #     #await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
+        #     await Gb.ValidateAppleAcctUPW.async_validate_upw_all_apple_accts_httpx()
 
-        # Start iCloud3
-        Gb.iCloud3  = iCloud3()
-        Gb.initial_icloud3_loading_flag = True
 
         await hacs_ic3.check_hacs_icloud3_update_available()
         await start_ic3.update_lovelace_resource_event_log_js_entry()
@@ -275,6 +261,13 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
         Gb.hass.async_add_executor_job(register_icloud3_services)
 
         log_debug_msg('Start iCloud3 Initial Load Executor Job (iCloud3.start_icloud3)')
+
+        # Initialize iCloud3 but do not actually start it
+        Gb.iCloud3 = iCloud3()
+        Gb.initial_icloud3_loading_flag = True
+        # Now, start iCloud3 operations in it's own thread instead of running in the Event Loop.
+        # You can not do asyncio/await functions but the requests can now be run without creating
+        # an HA blocking call error.
         icloud3_started = await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3)
 
         if icloud3_started:

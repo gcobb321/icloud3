@@ -15,7 +15,7 @@ from ..const            import (HIGH_INTEGER, NOT_SET, RARROW,
 
 from ..utils.utils      import (isbetween, is_statzone, format_gps, zone_dname,
                                 is_empty, isnot_empty, )
-from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_debug_msg, log_exception, log_data, _evlog, _log, )
 from ..utils.time_util  import (datetime_now, )
 from ..utils.dist_util  import (format_dist_m, gps_distance_km, )

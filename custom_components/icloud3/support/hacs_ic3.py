@@ -10,7 +10,7 @@ from ..const                import (STORAGE_DIR, EVLOG_ALERT,
 
 from ..utils.utils        import (instr, is_empty, isnot_empty, )
 from ..utils.messaging    import (log_info_msg, log_debug_msg, log_exception,
-                                    post_event, post_evlog_greenbar_msg,
+                                    post_event, post_alert, post_greenbar_msg,
                                     _evlog, _log, )
 from ..utils.time_util    import (datetime_now, secs_to_datetime, )
 from ..utils.file_io      import (file_exists, async_read_json_file, read_json_file, )

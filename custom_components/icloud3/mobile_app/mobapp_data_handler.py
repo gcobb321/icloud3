@@ -14,7 +14,7 @@ from ..const            import (DEVICE_TRACKER, NOTIFY,
 
 from ..utils.utils      import (instr, is_statzone, is_zone, zone_dname,
                                     list_add, list_to_str, )
-from ..utils.messaging  import (post_event, post_monitor_msg, more_info,
+from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, more_info,
                                     log_debug_msg, log_exception, log_error_msg, log_data, log_data_unfiltered,
                                     _evlog, _log, )
 from ..utils.time_util  import (secs_to_time, secs_since, mins_since, time_now, time_now_secs,
@@ -485,7 +485,7 @@ def get_and_verify_device_trkr_data(Device, entity_id):
         if device_trkr_attrs[DEVICE_TRACKER] in ['unavailable', 'unknown', NOT_SET]:
             if (Device.mobapp_data_invalid_error_cnt % 1440) == 0:
                 Device.mobapp_data_invalid_error_cnt += 1
-                post_event( f"{EVLOG_ALERT}MOBILE APP DEVICE ERROR > DEVICE UNAVAILABLE, "
+                post_alert( f"MOBILE APP DEVICE ERROR > DEVICE UNAVAILABLE, "
                             f"{CRLF}{Device.conf_mobapp_fname} ({entity_id}), "
                             f"AssignedTo-{Device.fname_devicename}, "
                             f"{CRLF}Disabled in MobApp Integration or Unknown Name in MobApp on device")
@@ -534,7 +534,7 @@ def get_and_verify_device_trkr_data(Device, entity_id):
         if LATITUDE not in device_trkr_attrs or device_trkr_attrs[LATITUDE] == 0:
             Device.mobapp_data_invalid_error_cnt += 1
             if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
-                post_event( f"{EVLOG_ALERT}MOBILE APP ERROR (#{Device.mobapp_data_invalid_error_cnt}) > "
+                post_alert( f"MOBILE APP ERROR (#{Device.mobapp_data_invalid_error_cnt}) > "
                             f"No gps location reported. It may be asleep, offline or not available"
                             f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}")
                             # f"{more_info('mobapp_device_no_location')}")

@@ -17,7 +17,7 @@ from ..const            import (
                                 CONF_DATA_SOURCE, CONF_LOG_ZONES,
                                 CONF_APPLE_ACCOUNT, CONF_FAMSHR_DEVICENAME,
                                 CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
-                                CONF_TRACKING_MODE,
+                                CONF_TRACKING_MODE, CONF_PASSWORD_SRP_ENABLED,
                                 CONF_PICTURE, CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES,
                                 CONF_DISPLAY_TEXT_AS,
                                 CONF_TRACK_FROM_BASE_ZONE,
@@ -187,7 +187,7 @@ def _reconstruct_conf_file():
     Gb.conf_xxx[xxx] dictionary items.
 
     The Gb.conf_tracking[CONF_PASSWORD] field contains the real password
-    while iCloud3 is running. This makes it easier logging into PyiCloud
+    while iCloud3 is running. This makes it easier logging into AppleAcct
     and in config_flow. Save it, then put the encoded password in the file
     update the file and then restore the real password
     '''
@@ -468,7 +468,7 @@ def _count_device_tracking_methods_configured():
     '''
     Count the number of devices that have been configured for the icloud,
     fmf and Mobile App tracking methods. This will be compared to the actual
-    number of devices returned from iCloud during setup in PyiCloud. Sometmes,
+    number of devices returned from iCloud during setup in AppleAcct. Sometmes,
     iCloud does not return all devices in the iCloud list and a refresh/retry
     is needed.
     '''
@@ -874,7 +874,7 @@ def decode_all_passwords():
 
     try:
         for apple_acct in Gb.conf_apple_accounts:
-            Gb.PyiCloud_password_by_username[apple_acct[CONF_USERNAME]] = \
+            Gb.AppleAcct_password_by_username[apple_acct[CONF_USERNAME]] = \
                 decode_password(apple_acct[CONF_PASSWORD])
 
     except Exception as err:

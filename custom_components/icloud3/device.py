@@ -59,8 +59,8 @@ from .utils             import entity_io
 
 from .utils.utils       import (instr, is_zone, isnot_zone, is_statzone, list_add, list_del,
                                 circle_letter, format_gps, zone_dname, username_id, )
-from .utils.messaging   import (post_event, post_error_msg, post_monitor_msg,
-                                post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
+from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
+                                post_greenbar_msg, clear_greenbar_msg,
                                 log_exception, log_debug_msg, log_error_msg, log_data,
                                 post_internal_error, _evlog, _log, )
 from .utils.time_util   import (time_now_secs, secs_to_time, s2t, time_now, datetime_now,
@@ -90,7 +90,7 @@ class iCloud3_Device(TrackerEntity):
         self.fname                 = devicename.title()
 
         self.StatZone              = None    # The StatZone this Device is in or None if not in a StatZone
-        self.PyiCloud              = None    # PyiCloud object for the Apple Account for this iCloud device
+        self.AppleAcct             = None    # AppleAcct object for the Apple Account for this iCloud device
 
         self.FromZones_by_zone     = {}      # DeviceFmZones objects for the track_from_zones parameter for this Device
         self.FromZone_Home         = None    # DeviceFmZone object for the Home zone
@@ -126,7 +126,6 @@ class iCloud3_Device(TrackerEntity):
         self.device_type                  = 'iPhone'
         self.raw_model                    = DEVICE_TYPE_FNAME(self.device_type)      # iPhone15,2
         self.model                        = DEVICE_TYPE_FNAME(self.device_type)      # iPhone
-        #self.model_display_name           = DEVICE_TYPE_FNAME.get(self.device_type, self.device_type)      # iPhone 14 Pro
         self.model_display_name           = Gb.model_display_name_by_raw_model.get(self.raw_model, self.raw_model)  # iPhone 14 Pro
         self.data_source                  = None
         self.tracking_status              = TRACKING_NORMAL
@@ -874,8 +873,8 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def AADevData_icloud(self):
-        if self.PyiCloud:
-            return self.PyiCloud.AADevData_by_device_id.get(self.icloud_device_id)
+        if self.AppleAcct:
+            return self.AppleAcct.AADevData_by_device_id.get(self.icloud_device_id)
 
         return None
 

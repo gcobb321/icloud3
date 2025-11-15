@@ -39,8 +39,8 @@ from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONE
 
 from ..utils.utils          import (instr, isbetween, round_to_zero, is_zone, is_statzone, isnot_zone,
                                     zone_dname, list_add, list_to_str, )
-from ..utils.messaging      import (post_event, post_error_msg,
-                                    post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
+from ..utils.messaging      import (post_event, post_alert, post_error_msg,
+                                    post_greenbar_msg, clear_greenbar_msg,
                                     post_internal_error, post_monitor_msg, log_debug_msg, log_data,
                                     log_info_msg, log_info_msg_HA, log_exception, _evlog, _log, )
 from ..utils.time_util      import (secs_to_time, format_timer, format_time_age, format_secs_since,
@@ -606,7 +606,7 @@ def post_results_message_to_event_log(Device, FromZone):
             and secs_since(Device.mobapp_data_secs) > 3600):
         event_msg += f"MobAppLocated-{format_age(Device.mobapp_data_secs)}, "
 
-    # event_msg += f"AppleAcct-{Device.PyiCloud.account_name}, "
+    # event_msg += f"AppleAcct-{Device.AppleAcct.account_name}, "
 
     post_event(Device, event_msg[:-2])
 
@@ -1221,13 +1221,13 @@ def device_will_update_in_15secs(Device=None, update_in_secs=None, only_icloud_d
     _Devices_not_to_check = [_Device
                     for _Device in Gb.Devices_by_devicename_tracked.values()
                     if (_Device is Device
-                        or _Device.PyiCloud is None
+                        or _Device.AppleAcct is None
                         or (only_icloud_devices and _Device.family_share_device is False)
                         or _Device.is_offline
                         or _Device.is_data_source_ICLOUD is False
                         or _Device.is_tracking_paused
                         or secs_since(_Device.loc_data_secs) > Gb.max_interval_secs
-                        or secs_since(_Device.PyiCloud.last_refresh_secs) < 10)]
+                        or secs_since(_Device.AppleAcct.last_refresh_secs) < 10)]
 
     _Devices_to_check = [_Device        for _Device in Gb.Devices_by_devicename_tracked.values()
                                         if _Device not in _Devices_not_to_check]

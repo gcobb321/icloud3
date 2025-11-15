@@ -25,7 +25,7 @@ from .const             import (HOME, NOT_HOME, STATIONARY, HIGH_INTEGER,
 from .utils             import entity_io
 from .utils.utils       import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
-from .utils.messaging   import (post_event, post_error_msg, post_monitor_msg,
+from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_exception, log_data,_evlog, _log, )
 from .utils.time_util   import (time_now_secs, )
 from .utils.dist_util   import (gps_distance_m, gps_distance_km, )

@@ -1,6 +1,6 @@
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (CRLF_DOT, NL4, )
+from ..const                import (CRLF_DOT, NL3, NL4, NL3D, )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
 from .messaging             import (log_exception, _evlog, _log, log_debug_msg,
                                     log_data_unfiltered, write_ic3log_recd, )
@@ -25,192 +25,6 @@ _LOGGER = logging.getLogger(__name__)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#            HTTPX & REQUESTS URL UTILITIES
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_httpx_request_url_data(url, headers=None):
-    '''
-    Set up and request data from a url using the httpx requests process.
-
-    Returns:
-        - data dictionary with the returned json data, the url and status_code
-        - error dictionary with the url, error and status_code if a connection or other error
-            occurred
-    '''
-    try:
-        error_type = 'InternetError-'
-        error_code = 104
-        try:
-            if headers is None:
-                httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
-
-            else:
-                httpx = create_async_httpx_client(headers=headers)
-
-
-            response = await httpx.get(url)
-
-
-            try:
-                data = response.json()
-            except:
-                data = {}
-
-            data['url']         = url
-            data['error']       = ''
-            data['status_code'] = response.status_code
-
-            return data
-
-        except HTTPStatusError:
-            error_type = 'ClientError'
-            error_code = 400
-        except (ConnectTimeout) as err:
-            error_type += 'ConnectTimeout'
-            error_code = 104
-        except (ConnectionError) as err:
-            error_type += 'ConnectionError'
-            error_code = 105
-        except (HTTPError) as err:
-            error_type += 'HTTPError'
-            error_code = 500
-        except Exception as err:
-            log_exception(err)
-            error_type += 'Other'
-            error_code = 500
-
-        data = {'url': url, 'error': error_type, 'status_code': error_code}
-
-        return data
-
-    except Exception as err:
-        log_exception(err)
-        error_type = 'OverAll'
-
-    data = {'url': url, 'error': error_type, 'status_code': error_code}
-
-    return data
-
-#----------------------------------------------------------------------------
-def httpx_request_url_data(url, headers=None):
-    '''
-    Set up and request data from a url using the httpx requests process.
-
-    Returns:
-        - data dictionary with the returned json data, the url and status_code
-        - error dictionary with the url, error and status_code if a connection or other error
-            occurred
-    '''
-    try:
-        error_type = ''
-        error_code = -99
-        try:
-            # if Gb.httpx is None and headers is None:
-            #     # Use HA httpx client
-            #     # Gb.httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
-
-            #     # Create a new HA httpx client
-            #     Gb.httpx = create_async_httpx_client(headers=headers)
-            if headers is None:
-                # Use HA httpx client
-                httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
-
-            else:
-                httpx = create_async_httpx_client(headers=headers)
-
-            httpx = create_async_httpx_client(headers=headers)
-
-            error_type = 'InternetError-'
-
-            # response = await Gb.httpx.get(url)
-            response = httpx.get(url)
-            response.raise_for_status()
-
-            data = response.json()
-
-            data['url'] = url
-            data['status_code'] = response.status_code
-
-            return data
-
-        except HTTPStatusError:
-            error_type = 'ClientError'
-        except (ConnectTimeout) as err:
-            error_type += 'ConnectTimeout'
-        except (ConnectionError) as err:
-            error_type += 'ConnectionError'
-        except (HTTPError) as err:
-            error_type += 'HTTPError'
-        except Exception as err:
-            log_exception(err)
-            error_type += 'General'
-
-        try:
-            error_code = response.status_code
-        except:
-            if error_type == 'InternetError-':
-                error_code = 104
-            else:
-                error_code = -999
-
-        data = {'url': url, 'error': error_type, 'status_code': error_code}
-
-        return data
-
-    except Exception as err:
-        log_exception(err)
-        error_type = 'OverAll'
-
-    data = {'url': url, 'error': error_type, 'status_code': error_code}
-
-    return data
-
-#............................................................................
-def create_async_httpx_client(headers=None):
-    """Create a new httpx.AsyncClient with kwargs, i.e. for cookies.
-
-    If auto_cleanup is False, the client will be
-    automatically closed on homeassistant_stop.
-
-    This method must be run in the event loop.
-    """
-    client = httpx_client.HassHttpXAsyncClient(
-                    verify=False,
-                    headers=headers,
-                    limits=httpx_client.DEFAULT_LIMITS,
-    )
-
-    original_aclose = client.aclose
-
-    httpx_client._async_register_async_client_shutdown(Gb.hass, client, original_aclose)
-
-    return client
-
-#----------------------------------------------------------------------------
-def request_url_data(url):
-    try:
-        response = requests.get(url, timeout=3)
-
-    except requests.RequestException as err:
-        data = {'url': url, 'error': err, 'status_code': -2}
-
-        return data
-
-    except Exception as err:
-        log_exception(err)
-        data = {'url': url, 'error': err, 'status_code': -1}
-
-        return data
-
-    data = response.json()
-    data['url'] = url
-    data['status_code'] = response.status_code
-
-
-    return data
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
 #            JSON FILE UTILITIES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -232,15 +46,13 @@ async def async_read_json_file(filename):
         log_exception(err)
         pass
 
-    if instr(filename, 'dashboard') or True is True:
-        _log("async_read_json_file data={}")
     return {}
 
 #--------------------------------------------------------------------
 def read_json_file(filename, async_msg=False):
 
     _async_msg = '' if async_msg is False else ' (async)'
-    filename_msg = f"{NL4}🔻 READ JSON FILE{_async_msg}--{filename}"
+    filename_msg = f"{NL3D}READ JSON FILE{_async_msg}--{filename}"
 
     if file_exists(filename) is False:
         log_debug_msg(f"{filename_msg}❗ File Not Found")
@@ -251,14 +63,13 @@ def read_json_file(filename, async_msg=False):
 
     except RuntimeError as err:
         # log_exception(err)
-        log_debug_msg(f"{filename_msg}{NL4}❗ NoEventLoop-`await` not needed")
+        log_debug_msg(f"{filename_msg}{NL3_DATA}NoEventLoop-`await` not needed")
         data = {}
 
     except Exception as err:
         log_exception(err)
         data = {}
 
-    # _data = {str(data)} if Gb.log_rawdata_flag else {str(data)[:100]}
     _data = {str(data)[:100]}
     log_data_unfiltered(f"{filename_msg}", _data)
 
@@ -476,21 +287,6 @@ def _os(os_module, filename):
     results = os_module(filename)
     return results
 
-#--------------------------------------------------------------------
-def is_event_loop_running():
-    try:
-        asyncio.get_running_loop()
-        return True
-    except RuntimeError:
-        return False
-    except Exception as err:
-        log_exception(err)
-    return False
-
-def is_event_loop_running2():
-    if asyncio.get_event_loop_policy()._local._loop:
-        return True
-    return False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

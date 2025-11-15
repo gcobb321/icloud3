@@ -1,31 +1,33 @@
 {
-          "title": "iCloud3 v3：Apple 设备追踪器",
+  "title": "iCloud3 v3：Apple 设备追踪器",
   "config": {
     "abort": {
-              "config_update_complete": "iCloud3 配置已更新完成",
-        "already_configured": "iCloud3 已经安装，不能重复安装。请在 iCloud3 集成中点击配置\n\n如果要删除后重新安装，请先重启 HA，再重新安装 iCloud3",
-        "disabled": "iCloud3 已禁用，无法安装。请先启用 iCloud3，再点击配置\n\n如果要删除后重新安装，请先重启 HA，再重新安装 iCloud3",
-                "login_error": "登录 Apple 账户时出错。请检查用户名和密码。",
-        "reauth_successful": "重新验证完成",
-        "verification_code_requested": "已请求新的 Apple ID 双重验证码",
-        "verification_code_accepted": "Apple ID 双重验证码已接受，重新验证完成",
-        "verification_code_cancelled": "Apple ID 双重验证已取消",
-        "update_cancelled": "更新已取消",
-        "icloud3_init_error": "初始化 iCloud3 配置界面时出现问题。iCloud3 可能在启动时出错。请查看 'home-assistant.log' 文件中的 iCloud3 相关错误。",
-        "reauth_apple_acct_unknown": "请求双重验证码的 Apple 账户不存在",
-        "reauth_apple_acct_unused": "请求双重验证码的 Apple 账户未使用"
+      "translation_file_by": "@lo3612",
+
+      "config_update_complete": "✔️ iCloud3 配置已更新完成",
+      "already_configured": "iCloud3 已经安装，不能重复安装。请在 iCloud3 集成中点击配置\n\n如果要删除后重新安装，请先重启 HA，再重新安装 iCloud3",
+      "disabled": "iCloud3 已禁用，无法安装。请先启用 iCloud3，再点击配置\n\n如果要删除后重新安装，请先重启 HA，再重新安装 iCloud3",
+      "login_error": "登录 Apple 账户时出错。请检查用户名和密码。",
+      "reauth_successful": "✔️ 重新验证完成",
+      "verification_code_requested": "已请求新的 Apple ID 双重验证码",
+      "verification_code_accepted": "✔️ Apple ID 双重验证码已接受，重新验证完成",
+      "verification_code_cancelled": "Apple ID 双重验证已取消",
+      "update_cancelled": "更新已取消",
+      "icloud3_init_error": "初始化 iCloud3 配置界面时出现问题。iCloud3 可能在启动时出错。请查看 'home-assistant.log' 文件中的 iCloud3 相关错误。",
+      "reauth_apple_acct_unknown": "请求双重验证码的 Apple 账户不存在",
+      "reauth_apple_acct_unused": "请求双重验证码的 Apple 账户未使用"
     },
     "error": {
       "invalid_path": "提供的路径无效。应该使用 `user/repo-name` 格式",
-              "verification_code_send_error": "发送 Apple ID 双重验证码失败",
-        "verification_code_requested": "已请求新的 Apple ID 双重验证码",
-        "verification_code_accepted": "Apple ID 双重验证码已接受，重新验证完成",
-        "verification_code_invalid": "双重验证码错误。请重新输入或请求新的验证码",
-        "verification_code_needed": "需要 Apple 账户双重验证码",
-        "verification_code_cancelled": "Apple ID 双重验证已取消",
+      "verification_code_send_error": "发送 Apple ID 双重验证码失败",
+      "verification_code_requested": "已请求新的 Apple ID 双重验证码",
+      "verification_code_accepted": "✔️ Apple ID 双重验证码已接受，重新验证完成",
+      "verification_code_invalid": "双重验证码错误。请重新输入或请求新的验证码",
+      "verification_code_needed": "需要 Apple 账户双重验证码",
+      "verification_code_cancelled": "Apple ID 双重验证已取消",
 
-              "icloud_no_devices": "在 iCloud 家庭共享列表中未找到设备",
-        "icloud_other_error": "验证 Apple 账户时出现未知错误，请稍后重试"
+      "icloud_no_devices": "在 iCloud 家庭共享列表中未找到设备",
+      "icloud_other_error": "验证 Apple 账户时出现未知错误，请稍后重试"
     },
     "step": {
       "user": {
@@ -67,19 +69,20 @@
   },
   "options": {
     "abort": {
-      "config_update_complete": "iCloud3 配置更新成功",
+      "config_update_complete": "✔️ iCloud3 配置更新成功",
       "already_configured": "iCloud3 已经安装，无法重复安装。请在 iCloud3 集成中选择配置",
       "disabled": "iCloud3 已禁用，无法安装。请先启用 iCloud3，然后选择配置",
       "ha_restarting": "Home Assistant 正在重启\n\n重启后必须刷新 iCloud3 界面",
       "ic3_reloading": "正在重新加载 iCloud3",
-      "reauth_successful": "重新验证成功完成"
+      "reauth_successful": "✔️ 重新验证成功完成"
     },
     "error": {
       "unknown_action": "无法识别所选操作",
       "not_available": "此操作当前不可用",
       "update_aborted": "更新中止，数据字段中检测到错误",
-      "conf_updated": "iCloud3 配置参数更新成功",
+      "conf_updated": "✔️ iCloud3 配置参数更新成功",
       "conf_reloaded": "iCloud3 配置文件已重新加载",
+
       "apple_acct_logging_into": "正在登录 Apple 账户",
       "apple_acct_logged_into": "已登录 Apple 账户",
       "apple_acct_already_logged_into": "已经登录 Apple 账户",
@@ -92,6 +95,7 @@
       "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
       "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
       "apple_acct_login_error_srp_401": "❌ Python SRP 库凭据错误。创建安全远程密码哈希的 Python 模块计算出错误值。尝试更改密码看能否登录 Apple 账户",
+
       "apple_acct_dup_username_error": "错误：用户名已被另一个数据源条目使用",
       "apple_acct_username_inuse_error": "错误：此用户名已被另一个数据源条目使用。必须先移除另一个才能更改。请先选择另一个并停止使用",
       "apple_acct_not_available": "❌ 登录失败，Apple 账户不可用",
@@ -101,31 +105,45 @@
       "apple_acct_not_set_up": "未设置 Apple 账户。请查看数据源 > Apple 账户和移动应用界面",
       "apple_acct_parm_error": "Apple 账户参数错误。请在数据源 > Apple 账户和移动应用界面更新",
       "apple_acct_no_data_source": "❌ 未选择数据源（Apple 账户或移动应用）",
+
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id 和设备上的名称（设置 > 通用 > 关于）不能完全相同（字母和大小写）",
       "mobile_app_error": "错误，未安装移动应用集成。移动应用不会用作数据源；不会监控位置数据和区域进出触发",
       "password_asp_invalid": "Apple 不支持在 WebAuth 应用中使用应用专用密码",
+      "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
+      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Code entry screen)",
+
       "verification_code_requested": "已请求新的 Apple ID 验证码",
       "verification_code_needed": "其中一个 Apple 账户需要验证码",
-      "verification_code_accepted": "Apple 账户验证码已接受",
+      "verification_code_accepted": "✔️ Apple 账户验证码已接受",
       "verification_code_invalid": "❌ 验证码不正确。请重新输入或请求新验证码",
       "verification_code_send_error": "❌ 发送 Apple ID 验证码失败",
+
+      "duplicate_ic3_devicename": "此名称已被另一个 iCloud3 设备使用",
+      "already_assigned": "此选择已分配给另一个设备",
+      "mobapp_search_error": "警告：搜索失败 - 未找到以 iCloud3 或 Apple 账户设备名开头的移动应用设备。选择无或要使用的设备",
+      "duplicate_other_devicename": "此名称已在另一个集成或平台中使用",
+
       "inactive_device": "设备处于非活动状态。改为追踪来定位和追踪此设备",
       "inactive_all_devices": "✪✪ 所有设备都处于非活动状态。不会追踪任何设备 ✪✪",
       "inactive_most_devices": "大部分设备处于非活动状态，不会定位或追踪",
       "inactive_some_devices": "部分设备处于非活动状态，不会定位或追踪",
       "inactive_few_devices": "少数设备处于非活动状态，不会定位或追踪",
       "inactive_no_devices": "未设置设备。在更新设备界面，选择添加新设备，然后选择提交显示添加 iCloud3 device_tracker 实体的界面",
+
       "away_time_zone_dup_devices_1": "其中一个设备也在其他设备列表中",
       "away_time_zone_dup_devices_2": "其中一个设备也在其他设备列表中",
-      "review_filledin_fields": "检查已填写的字段",
-      "not_numeric": "❌ 输入的值不是数字",
+
       "waze_server_error_us": "你所在位置的正确服务器是：美国、加拿大",
       "waze_server_error_il": "你所在位置的正确服务器是：以色列",
       "waze_server_error_row": "你所在位置的正确服务器是：世界其他地区",
+
       "required_field": "必须指定这个参数",
+      "review_filledin_fields": "检查已填写的字段",
+      "not_numeric": "❌ 输入的值不是数字",
       "no_data_source": "必须从 Apple 账户或移动应用设备列表中选择提供位置数据的设备",
       "no_data_source_set_inactive": "当数据源未知且设置为无时，将追踪模式设置为非活动",
       "no_add_entities_device_tracker_fct": "添加设备的 HA 组件不可用。必须重启 HA",
+
       "unknown_value": "需要检查其中一个选择参数",
       "invalid_selection": "选择了无效或标题项，重置为原始值",
       "unknown_devicename": "在 Apple 账户或移动应用设备列表中未找到配置的设备",
@@ -136,30 +154,34 @@
       "unknown_icloud_mobapp": "检查 iCloud 和移动应用参数值（未找到或无效）",
       "unknown_icloud_mobapp_picture": "检查 iCloud、移动应用和图片参数值（未找到或无效）",
       "unknown_icloud_picture": "检查 iCloud 和图片参数值（未找到或无效）",
+
       "internet_connection_err": "Home Assistant 离线，没有网络连接",
+      "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
       "apple_acct_connection_err": "网络可用但无法连接到 Apple。请几分钟后重试",
+
       "tfz_selection_invalid": "值必须是正在追踪的区域",
       "time_factor_invalid_range": "行程时间倍数必须在 0.1 到 0.9 之间",
       "fixed_interval_invalid_range": "固定间隔必须为 0（不使用）或 >= 3（建议 > 5）",
+
       "display_text_as_no_gtsign": "实际文本和显示文本之间的 '>' 缺失",
       "display_text_as_no_actual": "未指定实际文本",
       "display_text_as_no_display_as": "未指定显示文本",
+
       "not_found_directory": "未找到目录",
       "not_found_file": "未找到文件",
-      "duplicate_ic3_devicename": "此名称已被另一个 iCloud3 设备使用",
-      "already_assigned": "此选择已分配给另一个设备",
-      "mobapp_search_error": "警告：搜索失败 - 未找到以 iCloud3 或 Apple 账户设备名开头的移动应用设备。选择无或要使用的设备",
-      "duplicate_other_devicename": "此名称已在另一个集成或平台中使用",
+
       "action_completed": "请求的操作已完成",
       "action_cancelled": "请求的操作已取消",
       "restart_ha": "需要重启 Home Assistant 继续",
-      "excluded_sensors_ha_restart": "已更新排除的传感器。需要重启 HA",
+      "excluded_sensors_ha_restart": "✔️ 已更新排除的传感器。需要重启 HA",
+
       "fix_entity_name_complete": "传感器实体名称修正已完成",
       "fix_entity_name_not_needed": "未发现传感器实体名称错误",
+
       "dashboard_device_keyword_error": "无法更新仪表盘。设备关键词不可用",
       "dashboard_created_initial": "已创建初始 iCloud3 仪表盘",
       "dashboard_created": "仪表盘已创建",
-      "dashboard_updated": "仪表盘已更新",
+      "dashboard_updated": "✔️ 仪表盘已更新",
       "dashboard_name_used": "此仪表盘名称已分配给另一个仪表盘",
       "dashboard_main_2_devices": "主视图界面只能选择 2 个设备",
       "dashboard_error": "更新仪表盘时发生错误",
@@ -175,6 +197,7 @@
       },
       "menu_0": {
         "title": "配置设备和传感器",
+        "description": "This menu contains items related to Apple Accounts, Tracked Devices, Apple Authentication, Sensors, iCloud3 Dashboard and Maintenance Tools",
         "data": {
           "xmenu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
@@ -183,6 +206,7 @@
       },
       "menu_1": {
         "title": "配置参数",
+        "description": "This menu contains items related to configuring how iCloud3 should track devices and how the results should be reported",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
@@ -266,6 +290,7 @@
         "data": {
           "account_selected": "待认证的 APPLE 账户",
           "verification_code": "APPLE 账户验证码",
+          "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ 操作命令"
         }
       },
@@ -386,8 +411,8 @@
         "title": "维护工具",
         "description": "维护工具可以用来修正 iCloud3 配置文件错误、重置为默认设置、重新加载 iCloud3、重启 Home Assistant 等。",
         "data": {
-          "log_level_devices": "日志设备过滤 - 只为这些设备写入 iCloud 原始数据到日志文件",
           "log_level": "日志级别 - 写入 iCloud3 日志文件（icloud3.log）的消息类型",
+          "log_level_devices": "日志设备过滤 - 只为这些设备写入 iCloud 原始数据到日志文件",
           "tools": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Apple 账户工具",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ 工具"
         },

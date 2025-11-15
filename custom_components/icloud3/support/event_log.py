@@ -103,8 +103,8 @@ class EventLog(object):
         self.apple_acct_auth_cnts_by_owner = {}      # Display only the last 4 Apple Acct Auth statements
 
         # An alert message is displayed in a green bar at the top of the EvLog screen
-        #   post_evlog_greenbar_msg("msg") = Display the message
-        #   clear_evlog_greenbar_msg()     = Clear the alert msg and remove the green bar
+        #   post_greenbar_msg("msg") = Display the message
+        #   clear_greenbar_msg()     = Clear the alert msg and remove the green bar
         self.greenbar_alert_msg      = ''       # Message to display in green bar at the top of the Evlog
 
         self.user_message            = ''       # Display a message in the name0 button
@@ -453,7 +453,7 @@ class EventLog(object):
             log_attr_text = ""
             if Gb.evlog_trk_monitors_flag: log_attr_text += 'monitor,'
             if Gb.log_debug_flag:          log_attr_text += 'debug,'
-            if Gb.log_rawdata_flag:           log_attr_text += 'rawdata,'
+            if Gb.log_rawdata_flag:        log_attr_text += 'rawdata,'
 
             self.evlog_attrs['log_level_debug'] = log_attr_text
 
@@ -505,7 +505,7 @@ class EventLog(object):
                 f"{dt_util.now().strftime('%f')}")
 
 #------------------------------------------------------
-    def display_user_message(self, user_message, alert=False, clear_evlog_greenbar_msg=False):
+    def display_user_message(self, user_message, alert=False, clear_greenbar_msg=False):
         '''
         Display or clear the special message displayed in the name0 button on
         the Event Log. However, do not change or clear it if the persists flag
@@ -515,7 +515,7 @@ class EventLog(object):
         The user_message_alert_flag must be set to False to change or clear
         a message.
         '''
-        if clear_evlog_greenbar_msg:
+        if clear_greenbar_msg:
             self.user_message_alert_flag = alert = False
 
         if alert:
@@ -681,9 +681,13 @@ class EventLog(object):
         self.devicename_cnts[devicename_type] += 1
 
 #------------------------------------------------------
-    def clear_evlog_greenbar_msg(self):
+    def clear_greenbar_msg(self):
+
+        if self.greenbar_alert_msg == '':
+            return
 
         self.greenbar_alert_msg = ''
+        self.display_user_message('', clear_greenbar_msg=True)
 
 #------------------------------------------------------
     def _filtered_evlog_recds(self, devicename='', max_recds=HIGH_INTEGER, selected_devicename=None):
@@ -741,7 +745,7 @@ class EventLog(object):
             return el_recds
 
         elif Gb.EvLog.greenbar_alert_msg.startswith('Start up log'):
-            self.clear_evlog_greenbar_msg()
+            self.clear_greenbar_msg()
 
         el_devicename_check = ['*', '**', 'nodevices', devicename]
 

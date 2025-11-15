@@ -15,8 +15,8 @@ from ..const            import (DOMAIN,
                                 )
 
 from ..utils.utils      import (instr, )
-from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg,
-                                post_evlog_greenbar_msg, clear_evlog_greenbar_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
+                                post_greenbar_msg, clear_greenbar_msg,
                                 more_info,
                                 log_info_msg, log_debug_msg, log_exception,
                                 _evlog, _log, )
@@ -130,9 +130,7 @@ def process_update_service_request(call):
 def process_restart_icloud3_service_request(call):
     """ icloud3.restart service call request  """
 
-    Gb.InternetError.reset_internet_error_fields()
-    Gb.InternetErro.internet_error_test = False
-    Gb.InternetError.internet_error_test_after_startup = False
+    Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
 
 #--------------------------------------------------------------------
 def process_find_iphone_alert_service_request(call):
@@ -293,7 +291,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
     action = action_entry
 
-    if action == f"{CMD_REFRESH_EVENT_LOG}+clear_evlog_greenbar_msgs":
+    if action == f"{CMD_REFRESH_EVENT_LOG}+clear_greenbar_msgs":
         action = CMD_REFRESH_EVENT_LOG
 
     if (action == CMD_REFRESH_EVENT_LOG
@@ -311,7 +309,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
     action_option = action_entry.replace(action, '').strip()
 
     # EvLog version sent from the EvLog program already set, ignore the svc call
-    if action == 'event_log_version': # and Gb.evlog_version == action_option:
+    if action == 'event_log_version':
         return
 
     devicename_msg = devicename if devicename in Gb.Devices_by_devicename else None
@@ -347,15 +345,25 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
                 Device.pause_tracking()
 
         elif action == CMD_RESUME:
-            Gb.InternetError.reset_internet_error_fields()
+            Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
 
             Gb.all_tracking_paused_flag = False
             Gb.all_tracking_paused_secs = 0
-            Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
+            Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
             for Device in Devices:
                 Device.resume_tracking()
 
         elif action == CMD_LOCATE:
+            # Trigger an Internet Error test
+            if Gb.test_internet_error_after_startup:
+                Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
+                Gb.test_internet_error = True
+                Gb.icloud_io_request_secs = time_now_secs() + 70
+                Device = Gb.Devices_by_devicename.get(Gb.EvLog.evlog_attrs["devicename"])
+                if Device:
+                    _handle_action_device_locate(Device, '')
+                return
+
             for Device in Devices:
                 _handle_action_device_locate(Device, action_option)
 
@@ -398,19 +406,15 @@ def _handle_global_action(global_action, action_option):
         Gb.log_debug_flag_restart         = Gb.log_debug_flag
         Gb.log_rawdata_flag_restart       = Gb.log_rawdata_flag
         Gb.restart_icloud3_request_flag   = True
-        Gb.InternetError.reset_internet_error_fields()
-        Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_evlog_greenbar_msg=True)
+        Gb.restart_requested_by = 'user'
+        Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
+        Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_greenbar_msg=True)
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
         return
 
     elif global_action == CMD_EXPORT_EVENT_LOG:
-        if Gb.InternetError.internet_error_test_after_startup:
-            Gb.InternetError.internet_error_test = True
-            # Gb.InternetError.internet_error_test = False      #False to test www.icloud.com
-            Gb.last_PyiCloud_request_secs = time_now_secs() + 70
-        else:
-            Gb.EvLog.export_event_log()
+        Gb.EvLog.export_event_log()
         return
 
     elif global_action == CMD_REFRESH_EVENT_LOG:
@@ -438,12 +442,14 @@ def _handle_global_action(global_action, action_option):
             Gb.WazeHist.wazehist_recalculate_time_dist_abort_flag = True
             event_msg+="Stopped"
             post_event(event_msg)
+
         elif Gb.wazehist_recalculate_time_dist_flag:
             event_msg+=("Starting Immediately"
                         f"{CRLF_DOT}SELECT AGAIN TO STOP")
             post_event(event_msg)
             Gb.wazehist_recalculate_time_dist_flag = False
             Gb.WazeHist.wazehist_recalculate_time_dist_all_zones()
+
         else:
             Gb.wazehist_recalculate_time_dist_flag = True
             event_msg+=(f"Scheduled to run tonight at Midnight "
@@ -514,6 +520,7 @@ def _handle_action_device_locate(Device, action_option):
     '''
     Set the next update time & interval from the Action > locate service call
     '''
+
     if action_option in ['mobapp', 'iosapp', 'mobileapp']:
         if Device.is_data_source_MOBAPP:
             _handle_action_device_location_mobapp(Device)
@@ -540,12 +547,10 @@ def _handle_action_device_locate(Device, action_option):
 
     if Device.is_tracking_paused:
         Gb.all_tracking_paused_flag = False
-        Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
+        Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
         Device.resume_tracking()
 
-    Gb.InternetError.reset_internet_error_fields()
-    # Gb.icloud_force_update_flag = True
-    # Device.icloud_force_update_flag = True
+    Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
     Device.reset_tracking_fields(interval_secs)
     det_interval.update_all_device_fm_zone_sensors_interval(Device, interval_secs)
     Device.icloud_update_reason = f"Location Requested@{time_now()}"
@@ -584,8 +589,8 @@ def find_iphone_alert_service_handler(devicename):
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
-        if device_id and Device.PyiCloud and Device.PyiCloud.AADevices:
-            Device.PyiCloud.AADevices.play_sound(device_id, subject="Find My iPhone Alert")
+        if device_id and Device.AppleAcct and Device.AppleAcct.AADevices:
+            Device.AppleAcct.AADevices.play_sound(device_id, subject="Find My iPhone Alert")
 
             post_event(devicename, "iCloud Find My iPhone Alert sent")
             return
@@ -624,8 +629,8 @@ def lost_device_alert_service_handler(devicename, number, message=None):
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
-        if device_id and Device.PyiCloud and Device.PyiCloud.AADevices:
-            Device.PyiCloud.AADevices.lost_device(device_id, number=number, message=message)
+        if device_id and Device.AppleAcct and Device.AppleAcct.AADevices:
+            Device.AppleAcct.AADevices.lost_device(device_id, number=number, message=message)
 
             post_event(devicename, "iCloud Lost Device Alert sent")
             return
@@ -641,8 +646,8 @@ def display_message_alert_service_handler(devicename, message, sounds=False):
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
-        if device_id and Device.PyiCloud and Device.PyiCloud.AADevices:
-            Device.PyiCloud.AADevices.display_message(device_id, message=message, sounds=sounds)
+        if device_id and Device.AppleAcct and Device.AppleAcct.AADevices:
+            Device.AppleAcct.AADevices.display_message(device_id, message=message, sounds=sounds)
 
             post_event(devicename, "iCloud Display Message Alert sent")
             return

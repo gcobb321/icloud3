@@ -11,7 +11,7 @@ from ..const            import (WAZE_USED, WAZE_NOT_USED, WAZE_PAUSED, WAZE_OUT_
                                 LATITUDE, LONGITUDE, ZONE, )
 
 from ..utils.utils      import (instr, format_gps, )
-from ..utils.messaging  import (post_event, post_internal_error, log_info_msg, _evlog, _log, )
+from ..utils.messaging  import (post_event, post_alert, post_internal_error, log_info_msg, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer,  )
 from ..utils.dist_util  import (km_to_um, )
 
@@ -403,7 +403,7 @@ class Waze(object):
             self.waze_status = WAZE_NOT_USED
             err = "A problem occurred connecting to `www.waze.com`. Waze is not available at this time"
 
-        post_event(f"{EVLOG_ALERT}Alert > Waze Connection Error, Region-{self.waze_region} > {err}. "
+        post_alert(f"Alert > Waze Connection Error, Region-{self.waze_region} > {err}. "
                     "The route distance will be calculated, Travel Time is not available.")
 
 #--------------------------------------------------------------------

@@ -43,21 +43,21 @@ DEVICE_DATA_FILTER_OUT = [
 #
 #   AADevData Object - Store all of the data related to the device. It is created
 #   and updated in the FindMyPhoneSvcMgr.refresh_client module and is based on the
-#   device_id. The Global Variable PyiCloud.AADevData_by_device_id contains the object
+#   device_id. The Global Variable AppleAcct.AADevData_by_device_id contains the object
 #   pointer for each device_id.
 #
 #       - content = all of the data for this device_id
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-class PyiCloud_AppleAcctDeviceData():
+class iCloud_AppleAcctDeviceData():
     '''
     AADevData stores all the device data for each Apple Acct
 
     Parameters:
         - device_id = iCloud device id of the device
         - device_data = data received from Apple
-        - PyiCloudSession = PyiCloud instance that authenticates and gets the data
+        - iCloudSession = AppleAcct instance that authenticates and gets the data
         - params = ?
         - data_source = 'iCloud'
         - timestamp_field = name of the location timestamp field in device_data
@@ -67,20 +67,20 @@ class PyiCloud_AppleAcctDeviceData():
 
     def __init__(self, device_id,
                         device_data,
-                        PyiCloudSession,
+                        iCloudSession,
                         params,
                         data_source,
                         timestamp_field,
                         AADevices,
                         device_data_name,):
 
-        self.setup_time      = time_now()
-        self.PyiCloud        = AADevices.PyiCloud  # PyiCloud object (Apple Acct) with the device data
-        self.PyiCloudSession = PyiCloudSession
+        self.setup_time    = time_now()
+        self.AppleAcct     = AADevices.AppleAcct # AppleAcct object (Apple Acct) with the device data
+        self.iCloudSession = iCloudSession
 
         # __init__ is run several times during to initialize the AADevData fields
         # Initialize the identity fields on the initial create
-        if device_id not in self.PyiCloud.AADevData_by_device_id:
+        if device_id not in self.AppleAcct.AADevData_by_device_id:
             self.device_id       = device_id
             self.params          = params
             self.data_source     = data_source
@@ -124,6 +124,7 @@ class PyiCloud_AppleAcctDeviceData():
         self.device_data[DATA_SOURCE] = self.data_source
         self.device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
         self.raw_model = self.device_data.get('rawDeviceModel', self.device_class).replace('_', '')
+
         Gb.model_display_name_by_raw_model[self.raw_model] = self.icloud_device_display_name
 
 #----------------------------------------------------------------------
@@ -168,21 +169,21 @@ class PyiCloud_AppleAcctDeviceData():
             return dname
 
         # It is ok if dname has not been seen
-        if dname not in self.PyiCloud.device_id_by_icloud_dname:
+        if dname not in self.AppleAcct.device_id_by_icloud_dname:
             return dname
 
         # This is not a tracked and configured device if the dname is not used
         # but maybe a dupe because the dname is found with a different device_id
         conf_devicename = self._find_conf_device_devicename(CONF_FAMSHR_DEVICENAME, dname)
         if conf_devicename == '':
-            found_before = (dname in self.PyiCloud.device_id_by_icloud_dname)
+            found_before = (dname in self.AppleAcct.device_id_by_icloud_dname)
             if found_before is False:
                 return dname
 
         # Dupe dname, it has not been seen and dname has been used
         # Add a period to dname to make it unique
         _dname = f"{dname}."
-        while _dname in self.PyiCloud.device_id_by_icloud_dname:
+        while _dname in self.AppleAcct.device_id_by_icloud_dname:
             _dname += '.'
         self.fname_dup_suffix = _dname.replace(dname, '')
 
@@ -196,7 +197,7 @@ class PyiCloud_AppleAcctDeviceData():
         '''
         conf_devicename = [conf_device[CONF_IC3_DEVICENAME]
                                 for conf_device in Gb.conf_devices
-                                if (conf_device[CONF_APPLE_ACCOUNT] == self.PyiCloud.username
+                                if (conf_device[CONF_APPLE_ACCOUNT] == self.AppleAcct.username
                                     and conf_device[field] == field_value)]
 
         if conf_devicename:
@@ -244,7 +245,6 @@ class PyiCloud_AppleAcctDeviceData():
             else:
                 device_class = self.device_data.get('deviceClass', '')
 
-            # return (f"{display_name}; {raw_model}").replace("’", "'")
             return (f"{self.icloud_device_display_name}; {self.raw_model}").replace("’", "'")
 
         else:
@@ -270,7 +270,9 @@ class PyiCloud_AppleAcctDeviceData():
         idx = display_name.find('-inch')
         if idx > 0:
             display_name = display_name[:idx-3] + display_name[idx+5:]
-        return display_name
+
+        #v3.3 - Remove spaces from display name
+        return display_name.replace(' ', '')
 
 #----------------------------------------------------------------------
     @property
@@ -316,7 +318,7 @@ class PyiCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------------
     def save_new_device_data(self, device_data):
         '''Update the device data.'''
-        if self.PyiCloud.china_gps_coordinates != '':
+        if self.AppleAcct.china_gps_coordinates != '':
             device_data = self.convert_GCJ02_BD09_to_WGS84(device_data)
 
         try:
@@ -374,9 +376,9 @@ class PyiCloud_AppleAcctDeviceData():
         latitude  = device_data[LOCATION][LATITUDE]
         longitude = device_data[LOCATION][LONGITUDE]
 
-        if self.PyiCloud.china_gps_coordinates == 'GCJ02':
+        if self.AppleAcct.china_gps_coordinates == 'GCJ02':
             latitude, longitude = gps.gcj_to_wgs(latitude, longitude)
-        elif self.PyiCloud.china_gps_coordinates == 'BD09':
+        elif self.AppleAcct.china_gps_coordinates == 'BD09':
             latitude, longitude = gps.bd_to_wgs(latitude, longitude)
 
         return device_data
@@ -401,7 +403,7 @@ class PyiCloud_AppleAcctDeviceData():
 
             # This will create old location for testing
             # if self.name=='Gary-iPhone':
-            #     raise PyiCloudAPIResponseException('test error', 404)
+            #     raise AppleAcctAPIResponseException('test error', 404)
             #     self.device_data[LOCATION][TIMESTAMP]     = int(self.device_data[LOCATION][self.timestamp_field] / 1000) - 600
             #     _evlog('gary_iphone', f"Reduce loc time to {secs_to_time(self.device_data[LOCATION][TIMESTAMP])}")
 
@@ -450,6 +452,6 @@ class PyiCloud_AppleAcctDeviceData():
 
     def __repr__(self):
         try:
-            return f"<AADevData: {self.setup_time}-{self.PyiCloud.username_base}-{self.name}-{self.device_id[:8]}"
+            return f"<AADevData: {self.setup_time}-{self.AppleAcct.username_base}-{self.name}-{self.device_id[:8]}"
         except:
             return f"<AADevData: Undefined>"

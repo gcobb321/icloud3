@@ -40,8 +40,10 @@ from .const             import (VERSION, VERSION_BETA, ICLOUD3_VERSION_MSG,
                                 ALERTS_SENSOR_ATTRS
                                 )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
-from .apple_acct        import pyicloud_ic3_interface
+# from .apple_acct        import apple_acct_support as aas
 from .apple_acct        import icloud_data_handler
+from .apple_acct.internet_error import InternetConnection_ErrorHandler
+from .apple_acct.apple_acct_upw import ValidateAppleAcctUPW
 from .mobile_app        import mobapp_data_handler
 from .mobile_app        import mobapp_interface
 from .startup           import start_ic3
@@ -50,13 +52,12 @@ from .support           import service_handler
 from .tracking          import stationary_zone as statzone
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
-from .utils.file_io     import (is_event_loop_running,  is_event_loop_running2,)
 from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone,
-                                list_to_str, isbetween, username_id, zone_dname, )
+                                list_to_str, isbetween, username_id, zone_dname, is_running_in_event_loop, )
 from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
 from .utils.messaging   import (broadcast_info_msg,
-                                post_event, post_error_msg, post_monitor_msg, post_internal_error,
-                                post_evlog_greenbar_msg, clear_evlog_greenbar_msg, update_alert_sensor,
+                                post_event, post_alert, post_error_msg, post_monitor_msg, post_internal_error,
+                                post_greenbar_msg, clear_greenbar_msg, update_alert_sensor,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
                                 log_debug_msg, archive_ic3log_file,
                                 _evlog, _log, )
@@ -72,13 +73,18 @@ import time
 import traceback
 from re import match
 import homeassistant.util.dt        as dt_util
-from   homeassistant.helpers.event  import (track_utc_time_change, async_track_time_change)
+from   homeassistant.helpers.event  import (track_utc_time_change)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class iCloud3:
-    """iCloud3 Device Tracker Platform"""
+    """
+    iCloud3 Device Tracker Platform
+    """
 
     def __init__(self):
+        '''
+        This runs in the event_loop
+        '''
 
         Gb.started_secs                    = time_now_secs()
         Gb.hass_configurator_request_id    = {}
@@ -98,12 +104,13 @@ class iCloud3:
         Gb.any_device_was_updated_reason   = ''
         Gb.start_icloud3_inprocess_flag    = False
         Gb.restart_icloud3_request_flag    = False
+        Gb.restart_requested_by            = ''
+
+        Gb.InternetError = InternetConnection_ErrorHandler()
+        Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
 
         self.initialize_5_sec_loop_control_flags()
         self.location_updated_by_Device = {}
-
-        #initialize variables configuration.yaml parameters
-        # start_ic3.set_global_variables_from_conf_parameters()
 
     def __repr__(self):
         return (f"<iCloud3: {Gb.version}>")
@@ -132,9 +139,20 @@ class iCloud3:
                     f"Since-{format_time_age(self.loop_ctrl_device_update_in_process_secs)}")
         log_debug_msg(log_msg)
 
-#--------------------------------------------------------------------
-    def start_icloud3(self):
 
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   START/RESTART ICLOUD3
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def start_icloud3(self):
+        '''
+        Start/Restart iCloud3 -  Initialize everything and start iCloud3
+
+        This does not run in the Event Loop, it runs in it's own thread.
+        Calls to the session.request to get data from Apple/icloud.com
+        does not support asyncio/await protocol.
+        '''
         try:
             if Gb.start_icloud3_inprocess_flag:
                 return False
@@ -142,39 +160,38 @@ class iCloud3:
             service_handler.issue_ha_notification()
 
             self.startup_secs = time_now_secs()
-            self.initial_locate_complete_flag  = False
+            self.initial_locate_complete_flag = False
             self.startup_log_msgs           = ''
             self.startup_log_msgs_prefix    = ''
             Gb.start_icloud3_inprocess_flag = True
-            Gb.restart_icloud3_request_flag = False
             Gb.all_tracking_paused_flag     = False
             Gb.all_tracking_paused_secs     = 0
 
+            Gb.restart_icloud3_request_flag = False
+
             start_ic3_control.stage_1_setup_variables()
             start_ic3_control.stage_2_prepare_configuration()
-            start_ic3_control.stage_3_setup_configured_devices()
 
             # Terminate startup process if internet is down
+            Gb.InternetError.is_internet_available()
             if Gb.internet_error:
                 start_ic3_control.stage_6_initialization_complete()
                 Gb.InternetError.start_internet_error_handler()
+
+                post_event( f"{EVLOG_IC3_STARTING}Internet Connection Error, iCloud3 will restart when available")
             else:
-                stage_4_success = start_ic3_control.stage_4_setup_data_sources()
-                if stage_4_success is False or Gb.reinitialize_icloud_devices_flag:
-                    stage_4_success = start_ic3_control.stage_4_setup_data_sources_retry()
-                    if stage_4_success is False or Gb.reinitialize_icloud_devices_flag:
-                        stage_4_success = start_ic3_control.stage_4_setup_data_sources_retry(final_retry=True)
+                start_ic3_control.stage_3_setup_configured_devices()
+                start_ic3_control.stage_4_setup_data_sources()
+                start_ic3_control.stage_5_configure_tracked_devices()
+                start_ic3_control.stage_6_initialization_complete()
 
-            start_ic3_control.stage_5_configure_tracked_devices()
-            start_ic3_control.stage_6_initialization_complete()
+                post_event( f"{EVLOG_IC3_STARTING}Start up Complete > {ICLOUD3_VERSION_MSG}, "
+                    f"{format_day_date_now()}")
 
-            post_event( f"{EVLOG_IC3_STARTING}Start up Complete > {ICLOUD3_VERSION_MSG}, "
-                f"{format_day_date_now()}")
-
-            start_ic3_control.stage_7_initial_locate()
+                start_ic3_control.stage_7_initial_locate()
 
             Gb.trace_prefix = '------'
-            Gb.EvLog.display_user_message('', clear_evlog_greenbar_msg=True)
+            Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
 
             Gb.EvLog.startup_event_save_recd_flag = False
             Gb.initial_icloud3_loading_flag = False
@@ -201,7 +218,7 @@ class iCloud3:
 #   This function is called every 5 seconds by HA. Cycle through all
 #   of the iCloud devices to see if any of the ones being tracked need
 #   to be updated. If so, we might as well update the information for
-#   all of the devices being tracked since PyiCloud gets data for
+#   all of the devices being tracked since AppleAcct gets data for
 #   every device in the account
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -213,15 +230,15 @@ class iCloud3:
         # Handle internet connection errors
         if Gb.InternetError.internet_error_test_timeout:
             Gb.internet_error = False
-            Gb.last_PyiCloud_request_secs = Gb.this_update_secs - 60
+            Gb.icloud_io_request_secs = Gb.this_update_secs - 60
             Gb.InternetError.internet_error_test_timeout = False
-            Gb.InternetError.internet_error_test_counter = 4
 
-        if (secs_since(Gb.last_PyiCloud_request_secs) >= 60
+        if (secs_since(Gb.icloud_io_request_secs) >= 60
                 and Gb.internet_error is False):
             Gb.internet_error = True
-            age = format_age(Gb.last_PyiCloud_request_secs, xago=False)
-            post_event(f"{EVLOG_ALERT}Internet Error detected (www.icloud.com) > "
+            age = format_age(Gb.icloud_io_request_secs, xago=False)
+
+            post_alert(f"Internet Error detected (www.icloud.com) > "
                         f"{age} has elapsed since the last location request with no response. "
                         "Possible causes:"
                         f"{CRLF_DOT}An Internet Connection Error (Internet, WiFi, Router is down)"
@@ -287,7 +304,7 @@ class iCloud3:
             # End - Unccommented code to test of moving device into a statzone while home
 
             if Gb.all_tracking_paused_flag:
-                post_evlog_greenbar_msg(f"All Devices > Tracking Paused at "
+                post_greenbar_msg(f"All Devices > Tracking Paused at "
                                         f"{format_time_age(Gb.all_tracking_paused_secs)}")
                 return
 
@@ -508,7 +525,7 @@ class iCloud3:
         Update the device based on iCloud data
         '''
 
-        if (Device.PyiCloud is None):
+        if (Device.AppleAcct is None):
             return
 
         Gb.trace_prefix = 'ICLOUD'
@@ -628,11 +645,11 @@ class iCloud3:
         if (Gb.use_data_source_ICLOUD is False
                 or Gb.all_tracking_paused_flag):
             return
-        # if Gb.PyiCloud is None:
+        # if Gb.AppleAcct is None:
         #     return
 
         if Device := det_interval.device_will_update_in_15secs():
-            if Device.PyiCloud is None: return
+            if Device.AppleAcct is None: return
 
             Gb.trace_prefix = 'GETLOC'
             log_start_finish_update_banner('start', Device.devicename, 'icloud prefetch', '')
@@ -692,9 +709,6 @@ class iCloud3:
             if Gb.log_debug_flag:
                 for devicename, Device in Gb.Devices_by_devicename_tracked.items():
                     Device.log_data_fields()
-
-            if isnot_empty(Gb.username_pyicloud_503_internet_error):
-                pyicloud_ic3_interface.log_into_apple_acct_retry()
 
         if time_mm != 0:
             return
@@ -955,8 +969,8 @@ class iCloud3:
 
             if data_source == ICLOUD:
                 update_reason = f"{Device.icloud_update_reason}"
-                if Device.PyiCloud:
-                    acct_name = Device.PyiCloud.account_owner_link
+                if Device.AppleAcct:
+                    acct_name = Device.AppleAcct.account_owner_link
 
             elif data_source == MOBAPP:
                 update_reason = Device.mobapp_data_change_reason
@@ -1039,7 +1053,7 @@ class iCloud3:
 #----------------------------------------------------------------------------
     def _update_device_location_raw_data(self, Device):
 
-        if Device.PyiCloud:
+        if Device.AppleAcct:
             icloud_data_handler.update_device_with_latest_raw_data(Device)
         else:
             Device.update_dev_loc_data_from_raw_data_MOBAPP()
@@ -1081,8 +1095,8 @@ class iCloud3:
                         f"{EVLOG_UPDATE_END}{Device.dev_data_source} Results > "
                         f"{self._results_special_msg(Device)}"))
 
-        if Device.dev_data_source == ICLOUD and Device.PyiCloud:
-            acct_name = Device.PyiCloud.account_owner_link
+        if Device.dev_data_source == ICLOUD and Device.AppleAcct:
+            acct_name = Device.AppleAcct.account_owner_link
         else:
             acct_name = ''
         log_start_finish_update_banner('finish', f"{devicename}{acct_name}",
@@ -1291,8 +1305,8 @@ class iCloud3:
         if mobapp_unavailable_msg:
             general_alert_msg += f"{CRLF_LBDOT}MobApp Device Unavailable-{mobapp_unavailable_msg[:-2]}"
 
-        if (Gb.InternetError.internet_error_test
-                or Gb.InternetError.internet_error_test_after_startup):
+        if (Gb.test_internet_error
+                or Gb.test_internet_error_after_startup):
             general_alert_msg += f"{CRLF_LRED_ALERT}InternetConnection Error Test > True"
 
         # if Gb.EvLog.alert_attr_filter(startup_alert_attr) != startup_alert_attr:
@@ -1305,17 +1319,17 @@ class iCloud3:
         if general_alert_msg.startswith(CRLF):
             general_alert_msg = general_alert_msg[1:]
         if general_alert_msg != Gb.EvLog.greenbar_alert_msg:
-            post_evlog_greenbar_msg(general_alert_msg)
+            post_greenbar_msg(general_alert_msg)
         elif general_alert_msg == '' and Gb.EvLog.greenbar_alert_msg:
-            clear_evlog_greenbar_msg()
+            clear_greenbar_msg()
 
 #----------------------------------------------------------------------------
     def _check_apple_acct_authentication_needed(self):
 
         msg = ""
-        for username, PyiCloud in Gb.PyiCloud_by_username.items():
-            if PyiCloud.requires_2fa:
-                msg += (f"Apple Acct > {PyiCloud.account_owner}, "
+        for username, AppleAcct in Gb.AppleAcct_by_username.items():
+            if AppleAcct.auth_2fa_code_needed:
+                msg += (f"Apple Acct > {AppleAcct.account_owner}, "
                         f"Auth Code Needed")
 
 #--------------------------------------------------------------------
@@ -1384,8 +1398,8 @@ class iCloud3:
         # Get all Apple accts needing a 2fa-auth code that have otp tokens
         conf_apple_accts = [conf_apple_acct
                         for conf_apple_acct in Gb.conf_apple_accounts
-                        if (conf_apple_acct[CONF_USERNAME] in Gb.PyiCloud_by_username
-                            and Gb.PyiCloud_by_username[conf_apple_acct[CONF_USERNAME]].requires_2fa
+                        if (conf_apple_acct[CONF_USERNAME] in Gb.AppleAcct_by_username
+                            and Gb.AppleAcct_by_username[conf_apple_acct[CONF_USERNAME]].auth_2fa_code_needed
                             and conf_apple_acct[CONF_TOTP_KEY])]
 
         if is_empty(conf_apple_accts):
@@ -1420,8 +1434,8 @@ class iCloud3:
             start_ic3.set_log_level('info')
             start_ic3.update_conf_file_log_level('info')
 
-        for username, PyiCloud in Gb.PyiCloud_by_username.items():
-            PyiCloud.auth_cnt = 0
+        for username, AppleAcct in Gb.AppleAcct_by_username.items():
+            AppleAcct.auth_cnt = 0
 
         if (Gb.WazeHist
                 and Gb.WazeHist.is_historydb_USED

@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.2.4.2'
+VERSION                         = '3.3'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -122,6 +122,7 @@ OTHER_FNAME                     = 'Other'
 
 IPHONE                          = 'iphone'
 WATCH                           = 'watch'
+APPLE_WATCH                     = 'apple watch'
 WATCH_WIFI                      = 'watch_wifi'
 IPAD                            = 'ipad'
 IPAD_CELL                       = 'ipad_cell'
@@ -132,7 +133,8 @@ OTHER                           = 'other'
 
 DEVICE_TYPES = [
         IPHONE, IPAD, IPAD_CELL, WATCH, WATCH_WIFI,
-        IPHONE_FNAME, IPAD_FNAME, IPAD_CELL_FNAME, WATCH_FNAME, WATCH_WIFI_FNAME,
+        IPHONE_FNAME, IPAD_FNAME, IPAD_CELL_FNAME,
+        WATCH_FNAME, WATCH_WIFI_FNAME, APPLE_WATCH,
         MAC, IPOD, AIRPODS,
         MAC_FNAME, IPOD_FNAME, AIRPODS_FNAME,
         ICLOUD,
@@ -140,6 +142,7 @@ DEVICE_TYPES = [
 DEVICE_TYPE_FNAMES = {
         IPHONE: IPHONE_FNAME,
         WATCH: WATCH_FNAME,
+        APPLE_WATCH: WATCH_FNAME,
         WATCH_WIFI: WATCH_WIFI_FNAME,
         IPAD: IPAD_FNAME,
         IPAD_CELL: IPAD_CELL_FNAME,
@@ -341,7 +344,7 @@ EVLOG_IC3_STAGE_HDR = '^g^'
 EVLOG_BROWN_BAR     = '^i^'
 
 
-EVLOG_NOTICE      = '^5^'
+EVLOG_NOTICE      = '^6^'
 EVLOG_TRACE       = '^3^'
 EVLOG_DEBUG       = '^6^'
 EVLOG_MONITOR     = '^m^'
@@ -370,7 +373,7 @@ Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• �
 ═ ⎯ — –ᗒ ⁃ » ━▶ ━➤🡺 —> > ❯↦ 🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆aak◈◉● ⟷
 •⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
 ▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
-.…⋯⋮ ⋱⋰ ⠁⠂⠐⠄⠠⠈⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⟡⯌✦⯌⯏⯍aak✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢aak. 
+.…⋯⋮ ⋱⋰ ⠁⠂⠐⠄⠠⠈⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⟡⯌✦⯌⯏⯍aak✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢aak.
 🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
 ≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
 https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
@@ -385,8 +388,12 @@ NBSP6             = '⠿' #'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 CRLF              = '⣇' #'<br>'
 NL                = '\n'
 NLSP4             = '\n⠂   '
-NL4               = '\n⠀⠀⠀'
-NL4_DATA          = '\n⠀⠀⠀❗ '
+NL3               = '\n⠂ '
+NL4               = '\n⠂  '
+NL3U              = '\n⠂ 🔺 '
+NL3D              = '\n⠂ 🔻 '
+NL3_DATA          = '\n⠂  ❗ '
+NL4_DATA          = '\n⠂   ❗ '
 BSP4              = '⠀⠀⠀⠀'  # Braille spaces
 LLINK             = ''
 RLINK             = ''
@@ -789,7 +796,7 @@ CONF_PASSTHRU_ZONE_TIME         = 'passthru_zone_time'
 CONF_LOG_LEVEL                  = 'log_level'
 CONF_LOG_LEVEL_DEVICES          = 'log_level_devices'
 CONF_DISPLAY_GPS_LAT_LONG       = 'display_gps_lat_long'
-CONF_RECREATE_MAIN_DASHBOARD    = 'recreate_main_dashboard'
+CONF_PASSWORD_SRP_ENABLED       = 'password_srp_enabled'
 
 # Zone Parameters
 CONF_DEVICE_TRACKER_STATE_SOURCE= 'device_tracker_state_source'
@@ -970,6 +977,7 @@ DEFAULT_TRACKING_CONF = {
         CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX: '',
         CONF_SERVER_LOCATION_NEEDED: False,
         CONF_SETUP_ICLOUD_SESSION_EARLY: True,
+        CONF_PASSWORD_SRP_ENABLED: True,
         CONF_DATA_SOURCE: f'{ICLOUD},{MOBAPP}',
         CONF_APPLE_ACCOUNTS: [],
         CONF_DEVICES: [],
@@ -1044,7 +1052,6 @@ DEFAULT_GENERAL_CONF = {
         CONF_TRACK_FROM_BASE_ZONE_USED: True,
         CONF_TRACK_FROM_BASE_ZONE: HOME,
         CONF_TRACK_FROM_HOME_ZONE: True,
-        CONF_RECREATE_MAIN_DASHBOARD: False,
 
         # inZone Configuration Parameters
         CONF_CENTER_IN_ZONE: False,

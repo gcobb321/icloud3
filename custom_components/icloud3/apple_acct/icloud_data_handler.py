@@ -8,13 +8,13 @@ from ..const            import (HOME, NOT_SET, HHMMSS_ZERO,
                                     LOCATION,
                                     )
 
-from .                  import pyicloud_ic3_interface
-from .pyicloud_ic3      import (PyiCloudAPIResponseException, PyiCloud2FARequiredException,
+from .                  import apple_acct_support as aas
+from .apple_acct        import (AppleAcctAPIResponseException, AppleAcct2FARequiredException,
                                 HTTP_RESPONSE_CODES, )
 from ..startup          import start_ic3 as start_ic3
 from ..tracking         import determine_interval as det_interval
 from ..utils.utils      import (instr, is_statzone, list_to_str, list_add, list_del, )
-from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg, log_debug_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg, log_debug_msg,
                                 log_exception, log_data, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer, format_age, secs_since,)
 
@@ -135,8 +135,8 @@ def request_icloud_data_update(Device):
     '''
     if (Gb.use_data_source_ICLOUD is False
             or Device.is_data_source_ICLOUD is False
-            or Device.PyiCloud is None):
-            # or Gb.PyiCloud is None):
+            or Device.AppleAcct is None):
+            # or Gb.AppleAcct is None):
         return False
 
     devicename = Device.devicename
@@ -166,7 +166,7 @@ def request_icloud_data_update(Device):
 
         return True
 
-    except (PyiCloud2FARequiredException, PyiCloudAPIResponseException) as err:
+    except (AppleAcct2FARequiredException, AppleAcctAPIResponseException) as err:
         Device.icloud_acct_error_flag      = True
         Device.icloud_devdata_useable_flag = False
 
@@ -203,14 +203,14 @@ def update_AADevData_data(Device, results_msg_flag=True):
     try:
         if (Gb.use_data_source_ICLOUD is False
                 or Device.is_data_source_ICLOUD is False
-                or Device.PyiCloud is None):
+                or Device.AppleAcct is None):
             return False
 
         if Device.icloud_device_id is None:
             return False
 
-        if pyicloud_ic3_interface.is_authentication_2fa_code_needed(Device.PyiCloud):
-            if pyicloud_ic3_interface.authenticate_icloud_account(Device.PyiCloud, called_from='data_handler') is False:
+        if aas.is_authentication_2fa_code_needed(Device.AppleAcct):
+            if aas.authenticate_icloud_account(Device.AppleAcct, called_from='data_handler') is False:
                 return False
 
         if is_AADevData_data_useable(Device, results_msg_flag=False):
@@ -227,23 +227,17 @@ def update_AADevData_data(Device, results_msg_flag=True):
         if Device.is_data_source_ICLOUD:
             loc_data_stale = (icloud_loc_secs != Device.loc_data_secs
                                 or Device.next_update_secs > (icloud_loc_secs + 5))
-            if ((loc_data_stale and secs_since(Device.PyiCloud.last_refresh_secs) >= 5)
+            if ((loc_data_stale and secs_since(Device.AppleAcct.last_refresh_secs) >= 5)
                         # and ((icloud_loc_secs != Device.loc_data_secs
                         #       or Device.next_update_secs > (icloud_loc_secs + 5))))
                     or Device.icloud_initial_locate_done is False):
 
-                device_id = None if Device.PyiCloud.locate_all_devices else Device.icloud_device_id
+                device_id = None if Device.AppleAcct.locate_all_devices else Device.icloud_device_id
 
                 locate_all_devices, device_id = _locate_all_or_acct_owner(Device)
-                Device.PyiCloud.refresh_icloud_data(requested_by_devicename=Device.devicename,
+                Device.AppleAcct.refresh_icloud_data(requested_by_devicename=Device.devicename,
                                                     locate_all_devices=locate_all_devices,
                                                     device_id=device_id)
-        if (Device.PyiCloud.response_code == 503
-                and Device.devicename not in Gb.username_pyicloud_503_internet_error):
-            list_add(Gb.username_pyicloud_503_internet_error, Device.devicename)
-            post_event( f"{EVLOG_ERROR}Apple Acct > {Device.PyiCloud.account_owner}, "
-                        f"Refresh Location Data Failed, Connection Error 503, Will "
-                        f"try to reconnect in 15-min")
 
         if update_all_devices_with_latest_raw_data(Device) is False:
             return False
@@ -256,9 +250,9 @@ def update_AADevData_data(Device, results_msg_flag=True):
 
         return True
 
-    except (PyiCloud2FARequiredException, PyiCloudAPIResponseException) as err:
+    except (AppleAcct2FARequiredException, AppleAcctAPIResponseException) as err:
         try:
-            _err_msg = HTTP_RESPONSE_CODES.get(Device.PyiCloud.Session.response_code,
+            _err_msg = HTTP_RESPONSE_CODES.get(Device.AppleAcct.Session.response_code,
                             'Unknown Error')
 
             Device.icloud_acct_error_flag      = True
@@ -268,8 +262,9 @@ def update_AADevData_data(Device, results_msg_flag=True):
                         f"refreshing the iCloud Location. iCloud may be down or there is an "
                         f"internet connection issue. iCloud3 will try again later. "
                         f"{CRLF_DOT}{_err_msg}, "
-                        f"Error-{Device.PyiCloud.Session.response_code}")
-                        # f"Error-{Gb.PyiCloud.Session.response_code}")
+                        f"Error-{Device.AppleAcct.response_code}")
+                        # f"Error-{Device.AppleAcct.Session.response_code}")
+                        # f"Error-{Gb.AppleAcct.Session.response_code}")
 
             post_event(Device, error_msg)
             post_error_msg(error_msg)
@@ -291,8 +286,8 @@ def _locate_all_or_acct_owner(Device):
     Returns:
         - [locate_all_devices, device_id]
     '''
-    PyiCloud = Device.PyiCloud
-    device_id = None if PyiCloud.locate_all_devices else Device.icloud_device_id
+    AppleAcct = Device.AppleAcct
+    device_id = None if AppleAcct.locate_all_devices else Device.icloud_device_id
 
     _Device = det_interval.device_will_update_in_15secs(Device=Device, only_icloud_devices=True)
 
@@ -304,7 +299,7 @@ def _locate_all_or_acct_owner(Device):
     # Locate_all override is enabled or
     # locate_all=False but Locating a iCloud device (not in the owners device_id list) or
     # Locate_all=False and updating an owners device but iCloud will update soon
-    if (PyiCloud.locate_all_devices
+    if (AppleAcct.locate_all_devices
             or Device.family_share_device
             or _Device):
         locate_all_devices = True
@@ -324,7 +319,7 @@ def update_all_devices_with_latest_raw_data(Device):
 def update_device_with_latest_raw_data(Device, all_devices=False):
     '''
     Update a Device's location data with the latest data from FamSshr or the MobApp
-    if is is better or newer than the old data. Optionally, cycle thru all PyiCloud
+    if is is better or newer than the old data. Optionally, cycle thru all AppleAcct
     Devices and update the data for every device being tracked or monitored when
     new data is requested for a device since iCloud gives us data for all devices.
 
@@ -464,8 +459,8 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                 else:
                     post_monitor_msg(_Device, event_msg)
 
-        #pyicloud_ic3_interface.display_authentication_msg(Device.PyiCloud)
-        # pyicloud_ic3_interface.display_authentication_msg(Gb.PyiCloud)
+        #pyicloud_ic3_interface.display_authentication_msg(Device.AppleAcct)
+        # pyicloud_ic3_interface.display_authentication_msg(Gb.AppleAcct)
         Gb.trace_prefix = save_evlog_prefix
 
         return True
@@ -590,14 +585,14 @@ def _get_devdata_useable_status(Device, data_source):
 #----------------------------------------------------------------------------
 def get_icloud_AADevData_to_use(_Device):
     '''
-    Analyze tracking method and location times from the raw PyiCloud device data
+    Analyze tracking method and location times from the raw AppleAcct device data
     to get best data to use
 
     Return:
         _AADevData - The AADevData (_icloud) data object
     '''
     try:
-        _AADevData_icloud = _Device.PyiCloud.AADevData_by_device_id.get(_Device.icloud_device_id)
+        _AADevData_icloud = _Device.AppleAcct.AADevData_by_device_id.get(_Device.icloud_device_id)
 
         if _AADevData_icloud is None:
             _AADevData = None

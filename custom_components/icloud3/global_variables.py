@@ -26,7 +26,7 @@
 from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
                             NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
                             APPLE_SERVER_ENDPOINT,
-                            DEFAULT_GENERAL_CONF,
+                            DEFAULT_GENERAL_CONF, DEFAULT_TRACKING_CONF,
                             CONF_UNIT_OF_MEASUREMENT,
                             CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
                             CONF_CENTER_IN_ZONE, CONF_DISPLAY_GPS_LAT_LONG,
@@ -34,7 +34,7 @@ from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
                             CONF_DISCARD_POOR_GPS_INZONE, CONF_OLD_LOCATION_THRESHOLD, CONF_OLD_LOCATION_ADJUSTMENT,
                             CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_MOBAPP_ALIVE_INTERVAL,
                             CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
-                            CONF_WAZE_REALTIME,
+                            CONF_WAZE_REALTIME, CONF_PASSWORD_SRP_ENABLED,
                             CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE ,
                             CONF_WAZE_HISTORY_TRACK_DIRECTION,
                             CONF_STAT_ZONE_FNAME,
@@ -59,8 +59,31 @@ from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 class GlobalVariables(object):
     '''
+    Define global variables used to enable testing iCloud3 functions
+    '''
+    disable_upw_filter = False # Disable filtering passwords in the icloud3.log file
+    fido2_security_keys_enabled = False
+
+    # This variable provides a mechanism of testing Internet Connection Errors when iCloud3 is
+    # starting without an actual error.
+    # Setting to True will raise an ConnectionError error in 'icloud_requests'
+    # that sets Gb.internet_error to True. Then in the 'icloud3_main' 5-sec loop, the Gb.internet_error
+    # flag is tested and then calls the start_internet_error_handler function
+    # below that handles internet errors.
+    test_internet_error = False
+    test_internet_error_counter = 2
+
+    # This variable provides a mechanism of testing Internet Connection Errors after iCloud3 has
+    # starting without an actual error.
+    # Set this to True, then select 'EvLog > Actions > Locate with iCloud'. This will set the
+    # 'internet_error_test' to True and set this variable to False. A Locate will then be issued
+    # and caught as described above.
+    test_internet_error_after_startup = False
+
+    '''
     Define global variables used in the various iCloud3 modules
     '''
+
     # Fixed variables set during iCloud3 loading that will not change
     version         = f"{VERSION}{VERSION_BETA}"
     version_beta    = VERSION_BETA
@@ -104,23 +127,37 @@ class GlobalVariables(object):
     prestartup_log      = ''     # _log calls made before the IC3Logger is set up will be stored here
 
     iC3EntityPlatform   = None   # iCloud3 Entity Platform (homeassistant.helpers.entity_component)
-    PyiCloud            = None   # iCloud Account service
-    PyiCloudLoggingInto = None   # PyiCloud being set up  that can be used if the login fails
-    PyiCloud_needing_reauth_via_ha = {} # Reauth needed sent to ha for notify msg display
+    AppleAcct           = None   # iCloud Account service
+    AppleAcctLoggingInto = None   # AppleAcct being set up  that can be used if the login fails
+    AppleAcct_needing_reauth_via_ha = {} # Reauth needed sent to ha for notify msg display
     ValidateAppleAcctUPW = None    # A session that can be used to verify the username/password
-    PyiCloud_by_username        = {}
-    PyiCloudSession_by_username = {}    # Session object for a username, set in Session so exists on an error
 
-    username_pyicloud_503_internet_error = [] # Session object for a username, set in Session so exists on an error
-    upw_filter_items        = {}    # username/passwords to be filtered from the EvLog and log file
-    upw_unfilter_items      = {}    # username/passwords that are filtered that need to be unfiltered (icloud3_alerts items)
-    upw_hide_items          = []    # username/passwords that should be hidded instead of filtered
-    disable_upw_filter      = False # Disable the filtering
+    AppleAcct_by_username             = {}
+    AppleAcct_by_devicename           = {}  # AppleAcct object for each ic3 devicename
+    AppleAcct_by_username             = {}  # AppleAcct object for each Apple acct username
+    AppleAcct_password_by_username    = {}  # Password for each Apple acct username
+    AppleAcct_logging_in_usernames    = []  # usernames that are currently logging in. Used to prevent another login
 
-    operating_mode          = 0         # Platform (Legacy using configuration.yaml) or Integration
-    ha_config_platform_stmt = False     # a platform: icloud3 stmt is in the configurationyaml file that needs to be removed
-    add_entities            = None
-    ha_started              = False     # Set to True in start_ic3.ha_startup_completed from listener in __init__
+    iCloudSession_by_username  = {}  # Session object for a username, set in Session so exists on an error
+    username_valid_by_username = {}  # The username/password validation status
+    valid_upw_results_msg      = ''  # valid upw results from Stage 3 to redisplay in Stage 4
+    server_err_503_usernames   = []
+    aalogin_error_secs_by_username   = {} # Time a server err 503 wa detected
+    aalogin_error_reason_by_username = {}
+
+    upw_filter_items           = {}    # username/passwords to be filtered from the EvLog and log file
+    upw_unfilter_items         = {}    # username/passwords that are filtered that need to be unfiltered (icloud3_alerts items)
+    upw_hide_items             = []    # username/passwords that should be hidded instead of filtered
+
+    usernames_setup_error_retry_list  = []  # usernames that failed to set up in Stage 4 and need to be retried
+    devicenames_setup_error_retry_list= []  # devices that failed to set up in Stage 4 and need to be retried
+    startup_alerts_by_source          = {}  # alerts during startup by devicename/apple_acct/mobapp device
+
+    #polling_5_sec_loop_running = False
+    operating_mode              = 0         # Platform (Legacy using configuration.yaml) or Integration
+    ha_config_platform_stmt     = False     # a platform: icloud3 stmt is in the configurationyaml file that needs to be removed
+    add_entities                = None
+    ha_started                  = False     # Set to True in start_ic3.ha_startup_completed from listener in __init__
 
     # iCloud3 Directory & File Names
     ha_config_directory         = ''      # '/config', '/home/homeassistant/.homeassistant'
@@ -163,33 +200,25 @@ class GlobalVariables(object):
     Devices_by_nearby_group           = {}  # Devvic by group within  50mm of each other
     inactive_fname_by_devicename      = {}  # Devices with tracking_mode=inactive
 
-    # PyiCloud objects by various categories
+    # AppleAcct objects by various categories
     conf_usernames                    = set()  # List of Apple Acct usernames in config
     Devices_by_username               = {}  # A list of Devices for each Apple Acct username ('gary@email.com': [gary_iphone, lillian_iphone])
     owner_device_ids_by_username      = {}  # List of owner info for Devices in Apple Acct
     owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
-    username_valid_by_username        = {}  # The username/password validation status
 
     InternetPingIP                    = None    # Internet Connection Test Availabile Handler
     InternetError                     = None    # Internet Connection Error Handler
-    internet_error                    = False   # Internet Connection Error Flag (set in PyiCloud_Session)
-    last_PyiCloud_request_secs        = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
+    internet_error                    = False   # Internet Connection Error Flag (set in AppleAcct_Session)
+    icloud_io_request_secs            = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
+    icloud_io_1_min_timer_fct         = None    # 1-min timer set when an icloud_io call is made
 
-    external_ip_name                   = None   # External IP name and address of the users newtowrk (internet_error)
-    external_ip_address                = None
-    apple_com_ip_address               = None
-    pingable_ip_name                   = None   # Pingable  P name and address to use to test the internet status (internet_error)
-    pingable_ip_address                = None
-    pingable_ip_Ping                   = None   # Ping object from the Ping helpers routined (internet_error)
-    httpx                              = None   # HTTPX Client from the HA httpx.client (setup & used in file_io.py)
-
-    PyiCloud_by_devicename            = {}  # PyiCloud object for each ic3 devicename
-    PyiCloud_by_username              = {}  # PyiCloud object for each Apple acct username
-    PyiCloud_password_by_username     = {}  # Password for each Apple acct username
-    PyiCloud_logging_in_usernames     = []  # usernames that are currently logging in. Used to prevent another login
-    usernames_setup_error_retry_list  = []  # usernames that failed to set up in Stage 4 and need to be retried
-    devicenames_setup_error_retry_list= []  # devices that failed to set up in Stage 4 and need to be retried
-    startup_alerts_by_source          = {}  # alerts during startup by devicename/apple_acct/mobapp device
+    external_ip_name                  = None   # External IP name and address of the users newtowrk (internet_error)
+    external_ip_address               = None
+    apple_com_ip_address              = None
+    pingable_ip_name                  = None   # Pingable  P name and address to use to test the internet status (internet_error)
+    pingable_ip_address               = None
+    pingable_ip_Ping                  = None   # Ping object from the Ping helpers routined (internet_error)
+    httpx                             = None   # HTTPX Client from the HA httpx.client (setup & used in file_io.py)
 
     # iCloud Device information - These is used verify the device, display on the EvLog and in the Config Flow
     # device selection list on the iCloud3 Devices screen
@@ -273,6 +302,7 @@ class GlobalVariables(object):
     start_icloud3_inprocess_flag    = True
     restart_icloud3_request_flag    = False     # iC3 needs to be restarted
     restart_ha_flag                 = False     # HA needs to be restarted
+    restart_requested_by            = ''        # Requested by 'service_handler', 'config_flow'
     any_device_was_updated_reason   = ''
     startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
     startup_lists                   = {}        # Log variable and dictionsry field/values to icloud3-0.log file
@@ -389,6 +419,7 @@ class GlobalVariables(object):
     travel_time_factor              = DEFAULT_GENERAL_CONF[CONF_TRAVEL_TIME_FACTOR]
     log_level                       = DEFAULT_GENERAL_CONF[CONF_LOG_LEVEL]
     log_level_devices               = DEFAULT_GENERAL_CONF[CONF_LOG_LEVEL_DEVICES]
+    password_srp_enabled            = DEFAULT_TRACKING_CONF[CONF_PASSWORD_SRP_ENABLED]
 
     device_tracker_state_source     = DEFAULT_GENERAL_CONF[CONF_DEVICE_TRACKER_STATE_SOURCE]
     display_gps_lat_long_flag       = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]
@@ -508,8 +539,20 @@ class GlobalVariables(object):
                                                         # at the end of polling loop after all devices have been processed
 
     # Miscellenous variables
-    broadcast_msg                  = ''
-    broadcast_info_msg             = None
+    broadcast_msg        = ''
+    broadcast_info_msg   = None
+
+    # Test variables
+    test_true_1         = True
+    test_true_2         = True
+    test_false_1        = False
+    test_false_2        = False
+    test_str_1          = ''
+    test_str_2          = ''
+    test_list_1         = []
+    test_list_2         = []
+    test_dict_1         = {}
+    test_dict_2         = {}
 
     #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 

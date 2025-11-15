@@ -9,12 +9,13 @@ from ..const            import (AIRPODS_FNAME, NONE_FNAME,
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                 secs_since, format_secs_since, format_age, format_time_age )
-from ..utils.messaging  import (post_event, post_monitor_msg, post_error_msg,
-                                _evlog, _log,
+from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_error_msg,
+                                post_greenbar_msg, _evlog, _log,
                                 log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                log_data, log_exception, log_data_unfiltered, filter_data_dict, )
+                                log_data, log_exception, log_data_unfiltered, )
 
-from .apple_acct_device_data import PyiCloud_AppleAcctDeviceData
+from .apple_acct_device_data import iCloud_AppleAcctDeviceData
+from .                  import icloud_requests_io  as icloud_io
 
 import logging
 LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
@@ -30,7 +31,7 @@ PLAYSOUND_ENDPOINT  = "/fmipservice/client/web/playSound"
 MESSAGE_ENDPOINT    = "/fmipservice/client/web/sendMessage"
 LOSTDEVICE_ENDPOINT = "/fmipservice/client/web/lostDevice"
 
-class PyiCloud_AppleAcctDevices():
+class iCloud_AppleAcctDevices():
     '''
     The 'Find my iPhone' iCloud service
 
@@ -38,17 +39,17 @@ class PyiCloud_AppleAcctDevices():
     latitude and longitude.
     '''
 
-    def __init__(self,  PyiCloud,
-                        PyiCloudSession,
+    def __init__(self,  AppleAcct,
+                        iCloudSession,
                         params,
                         task="RefreshData",
                         device_id=None, subject=None, message=None,
                         sounds=False, number="", newpasscode=""):
 
         self.setup_time      = time_now()
-        self.PyiCloudSession = PyiCloudSession
-        self.PyiCloud        = PyiCloud
-        self.username_base   = self.PyiCloud.username_base
+        self.iCloudSession = iCloudSession
+        self.AppleAcct       = AppleAcct
+        self.username_base   = self.AppleAcct.username_base
 
         self.params       = params
         self.task         = task
@@ -84,7 +85,7 @@ class PyiCloud_AppleAcctDevices():
             # This will generate an error if the table has not been defined from (init or start_ic3)
             # Init may be in the process of setting up the table and iCloud but then start_ic3/Stage 4
             # thinks it is not done and resets everything.
-            if isnot_empty(self.PyiCloud.device_id_by_icloud_dname):
+            if isnot_empty(self.AppleAcct.device_id_by_icloud_dname):
                 return
         except:
             pass
@@ -107,12 +108,12 @@ class PyiCloud_AppleAcctDevices():
                     for conf_device in Gb.conf_devices
                     if (conf_device[CONF_FAMSHR_DEVICENAME] != NONE_FNAME
                         and conf_device[CONF_FAMSHR_DEVICENAME] not in \
-                                self.PyiCloud.device_id_by_icloud_dname)]
+                                self.AppleAcct.device_id_by_icloud_dname)]
 
 #---------------------------------------------------------------------------
     @property
     def is_AADevices_setup_complete(self):
-        return self.PyiCloud.is_AADevices_setup_complete
+        return self.AppleAcct.is_AADevices_setup_complete
 
 #---------------------------------------------------------------------------
     @property
@@ -145,14 +146,16 @@ class PyiCloud_AppleAcctDevices():
             = False - Locate only the devices belonging to this Apple acct
         '''
         try:
+            AppleAcct = self.AppleAcct
             if (Gb.internet_error
                     or self.is_AADevices_setup_complete is False):
                 return False
 
-            #locate_all_devices = True if locate_all_devices is None else locate_all_devices
-            locate_all_devices = locate_all_devices               if locate_all_devices is not None \
-                            else self.PyiCloud.locate_all_devices if self.PyiCloud.locate_all_devices is not None \
-                            else True
+            if locate_all_devices is None:
+                if AppleAcct.locate_all_devices is not None:
+                    locate_all_devices = AppleAcct.locate_all_devices
+                else:
+                    locate_all_devices = True
 
             if requested_by_devicename:
                 _Device = Gb.Devices_by_devicename[requested_by_devicename]
@@ -161,44 +164,44 @@ class PyiCloud_AppleAcctDevices():
                 last_update_loc_time = '?'
 
             if locate_all_devices is False:
-                device_msg = f"OwnerDev-{len(Gb.owner_device_ids_by_username.get(self.PyiCloud.username, []))}"
+                device_msg = f"OwnerDev-{len(Gb.owner_device_ids_by_username.get(AppleAcct.username, []))}"
             else:
-                device_msg = f"AllDevices-{len(Gb.Devices_by_username.get(self.PyiCloud.username, []))}"
+                device_msg = f"AllDevices-{len(Gb.Devices_by_username.get(AppleAcct.username, []))}"
 
-            log_debug_msg( f"Apple Acct > {self.PyiCloud.username_base}, "
+            log_debug_msg( f"Apple Acct > {AppleAcct.username_base}, "
                                 f"RefreshRequestBy-{requested_by_devicename}, "
                                 f"LocateAllDev-{locate_all_devices}, {device_msg}, LastLoc-{last_update_loc_time}")
 
-            url  = f"{self.PyiCloud.findme_url_root}{REFRESH_ENDPOINT}"
+            url  = f"{AppleAcct.findme_url_root}{REFRESH_ENDPOINT}"
             data = {"clientContext":{
                         "fmly": locate_all_devices,
                         "shouldLocate": True,
                         "selectedDevice": device_id,
                         "deviceListVersion": 1, },
-                    "accountCountryCode": self.PyiCloud.session_data_token.get("account_country"),
-                    "dsWebAuthToken": self.PyiCloud.session_data_token.get("session_token"),
-                    "trustToken": self.PyiCloud.session_data_token.get("trust_token", ""),
+                    "accountCountryCode": AppleAcct.session_data_token.get("account_country"),
+                    "dsWebAuthToken": AppleAcct.session_data_token.get("session_token"),
+                    "trustToken": AppleAcct.session_data_token.get("trust_token", ""),
                     "extended_login": True,}
 
             try:
-                self.devices_data = self.PyiCloudSession.post(url, params=self.params, data=data)
+                self.devices_data = icloud_io.post(AppleAcct, url, params=self.params, data=data)
 
             except Exception as err:
-                # log_exception(err)
+                log_exception(err)
                 self.devices_data = {}
-                log_debug_msg(  f"{self.PyiCloud.username_base}, "
+                log_debug_msg(  f"{AppleAcct.username_base}, "
                                 f"No data returned from iCloud refresh request {err=}")
 
-            if self.PyiCloudSession.response_code == 501:
+            if AppleAcct.response_code == 501:
                 self._set_service_available(False)
-                post_event( f"{EVLOG_ALERT}iCLOUD ALERT > {self.PyiCloud.account_owner}, "
+                post_alert( f"iCLOUD ALERT > {AppleAcct.account_owner}, "
                             f"Apple Acct Data Source is not available. "
                             f"The web url providing location data returned a "
                             f"Service Not Available error")
                 return None
 
             self.update_device_location_data(requested_by_devicename, self.devices_data.get("content", {}))
-            return isnot_empty(self.PyiCloud.AADevData_by_device_id)
+            return isnot_empty(self.AppleAcct.AADevData_by_device_id)
 
         except Exception as err:
             log_exception(err)
@@ -214,8 +217,8 @@ class PyiCloud_AppleAcctDevices():
             return
 
         try:
-            self.PyiCloud.last_refresh_secs = time_now_secs()
-            self.PyiCloud.update_requested_by = requested_by_devicename
+            self.AppleAcct.last_refresh_secs = time_now_secs()
+            self.AppleAcct.update_requested_by = requested_by_devicename
             monitor_msg = f"UPDATED iCloud Data > RequestedBy-{requested_by_devicename}"
 
             for device_data in devices_data:
@@ -228,9 +231,7 @@ class PyiCloud_AppleAcctDevices():
 
 
                 device_data[NAME] = device_data_name = self._remove_special_chars(device_data[NAME])
-                        # AADevData._remove_special_chars(device_data[NAME])
-
-                device_id = device_data[ID]
+                device_id         = device_data[ID]
                 aadevdata_hdr_msg = ''
 
                 if (device_data_name in Gb.conf_icloud_dnames
@@ -250,14 +251,14 @@ class PyiCloud_AppleAcctDevices():
                             monitor_msg += f"{CRLF_STAR}OFFLINE > "
                         else:
                             monitor_msg += f"{CRLF_STAR}NO LOCATION > "
-                        monitor_msg += (f"{self.PyiCloud.account_owner}, "
+                        monitor_msg += (f"{self.AppleAcct.account_owner}, "
                                         f"{device_data_name}/"
                                         f"{device_id[:8]}, "
                                         f"{device_data['modelDisplayName']} "
                                         f"({device_data['rawDeviceModel']})")
 
                 # Create AADevData object if the device_id is not already set up
-                if device_id not in self.PyiCloud.AADevData_by_device_id:
+                if device_id not in self.AppleAcct.AADevData_by_device_id:
                     # if device_data_name == 'Gary-iPad':
                     #     self._create_test_data(device_id, device_data_name, device_data)
                     # else:
@@ -265,7 +266,7 @@ class PyiCloud_AppleAcctDevices():
                     monitor_msg += device_msg
                     #continue
 
-                # The PyiCloudSession is not recreated on a restart if it already is valid but we need to
+                # The iCloudSession is not recreated on a restart if it already is valid but we need to
                 # initialize all devices, not just tracked ones on an iC3 restart.
                 elif Gb.start_icloud3_inprocess_flag:
                     device_msg = self._initialize_iCloud_AADevData_object(device_id, device_data_name, device_data)
@@ -273,7 +274,7 @@ class PyiCloud_AppleAcctDevices():
                     #continue
 
                 # Non-tracked devices are not updated
-                _AADevData = self.PyiCloud.AADevData_by_device_id[device_id]
+                _AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
 
                 _Device = _AADevData.Device
                 if (_AADevData.Device is None
@@ -287,11 +288,11 @@ class PyiCloud_AppleAcctDevices():
 
                 if ('all' in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
                         or _AADevData.ic3_devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-                    log_hdr = ( f"{self.PyiCloud.username_base}{LINK}"
+                    log_hdr = ( f"{self.AppleAcct.username_base}{LINK}"
                                 f"{device_data_name}/{_Device.devicename}{RLINK}, "
                                 f"{aadevdata_hdr_msg}, iCloud Data ")
                     log_data(log_hdr, _AADevData.device_data,
-                                data_source='icloud', filter_id=self.PyiCloud.username)
+                                data_source='icloud', filter_id=self.AppleAcct.username)
 
                 if _AADevData.last_loc_time_gps == _AADevData.loc_time_gps:
                     last_loc_time_gps_msg = last_loc_time_msg = ''
@@ -364,9 +365,9 @@ class PyiCloud_AppleAcctDevices():
 #----------------------------------------------------------------------------
     def _create_AADeviceData_object(self, device_id, device_data_name, device_data):
 
-        _AADevData = PyiCloud_AppleAcctDeviceData(device_id,
+        _AADevData = iCloud_AppleAcctDeviceData(device_id,
                                     device_data,
-                                    self.PyiCloudSession,
+                                    self.iCloudSession,
                                     self.params,
                                     'iCloud',
                                     'timeStamp',
@@ -375,13 +376,13 @@ class PyiCloud_AppleAcctDevices():
 
         self.set_apple_acct_device_data_fields(device_id, _AADevData)
 
-        log_debug_msg(  f"{self.PyiCloud.username_base}, "
+        log_debug_msg(  f"{self.AppleAcct.username_base}, "
                         f"Create AppleAcctDeviceData object, "
-                        f"{self.PyiCloud.account_owner}{LINK}{_AADevData.fname}{RLINK}")
+                        f"{self.AppleAcct.account_owner}{LINK}{_AADevData.fname}{RLINK}")
 
-        log_hdr = f"{self.PyiCloud.account_name}{LINK}{_AADevData.fname}{RLINK}, AADeviceData"
+        log_hdr = f"{self.AppleAcct.account_name}{LINK}{_AADevData.fname}{RLINK}, AADeviceData"
         log_data(log_hdr, _AADevData.device_data,
-                    data_source='icloud', filter_id=self.PyiCloud.username)
+                    data_source='icloud', filter_id=self.AppleAcct.username)
 
         dup_msg = f" as {_AADevData.fname}" if _AADevData.fname_dup_suffix else ''
 
@@ -390,16 +391,14 @@ class PyiCloud_AppleAcctDevices():
 #----------------------------------------------------------------------------
     def _initialize_iCloud_AADevData_object(self, device_id, device_data_name, device_data):
 
+        _AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
 
-        _AADevData = self.PyiCloud.AADevData_by_device_id[device_id]
-
-        # dname = _AADevData._remove_special_chars(_AADevData.name)
         dname = self._remove_special_chars(_AADevData.name)
-        self.PyiCloud.dup_icloud_dname_cnt[dname] = 0
+        self.AppleAcct.dup_icloud_dname_cnt[dname] = 0
 
         _AADevData.__init__(  device_id,
                             device_data,
-                            self.PyiCloudSession,
+                            self.iCloudSession,
                             self.params,
                             'iCloud', 'timeStamp',
                             self,
@@ -407,13 +406,14 @@ class PyiCloud_AppleAcctDevices():
 
         self.set_apple_acct_device_data_fields(device_id, _AADevData)
 
+        post_greenbar_msg(f"409 Apple Acct > {self.AppleAcct.username_base}, {_AADevData.fname}")
         log_debug_msg(  f"Initialize AADevData_icloud object "
-                        f"{self.PyiCloud.username_base}{LINK}<{_AADevData.fname}, "
+                        f"{self.AppleAcct.username_base}{LINK}<{_AADevData.fname}, "
                         f"{device_data_name}")
 
-        log_hdr = f"{self.PyiCloud.account_name}{LINK}{_AADevData.fname}{RLINK}, iCloud Data"
+        log_hdr = f"{self.AppleAcct.account_name}{LINK}{_AADevData.fname}{RLINK}, iCloud Data"
         log_data(log_hdr, _AADevData.device_data,
-                    data_source='icloud', filter_id=self.PyiCloud.username)
+                    data_source='icloud', log_rawdata_flag=True, filter_id=self.AppleAcct.username)
 
         return (f"{CRLF_DOT}INITIALIZED > {device_data_name}, {_AADevData.loc_time_gps}")
 
@@ -426,13 +426,13 @@ class PyiCloud_AppleAcctDevices():
         exists and is not recreated. The iCloud dictionaries need to be
         set up again.
         '''
-        list_add(self.PyiCloud.AADevData_items, _AADevData)
-        self.PyiCloud.AADevData_by_device_id[device_id]             = _AADevData
-        self.PyiCloud.device_id_by_icloud_dname[_AADevData.fname]   = device_id
-        self.PyiCloud.icloud_dname_by_device_id[device_id]          = _AADevData.fname
-        self.PyiCloud.device_info_by_icloud_dname[_AADevData.fname] = _AADevData.icloud_device_info
-        self.PyiCloud.device_model_info_by_fname[_AADevData.fname]  = _AADevData.icloud_device_model_info
-        self.PyiCloud.device_model_name_by_icloud_dname[_AADevData.fname] = _AADevData.icloud_device_display_name
+        list_add(self.AppleAcct.AADevData_items, _AADevData)
+        self.AppleAcct.AADevData_by_device_id[device_id]             = _AADevData
+        self.AppleAcct.device_id_by_icloud_dname[_AADevData.fname]   = device_id
+        self.AppleAcct.icloud_dname_by_device_id[device_id]          = _AADevData.fname
+        self.AppleAcct.device_info_by_icloud_dname[_AADevData.fname] = _AADevData.icloud_device_info
+        self.AppleAcct.device_model_info_by_fname[_AADevData.fname]  = _AADevData.icloud_device_model_info
+        self.AppleAcct.device_model_name_by_icloud_dname[_AADevData.fname] = _AADevData.icloud_device_display_name
 
 #----------------------------------------------------------------------
     @staticmethod
@@ -453,12 +453,12 @@ class PyiCloud_AppleAcctDevices():
             post_event("iCloud Service is not available, try again later")
             return
 
-        url  = f"{self.PyiCloud.findme_url_root}{PLAYSOUND_ENDPOINT}"
+        url  = f"{self.AppleAcct.findme_url_root}{PLAYSOUND_ENDPOINT}"
         data = {"device": device_id,
                 "subject": subject,
                 "clientContext": {"fmly": True}, }
 
-        self.PyiCloudSession.post(url, params=self.params, data=data)
+        icloud_io.post(self.AppleAcct, url, params=self.params, data=data)
         return
 
 #----------------------------------------------------------------------------
@@ -472,14 +472,14 @@ class PyiCloud_AppleAcctDevices():
             post_event("iCloud Service is not available, try again later")
             return
 
-        url  = f"{self.PyiCloud.findme_url_root}{MESSAGE_ENDPOINT}"
+        url  = f"{self.AppleAcct.findme_url_root}{MESSAGE_ENDPOINT}"
         data = {"device": device_id,
                 "subject": subject,
                 "sound": sounds,
                 "userText": True,
                 "text": message, }
 
-        self.PyiCloudSession.post(url, params=self.params, data=data)
+        icloud_io.post(self.AppleAcct, url, params=self.params, data=data)
         return
 
 #----------------------------------------------------------------------------
@@ -497,7 +497,7 @@ class PyiCloud_AppleAcctDevices():
             post_event("iCloud Service is not available, try again later")
             return
 
-        url  = f"{self.PyiCloud.findme_url_root}{LOSTDEVICE_ENDPOINT}"
+        url  = f"{self.AppleAcct.findme_url_root}{LOSTDEVICE_ENDPOINT}"
         data = {"text": message,
                 "userText": True,
                 "ownerNbr": number,
@@ -506,13 +506,13 @@ class PyiCloud_AppleAcctDevices():
                 "device": device_id,
                 "passcode": newpasscode, }
 
-        self.PyiCloudSession.post(url, params=self.params, data=data)
+        icloud_io.post(self.AppleAcct, url, params=self.params, data=data)
         return
 
 #----------------------------------------------------------------------------
     def __repr__(self):
         try:
-            return (f"<PyiCloud.AADevices: {self.PyiCloud.setup_time}-{self.setup_time}-"
-                    f"{self.PyiCloud.account_owner}>")
+            return (f"<AppleAcct.AADevices: {self.AppleAcct.setup_time}-{self.setup_time}-"
+                    f"{self.AppleAcct.account_owner}>")
         except:
-            return (f"<PyiCloud.AADevices: NotSetUp>")
+            return (f"<AppleAcct.AADevices: NotSetUp>")

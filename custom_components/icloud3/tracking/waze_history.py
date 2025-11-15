@@ -5,8 +5,8 @@ from ..const            import (EVLOG_NOTICE, EVLOG_ALERT, CRLF_DOT, CRLF, RARRO
 
 from ..utils.utils      import (list_to_str, zone_dname,)
 from ..utils.messaging  import (broadcast_info_msg, format_filename,
-                                post_event, post_internal_error, post_monitor_msg,
-                                post_evlog_greenbar_msg,
+                                post_event, post_alert, post_internal_error, post_monitor_msg,
+                                post_greenbar_msg,
                                 refresh_event_log, log_info_msg, log_error_msg, log_exception,
                                 _evlog, _log, )
 from ..utils.time_util  import (datetime_now, format_timer, )
@@ -663,7 +663,7 @@ class WazeRouteHistory(object):
                                             f"{format_dist_km(zone_distance_check)} and will be removed "
                                             f"from the Waze History Database")
                     post_event(event_msg)
-                    post_evlog_greenbar_msg(evlog_alert_msg)
+                    post_greenbar_msg(evlog_alert_msg)
 
                 self._update_sensor_ic3_wazehist_track(Zone.latitude5, Zone.longitude5)
 
@@ -774,7 +774,7 @@ class WazeRouteHistory(object):
         event_msg =(f"{EVLOG_NOTICE}Waze History > Recalculate Time/Distance Started, "
                     f"TrackFmZone-{zone_dname}, "
                     f"Records-{self.total_recd_cnt}")
-        post_evlog_greenbar_msg(event_msg[3:])
+        post_greenbar_msg(event_msg[3:])
         post_event(event_msg)
         refresh_event_log()
 
@@ -841,7 +841,7 @@ class WazeRouteHistory(object):
                                     f"({(recd_cnt/self.total_recd_cnt*100):.0f}%), "
                                     f"Updated-{update_cnt} "
                                     f"{CRLF}Select Action > WazeHist Recalculate... again to cancel")
-                    post_evlog_greenbar_msg(alert_message)
+                    post_greenbar_msg(alert_message)
                     refresh_event_log()
 
             except:
@@ -863,7 +863,7 @@ class WazeRouteHistory(object):
                     f"Checked-{recd_cnt} of {self.total_recd_cnt}, "
                     f"Updated-{update_cnt}, "
                     f"Time-{format_timer(running_time)}")
-        post_evlog_greenbar_msg('')
+        post_greenbar_msg('')
         refresh_event_log()
 
         return recd_cnt, self.total_recd_cnt, update_cnt, deleted_cnt

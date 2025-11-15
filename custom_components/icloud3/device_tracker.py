@@ -386,8 +386,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs['integration']  = icloud3
 
             if self.Device:
-                if self.Device.PyiCloud:
-                    extra_attrs['apple_account'] = self.Device.PyiCloud.account_owner_username
+                if self.Device.AppleAcct:
+                    extra_attrs['apple_account'] = self.Device.AppleAcct.account_owner_username
                 else:
                     extra_attrs['apple_account'] = 'None'
                 if self.Device.mobapp[DEVICE_TRACKER]:
@@ -614,15 +614,12 @@ class iCloud3_DeviceTracker(TrackerEntity):
         if device_id := self.registry_entry.device_id:
             device_registry = dr.async_get(Gb.hass)
             if device_id in device_registry.devices:
-                _log(f"REMOVING {device_id=}")
                 device_registry.async_remove_device(device_id)
 
         # Remove from entity registry.
         if entity_id := self.registry_entry.entity_id:
-            _log(f"{entity_id=}")
             entity_registry = er.async_get(Gb.hass)
             if entity_id in entity_registry.entities:
-                _log(f"REMOVING {entity_id=}")
                 entity_registry.async_remove(entity_id)
 
 #-------------------------------------------------------------------------------------------

@@ -19,7 +19,7 @@ from ..const            import (HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW,
 from ..utils.file_io    import (file_size, file_exists, set_write_permission, )
 from ..utils.utils      import (instr, is_zone, is_statzone, isnot_statzone, isnot_zone, zone_dname,
                                 list_to_str, list_add, list_del, )
-from ..utils.messaging  import (post_event, post_error_msg, post_monitor_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_info_msg, log_exception,
                                 _evlog, _log, )
 from ..utils.time_util import (time_now_secs, secs_to_time,  secs_to, secs_since, mins_since, time_now,

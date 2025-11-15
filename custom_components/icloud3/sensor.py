@@ -43,7 +43,7 @@ from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
 from .utils.utils       import (instr, is_empty, isnot_empty, round_to_zero, is_number,
                                 list_add, list_to_str, )
 from .utils.format      import (icon_circle, icon_box, )
-from .utils.messaging   import (post_event, post_evlog_greenbar_msg, log_info_msg, log_debug_msg,
+from .utils.messaging   import (post_event, post_alert, post_greenbar_msg, log_info_msg, log_debug_msg,
                                 log_error_msg,log_exception, log_info_msg_HA, log_exception_HA,
                                 _evlog, _log, )
 from .utils.time_util   import (time_to_12hrtime, time_remove_am_pm, format_timer,

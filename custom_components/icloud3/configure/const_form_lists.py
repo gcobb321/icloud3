@@ -31,7 +31,7 @@ MENU_PAGE_TITLE = [
 MENU_KEY_TEXT = {
         'data_source':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
         'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
-        'verification_code':    'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter or Request the 6-digit Apple Account Verification Code',
+        'verification_code':    'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Verification Code/Security Key Name to Apple for verification. Refresh expired codes/Security Key approval requests',
         'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
         'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
         'dashboard_builder':    'DASHBOARD BUILDER > Build a Lovelace Dashboard to display device tracking information',
@@ -89,10 +89,15 @@ ACTION_LIST_OPTIONS = {
         'stop_using_apple_acct':    'STOP USING AN APPLE ACCOUNT > Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it',
         'verification_code':        'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter (or Request) the 6-digit Apple Account Verification Code',
         'delete_apple_acct':        'DELETE APPLE ACCOUNT > Delete the selected Apple Account. Delete or reassign iCloud3 devices using it',
+        'data_source_parameters':   'UPDATE DISPLAY/RUN TIME PARAMETERS > Update parameters (Display Apple Server Location, Enable Login with PasswordSRP)',
 
-        'send_verification_code':   'SEND THE VERIFICATION CODE TO APPLE > Send the 6-digit Apple Account Verification Code back to Apple to approve access to Apple Account',
-        "request_verification_code":'REQUEST A NEW APPLE ACCOUNT VERIFICATION CODE > Reset Apple Account Interface and request a new Apple Account Verification Code',
+        'send_verification_code':   'SEND CODE/KEY TO APPLE TO AUTHENTICATE SIGN-IN > Send the Verification Code or Security Key being used back to Apple to confirm access to the Apple Account',
+        'request_verification_code':'REQUEST NEW CODE/REFRESH SECURITY KEY LIST > Display `Apple Acct Sign-In is Requested` window on a Trusted Device. Get a new Code or confirm using a Security Key',
+
+        'X-send_verification_code':   'SEND VERIFICATION CODE > Send the Verification Code back to Apple to approve access to Apple Account',
+        'X-request_verification_code':'REQUEST A VERIFICATION CODE > Reset Apple Account Interface and request a new Verification Code on a Trusted Device',
         'cancel_verification_entry':'CANCEL > Cancel the Verification Code Entry and Close this screen',
+        'accept_terms_of_use':      'ACCEPT `TERMS OF USE` > Send `I Agree` to Apple updates to the `Terms of Use`',
 
         'update_device':            'SELECT THE DEVICE > Update the selected device, Add a new device to be tracked by iCloud3, Display more Devices on the next page',
         'add_device':               'ADD DEVICE > Continue to the `‘Update Devices`’ screen to finish setting up the new device',
@@ -161,7 +166,8 @@ ADD = UNSELECTED = -1
 # Action List Items for all screens
 APPLE_ACCOUNT_ACTIONS = [
         ACTION_LIST_OPTIONS['update_apple_acct'],
-        ACTION_LIST_OPTIONS['delete_apple_acct']]
+        ACTION_LIST_OPTIONS['delete_apple_acct'],
+        ACTION_LIST_OPTIONS['data_source_parameters']]
 APPLE_ACCOUNT_DELETE_ACTIONS = [
         ACTION_LIST_OPTIONS['delete_apple_acct'],
         ACTION_LIST_OPTIONS['cancel_goto_previous']]
@@ -237,7 +243,7 @@ DATA_SOURCE_OPTIONS = {
         'MobApp':   'HA MOBILE APP - Location data and zone enter/exit triggers from devices with the Mobile App'
         }
 
-# Apple Server Endpoint value - Add onto the Server URL in PyiCloud_ic3 if this starts with a period ('.')
+# Apple Server Endpoint value - Add onto the Server URL in AppleAcct_ic3 if this starts with a period ('.')
 APPLE_SERVER_LOCATION_OPTIONS = {
         'usa':       'USA/OTHER - The Apple Server is not located in China',
         '.cn':       'CHINA - The Apple Server is located in China (GCJ02)',
