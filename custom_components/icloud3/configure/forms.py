@@ -545,6 +545,10 @@ def form_reauth(self, reauth_username=None):
                             mode='dropdown')),
                 vol.Optional(CONF_VERIFICATION_CODE, default=' '):
                         selector.TextSelector(),
+        })
+
+        if Gb.fido2_security_keys_enabled:
+            schema.update({
                 vol.Required('fido2_key_name',
                         default=self.reauth_form_fido2_key_names_list[0]):
                         selector.SelectSelector(selector.SelectSelectorConfig(
@@ -1567,7 +1571,7 @@ def form_restart_ha_reload_icloud3(self):
 
     self.actions_list = []
     self.actions_list.append(ACTION_LIST_OPTIONS['restart_ha'])
-    self.actions_list.append(ACTION_LIST_OPTIONS['reload_icloud3'])
+    # self.actions_list.append(ACTION_LIST_OPTIONS['reload_icloud3'])
     self.actions_list.append(ACTION_LIST_OPTIONS['exit'])
 
     actions_list_default = utils.action_default_text('exit')

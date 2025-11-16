@@ -592,8 +592,12 @@ async def async_reauthenticate_apple_account(self,
         user_input = utils.strip_spaces(user_input, [CONF_VERIFICATION_CODE])
         user_input = utils.option_text_to_parm(user_input, 'account_selected',
                                                 self.apple_acct_items_by_username)
-        user_input = utils.option_text_to_parm(user_input, 'fido2_key_name',
+
+        if Gb.fido2_security_keys_enabled:
+            user_input = utils.option_text_to_parm(user_input, 'fido2_key_name',
                                                 self.reauth_form_fido2_key_names_list)
+        else:
+            user_input['fido2_key_name'] = ['']
 
         ui_account_selected       = user_input.get('account_selected')
         ui_conf_verification_code = user_input.get(CONF_VERIFICATION_CODE, '')
@@ -699,6 +703,7 @@ async def async_reauthenticate_apple_account(self,
                 valid_code_key = await apple_acct_reauth_via_code_security_key(self, user_input)
 
             elif Gb.fido2_security_keys_enabled is False:
+                valid_code_key = False
                 pass
 
             elif (AppleAcct.fido2_key_names is None

@@ -162,7 +162,8 @@ def create_AppleAcct(username, password, apple_server_location, locate_all_devic
     try:
         AppleAcct = Gb.AppleAcct_by_username.get(username)
         if AppleAcct is None:
-            log_info_msg(f"{NL3}🔻{'—'*20} {username.upper()} {'—'*5} SETUP APPLE ACCOUNT {'—'*20}🔻")
+            # log_info_msg(f"{NL3}🔻{'—'*20} {username_id(username).upper()} {'—'*5} SETUP APPLE ACCOUNT {'—'*20}🔻")
+            log_info_msg(f"{NL3}🔻{'═'*40} {username_id(username).upper()} {'═'*40}🔻")
             AppleAcct = AppleAcctManager(
                                 username,
                                 password,
@@ -172,7 +173,7 @@ def create_AppleAcct(username, password, apple_server_location, locate_all_devic
                                 session_directory=Gb.icloud_session_directory)
 
             log_info_msg(f'{AppleAcct=} {AppleAcct.apple_id=}')
-            log_info_msg(f"{NL3}🔺{'—'*20} {username.upper()} {'—'*5} SETUP APPLE ACCOUNT {'—'*20}🔺")
+            log_info_msg(f"{NL3}🔺{'═'*40} {username_id(username).upper()} {'═'*40}🔺")
 
             # log_info_msg(f"{NL3}🔻{'—'*20}🔻  {username.upper()} SETUP APPLE ACCOUNT  🔻{'—'*20}🔻")
             # PyAppleAcct = PyiCloudService(
@@ -241,8 +242,8 @@ def setup_status_msg(AppleAcct, setup_method, username=None):
     # post_event(f"Apple Acct > {AppleAcct.account_owner}, iCloud Data Handler Setup")
     log_debug_msg(  f"APPLE ACCT SETUP > {AppleAcct.username_id} ({AppleAcct.account_owner}), "
                     f"Method-{setup_method}, "
-                    f"SetupComplete-{AppleAcct.is_AADevices_setup_complete}, "
-                    f"Devices-{list_to_str(aadevdata_items)}")
+                    f"Setup Complete-{AppleAcct.is_AADevices_setup_complete}")
+    log_debug_msg(  f"APPLE ACCT SETUP > Devices-{list_to_str(aadevdata_items)}")
 
 #--------------------------------------------------------------------
 def verify_icloud_device_info_received(AppleAcct):

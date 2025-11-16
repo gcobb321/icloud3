@@ -283,9 +283,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
         if action_item == 'goto_previous':
             return self.async_abort(reason="verification_code_cancelled")
-            # return self.async_show_form(step_id='reauth',
-            #                                 data_schema=self.form_schema(self.called_from_step_id_1),
-            #                                 errors=self.errors)
 
         else:
             lists.build_apple_accounts_list(self)
@@ -298,83 +295,83 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
 
 
-        self.step_id = 'reauth'
-        self.errors = errors or {}
-        self.errors_user_input = {}
-        action_item = ''
-        reauth_username = None
+        # self.step_id = 'reauth'
+        # self.errors = errors or {}
+        # self.errors_user_input = {}
+        # action_item = ''
+        # reauth_username = None
 
-        if Gb.internet_error:
-            self.errors['base'] = 'internet_error_no_change'
+        # if Gb.internet_error:
+        #     self.errors['base'] = 'internet_error_no_change'
 
-        if user_input is None:
-            return self.async_show_form(step_id='reauth',
-                                        data_schema=forms.form_reauth(_OptFlow),
-                                        errors=self.errors)
+        # if user_input is None:
+        #     return self.async_show_form(step_id='reauth',
+        #                                 data_schema=forms.form_reauth(_OptFlow),
+        #                                 errors=self.errors)
 
-        user_input, action_item = utils.action_text_to_item(_OptFlow, user_input)
-        user_input = utils.strip_spaces(user_input, [CONF_VERIFICATION_CODE])
-        user_input = utils.option_text_to_parm(user_input,
-                                'account_selected', _OptFlow.apple_acct_items_by_username)
+        # user_input, action_item = utils.action_text_to_item(_OptFlow, user_input)
+        # user_input = utils.strip_spaces(user_input, [CONF_VERIFICATION_CODE])
+        # user_input = utils.option_text_to_parm(user_input,
+        #                         'account_selected', _OptFlow.apple_acct_items_by_username)
 
-        log_debug_msg(f"⭐ {self.step_id.upper()}-CF ({action_item}) > UserInput-{user_input}, Errors-{errors}")
+        # log_debug_msg(f"⭐ {self.step_id.upper()}-CF ({action_item}) > UserInput-{user_input}, Errors-{errors}")
 
-        if 'account_selected' in user_input:
-            ui_username = user_input['account_selected']
-            conf_apple_acct, aa_idx = config_file.conf_apple_acct(ui_username)
-            username  = conf_apple_acct[CONF_USERNAME]
-            password  = conf_apple_acct[CONF_PASSWORD]
-            _OptFlow.AppleAcct = Gb.AppleAcct_by_username.get(username)
-        else:
-            # When iCloud3 creates the AppleAcct object for the Apple account during startup,
-            # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
-            # job is run that tells HA to issue a notification.  The AppleAcct object is saved
-            # to be used here
-            user_input = None
-            username   = Gb.AppleAcct_needing_reauth_via_ha[CONF_USERNAME]
-            password   = Gb.AppleAcct_needing_reauth_via_ha[CONF_PASSWORD]
-            acct_owner = Gb.AppleAcct_needing_reauth_via_ha['account_owner']
+        # if 'account_selected' in user_input:
+        #     ui_username = user_input['account_selected']
+        #     conf_apple_acct, aa_idx = config_file.conf_apple_acct(ui_username)
+        #     username  = conf_apple_acct[CONF_USERNAME]
+        #     password  = conf_apple_acct[CONF_PASSWORD]
+        #     _OptFlow.AppleAcct = Gb.AppleAcct_by_username.get(username)
+        # else:
+        #     # When iCloud3 creates the AppleAcct object for the Apple account during startup,
+        #     # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
+        #     # job is run that tells HA to issue a notification.  The AppleAcct object is saved
+        #     # to be used here
+        #     user_input = None
+        #     username   = Gb.AppleAcct_needing_reauth_via_ha[CONF_USERNAME]
+        #     password   = Gb.AppleAcct_needing_reauth_via_ha[CONF_PASSWORD]
+        #     acct_owner = Gb.AppleAcct_needing_reauth_via_ha['account_owner']
 
-        _OptFlow.apple_acct_reauth_username = username
+        # _OptFlow.apple_acct_reauth_username = username
 
-        if Gb.internet_error:
-            self.errors['base'] = 'internet_error_no_change'
-            action_item = ''
+        # if Gb.internet_error:
+        #     self.errors['base'] = 'internet_error_no_change'
+        #     action_item = ''
 
-        if _OptFlow.AppleAcct is None:
-            self.errors['account_selected'] = 'apple_acct_not_logged_into'
-            action_item = 'goto_previous'
+        # if _OptFlow.AppleAcct is None:
+        #     self.errors['account_selected'] = 'apple_acct_not_logged_into'
+        #     action_item = 'goto_previous'
 
-        elif (action_item == 'send_verification_code'
-                and user_input.get(CONF_VERIFICATION_CODE, '') == ''):
-            action_item = 'goto_previous'
+        # elif (action_item == 'send_verification_code'
+        #         and user_input.get(CONF_VERIFICATION_CODE, '') == ''):
+        #     action_item = 'goto_previous'
 
-        if action_item == 'goto_previous':
-            aascf.clear_AppleAcct_2fa_flags()
-            await _OptFlow._async_write_icloud3_configuration_file(force_write=True)
-            return self.async_abort(reason="verification_code_cancelled")
+        # if action_item == 'goto_previous':
+        #     aascf.clear_AppleAcct_2fa_flags()
+        #     await _OptFlow._async_write_icloud3_configuration_file(force_write=True)
+        #     return self.async_abort(reason="verification_code_cancelled")
 
-        if action_item == 'send_verification_code':
-            valid_code = await aascf.reauth_send_verification_code_handler(_OptFlow, user_input)
+        # if action_item == 'send_verification_code':
+        #     valid_code = await aascf.reauth_send_verification_code_handler(_OptFlow, user_input)
 
-            if valid_code:
-                # self.errors['base'] = self.header_msg = 'verification_code_accepted'
-                self.errors['account_selected'] = self.header_msg = 'verification_code_accepted'
-                if instr(str(_OptFlow.apple_acct_items_by_username), 'AUTHENTICATION'):
-                    _OptFlow.conf_apple_acct = ''
-                else:
-                    aascf.clear_AppleAcct_2fa_flags()
-                    return self.async_abort(reason="verification_code_accepted")
-            else:
-                self.errors[CONF_VERIFICATION_CODE] = 'verification_code_invalid'
+        #     if valid_code:
+        #         # self.errors['base'] = self.header_msg = 'verification_code_accepted'
+        #         self.errors['account_selected'] = self.header_msg = 'verification_code_accepted'
+        #         if instr(str(_OptFlow.apple_acct_items_by_username), 'AUTHENTICATION'):
+        #             _OptFlow.conf_apple_acct = ''
+        #         else:
+        #             aascf.clear_AppleAcct_2fa_flags()
+        #             return self.async_abort(reason="verification_code_accepted")
+        #     else:
+        #         self.errors[CONF_VERIFICATION_CODE] = 'verification_code_invalid'
 
-        elif action_item == 'request_verification_code':
-            reauth_username = username
-            await aascf.async_pyicloud_reset_session(_OptFlow, username, password)
+        # elif action_item == 'request_verification_code':
+        #     reauth_username = username
+        #     await aascf.async_pyicloud_reset_session(_OptFlow, username, password)
 
-        return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(_OptFlow, reauth_username=reauth_username),
-                                    errors=self.errors)
+        # return self.async_show_form(step_id='reauth',
+        #                             data_schema=forms.form_reauth(_OptFlow, reauth_username=reauth_username),
+        #                             errors=self.errors)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -584,7 +581,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         if self.initialize_options_required_flag:
             self.initialize_options()
+
         self.errors = {}
+        self.header_msg = ''
 
         if self.abort_flag:
             return await self.async_step_restart_ha()
@@ -1636,18 +1635,18 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             await Gb.hass.services.async_call("homeassistant", "restart")
             return self.async_abort(reason="ha_restarting")
 
-        elif action_item == 'reload_icloud3':
-            post_event("RELOAD ICLOUD3")
-            write_config_file_to_ic3log()
-            await config_file.async_write_icloud3_configuration_file()
-            close_ic3log_file()
+        # elif action_item == 'reload_icloud3':
+        #     post_event("RELOAD ICLOUD3")
+        #     write_config_file_to_ic3log()
+        #     await config_file.async_write_icloud3_configuration_file()
+        #     close_ic3log_file()
 
-            await Gb.hass.services.async_call(
-                    "homeassistant",
-                    "reload_config_entry",
-                    {'device_id': Gb.ha_device_id_by_devicename[DOMAIN]},)
+        #     await Gb.hass.services.async_call(
+        #             "homeassistant",
+        #             "reload_config_entry",
+        #             {'device_id': Gb.ha_device_id_by_devicename[DOMAIN]},)
 
-            return self.async_abort(reason="ic3_reloading")
+        #     return self.async_abort(reason="ic3_reloading")
 
         return await self.async_step_menu()
 

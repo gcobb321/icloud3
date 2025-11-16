@@ -48,15 +48,16 @@ from .apple_acct_devices    import iCloud_AppleAcctDevices
 from .icloud_fido           import iCloud_Fido2
 from .                      import icloud_requests_io  as icloud_io
 
-
+from .cookie_jar            import PyiCloudCookieJar
+import http.cookiejar as cookielib
 #--------------------------------------------------------------------
-from uuid               import uuid1
-from os                 import path
-from re                 import match
+from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
+from uuid                   import uuid1
+from os                     import path
+from re                     import match
 import srp
 import hashlib
 import base64
-import http.cookiejar as cookielib
 import logging
 LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
 
@@ -562,6 +563,8 @@ class AppleAcctManager():
         self.auth_2fa_code_needed = self._is_auth_2fa_code_needed
         self._update_token_pw_file(CONF_PASSWORD, encode_password(self.token_password))
 
+        self.list_cookies()
+
         time_between_token_auth    = format_age(self.last_token_auth_secs)
         time_between_password_auth = format_age(self.last_password_auth_secs)
         if instr(self.auth_method, 'Token'):
@@ -1003,14 +1006,14 @@ class AppleAcctManager():
         success = self.load_cookies(self.cookie_dir_filename)
         if success:
             log_debug_msg(  f"{self.username_base}, "
-                            f"Load Cookies File ({self.cookie_dir_filename})")
+                            f"Loaded Cookies File ({self.cookie_dir_filename})")
 
         else:
             log_warning_msg(f"{self.username_base}, "
                             f"Load Cookies File Failed ({self.cookie_dir_filename})")
 
 #--------------------------------------------------------------------
-    def load_cookies(self, cookie_dir_filename):
+    def x_load_cookies(self, cookie_dir_filename):
         self.iCloudSession.cookies = cookielib.LWPCookieJar(filename=cookie_dir_filename)
 
         if path.exists(cookie_dir_filename):
@@ -1022,6 +1025,34 @@ class AppleAcctManager():
                 return False
 
         return True
+
+#--------------------------------------------------------------------
+    def load_cookies(self, cookie_dir_filename):
+        self.iCloudSession.cookies = PyiCloudCookieJar(filename=cookie_dir_filename)
+
+        if path.exists(cookie_dir_filename):
+            try:
+                cast(PyiCloudCookieJar, self.iCloudSession.cookies).load()
+
+            except (OSError, ValueError) as err:
+                log_warning_msg(f"{self.username_base}, "
+                                f"Failed to load cookie jar {cookie_dir_filename}, "
+                                f"Starting without persisted cookies",
+                                f"{err}")
+                cast(PyiCloudCookieJar, self.iCloudSession.cookies).clear()
+                return False
+
+        return True
+
+#----------------------------------------------------------------------------
+    def list_cookies(self):
+        if Gb.log_debug_flag is False:
+            return
+
+        try:
+            cast(PyiCloudCookieJar, self.iCloudSession.cookies).list()
+        except:
+            (f"\n⠂  ❗ _.Cookie.file-{self.AppleAcct.cookie_dir_filename}, None")
 
 #----------------------------------------------------------------------------
     '''
@@ -1363,28 +1394,33 @@ class AppleAcctManager():
 class SrpPassword:
     """SRP password."""
 
-    def __init__(self, password) -> None:
+    def __init__(self, password: str) -> None:
         self._password_hash: bytes = hashlib.sha256(password.encode("utf-8")).digest()
-        self.salt       = None
-        self.iterations = None
-        self.key_length = None
+        # _log(f'{password=} {self._password_hash=}')
+        self.salt: bytes | None = None
+        self.iterations: int | None = None
+        self.key_length: int | None = None
 
-    def set_encrypt_info(self, salt, iterations, key_length):
-        # Set encrypt info
-        self.salt       = salt
+    def set_encrypt_info(self, salt: bytes, iterations: int, key_length: int) -> None:
+        """Set encrypt info."""
+        self.salt = salt
         self.iterations = iterations
         self.key_length = key_length
 
-    def encode(self,):
-        # Encode password
+    def encode(
+        self,
+    ) -> bytes:
+        """Encode password."""
         if self.salt is None or self.iterations is None or self.key_length is None:
             raise ValueError("Encrypt info not set")
 
-        return hashlib.pbkdf2_hmac("sha256",
-                                    self._password_hash, self.salt,
-                                    self.iterations, self.key_length)
-
-
+        return hashlib.pbkdf2_hmac(
+            "sha256",
+            self._password_hash,
+            self.salt,
+            self.iterations,
+            self.key_length,
+        )
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #       EXCEPTION HANDLERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

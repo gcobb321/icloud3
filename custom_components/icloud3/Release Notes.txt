@@ -15,16 +15,31 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-### iCloud3 ➤ v3.3
-### ✨ New and Improved Features
-- **Apple Account 503 Login Error**
-    - Fixed the problem logging into the Apple Accounts
-    - Important Note:
-        - Condition 1 - This is a new login, the iCloud session files with the Trust Tokens and Cookies are being created.
-        - Condition 2 - You are using multiple Apple Accounts.
-        - What happens - One account may login in fine (usually the first one), the other will fail with a _Server/PW-503_ error. This is displayed in the Event Log, Stage 4, the greenbar at the top of the Event Log and in the _iCloud_Alerts_ sensor.
-        - What to do: Wait about 5-minutes, then restart iCloud3 using _Event Log > Actions > Restart_iCloud3`
+### iCloud3 ➤ v3.3.1
+### 🚩 Updates to iCloud3 v3.3
+- Fixed the _TypeError: iCloudSession.request() got an unexpected keyword argument 'retry_cnt'_ error
+- Reverted displaying Security Key messages on the Authenticate Apple Account Sign-in screen
+- Changed the way Apple cookie files were handled to see if it helped cure the 'Server Not Available 503' error. It didn't.
+- The Apple Cookies are now being logged in the _icloud3.log_ file when the Apple account is logged into.
 
+### iCloud3 ➤ v3.3
+### 📢🚩✨💥🚀🎁 iCloud3 works again, you can log into your Apple Account
+- **Comments**
+    - I believe Apple reimplemented the authentication process they introduced last November that caused the same errors. This time, however, the native Python PyiCloud interface had already incorporated the changes that solved the problem. Thanks go to the PyiCloud team headed by @timlaing. It also helped that I was home and not on a cruise ship off the western coast of Africa like last time.
+- **Some Notes about the 503 Error you may still see**:
+    - Condition 1 - This is a new login, the iCloud session files with the Trust Tokens and Cookies are being created.
+    - Condition 2 - You are using multiple Apple Accounts.
+    - What happens - One account may login in fine (usually the first one), the other will fail with a _Server/PW-503_ error. This is displayed in the Event Log, Stage 4, the greenbar at the top of the Event Log and in the _iCloud3 Alerts_ sensor (sensor.icloud3_alerts).
+    - What to do: Wait about 5-minutes, then restart iCloud3 using _Event Log > Actions > Restart iCloud3_ option. Do it again later if it gave you the 503 Error again.
+
+- **Thanks for the Coffee**
+    - For those who encouraged me with the comments and coffee, thank you. I appreciate it.
+
+<a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
+<img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
+
+
+### ✨ New and Improved Features
 - **Apple Account**
     - Added support for accepting updates to Apple's 'Terms of Use' documents.
     - Added _Update Display/Run-Time Parameters_ screen to the _Update Apple Account_ screen

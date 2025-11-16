@@ -29,6 +29,10 @@ from ..utils.messaging      import (_log, _evlog, post_event, post_alert, post_e
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_data, log_exception, log_data_unfiltered, log_request_data, )
 
+from .cookie_jar            import PyiCloudCookieJar
+# import http.cookiejar as cookielib
+#--------------------------------------------------------------------
+from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
 from requests               import Session, adapters
 import requests
 from requests.exceptions    import ConnectionError
@@ -178,7 +182,9 @@ class iCloudSession(Session):
                 verify=None,
                 cert=None,
                 json=None,
-                retried=None):
+                retried=None,
+                retry_cnt=None):
+
         return self._request(
                 method,
                 url,
@@ -196,7 +202,8 @@ class iCloudSession(Session):
                 verify=verify,
                 cert=cert,
                 json=json,
-                retried=retried)
+                retried=retried,
+                retry_cnt=retry_cnt)
 
     def _request(self, method, url, **kwargs, ):
         # callee.function and callee.lineno provice calling function and the line number
@@ -204,6 +211,7 @@ class iCloudSession(Session):
         module = inspect.getmodule(callee[0])
 
         if 'retry_cnt' in kwargs:
+            if kwargs['retry_cnt'] is None: kwargs['retry_cnt'] = 0
             pass
         elif Gb.internet_error:
             return {}
@@ -325,9 +333,16 @@ class iCloudSession(Session):
             if response_header_value:
                 self.AppleAcct.session_data.update({session_arg: response_header_value})
 
-        # cookie variable reference - self.cookies._cookies['.apple.com']['/']['acn01'].expires
+        # cookie variable reference - self.ookies._cookies['.apple.com']['/']['acn01'].expires
         if self.AppleAcct.validate_aa_upw is False:
-            self.cookies.save(ignore_discard=True, ignore_expires=True)
+            try:
+                cast(PyiCloudCookieJar, self.cookies).save()
+                log_debug_msg(f"Saved cookies data to file {self.AppleAcct.cookie_dir_filename}")
+
+            except (OSError, ValueError) as err:
+                log_warning_msg(f"Failed to saved cookies data to file {self.AppleAcct.cookie_dir_filename}, "
+                                f"Error-{err}")
+
             self.AppleAcct.session_data_token.update(self.AppleAcct.session_data)
 
             save_json_file(self.AppleAcct.session_dir_filename, self.AppleAcct.session_data)

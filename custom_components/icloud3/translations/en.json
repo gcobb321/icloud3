@@ -7,24 +7,30 @@
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "The Apple account is not log into",
-      "xlogin_error_upw": "Apple account login error - Verify the username and password",
       "login_error_ipv6": "Apple Account login timeout error, IPv6 is not supported - Go to HA Devices & Settings > System > Network. Disable IPv6 and restart HA.",
       "login_error_other": "An unknown error occurred logging into the Apple Account.",
-      "verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
+      "verification_code_requested": "The code was requested. Waiting for it to be entered and sent to Apple",
+      "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
+      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
+      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
       "verification_code_cancelled": "The Authenticate Apple Account Sign-in process was completed",
       "update_cancelled": "Update Cancelled",
       "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3",
-      "reauth_apple_acct_unknown": "Apple account requesting verification code is unknown",
-      "reauth_apple_acct_unused": "Apple account requesting verification code is not used"
+      "reauth_apple_acct_unknown": "Apple account requesting Verification Code is unknown",
+      "reauth_apple_acct_unused": "Apple account requesting Verification Code is not used"
     },
     "error": {
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
-      "verification_code_send_error": "Failed to send the Code/Security Key",
-      "verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
-      "verification_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
-      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
+      "verification_code_send_error": "Failed to send the Verification Code",
+      "SK-verification_code_send_error": "Failed to send the Code/Security Key",
+      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
+      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
+      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
+      "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
+      "SK-verification_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
+      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
+      "SK-verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
       "verification_code_cancelled": "The Apple Account authentication was cancelled",
       "apple_acct_not_logged_into": "The Apple Account is not logged into",
       "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
@@ -52,7 +58,8 @@
       },
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
-        "description": "Enter the 6-digit Verification Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
+        "description": "Enter the 6-digit Verification Code to approve signing into the Apple Account",
+        "SK-description": "Enter the 6-digit Verification Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
         "data": {
           "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
           "verification_code": "6-DIGIT VERIFICATION CODE - Sign-in Code displayed on the Trusted Devices ",
@@ -84,7 +91,8 @@
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
       "ic3_reloading": "RELOADING ICLOUD3",
-      "verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete"
+      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
+      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete"
     },
     "error": {
       "unknown_action": "Selected Action could not be identified",
@@ -123,12 +131,17 @@
       "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Code entry screen)",
 
-      "verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
+      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
+      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
+      "SK-verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
       "verification_code_cancelled": "The Apple Account authentication was cancelled",
-      "verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
-      "verification_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
-      "verification_code_send_error": "❌ Failed to send the Code/Security Key",
+      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
+      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
+      "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
+      "SK-verification_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
+      "verification_code_send_error": "❌ Failed to send the Verification Code",
+      "SK-verification_code_send_error": "❌ Failed to send the Code/Security Key",
 
       "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
       "already_assigned": "This selection is already assigned to another device",
@@ -318,7 +331,8 @@
 
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
-        "description": "Enter the 6-digit Verification Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
+        "description": "Enter the 6-digit Verification Code to approve signing into the Apple Account",
+        "SK-description": "Enter the 6-digit Verification Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
         "data": {
           "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
           "verification_code": "6-DIGIT VERIFICATION CODE - Sign-in Code displayed on the Trusted Devices ",
