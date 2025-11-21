@@ -70,7 +70,6 @@ from .                  import sensor as ic3_sensor
 from .                  import device_tracker as ic3_device_tracker
 from .startup           import start_ic3
 from .startup           import config_file
-from .startup           import restore_state
 from .utils             import entity_io
 from .utils             import file_io
 
@@ -111,8 +110,10 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         self.step_id = ''           # step_id for the window displayed
         self.errors  = {}           # Errors en.json error key
         self.OptFlow = None
+        self.data_source = Gb.conf_tracking[CONF_DATA_SOURCE]
 
         # Items used in the REAUTH handler
+        self.username = ''
         self.AppleAcct = None
         self.apple_acct_reauth_username = ''
         self.header_msg = ''
@@ -223,7 +224,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            REAUTH
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth(self, user_input=None, errors=None, called_from_step_id=None):
+    async def async_step_reauth(self, user_input=None, errors=None, return_to_step_id=None):
         '''
         Ask for the verification code from the user.
 
@@ -232,7 +233,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         a valid code indicator or invalid code error.
 
         If the code is valid, either:
-            - return to the called_from_step_id (icloud_account form) if in the config_flow configuration routine or,
+            - return to the return_to_step_id (icloud_account form) if in the config_flow configuration routine or,
             - issue a 'create_entry' indicating a successful verification. This will return
             to the function it wass called from. This will be when a validation request was
             needed during the normal tracking.
@@ -240,7 +241,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         If invalid, display an error message and ask for the code again.
 
         Input:
-            - called_from_step_id
+            - return_to_step_id
                     = the step_id in the config_glow if the icloud3 configuration
                         is being updated
                     = None if the rquest is from another regular function during the normal
@@ -270,15 +271,16 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
             password   = Gb.AppleAcct_needing_reauth_via_ha.get(CONF_PASSWORD, '')
             acct_owner = Gb.AppleAcct_needing_reauth_via_ha.get('account_owner', '')
 
-        AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username.get(username, None)
-        self.apple_acct_reauth_username = reauth_username = username
 
-        log_debug_msg(  f"⭐ REAUTH (From={called_from_step_id}, "
+        self.AppleAcct = Gb.AppleAcct_by_username.get(username, None)
+        self.apple_acct_reauth_username = reauth_username = self.username =username
+
+        log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
                             f"{username=} > UserInput-{user_input},  Errors-{errors}")
 
         action_item, reauth_username, user_input, errors = \
             await aascf.async_reauthenticate_apple_account(self, user_input=user_input, errors=errors,
-                                            called_from_step_id='reauth', reauth_username=reauth_username)
+                                            return_to_step_id='reauth', reauth_username=reauth_username)
 
 
         if action_item == 'goto_previous':
@@ -286,92 +288,23 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
         else:
             lists.build_apple_accounts_list(self)
-            log_debug_msg(  f"⭐ REAUTH (From={called_from_step_id}, "
+            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
                             f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
             return self.async_show_form(step_id='reauth',
                                         data_schema=forms.form_reauth(self, reauth_username=reauth_username),
                                         errors=self.errors)
 
+#........................................................................................
+    def _is_apple_acct_setup(self):
+        if self.username:
+            return True
+        elif is_empty(Gb.conf_apple_accounts):
+            return False
+        elif Gb.conf_apple_accounts[0].get(CONF_USERNAME, '') == '':
+            return False
 
+        return True
 
-
-        # self.step_id = 'reauth'
-        # self.errors = errors or {}
-        # self.errors_user_input = {}
-        # action_item = ''
-        # reauth_username = None
-
-        # if Gb.internet_error:
-        #     self.errors['base'] = 'internet_error_no_change'
-
-        # if user_input is None:
-        #     return self.async_show_form(step_id='reauth',
-        #                                 data_schema=forms.form_reauth(_OptFlow),
-        #                                 errors=self.errors)
-
-        # user_input, action_item = utils.action_text_to_item(_OptFlow, user_input)
-        # user_input = utils.strip_spaces(user_input, [CONF_VERIFICATION_CODE])
-        # user_input = utils.option_text_to_parm(user_input,
-        #                         'account_selected', _OptFlow.apple_acct_items_by_username)
-
-        # log_debug_msg(f"⭐ {self.step_id.upper()}-CF ({action_item}) > UserInput-{user_input}, Errors-{errors}")
-
-        # if 'account_selected' in user_input:
-        #     ui_username = user_input['account_selected']
-        #     conf_apple_acct, aa_idx = config_file.conf_apple_acct(ui_username)
-        #     username  = conf_apple_acct[CONF_USERNAME]
-        #     password  = conf_apple_acct[CONF_PASSWORD]
-        #     _OptFlow.AppleAcct = Gb.AppleAcct_by_username.get(username)
-        # else:
-        #     # When iCloud3 creates the AppleAcct object for the Apple account during startup,
-        #     # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
-        #     # job is run that tells HA to issue a notification.  The AppleAcct object is saved
-        #     # to be used here
-        #     user_input = None
-        #     username   = Gb.AppleAcct_needing_reauth_via_ha[CONF_USERNAME]
-        #     password   = Gb.AppleAcct_needing_reauth_via_ha[CONF_PASSWORD]
-        #     acct_owner = Gb.AppleAcct_needing_reauth_via_ha['account_owner']
-
-        # _OptFlow.apple_acct_reauth_username = username
-
-        # if Gb.internet_error:
-        #     self.errors['base'] = 'internet_error_no_change'
-        #     action_item = ''
-
-        # if _OptFlow.AppleAcct is None:
-        #     self.errors['account_selected'] = 'apple_acct_not_logged_into'
-        #     action_item = 'goto_previous'
-
-        # elif (action_item == 'send_verification_code'
-        #         and user_input.get(CONF_VERIFICATION_CODE, '') == ''):
-        #     action_item = 'goto_previous'
-
-        # if action_item == 'goto_previous':
-        #     aascf.clear_AppleAcct_2fa_flags()
-        #     await _OptFlow._async_write_icloud3_configuration_file(force_write=True)
-        #     return self.async_abort(reason="verification_code_cancelled")
-
-        # if action_item == 'send_verification_code':
-        #     valid_code = await aascf.reauth_send_verification_code_handler(_OptFlow, user_input)
-
-        #     if valid_code:
-        #         # self.errors['base'] = self.header_msg = 'verification_code_accepted'
-        #         self.errors['account_selected'] = self.header_msg = 'verification_code_accepted'
-        #         if instr(str(_OptFlow.apple_acct_items_by_username), 'AUTHENTICATION'):
-        #             _OptFlow.conf_apple_acct = ''
-        #         else:
-        #             aascf.clear_AppleAcct_2fa_flags()
-        #             return self.async_abort(reason="verification_code_accepted")
-        #     else:
-        #         self.errors[CONF_VERIFICATION_CODE] = 'verification_code_invalid'
-
-        # elif action_item == 'request_verification_code':
-        #     reauth_username = username
-        #     await aascf.async_pyicloud_reset_session(_OptFlow, username, password)
-
-        # return self.async_show_form(step_id='reauth',
-        #                             data_schema=forms.form_reauth(_OptFlow, reauth_username=reauth_username),
-        #                             errors=self.errors)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -402,6 +335,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
                         data_schema=forms.form_restart_ha(self),
                         errors=self.errors,
                         last_step=False)
+
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -439,8 +373,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                         MENU_KEY_TEXT_PAGE_1[MENU_PAGE_1_INITIAL_ITEM]]
         self.menu_page_no          = 0      # Menu currently displayed
         self.header_msg            = None   # Message displayed on menu after update
-        self.called_from_step_id_1 = ''     # Form/Fct to return to when verifying the icloud auth code
-        self.called_from_step_id_2 = ''     # Form/Fct to return to when verifying the icloud auth code
+        self.return_to_step_id_1   = ''     # Form/Fct to return to when verifying the icloud auth code
+        self.return_to_step_id_2   = ''     # Form/Fct to return to when verifying the icloud auth code
 
         self.actions_list              = []     # Actions list at the bottom of the screen
         self.actions_list_default      = ''     # Default action_items to reassign on screen redisplay
@@ -646,7 +580,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_menu(self, user_input=None, errors=None):
         self.step_id = f"menu_{self.menu_page_no}"
-        self.called_from_step_id_1 = self.called_from_step_id_2 = ''
+        self.return_to_step_id_1 = self.return_to_step_id_2 = ''
         self.errors = errors or {}
         await self._async_write_icloud3_configuration_file()
 
@@ -789,7 +723,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 return self.async_abort(reason="ha_restarting")
 
             elif action_item == 'review_inactive_devices':
-                self.called_from_step_id_1 = 'restart_icloud3'
+                self.return_to_step_id_1 = 'restart_icloud3'
                 return await self.async_step_review_inactive_devices()
 
             if action_item == 'restart_ic3_now':
@@ -873,7 +807,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
 
         if action_item == 'goto_previous':
-            if self.called_from_step_id_1 == 'restart_icloud3':
+            if self.return_to_step_id_1 == 'restart_icloud3':
                 return await self.async_step_restart_icloud3()
 
         return await self.async_step_menu()
@@ -2042,7 +1976,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 #              DATA SOURCE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_data_source(   self, user_input=None, errors=None,
-                                        called_from_step_id=None):
+                                        return_to_step_id=None):
         '''
         Updata Data Sources form enables/disables finddev and mobile app datasources and
         adds/updates/removes an Apple account using the Update Username/Password screen
@@ -2139,7 +2073,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_update_apple_acct()
 
         if action_item == 'verification_code':
-            return await self.async_step_reauth(called_from_step_id='data_source')
+            self.apple_acct_reauth_username = self.username
+            return await self.async_step_reauth(return_to_step_id='data_source')
 
         if user_input[CONF_DATA_SOURCE] == '':
             self.errors['base'] = 'apple_acct_no_data_source'
@@ -2267,6 +2202,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         conf_locate_all = self.conf_apple_acct[CONF_LOCATE_ALL]
 
         add_log_file_filter(ui_username, f"**{self.aa_idx}**")
+        add_log_file_filter(ui_username.upper(), f"**{self.aa_idx}**")
         add_log_file_filter(ui_password)
 
         if Gb.log_debug_flag:
@@ -2321,9 +2257,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             return await self.async_step_delete_apple_acct(user_input=user_input)
 
-        valid_upw = True
+        valid_upw = False
         aa_login_info_changed   = False
         other_flds_changed      = False
+        username_items_text = self.apple_acct_items_by_username.get(ui_username, 'not logged into')
+        aa_not_logged_into = instr(username_items_text, 'not logged into')
 
         if action_item == 'save_log_into_apple_acct':
             # Apple acct login info changed, validate it without logging in
@@ -2338,33 +2276,33 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     or user_input[CONF_TOTP_KEY] != self.conf_apple_acct[CONF_TOTP_KEY]):
                 other_flds_changed = True
 
-            if valid_upw:
-                if aa_login_info_changed or other_flds_changed:
-                    self._update_conf_apple_accounts(self.aa_idx, user_input)
-                    await self._async_write_icloud3_configuration_file()
-                    self.add_apple_acct_flag = False
+            # if valid_upw:
+            #     if aa_login_info_changed or other_flds_changed:
+            #         self._update_conf_apple_accounts(self.aa_idx, user_input)
+            #         await self._async_write_icloud3_configuration_file()
+            #         self.add_apple_acct_flag = False
 
-            if valid_upw is False or aa_login_info_changed:
+            if aascf.is_asp_password(ui_password):
+                pass
+
+            elif valid_upw is False or aa_login_info_changed:
                 if Gb.ValidateAppleAcctUPW is None:
                     Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
                 valid_upw = await Gb.ValidateAppleAcctUPW.async_validate_username_password(
                                         ui_username, ui_password)
-            Gb.username_valid_by_username[ui_username] = valid_upw
+                Gb.valid_upw_by_username[ui_username] = valid_upw
 
-            if valid_upw is False:
-                self.actions_list_default = 'add_change_apple_acct'
-                self.errors['base'] = ''
-                self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
+                if valid_upw is False:
+                    self.actions_list_default = 'add_change_apple_acct'
+                    self.errors['base'] = ''
+                    self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
 
-                # App Specific Password (ASP) format: msim-lwru-afiq-igwr
-                if (len(ui_password) == 19
-                        and ui_password[4:5] == '-'
-                        and ui_password[9:10] == '-'
-                        and ui_password[14:15] == '-'):
-                    self.errors[CONF_PASSWORD] = 'password_asp_invalid'
-                return await self.async_step_update_apple_acct(
-                                    user_input=user_input,
-                                    errors=self.errors)
+                    # App Specific Password (ASP) format: uqvf-gguc-tzpd-knor
+                    if aascf.is_asp_password(ui_password):
+                        self.errors[CONF_PASSWORD] = 'password_asp_invalid'
+                    return await self.async_step_update_apple_acct(
+                                        user_input=user_input,
+                                        errors=self.errors)
 
         # If nothing changed, the last login may have failed and the config was set back to what it
         # was. The Gb.AppleAcct_by_username will be the AppleAcctLoggedInto that failed, not the
@@ -2376,23 +2314,23 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         # A new config, Log into the account
         if (aa_login_info_changed
+                or aa_not_logged_into
                 or ui_username not in Gb.AppleAcct_by_username
                 or Gb.AppleAcct_by_username.get(ui_username) is None):
 
             successful_login = await aascf.async_log_into_apple_account(self,
-                                                user_input, called_from_step_id='update_apple_acct')
+                                                user_input, return_to_step_id='update_apple_acct')
 
-            await self._async_write_icloud3_configuration_file()
+            if successful_login:
+                self._update_conf_apple_accounts(self.aa_idx, user_input)
+                await self._async_write_icloud3_configuration_file()
+                self.add_apple_acct_flag = False
+                self.errors[CONF_USERNAME] = ''
+                # await self._async_write_icloud3_configuration_file()
 
             if successful_login is False:
                 self.add_apple_acct_flag = False
-                ipv6_info = Gb.InternetError.ha_system_network_ipv6_info()
-                if ipv6_info:
-                    self.errors[CONF_USERNAME] = 'apple_acct_login_error_ipv6'
-                elif Gb.internet_error:
-                    self.errors[CONF_USERNAME] = 'internet_error'
-                else:
-                    self.errors[CONF_USERNAME] = 'apple_acct_login_error_other'
+                self.errors[CONF_USERNAME] = aascf.login_err_msg(self.AppleAcct, ui_username)
 
                 return await self.async_step_update_apple_acct(
                                     user_input=user_input,
@@ -2416,7 +2354,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 return await self.async_step_data_source(user_input=None)
 
         if action_item == 'verification_code':
-            return await self.async_step_reauth(called_from_step_id='update_apple_acct')
+            self.apple_acct_reauth_username = ui_username
+            return await self.async_step_reauth(return_to_step_id='data_source')
 
         lists.build_apple_accounts_list(self)
         return self.async_show_form(step_id='update_apple_acct',
@@ -2499,52 +2438,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         lists.build_apple_accounts_list(self)
         lists.build_devices_list(self)
         config_file.build_log_file_filters()
-
-#-------------------------------------------------------------------------------------------
-    # def tracked_untracked_form_msg(self, username):
-    #     '''
-    #     This is used in the config_flow_forms to fill in the tracked and untracked devices
-    #     on the username password form
-    #     '''
-
-    #     AppleAcct = Gb.AppleAcct_by_username.get(username)
-    #     icloud_dnames = AppleAcct.icloud_dnames if AppleAcct else []
-
-    #     devicenames_by_username, icloud_dnames_by_username = \
-    #                 self.get_conf_device_names_by_username(username)
-    #     tracked_devices = [icloud_dname
-    #                             for icloud_dname in icloud_dnames
-    #                             if icloud_dname in icloud_dnames_by_username]
-    #     untracked_devices = [icloud_dname
-    #                             for icloud_dname in icloud_dnames
-    #                             if icloud_dname not in icloud_dnames_by_username]
-
-    #     return (f"({list_to_str(tracked_devices)})",
-    #             f"Untracked-({list_to_str(untracked_devices)})")
-
-# #--------------------------------------------------------------------
-#     def get_conf_device_names_by_username(self, username):
-#         '''
-#         Cycle through the conf_devices and build a list of device names by the
-#         apple account usernames
-
-#         Parameter:
-#             username
-#         Return:
-#             {devicenames_by_username}, {icloud_dnames_by_username}
-#         '''
-#         devicenames_by_username = [conf_device[CONF_IC3_DEVICENAME]
-#                                     for conf_device in Gb.conf_devices
-#                                     if conf_device[CONF_APPLE_ACCOUNT] == username]
-
-#         icloud_dnames_by_username = [conf_device[CONF_FAMSHR_DEVICENAME]
-#                                         for conf_device in Gb.conf_devices
-#                                         if conf_device[CONF_APPLE_ACCOUNT] == username]
-
-#         devicenames_by_username.sort()
-#         icloud_dnames_by_username.sort()
-
-#         return devicenames_by_username, icloud_dnames_by_username
 
 #-------------------------------------------------------------------------------------------
     def _can_disable_locate_all(self, user_input):
@@ -2635,7 +2528,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self._update_config_file_tracking(user_input={}, update_config_flag=True)
 
         # Remove the apple acct from the AppleAcct dict and delete it's instance
-        valid_upw = Gb.username_valid_by_username.pop(conf_username, False)
+        valid_upw = Gb.valid_upw_by_username.pop(conf_username, False)
         AppleAcct = Gb.AppleAcct_by_username.pop(conf_username, None)
         if AppleAcct: del AppleAcct
 
@@ -2685,27 +2578,29 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 #            REAUTH
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_reauth(self, user_input=None, errors=None,
-                                        called_from_step_id=None, reauth_username=None):
+                                        return_to_step_id=None, reauth_username=None):
 
         self.step_id = 'reauth'
         self.errors = errors or {}
         self.errors_user_input = {}
-        self.called_from_step_id_1 = called_from_step_id or self.called_from_step_id_1 or 'menu_0'
+        self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
 
         action_item, reauth_username, user_input, errors = \
             await aascf.async_reauthenticate_apple_account(self, user_input=user_input, errors=errors,
-                                            called_from_step_id=called_from_step_id, reauth_username=reauth_username)
+                                            return_to_step_id=return_to_step_id, reauth_username=reauth_username)
 
 
         lists.build_apple_accounts_list(self)
         if action_item == 'goto_previous':
-            return self.async_show_form(step_id=self.called_from_step_id_1,
-                                            data_schema=self.form_schema(self.called_from_step_id_1),
+            return self.async_show_form(step_id=self.return_to_step_id_1,
+                                            data_schema=self.form_schema(self.return_to_step_id_1),
                                             errors=self.errors)
 
         else:
-            log_debug_msg(  f"⭐ REAUTH (From={called_from_step_id}, "
+            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
                             f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+            if user_input and 'account_selected' in user_input:
+                reauth_username = user_input['account_selected']
             return self.async_show_form(step_id='reauth',
                                         data_schema=forms.form_reauth(self, reauth_username=reauth_username),
                                         errors=self.errors)

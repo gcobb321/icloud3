@@ -1,6 +1,6 @@
 """Cookie jar with persistence support."""
 
-from ..utils.messaging   import (_log, log_info_msg, )
+from ..utils.messaging   import (_log, log_info_msg, shrink_item, )
 from ..utils.time_util   import (secs_to_datetime)
 
 from http.cookiejar import LWPCookieJar
@@ -71,6 +71,8 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
     def list(self):
         _log_msg = ''
         for cookie in self:
-            _log_msg += (f"\n⠂  ❗ _.Cookie.{cookie.name}, Expires-{secs_to_datetime(cookie.expires)}")
+            _log_msg +=(f"\n⠂  ❗ _.Cookie.{cookie.name}, "
+                        f"Expires-{secs_to_datetime(cookie.expires)}, "
+                        f"{shrink_item(cookie.value)}")
 
         log_info_msg(_log_msg)

@@ -2,9 +2,6 @@
 from homeassistant.helpers          import (selector, entity_registry as er, device_registry as dr,)
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-# import pyotp
-import time
-from datetime           import datetime
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (RED_ALERT, LINK, RLINK, RARROW,
@@ -56,7 +53,6 @@ from ..utils.time_util  import (format_timer, )
 from .                  import utils_configure as utils
 from .                  import selection_lists as lists
 from .const_form_lists  import *
-from ..apple_acct       import apple_acct_support_cf as aascf
 from ..configure        import dashboard_builder as dbb
 from ..mobile_app       import mobapp_interface
 from ..startup          import config_file
@@ -342,7 +338,9 @@ def form_update_apple_acct(self):
     locate_all = errs_ui.get(CONF_LOCATE_ALL) or self.conf_apple_acct[CONF_LOCATE_ALL]
     totp_key   = errs_ui.get(CONF_TOTP_KEY)   or self.conf_apple_acct[CONF_TOTP_KEY] or ' '
 
-    if password.strip() == '' or self.add_apple_acct_flag:
+    if (password.strip() == ''
+            or self.add_apple_acct_flag
+            or Gb.valid_upw_by_username.get(username, False) is False):
         password_selector = selector.TextSelector()
     else:
         password_selector = selector.TextSelector(selector.TextSelectorConfig(type='password'))
@@ -356,7 +354,7 @@ def form_update_apple_acct(self):
             pass
         elif instr(apple_acct_info, 'invalid username/password'):
             self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
-        elif instr(apple_acct_info, 'not logged in'):
+        elif instr(apple_acct_info, NOT_LOGGED_IN):
             self.errors[CONF_USERNAME] = 'apple_acct_not_logged_into'
         elif instr(apple_acct_info, 'authentication needed'):
             self.errors[CONF_USERNAME] = 'verification_code_needed'
@@ -416,7 +414,7 @@ def form_delete_apple_acct(self):
     if (instr(apple_acct_info, '0 of')
             or instr(apple_acct_info, '1 of 1')
             or instr(apple_acct_info, 'Tracked-()')
-            or instr(apple_acct_info, 'Not logged into')):
+            or instr(apple_acct_info, NOT_LOGGED_IN)):
         default_device_action = 'delete_devices'
     else:
         default_device_action = 'reassign_devices'
@@ -480,7 +478,13 @@ def form_reauth(self, reauth_username=None):
 
         # Get the first acct (No Apple accts are set up or no Apple acct is selected)
         # or get the acct that needs to be authenticated
-        if (instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION')
+        # Requesting a new code will set the selected acct. Use it to deselect the acct
+        if reauth_username is not None and reauth_username != '':
+            self.apple_acct_reauth_username = reauth_username
+            self.conf_apple_acct, self.aa_idx = \
+                            config_file.conf_apple_acct(reauth_username)
+
+        elif (instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION')
                 or instr(str(self.apple_acct_items_by_username), 'TERMS OF USE')):
             usernames = [username
                             for username, acct_info in self.apple_acct_items_by_username.items()
@@ -497,11 +501,6 @@ def form_reauth(self, reauth_username=None):
                             config_file.conf_apple_acct(0)
             self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
 
-        # Requesting a new code will set the selected acct. Use it to deselect the acct
-        elif reauth_username is not None and reauth_username != '':
-            self.apple_acct_reauth_username = reauth_username
-            self.conf_apple_acct, self.aa_idx = \
-                            config_file.conf_apple_acct(reauth_username)
 
         elif isnot_empty(self.conf_apple_acct):
             self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]

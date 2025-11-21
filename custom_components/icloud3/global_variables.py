@@ -139,7 +139,7 @@ class GlobalVariables(object):
     AppleAcct_logging_in_usernames    = []  # usernames that are currently logging in. Used to prevent another login
 
     iCloudSession_by_username  = {}  # Session object for a username, set in Session so exists on an error
-    username_valid_by_username = {}  # The username/password validation status
+    valid_upw_by_username      = {}  # The username/password validation status
     valid_upw_results_msg      = ''  # valid upw results from Stage 3 to redisplay in Stage 4
     server_err_503_usernames   = []
     aalogin_error_secs_by_username   = {} # Time a server err 503 wa detected

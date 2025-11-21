@@ -3,16 +3,18 @@
   "config": {
     "abort": {
       "translation_file_by": "@gcobb321",
+
       "config_update_complete": "✔️ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "The Apple account is not log into",
       "login_error_ipv6": "Apple Account login timeout error, IPv6 is not supported - Go to HA Devices & Settings > System > Network. Disable IPv6 and restart HA.",
+      "login_error_503": "Apple Account Login Error 503, Server Refused/Rejected Request.",
       "login_error_other": "An unknown error occurred logging into the Apple Account.",
       "verification_code_requested": "The code was requested. Waiting for it to be entered and sent to Apple",
       "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
       "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
+      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
       "verification_code_cancelled": "The Authenticate Apple Account Sign-in process was completed",
       "update_cancelled": "Update Cancelled",
       "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3",
@@ -21,21 +23,25 @@
     },
     "error": {
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
-      "verification_code_send_error": "Failed to send the Verification Code",
+
       "SK-verification_code_send_error": "Failed to send the Code/Security Key",
-      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
       "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
       "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
-      "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
       "SK-verification_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
-      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
       "SK-verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
+
+      "verification_code_send_error": "Failed to send the Verification Code",
+      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
+      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
+      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
       "verification_code_cancelled": "The Apple Account authentication was cancelled",
+
       "apple_acct_not_logged_into": "The Apple Account is not logged into",
       "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Code entry screen)",
-      "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA.",
+      "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
+      "apple_acct_login_error_503": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request",
       "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
 
       "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
@@ -106,14 +112,14 @@
       "apple_acct_logged_into": "Logged into the Apple Account",
       "apple_acct_already_logged_into": "Already Logged into the Apple Account",
       "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
-      "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA.",
+      "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
       "apple_acct_invalid_upw": "❌ Invalid Username or Password",
-      "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
-      "apple_acct_login_error_503": "🍎 Apple is delaying displaying a new Verification code to prevent Suspicious Activity, probably due to too many requests. It should be displayed in about 20-30 minutes. Restart HA if it is not displayed",
+      "apple_acct_login_error_503": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request",
       "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
       "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
       "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
       "apple_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into.",
+      "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
 
       "apple_acct_dup_username_error": "Error: Username is being used by another Data Source entry",
       "apple_acct_username_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
@@ -131,17 +137,17 @@
       "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Code entry screen)",
 
-      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
       "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
       "SK-verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
+      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
+      "SK-verification_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
+      "SK-verification_code_send_error": "❌ Failed to send the Code/Security Key",
+      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
       "verification_code_cancelled": "The Apple Account authentication was cancelled",
       "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
-      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
       "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
-      "SK-verification_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
       "verification_code_send_error": "❌ Failed to send the Verification Code",
-      "SK-verification_code_send_error": "❌ Failed to send the Code/Security Key",
 
       "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
       "already_assigned": "This selection is already assigned to another device",
@@ -194,6 +200,7 @@
 
       "not_found_directory": "The directory was not found",
       "not_found_file": "The file was not found",
+
       "action_completed": "Requested Action has been completed",
       "action_cancelled": "Requested Action has been cancelled",
       "restart_ha": "Home Assistant needs to be restarted to continue",
@@ -261,6 +268,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
         }
       },
+
       "restart_ha_reload_icloud3": {
         "title": "Restart Home Assistant or iCloud3",
         "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
@@ -621,6 +629,7 @@
           "waze_history_max_distance": "Do not save the Waze travel time & distance to the Waze History Database if the distance is greater than this value"
         }
       },
+
       "special_zones": {
         "title": "Special Zones",
         "description": "This screen is used to configure:\n&nbsp;&nbsp;• Stationary Zones - Created when the device is in the same location for a short\n&nbsp;&nbsp;&nbsp;&nbsp;period of time\n&nbsp;&nbsp;• Enter Zone Delay Time - Delay processing a Zone Enter Trigger\n&nbsp;&nbsp;• A temporary “home” zone at another location",

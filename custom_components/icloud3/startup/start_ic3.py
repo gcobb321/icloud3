@@ -1133,7 +1133,7 @@ def setup_validate_apple_accts_upw():
 
     if Gb.ValidateAppleAcctUPW is None:
         Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-        Gb.username_valid_by_username = {}
+        Gb.valid_upw_by_username = {}
 
 #------------------------------------------------------------------------------
 def create_Devices_object():
@@ -1164,7 +1164,7 @@ def create_Devices_object():
             if (Gb.use_data_source_ICLOUD
                     and username != ''
                     and icloud_dname != 'None'
-                    and username not in Gb.username_valid_by_username):
+                    and username not in Gb.valid_upw_by_username):
                 conf_apple_acct, _idx = config_file.conf_apple_acct(username)
                 if _idx < 0:
                     error_msg = f"Unknown Apple Acct ({apple_acct})"
@@ -1175,7 +1175,7 @@ def create_Devices_object():
                     password = conf_apple_acct[CONF_PASSWORD]
                     valid_upw = Gb.ValidateAppleAcctUPW.validate_username_password(username, password)
 
-                    Gb.username_valid_by_username[username] = valid_upw
+                    Gb.valid_upw_by_username[username] = valid_upw
 
             if devicename == '':
                 post_greenbar_msg(f"HA device_tracker entity id not configured for {icloud_dname}")
@@ -1223,10 +1223,10 @@ def create_Devices_object():
             elif Gb.internet_error:
                 apple_acct_msg =f"{Device.conf_apple_acct_username_id}, INTERNERT UNAVAILABLE"
 
-            elif Device.conf_apple_acct_username not in Gb.username_valid_by_username:
+            elif Device.conf_apple_acct_username not in Gb.valid_upw_by_username:
                 apple_acct_msg =f"{RED_ALERT}{Device.conf_apple_acct_username}, UNKNOWN APPLE ACCT"
 
-            elif Gb.username_valid_by_username.get(Device.conf_apple_acct_username, False) is False:
+            elif Gb.valid_upw_by_username.get(Device.conf_apple_acct_username, False) is False:
                 apple_acct_msg = f"{RED_ALERT}{Device.conf_apple_acct_username}, INVALID USERNAME/PW"
 
             else:
@@ -1352,8 +1352,8 @@ def log_into_apple_accounts():
         locate_all_devices = conf_apple_acct[CONF_LOCATE_ALL]
 
         AppleAcct = Gb.AppleAcct_by_username.get(username)
-        if Gb.username_valid_by_username.get(username) is False:
-            results_msg += f"{CRLF_RED_ALERT}{username_id(username)}, Not Logged in, Invalid Username-Password"
+        if Gb.valid_upw_by_username.get(username) is False:
+            results_msg += f"{CRLF_RED_X}{username_id(username)}, Not Logged in, Invalid Username-Password"
             alert_msg = EVLOG_ALERT
 
         elif (AppleAcct is None
@@ -1374,7 +1374,7 @@ def log_into_apple_accounts():
                     results_msg += (f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, "
                                     f"Login Successful, {AppleAcct.auth_method}")
             else:
-                results_msg += (f"{RED_ALERT}{username_id(username)}, Login Failed, "
+                results_msg += (f"{RED_X}{username_id(username)}, Login Failed, "
                                 f"Server Loc-{apple_server_location}")
                 alert_msg = EVLOG_ALERT
                 update_alert_sensor(username_id(username), "Apple Acct Login Failed")
@@ -1486,7 +1486,7 @@ def setup_data_source_ICLOUD(retry=False):
         if is_empty(AppleAcct.AADevData_by_device_id):
             AppleAcct.refresh_icloud_data()
 
-        if AppleAcct and Gb.username_valid_by_username.get(username):
+        if AppleAcct and Gb.valid_upw_by_username.get(username):
             setup_tracked_devices_for_icloud(AppleAcct)
             set_device_data_source(AppleAcct)
 
@@ -1497,7 +1497,7 @@ def setup_data_source_ICLOUD(retry=False):
         if AppleAcct.login_failed:
             continue
 
-        if AppleAcct and Gb.username_valid_by_username.get(username):
+        if AppleAcct and Gb.valid_upw_by_username.get(username):
             _post_evlog_apple_acct_tracked_devices_info(AppleAcct)
 
     _set_any_Device_alerts()

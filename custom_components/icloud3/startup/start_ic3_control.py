@@ -198,7 +198,7 @@ def stage_4_setup_data_sources():
         # Get list of all unique Apple Acct usernames in config
         Gb.conf_usernames = [apple_account[CONF_USERNAME]
                                     for apple_account in Gb.conf_apple_accounts
-                                    if (apple_account[CONF_USERNAME] in Gb.username_valid_by_username
+                                    if (apple_account[CONF_USERNAME] in Gb.valid_upw_by_username
                                             and apple_account[CONF_USERNAME] != '')]
 
         if Gb.use_data_source_ICLOUD:

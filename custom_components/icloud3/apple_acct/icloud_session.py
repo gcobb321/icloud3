@@ -29,26 +29,19 @@ from ..utils.messaging      import (_log, _evlog, post_event, post_alert, post_e
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_data, log_exception, log_data_unfiltered, log_request_data, )
 
-from .cookie_jar            import PyiCloudCookieJar
-# import http.cookiejar as cookielib
+from .icloud_cookie_jar     import PyiCloudCookieJar
+
 #--------------------------------------------------------------------
 from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
 from requests               import Session, adapters
 import requests
-from requests.exceptions    import ConnectionError
-import urllib3.util.connection
+# from requests.exceptions    import ConnectionError
 from os                     import path
 import inspect
 import json
-import datetime as dt
-
-from homeassistant.helpers.event import track_time_interval
-
-import time
+# import datetime as dt
 
 from urllib.parse import urlparse
-import socket
-import errno
 
 HEADER_DATA = {
     "X-Apple-ID-Account-Country": "account_country",

@@ -94,11 +94,12 @@ FILTER_FIELDS = [
         'dsWebAuthToken', 'accountCountryCode', 'extended_login', 'trustToken', 'trustTokens',
         'data', 'json', 'headers', 'params', 'url', 'retry_cnt', 'retried', 'retry', '#',
         'code', 'ok', 'method', 'fmly', 'shouldLocate', 'selectedDevice', 'membersInfo',
-        'accountName', 'salt', 'a', 'b', 'c', 'm1', 'm2', 'protocols', 'iteration', 'Authorization',
-        'X-Apple-OAuth-State', 'X-Apple-ID-Session-Id', 'Accept',
+        'X-Apple-OAuth-State', 'X-Apple-ID-Session-Id', 'Accept', 'Authorization',
         'identifiers', 'labels', 'model', 'name_by_user', 'area_id', 'manufacturer', 'sw_version',
         'keyNames', 'securityCode', 'trustedPhoneNumbers', 'trustedPhoneNumber',
         'authenticationType',
+        'username', 'password', 'accountName', 'salt', 'protocols', 'iteration',
+        'a', 'A', 'b', 'B', 'c', 'm1', 'M1', 'm2', 'M2', 'g', 'K', 'N', 'u', 'v',
         ]
 FILTER_OUT = [
     'features', 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
@@ -1052,7 +1053,7 @@ def _create_log_msg_from_data(rawdata, data=None):
 
             filtered_rawdata.pop(k)
 
-    filtered_rawdata = {k: _shrink_item(k, v) for k, v in filtered_rawdata.items()}
+    filtered_rawdata = {k: shrink_item(v, k) for k, v in filtered_rawdata.items()}
     log_items_data['items'] = filtered_rawdata
 
     log_msg = ''
@@ -1077,12 +1078,12 @@ def _filter_rawdata_items(item_value_dict, shrink_only=None):
         if k not in FILTER_FIELDS and shrink_only is None:
             continue
 
-        _filtered_rawdata_items[k] = _shrink_item(k, v)
+        _filtered_rawdata_items[k] = shrink_item(v, k)
 
     return _filtered_rawdata_items
 
 #..........................................................................................
-def _shrink_item(k, v):
+def shrink_item(v, k=None):
     '''
     Reduce the size of str fields longer than 20-chars
     '''

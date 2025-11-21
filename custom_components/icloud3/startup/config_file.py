@@ -320,6 +320,7 @@ def build_log_file_filters():
                 continue
 
             add_log_file_filter(conf_apple_acct[CONF_USERNAME], f"**{aa_idx}**")
+            add_log_file_filter(conf_apple_acct[CONF_USERNAME].upper(), f"**{aa_idx}**")
             add_log_file_filter(conf_apple_acct[CONF_PASSWORD])
             add_log_file_filter(decode_password(conf_apple_acct[CONF_PASSWORD]))
 

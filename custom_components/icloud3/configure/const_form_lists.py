@@ -18,6 +18,7 @@ TITLE          = 'title'
 PATH           = 'path'
 ADD            = 'add'
 IC3DB          = 'ic3db-'
+NOT_LOGGED_IN  = 'NOT LOGGED IN'
 
 DATA_ENTRY_ALERT_CHAR = '⛔'
 DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
@@ -88,7 +89,7 @@ ACTION_LIST_OPTIONS = {
         'save_log_into_apple_acct': 'SAVE CHANGES, LOG INTO APPLE ACCT > Save any configuration changes, Log into the Apple Account',
         'log_into_apple_acct':      'LOG INTO APPLE ACCT > Log into the Apple Account, Save any configuration changes',
         'stop_using_apple_acct':    'STOP USING AN APPLE ACCOUNT > Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it',
-        'verification_code':        'ENTER/REQUEST AN APPLE ACCOUNT VERIFICATION CODE > Enter (or Request) the 6-digit Apple Account Verification Code',
+        'verification_code':        'AUTHENTICATE APPLE ACCT SIGN-IN > Send/Request the 6-digit Verification Code',
         'delete_apple_acct':        'DELETE APPLE ACCOUNT > Delete the selected Apple Account. Delete or reassign iCloud3 devices using it',
         'data_source_parameters':   'UPDATE DISPLAY/RUN TIME PARAMETERS > Update parameters (Display Apple Server Location, Enable Login with PasswordSRP)',
 

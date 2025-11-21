@@ -34,17 +34,17 @@ from re                  import match
 #          APPLE ACCOUNT ICLOUD SUPPORT ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_log_into_apple_account(self, user_input, called_from_step_id=None):
+async def async_log_into_apple_account(self, user_input, return_to_step_id=None):
     '''
     Log into the icloud account and check to see if a verification code is needed.
     If so, show the verification form, get the code from the user, verify it and
-    return to the 'called_from_step_id' (icloud_account).
+    return to the 'return_to_step_id' (icloud_account).
 
     Input:
         user_input  = A dictionary with the username and password, or
                         {username: icloudAccountUsername, password: icloudAccountPassword}
                     = {} to use the username/password in the tracking configuration parameters
-        called_from_step_id
+        return_to_step_id
                     = The step logging into the iCloud account. This step will be returned
                         to when the login is complete.
 
@@ -62,7 +62,7 @@ async def async_log_into_apple_account(self, user_input, called_from_step_id=Non
     '''
     try:
         self.errors = {}
-        called_from_step_id = called_from_step_id or 'update_apple_acct'
+        return_to_step_id = return_to_step_id or 'update_apple_acct'
 
         # The username may be changed to assign a new account, if so, log into the new one
         if CONF_USERNAME not in user_input or CONF_PASSWORD not in user_input:
@@ -72,13 +72,14 @@ async def async_log_into_apple_account(self, user_input, called_from_step_id=Non
         password = user_input[CONF_PASSWORD]
 
         add_log_file_filter(username, f"**{self.aa_idx}**")
+        add_log_file_filter(username.upper(), f"**{self.aa_idx}**")
         add_log_file_filter(password)
 
         apple_server_location = user_input.get(CONF_SERVER_LOCATION,'usa')
 
         log_info_msg(   f"Apple Acct > {username}, Logging in, "
                         f"UserInput-{user_input}, Errors-{self.errors}, "
-                        f"Step-{self.step_id}, CalledFrom-{called_from_step_id}")
+                        f"Step-{self.step_id}, CalledFrom-{return_to_step_id}")
 
         # Already logged in and no changes
         AppleAcct = Gb.AppleAcct_by_username.get(username)
@@ -92,14 +93,13 @@ async def async_log_into_apple_account(self, user_input, called_from_step_id=Non
             self.header_msg = 'apple_acct_logged_into'
 
             log_info_msg(f"Apple Acct > {username}, Already Logged in, {self.AppleAcct}")
-            return True
+            # return True
 
         # Validate the account before actually logging in
         valid_upw = await Gb.ValidateAppleAcctUPW.async_validate_username_password(username, password)
-
         if valid_upw is False:
-            if username in Gb.username_valid_by_username:
-                del Gb.username_valid_by_username[username]
+            if username in Gb.valid_upw_by_username:
+                del Gb.valid_upw_by_username[username]
             self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
             log_info_msg(f"Apple Acct > {username}, Invalid Username/password")
             return False
@@ -138,12 +138,12 @@ async def async_log_into_apple_account(self, user_input, called_from_step_id=Non
         self.username = username
         self.password = password
         self.apple_server_location = apple_server_location
-        Gb.username_valid_by_username[username] = True
+        Gb.valid_upw_by_username[username] = True
         log_info_msg(f"Apple Acct > {username}, Login successful, {self.AppleAcct}")
 
         start_ic3.dump_startup_lists_to_log()
 
-        if AppleAcct.auth_2fa_code_needed or called_from_step_id is None:
+        if AppleAcct.auth_2fa_code_needed or return_to_step_id is None:
             log_info_msg(f"Apple Acct > {username}, 2fa Verification Needed, {self.AppleAcct}")
             return True
 
@@ -459,7 +459,6 @@ async def async_pyicloud_reset_session(self, username, password):
 
     if instr(login_err, '-200') is False:
         if AppleAcct and AppleAcct.response_code == 503:
-            # list_add(Gb.server_err_503_usernames, username)
             if username not in Gb.aalogin_error_secs_by_username:
                 Gb.aalogin_error_secs_by_username[username] = time_now_secs()
                 Gb.aalogin_error_reason_by_username[username] = 'Server/PW Err-503'
@@ -529,15 +528,42 @@ async def async_delete_all_pyicloud_cookies_session_files():
     except Exception as err:
         log_exception(err)
 
+#--------------------------------------------------------------------
+def is_asp_password(ui_password):
+    '''
+    True if the password is App Specific Password (ASP) format: uqvf-gguc-tzpd-knor
+    '''
+
+    return (len(ui_password) == 19
+                and ui_password[4:5] == '-'
+                and ui_password[9:10] == '-'
+                and ui_password[14:15] == '-')
+
+#--------------------------------------------------------------------
+def login_err_msg(AppleAcct, username):
+    ipv6_info = Gb.InternetError.ha_system_network_ipv6_info()
+    if ipv6_info:
+        err_msg = 'apple_acct_login_error_ipv6'
+    elif Gb.internet_error:
+        err_msg = 'internet_error'
+    elif AppleAcct and AppleAcct.response_code_pw == 503:
+        err_msg = 'apple_acct_login_error_503'
+    elif Gb.valid_upw_by_username.get(username, None) is False:
+        err_msg = 'apple_acct_invalid_upw'
+    else:
+        err_msg = 'apple_acct_login_error_other'
+
+    return err_msg
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#          APPLE ACCOUNT REAUTHENTICATION SUPPORT ROUTINES
+#           APPLE ACCOUNT REAUTHENTICATION SUPPORT ROUTINES
+#           USED IN CONFIG_FLOW IN THE REAUTH ONLY AND THE DATA_FLOW REAUTH HANDLER
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_reauthenticate_apple_account(self,
                                     user_input=None, errors=None,
-                                    called_from_step_id=None, reauth_username=None):
+                                    return_to_step_id=None, reauth_username=None):
     '''
     Ask the verification code to the user.
 
@@ -546,7 +572,7 @@ async def async_reauthenticate_apple_account(self,
     a valid code indicator or invalid code error.
 
     If the code is valid, either:
-        - return to the called_from_step_id (icloud_account form) if in the config_flow configuration routine or,
+        - return to the return_to_step_id (icloud_account form) if in the config_flow configuration routine or,
         - issue a 'create_entry' indicating a successful verification. This will return
         to the function it wass called from. This will be when a validation request was
         needed during the normal tracking.
@@ -554,7 +580,7 @@ async def async_reauthenticate_apple_account(self,
     If invalid, display an error message and ask for the code again.
 
     Input:
-        - called_from_step_id
+        - return_to_step_id
                 = the step_id in the config_glow if the icloud3 configuration
                     is being updated
                 = None if the rquest is from another regular function during the normal
@@ -563,9 +589,9 @@ async def async_reauthenticate_apple_account(self,
     # self.step_id = 'reauth'
     # self.errors = errors or {}
     # self.errors_user_input = {}
-    # self.called_from_step_id_1 = called_from_step_id or self.called_from_step_id_1 or 'menu_0'
+    # self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
     action_item = ''
-    reauth_username = None
+    # reauth_username = None
     AppleAcct = self.AppleAcct
 
     if Gb.internet_error:
@@ -578,7 +604,7 @@ async def async_reauthenticate_apple_account(self,
     elif AppleAcct is None:
         self.errors['account_selected'] = 'apple_acct_not_logged_into'
 
-    log_debug_msg(  f"⭐ REAUTH HANDLER (From={called_from_step_id}, "
+    log_debug_msg(  f"⭐ REAUTH HANDLER (From={return_to_step_id}, "
                         f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
 
     if user_input is None:
@@ -603,7 +629,7 @@ async def async_reauthenticate_apple_account(self,
         ui_conf_verification_code = user_input.get(CONF_VERIFICATION_CODE, '')
         ui_conf_fido_key_name     = user_input['fido2_key_name']
         if 'terms_of_use' not in user_input: user_input['terms_of_use'] = False
-        log_debug_msg(  f"⭐ REAUTH HANDLER (From={called_from_step_id}, "
+        log_debug_msg(  f"⭐ REAUTH HANDLER (From={return_to_step_id}, "
                         f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
 
         if (ui_account_selected is not None
@@ -648,21 +674,13 @@ async def async_reauthenticate_apple_account(self,
             AppleAcct.terms_of_use_accepted = True
 
         if action_item == 'log_into_apple_acct':
-            _log(f'{username=} {password=}')
             if username and password:
                 successful_login = await async_log_into_apple_account(self,
-                                                    user_input, called_from_step_id='reauth')
+                                                    user_input, return_to_step_id='reauth')
 
             if successful_login is False:
                 self.add_apple_acct_flag = False
-                ipv6_info = Gb.InternetError.ha_system_network_ipv6_info()
-                if ipv6_info:
-                    self.errors[CONF_USERNAME] = 'apple_acct_login_error_ipv6'
-                elif Gb.internet_error:
-                    self.errors[CONF_USERNAME] = 'internet_error'
-                else:
-                    self.errors[CONF_USERNAME] = 'apple_acct_login_error_other'
-
+                self.errors[CONF_USERNAME] = login_err_msg(AppleAcct, username)
                 return 'refresh_screen', reauth_username, user_input, errors
 
             Gb.AppleAcct_by_username[user_input[CONF_USERNAME]] = AppleAcct or Gb.AppleAcctLoggingInto
@@ -721,6 +739,7 @@ async def async_reauthenticate_apple_account(self,
                 else:
                     clear_AppleAcct_2fa_flags()
                     post_greenbar_msg('')
+                    self.apple_acct_reauth_username = reauth_username
                     if len(Gb.conf_apple_accounts) <= 1:
                         return 'refresh_screen', reauth_username, None, errors
 
@@ -732,12 +751,10 @@ async def async_reauthenticate_apple_account(self,
             post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {AppleAcct.account_owner}, "
                         f"Requested a new Verification Code")
 
-            reauth_username = ui_username
+            self.apple_acct_reauth_username = reauth_username = ui_username
             await async_pyicloud_reset_session(self, username, password)
             await async_get_fido2_key_names(AppleAcct)
 
-
-        # lists.build_apple_accounts_list(self)
         return 'refresh_screen', reauth_username, user_input, errors
 
     except Exception as err:

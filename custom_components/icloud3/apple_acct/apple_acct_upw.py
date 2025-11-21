@@ -1,7 +1,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (AIRPODS_FNAME, NONE_FNAME,
-                                    EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS, CRLF_RED_ALERT,
+                                    EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS, CRLF_RED_ALERT, CRLF_RED_X,
                                     HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                     ICLOUD, NAME, ID,
                                     APPLE_SERVER_ENDPOINT,
@@ -80,7 +80,7 @@ class ValidateAppleAcctUPW():
         This is run is startup Stage 3
 
         Update:
-            - Gb.username_valid_by_username
+            - Gb.valid_upw_by_username
             - results_msg
         '''
         if (Gb.use_data_source_ICLOUD is False
@@ -103,19 +103,19 @@ class ValidateAppleAcctUPW():
 
             valid_upw = self.validate_username_password(username, password)
 
-            Gb.username_valid_by_username[username] = valid_upw
+            Gb.valid_upw_by_username[username] = valid_upw
 
             if valid_upw:
                 crlf_symb = CRLF_CHK
             else:
-                crlf_symb = CRLF_RED_ALERT
+                crlf_symb = CRLF_RED_X
                 alert_msg = EVLOG_ALERT
             results_msg += f"{crlf_symb}{_username_id}, Validated-{yes_no(valid_upw)}, {self.method}"
 
-        self.results_msg = f"{alert_msg}Apple Acct > Verify Username-Password{results_msg}"
+        self.results_msg = f"{alert_msg}Apple Acct > Verify Username/Password{results_msg}"
         post_event(self.results_msg)
 
-        Gb.startup_lists['Gb.username_valid_by_username'] = Gb.username_valid_by_username
+        Gb.startup_lists['Gb.valid_upw_by_username'] = Gb.valid_upw_by_username
 
 #----------------------------------------------------------------------------
     def validate_username_password(self, username, password):
@@ -179,7 +179,7 @@ class ValidateAppleAcctUPW():
         # Authentication failed, do some cleanup
         self.method = 'Invalid Username-Password'
         Gb.aalogin_error_secs_by_username[username]   = time_now_secs()
-        Gb.aalogin_error_reason_by_username[username] = 'Username/Password'
+        Gb.aalogin_error_reason_by_username[username] = 'Invalid Username/Password'
         aa_cookie_files_exist = file_io.file_exists(self.AppleAcct.cookie_dir_filename)
         if aa_cookie_files_exist is False:
             file_io.delete_file(self.AppleAcct.cookie_dir_filename)

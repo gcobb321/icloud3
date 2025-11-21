@@ -18,7 +18,7 @@ by various people to include:
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (AIRPODS_FNAME, NONE_FNAME,
-                                    EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS,
+                                    EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS, RED_X,
                                     HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                     ICLOUD, NAME, ID,
                                     APPLE_SERVER_ENDPOINT,
@@ -46,9 +46,10 @@ from ..utils                import gps
 
 from .apple_acct_devices    import iCloud_AppleAcctDevices
 from .icloud_fido           import iCloud_Fido2
+from .srp_encode_password   import SrpEncodePassword
 from .                      import icloud_requests_io  as icloud_io
 
-from .cookie_jar            import PyiCloudCookieJar
+from .icloud_cookie_jar     import PyiCloudCookieJar
 import http.cookiejar as cookielib
 #--------------------------------------------------------------------
 from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
@@ -224,8 +225,8 @@ class AppleAcctManager():
 
             username_password = f"{username}:{password}"
             upw = username_password.encode('ascii')
-            username_password_b64 = base64.b64encode(upw)
-            self.username_password_b64 = username_password_b64.decode('ascii')
+            username_password_bytes = base64.b64encode(upw)
+            self.username_password_bytes = username_password_bytes.decode('ascii')
 
             self.locate_all_devices  = locate_all_devices if locate_all_devices is not None else True
             self.terms_of_use_update_needed = False
@@ -328,7 +329,7 @@ class AppleAcctManager():
                 Gb.aalogin_error_secs_by_username[self.username] = time_now_secs()
                 Gb.aalogin_error_reason_by_username[self.username] = 'Server/PW Err-503'
 
-        post_alert( f"Apple Acct > {self.username_base}, Login Failed, "
+        post_alert( f"{RED_X}Apple Acct > {self.username_base}, Login Failed, "
                     f"{self.response_code_desc}, "
                     f"AppleServerLocation-`{self.apple_server_location}`, "
                     "Location Data not Refreshed")
@@ -512,8 +513,6 @@ class AppleAcctManager():
         if (refresh_session is False
                 and self.session_data.get('session_token')
                 and 'dsid' in self.params):
-            log_info_msg(f"{self.username_base}, Validate Token")
-
             self.auth_method = "ValidToken"
             login_successful = self._validate_token()
 
@@ -521,16 +520,12 @@ class AppleAcctManager():
 
         # Authenticate - Sign into Apple Account (POST=/signin)
         if login_successful is False:
-            log_info_msg(f"{self.username_base}, Authenticate with Token")
-
             self.auth_method = "TrustToken"
             login_successful = self._authenticate_with_token()
 
             log_debug_msg(f"{self.username_base}, {self.auth_method}, {login_successful=}")
 
         if login_successful is False:   # and Gb.password_srp_enabled:
-            log_info_msg(f"{self.username_base}, Authenticate with PasswordSRP")
-
             self.auth_method = 'PasswordSRP'
             login_successful = self.authenticate_with_password_srp()
 
@@ -546,8 +541,6 @@ class AppleAcctManager():
         # login_successful = False
 
         if login_successful is False:
-            log_info_msg(f"{self.username_base}, Authenticate with Password")
-
             self.auth_method = 'Password'
             login_successful = self.authenticate_with_password()
 
@@ -590,7 +583,7 @@ class AppleAcctManager():
     def _authenticate_with_token(self):
         '''Authenticate using session token. Return True if successful.'''
         try:
-
+            log_info_msg(f"{self.username_base}, Authenticate with TrustToken")
             post_greenbar_msg(f"Apple Acct > {self.username_base}, Auth with TrustToken")
 
             if "session_token" in self.session_data:
@@ -690,6 +683,7 @@ class AppleAcctManager():
             True - Successful login
             False - Invalid Password or other error
         '''
+        log_info_msg(f"{self.username_base}, Authenticate with Password")
         post_greenbar_msg(f"Apple Acct > {self.username_base}, Auth with Password")
 
         headers = self._get_auth_headers()
@@ -740,94 +734,97 @@ class AppleAcctManager():
             True - Successful login
             False - Invalid Password or other error
         '''
-
         username = username if username is not None else self.username
         password = password if password is not None else self.password
+
+        log_info_msg(f"{self.username_base}, Authenticate with PasswordSRP")
         post_greenbar_msg(f"Apple Acct > {self.username_base}, Auth with PasswordSRP")
 
+        log_info_msg(  f"{self.username_base}, signin/init, Calculate and send private key")
+
         # Step 1: client generates private key a (stored in srp.User) and public key A, sends to server
-        log_info_msg(  f"{self.username_base}, Authenticating with PasswordSRP, "
-                        "signin/init, Calculate and send private key")
-
-        srp_password = SrpPassword(password)
-
         srp.rfc5054_enable()
         srp.no_username_in_x()
-        usr = srp.User(username, srp_password, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
-        usr_username, A = usr.start_authentication()
 
-        headers = self._get_auth_headers()
-        headers["Accept"] = "application/json, text/javascript"
+        SrpEncodePW = SrpEncodePassword(password)
+        SrpUser     = srp.User(username, SrpEncodePW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
+        _, A = SrpUser.start_authentication()
+        A_bytes = base64.b64encode(A).decode()
 
-        url  = f"{self.AUTH_ENDPOINT}/signin/init"
-        data = {'a': base64.b64encode(A).decode(),
-                'accountName': usr_username,
-                'protocols': ['s2k', 's2k_fo']}
-
-        try:
-            data = icloud_io.post(self, url, json=data, headers=headers)
-
-        except AppleAcctAPIResponseException as err:
-            msg = "PasswordSRP Authentication Failed"
-            raise AppleAcctFailedLoginException(msg, err) from err
-        except Exception as err:
-            post_error_msg(f"PasswordSRP Authentication Failed > {err}")
-            log_exception(err)
+        data = {'a': A_bytes}
+        data = self._srp_icloud_io_signin_init(username, data)
 
         if 'salt' not in data:
             return False
 
-        # Step 2: server sends public key B, salt, and c to client
-        try:
-            salt       = base64.b64decode(data['salt'])
-            b          = base64.b64decode(data['b'])
-            c          = data['c']
-            iterations = data['iteration']
-            key_length = 32
+        # Step 2: server sends salt, public key B and c to client
+        salt       = base64.b64decode(data['salt'])
+        b          = base64.b64decode(data['b'])
+        c          = data['c']
+        iterations = data['iteration']
+        key_length = 32
 
-        except Exception as err:
-            log_exception(err)
-
-        # Step 3: client generates session key M1 and M2 with salt and b, sends to server
         log_info_msg(  f"{self.username_base}, Authenticating with PasswordSRP, "
                         "signin/complete, Server will verify Credentials")
 
-        srp_password.set_encrypt_info(salt, iterations, key_length)
-        m1 = usr.process_challenge(salt, b )
-        m2 = usr.H_AMK
+        # Step 3: client generates session key M1 and M2 with salt and b, sends to server
+        SrpEncodePW.set_encrypt_info(salt, iterations, key_length)
+
+        m1_srpusr = SrpUser.process_challenge(salt, b)
+        m1        = base64.b64encode(m1_srpusr).decode()
+        m2_srpusr = SrpUser.H_AMK
+        m2        = base64.b64encode(m2_srpusr).decode()
 
         if m1 and m2:
-            data = {"accountName": usr_username,
-                    "c": c,
-                    "m1": base64.b64encode(m1).decode(),
-                    "m2": base64.b64encode(m2).decode(),
-                    "rememberMe": True,
-                    "trustTokens": [],}
+            data = {"c": c, "m1": m1, "m2": m2}
 
-        if 'trust_token' in self.session_data:
-            self.trust_token  = self.session_data['trust_token']
-            data["trustTokens"] = [self.trust_token]
-
-        url  = f"{self.AUTH_ENDPOINT}/signin/complete"
-        params = {"isRememberMeEnabled": "true"}
-
-        try:
-            data = icloud_io.post(self, url, params=params, json=data, headers=headers, )
-
-        except AppleAcctAPIResponseException as error:
-            self.response_code_pw = self.response_code
-            # Authentication Error, invalid username/password
-            # self.response_code = 401
-            return False
+        data = self._srp_icloud_io_signin_complete(username, data)
 
         self.response_code_pw = self.response_code
         return self.response_code in [200, 409]
+
+#............................................................................
+    def _srp_icloud_io_signin_init(self, username, data):
+
+        data.update({'protocols': ['s2k', 's2k_fo']})
+
+        return self._srp_icloud_io('init', username, data)
+
+#............................................................................
+    def _srp_icloud_io_signin_complete(self, username, data):
+
+        trust_token  = self.session_data.get('trust_token')
+        trust_tokens = [trust_token] if trust_token else []
+        data.update({"rememberMe": True, "trustTokens": trust_tokens})
+
+        url    = f"{self.AUTH_ENDPOINT}/"
+        params = {"isRememberMeEnabled": "true"}
+
+        return self._srp_icloud_io('complete', username, data, params)
+
+#............................................................................
+    def _srp_icloud_io(self, url, username, data, params=None):
+
+        url    = f"{self.AUTH_ENDPOINT}/signin/{url}"
+        headers = self._get_auth_headers()
+        headers["Accept"] = "application/json, text/javascript"
+        data.update({"accountName": username})
+
+        try:
+            data = icloud_io.post(self, url, json=data, headers=headers)
+            return data
+
+        except AppleAcctAPIResponseException as err:
+            pass
+        except Exception as err:
+            log_exception(err)
+
 
 #----------------------------------------------------------------------------
     def _validate_token(self):
         '''Checks if the current access token is still valid.'''
 
-        # log_debug_msg(f"{self.username_base}, Checking session token validity")
+        log_info_msg(f"{self.username_base}, Validate Token")
 
         url = f"{self.SETUP_ENDPOINT}/validate"
         data = "null"
@@ -1362,6 +1359,7 @@ class AppleAcctManager():
             log_exception(err)
 
         return False
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            OTHER SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1386,41 +1384,6 @@ class AppleAcctManager():
         except:
             return (f"<AppleAcctManager: NotSetUp>")
 
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#       PASSWORD SRP ENCODER
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-class SrpPassword:
-    """SRP password."""
-
-    def __init__(self, password: str) -> None:
-        self._password_hash: bytes = hashlib.sha256(password.encode("utf-8")).digest()
-        # _log(f'{password=} {self._password_hash=}')
-        self.salt: bytes | None = None
-        self.iterations: int | None = None
-        self.key_length: int | None = None
-
-    def set_encrypt_info(self, salt: bytes, iterations: int, key_length: int) -> None:
-        """Set encrypt info."""
-        self.salt = salt
-        self.iterations = iterations
-        self.key_length = key_length
-
-    def encode(
-        self,
-    ) -> bytes:
-        """Encode password."""
-        if self.salt is None or self.iterations is None or self.key_length is None:
-            raise ValueError("Encrypt info not set")
-
-        return hashlib.pbkdf2_hmac(
-            "sha256",
-            self._password_hash,
-            self.salt,
-            self.iterations,
-            self.key_length,
-        )
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #       EXCEPTION HANDLERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

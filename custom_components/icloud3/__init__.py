@@ -245,7 +245,7 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
         # Validate Apple account username/password
         # Gb.EvLog.display_user_message("Validating Apple account username/password")
         # Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-        # Gb.username_valid_by_username = {}
+        # Gb.valid_upw_by_username = {}
         # if (Gb.use_data_source_ICLOUD
         #         and Gb.internet_error is False
         #         and Gb.conf_tracking['setup_icloud_session_early']):

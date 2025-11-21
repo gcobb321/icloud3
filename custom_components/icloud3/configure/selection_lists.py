@@ -24,10 +24,9 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_
                                 _log, _evlog, )
 
 from ..apple_acct       import apple_acct_support_cf as aascf
-from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, )
+from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, NOT_LOGGED_IN, )
 from ..startup          import config_file
 from ..utils            import file_io
-
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -67,18 +66,20 @@ def build_apple_accounts_list(self):
         elif username == '':
             continue
         else:
-            valid_upw = Gb.username_valid_by_username.get(username)
+            valid_upw = Gb.valid_upw_by_username.get(username)
             AppleAcct = Gb.AppleAcct_by_username.get(username)
             if AppleAcct is None or AppleAcct.is_AADevices_setup_complete is False:
                 aa_text = f"{username}{RARROW}{RED_ALERT}"
                 if valid_upw is False:
-                    aa_text += 'Not logged in, Invalid Username/Password'
+                    aa_text += f"{NOT_LOGGED_IN}, Invalid Username/Password"
                 elif instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD) is False:
-                    aa_text += 'Not logged iIn, Apple data src is disabled'
+                    aa_text +=  f"{NOT_LOGGED_IN}, Apple data source is disabled"
+                elif AppleAcct and AppleAcct.terms_of_use_update_needed:
+                    aa_text +=  f"{NOT_LOGGED_IN}, ACCEPT `TERMS OF USE` NEEDED"
                 elif valid_upw is None:
-                    aa_text += 'Not logged into this Apple Account'
+                    aa_text +=  NOT_LOGGED_IN
                 else:
-                    aa_text += 'Not logged in, Unknown error, Restart iCloud3'
+                    aa_text +=  f"{NOT_LOGGED_IN}, Unknown error, Restart iCloud3"
                 self.apple_acct_items_by_username[username] = aa_text
                 continue
 
@@ -334,7 +335,7 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
         aa_idx += 1
         aa_idx_dots = '.'*aa_idx
 
-        if Gb.username_valid_by_username.get(username, False) is False:
+        if Gb.valid_upw_by_username.get(username, False) is False:
             continue
 
         AppleAcct = Gb.AppleAcct_by_username.get(username)

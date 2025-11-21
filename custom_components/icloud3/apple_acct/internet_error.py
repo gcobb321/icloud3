@@ -252,7 +252,7 @@ class InternetConnection_ErrorHandler:
             Gb.restart_icloud3_request_flag = True
             Gb.AppleAcct_by_username = {}
             Gb.iCloudSession_by_username = {}
-            Gb.username_valid_by_username = {}
+            Gb.valid_upw_by_username = {}
 
         else:
             event_msg =(f"Internet Connection Available at {secs_to_time(time_now_secs())}, "

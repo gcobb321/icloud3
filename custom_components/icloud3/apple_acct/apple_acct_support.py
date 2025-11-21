@@ -125,8 +125,6 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
     list_add(Gb.usernames_setup_error_retry_list, username)
 
     post_error_msg( f"{EVLOG_ALERT}{login_err}")
-    _log(f'{username=} {Gb.aalogin_error_reason_by_username=}')
-    _log(f'{username=} {Gb.aalogin_error_secs_by_username=}')
     update_alert_sensor(username_id(username), (
                                 f"Apple Acct Login Failed, "
                                 f"{Gb.aalogin_error_reason_by_username.get(username, 'Unknown')}"))
@@ -407,7 +405,7 @@ def reset_AppleAcct_variables():
     Gb.AppleAcct_password_by_username  = {}
     Gb.AppleAcct_logging_in_usernames  = []
 
-    Gb.username_valid_by_username      = {}
+    Gb.valid_upw_by_username      = {}
     Gb.server_err_503_usernames        = []
     Gb.aalogin_error_secs_by_username  = {}
     Gb.aalogin_error_reason_by_username = {}
