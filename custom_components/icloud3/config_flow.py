@@ -110,7 +110,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         self.step_id = ''           # step_id for the window displayed
         self.errors  = {}           # Errors en.json error key
         self.OptFlow = None
-        self.data_source = Gb.conf_tracking[CONF_DATA_SOURCE]
+        self.data_source = ICLOUD
 
         # Items used in the REAUTH handler
         self.username = ''
@@ -252,7 +252,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         if Gb.OptionsFlowHandler is None:
             Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         _OptFlow = Gb.OptionsFlowHandler
-
+        self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, ICLOUD)
 
         if user_input and 'account_selected' in user_input:
             user_input = utils.option_text_to_parm(user_input,

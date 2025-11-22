@@ -15,19 +15,25 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-### iCloud3 ➤ v3.3.2
-### 🚩 Updates to iCloud3 v3.3
-**Apple account Error 503/Password SRP handling**
-    - Fixed several issues in the PasswordSRP handler dealing with verifying the password. This was creating the Server Not Available 503 error resulting in password authentication failures and login delays.
-**Update Apple Account**
-    - When the Apple account passsword is changed, it needs to also be changed on this screen, otherwise the account will not be logged into on the next iCloud3 restart. Fixed a problem verifying the new password, relogging into the account and requesting an authentication code.
-    - *Multiple Apple accounts* - Fixed a problem when going from this screen to the *Authenticate Apple Account Signin screen. The selected account was not being reselected.
-**Authenticate Apple Account Signin**
-    - *Multiple Apple accounts* - When several accounts need to be authenticated, the correct one was not being reselected after requesting new code.
-    - Improved handling of logging into the Apple account
-    - The Apple account login attempt would only be retried when the username and password was changed even though the account was not logged into. This as been fixed.
-**Hardware Security Keys (YubiKey)
-    - Removed the security key selection fields from the Authenticate Apple Account Signin until I get it working.
+### iCloud3 ➤ v3.3.3 (11/22/2025)
+### Account Reauthentication
+- Fixed a 'DATA_SOURCE not available error' when reauthenticating the Apple account.
+- The results of the Internet Connection Test done during Startup, Stage 2 are now displayed in the Event Log and icloud3.log file.
+
+
+### iCloud3 ➤ v3.3.2 (11/21/2025)
+### 🚩 Updates to iCloud3 v3.3.x
+### Apple account Error 503/Password SRP handling
+- Fixed several issues in the PasswordSRP handler dealing with verifying the password. This was creating the Server Not Available 503 error resulting in password authentication failures and login delays.
+### Update Apple Account screen
+- When the Apple account password is changed, it needs to also be changed on this screen, otherwise the account will not be logged into on the next iCloud3 restart. Fixed a problem verifying the new password, relogging into the account and requesting an authentication code.
+- *Multiple Apple accounts* - Fixed a problem when going from this screen to the *Authenticate Apple Account Sign-in screen. The selected account was not being reselected.
+### Authenticate Apple Account Sign-in screen
+- *Multiple Apple accounts* - When several accounts need to be authenticated, the correct one was not being reselected after requesting new code.
+- Improved handling of logging into the Apple account
+- The Apple account login attempt would only be retried when the username and password was changed even though the account was not logged into. This as been fixed.
+### Hardware Security Keys (YubiKey)
+- Removed the security key selection fields from the *Authenticate Apple Account Sign-in* screen until I get it working.
 
 
 

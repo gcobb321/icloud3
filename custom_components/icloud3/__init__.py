@@ -225,14 +225,6 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
         await async_get_ha_location_info(Gb.hass)
         calculate_time_zone_offset()
 
-        # Start the Internet Error handler, then see if it is available. If not, Gb.internet_error
-        # will be set to True. This will stop the startup process in icloud3_main.start_ic3 at
-        # Stage 3 and display the Internet Connection Error messages.
-        # Gb.InternetError = InternetConnection_ErrorHandler()
-        # await Gb.InternetError.async_is_internet_available()
-        # Gb.InternetError.is_internet_available()
-        #Gb.AppleAcct = None
-
         if Gb.restart_ha_flag:
             log_error_msg("iCloud3 > Waiting for HA restart to remove legacy "
                             "devices before continuing")
@@ -241,17 +233,6 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
         Gb.EvLog.post_event(
                 f"{EVLOG_IC3_STARTING}Starting > {ICLOUD3_VERSION_MSG}, "
                 f"{format_day_date_now()}")
-
-        # Validate Apple account username/password
-        # Gb.EvLog.display_user_message("Validating Apple account username/password")
-        # Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-        # Gb.valid_upw_by_username = {}
-        # if (Gb.use_data_source_ICLOUD
-        #         and Gb.internet_error is False
-        #         and Gb.conf_tracking['setup_icloud_session_early']):
-        #     #await Gb.hass.async_add_executor_job(move_icloud_cookies_to_icloud3_apple_acct)
-        #     await Gb.ValidateAppleAcctUPW.async_validate_upw_all_apple_accts_httpx()
-
 
         await hacs_ic3.check_hacs_icloud3_update_available()
         await start_ic3.update_lovelace_resource_event_log_js_entry()
@@ -265,6 +246,7 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
         # Initialize iCloud3 but do not actually start it
         Gb.iCloud3 = iCloud3()
         Gb.initial_icloud3_loading_flag = True
+
         # Now, start iCloud3 operations in it's own thread instead of running in the Event Loop.
         # You can not do asyncio/await functions but the requests can now be run without creating
         # an HA blocking call error.

@@ -58,6 +58,7 @@ class InternetConnection_ErrorHandler:
         self.internet_error_notify_msg_sent = False
         self.notify_Device       = None
         self.log_level_save      = Gb.log_level
+        self.data                = None
         start_ic3.set_log_level('rawdata')
 
         self.status_check_interval_secs = 5
@@ -173,11 +174,11 @@ class InternetConnection_ErrorHandler:
 
         url = 'https://setup.icloud.com/setup/authenticate/interneterrortest'
 
-        data = icloud_io.request(url)
-        #log_data(, data)
+        self.data = icloud_io.request(url)
+        #log_data(, self.data)
 
-        Gb.internet_error = data['error'].startswith('InternetError')
-        self.internet_error_code = data['code']
+        Gb.internet_error = self.data['error'].startswith('InternetError')
+        self.internet_error_code = self.data['code']
 
         if self.is_testing_internet_error(inet_chk=True):
             Gb.internet_error = True

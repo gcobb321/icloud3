@@ -785,6 +785,9 @@ class AppleAcctManager():
 
 #............................................................................
     def _srp_icloud_io_signin_init(self, username, data):
+        '''
+        Process the endpoint/signin/init request
+        '''
 
         data.update({'protocols': ['s2k', 's2k_fo']})
 
@@ -792,20 +795,21 @@ class AppleAcctManager():
 
 #............................................................................
     def _srp_icloud_io_signin_complete(self, username, data):
+        '''
+        Process the endpoint/signin/complete request
+        '''
 
+        params       = {"isRememberMeEnabled": "true"}
         trust_token  = self.session_data.get('trust_token')
         trust_tokens = [trust_token] if trust_token else []
         data.update({"rememberMe": True, "trustTokens": trust_tokens})
 
-        url    = f"{self.AUTH_ENDPOINT}/"
-        params = {"isRememberMeEnabled": "true"}
-
         return self._srp_icloud_io('complete', username, data, params)
 
 #............................................................................
-    def _srp_icloud_io(self, url, username, data, params=None):
+    def _srp_icloud_io(self, url_suffix, username, data, params=None):
 
-        url    = f"{self.AUTH_ENDPOINT}/signin/{url}"
+        url     = f"{self.AUTH_ENDPOINT}/signin/{url_suffix}"
         headers = self._get_auth_headers()
         headers["Accept"] = "application/json, text/javascript"
         data.update({"accountName": username})

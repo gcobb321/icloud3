@@ -52,14 +52,14 @@ from .support           import service_handler
 from .tracking          import stationary_zone as statzone
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
-from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone,
+from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone, yes_no,
                                 list_to_str, isbetween, username_id, zone_dname, is_running_in_event_loop, )
 from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
 from .utils.messaging   import (broadcast_info_msg,
                                 post_event, post_alert, post_error_msg, post_monitor_msg, post_internal_error,
                                 post_greenbar_msg, clear_greenbar_msg, update_alert_sensor,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
-                                log_debug_msg, archive_ic3log_file,
+                                log_debug_msg, log_data, archive_ic3log_file,
                                 _evlog, _log, )
 from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mins_since,
                                 secs_to_time, secs_to_hhmm, secs_to_datetime,
@@ -174,12 +174,17 @@ class iCloud3:
 
             # Terminate startup process if internet is down
             Gb.InternetError.is_internet_available()
+            event_msg = f"Internet Connection Test > Connected-{yes_no(not Gb.internet_error)}"
+            log_data(event_msg, Gb.InternetError.data)
+
             if Gb.internet_error:
+                post_alert(event_msg)
                 start_ic3_control.stage_6_initialization_complete()
                 Gb.InternetError.start_internet_error_handler()
 
                 post_event( f"{EVLOG_IC3_STARTING}Internet Connection Error, iCloud3 will restart when available")
             else:
+                post_event(event_msg)
                 start_ic3_control.stage_3_setup_configured_devices()
                 start_ic3_control.stage_4_setup_data_sources()
                 start_ic3_control.stage_5_configure_tracked_devices()
