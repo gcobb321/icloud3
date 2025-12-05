@@ -336,12 +336,18 @@ def strip_lead_comma(text):
 
 #--------------------------------------------------------------------
 def username_id(username):
-    username_base = f"{username}@".split('@')[0]
+    _username_base = f"{username}@".split('@')[0]
+    _username_base = username_base(username)
 
-    if username_base in Gb.upw_filter_items:
-        return Gb.upw_filter_items[username_base]
+    if _username_base in Gb.upw_filter_items:
+        return Gb.upw_filter_items[_username_base]
     else:
-        return f"{username_base}@"
+        return f"{_username_base}@"
+
+#--------------------------------------------------------------------
+def username_base(username):
+    _username_base = f"{username}@".split('@')[0]
+    return f"{_username_base}@"
 
 #--------------------------------------------------------------------
 def format_cnt(desc, n):
@@ -441,7 +447,7 @@ def is_running_in_event_loop():
         return False
 
     return False
-    
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #            CONFIG_FLOW FUNCTIONS

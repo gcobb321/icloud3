@@ -15,14 +15,19 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
+## 🍎 iCloud3 v3.3.4.1 ()
+- Reverted to an unobscured Apple account on the _Update Apple Account_ and _Authenticate Apple Account Signon_ screens.
+
+
+
 ## 🍎 iCloud3 v3.3.4 ()
-### APPLE ACCOUNTS
+### 🍎 Improved Apple Accounts Handling
 - Errors occurring when validating a username/password or authenticating Apple account have been enhanced to provide more information.
 - Updated the PasswordSRP Authentication method to display more information messages if an error occurred.
 - Updated the PasswordSRP Authentication method to try to detecd accounts that could not be verified and needing a password change.
 - Enhanced the internal procedures for adding a new Apple account, relogging into an existing account and authenticating it.
--
-### OTHER
+- Many other under the cover changes to improve error handling, messages and interaction with Apple servers.
+### 🗺️ Waze
 - Updated the Waze Route Time/Distance process to use Google's new data request URLs.
 
 ### 🐞 Bug Fixes

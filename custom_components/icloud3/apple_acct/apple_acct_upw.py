@@ -56,6 +56,7 @@ class ValidateAppleAcctUPW():
     def __init__(self):
         self.validate_aa_upw = True
         self.username = 'validate_upw'
+        self.username_base = ''
         self.password = 'validate_upw'
         self.method   = ''
 
