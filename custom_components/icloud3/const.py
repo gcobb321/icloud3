@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.3.3'
+VERSION                         = '3.3.4'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -179,6 +179,15 @@ DEVICE_TYPE_INZONE_INTERVALS = {
         AIRPODS: 15,
         NO_MOBAPP: 15,
         OTHER: 120,
+}
+DEVICE_DISPLAY_NAMES_FILTERS = {
+        'generation': 'gen',
+        'nd gen': '',
+        'th gen': '',
+        'Series ': '',
+        'mini': 'Mini',
+        '(': '',
+        ')': '',
 }
 
 # Apple is using a country specific iCloud server based on the country code in pyicloud_ic3.

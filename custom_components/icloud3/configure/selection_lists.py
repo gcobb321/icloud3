@@ -18,7 +18,7 @@ from ..const            import (RARROW, PHDOT, CRLF_DOT, DOT, HDOT, PHDOT, CIRCL
 
 from ..utils.utils      import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                 is_statzone, zone_dname, isbetween, list_del, list_add,
-                                sort_dict_by_values,
+                                sort_dict_by_values, username_id, username_base,
                                 encode_password, decode_password, )
 from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
@@ -45,6 +45,13 @@ def build_apple_accounts_list(self):
         include_icloud_dnames:
             True - Add a list of the devices in the Apple Account and add a
                     new account option
+
+
+    The list is built:
+        - At the start of the forms functions for the Data Sources, Update Apple Acct,
+            and Reauth screens
+        - When the Apple Acct config is updated
+        - When an Apple Acct is deleted
     '''
 
     self.apple_acct_items_by_username = {}
@@ -54,13 +61,7 @@ def build_apple_accounts_list(self):
     for apple_account in Gb.conf_apple_accounts:
         aa_idx += 1
         username = apple_account[CONF_USERNAME]
-        # devicenames_by_username = [conf_device[CONF_IC3_DEVICENAME]
-        #                             for conf_device in Gb.conf_devices
-        #                             if conf_device[CONF_APPLE_ACCOUNT] == username]
-        devicenames_by_username, icloud_dnames_by_username = \
-                    get_conf_device_names_by_username(username)
-        devices_assigned_cnt = len(devicenames_by_username)
-
+        tracked_cnt, tracked_devices, untracked_cnt, untracked_devices = tracked_untracked_form_msg(username)
         if aa_idx == 0 and username == '':
             break
         elif username == '':
@@ -68,45 +69,44 @@ def build_apple_accounts_list(self):
         else:
             valid_upw = Gb.valid_upw_by_username.get(username)
             AppleAcct = Gb.AppleAcct_by_username.get(username)
-            if AppleAcct is None or AppleAcct.is_AADevices_setup_complete is False:
-                aa_text = f"{username}{RARROW}{RED_ALERT}"
+
+            if AppleAcct:
+                aa_text = ''
+                if AppleAcct.auth_2fa_code_needed:
+                    self.is_verification_code_needed = True
+                    aa_text += f"{RED_ALERT}AUTHENTICATION NEEDED, "
+                elif AppleAcct.terms_of_use_update_needed:
+                    aa_text += f"{RED_ALERT}ACCEPT `TERMS OF USE` NEEDED, "
+                elif AppleAcct.login_successful is False:
+                    aa_text = f"{RED_ALERT}{NOT_LOGGED_IN}, {AppleAcct.response_code_desc}, "
+
+                aa_text += (f"{tracked_cnt} of "
+                            f"{tracked_cnt+untracked_cnt} Devices Tracked "
+                            f"({tracked_devices})")
+
+            else:
+                aa_text = f"{RED_ALERT}{NOT_LOGGED_IN}, "
                 if valid_upw is False:
-                    aa_text += f"{NOT_LOGGED_IN}, Invalid Username/Password"
+                    aa_text += "Invalid Username/Password-401"
                 elif instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD) is False:
-                    aa_text +=  f"{NOT_LOGGED_IN}, Apple data source is disabled"
-                elif AppleAcct and AppleAcct.terms_of_use_update_needed:
-                    aa_text +=  f"{NOT_LOGGED_IN}, ACCEPT `TERMS OF USE` NEEDED"
-                elif valid_upw is None:
-                    aa_text +=  NOT_LOGGED_IN
+                    aa_text =  "Apple data source is disabled"
                 else:
-                    aa_text +=  f"{NOT_LOGGED_IN}, Unknown error, Restart iCloud3"
-                self.apple_acct_items_by_username[username] = aa_text
-                continue
+                    aa_text =  "Unknown error, Restart iCloud3"
 
-        # AppleAcct.username_id is the filtered text (geekstergary=gee**2**ry)
-        # Convert it back to the real username_id text for displaying on the screen
-        username_id = Gb.upw_unfilter_items.get(AppleAcct.username_id, AppleAcct.username_id)
-        aa_text = f"{username_id}{RARROW}"
-        if AppleAcct.auth_2fa_code_needed:
-            self.is_verification_code_needed = True
-            aa_text += f"{RED_ALERT} AUTHENTICATION NEEDED, "
-        if AppleAcct.terms_of_use_update_needed:
-            aa_text += f"{RED_ALERT} ACCEPT `TERMS OF USE` NEEDED, "
-
-        aa_text += (f"{devices_assigned_cnt} of "
-                    f"{len(AppleAcct.icloud_dnames)} iCloud Devices Tracked "
-                    f"{tracked_untracked_form_msg(username)[0]}")
-
-        self.apple_acct_items_by_username[username] = aa_text
+        # self.apple_acct_items_by_username[username] = f"{username_id(username)}{RARROW}{aa_text}"
+        self.apple_acct_items_by_username[username] = f"{username_base(username)}{RARROW}{aa_text}"
 
 #-------------------------------------------------------------------------------------------
 def tracked_untracked_form_msg(username):
     '''
     This is used in the config_flow_forms to fill in the tracked and untracked devices
-    on the username password form
+    on the Apple Acct Username Password form
     '''
 
     AppleAcct = Gb.AppleAcct_by_username.get(username)
+    if AppleAcct is None:
+        return [0, '', 0, '']
+
     icloud_dnames = AppleAcct.icloud_dnames if AppleAcct else []
 
     devicenames_by_username, icloud_dnames_by_username = get_conf_device_names_by_username(username)
@@ -117,8 +117,8 @@ def tracked_untracked_form_msg(username):
                             for icloud_dname in icloud_dnames
                             if icloud_dname not in icloud_dnames_by_username]
 
-    return (f"({list_to_str(tracked_devices)})",
-            f"Untracked-({list_to_str(untracked_devices)})")
+    return [len(tracked_devices), list_to_str(tracked_devices),
+            len(untracked_devices), list_to_str(untracked_devices)]
 
 #--------------------------------------------------------------------
 def get_conf_device_names_by_username(username):

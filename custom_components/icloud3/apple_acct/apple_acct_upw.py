@@ -145,10 +145,10 @@ class ValidateAppleAcctUPW():
             self.AppleAcct = Gb.AppleAcct_by_username.get(username)
             if self.AppleAcct is None:
 
-                self.AppleAcct = aas.create_AppleAcct(username, password, apple_server_location='usa', locate_all_devices=True)
-                # self.AppleAcct = AppleAcctManager(username, password,
-                #                                 apple_server_location='usa',
-                #                                 validate_aa_upw=False)
+                self.AppleAcct = aas.create_AppleAcct(  username, password,
+                                                        apple_server_location='usa',
+                                                        locate_all_devices=True)
+
 
                 self.iCloudSession = self.AppleAcct.iCloudSession
 
@@ -169,23 +169,11 @@ class ValidateAppleAcctUPW():
         if self.AppleAcct.login_successful:
             return True
 
-
-        # self.method = 'Authenticate'
-        # valid_upw = self._validate_via_authenticate(username, password)
-        # log_debug_msg(f"{self.username_base}, Method-{self.method}, Results-{valid_upw}")
-        # if valid_upw:
-        #     return valid_upw
-
         # Authentication failed, do some cleanup
         self.method = 'Invalid Username-Password'
-        Gb.aalogin_error_secs_by_username[username]   = time_now_secs()
-        Gb.aalogin_error_reason_by_username[username] = 'Invalid Username/Password'
-        aa_cookie_files_exist = file_io.file_exists(self.AppleAcct.cookie_dir_filename)
-        if aa_cookie_files_exist is False:
-            file_io.delete_file(self.AppleAcct.cookie_dir_filename)
-            file_io.delete_file(self.AppleAcct.session_dir_filename)
+        self.AppleAcct.setup_error(401)
 
-        return valid_upw
+        return False
 
 #............................................................................
     def _validate_via_authenticate(self, username, password):

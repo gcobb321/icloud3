@@ -18,8 +18,7 @@ from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_e
 from ..utils.time_util  import (time_now_secs)
 
 
-from ..apple_acct.apple_acct     import (AppleAcctManager, AppleAcctFailedLoginException, )
-from ..apple_acct.icloud_session import (HTTP_RESPONSE_CODES )
+from ..apple_acct.apple_acct import (AppleAcctManager, AppleAcctFailedLoginException, )
 from ..configure        import utils_configure as utils
 from ..configure        import selection_lists as lists
 from ..startup          import config_file
@@ -157,36 +156,35 @@ async def async_log_into_apple_account(self, user_input, return_to_step_id=None)
         Gb.HALogger.error(f"Error logging into Apple Acct: {err}")
 
         response_code = Gb.AppleAcctLoggingInto.response_code
-        if Gb.PyiCloudLoggingInto.response_code_pw == 503:
-            response_code = 503
-            # list_add(Gb.server_err_503_usernames, username)
-            if username not in Gb.aalogin_error_secs_by_username:
-                Gb.aalogin_error_secs_by_username[username] = time_now_secs()
-                Gb.aalogin_error_reason_by_username[username] = 'Server/PW Err-503'
+        if Gb.AppleAcctLoggingInto.response_code_pw == 503:
+            Gb.AppleAcctLoggingInto.setup_error(503)
+
         elif response_code == 302:
+            Gb.AppleAcctLoggingInto.setup_error(302, 'Server Location')
             apple_server_location = Gb.AppleAcctLoggingInto.apple_server_location
             if (apple_server_location == 'usa'):
+                Gb.AppleAcctLoggingInto.setup_error(302, 'Server Loc-cn')
                 self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302_cn'
             elif (apple_server_location == '.cn'):
+                Gb.AppleAcctLoggingInto.setup_error(302, 'Server Loc-usa')
                 self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302_usa'
             else:
+                Gb.AppleAcctLoggingInto.setup_error(302, 'Server Loc-??')
                 self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302'
 
         elif response_code == 400:
             self.errors['base'] = 'apple_acct_invalid_upw'
         elif response_code == 401 and instr(err, 'Python SRP'):
+            Gb.AppleAcctLoggingInto.setup_error(401)
             self.errors['base'] = 'apple_acct_login_error_srp_401'
         elif response_code == 401:
+            Gb.AppleAcctLoggingInto.setup_error(401)
             self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
-        elif response_code == 302:
-            apple_server_location = Gb.AppleAcctLoggingInto.apple_server_location
-            if (apple_server_location == 'usa'):
-                self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302_cn'
-            elif (apple_server_location == '.cn'):
-                self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302_usa'
-            else:
-                self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302'
+        elif response_code == 403:
+            Gb.AppleAcctLoggingInto.setup_error(403)
+            self.errors[CONF_USERNAME] = 'apple_acct_locked'
         else:
+            Gb.AppleAcctLoggingInto.setup_error(response_code)
             self.errors['base'] = 'apple_acct_login_error_other'
         error_msg = HTTP_RESPONSE_CODES.get(response_code, 'Other Error')
 
@@ -231,7 +229,7 @@ def create_AppleAcctManager_config_flow(username, password, apple_server_locatio
 
     if AppleAcct and AppleAcct.login_successful:
         log_debug_msg(  f"Apple Acct > {AppleAcct.account_owner}, Login Successful, "
-                        f"{AppleAcct.response_code_desc}, "
+                        f"Error-{AppleAcct.response_code_desc}, "
                         f"Update Connfiguration")
     else:
         # raise AppleAcctFailedLoginException
@@ -334,9 +332,9 @@ async def async_finish_authentication_and_data_refresh(caller_self):
 
     if AppleAcct.login_successful is False:
         err_msg = ( f"Apple Acct > {AppleAcct.username_base}, Authentication Failed, "
-                            f"{AppleAcct.response_code_desc}, "
-                            f"AppleServerLocation-`{AppleAcct.apple_server_location}`, "
-                            "Location Data not Refreshed")
+                    f"Error-{AppleAcct.response_code_desc}, "
+                    f"AppleServerLocation-`{AppleAcct.apple_server_location}`, "
+                    "Location Data not Refreshed")
         post_error_msg(err_msg)
         return
 
@@ -400,81 +398,6 @@ async def async_confirm_fido2_security_key(AppleAcct, fido2_key_name):
     _log(f'{valid_key=}')
 
     return valid_key
-
-#--------------------------------------------------------------------
-async def async_pyicloud_reset_session(self, username, password):
-    '''
-    Reset the current session and authenticate to restart pyicloud_ic3
-    and enter a new verification code
-
-    The username & password are specified in case the Apple acct is not logged
-    into because of an error
-    '''
-    try:
-        AppleAcct = self.AppleAcct
-        if AppleAcct:
-            pyicloud_username = AppleAcct.username or self.username
-
-            post_event(f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.username_id}, Authentication Needed")
-
-            await async_delete_icloud_session_requests_file(pyicloud_username)
-            # await async_delete_icloud_session_requests_file(AppleAcct.username)
-
-            if AppleAcct.authentication_alert_displayed_flag is False:
-                AppleAcct.authentication_alert_displayed_flag = True
-
-            await Gb.hass.async_add_executor_job(AppleAcct.setup_new_apple_account_session)
-
-            # Initialize AppleAcct object to force a new one that will trigger the 2fa process
-            AppleAcct.verification_code = None
-
-        # The Apple acct is not logged into. There may have been some type Of error.
-        # Delete the session files for the username selected on the request form and
-        # try to login
-        elif username and password:
-            post_event(f"{EVLOG_NOTICE}Apple Acct > {username_id(username)}, Authentication Needed")
-
-            await self.async_delete_icloud_session_requests_file(username)
-
-            user_input = {}
-            user_input[CONF_USERNAME] = username
-            user_input[CONF_PASSWORD] = password
-
-            await async_log_into_apple_account(self, user_input)
-
-            AppleAcct = self.AppleAcct
-
-        if AppleAcct:
-            post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {AppleAcct.username_id}, "
-                        f"Waiting for the 6-digit Verification Code to be entered")
-            return
-
-    except AppleAcctFailedLoginException as err:
-        login_err = str(err)
-        login_err + ", Will retry logging into the Apple Account later"
-
-    except Exception as err:
-        login_err = str(err)
-        log_exception(err)
-
-    if instr(login_err, '-200') is False:
-        if AppleAcct and AppleAcct.response_code == 503:
-            if username not in Gb.aalogin_error_secs_by_username:
-                Gb.aalogin_error_secs_by_username[username] = time_now_secs()
-                Gb.aalogin_error_reason_by_username[username] = 'Server/PW Err-503'
-            self.errors['base'] = 'apple_acct_login_error_503'
-
-            post_event( f"{EVLOG_ERROR}Configure Apple Acct > {username}, "
-                        f"Apple is delaying displaying a new Verification code to "
-                        f"prevent Suspicious Activity, probably due to too many requests. "
-                        f"It should be displayed in about 20-30 minutes. "
-                        f"{CRLF_DOT}The Apple Acct login will be retried within 15-mins. "
-                        f"The Verification Code will be displayed then if successful")
-        else:
-            post_event( f"{EVLOG_ERROR}Configure Apple Acct > {username}, "
-                        f"An Error was encountered requesting the 6-digit Verification Code, "
-                        f"{login_err}")
-
 
 #--------------------------------------------------------------------
 async def async_delete_icloud_session_requests_file(username=None):
@@ -591,7 +514,6 @@ async def async_reauthenticate_apple_account(self,
     # self.errors_user_input = {}
     # self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
     action_item = ''
-    # reauth_username = None
     AppleAcct = self.AppleAcct
 
     if Gb.internet_error:
@@ -668,6 +590,10 @@ async def async_reauthenticate_apple_account(self,
         self.apple_acct_reauth_username = username
         AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username.get(username, AppleAcct)
 
+        if (action_item != 'log_into_apple_acct'
+                and AppleAcct.login_successful is False):
+            return 'refresh_screen', reauth_username, user_input, errors
+
         if (AppleAcct
                 and AppleAcct.terms_of_use_update_needed
                 and user_input['terms_of_use']):
@@ -683,8 +609,7 @@ async def async_reauthenticate_apple_account(self,
                 self.errors[CONF_USERNAME] = login_err_msg(AppleAcct, username)
                 return 'refresh_screen', reauth_username, user_input, errors
 
-            Gb.AppleAcct_by_username[user_input[CONF_USERNAME]] = AppleAcct or Gb.AppleAcctLoggingInto
-            Gb.AppleAcct_password_by_username[username] = password
+            #Gb.AppleAcct_password_by_username[username] = password
             if instr(self.data_source, ICLOUD) is False:
                 self._update_data_source({CONF_DATA_SOURCE: [ICLOUD, self.data_source]})
 
@@ -759,3 +684,75 @@ async def async_reauthenticate_apple_account(self,
 
     except Exception as err:
         log_exception(err)
+
+
+#--------------------------------------------------------------------
+async def async_pyicloud_reset_session(self, username, password):
+    '''
+    Reset the current session and authenticate to restart pyicloud_ic3
+    and enter a new verification code
+
+    The username & password are specified in case the Apple acct is not logged
+    into because of an error
+    '''
+    try:
+        AppleAcct = self.AppleAcct
+        if AppleAcct:
+            aa_username = AppleAcct.username or self.username
+
+            post_event(f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.username_id}, Authentication Needed")
+
+            await async_delete_icloud_session_requests_file(aa_username)
+
+            if AppleAcct.authentication_alert_displayed_flag is False:
+                AppleAcct.authentication_alert_displayed_flag = True
+
+            await Gb.hass.async_add_executor_job(AppleAcct.setup_new_apple_account_session)
+
+            # Initialize AppleAcct object to force a new one that will trigger the 2fa process
+            AppleAcct.verification_code = None
+
+        # The Apple acct is not logged into. There may have been some type Of error.
+        # Delete the session files for the username selected on the request form and
+        # try to login
+        elif username and password:
+            post_event(f"{EVLOG_NOTICE}Apple Acct > {username_id(username)}, Authentication Needed")
+
+            await async_delete_icloud_session_requests_file(username)
+
+            user_input = {}
+            user_input[CONF_USERNAME] = username
+            user_input[CONF_PASSWORD] = password
+
+            login_successful = await async_log_into_apple_account(self, user_input)
+
+            AppleAcct = self.AppleAcct
+
+        if AppleAcct:
+            post_event( f"{EVLOG_NOTICE}Configure Apple Acct > {AppleAcct.username_id}, "
+                        f"Waiting for the 6-digit Verification Code to be entered")
+            return
+
+    except AppleAcctFailedLoginException as err:
+        login_err = str(err)
+        login_err + ", Will retry logging into the Apple Account later"
+
+    except Exception as err:
+        login_err = str(err)
+        log_exception(err)
+
+    if instr(login_err, '-200') is False:
+        if AppleAcct and AppleAcct.response_code == 503:
+            Gb.AppleAcctLoggingInto.setup_error(503)
+            self.errors['base'] = 'apple_acct_login_error_503'
+
+            post_event( f"{EVLOG_ERROR}Configure Apple Acct > {username}, "
+                        f"Apple is delaying displaying a new Verification code to "
+                        f"prevent Suspicious Activity, probably due to too many requests. "
+                        f"It should be displayed in about 20-30 minutes. "
+                        f"{CRLF_DOT}The Apple Acct login will be retried within 15-mins. "
+                        f"The Verification Code will be displayed then if successful")
+        else:
+            post_event( f"{EVLOG_ERROR}Configure Apple Acct > {username}, "
+                        f"An Error was encountered requesting the 6-digit Verification Code, "
+                        f"{login_err}")

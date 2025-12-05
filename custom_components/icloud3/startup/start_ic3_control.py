@@ -154,7 +154,7 @@ def stage_3_setup_configured_devices():
 
         # Reinitialize AppleAcct to recreate all Apple Acct objects
         if Gb.restart_requested_by == 'user':
-            aas.reset_AppleAcct_variables()
+            aas.reset_AppleAcct_Gb_variables()
 
         # start_ic3.setup_validate_apple_accts_upw()
         Gb.ValidateAppleAcctUPW.validate_upw_all_apple_accts()
@@ -321,7 +321,7 @@ def stage_7_initial_locate():
 
     # The restart will be requested if using iCloud as a data source and no data was returned
     # from AppleAcct
-    if Gb.AppleAcct_by_username == {}:
+    if is_empty(Gb.AppleAcct_by_username):
         return
 
     if Gb.reinitialize_icloud_devices_flag and Gb.conf_icloud_device_cnt > 0:

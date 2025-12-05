@@ -406,9 +406,10 @@ def _handle_global_action(global_action, action_option):
         Gb.log_debug_flag_restart         = Gb.log_debug_flag
         Gb.log_rawdata_flag_restart       = Gb.log_rawdata_flag
         Gb.restart_icloud3_request_flag   = True
-        Gb.restart_requested_by = 'user'
+        Gb.restart_requested_by           = 'user'
         Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
-        Gb.EvLog.display_user_message('iCloud3 is Restarting', clear_greenbar_msg=True)
+        post_greenbar_msg(f"Restarting {ICLOUD3_VERSION_MSG}")
+        Gb.EvLog.display_user_message('iCloud3 is Restarting')
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
         return

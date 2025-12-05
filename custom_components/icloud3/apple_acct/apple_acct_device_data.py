@@ -14,6 +14,7 @@ from ..const            import (AIRPODS_FNAME, NONE_FNAME,
                                 CONF_PASSWORD, CONF_MODEL_DISPLAY_NAME, CONF_RAW_MODEL,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
                                 CONF_FAMSHR_DEVICE_ID, CONF_LOG_LEVEL_DEVICES,
+                                DEVICE_DISPLAY_NAMES_FILTERS
                                 )
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del,
                                 encode_password, decode_password, username_id, )
@@ -262,11 +263,9 @@ class iCloud_AppleAcctDeviceData():
     @property
     def icloud_device_display_name(self):
         display_name = self.device_data['deviceDisplayName']
-        display_name = display_name.replace('generation', 'gen')
-        display_name = display_name.replace('nd gen', '')
-        display_name = display_name.replace('th gen', '')
-        display_name = display_name.replace('Series ', '')
-        display_name = display_name.replace('(', '').replace(')', '')
+        for from_str, to_str in DEVICE_DISPLAY_NAMES_FILTERS.items():
+            display_name = display_name.replace(from_str, to_str)
+
         idx = display_name.find('-inch')
         if idx > 0:
             display_name = display_name[:idx-3] + display_name[idx+5:]

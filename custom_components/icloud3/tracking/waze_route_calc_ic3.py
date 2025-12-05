@@ -24,6 +24,15 @@ import re
 
 from ..utils.messaging  import (_log, log_exception, log_warning_msg, log_error_msg, log_info_msg, )
 
+WAZE_URL_BASE     = 'https://routing-livemap-'
+WAZE_URL_ENDPOINT = '.waze.com/RoutingManager/routingRequest'
+ROUTING_SERVERS = {
+    'us': 'am',
+    'na': 'am',
+    'il': 'il',
+    'eu': 'row',
+    'au': 'row',
+}
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class WRCError(Exception):
     def __init__(self, message):
@@ -36,11 +45,12 @@ class WRCError(Exception):
 class WazeRouteCalculator(object):
     """Calculate actual route time and distance with Waze API"""
 
-    WAZE_URL = "https://www.waze.com/"
+
     HEADERS = {
         "User-Agent": "Mozilla/5.0",
-        "referer": WAZE_URL,
+        "referer": WAZE_URL_BASE,
     }
+
     # VEHICLE_TYPES = ('TAXI', 'MOTORCYCLE')
     # BASE_COORDS = {
     #     'US': {"lat": 40.713, "lon": -74.006},
@@ -56,28 +66,13 @@ class WazeRouteCalculator(object):
     # }
     # COORD_MATCH = re.compile(r'^([-+]?)([\d]{1,2})(((\.)(\d+)(,)))(\s*)(([-+]?)([\d]{1,3})((\.)(\d+))?)$')
 
-    ROUTING_SERVERS = {
-        'US': 'RoutingManager/routingRequest',
-        'IL': 'il-RoutingManager/routingRequest',
-        'ROW': 'row-RoutingManager/routingRequest',
-
-        'us': 'RoutingManager/routingRequest',
-        'il': 'il-RoutingManager/routingRequest',
-        'row': 'row-RoutingManager/routingRequest',
-
-        'EU': 'row-RoutingManager/routingRequest',
-        'AU': 'row-RoutingManager/routingRequest',
-    }
 
 #--------------------------------------------------------------------
     def __init__(self, region, real_time):
         # self.log = logging.getLogger(__name__)
         # self.log.addHandler(logging.NullHandler())
 
-        region = region.upper()
-        if region == 'NA':
-            region = 'US'
-        self.region = region
+        self.region = ROUTING_SERVERS.get(region.lower(), 'row')
 
         self.real_time = real_time
         self.vehicle_type = ''
@@ -90,7 +85,7 @@ class WazeRouteCalculator(object):
     def get_route(self, from_lat, from_long, to_lat, to_long,):
         """Get route data from waze"""
 
-        url = self.WAZE_URL + self.ROUTING_SERVERS[self.region]
+        url = f"{WAZE_URL_BASE}{self.region}{WAZE_URL_ENDPOINT}"
 
         url_options = {
             "from": f"x:{from_long} y:{from_lat}",

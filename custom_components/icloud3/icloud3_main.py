@@ -40,7 +40,7 @@ from .const             import (VERSION, VERSION_BETA, ICLOUD3_VERSION_MSG,
                                 ALERTS_SENSOR_ATTRS
                                 )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
-# from .apple_acct        import apple_acct_support as aas
+from .apple_acct        import apple_acct_support as aas
 from .apple_acct        import icloud_data_handler
 from .apple_acct.internet_error import InternetConnection_ErrorHandler
 from .apple_acct.apple_acct_upw import ValidateAppleAcctUPW
@@ -259,6 +259,7 @@ class iCloud3:
 
         # Restart iCloud via service call from EvLog or config_flow
         if Gb.restart_icloud3_request_flag:
+            post_greenbar_msg(f"Restarting {ICLOUD3_VERSION_MSG}")
             self.start_icloud3()
 
         if Gb.config_parms_update_control != {''}:
@@ -705,6 +706,9 @@ class iCloud3:
 
             if is_empty(Gb.mobapp_notify_devicenames):
                 mobapp_interface._get_mobile_app_notify_devices()
+
+            if isnot_empty(Gb.AppleAcct_error_by_username):
+                aas.retry_apple_acct_login_after_error()
 
         # Every 15-minutes:
         #   - Refresh a device's distance to the other devices

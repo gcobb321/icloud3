@@ -28,18 +28,17 @@
       "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
       "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
       "SK-verification_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
-      "SK-verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
 
       "verification_code_send_error": "Failed to send the Verification Code",
       "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
       "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
       "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
-      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
+      "verification_code_needed": "An Apple Account needs to be Authenticated",
       "verification_code_cancelled": "The Apple Account authentication was cancelled",
 
       "apple_acct_not_logged_into": "The Apple Account is not logged into",
       "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
-      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Code entry screen)",
+      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Apple Acct screen)",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
       "apple_acct_login_error_503": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request",
       "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
@@ -124,26 +123,27 @@
       "apple_acct_dup_username_error": "Error: Username is being used by another Data Source entry",
       "apple_acct_username_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
       "apple_acct_not_available": "❌ Login Failed, Apple Account is not Available",
+      "apple_acct_locked": "❌ Login Failed, Apple Account may be Locked",
       "apple_acct_not_logged_into": "The Apple Account is not logged into",
       "apple_acct_updated_not_logged_into": "Apple Acct info was saved, Login Error, Will Complete Login Later",
       "apple_acct_data_source_warning": "Warning: Apple Accts have been set up but are not used as a data source",
-      "apple_acct_not_set_up": "No Apple Accts are set up. See `Data Sources > Apple Acct & Mobile App` screen",
-      "apple_acct_parm_error": "Apple Account parameter error. Update it on the `Data Sources > Apple Account & Mobile App` screen",
+      "apple_acct_not_set_up": "No Apple Accts are set up. See `Apple Accounts & Mobile App` screen",
+      "apple_acct_parm_error": "Apple Account parameter error. Update it on the `Apple Accounts & Mobile App` screen",
       "apple_acct_no_data_source": "❌ No Data Sources have been selected (Apple Account or Mobile App)",
 
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id and name on the device (Settings > General > About) can not be exactly the same (letters & case)",
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
       "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
       "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
-      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Code entry screen)",
+      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth AQpple Acct screen)",
 
       "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code or Security Key",
       "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
       "SK-verification_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
       "SK-verification_code_send_error": "❌ Failed to send the Code/Security Key",
+
       "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_needed": "The Apple Account needs to be authenticated with a Verification Code",
+      "verification_code_needed": "An Apple Account needs to be Authenticated",
       "verification_code_cancelled": "The Apple Account authentication was cancelled",
       "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
       "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
@@ -172,7 +172,7 @@
       "review_filledin_fields": "Review the 'Filled in' fields",
       "not_numeric": "❌ The value entered is not numeric",
       "no_data_source": "A device providing location data must be selected from the Apple Acct or Mobile App devices list",
-      "no_data_source_set_inactive": "Set the  Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
+      "no_data_source_set_inactive": "Set the Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
       "no_add_entities_device_tracker_fct": "The HA component for adding devices is not available. HA MUST BE RESTARTED",
 
       "unknown_value": "One of the selection parameters needs to be reviewed",
@@ -287,7 +287,7 @@
 
       "data_source": {
         "title": "Apple Account & Mobile App - Data Source",
-        "description": "The data sources provide location and other information iCloud3 uses to track the iDevice.",
+        "description": "The Apple Acct and Mobile App provide location and other information iCloud3 uses to track the iDevice.",
         "data": {
           "data_source": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DATA SOURCE",
           "data_source_mobapp": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MOBILE APP INTEGRATION",
@@ -312,15 +312,15 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-          "locate_all": "ENABLED→Locate the Owner's & other Family members devices in the Apple Acct. DISABLED→Locate the Owner's devices. Do not locate other Family members devices."
+          "locate_all": "ENABLED →Locate the Owner's & other Family members devices in the Apple Acct DISABLED→Locate the Owner's devices. Do not locate other Family members devices"
         }
       },
 
       "data_source_parameters": {
-        "title": "Update Data Source Parameters",
+        "title": "Apple Account Parameters",
         "data": {
           "password_srp_enabled": "PASSWORD SRP PROTOCOL - Use the PasswordSRP protocol to verify the Apple Account Password when logging in.",
-          "apple_server_location_needed": "APPLE SERVER LOCATION - Always display Apple Server Location Selection field on Apple Acct Username/Password screen (China, Hong Kong)",
+          "apple_server_location_needed": "APPLE SERVER LOCATION (CHINA) - Always display Apple Server Location Selection field on `Apple Acct Username/Password` screen (China, Hong Kong)",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {

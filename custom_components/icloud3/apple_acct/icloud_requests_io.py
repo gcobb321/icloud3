@@ -294,7 +294,7 @@ async def async_httpx_request(url, **kwargs): #headers=None):
     return data
 
 #--------------------------------------------------------------------
-def httpx_request(url, headers=None):
+def httpx_request(url, headers=None, **kwargs):
     '''
     Set up and request data from a url using the httpx requests process.
 
@@ -318,7 +318,7 @@ def httpx_request(url, headers=None):
                 httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
 
             else:
-                httpx = create_async_httpx_client(headers=headers)
+                httpx = create_async_httpx_client(headers=headers, **kwargs)
 
             response = httpx.get(url)
 

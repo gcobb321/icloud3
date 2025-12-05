@@ -73,7 +73,8 @@ from ..utils.messaging      import (broadcast_info_msg,
                                     internal_error_msg2,
                                     _evlog, _log, more_info, format_header_box,)
 from ..utils.dist_util      import (format_dist_km, m_to_um, )
-from ..utils.time_util      import (time_now_secs, mins_since, format_timer, format_time_age, format_age, )
+from ..utils.time_util      import (time_now_secs, mins_since, format_timer, format_time_age,
+                                    secs_to_hhmm, secs_to_time, )
 from ..utils.file_io        import (directory_exists, make_directory,  copy_file,
                                     get_filename_list, get_directory_filename_list,)
 
@@ -145,6 +146,8 @@ def handle_config_parms_update():
                 f"Type-{list_to_str(config_parms_update_control).title()}")
 
     if 'restart' in config_parms_update_control:
+        post_greenbar_msg(f"Restarting {ICLOUD3_VERSION_MSG}")
+        Gb.EvLog.display_user_message('iCloud3 is Restarting')
         post_event(f"{EVLOG_IC3_STARTING}Restart Requested > {ICLOUD3_VERSION_MSG}")
         initialize_data_source_variables()
         Gb.restart_icloud3_request_flag = True
@@ -333,7 +336,7 @@ def initialize_global_variables():
     Gb.gps_accuracy_threshold       = DEFAULT_GENERAL_CONF[CONF_GPS_ACCURACY_THRESHOLD]
     Gb.old_location_threshold       = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_THRESHOLD] * 60
     Gb.old_location_adjustment      = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_ADJUSTMENT] * 60
-    Gb.password_srp_enabled         = DEFAULT_TRACKING_CONF[CONF_PASSWORD_SRP_ENABLED]
+    # Gb.password_srp_enabled         = DEFAULT_TRACKING_CONF[CONF_PASSWORD_SRP_ENABLED]
 
     Gb.tfz_tracking_max_distance    = DEFAULT_GENERAL_CONF[CONF_TFZ_TRACKING_MAX_DISTANCE]
 
@@ -1349,7 +1352,7 @@ def log_into_apple_accounts():
         conf_apple_acct, _idx = config_file.conf_apple_acct(username)
         password = Gb.AppleAcct_password_by_username[username]
         apple_server_location = conf_apple_acct[CONF_SERVER_LOCATION]
-        locate_all_devices = conf_apple_acct[CONF_LOCATE_ALL]
+        locate_all_devices    = conf_apple_acct[CONF_LOCATE_ALL]
 
         AppleAcct = Gb.AppleAcct_by_username.get(username)
         if Gb.valid_upw_by_username.get(username) is False:
@@ -1374,21 +1377,17 @@ def log_into_apple_accounts():
                     results_msg += (f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, "
                                     f"Login Successful, {AppleAcct.auth_method}")
             else:
-                results_msg += (f"{RED_X}{username_id(username)}, Login Failed, "
+                results_msg += (f"{CRLF_RED_X}{username_id(username)}, Login Failed, "
                                 f"Server Loc-{apple_server_location}")
                 alert_msg = EVLOG_ALERT
                 update_alert_sensor(username_id(username), "Apple Acct Login Failed")
-
-            if AppleAcct:
-                Gb.AppleAcct_by_username[username] = AppleAcct
 
         else:
             results_msg += f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, Already logged in"
 
     post_event(f"{alert_msg}Apple Acct > Log in and Authenticate{results_msg}")
 
-    Gb.startup_lists['Gb.aalogin_error_secs_by_username']   = Gb.aalogin_error_secs_by_username
-    Gb.startup_lists['Gb.aalogin_error_reason_by_username'] = Gb.aalogin_error_reason_by_username
+    Gb.startup_lists['Gb.AppleAcct_error_by_username'] = Gb.AppleAcct_error_by_username
 
     # Tell HA to generate reauth needed notification that will be handled
     # handled in config_flow
@@ -1476,11 +1475,17 @@ def setup_data_source_ICLOUD(retry=False):
 
     for username, AppleAcct in Gb.AppleAcct_by_username.items():
         if AppleAcct.login_failed:
-            post_alert( f"Apple Acct > {username_id(username)}, Login Failed, "
-                        f"{Gb.aalogin_error_reason_by_username.get(username,'Devices not Available')}")
+            if username in Gb.AppleAcct_error_by_username:
+                reason = f"{AppleAcct.error_reason}"
+                if AppleAcct.error_next_retry_secs > 0:
+                    reason += f", Retry at {secs_to_hhmm(AppleAcct.error_next_retry_secs)}"
+            else:
+                reason =  'Devices not Available'
+            post_alert( f"Apple Acct > {username_id(username)}, "
+                        f"Login Failed, {reason}")
             update_alert_sensor(username_id(username),
-                        f"Apple Acct Login Failed, "
-                        f"{Gb.aalogin_error_reason_by_username.get(username,'Devices not Available')}")
+                        f"Apple Login Failed, {reason}")
+
             continue
 
         if is_empty(AppleAcct.AADevData_by_device_id):
@@ -1493,7 +1498,6 @@ def setup_data_source_ICLOUD(retry=False):
     # Now that all devices are set up, cycle through them again and display the
     # final results in the EvLog
     for username, AppleAcct in Gb.AppleAcct_by_username.items():
-        # if username in Gb.aalogin_error_secs_by_username:
         if AppleAcct.login_failed:
             continue
 
@@ -1757,7 +1761,7 @@ def _set_any_Device_alerts():
         if (Device.conf_apple_acct_username == ''
                 or Device.conf_icloud_dname == ''
                 or Device.verified_flag is False
-                or Device.conf_apple_acct_username in Gb.aalogin_error_secs_by_username):
+                or Device.conf_apple_acct_username in Gb.AppleAcct_error_by_username):
             continue
 
         if Device.conf_apple_acct_username not in Gb.AppleAcct_by_username:
@@ -1770,7 +1774,6 @@ def _set_any_Device_alerts():
                     f"Apple Acct Login Problem ({Device.conf_apple_acct_username_id})"))
 
         # Device's Apple acct ok but device not in Apple acct
-        # elif Device.AppleAcct is None and Device.conf_icloud_dname:
         elif (Device.AppleAcct
                 and Device.AppleAcct.device_id_by_icloud_dname.get(Device.conf_icloud_dname) is None):
             Device.set_fname_alert(YELLOW_ALERT)
@@ -2628,7 +2631,6 @@ def setup_trackable_devices():
         # Get Apple acct owner from AppleAcct
         if username in Gb.AppleAcct_by_username:
             _AppleAcct = Gb.AppleAcct_by_username[username]
-
             if _AppleAcct.login_failed:
                 pass
             elif (icloud_dname not in _AppleAcct.device_id_by_icloud_dname
@@ -2691,7 +2693,7 @@ def display_all_devices_config_info(selected_devicenames=None):
         apple_acct_err_msg = icloud_dname_err_msg = ''
 
         # Get Apple acct owner from AppleAcct
-        if username in Gb.aalogin_error_secs_by_username:
+        if username in Gb.AppleAcct_error_by_username:
             pass
         elif (Device.conf_apple_acct_username in Gb.AppleAcct_by_username
                 and Device.verified_ICLOUD is False):

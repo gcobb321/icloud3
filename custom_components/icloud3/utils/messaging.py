@@ -98,7 +98,7 @@ FILTER_FIELDS = [
         'identifiers', 'labels', 'model', 'name_by_user', 'area_id', 'manufacturer', 'sw_version',
         'keyNames', 'securityCode', 'trustedPhoneNumbers', 'trustedPhoneNumber',
         'authenticationType',
-        'username', 'password', 'accountName', 'salt', 'protocols', 'iteration',
+        'username', 'password', 'accountName', 'salt', 'protocols', 'protocol', 'iteration',
         'a', 'A', 'b', 'B', 'c', 'm1', 'M1', 'm2', 'M2', 'g', 'K', 'N', 'u', 'v',
         ]
 FILTER_OUT = [
@@ -303,7 +303,7 @@ def clear_greenbar_msg():
     Gb.EvLog.display_user_message(Gb.EvLog.user_message)
 
 #-------------------------------------------------------------------------------------------
-def update_alert_sensor(type=None, alert_msg=None, update_sensor=False, replace_alert_msg=False):
+def update_alert_sensor(type_or_key=None, alert_msg=None, update_sensor=False, replace_alert_msg=False):
     '''
     Update the Gb.alerts_sensor_attrs dictionary
     Critical alerts (ALERT_CRITICAL) will replace any previous critical alerts instead of appending it
@@ -311,12 +311,12 @@ def update_alert_sensor(type=None, alert_msg=None, update_sensor=False, replace_
     Type: Attribute to add or update
     '''
 
-    if type is None and alert_msg is None:
+    if type_or_key is None and alert_msg is None:
         Gb.AlertsSensor.async_update_sensor()
         return
 
-    if type is None:
-        type = ALERT_OTHER
+    if type_or_key is None:
+        type_or_key = ALERT_OTHER
 
     update_sensor = False
 
@@ -326,16 +326,14 @@ def update_alert_sensor(type=None, alert_msg=None, update_sensor=False, replace_
         update_sensor = True
 
     # Not critical alert - Only keep first alert for acct or device
-    elif (type != ALERT_CRITICAL
-            and type in Gb.alerts_sensor_attrs):
+    elif (type_or_key != ALERT_CRITICAL
+            and type_or_key in Gb.alerts_sensor_attrs
+            and replace_alert_msg is False):
         return
 
     # Add the alert
     else:
-        if type in Gb.alerts_sensor_attrs:
-            alert_msg = f"{Gb.alerts_sensor_attrs[type]}; {alert_msg}"
-        else:
-            Gb.alerts_sensor_attrs[type] = alert_msg
+        Gb.alerts_sensor_attrs[type_or_key] = alert_msg
 
         if Gb.start_icloud3_inprocess_flag is False or update_sensor:
             update_sensor = True
@@ -347,7 +345,6 @@ def update_alert_sensor(type=None, alert_msg=None, update_sensor=False, replace_
         new_alerts_sensor_attrs.update(
             {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
                             if _source == ALERT_CRITICAL})
-
 
         # Apple Acct alerts (-source will be the filter value, change it back to the real value)
         new_alerts_sensor_attrs.update(
@@ -427,27 +424,31 @@ def open_ic3log_file(new_log_file=False):
     # if is_empty(Gb.conf_general):
     #     return
 
-    ic3logger_file = Gb.hass.config.path(IC3LOG_FILENAME)
-    filemode = 'w' if new_log_file else 'a'
+    try:
+        ic3logger_file = Gb.hass.config.path(IC3LOG_FILENAME)
+        filemode = 'w' if new_log_file else 'a'
 
-    if Gb.iC3Logger is None or new_log_file:
-        Gb.iC3Logger = logging.getLogger(DOMAIN)
-        Gb.iC3Logger.setLevel(logging.INFO)
+        if Gb.iC3Logger is None or new_log_file:
+            Gb.iC3Logger = logging.getLogger(DOMAIN)
+            Gb.iC3Logger.setLevel(logging.INFO)
 
-        handler   = logging.FileHandler(ic3logger_file, mode=filemode, encoding='utf-8')
-        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='%m-%d %H:%M:%S')
-        handler.setFormatter(formatter)
-        handler.addFilter(LoggerFilter)
+            handler   = logging.FileHandler(ic3logger_file, mode=filemode, encoding='utf-8')
+            formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            handler.addFilter(LoggerFilter)
 
-        Gb.iC3Logger.addHandler(handler)
+            Gb.iC3Logger.addHandler(handler)
 
-    if isnot_empty(Gb.conf_general):
-        Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
+        if isnot_empty(Gb.conf_general):
+            Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
 
-    if is_empty(Gb.conf_general):
-        write_ic3log_recd(f"Loading {ICLOUD3_VERSION_MSG}")
+        if is_empty(Gb.conf_general):
+            write_ic3log_recd(f"Loading {ICLOUD3_VERSION_MSG}")
 
-    write_ic3log_recd(f"Open iCloud3 Log File ({IC3LOG_FILENAME})")
+        write_ic3log_recd(f"Open iCloud3 Log File ({IC3LOG_FILENAME})")
+
+    except Exception as err:
+        log_exception(err)
 
 #--------------------------------------------------------------------
 def close_ic3log_file():
@@ -678,6 +679,14 @@ def log_start_finish_update_banner(start_finish, devicename,
     log_msg = format_header_box(text, start_finish=start_finish)
 
     log_info_msg(log_msg)
+
+#--------------------------------------------------------------------
+def log_banner(start_finish, msg):
+
+    sf_char =   '🔻' if start_finish == 'start' else \
+                '🔺' if start_finish == 'finish' else \
+                '🔶'
+    log_info_msg(f"{NL3}{sf_char}{'═'*40}{sf_char}  {msg.upper()}  {sf_char}{'═'*40}{sf_char}")
 
 #--------------------------------------------------------------------
 def log_stack(hdr_msg=None, return_function=False, return_cnt=0):

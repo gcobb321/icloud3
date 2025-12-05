@@ -132,22 +132,25 @@ class GlobalVariables(object):
     AppleAcct_needing_reauth_via_ha = {} # Reauth needed sent to ha for notify msg display
     ValidateAppleAcctUPW = None    # A session that can be used to verify the username/password
 
-    AppleAcct_by_username             = {}
-    AppleAcct_by_devicename           = {}  # AppleAcct object for each ic3 devicename
+    # AppleAcct objects by various categories
     AppleAcct_by_username             = {}  # AppleAcct object for each Apple acct username
     AppleAcct_password_by_username    = {}  # Password for each Apple acct username
     AppleAcct_logging_in_usernames    = []  # usernames that are currently logging in. Used to prevent another login
+    AppleAcct_error_by_username       = {}  # An error was encountered during verification, login or authentication
+    iCloudSession_by_username         = {}  # Session object for a username, set in Session so exists on an error
 
-    iCloudSession_by_username  = {}  # Session object for a username, set in Session so exists on an error
-    valid_upw_by_username      = {}  # The username/password validation status
-    valid_upw_results_msg      = ''  # valid upw results from Stage 3 to redisplay in Stage 4
-    server_err_503_usernames   = []
-    aalogin_error_secs_by_username   = {} # Time a server err 503 wa detected
-    aalogin_error_reason_by_username = {}
+    valid_upw_by_username             = {}  # The username/password validation status
+    valid_upw_results_msg             = ''  # valid upw results from Stage 3 to redisplay in Stage 4
 
-    upw_filter_items           = {}    # username/passwords to be filtered from the EvLog and log file
-    upw_unfilter_items         = {}    # username/passwords that are filtered that need to be unfiltered (icloud3_alerts items)
-    upw_hide_items             = []    # username/passwords that should be hidded instead of filtered
+    conf_usernames                    = []  # List of Apple Acct usernames in config
+    AppleAcct_by_devicename           = {}  # AppleAcct object for each ic3 devicename
+    Devices_by_username               = {}  # List of Devices for each username ('gary@email.com': [gary_iphone, lillian_iphone])
+    owner_device_ids_by_username      = {}  # List of owner info for Devices in Apple Acct
+    owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
+
+    upw_filter_items                  = {}    # username/pws to be filtered from the EvLog and log file
+    upw_unfilter_items                = {}    # username/pws that are filtered that need to be unfiltered (icloud3_alerts items)
+    upw_hide_items                    = []    # username/passwords that should be hidded instead of filtered
 
     usernames_setup_error_retry_list  = []  # usernames that failed to set up in Stage 4 and need to be retried
     devicenames_setup_error_retry_list= []  # devices that failed to set up in Stage 4 and need to be retried
@@ -199,12 +202,6 @@ class GlobalVariables(object):
     Devices_by_mobapp_dname           = {}  # All verified Devices by the  conf_mobapp_dname
     Devices_by_nearby_group           = {}  # Devvic by group within  50mm of each other
     inactive_fname_by_devicename      = {}  # Devices with tracking_mode=inactive
-
-    # AppleAcct objects by various categories
-    conf_usernames                    = set()  # List of Apple Acct usernames in config
-    Devices_by_username               = {}  # A list of Devices for each Apple Acct username ('gary@email.com': [gary_iphone, lillian_iphone])
-    owner_device_ids_by_username      = {}  # List of owner info for Devices in Apple Acct
-    owner_Devices_by_username         = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
 
     InternetPingIP                    = None    # Internet Connection Test Availabile Handler
     InternetError                     = None    # Internet Connection Error Handler
@@ -293,7 +290,7 @@ class GlobalVariables(object):
 
     # iCloud3 Alerts Sensor
     AlertsSensor                    = None   # icloud3_alerts Sensor
-    alerts_sensor           = 'none' # Alerts sensor State value (last alert encountered)
+    alerts_sensor                   = 'none' # Alerts sensor State value (last alert encountered)
     alerts_sensor_attrs             = {}     # Alerts Attributes by alert type
 
     # System Wide variables control iCloud3 start/restart procedures
@@ -419,7 +416,7 @@ class GlobalVariables(object):
     travel_time_factor              = DEFAULT_GENERAL_CONF[CONF_TRAVEL_TIME_FACTOR]
     log_level                       = DEFAULT_GENERAL_CONF[CONF_LOG_LEVEL]
     log_level_devices               = DEFAULT_GENERAL_CONF[CONF_LOG_LEVEL_DEVICES]
-    password_srp_enabled            = DEFAULT_TRACKING_CONF[CONF_PASSWORD_SRP_ENABLED]
+    # password_srp_enabled            = DEFAULT_TRACKING_CONF[CONF_PASSWORD_SRP_ENABLED]
 
     device_tracker_state_source     = DEFAULT_GENERAL_CONF[CONF_DEVICE_TRACKER_STATE_SOURCE]
     display_gps_lat_long_flag       = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]

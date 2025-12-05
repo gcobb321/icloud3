@@ -19,7 +19,7 @@ from .apple_acct        import (AppleAcctManager,
 
 # from ..startup          import start_ic3_control
 from ..utils.messaging  import (post_event, post_alert, post_alert, post_error_msg, post_monitor_msg,
-                                post_greenbar_msg, update_alert_sensor,
+                                post_greenbar_msg, update_alert_sensor, log_banner,
                                 log_debug_msg, log_info_msg, log_exception, log_error_msg, log_warning_msg,
                                 internal_error_msg2, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_age, secs_to_hhmm,
@@ -38,6 +38,36 @@ from re import match
 #   APPLE ACCT INTERFACE FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def retry_apple_acct_login_after_error():
+    '''
+    Retry logging into and authenticating the Apple account if an error was encountered when
+    starting iCloud3. This will retry the 503 error authenticating the acct via PasswordSRP
+
+    This is checked every 5-mins in the icloud3_main._main_5sec_loop_special_time_control function
+    '''
+    for username, AppleAcct in Gb.AppleAcct_error_by_username.items():
+        if (AppleAcct.error_next_retry_secs == 0
+                or AppleAcct.error_next_retry_secs > time_now_secs()):
+            continue
+
+        AppleAcct.authenticate_and_refresh_data()
+        if AppleAcct.login_successful:
+            AppleAcct.setup_error(None)
+        else:
+            AppleAcct.error_retry_cnt += 1
+            if AppleAcct.error_retry_cnt < 6:
+                AppleAcct.error_next_retry_secs += AppleAcct.error_retry_cnt * 600
+            else:
+                AppleAcct.error_next_retry_secs += 3600
+
+            post_alert( f"Apple Acct > {AppleAcct.username_base}, "
+                        f"Retry Login (#{AppleAcct.error_retry_cnt}) "
+                        f"at {secs_to_hhmm(AppleAcct.error_next_retry_secs)}")
+            alert_msg =(f"Apple Login Failed, {AppleAcct.error_reason}, "
+                        f"Retry at {secs_to_hhmm(AppleAcct.error_next_retry_secs)}")
+            update_alert_sensor(AppleAcct.username_id, alert_msg, replace_alert_msg=True)
+
+
 def log_into_apple_account(username, password, apple_server_location, locate_all_devices=None):
     '''
     Log in and Authenticate the Apple Account via pyicloud
@@ -85,7 +115,8 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
 
         # Setup iCloud
         elif (AppleAcct and AppleAcct.is_AADevices_setup_complete):
-            create_AppleAcct_AADevices(AppleAcct)
+            AppleAcct.create_AADevices_object()
+            setup_status_msg(AppleAcct, "2, Create AADevices")
 
         # Setup AppleAcct and iCloud
         else:
@@ -96,8 +127,6 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
 
         verify_icloud_device_info_received(AppleAcct)
         is_authentication_2fa_code_needed(AppleAcct, initial_setup=True)
-
-        Gb.AppleAcct_by_username[username] = AppleAcct
 
         return AppleAcct
 
@@ -114,20 +143,19 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
         AppleAcct = Gb.AppleAcctLoggingInto
         login_err = str(err)
         login_err + ", Will retry logging into the Apple Account later"
-        # Gb.username = Gb.username_base = Gb.password = ''
 
     except Exception as err:
         AppleAcct = Gb.AppleAcctLoggingInto
         login_err = str(err)
         log_exception(err)
 
-
-    list_add(Gb.usernames_setup_error_retry_list, username)
+    if username in Gb.AppleAcct_error_by_username:
+        reason = f"{AppleAcct.error_reason} ({AppleAcct.error_codes})"
+    else:
+        reason = 'Unknown'
 
     post_error_msg( f"{EVLOG_ALERT}{login_err}")
-    update_alert_sensor(username_id(username), (
-                                f"Apple Acct Login Failed, "
-                                f"{Gb.aalogin_error_reason_by_username.get(username, 'Unknown')}"))
+    update_alert_sensor(username_id(username), f"Apple Acct Login Failed, {reason}")
 
     return AppleAcct
 
@@ -141,27 +169,10 @@ def refresh_AppleAcct_AADdevices_data(AppleAcct):
     setup_status_msg(AppleAcct, "1, Refresh iCloud Devices")
 
 #....................................................................
-def create_AppleAcct_AADevices(AppleAcct):
-    '''
-    The AppleAcct Apple acct object exists but the devices do not. Create them.
-    '''
-    try:
-        AppleAcct.create_AADevices_object()
-
-        Gb.AppleAcct_by_username[AppleAcct.username] = AppleAcct
-
-    except Exception as err:
-        log_exception(err)
-
-    setup_status_msg(AppleAcct, "2, Create AADevices")
-
-#....................................................................
 def create_AppleAcct(username, password, apple_server_location, locate_all_devices):
     try:
         AppleAcct = Gb.AppleAcct_by_username.get(username)
         if AppleAcct is None:
-            # log_info_msg(f"{NL3}🔻{'—'*20} {username_id(username).upper()} {'—'*5} SETUP APPLE ACCOUNT {'—'*20}🔻")
-            log_info_msg(f"{NL3}🔻{'═'*40} {username_id(username).upper()} {'═'*40}🔻")
             AppleAcct = AppleAcctManager(
                                 username,
                                 password,
@@ -169,30 +180,6 @@ def create_AppleAcct(username, password, apple_server_location, locate_all_devic
                                 locate_all_devices=locate_all_devices,
                                 cookie_directory=Gb.icloud_cookie_directory,
                                 session_directory=Gb.icloud_session_directory)
-
-            log_info_msg(f'{AppleAcct=} {AppleAcct.apple_id=}')
-            log_info_msg(f"{NL3}🔺{'═'*40} {username_id(username).upper()} {'═'*40}🔺")
-
-            # log_info_msg(f"{NL3}🔻{'—'*20}🔻  {username.upper()} SETUP APPLE ACCOUNT  🔻{'—'*20}🔻")
-            # PyAppleAcct = PyiCloudService(
-            #                     username,
-            #                     password,
-            #                     cookie_directory=Gb.icloud_cookie_directory,
-            #                     with_family=locate_all_devices,
-            #                     china_mainland=False,)
-            #                     # apple_server_location=apple_server_location,
-            #                     # locate_all_devices=locate_all_devices,
-            #                     # session_directory=Gb.icloud_session_directory)
-
-            # log_info_msg(f'{PyAppleAcct=} {PyAppleAcct._apple_id=}')
-            # log_info_msg(f'{PyAppleAcct.devices=}')
-            # log_info_msg(f"{NL3}🔺{'—'*20}🔺  {username.upper()} SETUP APPLE ACCOUNT  🔺{'—'*20}🔺")
-
-
-        # Stage 4 checks to see if AppleAcct exists and it has AADevData device info. These values exists
-        # if the __init__ login was completed. However, if it was not completed and they do not exist,
-        # Stage 4 will do another login and set these values when it finishes, which is before the
-        # __init__ is complete. Do not set them again when __init__ login finially completes.
 
     except Exception as err:
         log_exception(err)
@@ -379,7 +366,7 @@ def new_2fa_authentication_code_requested(AppleAcct, initial_setup=False):
         return True
 
 #--------------------------------------------------------------------
-def reset_AppleAcct_variables():
+def reset_AppleAcct_Gb_variables():
     '''
     Delete all Apple account objects and clear all dictionaries
     so new AppleAcct objects will be set up again on a restart
@@ -388,26 +375,54 @@ def reset_AppleAcct_variables():
 
     Gb.AppleAcct             = None
     Gb.AppleAcctLoggingInto  = None
-    # Gb.ValidateAppleAcctUPW  = None
     Gb.valid_upw_results_msg = ''
 
-    for iCloudSession in Gb.iCloudSession_by_username.values():
-        del(iCloudSession)
-
     for AppleAcct in Gb.AppleAcct_by_username.values():
+        del AppleAcct.iCloudSession
         del(AppleAcct)
 
-    Gb.iCloudSession_by_username       = {}
-    Gb.AppleAcct_by_username           = {}
+    Gb.AppleAcct_by_username          = {}
+    Gb.AppleAcct_by_devicename        = {}
+    Gb.AppleAcct_password_by_username = {}
+    Gb.AppleAcct_error_by_username    = {}
+    Gb.iCloudSession_by_username      = {}
+    Gb.valid_upw_results_msg          = ''
+    Gb.Devices_by_username            = {}
+    Gb.owner_device_ids_by_username   = {}
+    Gb.owner_Devices_by_username      = {}
     Gb.AppleAcct_needing_reauth_via_ha = {}
-    Gb.AppleAcct_by_devicename         = {}
-    Gb.AppleAcct_by_username           = {}
-    Gb.AppleAcct_password_by_username  = {}
-    Gb.AppleAcct_logging_in_usernames  = []
 
-    Gb.valid_upw_by_username      = {}
-    Gb.server_err_503_usernames        = []
-    Gb.aalogin_error_secs_by_username  = {}
-    Gb.aalogin_error_reason_by_username = {}
+    Gb.AppleAcct_logging_in_usernames = []
+    Gb.conf_usernames                 = set()
 
     config_file.decode_all_passwords()
+
+#--------------------------------------------------------------------
+def delete_AppleAcct_Gb_variables_username(username):
+    '''
+    Delete all Apple account objects and clear all dictionaries
+    so new AppleAcct objects will be set up again on a restart
+    '''
+    log_info_msg("Resetting Apple Acct objects and variables")
+
+    AppleAcct = Gb.AppleAcct_by_username.pop(username, None)
+    if AppleAcct:
+        del AppleAcct.iCloudSession
+        del AppleAcct
+
+    _ = Gb.AppleAcct_by_devicename.pop(username, None)
+    _ = Gb.AppleAcct_password_by_username.pop(username, None)
+    _ = Gb.AppleAcct_error_by_username.pop(username, None)
+    _ = Gb.iCloudSession_by_username.pop(username, None)
+    _ = Gb.Devices_by_username.pop(username, None)
+    _ = Gb.owner_device_ids_by_username.pop(username, None)
+    _ = Gb.owner_Devices_by_username.pop(username, None)
+    _ = Gb.AppleAcct_needing_reauth_via_ha.pop(username, None)
+
+    list_del(Gb.AppleAcct_logging_in_usernames, username)
+    list_del(Gb.conf_usernames, username)
+
+    config_file.decode_all_passwords()
+
+    if Gb.AppleAcct_needing_reauth_via_ha.get(CONF_USERNAME) == username:
+        Gb.AppleAcct_needing_reauth_via_ha = {}

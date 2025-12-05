@@ -204,6 +204,25 @@ def secs_to_days(secs, days_text):
         return f"{days:.0f}{days_text}"
 
 #--------------------------------------------------------------------
+def next_min_mark_secs(mark_mins, plus_mins=0):
+    '''
+    now to next mins mark in secs 
+        10:23:23 --> 10:23:25 (5)
+        10:23:23 --> 10:23:35 (5, 10)
+        10:23:23 --> 10:23:30 (10)
+        10:23:23 --> 10:23:40 (10, 10)
+    '''
+
+    now_secs  = time_now_secs()
+    mark_secs = mark_mins * 60
+
+    secs_since_last_mins_mark = now_secs % mark_secs
+    secs_to_next_mins_mark    = mark_secs - secs_since_last_mins_mark
+    next_mark_secs            = now_secs + secs_to_next_mins_mark + (plus_mins * 60)
+
+    return next_mark_secs
+
+#--------------------------------------------------------------------
 def time_to_12hrtime(hhmmss, ampm=True):
     ''' 10:23:45 --> (h)h:mm:ssa or (h)h:mm:ssp '''
 

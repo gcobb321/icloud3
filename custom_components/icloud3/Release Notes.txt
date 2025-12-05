@@ -15,14 +15,32 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-### iCloud3 ➤ v3.3.3 (11/22/2025)
+## 🍎 iCloud3 v3.3.4 ()
+### APPLE ACCOUNTS
+- Errors occurring when validating a username/password or authenticating Apple account have been enhanced to provide more information.
+- Updated the PasswordSRP Authentication method to display more information messages if an error occurred.
+- Updated the PasswordSRP Authentication method to try to detecd accounts that could not be verified and needing a password change.
+- Enhanced the internal procedures for adding a new Apple account, relogging into an existing account and authenticating it.
+-
+### OTHER
+- Updated the Waze Route Time/Distance process to use Google's new data request URLs.
+
+### 🐞 Bug Fixes
+- If adding an Apple account on the _Update Apple Account screen_ was unsuccessful, an error would occur rebuilding the Apple accounts list.
+- If the username or password did not change and the Apple account was not logged into, nothing would happen when trying to log in again. Now, the login will be retried.
+- If a login was successful, the _NOT LOGGED INTO_ error message was not cleared on a successful login.
+
+
+
+
+## 🍎 iCloud3 v3.3.3 (11/22/2025)
 ### Account Reauthentication
-- Fixed a 'DATA_SOURCE not available error' when reauthenticating the Apple account.
+- Fixed a `Config flow could not be loaded: 500 Internal Server Error Server got itself in trouble` error when trying to reauthenticate the Apple account after selecting the Orange Reauthentication button on _Devices & settings > iCloud3_. It did not occur when selecting the _Authenticate Apple Account Sign-In_ screen.
+### Startup
 - The results of the Internet Connection Test done during Startup, Stage 2 are now displayed in the Event Log and icloud3.log file.
 
 
-### iCloud3 ➤ v3.3.2 (11/21/2025)
-### 🚩 Updates to iCloud3 v3.3.x
+## 🍎 iCloud3 v3.3.2 (11/21/2025)
 ### Apple account Error 503/Password SRP handling
 - Fixed several issues in the PasswordSRP handler dealing with verifying the password. This was creating the Server Not Available 503 error resulting in password authentication failures and login delays.
 ### Update Apple Account screen

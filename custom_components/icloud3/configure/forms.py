@@ -305,10 +305,10 @@ def form_data_source_parameters(self):
     self.actions_list = ACTION_LIST_ITEMS_BASE.copy()
 
     return vol.Schema({
-        vol.Required(CONF_PASSWORD_SRP_ENABLED,
-                    default=Gb.conf_tracking[CONF_PASSWORD_SRP_ENABLED]):
-                    # cv.boolean,
-                    selector.BooleanSelector(),
+        # vol.Required(CONF_PASSWORD_SRP_ENABLED,
+        #             default=Gb.conf_tracking[CONF_PASSWORD_SRP_ENABLED]):
+        #             # cv.boolean,
+        #             selector.BooleanSelector(),
         vol.Required(CONF_SERVER_LOCATION_NEEDED,
                     default=Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED]):
                     # cv.boolean,
@@ -325,7 +325,15 @@ def form_data_source_parameters(self):
 #            APPLE USERNAME PASSWORD
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_update_apple_acct(self):
-    self.actions_list = USERNAME_PASSWORD_ACTIONS.copy()
+    lists.build_apple_accounts_list(self)
+
+    retry_login_AA = [AA for AA in Gb.AppleAcct_error_by_username.values() if AA.error_next_retry_secs > 0]
+    if isnot_empty(retry_login_AA):
+        self.actions_list = [ACTION_LIST_OPTIONS['stop_login_retry']]
+    else:
+        self.actions_list = []
+    self.actions_list.extend(USERNAME_PASSWORD_ACTIONS)
+
     if Gb.internet_error:
         action_default = 'cancel_goto_previous'
     else:
@@ -361,13 +369,16 @@ def form_update_apple_acct(self):
         elif instr(apple_acct_info, 'terms of use'):
             self.errors[CONF_USERNAME] = 'apple_acct_terms_of_use_update_needed'
         self.errors.pop('account_selected', None)
-        self.header_nsg = ''
+        self.header_msg = ''
 
-    if self.add_apple_acct_flag:
+    if self.add_apple_acct_flag or username.strip() == '':
         acct_info = '➤ ADD A NEW APPLE ACCOUNT'
+    elif username not in self.apple_acct_items_by_username:
+        acct_info = self.apple_acct_items_by_username[username] = f"Setting up {username}"
     else:
+        _, _, untracked_cnt, untracked_devices = lists.tracked_untracked_form_msg(username)
         acct_info =(f"{self.apple_acct_items_by_username[username]}, "
-                    f"{lists.tracked_untracked_form_msg(username)[1]}")
+                    f"Untracked-({untracked_devices})")
 
     schema = ({
         vol.Optional('account_selected',
@@ -418,8 +429,8 @@ def form_delete_apple_acct(self):
         default_device_action = 'delete_devices'
     else:
         default_device_action = 'reassign_devices'
-
-    acct_info = f"{apple_acct_info}, {lists.tracked_untracked_form_msg(username)[1]}"
+    _, _, untracked_cnt, untracked_devices = lists.tracked_untracked_form_msg(username)
+    acct_info = f"{apple_acct_info}, Untracked-({untracked_devices})"
 
     return vol.Schema({
         vol.Optional('account_selected',
@@ -443,135 +454,135 @@ def form_delete_apple_acct(self):
 #            REAUTH
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_reauth(self, reauth_username=None):
+    lists.build_apple_accounts_list(self)
 
-    try:
-        # Display `Terms of Use` if any Apple account needs to be accepted
-        terms_of_use_update_needed = False
-        auth_2fa_code_needed       = False
-        request_2fa_code_needed    = False
-        for AppleAcct in Gb.AppleAcct_by_username.values():
-            if AppleAcct.terms_of_use_update_needed:
-                terms_of_use_update_needed = True
-            else:
-                if AppleAcct.auth_2fa_code_needed or AppleAcct.username == reauth_username:
-                    auth_2fa_code_needed = True
-                if AppleAcct.is_challenge_required:
-                    request_2fa_code_needed = True
-
-        self.actions_list = []
-        if terms_of_use_update_needed:
-            self.actions_list.append(ACTION_LIST_OPTIONS['accept_terms_of_use'])
-        self.actions_list.extend(REAUTH_ACTIONS)
-
-        if Gb.internet_error:
-            action_list_default = 'goto_previous'
-        elif terms_of_use_update_needed:
-            action_list_default = 'accept_terms_of_use'
-        elif auth_2fa_code_needed:
-            action_list_default = 'send_verification_code'
-        elif request_2fa_code_needed:
-            action_list_default = 'request_verification_code'
+    terms_of_use_update_needed = False
+    auth_2fa_code_needed       = False
+    request_2fa_code_needed    = False
+    for AppleAcct in Gb.AppleAcct_by_username.values():
+        if AppleAcct.terms_of_use_update_needed:
+            terms_of_use_update_needed = True
         else:
-            action_list_default = 'goto_previous'
+            if AppleAcct.auth_2fa_code_needed or AppleAcct.username == reauth_username:
+                auth_2fa_code_needed = True
+            if AppleAcct.is_challenge_required:
+                request_2fa_code_needed = True
 
-        lists.build_apple_accounts_list(self)
+    self.actions_list     = []
+    if terms_of_use_update_needed:
+        self.actions_list.append(ACTION_LIST_OPTIONS['accept_terms_of_use'])
+    self.actions_list.extend(REAUTH_ACTIONS)
 
-        # Get the first acct (No Apple accts are set up or no Apple acct is selected)
-        # or get the acct that needs to be authenticated
-        # Requesting a new code will set the selected acct. Use it to deselect the acct
-        if reauth_username is not None and reauth_username != '':
-            self.apple_acct_reauth_username = reauth_username
-            self.conf_apple_acct, self.aa_idx = \
-                            config_file.conf_apple_acct(reauth_username)
-
-        elif (instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION')
-                or instr(str(self.apple_acct_items_by_username), 'TERMS OF USE')):
-            usernames = [username
-                            for username, acct_info in self.apple_acct_items_by_username.items()
-                            if (instr(acct_info, 'AUTHENTICATION')
-                                    or instr(acct_info, 'TERMS OF USE'))]
-            self.apple_acct_reauth_username = usernames[0]
-            self.conf_apple_acct, self.aa_idx = \
-                            config_file.conf_apple_acct(self.apple_acct_reauth_username)
-
-        elif (is_empty(self.apple_acct_items_by_username)
-                or is_empty(Gb.conf_apple_accounts)
-                or self.apple_acct_reauth_username not in self.apple_acct_items_by_username):
-            self.conf_apple_acct, self.aa_idx = \
-                            config_file.conf_apple_acct(0)
-            self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
+    if Gb.internet_error:
+        action_list_default = 'goto_previous'
+    elif terms_of_use_update_needed:
+        action_list_default = 'accept_terms_of_use'
+    elif auth_2fa_code_needed:
+        action_list_default = 'send_verification_code'
+    elif request_2fa_code_needed:
+        action_list_default = 'request_verification_code'
+    else:
+        action_list_default = 'goto_previous'
 
 
-        elif isnot_empty(self.conf_apple_acct):
-            self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
+    # Get the first acct (No Apple accts are set up or no Apple acct is selected)
+    # or get the acct that needs to be authenticated
+    # Requesting a new code will set the selected acct. Use it to deselect the acct
+    if reauth_username is not None and reauth_username != '':
+        self.apple_acct_reauth_username = reauth_username
+        self.conf_apple_acct, self.aa_idx = \
+                        config_file.conf_apple_acct(reauth_username)
 
-        else:
-            self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(0)
-            self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
+    elif (instr(str(self.apple_acct_items_by_username), 'AUTHENTICATION')
+            or instr(str(self.apple_acct_items_by_username), 'TERMS OF USE')):
+        usernames = [username
+                        for username, acct_info in self.apple_acct_items_by_username.items()
+                        if (instr(acct_info, 'AUTHENTICATION')
+                                or instr(acct_info, 'TERMS OF USE'))]
+        self.apple_acct_reauth_username = usernames[0]
+        self.conf_apple_acct, self.aa_idx = \
+                        config_file.conf_apple_acct(self.apple_acct_reauth_username)
 
-        # Set the default list from the username list or an error
-        if self.apple_acct_reauth_username in Gb.AppleAcct_by_username:
-            default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
-            AppleAcct = Gb.AppleAcct_by_username.get(self.apple_acct_reauth_username)
+    elif (is_empty(self.apple_acct_items_by_username)
+            or is_empty(Gb.conf_apple_accounts)
+            or self.apple_acct_reauth_username not in self.apple_acct_items_by_username):
+        self.conf_apple_acct, self.aa_idx = \
+                        config_file.conf_apple_acct(0)
+        self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
 
-        # If No Apple accts are set up yet
-        elif is_empty(self.apple_acct_items_by_username):
-            default_acct_selected = 'No Apple Accounts have been set up'
-            self.apple_acct_items_by_username = {'.noacctssetup': default_acct_selected}
-            self.errors[CONF_USERNAME] = 'apple_acct_not_set_up'
-            action_list_default = 'goto_previous'
-            AppleAcct = None
 
-        else:
-            action_list_default = 'goto_previous'
-            AppleAcct = self.AppleAcct or None
+    elif isnot_empty(self.conf_apple_acct):
+        self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
 
-        # _log(f'{AppleAcct=} {AppleAcct.fido2_key_names=}')
-        if Gb.fido2_security_keys_enabled is False:
-            self.reauth_form_fido2_key_names_list = [
-                            'Not Available > Security Key Authentication has not been implemented']
-        elif AppleAcct.fido2_key_names:
-            self.reauth_form_fido2_key_names_list = AppleAcct.fido2_key_names.copy()
-        else:
-            self.reauth_form_fido2_key_names_list = [
-                            'None or Expired > Refresh Security Key List if using Security Keys']
+    else:
+        self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(0)
+        self.apple_acct_reauth_username = self.conf_apple_acct[CONF_USERNAME]
 
-        schema = ({
-            vol.Optional('account_selected',
-                        default=default_acct_selected):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
-                            options=dict_value_to_list(self.apple_acct_items_by_username),
-                            mode='dropdown')),
-                vol.Optional(CONF_VERIFICATION_CODE, default=' '):
-                        selector.TextSelector(),
+    # Set the default list from the username list or an error
+    default_acct_selected = ''
+    if self.apple_acct_reauth_username in Gb.AppleAcct_by_username:
+        default_acct_selected = self.apple_acct_items_by_username[self.apple_acct_reauth_username]
+        AppleAcct = Gb.AppleAcct_by_username.get(self.apple_acct_reauth_username)
+
+        if AppleAcct and AppleAcct.login_successful is False:
+            action_list_default = 'log_into_apple_acct'
+
+    # If No Apple accts are set up yet
+    elif is_empty(self.apple_acct_items_by_username):
+        default_acct_selected = 'No Apple Accounts have been set up'
+        self.apple_acct_items_by_username = {'.noacctssetup': default_acct_selected}
+        self.errors[CONF_USERNAME] = 'apple_acct_not_set_up'
+        action_list_default = 'goto_previous'
+        AppleAcct = None
+
+    else:
+        default_acct_selected = list(self.apple_acct_items_by_username.values())[0]
+        action_list_default = 'goto_previous'
+        AppleAcct = self.AppleAcct or None
+
+    # _log(f'{AppleAcct=} {AppleAcct.fido2_key_names=}')
+    if Gb.fido2_security_keys_enabled is False:
+        self.reauth_form_fido2_key_names_list = [
+                        'Not Available > Security Key Authentication has not been implemented']
+    elif AppleAcct.fido2_key_names:
+        self.reauth_form_fido2_key_names_list = AppleAcct.fido2_key_names.copy()
+    else:
+        self.reauth_form_fido2_key_names_list = [
+                        'None or Expired > Refresh Security Key List if using Security Keys']
+
+    schema = ({
+        vol.Optional('account_selected',
+                    default=default_acct_selected):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(self.apple_acct_items_by_username),
+                        mode='dropdown')),
+            vol.Optional(CONF_VERIFICATION_CODE, default=' '):
+                    selector.TextSelector(),
+    })
+
+    if Gb.fido2_security_keys_enabled:
+        schema.update({
+            vol.Required('fido2_key_name',
+                    default=self.reauth_form_fido2_key_names_list[0]):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=self.reauth_form_fido2_key_names_list, mode='dropdown')),
         })
 
-        if Gb.fido2_security_keys_enabled:
-            schema.update({
-                vol.Required('fido2_key_name',
-                        default=self.reauth_form_fido2_key_names_list[0]):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
-                            options=self.reauth_form_fido2_key_names_list, mode='dropdown')),
-            })
-
-        if terms_of_use_update_needed:
-            schema.update({
-                vol.Optional('terms_of_use',
-                    default=True):
-                    cv.boolean,
-            })
-
+    if terms_of_use_update_needed:
         schema.update({
-            vol.Optional('action_items',
-                        default=utils.action_default_text(action_list_default)):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
-                            options=self.actions_list, mode='list')),
-            })
+            vol.Optional('terms_of_use',
+                default=True):
+                cv.boolean,
+        })
 
-        return vol.Schema(schema)
+    schema.update({
+        vol.Optional('action_items',
+                    default=utils.action_default_text(action_list_default)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=self.actions_list, mode='list')),
+        })
 
-    except Exception as err:
-        log_exception(err)
+    return vol.Schema(schema)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

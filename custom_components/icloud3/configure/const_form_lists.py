@@ -86,12 +86,13 @@ ACTION_LIST_OPTIONS = {
         'select_form':              'SELECT > Select the parameter update form',
 
         'update_apple_acct':        'SELECT APPLE ACCOUNT > Update the Username/Password of the selected Apple Account, Add a new Apple Account, Remove the Apple Account',
-        'save_log_into_apple_acct': 'SAVE CHANGES, LOG INTO APPLE ACCT > Save any configuration changes, Log into the Apple Account',
+        'save_log_into_apple_acct': 'SAVE & LOG INTO APPLE ACCT > Save any configuration changes, Log into the Apple Account',
         'log_into_apple_acct':      'LOG INTO APPLE ACCT > Log into the Apple Account, Save any configuration changes',
         'stop_using_apple_acct':    'STOP USING AN APPLE ACCOUNT > Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it',
         'verification_code':        'AUTHENTICATE APPLE ACCT SIGN-IN > Send/Request the 6-digit Verification Code',
         'delete_apple_acct':        'DELETE APPLE ACCOUNT > Delete the selected Apple Account. Delete or reassign iCloud3 devices using it',
-        'data_source_parameters':   'UPDATE DISPLAY/RUN TIME PARAMETERS > Update parameters (Display Apple Server Location, Enable Login with PasswordSRP)',
+        'stop_login_retry':         'STOP RETRYING LOGIN > Stop retrying to log into the Apple Account',
+        'data_source_parameters':   'OTHER APPLE ACCOUNT PARAMETERS > Set run time or other config parameters (China Apple Server Location)',
 
         'send_verification_code':   'SEND CODE TO APPLE TO AUTHENTICATE SIGN-IN > Send the Verification Code back to Apple to confirm access to the Apple Account',
         'SK-send_verification_code':   'SEND CODE/KEY TO APPLE TO AUTHENTICATE SIGN-IN > Send the Verification Code or Security Key being used back to Apple to confirm access to the Apple Account',
@@ -221,7 +222,7 @@ DASHBOARD_BUILDER_ACTIONS = [
         ACTION_LIST_OPTIONS['cancel_goto_menu']]
 TOOL_LIST = {
         'reset_data_source':      'CLEAR DEVICE`S DATA SOURCE SELECTIONS > Erase the `Apple Acct Device` and `Mobile App Device` selection fields for all iCloud3 devices (Update iCloud3 Device screen)',
-        'reset_tracking':         'REMOVE ALL APPLE ACCTS & DEVICES > Erase all Apple Accts (Data Sources - Apple Acct and Mobile App screen) and Erase all Devices (iCloud3 Devices screen)',
+        'reset_tracking':         'REMOVE ALL APPLE ACCTS & DEVICES > Erase all Apple Accts (Apple Acct and Mobile App screen) and Erase all Devices (iCloud3 Devices screen)',
         'reset_general':          'RESET GENERAL CONFIGURATION PARAMETERS > Set the `General Parameters` to their default value (Other Parameter Menu screens). Sensors are reset on the Sensors screen.',
         'del_apple_acct_cookies': 'DELETE ALL APPLE/ICLOUD COOKIE FILES > Delete Apple Acct Cookie & Session files in the ‘.storage/icloud3.apple_acct’ directory, Restart HA',
         'del_icloud3_config_files': 'DELETE ALL ICLOUD3 CONFIGURATION FILES > Delete the iCloud3  Configuration files in the ‘.storage/icloud3’ directory. Apple Accts will be reverified.',
