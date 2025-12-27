@@ -491,7 +491,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.away_time_zone_hours_key_text   = {}
         self.away_time_zone_devices_key_text = {}
 
-        # Variables used for the system_settings s update
+        # Variables used for the system_settings update
         self.www_directory_list = []
 
         # List of all sensors created by ic3 during startup by sensor.py that is used
@@ -984,11 +984,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.step_id = 'format_settings'
         user_input, action_item = utils.action_text_to_item(self, user_input)
 
-        if self.www_directory_list == []:
-            start_dir = 'www'
-            self.www_directory_list = await Gb.hass.async_add_executor_job(
-                                                            file_io.get_directory_list,
-                                                            start_dir)
+        await lists.build_www_directory_filter_list(self)
 
         if self.common_form_handler(user_input, action_item, errors):
             if action_item == 'save':
@@ -1337,12 +1333,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         user_input, action_item = utils.action_text_to_item(self, user_input)
         utils.log_step_info(self, user_input, action_item)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'goto_previous':
             return await self.async_step_update_device()
 
-        if self.www_directory_list == []:
-            self.www_directory_list = \
-                await Gb.hass.async_add_executor_job(file_io.get_directory_list, 'www')
+        await lists.build_www_directory_filter_list(self)
 
         if action_item == 'save':
             Gb.picture_www_dirs = []
@@ -2163,7 +2157,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         if (user_input is None
                 or instr(self.errors.get(CONF_USERNAME, ''), 'invalid')
-                or instr(self.errors.get(CONF_USERNAME, ''), 'error')):
+                or instr(self.errors.get(CONF_USERNAME, ''), 'error')
+                or instr(self.errors.get(CONF_USERNAME, ''), 'required')
+                or instr(self.errors.get(CONF_PASSWORD, ''), 'required')):
             return self.async_show_form(step_id='update_apple_acct',
                         data_schema=forms.form_update_apple_acct(self),
                         errors=self.errors)
@@ -2222,7 +2218,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if Gb.log_debug_flag:
             log_user_input = user_input.copy()
             log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{log_user_input}, Errors-{errors}")
-
 
         if action_item == 'save_log_into_apple_acct':
             if ui_username == '':
@@ -2348,9 +2343,15 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if successful_login:
                 self.errors[CONF_USERNAME] = ''
 
+            AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username.get(ui_username)
+            Gb.AppleAcct_password_by_username[ui_username] = user_input[CONF_PASSWORD]
+
             if successful_login is False:
                 self.add_apple_acct_flag = False
-                self.errors[CONF_USERNAME] = aascf.login_err_msg(AppleAcct, ui_username)
+                if AppleAcct:
+                    self.errors[CONF_USERNAME] = aascf.login_err_msg(AppleAcct, ui_username)
+                else:
+                    self.errors['base'] = 'apple_acct_updated_not_logged_into'
 
                 return await self.async_step_update_apple_acct(
                                     user_input=user_input,
@@ -2358,9 +2359,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             if instr(self.data_source, ICLOUD) is False:
                 self._update_data_source({CONF_DATA_SOURCE: [ICLOUD, self.data_source]})
-
-            AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username[ui_username]
-            Gb.AppleAcct_password_by_username[ui_username] = user_input[CONF_PASSWORD]
 
             if (aa_login_info_changed and
                     ui_username in Gb.AppleAcct_error_by_username):

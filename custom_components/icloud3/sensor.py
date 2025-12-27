@@ -159,6 +159,7 @@ async def _create_all_devices_sensors():
     '''
     try:
         NewSensors = []
+
         for conf_device in Gb.conf_devices:
             devicename = conf_device[CONF_IC3_DEVICENAME]
 
@@ -166,6 +167,7 @@ async def _create_all_devices_sensors():
                 continue
 
             # if devicename not in Gb.conf_device_sensors:
+            # Not e:  Updated to always rebuild the list when starting up
             await config_sensors.update_configure_file_device_sensors(devicename, write_config_file=True)
 
             if devicename in Gb.conf_device_sensors:
@@ -189,13 +191,13 @@ async def _create_all_devices_sensors():
 #--------------------------------------------------------------------
 def create_device_sensor_from_config_file_list(devicename, conf_device):
     '''
-    The restore_file contains the base and from_zone sensor entity names for each device.
-    create the sensor using this value instead of cycling through the configuration sensors list
-    and creating them from scratch
+    The configuration file contains the base and from_zone sensor entity names for each device.
+    Create the sensor using this value. Keep track of added and removed sensors when the list
+    is being updated by Configure > Sensors screen.  Sensors are  only added when starting up. 
     '''
     SensorsFromConfigFile = []
-    Gb.sensors_added_by_devicename[devicename]   = []
-    Gb.sensors_removed_by_devicename[devicename] = []
+    Gb.sensors_added_by_devicename[devicename]   = [] # Created sensors for log file msg
+    Gb.sensors_removed_by_devicename[devicename] = [] # Removes sensors for log file msg
     devicename_sensors = Gb.Sensors_by_devicename.get(devicename, {})
     devicename_from_zone_sensors = Gb.Sensors_by_devicename_from_zone.get(devicename, {})
 
@@ -282,6 +284,8 @@ def create_tracked_device_sensors(devicename, conf_device, new_sensors_list=None
             new_sensors_list = []
 
             for sensor_group, sensor_list in Gb.conf_sensors.items():
+                if sensor_group == CONF_EXCLUDED_SENSORS:
+                    continue
                 if sensor_group != 'monitored_devices':
                     new_sensors_list.extend(sensor_list)
 

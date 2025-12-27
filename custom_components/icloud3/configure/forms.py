@@ -798,7 +798,9 @@ def form_update_device(self):
         self.errors[CONF_TRACKING_MODE] = 'inactive_device'
 
     log_zones_key_text = {'none': 'None'}
-    log_zones_key_text.update(self.zone_name_key_text)
+    zone_name_key_text = {k: v  for k, v in self.zone_name_key_text.items()
+                                if k.startswith('.') is False}
+    log_zones_key_text.update(zone_name_key_text)
     log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
 
     schema = {
@@ -853,7 +855,9 @@ def form_update_other_device_parameters(self):
     self.actions_list.append(ACTION_LIST_OPTIONS['cancel_goto_previous'])
 
     log_zones_key_text = {'none': 'None'}
-    log_zones_key_text.update(self.zone_name_key_text)
+    zone_name_key_text = {k: v  for k, v in self.zone_name_key_text.items()
+                                if k.startswith('.') is False}
+    log_zones_key_text.update(zone_name_key_text)
     log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
 
     device_type_fname = DEVICE_TYPE_FNAME(utils.parm_or_device(self, CONF_DEVICE_TYPE))

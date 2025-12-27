@@ -407,10 +407,11 @@ async def update_configure_file_device_sensors(devicenames=None, write_config_fi
     '''
     # Gb.conf_device_sensors = {}
     if devicenames is not None and type(devicenames) is str:
-        devicenames = list(devicenames)
+        devicenames = [devicenames]
 
     for conf_device in Gb.conf_devices:
         devicename = conf_device[CONF_IC3_DEVICENAME]
+
         if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
             continue
         elif devicenames is not None and devicename not in devicenames:
@@ -425,6 +426,8 @@ async def update_configure_file_device_sensors(devicenames=None, write_config_fi
     if write_config_file is True:
         await config_file.async_write_icloud3_configuration_file()
 
+    return Gb.conf_device_sensors[devicename]
+
 #--------------------------------------------------------------------
 def set_device_sensors_list(devicename, conf_device, new_sensors_list=None):
     '''
@@ -436,6 +439,9 @@ def set_device_sensors_list(devicename, conf_device, new_sensors_list=None):
             new_sensors_list = []
 
             for sensor_group, sensor_list in Gb.conf_sensors.items():
+                if sensor_group == CONF_EXCLUDED_SENSORS:
+                    continue
+
                 if (conf_device[CONF_TRACKING_MODE] == MONITOR_DEVICE
                         and sensor_group == 'monitored_devices'):
                     for md_sensor in sensor_list:

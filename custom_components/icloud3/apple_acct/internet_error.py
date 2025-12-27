@@ -272,8 +272,8 @@ class InternetConnection_ErrorHandler:
         post_event(f"{EVLOG_BROWN_BAR}{event_msg}")
         log_error_msg(f"iCloud3 Alert > {event_msg}")
 
-        update_alert_sensor(ALERT_CRITICAL, f"Internet Connection Available at "
-                                            f"{secs_to_time(time_now_secs())}")
+        # update_alert_sensor(ALERT_CRITICAL, f"Internet Connection Available at "
+        #                                     f"{secs_to_time(time_now_secs())}")
         update_alert_sensor(ALERT_CRITICAL, "")
 
 #----------------------------------------------------------------------------

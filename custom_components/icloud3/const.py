@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.3.4.1'
+VERSION                         = '3.3.4.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -376,15 +376,9 @@ dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 �
 Symbols = ±▪•●▬⮾ ⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
 Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔☁️🍎🔻⮽➕⚙️
 🔵🔴🟠🟡🟢🟣🟤🟦🟥🟧🟨🟩🟪🟫🔶🔷🔸🔹🔺🔻
-✅❎☑️⏭️⏮️🍏🅰️
-↺↻⟲⟳⭯⭮↺↻⥀⥁↶↷⮌⮍⮎⮏⤻⤸⤾⤿⤺⤼⤽⤹🗘⮔⤶⤷⃕⟳↻🔄🔁➡️🔃⬇️🔗
-●•✶✹✽♦✱✥❄✪⬥⨳✫✡  ﹡✱*⨯⧫♦⚙⚹⚙️✳🞺🞴🞸🞳
-═ ⎯ — –ᗒ ⁃ » ━▶ ━➤🡺 —> > ❯↦ 🡪ᗕᗒ ᐳ ─🡢 ⎯ ━ ──ᗒ 🡢 ─ᐅ ↣ ➙ →《》◆aak◈◉● ⟷
-•⟛⚯⧟⫗' '᚛᚜ 〉〈 ⦒⦑  ⟩⟨ ⓧ≻≺ ⸩⸨
-▐‖  ▹▻◁─▷◅◃‖╠ᐅ🡆▶▐🡆▐▶‖➤▐➤➜➔❰❰❱❱ ⠤ … ² ⚯⟗⟐⥄⥵⧴⧕⫘⧉⯏≷≶≳≲≪≫⋘⋙ ∮∯ ❪❫❴❵❮❯❰❱
-.…⋯⋮ ⋱⋰ ⠁⠂⠐⠄⠠⠈⣇⠈⠉⠋⠛⠟⠿⡿⣿ ⠗⠺ ⠿  ⸩⸨⯎⟡⯌✦⯌⯏⯍aak✧ 🙾 🙿 (ⲶⲼ+≈⟣⟢aak.
-🀫█ (▊Ⲷ (▉Ⲷ ▆ (■ ▦ ◼ ▉ (🀫Ⲷ▩▤
-≽≼≽ ⋞⋟≺≻ ≪≫≾≿⋘⋙ ⋖⋗
+✅❎☑️🅰️🍏
+🔄🔁➡️🔃⬇️🔗▶️⏩⏪⏫⏬⏭⏮⏯⏰⏱⏸⏹⏺
+
 https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 https://www.htmlsymbols.xyz/unit-symbols
 '''
@@ -934,6 +928,11 @@ CALC_DISTANCE_ATTR            = "calculated_distance"
 WAZE_DISTANCE                 = "waze_distance"
 CALC_DISTANCE                 = "calc_distance"
 
+CONF_SENSORS_OTHER            = 'other'
+GPS_ACCURACY                  = "gps_accuracy"
+ALTITUDE                      = "altitude"
+VERTICAL_ACCURACY             = "vertical_accuracy"
+
 CONF_EXCLUDED_SENSORS         = "excluded_sensors"
 
 
@@ -950,11 +949,6 @@ LAST_ZONE_DNAME    = "last_zone_dname"
 LAST_ZONE_FNAME    = "last_zone_fname"
 LAST_ZONE_NAME     = "last_zone_name"
 LAST_ZONE_DATETIME = "last_zone_changed"
-
-CONF_SENSORS_OTHER = 'other'
-GPS_ACCURACY       = "gps_accuracy"
-ALTITUDE           = "altitude"
-VERTICAL_ACCURACY  = "vertical_accuracy"
 
 CF_PROFILE         = 'profile'
 CF_DATA            = 'data'

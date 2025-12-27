@@ -9,7 +9,7 @@ from ..const            import (RARROW, PHDOT, CRLF_DOT, DOT, HDOT, PHDOT, CIRCL
                                 CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT, CONF_TOTP_KEY,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_VERIFICATION_CODE, CONF_LOCATE_ALL,
-                                CONF_TRACK_FROM_ZONES,
+                                CONF_TRACK_FROM_ZONES, CONF_PICTURE_WWW_DIRS,
                                 CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                                 CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE, CONF_FMF_EMAIL,CONF_FMF_DEVICE_ID,
@@ -265,11 +265,6 @@ async def build_update_device_selection_lists(self, selected_devicename=None):
         await build_mobapp_entity_selection_list(self, selected_devicename)
         await build_picture_filename_selection_list(self)
         await build_zone_selection_list(self)
-
-        # _xtraceha(f"{self.icloud_list_text_by_fname=}")
-        # _xtraceha(f"{self.mobapp_list_text_by_entity_id=}")
-        # _xtraceha(f"{self.conf_device=}")
-        # _xtraceha(f"{self.zone_name_key_text=}")
 
     except Exception as err:
         log_exception(err)
@@ -586,6 +581,18 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
     return
 
 #-------------------------------------------------------------------------------------------
+async def build_www_directory_filter_list(self):
+    '''
+    Set up the list of all www directories for selecting those that should be filteredd
+    '''
+
+    if self.www_directory_list == []:
+        start_dir = 'www'
+        self.www_directory_list = await Gb.hass.async_add_executor_job(
+                                                file_io.get_directory_list,
+                                                start_dir)
+
+#-------------------------------------------------------------------------------------------
 async def build_picture_filename_selection_list(self):
 
     try:
@@ -599,6 +606,21 @@ async def build_picture_filename_selection_list(self):
                                                 start_dir,
                                                 file_filter)
 
+        await build_www_directory_filter_list(self)
+        # if is_empty(self.www_directory_list):
+        #     for image_filename in image_filenames:
+        #         dir = image_filename.rsplit('/', 1)[0]
+        #         list_add(self.www_directory_list, dir)
+
+        # Make sure all directories in the filter list still exist, 
+        # delete it if it does not exist
+        www_gb_dirs_unknown = [dir  for dir in Gb.picture_www_dirs 
+                                    if dir not in self.www_directory_list]
+        if isnot_empty(www_gb_dirs_unknown):
+            for www_gb_dir_unknown in www_gb_dirs_unknown:
+                list_del(Gb.picture_www_dirs, www_gb_dir_unknown)
+            Gb.conf_profile[CONF_PICTURE_WWW_DIRS] = Gb.picture_www_dirs
+
         sorted_image_filenames = []
         over_25_warning_msgs = []
         for image_filename in image_filenames:
@@ -609,6 +631,7 @@ async def build_picture_filename_selection_list(self):
         sorted_image_filenames.sort()
         self.picture_by_filename = {}
         www_dir_idx = 0
+
 
         if Gb.picture_www_dirs:
             while www_dir_idx < len(Gb.picture_www_dirs):
@@ -621,8 +644,8 @@ async def build_picture_filename_selection_list(self):
             www_dir_idx += 1
             self.picture_by_filename[f".www_dirs{www_dir_idx}"] = over_25_warning_msg
 
-        self.picture_by_filename['.available'] = f"✅ ______ DEVICE PICTURE FILE NAMES {'_'*38}"
-        self.picture_by_filename['setup_dir_filter'] = "➤ FILTER IMAGE DIRECTORIES > Select directories with the picture image files"
+        self.picture_by_filename['setup_dir_filter'] = "️️▶️ SET IMAGE DIRECTORY FILTER > Select directories with the picture image files"
+        self.picture_by_filename['.available'] = f"⏬ ______ DEVICE PICTURE FILE NAMES {'_'*38}"
         self.picture_by_filename.update(self.picture_by_filename_base)
 
         for sorted_image_filename in sorted_image_filenames:

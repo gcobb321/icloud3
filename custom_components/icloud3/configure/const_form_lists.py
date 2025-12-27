@@ -41,7 +41,7 @@ MENU_KEY_TEXT = {
 
         'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
         'tracking_parameters':  'TRACKING PARAMETERS > Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals',
-        'format_settings':      'FIELD FORMATS & OTHER PARAMETERS > Zone Display & Device Tracker State formats, Unit of Measure/Time & Distance formats, Picture Dir Filters, Event Log Overrides, etc',
+        'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS > Zone Display & Device Tracker State formats, Unit of Measure/Time & Distance formats, Picture Dir Filters, etc',
         'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement',
         'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Route Server and Parameters, Waze History Database Parameters and Controls',
         'special_zones':        'SPECIAL ZONES > Enter Zone Delay Time. Stationary Zone. Primary Track-from-Home Zone Override',
@@ -49,7 +49,7 @@ MENU_KEY_TEXT = {
 
         'select':               'SELECT > Select the parameter update form',
         'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request Verification Code; Change Device Order; Sensors; Action Commands',
-        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Field Formats & Directories, Display Text As, Waze Route Distance/Time & History, Special Zones, Default inZone Intervals',
+        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Display Settings & Other Parameters, Display Text As, Waze Route Distance/Time & History, Special Zones, Default inZone Intervals',
         'exit':                 'EXIT AND RESTART ICLOUD3',
         'exit_update_dashboards': 'EXIT AND RESTART ICLOUD3 - UPDATE DASHBOARDS WITH DEVICE CHANGES'
 }
@@ -280,10 +280,11 @@ DASHBOARD_MAIN_VIEW_DEVICES_BASE = {
         'iphone-first-2': 'First 2 iPhones',
         }
 LOG_ZONES_KEY_TEXT = {
-        'name-zone':        ' → [year]-[zone].csv',
-        'name-device':      ' → [year]-[device].csv',
-        'name-device-zone': ' → [year]-[device]-[zone].csv',
-        'name-zone-device': ' → [year]-[zone]-[device].csv',
+        '.hdr':             '⎯⎯⎯⎯⎯⎯ ACTIVITY FILE NAME ⎯⎯⎯⎯⎯⎯',
+        'name-zone':        '⋙ Zone (2026-warehouse.csv)',
+        'name-device':      '⋙ Device (2026-gary.csv)',
+        'name-device-zone': '⋙ Device+Zone (2026-gary_iphone-warehouse.csv)',
+        'name-zone-device': '⋙ Zone+Device (2026-warehouse-gary_iphone.csv)',
         }
 TRACKING_MODE_OPTIONS = {
         'track':    'Track - Request Location and track the device',
@@ -468,11 +469,11 @@ WAZE_HISTORY_USED_HEADER = (
         "for a GPS location (100m radius). It reduces the number of internet requests to the Waze Servers "
         "after it has been in use for a while and speed up response time when in a poor cell area")
 PASSTHRU_ZONE_HEADER = (
-        "You may be driving through a non-tracked zone but not stopping at tne zone. The Mobile "
+        "You may be driving through a non-tracked zone but not stopping at the zone. The Mobile "
         "App issues an Enter Zone trigger when the device enters the zone and changes the "
         "device_tracker entity state to the Zone. iCloud3 does not process the Enter Zone "
         "trigger until the delay time has passed. This prevents processing a Zone Enter "
-        "trig[er that is immediately followed by an Exit Zone trigger.")
+        "trigger that is immediately followed by an Exit Zone trigger.")
 STAT_ZONE_HEADER = (
         "A Stationary Zone is automatically created if the device remains in the same location "
         "(store, friends house, doctor`s office, etc.) for an extended period of time")

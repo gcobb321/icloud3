@@ -1380,7 +1380,9 @@ def add_log_file_filter(item, replacement_text=None):
 
     Note
     '''
-    if item is None:
+    if (item is None
+            or item.strip() == ''
+            or len(item) < 6):
         return
     elif Gb.disable_upw_filter:
         return item

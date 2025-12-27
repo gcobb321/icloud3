@@ -15,12 +15,24 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-## 🍎 iCloud3 v3.3.4.1 ()
+## iCloud3 v3.3.4.2 ()
+### 🐞 Bug Fixes
+1. Apple Account - Fixed a bug when logging into an Apple account with a blank password.
+2. Internet Connection Error - Fixed abug handling the 1-minute timeout recheck routine after an Internet Conection Error ocurred.
+3. Sensors - Fixed a bug where a sensor that was just enabled would not be created wen restarting iCloud3.
+
+### 📢 Improvements
+1. The iCloud3 documentation has been updated and reorganized. It now reflects the screens in the crrent version. Some Menu headings and field names have been changed for clarity and consistency.
+
+
+
+
+## 🍎 iCloud3 v3.3.4.1 (12/10/2025)
 - Reverted to an unobscured Apple account on the _Update Apple Account_ and _Authenticate Apple Account Signon_ screens.
 
 
 
-## 🍎 iCloud3 v3.3.4 ()
+## iCloud3 v3.3.4 (12/9/2025)
 ### 🍎 Improved Apple Accounts Handling
 - Errors occurring when validating a username/password or authenticating Apple account have been enhanced to provide more information.
 - Updated the PasswordSRP Authentication method to display more information messages if an error occurred.
@@ -38,14 +50,14 @@ Gary
 
 
 
-## 🍎 iCloud3 v3.3.3 (11/22/2025)
+## iCloud3 v3.3.3 (11/22/2025)
 ### Account Reauthentication
 - Fixed a `Config flow could not be loaded: 500 Internal Server Error Server got itself in trouble` error when trying to reauthenticate the Apple account after selecting the Orange Reauthentication button on _Devices & settings > iCloud3_. It did not occur when selecting the _Authenticate Apple Account Sign-In_ screen.
 ### Startup
 - The results of the Internet Connection Test done during Startup, Stage 2 are now displayed in the Event Log and icloud3.log file.
 
 
-## 🍎 iCloud3 v3.3.2 (11/21/2025)
+## iCloud3 v3.3.2 (11/21/2025)
 ### Apple account Error 503/Password SRP handling
 - Fixed several issues in the PasswordSRP handler dealing with verifying the password. This was creating the Server Not Available 503 error resulting in password authentication failures and login delays.
 ### Update Apple Account screen

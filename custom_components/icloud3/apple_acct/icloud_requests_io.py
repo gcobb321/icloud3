@@ -197,7 +197,7 @@ def cancel_request_timeout_timer():
         Gb.icloud_io_1_min_timer_fct()
 
 #----------------------------------------------------------------------------
-def request_timed_out():
+def request_timed_out(current_time):
     '''
     The 1-min timer timedout. This indicates an Internet Error occurred. Check to see if it is
     really available in case the timer was never canceled.
