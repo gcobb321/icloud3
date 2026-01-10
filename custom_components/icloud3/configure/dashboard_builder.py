@@ -9,7 +9,7 @@ from homeassistant.components.lovelace.const import (LOVELACE_DATA,
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (IPHONE_FNAME, DEVICE_TYPES, IPHONE,
                                     CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_DEVICE_TYPE,
-                                    TRACK_DEVICE, INACTIVE_DEVICE)
+                                    TRACK, INACTIVE)
 
 from ..utils.utils          import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     list_add, list_del, dict_value_to_list, six_item_list, six_item_dict, )
@@ -409,7 +409,7 @@ def _build_devices_str_main_view(self):
                                             f"{conf_device[CONF_TRACKING_MODE]},"
                                             f"{conf_device[CONF_DEVICE_TYPE]}")
                                     for conf_device in Gb.conf_devices
-                                    if conf_device[CONF_TRACKING_MODE] != INACTIVE_DEVICE}
+                                    if conf_device[CONF_TRACKING_MODE] != INACTIVE}
     selected_devicenames = [devicename
                                     for devicename in self.ui_main_view_dnames
                                     if devicename in active_devicenames]
@@ -444,7 +444,7 @@ def _build_devices_str_main_view(self):
     if devices_2_iphn:
         selected_devicenames = [devicename
                                     for devicename, device_info in active_devicenames.items()
-                                    if (instr(device_info, TRACK_DEVICE)
+                                    if (instr(device_info, TRACK)
                                         and instr(device_info, IPHONE))]
         selected_devicenames = selected_devicenames[:2]
 
@@ -454,7 +454,7 @@ def _build_devices_str_main_view(self):
     if style_result_summary:
         trk_results_devicenames = [devicename
                                         for devicename, device_info in active_devicenames.items()
-                                        if (instr(device_info, TRACK_DEVICE)
+                                        if (instr(device_info, TRACK)
                                             and (all_devices or devicename in selected_devicenames))]
 
         template_name = 'template-trk-results-group'
@@ -469,7 +469,7 @@ def _build_devices_str_main_view(self):
     # Build dashboard  'Tracking results' screen for all or  first 2 iPhones
     elif style_track_details:
         trk_results_devicenames = [devicename   for devicename, device_info in active_devicenames.items()
-                                        if (instr(device_info, TRACK_DEVICE)
+                                        if (instr(device_info, TRACK)
                                             and (all_devices or devicename in selected_devicenames))]
 
         template_name = 'template-device-block'

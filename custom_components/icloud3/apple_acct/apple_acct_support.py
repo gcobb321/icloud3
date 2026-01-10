@@ -9,7 +9,7 @@ from ..const            import (HIGH_INTEGER,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY, CONF_LOCATE_ALL,
                                     CONF_SERVER_LOCATION,
-                                    CONF_TRACKING_MODE, INACTIVE_DEVICE,
+                                    CONF_TRACKING_MODE, INACTIVE,
                                     )
 
 

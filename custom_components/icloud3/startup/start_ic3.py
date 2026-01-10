@@ -20,7 +20,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES,
                                 IPHONE, IPAD, IPOD, WATCH, AIRPODS,
                                 MOBAPP, NO_MOBAPP, ICLOUD_DEVICE_STATUS, TIMESTAMP,
-                                INACTIVE_DEVICE,                                 NAME, FNAME, TITLE, RADIUS, NON_ZONE_ITEM_LIST, FRIENDLY_NAME,
+                                INACTIVE,                                 NAME, FNAME, TITLE, RADIUS, NON_ZONE_ITEM_LIST, FRIENDLY_NAME,
                                 LOCATION, LATITUDE, RADIUS,
                                 TRIGGER,
                                 ZONE, ID,
@@ -1191,7 +1191,7 @@ def create_Devices_object():
             broadcast_info_msg(f"Setting up Device > {devicename}")
 
             # Do not set up inactive device
-            if conf_device[CONF_TRACKING_MODE] ==  INACTIVE_DEVICE:
+            if conf_device[CONF_TRACKING_MODE] ==  INACTIVE:
                 post_event( f"{CIRCLE_STAR} {conf_device[CONF_FNAME]} ({devicename}) > "
                             f"{DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])}, INACTIVE, "
                             f"{CRLF_DOT}iCloud Device-{icloud_dname}"
@@ -1641,7 +1641,7 @@ def _match_AppleAcct_devices_to_Device(AppleAcct, retry_match_devices=None):
         devicename = conf_device[CONF_IC3_DEVICENAME]
 
         if (devicename not in Gb.Devices_by_devicename
-                or conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE):
+                or conf_device[CONF_TRACKING_MODE] == INACTIVE):
             continue
 
         Device = Gb.Devices_by_devicename[devicename]
@@ -1869,7 +1869,7 @@ def _post_evlog_apple_acct_tracked_devices_info(AppleAcct):
             devicename = Device.devicename
             exception_msg = ''
 
-            if Device.tracking_mode == INACTIVE_DEVICE:
+            if Device.tracking_mode == INACTIVE:
                 exception_msg += ', INACTIVE '
 
             pyicloud_icloud_dname = pyicloud_icloud_dname.replace('*', '')
@@ -2795,12 +2795,12 @@ def display_inactive_devices():
 
     Gb.inactive_fname_by_devicename = {conf_device[CONF_IC3_DEVICENAME]: conf_device[CONF_FNAME]
                                     for conf_device in Gb.conf_devices
-                                    if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE}
+                                    if conf_device[CONF_TRACKING_MODE] == INACTIVE}
 
     inactive_devices_msg =[( f"{conf_device[CONF_FNAME]} ({conf_device[CONF_IC3_DEVICENAME]}), "
                             f"{DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])}")
                                     for conf_device in Gb.conf_devices
-                                    if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE]
+                                    if conf_device[CONF_TRACKING_MODE] == INACTIVE]
 
     Gb.startup_lists['Gb.inactive_fname_by_devicename'] = Gb.inactive_fname_by_devicename
 

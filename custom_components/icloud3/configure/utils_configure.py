@@ -427,5 +427,5 @@ def discard_changes(user_input):
 #--------------------------------------------------------------------
 def log_step_info(self, user_input, action_item=None):
 
-    log_info_msg(  f"{self.step_id.upper()} ({action_item}) > "
+    log_info_msg(  f"🔸{self.step_id.upper()} ({action_item}) > "
                     f"UserInput-{user_input}, Errors-{self.errors}")

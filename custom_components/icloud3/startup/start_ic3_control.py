@@ -6,13 +6,14 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
+                                CONF_SENSORS_HASH,
                                 CONF_VERSION, ICLOUD, ZONE_DISTANCE,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION,
                                 ICLOUD, MOBAPP, DISTANCE_TO_DEVICES,
                                 )
 
 from ..utils.utils      import (instr, is_empty, isnot_empty, yes_no, list_to_str, list_add, list_del,
-                                username_id, is_running_in_event_loop, )
+                                username_id, is_running_in_event_loop, get_string_hash, )
 from ..utils.messaging  import (broadcast_info_msg,
                                 post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor,
                                 post_monitor_msg, post_internal_error, post_greenbar_msg,
@@ -25,6 +26,7 @@ from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, format_da
 
 from ..apple_acct       import apple_acct_support as aas
 from ..mobile_app       import mobapp_interface
+from ..                 import sensor as ic3_sensor
 from ..startup          import start_ic3
 from ..startup          import config_file
 from ..tracking         import determine_interval as det_interval
@@ -55,6 +57,17 @@ def stage_1_setup_variables():
 
         config_file.load_icloud3_configuration_file()
         write_config_file_to_ic3log()
+
+        try:
+            # conf_sensors_hash = get_string_hash(str(Gb.conf_sensors))
+            # if Gb.conf_profile[CONF_SENSORS_HASH] != conf_sensors_hash:
+            ic3_sensor.initialize_conf_device_sensors()
+            post_event('Device Sensors List > Sensors List Rebuilt on Restart')
+            post_event(f"Set up Sensors > Count-{ic3_sensor.total_sensors_cnt()}±")
+            post_event(f"Set up Devices > Count-{len(Gb.conf_devices)}")
+        except:
+            pass
+
         start_ic3.initialize_global_variables()
         start_ic3.set_global_variables_from_conf_parameters()
 

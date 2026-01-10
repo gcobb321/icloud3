@@ -19,7 +19,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME, LAST_UPDATED_SECS, LAST_UPDATED_TIME,
                                 STATE,
                                 ICLOUD, MOBAPP, DEVICE_TYPE_ICONS,
-                                TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE, TRACKING_MODE_FNAME,
+                                TRACK, MONITOR, INACTIVE, TRACKING_MODE_FNAME,
                                 NAME, DEVICE_TYPE_FNAME,
                                 ICLOUD_HORIZONTAL_ACCURACY, ICLOUD_VERTICAL_ACCURACY, ICLOUD_POSITION_TYPE,
                                 ICLOUD_BATTERY_LEVEL, ICLOUD_DEVICE_CLASS, ICLOUD_DEVICE_STATUS, ICLOUD_LOW_POWER_MODE, ID,
@@ -129,7 +129,7 @@ class iCloud3_Device(TrackerEntity):
         self.model_display_name           = Gb.model_display_name_by_raw_model.get(self.raw_model, self.raw_model)  # iPhone 14 Pro
         self.data_source                  = None
         self.tracking_status              = TRACKING_NORMAL
-        self.tracking_mode                = TRACK_DEVICE      #normal, monitor, inactive
+        self.tracking_mode                = TRACK      #normal, monitor, inactive
         self.alert                        = ''
         self.last_data_update_secs        = time_now_secs()
         self.last_evlog_msg_secs          = time_now_secs()
@@ -506,7 +506,7 @@ class iCloud3_Device(TrackerEntity):
         # Configuration parameters
         # Change Monitored to tracked if primary data source is MOBAPP since
         # a monitored device only monitors the iCloud data and MobApp Data may be available
-        self.tracking_mode        = conf_device.get(CONF_TRACKING_MODE, TRACK_DEVICE)
+        self.tracking_mode        = conf_device.get(CONF_TRACKING_MODE, TRACK)
         self.sensors['dev_id']    = self.devicename
         self.evlog_fname_alert_char = ''          # Character added to the fname in the EvLog (❗❌⚠️)
 
@@ -624,7 +624,7 @@ class iCloud3_Device(TrackerEntity):
         elif self.is_data_source_MOBAPP:
             self.primary_data_source = MOBAPP
             if self.is_monitored:
-                self.tracking_mode = TRACK_DEVICE
+                self.tracking_mode = TRACK
         else:
             self.primary_data_source = None
 
@@ -860,7 +860,7 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def tracking_mode_fname(self, track_fname=False):
-        if self.tracking_mode == TRACK_DEVICE and track_fname is False:
+        if self.tracking_mode == TRACK and track_fname is False:
             return ''
         else:
             return f", {TRACKING_MODE_FNAME[self.tracking_mode]}"
@@ -1024,15 +1024,15 @@ class iCloud3_Device(TrackerEntity):
     # is_xxx other properties
     @property
     def is_tracked(self):
-        return self.tracking_mode == TRACK_DEVICE
+        return self.tracking_mode == TRACK
 
     @property
     def is_monitored(self):
-        return self.tracking_mode == MONITOR_DEVICE
+        return self.tracking_mode == MONITOR
 
     @property
     def is_inactive(self):
-        return self.tracking_mode == INACTIVE_DEVICE
+        return self.tracking_mode == INACTIVE
 
     @property
     def isnot_inactive(self):

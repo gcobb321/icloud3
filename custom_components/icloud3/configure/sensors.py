@@ -1,11 +1,11 @@
 
 
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (INACTIVE_DEVICE, TRACK_DEVICE,
+from ..const             import (INACTIVE, TRACK,
                                 CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_TRACK_FROM_ZONES,
                                 CONF_EXCLUDED_SENSORS,
                                 HOME, NONE_FNAME, FROM_ZONE, ZONE, SENSORS,
-                                TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
+                                TRACK, MONITOR, INACTIVE,
                                 BATTERY, BATTERY_STATUS,
                                 CONF_IC3_DEVICENAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                 )
@@ -41,11 +41,33 @@ def remove_and_create_sensors(self, user_input):
 
     new_sensors_list, remove_sensors_list = \
             sensor_form_identify_new_and_removed_sensors(self, user_input)
-    remove_sensor_entity(remove_sensors_list)
 
-    for conf_device in Gb.conf_devices:
-        devicename  = conf_device[CONF_IC3_DEVICENAME]
-        create_sensor_entity(devicename, conf_device, new_sensors_list)
+    if isnot_empty(remove_sensors_list):
+        remove_sensor_entity(remove_sensors_list)
+        remove_sensors_from_excluded_sensors_list(remove_sensors_list)
+
+    if isnot_empty(new_sensors_list):
+        for conf_device in Gb.conf_devices:
+            devicename = conf_device[CONF_IC3_DEVICENAME]
+            create_sensor_entity(devicename, conf_device, new_sensors_list)
+
+#-------------------------------------------------------------------------------------------
+def remove_sensors_from_excluded_sensors_list(remove_sensors_list):
+
+    excluded_sensors_str = str(Gb.conf_sensors[CONF_EXCLUDED_SENSORS])
+    rebuild_excluded_device_sensors_flag = False
+
+    for excluded_sensor in remove_sensors_list:
+        if instr(excluded_sensors_str, f"{excluded_sensor})") is False:
+            continue
+
+        rebuild_excluded_device_sensors_flag = True
+        for devicename_sensor in Gb.conf_sensors[CONF_EXCLUDED_SENSORS].copy():
+            if devicename_sensor.endswith(f"{excluded_sensor})"):
+                list_del(Gb.conf_sensors[CONF_EXCLUDED_SENSORS], devicename_sensor)
+
+    if rebuild_excluded_device_sensors_flag:
+        ic3_sensor.build_excluded_device_sensors(Gb.conf_sensors[CONF_EXCLUDED_SENSORS])
 
 #-------------------------------------------------------------------------------------------
 def create_device_tracker_and_sensor_entities(self, devicename, conf_device):
@@ -68,7 +90,7 @@ def create_device_tracker_and_sensor_entities(self, devicename, conf_device):
 
     """
 
-    if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
+    if conf_device[CONF_TRACKING_MODE] == INACTIVE:
         return
 
     NewDeviceTrackers = []
@@ -262,7 +284,7 @@ def sensor_form_identify_new_and_removed_sensors(self, user_input):
                 or user_input[sensor_group] == Gb.conf_sensors[sensor_group]
                 or sensor_group == CONF_EXCLUDED_SENSORS):
             if user_input[CONF_EXCLUDED_SENSORS] != Gb.conf_sensors[CONF_EXCLUDED_SENSORS]:
-                list_add(self.config_parms_update_control, ['restart_ha', 'restart'])
+                list_add(self.config_parms_update_control, ['xrestart_ha', 'restart'])
             continue
 
         # Cycle thru the sensors now in the user_input sensor_group
@@ -360,11 +382,11 @@ def create_sensor_entity(devicename, conf_device, new_sensors_list):
     if new_sensors_list == []:
         return
 
-    if conf_device[CONF_TRACKING_MODE] == TRACK_DEVICE:
+    if conf_device[CONF_TRACKING_MODE] == TRACK:
         sensors_list = [v for v in new_sensors_list if v.startswith('md_') is False]
         NewSensors = ic3_sensor.create_tracked_device_sensors(devicename, conf_device, sensors_list)
 
-    elif conf_device[CONF_TRACKING_MODE] == MONITOR_DEVICE:
+    elif conf_device[CONF_TRACKING_MODE] == MONITOR:
         sensors_list = [v for v in new_sensors_list if v.startswith('md_') is True]
         NewSensors = ic3_sensor.create_monitored_device_sensors(devicename, conf_device, sensors_list)
     else:
@@ -386,153 +408,3 @@ def build_all_sensors_list():
             sensors_list.append(sensor)
 
     return sensors_list
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#      UPDATE CONFIGURATION FILE DEVICE_SENSORS LIST FOR ALL DEVICES
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-'''
-Build a list of the base and from_zone sensors for all devices from the device's
-configuration
-'''
-async def update_configure_file_device_sensors(devicenames=None, write_config_file=False):
-    '''
-    Create the sensors for each device being tracked or monitored and
-    the sensors associated with each device.
-
-    devicenames = list of devicenames to update
-    write_config_file = True to update the configuration file
-    '''
-    # Gb.conf_device_sensors = {}
-    if devicenames is not None and type(devicenames) is str:
-        devicenames = [devicenames]
-
-    for conf_device in Gb.conf_devices:
-        devicename = conf_device[CONF_IC3_DEVICENAME]
-
-        if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
-            continue
-        elif devicenames is not None and devicename not in devicenames:
-            continue
-        Gb.conf_device_sensors[devicename] = {SENSORS: {}, FROM_ZONE: {}}
-
-        try:
-            set_device_sensors_list(devicename, conf_device)
-        except Exception as err:
-            log_exception(err)
-
-    if write_config_file is True:
-        await config_file.async_write_icloud3_configuration_file()
-
-    return Gb.conf_device_sensors[devicename]
-
-#--------------------------------------------------------------------
-def set_device_sensors_list(devicename, conf_device, new_sensors_list=None):
-    '''
-    Add icloud3 sensors that have been selected via config_flow and
-    arein the Gb.conf_sensors for each device
-    '''
-    try:
-        if new_sensors_list is None:
-            new_sensors_list = []
-
-            for sensor_group, sensor_list in Gb.conf_sensors.items():
-                if sensor_group == CONF_EXCLUDED_SENSORS:
-                    continue
-
-                if (conf_device[CONF_TRACKING_MODE] == MONITOR_DEVICE
-                        and sensor_group == 'monitored_devices'):
-                    for md_sensor in sensor_list:
-                        list_add(new_sensors_list, md_sensor[3:])
-                else:
-                    new_sensors_list.extend(sensor_list)
-
-        # The sensor group is a group of sensors combined under one conf_sensor item
-        # Build sensors to be created from the the sensor or the sensor's group
-        sensors_list_set = set(SENSOR_LIST_ALWAYS)
-        tfz_sensors = []
-        for sensor in new_sensors_list:
-            if sensor not in SENSOR_DEFINITION:
-                continue
-            if sensor.startswith('tfz_'):
-                list_add(tfz_sensors, sensor[4:])
-                continue
-
-            if (instr(sensor, BATTERY)
-                    and conf_device[CONF_FAMSHR_DEVICENAME] == NONE_FNAME
-                    and conf_device[CONF_MOBILE_APP_DEVICE] == NONE_FNAME):
-                continue
-
-            if sensor in SENSOR_GROUPS:
-                sensors_list_set.update(SENSOR_GROUPS[sensor])
-            else:
-                sensors_list_set.add(sensor)
-
-        if 'last_zone' in sensors_list_set:
-            if 'zone' not in Gb.conf_sensors[ZONE]:   sensors_list_set.discard('last_zone')
-            if 'zone_name' in Gb.conf_sensors[ZONE]:  sensors_list_set.add('last_zone_name')
-            if 'zone_fname' in Gb.conf_sensors[ZONE]: sensors_list_set.add('last_zone_fname')
-
-        Gb.conf_device_sensors[devicename][SENSORS] = sensors_list_set
-
-        if HOME not in conf_device[CONF_TRACK_FROM_ZONES]:
-                conf_device[CONF_TRACK_FROM_ZONES].append(HOME)
-
-        if (is_empty(tfz_sensors)
-                or conf_device[CONF_TRACK_FROM_ZONES] == [HOME]):
-            Gb.conf_device_sensors[devicename][FROM_ZONE] = []
-        else:
-            set_from_zone_sensors_list(devicename, conf_device, tfz_sensors)
-
-        return
-
-    except Exception as err:
-        log_exception(err)
-        log_msg = (f"►INTERNAL ERROR (UpdtSensorUpdate-{err})")
-        log_error_msg(log_msg)
-
-#--------------------------------------------------------------------
-def set_from_zone_sensors_list(devicename, conf_device, sensors_list):
-
-    ha_zones, zone_entity_data = entity_io.get_entity_registry_data(platform=ZONE)
-    excluded_sensors_list      = _excluded_sensors_list()
-
-    sensors_from_zones = []
-    for sensor in sensors_list:
-        if (sensor not in SENSOR_DEFINITION):
-            continue
-
-        sensor = sensor.replace('tfz_', '')
-
-        for from_zone in conf_device[CONF_TRACK_FROM_ZONES]:
-            if from_zone not in ha_zones:
-                continue
-
-            sensor_from_zone = f"{sensor}_{from_zone}"
-            devicename_sensor_from_zone = f"{devicename}_{sensor}_{from_zone}"
-
-            if devicename_sensor_from_zone in excluded_sensors_list:
-                log_debug_msg(f"Sensor entity Excluded: sensor.{devicename_sensor_from_zone}")
-                continue
-
-            list_add(sensors_from_zones, sensor_from_zone)
-
-    Gb.conf_device_sensors[devicename][FROM_ZONE] = sensors_from_zones
-
-    return
-
-#--------------------------------------------------------------------
-def _excluded_sensors_list():
-    return [sensor_fname.split('(')[1][:-1]
-                        for sensor_fname in Gb.conf_sensors['excluded_sensors']
-                        if instr(sensor_fname, '(')]
-
-#--------------------------------------------------------------------
-def _strip_sensor_def_table_item_prefix(sensor):
-    '''
-    Remove the prefix for sensor names in the sensor definition table for
-    the 'track_from_zone (tfz_)  and 'monitor_device` (md_) sensors.
-    '''
-    return sensor.replace('tfz_', '').replace('md_', '')

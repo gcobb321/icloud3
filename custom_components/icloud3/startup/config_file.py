@@ -2,7 +2,7 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (
                                 ICLOUD3,
-                                RARROW, RARROW2, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE_DEVICE,
+                                RARROW, RARROW2, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE,
                                 ICLOUD, MOBAPP, NO_MOBAPP, NO_IOSAPP, HOME,
                                 CONF_PARAMETER_TIME_STR,
                                 CONF_PICTURE_WWW_DIRS,
@@ -35,7 +35,7 @@ from ..startup          import start_ic3
 from ..utils.utils      import (instr, ordereddict_to_dict, isbetween, list_add, is_empty,
                                 list_to_str, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
-                                open_ic3log_file, close_ic3log_file, )
+                                log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, )
 
 from ..utils            import file_io
@@ -169,6 +169,7 @@ async def async_write_icloud3_configuration_file(filename_suffix=None):
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
 
         success = await file_io.async_save_json_file(filename, Gb.conf_file_data)
+        log_debug_msg(f"Configuration File > Update Succerssful-{success}")
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -192,12 +193,6 @@ def _reconstruct_conf_file():
     update the file and then restore the real password
     '''
     Gb.conf_profile[CONF_UPDATE_DATE] = datetime_now()
-
-    # Gb.conf_tracking[CONF_PASSWORD] = \
-    #         encode_password(Gb.conf_tracking[CONF_PASSWORD])
-
-    # for apple_acct in Gb.conf_apple_accounts:
-    #     apple_acct[CONF_PASSWORD] = encode_password(apple_acct[CONF_PASSWORD])
 
     encode_all_passwords()
 
@@ -478,7 +473,7 @@ def _count_device_tracking_methods_configured():
         Gb.conf_mobapp_device_cnt = 0
 
         for conf_device in Gb.conf_devices:
-            if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
+            if conf_device[CONF_TRACKING_MODE] == INACTIVE:
                 continue
 
             if conf_device[CONF_FAMSHR_DEVICENAME].startswith(NONE_FNAME) is False:

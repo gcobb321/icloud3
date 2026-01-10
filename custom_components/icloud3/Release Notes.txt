@@ -15,14 +15,24 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-## iCloud3 v3.3.4.2 ()
+## iCloud3 v3.3.4.4 ()
 ### 🐞 Bug Fixes
-1. Apple Account - Fixed a bug when logging into an Apple account with a blank password.
-2. Internet Connection Error - Fixed abug handling the 1-minute timeout recheck routine after an Internet Conection Error ocurred.
-3. Sensors - Fixed a bug where a sensor that was just enabled would not be created wen restarting iCloud3.
+- **Configure > Tools**
+    - Fixed a bug handling a 'No' response when confirming the action for several items
+    - Fixed a bug where the results message was not displayed when the _Fix _2 Sensors Entity Name Errors_ was selected. The 'fix' operation was ran correctly.
+
+
+## iCloud3 v3.3.4.3 ()
+### 🐞 Bug Fixes
+- **Sensors**:
+    - Fixes the Undefined Sensors error created in v3.3.4.2
+    - Reduced the time needed to create the iCloud3 sensors. Instead of recreating the master sensors list every time iCloud3 starts, it is now only recreated it when changes have been made on the Configure Sensors screen.
+    - Fixed several bugs related to Excluded Sensors.
+- **Apple Account** - Fixed a bug when logging into an Apple account with a blank password.
+- **Internet Connection Error** - Fixed a bug handling the 1-minute timeout recheck routine after an Internet Connection Error occurred.
 
 ### 📢 Improvements
-1. The iCloud3 documentation has been updated and reorganized. It now reflects the screens in the crrent version. Some Menu headings and field names have been changed for clarity and consistency.
+- **iCloud3 Documentation** - The iCloud3 documentation had not been reviewed and updated in a long time, probable since v3.0 or v3.1 and was due for an overhaul. It was updated and reorganized and is now, for the most part, up-to-date. The update is not complete and some items still need to be addressed. Hopefully, this will be done sometime in January, 2026. There is no question that it is better than it was. Particular attention is being paid to the _Help and Trouble Shooting Problems_ sections.
 
 
 

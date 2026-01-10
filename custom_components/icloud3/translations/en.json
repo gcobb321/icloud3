@@ -204,7 +204,7 @@
       "action_completed": "Requested Action has been completed",
       "action_cancelled": "Requested Action has been cancelled",
       "restart_ha": "Home Assistant needs to be restarted to continue",
-      "excluded_sensors_ha_restart": "✔️ Excluded Sensors were Updated. An HA restart is required",
+      "excluded_sensors_ha_restart": "✔️ Excluded Sensors will not be created on next HA restart",
 
       "fix_entity_name_complete": "Sensor Entity Name Corrected completed",
       "fix_entity_name_not_needed": "No Sensor Entity Name Errors were found",

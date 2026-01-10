@@ -143,7 +143,7 @@ ACTION_LIST_OPTIONS = {
         'save_stay':                'SAVE > Update Configuration File',
 
         'confirm_action_yes':       'YES > Complete the requested action',
-        'confirm_return_no':        'NO  > Cancel the request',
+        'confirm_action_no':        'NO  > Cancel the request',
         'confirm_save':             'SAVE THE CONFIGURATION CHANGES > Save any changes, then return to the Main Menu',
 
         "divider1": "═══════════════════════════════════════",
@@ -204,7 +204,7 @@ DEVICE_LIST_ACTIONS_NO_ADD = [
         ACTION_LIST_OPTIONS['change_device_order'],
         ACTION_LIST_OPTIONS['goto_menu']]
 
-REVIEW_INACTIVE_DEVICES =  [
+REVIEW_INACTIVES =  [
         ACTION_LIST_OPTIONS['inactive_to_track'],
         ACTION_LIST_OPTIONS['goto_previous'],
         ACTION_LIST_OPTIONS['goto_menu']]
@@ -216,7 +216,7 @@ RESTART_NOW_LATER_ACTIONS = [
         ACTION_LIST_OPTIONS['review_inactive_devices']]
 CONFIRM_ACTIONS =  [
         ACTION_LIST_OPTIONS['confirm_action_yes'],
-        ACTION_LIST_OPTIONS['confirm_return_no']]
+        ACTION_LIST_OPTIONS['confirm_action_no']]
 DASHBOARD_BUILDER_ACTIONS = [
         ACTION_LIST_OPTIONS['create_dashboard'],
         ACTION_LIST_OPTIONS['cancel_goto_menu']]

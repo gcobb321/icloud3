@@ -245,6 +245,40 @@ def ordereddict_to_dict(odict_item):
     return dict_item
 
 #--------------------------------------------------------------------
+import hashlib
+
+def get_string_hash(input_string):
+    """
+    Generates a consistent SHA256 hash for a given input string.
+    
+    Args:
+        input_string (str): The string to hash.
+        
+    Returns:
+        str: The hexadecimal representation of the hash.
+    """
+    # Encode the string to bytes, which is required by hashlib
+    encoded_string = input_string.encode('utf-8')
+    
+    # Create a new sha256 hash object
+    hash_object = hashlib.sha256(encoded_string)
+    
+    # Get the hexadecimal representation of the hash
+    hex_dig = hash_object.hexdigest()
+    
+    return hex_dig
+
+# --- Usage Example ---
+string_data = "This is some data that might change over time."
+
+# Generate the hash
+current_hash = get_string_hash(string_data)
+print(f"The hash is: {current_hash}")
+
+# This hash can now be saved to a file or database.
+# When the program runs again, you can regenerate the hash and compare it.
+
+#--------------------------------------------------------------------
 def circle_letter(field):
     first_letter = field[:1].lower()
     # return CIRCLE_LETTERS_DARK.get(first_letter, '✪')

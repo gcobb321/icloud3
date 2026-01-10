@@ -273,13 +273,18 @@ class GlobalVariables(object):
 
     # HA device_tracker and sensor entity info
     DeviceTrackers_by_devicename    = {}  # HA device_tracker.[devicename] entity objects
-    Sensors_by_devicename           = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
-    Sensors_by_devicename_from_zone = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
-    Sensor_EventLog                 = None    # Event Log sensor object
     ha_device_id_by_devicename      = {}  # HA device_registry device_id
     ha_area_id_by_devicename        = {}  # HA device_registry area_id
+
+    # Sensor fields
+    Sensor_EventLog                 = None    # Event Log sensor object
+    Sensors_by_devicename           = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
+    Sensors_by_devicename_from_zone = {}  # HA sensor.[devicename]_[sensor_name]_[from_zone] objects
+    sensors_by_devicename           = {}  # Base sensor name for each device ...[sensors] & ...[from_zone]
     sensors_added_by_devicename     = {}  # Updated when a sensor is added in sensor.added_to-hass
     sensors_removed_by_devicename   = {}  # Updated when a sensor is removed in sensor.after_removal_cleanup
+    sensors_base                    = []  # Base list of sensors that will be created for each device
+    sensors_base_from_zone          = []
 
     # Event Log operational fields
     evlog_card_directory            = ''
@@ -366,14 +371,17 @@ class GlobalVariables(object):
     config_parm_initial_load        = {}        # Config parms from HA config.yaml used to reset eveerything on restart
     ha_config_yaml_icloud3_platform = {}        # Config parms from HA config.yaml used during initial conversion to config_flow
 
+    # Configuration file layout
     conf_file_data          = {}
     conf_profile            = {}
     conf_data               = {}
     conf_tracking           = {}
-    conf_devices            = []
     conf_apple_accounts     = []
+    conf_devices            = []
     conf_general            = {}
     conf_sensors            = {}
+    conf_device_sensors     = {}
+
     conf_devicenames        = []
     conf_icloud_dnames      = []
     conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter

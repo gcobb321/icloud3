@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.3.4.2'
+VERSION                         = '3.3.4.4'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -58,7 +58,12 @@ DISTANCE_TO_DEVICES             = 'distance_to'
 DISTANCE_TO_OTHER_DEVICES       = 'distance_to_other_devices'
 DISTANCE_TO_OTHER_DEVICES_DATETIME = 'distance_to_other_devices_datetime'
 
+
 # General constants
+BASE                            = 'base'
+TRACKED                         = 'tracked'
+MONITORED                       = 'monitored'
+EXCLUDED                        = 'excluded'
 HOME                            = 'home'
 HOME_FNAME                      = 'Home'
 NOT_HOME                        = 'not_home'
@@ -482,13 +487,13 @@ DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 OPT_NONE          = 0
 
 # Device tracking modes
-TRACK_DEVICE      = 'track'
-MONITOR_DEVICE    = 'monitor'
-INACTIVE_DEVICE   = 'inactive'
+TRACK               = 'track'
+MONITOR             = 'monitor'
+INACTIVE            = 'inactive'
 TRACKING_MODE_FNAME = {
-        TRACK_DEVICE: 'Tracked',
-        MONITOR_DEVICE: 'Monitored',
-        INACTIVE_DEVICE: 'INACTIVE',
+        TRACK: 'Tracked',
+        MONITOR: 'Monitored',
+        INACTIVE: 'INACTIVE',
 }
 
 # Zone field names
@@ -755,6 +760,7 @@ CONF_EVLOG_VERSION              = 'event_log_version'
 CONF_EVLOG_VERSION_RUNNING      = 'event_log_version_running'
 CONF_PICTURE_WWW_DIRS           = 'picture_www_dirs'
 CONF_EXTERNAL_IP_ADDRESS        = 'external_ip_address'
+CONF_SENSORS_HASH               = 'sensors_hash'
 
 # Account, Devices, Tracking Parameters
 CONF_USERNAME                   = 'username'
@@ -970,7 +976,8 @@ DEFAULT_PROFILE_CONF = {
         CONF_EVLOG_CARD_DIRECTORY: EVLOG_CARD_WWW_DIRECTORY,
         CONF_EVLOG_CARD_PROGRAM: EVLOG_CARD_WWW_JS_PROG,
         CONF_EVLOG_BTNCONFIG_URL: '',
-        CONF_PICTURE_WWW_DIRS: []
+        CONF_PICTURE_WWW_DIRS: [],
+        CONF_SENSORS_HASH: '',
 }
 
 DEFAULT_TRACKING_CONF = {
@@ -1003,7 +1010,7 @@ DEFAULT_DEVICE_CONF = {
         CONF_DEVICE_TYPE: 'iPhone',
         CONF_INZONE_INTERVAL: 120,
         CONF_FIXED_INTERVAL: 0,
-        CONF_TRACKING_MODE: TRACK_DEVICE,
+        CONF_TRACKING_MODE: TRACK,
         CONF_APPLE_ACCOUNT: '',
         CONF_FAMSHR_DEVICENAME: 'None',
         CONF_FAMSHR_DEVICE_ID: '',

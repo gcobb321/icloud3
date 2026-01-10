@@ -6,7 +6,7 @@ from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3, ICLOUD3
                                 NOT_SET, HOME,
                                 DEVICE_TYPE_ICONS,
                                 BLANK_SENSOR_FIELD, DEVICE_TRACKER_STATE,
-                                INACTIVE_DEVICE,
+                                INACTIVE,
                                 NAME, FNAME, PICTURE, ICON, ALERT,
                                 DEVICE_TRACKER, LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
                                 ZONE, ZONE_DATETIME,  LAST_ZONE, FROM_ZONE, ZONE_FNAME,
@@ -93,7 +93,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 continue
 
             if (devicename in Gb.DeviceTrackers_by_devicename
-                    or conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE):
+                    or conf_device[CONF_TRACKING_MODE] == INACTIVE):
                 continue
 
             DeviceTracker = iCloud3_DeviceTracker(devicename, conf_device)

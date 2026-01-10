@@ -591,6 +591,7 @@ async def async_reauthenticate_apple_account(self,
         AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username.get(username, AppleAcct)
 
         if (action_item != 'log_into_apple_acct'
+                and AppleAcct
                 and AppleAcct.login_successful is False):
             return 'refresh_screen', reauth_username, user_input, errors
 

@@ -5,7 +5,7 @@ NBSP              = '⠈' #'&nbsp;'
 from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG,
                                 CRLF_DOT, CRLF_HDOT, NBSP, NBSP6,DOT, HDOT, NL3, NL4,
                                 MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
-                                CONF_EVLOG_BTNCONFIG_URL,
+                                CONF_EVLOG_BTNCONFIG_URL, SENSORS, FROM_ZONE,
                                 EVLOG_IC3_STARTING, VERSION, VERSION_BETA,)
 
 
@@ -188,13 +188,16 @@ async def async_begin_icloud3_startup_process(dummy_parameter):
 
     try:
         try:
-            sensors_cnt = load_time_estimate = 0
-            if Gb.conf_devices:
-                first_key = next(iter(Gb.conf_device_sensors))
-                sensors_cnt = len(Gb.conf_device_sensors[first_key]['sensors']) * len(Gb.conf_devices)
+            sensors_cnt = 0
+            # if Gb.conf_devices:
+            #     for devicename, sensors_list in Gb.conf_device_sensors.items():
+            #         sensors_cnt += len(sensors_list[SENSORS])
+            #         sensors_cnt += len(sensors_list[FROM_ZONE])
 
-                Gb.EvLog.post_event(f"Setting up Devices > Count-{len(Gb.conf_devices)}")
-                Gb.EvLog.post_event( f"Setting up Sensors > Count-{sensors_cnt}")
+            # Gb.EvLog.post_event( f"Setting up Sensors > Count-{sensors_cnt}±")
+            sensors_cnt = ic3_sensor.total_sensors_cnt()
+            Gb.EvLog.post_event(f"Setting up Sensors > Count-{sensors_cnt}±")
+            Gb.EvLog.post_event(f"Setting up Devices > Count-{len(Gb.conf_devices)}")
         except Exception as err:
             pass
 

@@ -5,7 +5,7 @@ from ..const            import (RARROW, PHDOT, CRLF_DOT, DOT, HDOT, PHDOT, CIRCL
                                 YELLOW_ALERT, RED_ALERT, EVLOG_NOTICE, EVLOG_ALERT, EVLOG_ERROR, LINK, LLINK, RLINK,
                                 IPHONE_FNAME, IPHONE, IPAD, WATCH, MAC, AIRPODS, ICLOUD, OTHER, HOME, FAMSHR,
                                 DEVICE_TYPES, DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, DEVICE_TRACKER_DOT,
-                                TRACK_DEVICE, MONITOR_DEVICE, INACTIVE_DEVICE,
+                                TRACK, MONITOR, INACTIVE,
                                 CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT, CONF_TOTP_KEY,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_VERIFICATION_CODE, CONF_LOCATE_ALL,
@@ -173,9 +173,9 @@ def format_device_list_item(self, conf_device):
     device_text  = (f"{conf_device[CONF_FNAME]}"
                     f" ({conf_device[CONF_IC3_DEVICENAME]}){RARROW}")
 
-    if conf_device[CONF_TRACKING_MODE] == MONITOR_DEVICE:
+    if conf_device[CONF_TRACKING_MODE] == MONITOR:
         device_text += " Ⓜ MONITOR, "
-    elif conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE:
+    elif conf_device[CONF_TRACKING_MODE] == INACTIVE:
         device_text += "✪ INACTIVE, "
 
     if conf_device[CONF_FAMSHR_DEVICENAME] != 'None':
@@ -612,9 +612,9 @@ async def build_picture_filename_selection_list(self):
         #         dir = image_filename.rsplit('/', 1)[0]
         #         list_add(self.www_directory_list, dir)
 
-        # Make sure all directories in the filter list still exist, 
+        # Make sure all directories in the filter list still exist,
         # delete it if it does not exist
-        www_gb_dirs_unknown = [dir  for dir in Gb.picture_www_dirs 
+        www_gb_dirs_unknown = [dir  for dir in Gb.picture_www_dirs
                                     if dir not in self.www_directory_list]
         if isnot_empty(www_gb_dirs_unknown):
             for www_gb_dir_unknown in www_gb_dirs_unknown:

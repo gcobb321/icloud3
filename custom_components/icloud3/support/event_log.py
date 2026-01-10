@@ -293,20 +293,19 @@ class EventLog(object):
             pass
 
         try:
-            if (event_text.startswith(EVLOG_UPDATE_START)
-                    or event_text.startswith(EVLOG_UPDATE_END)
-                    # or event_text.startswith(EVLOG_IC3_STARTING)
+            this_update_time = ''
+            if len(event_text) <= 5:
+                pass
+            #if (event_text.startswith(EVLOG_UPDATE_START)
+            elif (event_text.startswith(EVLOG_UPDATE_END)
+                    or event_text.startswith(EVLOG_IC3_STARTING)
                     or event_text.startswith(EVLOG_IC3_STAGE_HDR)):
-                this_update_time = ''
-                if len(event_text) <= 5:
-                    pass
-                # elif instr(event_text, 'Internet'):
-                #     this_update_time = dt_util.now().strftime('%H:%M:%S')
-                #     this_update_time = time_to_12hrtime(this_update_time)
-                elif Gb.log_rawdata_flag:
-                    this_update_time = 'Rawdata'
+                this_update_time = dt_util.now().strftime('%a')
+                if Gb.log_rawdata_flag:
+                    this_update_time += ',Raw'
                 elif Gb.log_debug_flag:
-                    this_update_time = 'Debug'
+                    this_update_time += ',Dbug'
+
 
             else:
                 this_update_time = dt_util.now().strftime('%H:%M:%S')
@@ -319,7 +318,7 @@ class EventLog(object):
                         Device.last_evlog_msg_secs = time_now_secs()
                         from_zone_dname = Device.FromZone_BeingUpdated.from_zone_dname
                         if event_text.startswith(EVLOG_TIME_RECD):
-                            this_update_time = f"»{from_zone_dname[:6]}"
+                            this_update_time = f"»{from_zone_dname[:6]}"# 
                             if (Device.FromZone_BeingUpdated is Device.FromZone_TrackFrom
                                     and Device.FromZone_BeingUpdated is not Device.FromZone_Home):
                                 this_update_time = this_update_time.upper()

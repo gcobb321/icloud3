@@ -7,7 +7,7 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (RED_ALERT, LINK, RLINK, RARROW,
                                 IPHONE, IPAD, WATCH, AIRPODS, ICLOUD, OTHER, HOME, NONE,
                                 DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, MOBAPP, NO_MOBAPP,
-                                INACTIVE_DEVICE, HOME_DISTANCE,
+                                INACTIVE, HOME_DISTANCE,
                                 PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
                                 CONF_VERSION,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_BTNCONFIG_URL,
@@ -125,7 +125,7 @@ def form_confirm_action(self, action_desc=None):
     '''
 
     actions_list = CONFIRM_ACTIONS.copy()
-    actions_list_default = 'confirm_return_no'
+    actions_list_default = 'confirm_action_no'
     action_desc = action_desc if action_desc is not None else\
                     'Do you want to perform the selected action?'
 
@@ -158,7 +158,7 @@ def form_restart_icloud3(self):
     if self._inactive_device_cnt() > 0:
         inactive_devices = [conf_device[CONF_IC3_DEVICENAME]
                     for conf_device in Gb.conf_devices
-                    if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE]
+                    if conf_device[CONF_TRACKING_MODE] == INACTIVE]
         inactive_devices_list = \
             ACTION_LIST_OPTIONS['review_inactive_devices'].replace(
                     '^add-text^', list_to_str(inactive_devices))
@@ -186,12 +186,12 @@ def form_review_inactive_devices(self, start_cnt=None):
     self.inactive_devices_key_text = {}
     inactive_device_list = [conf_device[CONF_IC3_DEVICENAME]
                             for conf_device in Gb.conf_devices
-                            if conf_device[CONF_TRACKING_MODE] == INACTIVE_DEVICE]
+                            if conf_device[CONF_TRACKING_MODE] == INACTIVE]
 
     cnt = 0
     inactive_device_cnt = len(inactive_device_list)
     for conf_device in Gb.conf_devices[start_cnt:start_cnt+5]:
-        if conf_device[CONF_TRACKING_MODE] != INACTIVE_DEVICE:
+        if conf_device[CONF_TRACKING_MODE] != INACTIVE:
             continue
         cnt += 1
 
@@ -204,7 +204,7 @@ def form_review_inactive_devices(self, start_cnt=None):
         next_page_msg = ACTION_LIST_OPTIONS['next_page_devices'].replace('^add-text^', next_4_msg)
         self.actions_list.append(next_page_msg)
 
-    self.actions_list.extend(REVIEW_INACTIVE_DEVICES)
+    self.actions_list.extend(REVIEW_INACTIVES)
     return vol.Schema({
         vol.Required('inactive_devices',
                     default=[]):
@@ -794,7 +794,7 @@ def form_update_device(self):
     elif self.errors != {}:
         self.errors['base'] = 'unknown_value'
 
-    if utils.parm_or_device(self, CONF_TRACKING_MODE) == INACTIVE_DEVICE:
+    if utils.parm_or_device(self, CONF_TRACKING_MODE) == INACTIVE:
         self.errors[CONF_TRACKING_MODE] = 'inactive_device'
 
     log_zones_key_text = {'none': 'None'}
@@ -1460,7 +1460,8 @@ def form_sensors(self, user_input=None):
     self.actions_list = []
     self.actions_list.append(ACTION_LIST_OPTIONS['exclude_sensors'])
     self.actions_list.append(ACTION_LIST_OPTIONS['set_to_default_sensors'])
-    self.actions_list.extend(ACTION_LIST_ITEMS_BASE)
+    self.actions_list.append(ACTION_LIST_OPTIONS['save_stay'])
+    self.actions_list.append(ACTION_LIST_OPTIONS['goto_menu'])
 
     self.set_default_sensors(Gb.conf_sensors)
     sensors = user_input if user_input is not None else Gb.conf_sensors
@@ -1502,7 +1503,7 @@ def form_sensors(self, user_input=None):
                         options=Gb.conf_sensors[CONF_EXCLUDED_SENSORS], mode='list', multiple=True)),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.action_default_text('save_stay')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1514,10 +1515,12 @@ def form_exclude_sensors(self):
     self.actions_list = SENSORS_EXCLUDE_ACTIONS_.copy()
 
     if self.sensors_list_filter == '?':
+        default_action_item = 'filter_sensors'
         filtered_sensors_fname_list = [f"None Displayed - Enter a Filter or `all` \
                         to display all sensors ({len(self.sensors_fname_list)} Sensors)"]
         filtered_sensors_list_default = []
     else:
+        default_action_item = 'save_stay'
         self.sensors_list_filter.replace('?', '')
         if self.sensors_list_filter.lower() == 'all':
             filtered_sensors_fname_list = [sensor_fname
@@ -1535,6 +1538,7 @@ def form_exclude_sensors(self):
 
         filtered_sensors_fname_list.sort()
         if filtered_sensors_fname_list == []:
+            default_action_item = 'filter_sensors'
             filtered_sensors_fname_list = [f"No Sensors found containing \
                                                 '{self.sensors_list_filter}'"]
 
@@ -1552,7 +1556,7 @@ def form_exclude_sensors(self):
                         options=filtered_sensors_fname_list, mode='list', multiple=True)),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('filter_sensors')):
+                    default=utils.action_default_text(default_action_item)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
