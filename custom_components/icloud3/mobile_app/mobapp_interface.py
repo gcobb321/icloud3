@@ -73,7 +73,7 @@ def get_entity_registry_mobile_app_devices():
                 device_reg_data = device_registry.async_get(device_id)
 
                 log_title = (f"{NL3D}MobApp device_registry entry - <{mobapp_dname}>)")
-                log_data_unfiltered(log_title, str(device_reg_data)) #, log_rawdata_flag=True)
+                log_data_unfiltered(log_title, str(device_reg_data)) #, is_log_level_rawdata=True)
 
                 raw_model = device_reg_data.model
 
@@ -96,7 +96,7 @@ def get_entity_registry_mobile_app_devices():
                     [mobapp_fname, raw_model, device_type, model_display_name]    # Gary-iPhone, iPhone15,2; iPhone; iPhone 14 Pro
 
             log_title = (f"MobApp entity_registry entry - <{mobapp_dname}>)")
-            log_data(log_title, dev_trkr_entity, log_rawdata_flag=True)
+            log_data(log_title, dev_trkr_entity, is_log_level_rawdata=True)
 
         last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities, '_last_update_trigger')
         battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_level')
@@ -304,7 +304,7 @@ def setup_notify_service_name_for_mobapp_devices(post_evlog_msg=False):
         Gb.mobapp_fnames_by_mobapp_id[mobapp_id] = mobapp_fname
 
         for devicename, Device in Gb.Devices_by_devicename.items():
-            if (Device.mobapp_monitor_flag is False
+            if (Device.is_mobapp_monitored is False
                     or Gb.conf_data_source_MOBAPP is False):
                     # or Device.mobapp[NOTIFY] != ''):
                 continue
@@ -373,7 +373,7 @@ def request_location(Device, is_alive_check=False, force_request=False):
     '''
 
     if (Gb.used_data_source_MOBAPP is False
-            or Device.mobapp_monitor_flag is False
+            or Device.is_mobapp_monitored is False
             or Device.mobapp[NOTIFY] == ''
             or Device.is_offline):
         return

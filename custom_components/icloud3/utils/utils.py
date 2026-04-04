@@ -92,6 +92,13 @@ def str_to_list(str_value):
     return str_value.split(',')
 
 #--------------------------------------------------------------------
+def set_to_list(set_value):
+    if set_value is None:
+        return []
+
+    return list(set_value)
+
+#--------------------------------------------------------------------
 def delete_from_list(list_value, item):
     if item in list_value:
         list_value.remove(item)
@@ -125,6 +132,22 @@ def dict_value_to_list(key_value_dict):
 
     return value_list
 
+#-------------------------------------------------------------------------------------------
+def dict_del(dict_item, main_key, sub_key=None):
+    '''
+    Remove an item from a dict_item. The dict_item can be:
+        Gb.dict[main_key]
+        Gb.dict[main_key][sub_key]
+    '''
+
+    if main_key not in dict_item:
+        return
+
+    if sub_key is not None:
+        dict_item = dict_item[main_key]
+        main_key = sub_key
+
+    dict_item.pop(main_key, None)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -250,33 +273,23 @@ import hashlib
 def get_string_hash(input_string):
     """
     Generates a consistent SHA256 hash for a given input string.
-    
+
     Args:
         input_string (str): The string to hash.
-        
+
     Returns:
         str: The hexadecimal representation of the hash.
     """
     # Encode the string to bytes, which is required by hashlib
     encoded_string = input_string.encode('utf-8')
-    
+
     # Create a new sha256 hash object
     hash_object = hashlib.sha256(encoded_string)
-    
+
     # Get the hexadecimal representation of the hash
     hex_dig = hash_object.hexdigest()
-    
+
     return hex_dig
-
-# --- Usage Example ---
-string_data = "This is some data that might change over time."
-
-# Generate the hash
-current_hash = get_string_hash(string_data)
-print(f"The hash is: {current_hash}")
-
-# This hash can now be saved to a file or database.
-# When the program runs again, you can regenerate the hash and compare it.
 
 #--------------------------------------------------------------------
 def circle_letter(field):
@@ -339,7 +352,7 @@ def format_gps(latitude, longitude, accuracy, latitude_to=None, longitude_to=Non
     if longitude is None or latitude is None:
         gps_text = UNKNOWN
 
-    # elif Gb.display_gps_lat_long_flag is False:
+    # elif Gb.is_gps_lat_long_displayed is False:
     #     gps_text     = f"/±{accuracy:.0f}m"
 
     else:
@@ -401,7 +414,7 @@ def encode_password(password):
         Decoded password
     '''
     try:
-        if (password == '' or Gb.encode_password_flag is False):
+        if (password == '' or Gb.is_password_encoded is False):
             return password
 
         return f"««{base64_encode(password)}»»"
@@ -440,7 +453,7 @@ def decode_password(password):
     try:
         # If the password in the configuration file is not encoded (no '««' or '»»')
         # and it should be encoded, save the configuration file which will encode it
-        if (Gb.encode_password_flag
+        if (Gb.is_config_flow_open
                 and password != ''
                 and (password.startswith('««') is False
                     or password.endswith('»»') is False)):

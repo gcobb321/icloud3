@@ -6,15 +6,15 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 DEVICE_TRACKER, DEVICE_TRACKER_DOT, NOTIFY,
                                 HOME, ERROR, NONE_FNAME,
                                 STATE_TO_ZONE_BASE, CMD_RESET_PYICLOUD_SESSION,
-                                EVLOG_ALERT, EVLOG_IC3_STARTING, EVLOG_NOTICE, EVLOG_IC3_STAGE_HDR,
+                                EVLOG_ALERT, EVLOG_ATTENTION, EVLOG_NOTICE, EVLOG_IC3_STAGE_HDR,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 CIRCLE_LETTERS_DARK,
                                 EVENT_RECDS_MAX_CNT_BASE, EVENT_RECDS_MAX_CNT_ZONE,
                                 ALERTS_SENSOR_ATTRS,
-                                CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, HDOT, CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK, CRLF_CIRCLE_X,
+                                CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, HDOT, CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK, CRLF_CIRCLE_X, CIRCLE_X,
                                 CRLF_SP3_HDOT, CRLF_INDENT, CRLF_X, CRLF_TAB, DOT, CRLF_SP8_HDOT, CRLF_SP8_DOT,
                                 CRLF_RED_X, RED_X, CRLF_RED_ALERT, RED_ALERT, CRLF_RED_MARK, CRLF_STAR,
-                                CRLF_RED_ALERT, RED_ALERT, YELLOW_ALERT, UNKNOWN,
+                                CRLF_RED_ALERT, RED_ALERT, YELLOW_ALERT, UNKNOWN, INACTIVE_SYMB,
                                 RARROW, NBSP2, NBSP4, NBSP6, CIRCLE_STAR, INFO_SEPARATOR, DASH_20, CHECK_MARK,
                                 ICLOUD, FAMSHR,
                                 DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES,
@@ -118,7 +118,7 @@ def initialize_directory_filenames():
     Gb.wazehist_database_filename     = Gb.hass.config.path(STORAGE_DIR, icloud3_config_dir, 'waze_location_history.db')
     Gb.icloud3_directory              = Gb.hass.config.path('custom_components', DOMAIN)
     Gb.entity_registry_file           = Gb.hass.config.path(STORAGE_DIR, STORAGE_KEY_ENTITY_REGISTRY)
-    Gb.icloud_cookie_directory        = Gb.hass.config.path(STORAGE_DIR, 'icloud3.apple_acct')
+    Gb.icloud_cookies_directory        = Gb.hass.config.path(STORAGE_DIR, 'icloud3.apple_acct')
     Gb.icloud_session_directory       = Gb.hass.config.path(STORAGE_DIR, 'icloud3.apple_acct')
 
     # Note: The Event Log  directory & filename are initialized in config_file.py
@@ -146,11 +146,11 @@ def handle_config_parms_update():
                 f"Type-{list_to_str(config_parms_update_control).title()}")
 
     if 'restart' in config_parms_update_control:
-        post_greenbar_msg(f"Restarting {ICLOUD3_VERSION_MSG}")
+        post_greenbar_msg(f"Restarting iCloud3 {ICLOUD3_VERSION_MSG}")
         Gb.EvLog.display_user_message('iCloud3 is Restarting')
-        post_event(f"{EVLOG_IC3_STARTING}Restart Requested > {ICLOUD3_VERSION_MSG}")
+        post_event(f"{EVLOG_ATTENTION}iCloud3 Restart Requested ({ICLOUD3_VERSION_MSG})")
         initialize_data_source_variables()
-        Gb.restart_icloud3_request_flag = True
+        Gb.was_icloud3_restart_requested = True
         return
 
     post_event(f"{EVLOG_IC3_STAGE_HDR}")
@@ -322,9 +322,9 @@ def initialize_global_variables():
 
     # Configuration parameters
     Gb.device_tracker_state_source  = DEFAULT_GENERAL_CONF[CONF_DEVICE_TRACKER_STATE_SOURCE]
-    Gb.center_in_zone_flag          = DEFAULT_GENERAL_CONF[CONF_CENTER_IN_ZONE]
+    Gb.is_loc_centered_in_zone          = DEFAULT_GENERAL_CONF[CONF_CENTER_IN_ZONE]
     Gb.display_zone_format          = DEFAULT_GENERAL_CONF[CONF_DISPLAY_ZONE_FORMAT]
-    Gb.display_gps_lat_long_flag    = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]
+    Gb.is_gps_lat_long_displayed    = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]
     Gb.max_interval_secs            = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     Gb.offline_interval_secs        = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     Gb.exit_zone_interval_secs      = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
@@ -340,7 +340,7 @@ def initialize_global_variables():
 
     Gb.tfz_tracking_max_distance    = DEFAULT_GENERAL_CONF[CONF_TFZ_TRACKING_MAX_DISTANCE]
 
-    Gb.distance_method_waze_flag    = True
+    Gb.is_waze_dist_method_used    = True
     Gb.waze_region                  = DEFAULT_GENERAL_CONF[CONF_WAZE_REGION]
     Gb.waze_max_distance            = DEFAULT_GENERAL_CONF[CONF_WAZE_MAX_DISTANCE]
     Gb.waze_min_distance            = DEFAULT_GENERAL_CONF[CONF_WAZE_MIN_DISTANCE]
@@ -360,6 +360,8 @@ def initialize_global_variables():
 
     Gb.alerts_sensor        = 'none'
     Gb.alerts_sensor_attrs  = {}
+    Gb.icloud3_reload_requested_secs = 0
+    Gb.icloud3_reload_requested      = False
 
     initialize_on_initial_load()
 
@@ -368,7 +370,7 @@ def initialize_on_initial_load():
     # Initialize these variables only when starting up
     # Do not initialize them on a restart
 
-    if Gb.initial_icloud3_loading_flag is False:
+    if Gb.is_icloud3_initial_startup is False:
         return
 
     Gb.log_level = 'info'
@@ -404,8 +406,8 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.time_format_24_hour          = not Gb.time_format_12_hour
         Gb.device_tracker_state_source  = Gb.conf_general[CONF_DEVICE_TRACKER_STATE_SOURCE]
         Gb.display_zone_format          = Gb.conf_general[CONF_DISPLAY_ZONE_FORMAT]
-        Gb.display_gps_lat_long_flag    = Gb.conf_general[CONF_DISPLAY_GPS_LAT_LONG]
-        Gb.center_in_zone_flag          = Gb.conf_general[CONF_CENTER_IN_ZONE]
+        Gb.is_gps_lat_long_displayed    = Gb.conf_general[CONF_DISPLAY_GPS_LAT_LONG]
+        Gb.is_loc_centered_in_zone          = Gb.conf_general[CONF_CENTER_IN_ZONE]
         Gb.max_interval_secs            = Gb.conf_general[CONF_MAX_INTERVAL] * 60
         Gb.exit_zone_interval_secs      = Gb.conf_general[CONF_EXIT_ZONE_INTERVAL] * 60
         Gb.offline_interval_secs        = Gb.conf_general[CONF_OFFLINE_INTERVAL] * 60
@@ -419,8 +421,8 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.track_from_base_zone         = Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE]
         Gb.track_from_home_zone         = Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]
         Gb.gps_accuracy_threshold       = Gb.conf_general[CONF_GPS_ACCURACY_THRESHOLD]
-        Gb.discard_poor_gps_inzone_flag = Gb.conf_general[CONF_DISCARD_POOR_GPS_INZONE]
-        Gb.distance_between_device_flag = Gb.conf_general[CONF_DISTANCE_BETWEEN_DEVICES]
+        Gb.is_poor_gps_inzone_discarded = Gb.conf_general[CONF_DISCARD_POOR_GPS_INZONE]
+        Gb.is_dist_between_devices_calc = Gb.conf_general[CONF_DISTANCE_BETWEEN_DEVICES]
 
         Gb.tfz_tracking_max_distance   = Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]
         Gb.monitored_devices_location_sensors_flag = 'md_location_sensors' in Gb.conf_sensors['monitored_devices']
@@ -503,12 +505,15 @@ def ha_startup_completed(dummy_parameter):
     mobapp_interface.get_mobile_app_integration_device_info(ha_started_check=True)
     mobapp_interface.setup_notify_service_name_for_mobapp_devices()
 
+#------------------------------------------------------------------------------
 def ha_stopping(dummy_parameter):
     post_event("HA Shutting Down")
-    Gb.EvLog.display_user_message("HA Shutting Down, Waiting for HA Startup to Finish")
+    Gb.EvLog.display_user_message("HA Shutting Down")
 
+#------------------------------------------------------------------------------
 def ha_restart(dummp_parameter):
     Gb.hass.services.call("homeassistant", "restart")
+
 #------------------------------------------------------------------------------
 #
 #   SET THE GLOBAL DATA SOURCES
@@ -529,7 +534,7 @@ def initialize_data_source_variables():
     Gb.username                     = conf_username
     Gb.username_base                = username_id(Gb.username)
     Gb.password                     = conf_password
-    Gb.encode_password_flag         = Gb.conf_tracking[CONF_ENCODE_PASSWORD]
+    Gb.is_password_encoded         = Gb.conf_tracking[CONF_ENCODE_PASSWORD]
 
     Gb.AppleAcct_logging_in_usernames= []
 
@@ -542,12 +547,12 @@ def initialize_data_source_variables():
     Gb.conf_data_source_ICLOUD    = Gb.conf_data_source_ICLOUD
     Gb.conf_data_source_MOBAPP    = instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP)
 
-    Gb.use_data_source_ICLOUD     = Gb.conf_data_source_ICLOUD and Gb.username and Gb.password
+    Gb.use_data_source_ICLOUD     = (Gb.conf_data_source_ICLOUD and Gb.username != '' and Gb.password != '')
     Gb.use_data_source_MOBAPP     = Gb.conf_data_source_MOBAPP
     Gb.primary_data_source        = ICLOUD if Gb.use_data_source_ICLOUD else MOBAPP
 
     Gb.devices                    = Gb.conf_devices
-    Gb.icloud_force_update_flag   = False
+    Gb.is_force_icloud_update   = False
     Gb.get_ICLOUD_devices_retry_cnt = 0
 
 #------------------------------------------------------------------------------
@@ -643,12 +648,12 @@ def set_log_level(log_level):
     # log_debug/rawdata_flag _restart in service_handler (Restart) to reassign any log
     # level overrides on an iC3 restart
 
-    Gb.log_debug_flag   = instr(log_level, 'debug')
-    Gb.log_rawdata_flag = instr(log_level, 'rawdata')
-    Gb.log_rawdata_flag_unfiltered = instr(log_level, 'unfiltered')
-    Gb.log_rawdata_flag = Gb.log_rawdata_flag or Gb.log_rawdata_flag_unfiltered
-    Gb.log_debug_flag   = Gb.log_debug_flag or Gb.log_rawdata_flag
-    Gb.evlog_trk_monitors_flag = Gb.evlog_trk_monitors_flag or instr(log_level, 'eventlog')
+    Gb.is_log_level_debug   = instr(log_level, 'debug')
+    Gb.is_log_level_rawdata = instr(log_level, 'rawdata')
+    Gb.is_log_level_rawdata_unfiltered = instr(log_level, 'unfiltered')
+    Gb.is_log_level_rawdata = Gb.is_log_level_rawdata or Gb.is_log_level_rawdata_unfiltered
+    Gb.is_log_level_debug   = Gb.is_log_level_debug or Gb.is_log_level_rawdata
+    Gb.is_evlog_trk_monitors_displayed = Gb.is_evlog_trk_monitors_displayed or instr(log_level, 'eventlog')
 
     if Gb.iC3Logger:
         Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
@@ -669,8 +674,8 @@ def set_waze_conf_parameters():
     Gb.waze_realtime     = Gb.conf_general[CONF_WAZE_REALTIME]
     Gb.waze_region       = Gb.conf_general[CONF_WAZE_REGION]
 
-    Gb.distance_method_waze_flag = Gb.conf_general[CONF_WAZE_USED]
-    if Gb.distance_method_waze_flag is False:
+    Gb.is_waze_dist_method_used = Gb.conf_general[CONF_WAZE_USED]
+    if Gb.is_waze_dist_method_used is False:
         Gb.waze_history_database_used = False
     else:
         Gb.waze_history_database_used = Gb.conf_general[CONF_WAZE_HISTORY_DATABASE_USED]
@@ -696,7 +701,7 @@ def set_zone_display_as():
 
     '''
 
-    if Gb.initial_icloud3_loading_flag:
+    if Gb.is_icloud3_initial_startup:
         return
 
     zone_msg = ''
@@ -949,10 +954,10 @@ def create_Zones_object():
     '''
 
     try:
-        if Gb.initial_icloud3_loading_flag:
+        if Gb.is_icloud3_initial_startup:
             event.async_track_state_added_domain(Gb.hass, 'zone', zone_handler.ha_added_zone_entity_id)
             event.async_track_state_removed_domain(Gb.hass, 'zone', zone_handler.ha_removed_zone_entity_id)
-        if Gb.initial_icloud3_loading_flag is False:
+        if Gb.is_icloud3_initial_startup is False:
             Gb.hass.services.call(ZONE, "reload")
     except:
         pass
@@ -1083,7 +1088,7 @@ def create_Waze_object():
     '''
     try:
         if Gb.Waze:
-            Gb.Waze.__init__(   Gb.distance_method_waze_flag,
+            Gb.Waze.__init__(   Gb.is_waze_dist_method_used,
                                 Gb.waze_min_distance,
                                 Gb.waze_max_distance,
                                 Gb.waze_realtime,
@@ -1093,7 +1098,7 @@ def create_Waze_object():
                                 Gb.waze_history_max_distance,
                                 Gb.waze_history_track_direction)
         else:
-            Gb.Waze = Waze(     Gb.distance_method_waze_flag,
+            Gb.Waze = Waze(     Gb.is_waze_dist_method_used,
                                 Gb.waze_min_distance,
                                 Gb.waze_max_distance,
                                 Gb.waze_realtime,
@@ -1162,7 +1167,7 @@ def create_Devices_object():
             username     = conf_device[CONF_APPLE_ACCOUNT]
             apple_acct   = username_id(username)
 
-            #  Device's Apple Acct was not found in the Apple Accts list. It is invalid or
+            # Device's Apple Acct was not found in the Apple Accts list. It is invalid or
             # the password has not been verified yet
             if (Gb.use_data_source_ICLOUD
                     and username != ''
@@ -1192,7 +1197,8 @@ def create_Devices_object():
 
             # Do not set up inactive device
             if conf_device[CONF_TRACKING_MODE] ==  INACTIVE:
-                post_event( f"{CIRCLE_STAR} {conf_device[CONF_FNAME]} ({devicename}) > "
+                # post_event( f"{CIRCLE_STAR} {conf_device[CONF_FNAME]} ({devicename}) > "
+                post_event( f"{INACTIVE_SYMB} {conf_device[CONF_FNAME]} ({devicename}) > "
                             f"{DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])}, INACTIVE, "
                             f"{CRLF_DOT}iCloud Device-{icloud_dname}"
                             f"{CRLF_DOT}MobApp Entity-{conf_device[CONF_MOBILE_APP_DEVICE]}")
@@ -1355,17 +1361,44 @@ def log_into_apple_accounts():
         locate_all_devices    = conf_apple_acct[CONF_LOCATE_ALL]
 
         AppleAcct = Gb.AppleAcct_by_username.get(username)
+
+        # Initial check to see if AppleAcct is available
+        can_reuse_AppleAcct = (
+            Gb.was_icloud3_reloaded is True
+            and AppleAcct is not None
+            and isnot_empty(AppleAcct.AADevData_by_device_id)
+            and username == AppleAcct.username
+            and password == AppleAcct.password
+            and apple_server_location == AppleAcct.apple_server_location
+            and locate_all_devices == AppleAcct.locate_all_devices)
+
+        # Second check to see if AppleAcct is has no exceptions and can be reused
+        if can_reuse_AppleAcct:
+            can_reuse_AppleAcct = (
+                AppleAcct.is_AADevices_setup_complete
+                and AppleAcct.is_authenticated
+                and aas.is_authentication_2fa_code_needed(AppleAcct) is False
+                and Gb.AppleAcct_error_by_username.get(username, False) is False
+                and Gb.iCloudSession_by_username.get(username, None is not None)
+                and Gb.valid_upw_by_username.get(username, False))
+
+        # Force new AppleAcct login
+        # if Gb.was_icloud3_reloaded:
+        #     can_reuse_AppleAcct= False
+        #     _log('TEST CODE')
+
         if Gb.valid_upw_by_username.get(username) is False:
             results_msg += f"{CRLF_RED_X}{username_id(username)}, Not Logged in, Invalid Username-Password"
             alert_msg = EVLOG_ALERT
 
-        elif (AppleAcct is None
-                or AppleAcct.AADevData_by_device_id == {}
-                or username != AppleAcct.username
-                or password != AppleAcct.password
-                or apple_server_location != AppleAcct.apple_server_location
-                or locate_all_devices != AppleAcct.locate_all_devices):
 
+        # elif (AppleAcct is None
+        #         or AppleAcct.AADevData_by_device_id == {}
+        #         or username != AppleAcct.username
+        #         or password != AppleAcct.password
+        #         or apple_server_location != AppleAcct.apple_server_location
+        #         or locate_all_devices != AppleAcct.locate_all_devices):
+        elif can_reuse_AppleAcct is False:
             AppleAcct = aas.log_into_apple_account(
                                         username,
                                         password,
@@ -1375,7 +1408,9 @@ def log_into_apple_accounts():
             if AppleAcct:
                 if AppleAcct.is_authenticated:
                     results_msg += (f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, "
-                                    f"Login Successful, {AppleAcct.auth_method}")
+                                    f"Login Successful, {AppleAcct.auth_method}"
+                                    f"{CRLF_HDOT}Trust Token Expires "
+                                    f"{AppleAcct.trust_token_expire_date_time}")
             else:
                 results_msg += (f"{CRLF_RED_X}{username_id(username)}, Login Failed, "
                                 f"Server Loc-{apple_server_location}")
@@ -1389,18 +1424,6 @@ def log_into_apple_accounts():
 
     Gb.startup_lists['Gb.AppleAcct_error_by_username'] = Gb.AppleAcct_error_by_username
 
-    # Tell HA to generate reauth needed notification that will be handled
-    # handled in config_flow
-    if isnot_empty(Gb.AppleAcct_needing_reauth_via_ha):
-        try:
-            Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
-        except Exception as err:
-            log_exception(err)
-
-        AppleAcct.new_2fa_code_already_requested_flag = True
-        post_event( f"Apple Acct > {Gb.AppleAcct_needing_reauth_via_ha['account_owner']}, "
-                    f"Auth request submitted to HA")
-
     # Check if the pyicloud_ic3_interface detected the internet is down
     if Gb.internet_error:
         return False
@@ -1413,7 +1436,7 @@ def log_into_apple_accounts():
         post_event(f"Apple Acct > All Tracked Devices Located")
 
     else:
-        post_alert( f"Apple Acct > Some Tracked Devices not Located:"
+        post_event( f"Apple Acct > Location data is not available for:"
                     f"{CRLF}{NBSP6}{DOT}{list_to_str(Gb.devices_without_location_data)}")
 
     return True
@@ -1436,10 +1459,10 @@ def are_all_devices_verified(retry=False):
     # Get a list of all tracked devices that have not been set up by icloud or the Mobile App
     unverified_devices = [Device.fname_devicename
                             for devicename, Device in Gb.Devices_by_devicename.items()
-                            if Device.verified_flag is False and Device.isnot_inactive]
+                            if Device.was_verified is False and Device.isnot_inactive]
     unverified_device_usernames = [Device.conf_apple_acct_username
                             for devicename, Device in Gb.Devices_by_devicename.items()
-                            if (Device.verified_flag is False
+                            if (Device.was_verified is False
                                     and Device.isnot_inactive)]
 
     Gb.usernames_setup_error_retry_list   = list(set(unverified_device_usernames))
@@ -1760,7 +1783,7 @@ def _set_any_Device_alerts():
         # Device's Apple acct error
         if (Device.conf_apple_acct_username == ''
                 or Device.conf_icloud_dname == ''
-                or Device.verified_flag is False
+                or Device.was_verified is False
                 or Device.conf_apple_acct_username in Gb.AppleAcct_error_by_username):
             continue
 
@@ -1826,7 +1849,7 @@ def _post_evlog_apple_acct_tracked_devices_info(AppleAcct):
 
         if AppleAcct.terms_of_use_update_needed:
             reauth_needed_msg += f"{CRLF}{NBSP2}{RED_ALERT}Accept Terms of Service Needed"
-        if AppleAcct.auth_2fa_code_needed:
+        if AppleAcct.is_auth_code_needed:
             reauth_needed_msg += f"{CRLF}{NBSP2}{RED_ALERT}Authentication Needed"
 
         sorted_device_id_by_icloud_dname = OrderedDict(sorted(AppleAcct.device_id_by_icloud_dname.items()))
@@ -1889,7 +1912,7 @@ def _post_evlog_apple_acct_tracked_devices_info(AppleAcct):
             # display no location exception msg in EvLog
             exception_msg = ''
 
-            if _AADevData and Gb.log_rawdata_flag:
+            if _AADevData and Gb.is_log_level_rawdata:
                 log_title = (   f"iCloud Data {AppleAcct.account_name}{LINK}"
                                 f"{devicename}/{pyicloud_icloud_dname} "
                                 f"({_AADevData.device_identifier})")
@@ -2196,7 +2219,7 @@ def set_device_data_source(AppleAcct):
                     Gb.Devices_by_icloud_device_id[device_id] = Device
                     _AADevData = AppleAcct.AADevData_by_device_id[device_id]
 
-            if (Device.mobapp_monitor_flag and data_source is None):
+            if (Device.is_mobapp_monitored and data_source is None):
                 data_source = MOBAPP
 
             if data_source != MOBAPP:
@@ -2300,7 +2323,7 @@ def setup_tracked_devices_for_mobapp():
         if mobapp_id in Gb.MobileApp_fnames_disabled:
             update_alert_sensor(Device.fname, f"MobApp Device Disabled ({mobapp_dname})")
             Device.set_fname_alert(RED_ALERT)
-            Device.mobapp_device_unavailable_flag = True
+            Device.is_mobapp_device_unavailable = True
             mobapp_error_disabled_msg += (  f"{CRLF_DOT}{mobapp_dname} > "
                                             f"Assigned to-{Device.fname_devicename}")
             continue
@@ -2317,7 +2340,7 @@ def setup_tracked_devices_for_mobapp():
         verified_mobapp_fnames.append(mobapp_fname)
         Gb.mobapp_device_verified_cnt += 1
         Device.verified_MOBAPP = True
-        Device.mobapp_monitor_flag = True
+        Device.is_mobapp_monitored = True
 
         # Set raw_model that will get picked up by device_tracker and set in the device registry if it is still
         # at it's default value. Normally, raw_model is set when setting up FamShr if that is available, FmF does not
@@ -2537,7 +2560,7 @@ def _display_any_mobapp_errors( mobapp_error_mobile_app_msg,
 #--------------------------------------------------------------------
 def log_debug_stage_4_results():
 
-    # if Gb.log_debug_flag:
+    # if Gb.is_log_level_debug:
     #     log_debug_msg(f"{Gb.Devices=}")
     #     log_debug_msg(f"{Gb.Devices_by_devicename=}")
     #     log_debug_msg(f"{Gb.conf_devicenames=}")
@@ -2556,12 +2579,12 @@ def set_devices_verified_status():
     Cycle thru the Devices and set verified status based on data sources
     '''
     for devicename, Device in Gb.Devices_by_devicename.items():
-        Device.verified_flag = (Device.verified_ICLOUD
+        Device.was_verified = (Device.verified_ICLOUD
                             or  Device.verified_MOBAPP)
 
         # If the data source is iCloud and the device is not verified, set the
         # data source to MobApp
-        if (Device.verified_flag
+        if (Device.was_verified
                 and Device.is_data_source_ICLOUD
                 and Device.verified_ICLOUD is False
                 and Device.verified_MOBAPP):
@@ -2612,7 +2635,7 @@ def setup_trackable_devices():
                 Device.dist_apart_msg               = ''      # Distance to all other devices msg set in icloud3_main
                 Device.dist_apart_msg_by_devicename = {}
 
-        if Device.mobapp_monitor_flag:
+        if Device.is_mobapp_monitored:
             Gb.used_data_source_MOBAPP = True
 
             mobapp_attrs = mobapp_data_handler.get_mobapp_device_trkr_entity_attrs(Device)
@@ -2669,13 +2692,13 @@ def display_all_devices_config_info(selected_devicenames=None):
             continue
 
         if Device.fname in Gb.alerts_sensor_attrs:
-            if Device.verified_flag is False:
+            if Device.was_verified is False:
                 Device.evlog_fname_alert_char = RED_ALERT
             else:
                 Device.evlog_fname_alert_char = YELLOW_ALERT
 
         Device.display_info_msg(f"Set Trackable Devices > {devicename}")
-        if Device.verified_flag:
+        if Device.was_verified:
             tracking_mode = ''
         else:
             Gb.reinitialize_icloud_devices_flag = (Gb.conf_icloud_device_cnt > 0)
@@ -2741,7 +2764,7 @@ def display_all_devices_config_info(selected_devicenames=None):
                                 f"{CRLF_HDOT}Not used as a location data source")
 
         else:
-            evlog_msg += CRLF_DOT if Device.mobapp_monitor_flag else CRLF_RED_ALERT
+            evlog_msg += CRLF_DOT if Device.is_mobapp_monitored else CRLF_RED_ALERT
             evlog_msg += f"Mobile App Configuration:"
 
             trigger_entity = Device.mobapp[TRIGGER][7:] or 'UNKNOWN'
@@ -2888,7 +2911,7 @@ def post_restart_icloud3_complete_msg():
     for devicename, Device in Gb.Devices_by_devicename.items():   #
         Device.display_info_msg("Setup Complete, Locating Device")
 
-    post_event(f"{EVLOG_IC3_STARTING}Initializing {ICLOUD3_VERSION_MSG} > Complete")
+    post_event(f"{EVLOG_ATTENTION}Initializing {ICLOUD3_VERSION_MSG} > Complete")
 
     Gb.EvLog.update_event_log_display("")
 

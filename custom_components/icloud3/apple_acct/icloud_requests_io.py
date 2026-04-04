@@ -5,6 +5,7 @@ from ..utils.messaging      import (post_alert, log_exception, _evlog, _log, log
 from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
 from ..utils.utils          import (is_running_in_event_loop)
 from .icloud_session        import iCloudSession
+# from .icloud_session_auth_ipv4 import iCloudSession
 
 import datetime as dt
 import http.cookiejar as cookielib
@@ -16,7 +17,14 @@ from homeassistant.helpers.event import track_time_interval
 from homeassistant.helpers  import httpx_client
 from httpx                  import (ConnectTimeout, HTTPError, RequestError,
                                     HTTPStatusError, InvalidURL, )
-
+# Force socket to use IPv4 only since Apple authentication servers
+# do not support IPv6
+# import socket
+# _orig_getaddrinfo = socket.getaddrinfo
+# def _ipv4_only_getaddrinfo( host, port,
+#                             family=0, type=0, proto=0, flags=0):
+#     return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+# socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 REQUEST_TIMEOUT_TIME = dt.timedelta(seconds=60)
 
@@ -30,7 +38,7 @@ All data request calls to icloud.com are routed through this central io handler.
 '''
 
 def post(AppleAcct, url, **kwargs):
-    schedule_request_timeout_timer()
+    schedule_request_timeout_timer(url)
     try:
         data = AppleAcct.iCloudSession.post(url, **kwargs)
     except Exception as err:
@@ -42,9 +50,21 @@ def post(AppleAcct, url, **kwargs):
 
 #--------------------------------------------------------------------
 def get(AppleAcct, url, **kwargs):
-    schedule_request_timeout_timer()
+    schedule_request_timeout_timer(url)
     try:
         data = AppleAcct.iCloudSession.get(url, **kwargs)
+    except Exception as err:
+        log_exception(err)
+        data = {}
+
+    cancel_request_timeout_timer()
+    return data
+
+#--------------------------------------------------------------------
+def put(AppleAcct, url, **kwargs):
+    schedule_request_timeout_timer(url)
+    try:
+        data = AppleAcct.iCloudSession.put(url, **kwargs)
     except Exception as err:
         log_exception(err)
         data = {}
@@ -62,25 +82,21 @@ def new_session(AppleAcct, **kwargs):
     return _session
 
 #--------------------------------------------------------------------
-def cookies(AppleAcct, cookie_dir_filename):
-    AppleAcct.iCloudSession.cookies = cookielib.LWPCookieJar(filename=cookie_dir_filename)
+# def cookies(AppleAcct, cookies_filename):
+#     AppleAcct.iCloudSession.cookies = cookielib.LWPCookieJar(filename=cookies_filename)
 
-    if path.exists(AppleAcct.cookie_dir_filename):
-        try:
-            AppleAcct.iCloudSession.cookies.load(ignore_discard=True, ignore_expires=True)
+#     if path.exists(AppleAcct.cookies_filename):
+#         try:
+#             AppleAcct.iCloudSession.cookies.load(ignore_discard=True, ignore_expires=True)
 
-        except:
-            return False
+#         except:
+#             return False
 
-    return True
-
-#--------------------------------------------------------------------
-async def async_request(url, **kwargs):
-    return await Gb.hass.async_add_executor_job(request_url_data, url, kwargs)
+#     return True
 
 #--------------------------------------------------------------------
 def request(url, **kwargs):
-    schedule_request_timeout_timer()
+    schedule_request_timeout_timer(url)
     data = request_get_post(url, **kwargs)
     cancel_request_timeout_timer()
     return data
@@ -88,7 +104,9 @@ def request(url, **kwargs):
 #--------------------------------------------------------------------
 def request_get_post(url, **kwargs):
     '''
-    Set up and request data from a url. This handles non-session icloud.com calls
+    Set up and request data from a url. This handles non-session icloud.com calls.
+
+    Add no_log=True in kwargs to not log request info
 
     Returns:
         - data dictionary with the returned json data, the url and status_code
@@ -106,17 +124,24 @@ def request_get_post(url, **kwargs):
         data['ok']   = ok
 
         try:
+            no_log = kwargs.pop('no_log', False)
+            if no_log is False:
+                log_request_data('Request', 'Get', url, kwargs, 'TestConn')
+
+
             if 'data' in kwargs:
+                #  Direct call to Python requests module
                 response = requests.post(url, **kwargs)
             else:
                 response = requests.get(url, **kwargs)
 
+            if no_log is False:
+                log_request_data('Response', 'Get', url, kwargs, 'TestConn', response)
 
             try:
                 data = response.json()
             except Exception as err:
                 pass
-
 
             code = response.status_code
             ok   = True
@@ -161,7 +186,7 @@ Errors in the underlying Python code that support the session/request modules. I
 a data request is made and there is no response from Apple/iCloud.
 '''
 
-def schedule_request_timeout_timer():
+def schedule_request_timeout_timer(url):
     '''
     Set the timeout handler when a post/get call is made
     '''
@@ -169,11 +194,12 @@ def schedule_request_timeout_timer():
         cancel_request_timeout_timer()
         return
 
+    Gb.last_url_requested = url
+
     if Gb.icloud_io_request_secs > 0:
         cancel_request_timeout_timer()
 
     Gb.icloud_io_request_secs = time_now_secs()
-    # _log(f"🔺🔺 START TIMER {secs_to_time(Gb.icloud_io_request_secs)}")
 
     try:
         Gb.icloud_io_1_min_timer_fct = None
@@ -190,7 +216,6 @@ def schedule_request_timeout_timer():
 #------------------------------------------------------------------
 def cancel_request_timeout_timer():
 
-    # _log(f"🔻🔻 CANCEL TIMER {secs_to_time(Gb.icloud_io_request_secs)}")
     if Gb.icloud_io_request_secs > 0:
         Gb.icloud_io_request_secs = 0
     if Gb.icloud_io_1_min_timer_fct is not None:
@@ -204,6 +229,9 @@ def request_timed_out(current_time):
     '''
 
     cancel_request_timeout_timer()
+
+    if Gb.InternetError is None:
+        return True
 
     is_internet_available = Gb.InternetError.is_internet_available()
     if is_internet_available is False:

@@ -69,9 +69,9 @@ class iCloud3_Zone(object):
             Gb.HAZones_by_zone[self.zone] = self
 
         if zone_data:
-            log_data(f"Zone Data - <{zone} > ", self.zone_data, log_rawdata_flag=True)
+            log_data(f"Zone Data - <{zone} > ", self.zone_data, is_log_level_rawdata=True)
         if self.ha_zone_attrs:
-            log_data(f"Zone Attrs - <{zone} > ", self.ha_zone_attrs, log_rawdata_flag=True)
+            log_data(f"Zone Attrs - <{zone} > ", self.ha_zone_attrs, is_log_level_rawdata=True)
 
         if zone == HOME:
             Gb.HomeZone = self

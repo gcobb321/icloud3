@@ -21,7 +21,8 @@ more_info_text = {
         f"by pulling down on the screen."
         f"{CRLF}5. Check the MobApp device_tracker entities on “HA Settings > "
         f"Developer Tools > States” to verify that the devices using the Mobile App are "
-        f"listed, enabled and that the data is current."),
+        f"listed, enabled and that the data is current."
+        ),
 
     'mobapp_error_search_msg': (
         f"{CRLF_DASH_75}"
@@ -31,14 +32,16 @@ more_info_text = {
         f"to a specific device_tracker entity."
         f"{CRLF}2. Check the mobile_app devices in “HA Settings > Devices & "
         f"Services > Devices” screen and delete or rename the devices starting with the "
-        f"iCloud3 devicename that should be selected."),
+        f"iCloud3 devicename that should be selected."
+        ),
 
     'mobapp_error_disabled_msg': (
         f"{CRLF_DASH_75}"
         f"{CRLF}1. Go to “HA Devices & Services > Integrations > Mobile App”"
         f"{CRLF}2. Select the disabled device. Then select the 3-dots in the upper "
         f"right corner."
-        f"{CRLF}Select Enable device."),
+        f"{CRLF}Select Enable device."
+        ),
 
     'mobapp_error_multiple_devices_on_scan': (
         f"{CRLF_DASH_75}"
@@ -48,7 +51,8 @@ more_info_text = {
         f"to a specific device_tracker entity."
         f"{CRLF}2. Check the Mobile App devices on the “HA Settings > Devices & "
         f"Services > Devices” screen. Delete or rename the devices starting with the "
-        f"iCloud3 devicename that should not be selected."),
+        f"iCloud3 devicename that should not be selected."
+        ),
 
     'mobapp_error_mobile_app_msg': (
         f"{CRLF_DASH_75}"
@@ -61,7 +65,8 @@ more_info_text = {
         f"entities are listed and enabled. If disabled, select the “Gear” Icon and enable them. "
         f"If necessary. Review the HA Mobile App docs for more information."
         f"{CRLF}4. Do this for each mobile_app device with a problem."
-        f"{CRLF}5. Restart iCloud3 after making any changes (Event Log > Action > Restart)."),
+        f"{CRLF}5. Restart iCloud3 after making any changes (Event Log > Action > Restart)."
+        ),
 
     'mobapp_device_unavailable': (
         f"{CRLF_DASH_75}"
@@ -72,7 +77,8 @@ more_info_text = {
         f"displayed in general or for a specific device. If so, that issue must be corrected "
         f"before the Mobile App can be used for this device."
         f"{CRLF_DASH_75}"
-        f"{CRLF}The iCloud tracking method will continue to be used for this device."),
+        f"{CRLF}The iCloud tracking method will continue to be used for this device."
+        ),
 
     'mobapp_device_no_location': (
         f"{CRLF_DASH_75}"
@@ -86,7 +92,8 @@ more_info_text = {
         f"{CRLF}{NBSP3}2. Verify that the device can be located."
         f"{CRLF}{NBSP3}3. Verify that location services are enabled and the MobApp settings are correct."
         f"{CRLF}{NBSP3}4. Go to the “Mobile App > Location” screen, scroll to the bottom and select "
-        f"`Update Location`. Then see if any errors are displayed in the Event Log."),
+        f"`Update Location`. Then see if any errors are displayed in the Event Log."
+        ),
 
     'icloud_device_not_available': (
         f"{CRLF_DASH_75}"
@@ -103,7 +110,8 @@ more_info_text = {
         f"{CRLF}4. Check the Apple Account iCloud Device assigned to the iCloud3 device "
         f"on the “Configure Settings > Update Devices” screen. Open the iCloud Devices "
         f"list and review the devicenames available. Make sure the devices are correct and "
-        f"there are no duplicates or additional/new devices with a different name."),
+        f"there are no duplicates or additional/new devices with a different name."
+        ),
 
     'icloud_dup_devices': (
         f"{CRLF_DASH_75}"
@@ -150,7 +158,8 @@ more_info_text = {
         f"{CRLF}{NBSP3}1. HA Sidebar, Configuration, Companion App"
         f"{CRLF}{NBSP3}2. Debugging, Reset frontend cache, Settings, Done"
         f"{CRLF}{NBSP3}3. Close Companion App, Redisplay iCloud3 screen"
-        f"{CRLF}{NBSP3}4. Refresh, Pull down from the top, Spinning wheel, Done"),
+        f"{CRLF}{NBSP3}4. Refresh, Pull down from the top, Spinning wheel, Done"
+        ),
 
     'unverified_device': (
         f"{CRLF_DASH_75}"
@@ -168,7 +177,8 @@ more_info_text = {
         f"{CRLF}5. iCloud is down. The network is down. iCloud is not responding to location requests."
         f"{CRLF}6. An internal code error occurred. Check “HA Settings > System > Logs” for errors."
         f"{CRLF_DASH_75}"
-        f"{CRLF}Restart iCloud3 (Event Log > Actions > Restart iCloud) and see if the problem reoccurs."),
+        f"{CRLF}Restart iCloud3 (Event Log > Actions > Restart iCloud) and see if the problem reoccurs."
+        ),
 
     'all_devices_inactive': (
         f"Devices can be tracked, monitored or inactive on the “Configure Settings > Update "
@@ -178,7 +188,8 @@ more_info_text = {
         f"{CRLF}3. Verify the Mobile App Device assigned to the iCloud3 device is correct."
         f"{CRLF}4. Review the other parameters for the device while you are on this screen."
         f"{CRLF}5. Do this for all of your devices."
-        f"{CRLF}6. Exit the “Configure Settings” screens and Restart iCloud3."),
+        f"{CRLF}6. Exit the “Configure Settings” screens and Restart iCloud3."
+        ),
 
     'add_icloud3_integration': (
         f"{CRLF}1. Select {SETTINGS_INTEGRATIONS_MSG}"
@@ -192,7 +203,8 @@ more_info_text = {
         f"{CRLF}The Apple Account and Devices need to be setup in the iCloud3 configuration"
         f"{CRLF}1. “Event Log `Gear` > Configure” or “HA Settngs > Devices & Services > iCloud3 > Configure”"
         f"{CRLF}2. “Data Sources > Apple ……” to add an Apple account"
-        f"{CRLF}3. “iCloud3 Devices” to add devices that will be tracked"),
+        f"{CRLF}3. “iCloud3 Devices” to add devices that will be tracked"
+        ),
 
     'unverified_devices_caused_by': (
         f"{CRLF}This can be caused by:"
@@ -201,7 +213,8 @@ more_info_text = {
         f"{CRLF_DOT}The internet may be down."
         f"{CRLF_DOT}The username/password is not set up or incorrect."
         f"{CRLF_DASH_75}"
-        f"{CRLF}Check the Event Log error messages. Correct any problems and restart iCloud3."),
+        f"{CRLF}Check the Event Log error messages. Correct any problems and restart iCloud3."
+        ),
 
     'invalid_msg_key': (
         f"{CRLF_DASH_75}"
@@ -209,7 +222,8 @@ more_info_text = {
 
     'instructions_already_displayed': (
         f"{CRLF_DASH_75}"
-        f"{CRLF}See the instructions that have already been displayed"),
+        f"{CRLF}See the instructions that have already been displayed"
+        ),
 
     'password_srp_error': (
         f"{CRLF_DASH_75}"
@@ -218,6 +232,7 @@ more_info_text = {
         f"will have to change the Apple Account password to be able to log into it. "
         f"{CRLF}{CRLF}For more infornation, go to the iCloud3 GitHub "
         f"issues page. Click the red Bug icon on the Event Log and "
-        f"review the{CRLF}`➤ Password SRP Error Message` issue at the top of the screen."),
+        f"review the{CRLF}`➤ Password SRP Error Message` issue at the top of the screen."
+        ),
 
 }

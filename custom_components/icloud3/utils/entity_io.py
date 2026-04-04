@@ -1,21 +1,24 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (PLATFORM_SENSOR, DOMAIN, SENSOR,
+from ..const            import (PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR, DOMAIN, SENSOR, ICLOUD3LC,
                                 HIGH_INTEGER, NOT_SET,
                                 HOME, ZONE, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
                                 TRACE_ATTRS_BASE, TRACE_ICLOUD_ATTRS_BASE,                                BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME,
                                 LAST_UPDATED_SECS, LAST_UPDATED_TIME,
                                 STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
-from .utils             import (instr,  is_empty, isnot_empty, list_add, list_del,)
-from .messaging         import (log_debug_msg, log_exception, log_debug_msg, log_error_msg, log_data,
+from ..const_sensor     import (ICLOUD3_INTERNAL_SENSORS_ID, SENSOR_DEFINITION, )
+from .utils             import (instr,  is_empty, isnot_empty,
+                                list_add, list_del, list_to_str, set_to_list, )
+from .messaging         import (log_info_msg, log_debug_msg, log_exception,
+                                log_error_msg, log_data,
                                 _evlog, _log, )
 from .time_util         import (secs_to_time)
 
 from homeassistant.helpers import entity_registry as er, device_registry as dr
+from homeassistant.util.event_type import EventType
 from datetime import datetime
 import json
-
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -39,8 +42,6 @@ def get_state(entity_id):
 
     try:
         entity_data = Gb.hass.states.get(entity_id)
-        # _log(f"{entity_id=} {entity_data.state=}")
-
         if entity_data is None: return NOT_SET
 
         entity_state = entity_data.state
@@ -338,21 +339,63 @@ def get_entity(entity_id):
     except:
         return {}
 
-def remove_entity(entity_id):
+#................................................................................
+# def remove_sensor(entity_id):
+#     try:
+#         entity_reg = er.async_get(Gb.hass)
+#         entity_reg.async_remove(entity_id)
+#     except Exception as err:
+#         log_exception(err)
+#         pass
+
+#     try:
+#         if Gb.hass.states.async_available(entity_id) is False:
+#             Gb.hass.async_add_executor_job(Gb.hass.states.remove, entity_id)
+
+#     except Exception as err:
+#         log_exception(err)
+#         pass
+
+#................................................................................
+def remove_deleted_entity(entity_key):
     try:
         entity_reg = er.async_get(Gb.hass)
-        entity_reg.async_remove(entity_id)
+        if entity_key not in entity_reg.deleted_entities:
+            return
+
+        deleted_entity = entity_reg.deleted_entities.pop(entity_key, None)
+        entity_reg.async_schedule_save()
+
     except Exception as err:
+        log_exception(err)
         pass
 
+#............................................................................................
+# def remove_device(device_id):
+#     try:
+#         device_reg = dr.async_get(Gb.hass)
+#         device_reg.async_remove_device(device_id)
+
+#     except Exception as err:
+#         log_exception(err)
+
+#................................................................................
+def remove_deleted_device(device_id):
     try:
-        if Gb.hass.states.async_available(entity_id) is False:
-            Gb.hass.async_add_executor_job(Gb.hass.states.remove, entity_id)
+        device_reg = dr.async_get(Gb.hass)
+        # deleted_devices_keys = list(device_reg.deleted_devices.keys())
+        # if device_id not in deleted_devices_keys:
+        if device_id not in device_reg.deleted_devices:
+            return
+
+        device_reg.deleted_devices.pop(device_id, None)
+        device_reg.async_schedule_save()
 
     except Exception as err:
-        #log_exception(err)
+        log_exception(err)
         pass
 
+#....................................................................
 def get_assigned_sensor_entity(unique_id):
     try:
         entity_reg = er.async_get(Gb.hass)
@@ -360,6 +403,7 @@ def get_assigned_sensor_entity(unique_id):
     except:
         return None
 
+#................................................................................
 def change_entity_id(from_entity_id, to_entity_id):
     try:
         entity_reg = er.async_get(Gb.hass)
@@ -367,6 +411,7 @@ def change_entity_id(from_entity_id, to_entity_id):
     except Exception as err:
         log_exception(err)
 
+#................................................................................
 def update_entity(entity_id, **kwargs):
     try:
         entity_reg = er.async_get(Gb.hass)
@@ -375,6 +420,7 @@ def update_entity(entity_id, **kwargs):
         # log_exception(err)
         return False
 
+#................................................................................
 def is_entity_available(entity_id):
     try:
         entity_reg = er.async_get(Gb.hass)

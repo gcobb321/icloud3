@@ -1,6 +1,6 @@
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (CRLF_DOT, NL3, NL4, NL3D, )
+from ..const                import (CRLF_DOT, NL3, NL4, NL3D, NL3_DATA, NL3UD, )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
 from .messaging             import (log_exception, _evlog, _log, log_debug_msg,
                                     log_data_unfiltered, write_ic3log_recd, )
@@ -52,7 +52,7 @@ async def async_read_json_file(filename):
 def read_json_file(filename, async_msg=False):
 
     _async_msg = '' if async_msg is False else ' (async)'
-    filename_msg = f"{NL3D}READ JSON FILE{_async_msg}--{filename}"
+    filename_msg = f"{NL3UD}READ JSON FILE{_async_msg}--{filename}"
 
     if file_exists(filename) is False:
         log_debug_msg(f"{filename_msg}❗ File Not Found")

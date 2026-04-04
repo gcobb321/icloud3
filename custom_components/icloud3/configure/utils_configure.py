@@ -11,7 +11,8 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
 
-from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
+from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT,
+                                ACTION_LIST_ITEM_KEYS, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 
 VALID_ERROR_MSG = [ 'conf_updated',
@@ -110,27 +111,39 @@ def strip_special_text_from_user_input(user_input, pname):
     return user_input
 
 #--------------------------------------------------------------------
+def actions_list(self):
+    '''
+    Create a [{'value': action_item, 'label': action_item_text}, {..}]
+    selection list for the action items being displayed in the Actions area at the
+    bottom of the screen.
+    '''
+    return [{   'value': action_item,
+                'label': ACTION_LIST_OPTIONS.get(action_item, action_item)}
+                            for action_item in self.actions_list]
+
+#--------------------------------------------------------------------
 def action_text_to_item(self, user_input):
     '''
-    Convert the text of the item selected to it's key name.
+    Convert the user_input['action_items'] = action_selection field to it's key name.
     '''
 
     if user_input is None:
         return None, None
 
-    action_text = None
-    if 'action_item' in user_input:
-        action_item = user_input['action_item']
-        user_input.pop('action_item')
-
-    elif 'action_items' in user_input:
-        action_text = user_input['action_items']
-        user_input.pop('action_items')
-
-    else:
+    action_selection = None
+    if 'action_items' not in user_input:
         return user_input, None
 
-    action_item = ACTION_LIST_ITEMS_KEY_BY_TEXT.get(action_text)
+    action_selection = user_input.pop('action_items')
+
+    # If the actions_list is set up as an {value: key, label: text} item, the action_selection value
+    # will be the action_item
+    if action_selection in ACTION_LIST_ITEM_KEYS:
+        return user_input, action_selection
+
+    # If the actions_list is set up as an [display text] item, scan the actions_list table
+    # for a match. Then get action_item value
+    action_item = ACTION_LIST_ITEMS_KEY_BY_TEXT.get(action_selection)
 
     # Action item was not found in the list of action items and may include
     # special text updated at run time. The special text iss inserted by replacing
@@ -139,7 +152,7 @@ def action_text_to_item(self, user_input):
     if action_item is None:
         action_item = [action_item_key
                         for action_item_key, action_item_text in ACTION_LIST_OPTIONS.items()
-                        if action_text.startswith(action_item_text[:action_item_text.find('^')])]
+                        if action_selection.startswith(action_item_text[:action_item_text.find('^')])]
 
         if isnot_empty(action_item):
             action_item = action_item[0]

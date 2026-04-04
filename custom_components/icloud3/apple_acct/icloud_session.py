@@ -1,16 +1,15 @@
-
 '''
 Customized version of pyicloud.py to support iCloud3 Custom Component
 
 Platform that supports importing data from the iCloud Location Services
 and Find My Friends api routines. Modifications to pyicloud were made
 by various people to include:
-    - Original pyicloud - picklepete & Quantame
-                        - https://github.com/picklepete
+- Original pyicloud - picklepete & Quantame
+- https://github.com/picklepete
 
-    - Updated and maintained by - Quantame
-    - 2fa developed by          - Niccolo Zapponi (nzapponi)
-    - Find My Friends component - Z Zeleznick
+- Updated and maintained by - Quantame
+- 2fa developed by          - Niccolo Zapponi (nzapponi)
+- Find My Friends component - Z Zeleknick
 
 The picklepete version used imports for the services, utilities and exceptions
 modules. They are now maintained by Quantame and have been modified by
@@ -20,25 +19,30 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (EVLOG_ALERT, CRLF_DOT, APPLE_SERVER_ENDPOINT, )
+from ..const                import (EVLOG_ALERT, CRLF_DOT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4)
 from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del,
-                                    is_running_in_event_loop, )
+is_running_in_event_loop, )
 from ..utils.file_io        import (save_json_file, )
 from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
 from ..utils.messaging      import (_log, _evlog, post_event, post_alert, post_error_msg,
-                                    log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                    log_data, log_exception, log_data_unfiltered, log_request_data, )
+log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
+log_data, log_exception, log_data_unfiltered, log_request_data, )
 
 from .icloud_cookie_jar     import PyiCloudCookieJar
 
-#--------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––
 from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
 from requests               import Session, adapters
 import requests
+
 # from requests.exceptions    import ConnectionError
+
 from os                     import path
 import inspect
 import json
+import socket       # ADDED: needed for AF_INET in _IPv4OnlyAdapter
+import urllib3      # ADDED: needed to patch allowed_gai_family in _IPv4OnlyAdapter
+
 # import datetime as dt
 
 from urllib.parse import urlparse
@@ -60,7 +64,7 @@ CONNECTION_ERROR_503 = 503
 
 HTTP_RESPONSE_CODES = {
     0: 'Unknown Error',
-    200: ' Successful Response',
+    200: 'Successful Response',
     201: 'Device Offline',
     204: 'Verification Code Accepted',
     302: 'Apple Server not Available (Connection Error)',
@@ -73,7 +77,7 @@ HTTP_RESPONSE_CODES = {
     500: 'Verification Code May Be Needed',
     503: 'Apple Server Refused Password Validation Request',
     -2:  'Apple Server not Available (Connection Error)',
-}
+    }
 HTTP_RESPONSE_CODES_IDX = {str(code): code for code in HTTP_RESPONSE_CODES.keys()}
 
 DEVICE_DATA_FILTER_OUT = [
@@ -84,9 +88,9 @@ DEVICE_DATA_FILTER_OUT = [
     'lockedTimestamp', 'locFoundEnabled', 'lostDevice', 'pendingRemove', 'maxMsgChar', 'darkWake', 'wipeInProgress',
     'repairDeviceReason', 'deviceColor', 'deviceDiscoveryId', 'activationLocked', 'passcodeLength',
     ]
-    # 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
-    # 'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
-    # 'LCK', 'REM', 'MCS', 'REP', 'KEY', 'KPD', 'WIP',
+# 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
+# 'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
+# 'LCK', 'REM', 'MCS', 'REP', 'KEY', 'KPD', 'WIP',
 
 '''
 https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/ErrorCodes.html#//apple_ref/doc/uid/TP40015240-CH4-SW1
@@ -115,21 +119,58 @@ LOCK_SUCCESSFUL_2 = 2204
 LOCK_FAIL_PASSCODE_NOT_SET_CONS_FAIL = 2403
 LOCK_FAIL_NO_PASSCD_2 = 2406
 
-
 app specific password notes
-"appIdKey=ba2ec180e6ca6e6c6a542255453b24d6e6e5b2be0cc48bc1b0d8ad64cfe0228f&appleId=APPLE_ID&password=password2&protocolVersion=A1234&userLocale=en_US&format=plist" --header "application/x-www-form-urlencoded" "https://idmsa.apple.com/IDMSWebAuth/clientDAW.cgi"
+"appIdKey=ba2ec180e6ca6e6c6a542255453b24d6e6e5b2be0cc48bc1b0d8ad64cfe0228f&appleId=APPLE_ID&password=password2&protocolVersion=A1234&userLocale=en_US&format=plist" –header "application/x-www-form-urlencoded" "https://idmsa.apple.com/IDMSWebAuth/clientDAW.cgi"
 
---data "appIdKey=ba2ec180e6ca6e6c6a542255453b24d6e6e5b2be0cc48bc1b0d8ad64cfe0228f&appleId=APPLE_ID&password=password2&protocolVersion=A1234&userLocale=en_US&format=plist"
---header "application/x-www-form-urlencoded" "https://idmsa.apple.com/IDMSWebAuth/clientDAW.cgi"
+–data "appIdKey=ba2ec180e6ca6e6c6a542255453b24d6e6e5b2be0cc48bc1b0d8ad64cfe0228f&appleId=APPLE_ID&password=password2&protocolVersion=A1234&userLocale=en_US&format=plist"
+–header "application/x-www-form-urlencoded" "https://idmsa.apple.com/IDMSWebAuth/clientDAW.cgi"
 '''
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   PYICLOUD SESSION
+# IPv4-ONLY HTTP ADAPTER
+#
+# Apple authentication endpoints (idmsa.apple.com,
+# appleid.apple.com) only support IPv4. This adapter patches
+# urllib3's allowed_gai_family() for the duration of the request
+# so DNS resolution returns only AF_INET (IPv4) addresses, then
+# unconditionally restores the original function via try/finally.
+#
+# Auth URLs are identified by mounting this adapter on specific
+# Apple auth hostnames. requests matches session mounts by longest
+# prefix first, so these override the generic https:// mount for
+# those hosts only. All other URLs remain unrestricted (IPv4/IPv6).
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+class _IPv4OnlyAdapter(adapters.HTTPAdapter):
+    '''
+    Forces IPv4-only DNS resolution for Apple authentication
+    endpoints which do not support IPv6.
+    '''
+
+    def send(self, request, **kwargs):
+        _original_gai_family = urllib3.util.connection.allowed_gai_family
+
+        def _ipv4_only():
+            log_info_msg('Sending request via IPv4 Adapter')
+            return socket.AF_INET
+
+        urllib3.util.connection.allowed_gai_family = _ipv4_only
+        try:
+            return super().send(request, **kwargs)
+        finally:
+            urllib3.util.connection.allowed_gai_family = _original_gai_family
+
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+# PYICLOUD SESSION
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class iCloudSession(Session):
     '''iCloud session.'''
+
 
     def __init__(self, AppleAcct, validate_aa_upw=False):
         self.setup_time = time_now()
@@ -147,6 +188,7 @@ class iCloudSession(Session):
         self.verify        = True
         self.response_code = 0
         self.response_ok   = True
+        self.data          = {}
 
         Gb.icloud_io_1_min_timer_fct = None
 
@@ -155,9 +197,21 @@ class iCloudSession(Session):
         self.headers.update({"Origin":self.AppleAcct.HOME_ENDPOINT,
                             "Referer":self.AppleAcct.HOME_ENDPOINT,})
 
+        # Provided by Claude to specify IPv4 urls
         # Increase the number of connections to prevent timeouts
         # authenticting the Apple Account
         adapter = adapters.HTTPAdapter(pool_connections=20, pool_maxsize=20)
+        self.mount("https://", adapter)
+        self.mount("http://",  adapter)
+
+        # ADDED: Mount IPv4-only adapter for Apple authentication endpoints.
+        # Apple auth servers do not support IPv6. requests matches mounts by
+        # longest prefix first, so these specific host mounts take priority
+        # over the generic https:// mount above for auth requests only.
+        _ipv4_adapter = _IPv4OnlyAdapter(pool_connections=20, pool_maxsize=20)
+        self.mount("https://idmsa.apple.com",   _ipv4_adapter)
+        self.mount("https://appleid.apple.com", _ipv4_adapter)
+        self.mount("https://auth.apple.com",    _ipv4_adapter)
 
     # def request(self, method, url, **kwargs):  # pylint: disable=arguments-differ
     def request(self, method, url,
@@ -218,13 +272,13 @@ class iCloudSession(Session):
 
 
         # Log Response data to  the icloud3.log file
-        # log_rawdata_flag = (url.endswith('refreshClient') is False)
-        # if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
+        # is_log_level_rawdata = (url.endswith('refreshClient') is False)
+        # if Gb.is_log_level_rawdata or is_log_level_rawdata or Gb.is_icloud3_initial_startup:
         #     _hdr = (f"{self.AppleAcct.username_base}, {method}, Request-"
         #             f"{url.split('/')[-1]}")
         #     _data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
         #     _data.update(kwargs)
-        #     log_data(_hdr, _data, log_rawdata_flag=log_rawdata_flag)
+        #     log_data(_hdr, _data, is_log_level_rawdata=is_log_level_rawdata)
 
         kwargs.pop("retried", False)
         kwargs.pop("retry_cnt", 0)
@@ -238,18 +292,18 @@ class iCloudSession(Session):
         #++++++++++++++++ REQUEST ICLOUD DATA ++++++++++++++++
         try:
             if (Gb.test_internet_error
-                    and Gb.InternetError.status_check_cnt < Gb.InternetError.test_internet_error_counter):
+                    and Gb.InternetError.status_check_cnt < Gb.test_internet_error_counter):
                 post_alert(f"Internet Connection Error > Test Started, Error Generated")
                 raise requests.exceptions.ConnectionError
 
             response = Session.request(self, method, url, **kwargs)
 
             try:
-                data = response.json()
+                self.data = data = response.json()
                 self.response = response
 
             except Exception as err:
-                data = {}
+                self.data = data = {}
 
         #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
 
@@ -330,15 +384,13 @@ class iCloudSession(Session):
         if self.AppleAcct.validate_aa_upw is False:
             try:
                 cast(PyiCloudCookieJar, self.cookies).save()
-                log_debug_msg(f"Saved cookies data to file {self.AppleAcct.cookie_dir_filename}")
+                log_debug_msg(f"Saved cookies data to file {self.AppleAcct.cookies_filename_short}")
 
             except (OSError, ValueError) as err:
-                log_warning_msg(f"Failed to saved cookies data to file {self.AppleAcct.cookie_dir_filename}, "
+                log_warning_msg(f"Failed to saved cookies data to file {self.AppleAcct.cookies_filename_short}, "
                                 f"Error-{err}")
 
-            self.AppleAcct.session_data_token.update(self.AppleAcct.session_data)
-
-            save_json_file(self.AppleAcct.session_dir_filename, self.AppleAcct.session_data)
+            save_json_file(self.AppleAcct.session_filename, self.AppleAcct.session_data)
 
         if data and "webservices" in data:
             try:
@@ -348,14 +400,16 @@ class iCloudSession(Session):
                 pass
 
         try:
+
             if (response.ok is False
                     and (content_type not in json_mimetypes
                         or response.status_code in AUTHENTICATION_NEEDED_421_450_500)):
 
                 # Handle re-authentication for Find My iPhone
                 if (response.status_code in AUTHENTICATION_NEEDED_421_450_500
-                            and self.AppleAcct.findme_url_root
-                            and url.startswith(self.AppleAcct.findme_url_root)):
+                        and ((self.AppleAcct.findme_url_root is None and retry_cnt == 1)
+                            or (self.AppleAcct.findme_url_root
+                                and url.startswith(self.AppleAcct.findme_url_root)))):
 
                     log_debug_msg(  f"{self.AppleAcct.username_base}, "
                                     f"Authenticating Apple Account ({response.status_code})")
@@ -400,8 +454,7 @@ class iCloudSession(Session):
 
         return data
 
-
-#------------------------------------------------------------------
+    #--------------------------------------------------------------------
     @staticmethod
     def _resolve_error_code_reason(data):
         '''
@@ -428,7 +481,7 @@ class iCloudSession(Session):
 
         return code, reason
 
-#------------------------------------------------------------------
+    #--------------------------------------------------------------------
     @staticmethod
     def _raise_error(code, reason):
 
@@ -476,23 +529,23 @@ class iCloudSession(Session):
             api_error = AppleAcctAPIResponseException(reason, code)
 
         log_error_msg(f"{api_error}")
+        return
         raise api_error
 
-#------------------------------------------------------------------
+    #--------------------------------------------------------------------
     @staticmethod
     def _log_debug_msg(title, display_data):
         ''' Display debug data fields '''
         try:
-            log_debug_msg(f"{title} -- {display_data}")
+            log_debug_msg(f"{title} – {display_data}")
         except:
-            log_debug_msg(f"{title} -- None")
+            log_debug_msg(f"{title} – None")
 
-#------------------------------------------------------------------
+    #--------------------------------------------------------------------
     def _shrink_items(self, prefiltered_dict):
         '''
         Obscure account name and password in apple aadevdata
         '''
-
 
         if (prefiltered_dict is None
                 or type(prefiltered_dict) is not dict
@@ -527,20 +580,16 @@ class iCloudSession(Session):
     def username_base(self):
         return self.AppleAcct.username_base
 
-#------------------------------------------------------------------
+    #--------------------------------------------------------------------
     @staticmethod
     def _shrink(value):
         return  f"{value[:6]}………{value[-6:]}"
-
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #       UTILITY FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-
 
 
 
@@ -554,7 +603,7 @@ class AppleAcctException(Exception):
     '''Generic iCloud exception.'''
     pass
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcctAPIResponseException(AppleAcctException):
     '''iCloud response exception.'''
     def __init__(self, reason, code=None, retry=False):
@@ -569,34 +618,34 @@ class AppleAcctAPIResponseException(AppleAcctException):
 
         super(AppleAcctAPIResponseException, self).__init__(message)
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcctManagerNotActivatedException(AppleAcctAPIResponseException):
     '''iCloud service not activated exception.'''
     pass
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcctFailedLoginException(AppleAcctException):
     '''iCloud failed login exception.'''
     pass
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcct2FARequiredException(AppleAcctException):
     '''iCloud 2SA required exception.'''
     pass
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcct2SARequiredException(AppleAcctException):
     """iCloud 2SA required exception."""
     def __init__(self, apple_id):
         message = f"Two-step authentication required for account: {apple_id}"
         super().__init__(message)
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcctNoStoredPasswordAvailableException(AppleAcctException):
     '''iCloud no stored password exception.'''
     pass
 
-#----------------------------------------------------------------------------
+#––––––––––––––––––––––––––––––––––––––
 class AppleAcctNoDevicesException(AppleAcctException):
     '''iCloud no device exception.'''
     pass

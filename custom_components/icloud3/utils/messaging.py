@@ -17,9 +17,9 @@ set reject_attr = [ 'integration', 'icon', 'sensor_updated', 'friendly_name' ] %
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
-                                ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR, EVLOG_INIT_HDR, EVLOG_MONITOR,
+                                ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR, EVLOG_ATTENTION, EVLOG_MONITOR,
                                 EVLOG_TIME_RECD, EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
-                                EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING,EVLOG_IC3_STAGE_HDR,
+                                EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR,
                                 ALERT_CRITICAL, ALERT_OTHER,
                                 IC3LOG_FILENAME, EVLOG_TIME_RECD, EVLOG_TRACE,
                                 CRLF, CRLF_DOT, CRLF_HDOT,
@@ -48,6 +48,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
 from ..const_more_info      import more_info_text
 from .utils                 import (obscure_field, instr, is_empty, isnot_empty, list_add, list_del, )
 
+
 import homeassistant.util.dt   as dt_util
 from homeassistant.components  import persistent_notification
 
@@ -60,7 +61,7 @@ import logging
 DO_NOT_SHRINK     = ['url', 'accountName', ]
 FILTER_DATA_DICTS = ['items', 'userInfo', 'dsid', 'dsInfo', 'webservices', 'locations','location',
                     'params', 'headers', 'kwargs', 'clientContext', 'identifiers', 'labels',
-                    'securityCode', 'trustedPhoneNumber', ]
+                    'securityCode', 'trustedPhoneNumber', 'devices']
 FILTER_DATA_LISTS = ['devices', 'content', 'followers', 'following', 'contactDetails', 'protocols', 'trustTokens',
                     'keyNames', 'trustedPhoneNumbers', ]
 FILTER_FIELDS = [
@@ -97,6 +98,7 @@ FILTER_FIELDS = [
         'X-Apple-OAuth-State', 'X-Apple-ID-Session-Id', 'Accept', 'Authorization',
         'identifiers', 'labels', 'model', 'name_by_user', 'area_id', 'manufacturer', 'sw_version',
         'keyNames', 'securityCode', 'trustedPhoneNumbers', 'trustedPhoneNumber',
+        'deviceType', 'areaCode', 'phoneNumber', 'deviceId',
         'authenticationType',
         'username', 'password', 'accountName', 'salt', 'protocols', 'protocol', 'iteration',
         'a', 'A', 'b', 'B', 'c', 'm1', 'M1', 'm2', 'M2', 'g', 'K', 'N', 'u', 'v',
@@ -145,6 +147,9 @@ def broadcast_info_msg(info_msg):
     '''
     Display a message in the info sensor for all devices
     '''
+    return
+
+
     if INFO not in Gb.conf_sensors['device']:
         return
 
@@ -310,7 +315,6 @@ def update_alert_sensor(type_or_key=None, alert_msg=None, update_sensor=False, r
 
     Type: Attribute to add or update
     '''
-
     if type_or_key is None and alert_msg is None:
         Gb.AlertsSensor.async_update_sensor()
         return
@@ -322,7 +326,7 @@ def update_alert_sensor(type_or_key=None, alert_msg=None, update_sensor=False, r
 
     # Clear this message
     if alert_msg == '':
-        Gb.alerts_sensor_attrs.pop(type, None)
+        Gb.alerts_sensor_attrs.pop(type_or_key, None)
         update_sensor = True
 
     # Not critical alert - Only keep first alert for acct or device
@@ -335,7 +339,7 @@ def update_alert_sensor(type_or_key=None, alert_msg=None, update_sensor=False, r
     else:
         Gb.alerts_sensor_attrs[type_or_key] = alert_msg
 
-        if Gb.start_icloud3_inprocess_flag is False or update_sensor:
+        if Gb.is_icloud3_startup_inprocess is False or update_sensor:
             update_sensor = True
 
     # Rebuild list so importing alerts are at the top
@@ -427,6 +431,8 @@ def open_ic3log_file(new_log_file=False):
     try:
         ic3logger_file = Gb.hass.config.path(IC3LOG_FILENAME)
         filemode = 'w' if new_log_file else 'a'
+        filemode = 'a' if Gb.was_icloud3_reloaded else filemode
+
 
         if Gb.iC3Logger is None or new_log_file:
             Gb.iC3Logger = logging.getLogger(DOMAIN)
@@ -499,7 +505,7 @@ def check_ic3log_file_exists(ic3logger_file):
             Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
             open_ic3log_file(new_log_file=True)
 
-            log_msg = f"{EVLOG_IC3_STARTING}Recreated iCloud3 Log File: {ic3logger_file}"
+            log_msg = f"{EVLOG_ALERT}Recreated iCloud3 Log File: {ic3logger_file}"
             log_msg = f"{format_startup_header_box(log_msg, 20)}"
             log_msg = log_msg.replace('⡇', '⛔')
             Gb.iC3Logger.info(log_msg)
@@ -561,10 +567,8 @@ def write_config_file_to_ic3log():
     _conf_tracking.pop('apple_accounts', None)
 
     Gb.trace_prefix = '_INIT_'
-    indent = SP(37) if Gb.log_debug_flag else SP(18)
-    log_msg = ( f"{ICLOUD3_VERSION_MSG}, "
-                f"{dt_util.now().strftime('%A')}, "
-                f"{dt_util.now().strftime(DATETIME_FORMAT)[:19]}")
+    indent = SP(37) if Gb.is_log_level_debug else SP(18)
+    log_msg = ( f"iCloud3 Configuration File, {ICLOUD3_VERSION_MSG}")
     log_msg = ( f"{NL4}⛔{DASH_50}{DASH_50}"
                 f"{NL4}⛔    {log_msg}"
                 f"{NL4}⛔{DASH_50}{DASH_50}")
@@ -579,7 +583,11 @@ def write_config_file_to_ic3log():
                 f"{NLSP4}{_conf_tracking}"
                 f"{NLSP4}GENERAL CONFIGURAION:"
                 f"{NLSP4}{Gb.conf_general}"
-                f"{NLSP4}{Gb.ha_location_info}")
+                f"{NLSP4}{Gb.ha_location_info}"
+                f"{NLSP4}SENSORS:"
+                f"{NLSP4}{Gb.conf_sensors}"
+                f"{NLSP4}DEVICE SENSORS:"
+                f"{NLSP4}{Gb.conf_device_sensors}")
 
     for conf_apple_accounts in Gb.conf_apple_accounts:
         log_msg += (f"{NLSP4}APPLE ACCOUNT: {conf_apple_accounts.get(CONF_USERNAME)}:"
@@ -618,14 +626,10 @@ def log_info_msg(module_name, log_msg='+'):
     log_msg = format_msg_line(log_msg)
     write_ic3log_recd(log_msg)
 
-    log_msg = log_msg.replace(' > +', f" > ……\n{SP(22)}+")
-    Gb.HALogger.debug(log_msg)
-
 #--------------------------------------------------------------------
 def log_warning_msg(module_name, log_msg='+'):
 
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
-    # log_msg = filter_special_chars(log_msg)
     Gb.HALogger.warning(log_msg)
 
     log_msg = format_msg_line(log_msg)
@@ -635,7 +639,6 @@ def log_warning_msg(module_name, log_msg='+'):
 def log_error_msg(module_name, log_msg='+'):
 
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
-    # log_msg = filter_special_chars(log_msg)
     Gb.HALogger.error(log_msg)
 
     log_msg = format_msg_line(log_msg)
@@ -654,7 +657,7 @@ def log_exception(err):
 #--------------------------------------------------------------------
 def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
 
-    if Gb.log_debug_flag is False or Gb.iC3Logger is None:
+    if Gb.is_log_level_debug is False or Gb.iC3Logger is None:
         return
     if devicename_or_Device and log_msg == '':
         return
@@ -772,7 +775,7 @@ def filter_special_chars(log_msg, evlog_export=False):
     Filter out EVLOG_XXX control fields
     '''
     indent =SP(9) if evlog_export else \
-            SP(37) if Gb.log_debug_flag else \
+            SP(37) if Gb.is_log_level_debug else \
             SP(17)
     if log_msg.startswith('^'): log_msg = log_msg[3:]
 
@@ -798,9 +801,9 @@ def filter_special_chars(log_msg, evlog_export=False):
     log_msg = log_msg.replace(EVLOG_ERROR, '')
     log_msg = log_msg.replace(EVLOG_ALERT, '')
     log_msg = log_msg.replace(EVLOG_WARNING, '')
-    log_msg = log_msg.replace(EVLOG_INIT_HDR, '')
+    log_msg = log_msg.replace(EVLOG_ATTENTION, '')
     log_msg = log_msg.replace(EVLOG_HIGHLIGHT, '')
-    log_msg = log_msg.replace(EVLOG_IC3_STARTING, '')
+    log_msg = log_msg.replace(EVLOG_ATTENTION, '')
     log_msg = log_msg.replace(EVLOG_IC3_STAGE_HDR, '')
 
     log_msg = log_msg.replace('^1^', '').replace('^2^', '').replace('^3^', '')
@@ -820,7 +823,7 @@ def format_startup_header_box(log_msg):
         return log_msg
 
     hdr_code = log_msg[p:p+3]
-    if hdr_code in [EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR]:
+    if hdr_code in [EVLOG_ATTENTION, EVLOG_IC3_STAGE_HDR]:
         log_msg = log_msg[:p] + log_msg[p+3:]
         log_msg = format_header_box(log_msg)
 
@@ -834,7 +837,7 @@ def format_header_box(log_msg, indent=None, start_finish=None, evlog_export=Fals
     start_pos = log_msg.find('^')
     if start_pos == -1: start_pos = 0
 
-    indent = indent if indent is not None else 36 if Gb.log_debug_flag else 16
+    indent = indent if indent is not None else 36 if Gb.is_log_level_debug else 16
 
     top_char = bot_char = DASH_50
     if start_finish == 'start':
@@ -909,6 +912,7 @@ def log_data_unfiltered(_hdr, rawdata, data_source=None, filter_id=None):
 
     log_info_msg(f"{_hdr.upper()}{rawdata_items}")
 
+
     for device_data in devices_data:
         log_msg = ( f"iCloud AppleAcct Data (unfiltered -- "
                     f"{device_data}")
@@ -917,16 +921,19 @@ def log_data_unfiltered(_hdr, rawdata, data_source=None, filter_id=None):
 #--------------------------------------------------------------------
 def log_request_data(request_response_text, method, url, kwargs, AppleAcct=None, response=None):
 
-        log_rawdata_flag = False if response is None else response.status_code != 200
+        is_log_level_rawdata = False if response is None else response.status_code != 200
 
-        log_rawdata_flag = log_rawdata_flag or (url.endswith('refreshClient') is False)
-        if Gb.log_rawdata_flag or log_rawdata_flag or Gb.initial_icloud3_loading_flag:
+        is_log_level_rawdata = is_log_level_rawdata or (url.endswith('refreshClient') is False)
+        if Gb.is_log_level_rawdata or is_log_level_rawdata or Gb.is_icloud3_initial_startup:
             pass
         else:
             return
 
         try:
-            username = AppleAcct.username_base if AppleAcct in Gb.AppleAcct_by_username.values() else AppleAcct
+            if AppleAcct in Gb.AppleAcct_by_username.values():
+                username = AppleAcct.username_base
+            else:
+                username = AppleAcct
             _hdr = (f"{username}, {method}, {request_response_text}-{url.split('/')[-2:]}")
 
             if request_response_text.startswith('Request'):
@@ -942,17 +949,17 @@ def log_request_data(request_response_text, method, url, kwargs, AppleAcct=None,
                     except:
                         data = {}
                     _data = {'code': response.status_code, 'ok': response.ok, 'data': data}
-                    if Gb.log_rawdata_flag_unfiltered:
+                    if Gb.is_log_level_rawdata_unfiltered:
                         _data['headers'] = response.headers
 
 
-            log_data(_hdr, _data, log_rawdata_flag=log_rawdata_flag)
+            log_data(_hdr, _data, is_log_level_rawdata=is_log_level_rawdata)
 
         except Exception as err:
             log_exception(err)
 
 #--------------------------------------------------------------------
-def log_data(_hdr, rawdata, log_rawdata_flag=False, data_source=None, filter_id=None):
+def log_data(_hdr, rawdata, is_log_level_rawdata=False, data_source=None, filter_id=None):
     '''
     Add raw data records to the HA log file for debugging purposes.
 
@@ -968,16 +975,17 @@ def log_data(_hdr, rawdata, log_rawdata_flag=False, data_source=None, filter_id=
 
     if rawdata is None:
         return False
-    elif Gb.log_rawdata_flag is False and log_rawdata_flag is False:
+    elif Gb.is_log_level_rawdata is False and is_log_level_rawdata is False:
         return False
 
-    if (Gb.start_icloud3_inprocess_flag
+    if (Gb.is_icloud3_startup_inprocess
             or 'all' in Gb.log_level_devices
             or Gb.log_level_devices == []):
         pass
 
     elif instr(_hdr,'iCloud Data'):
-        log_level_devices = [devicename for devicename in Gb.log_level_devices if instr(_hdr, devicename)]
+        log_level_devices = [devicename for devicename in Gb.log_level_devices
+                                        if instr(_hdr, devicename)]
         if log_level_devices == []:
             return
 
@@ -1078,7 +1086,7 @@ def _filter_rawdata_items(item_value_dict, shrink_only=None):
     '''
     Cycle thru the items dict, filter and shrink the value items
     '''
-    if (Gb.log_rawdata_flag_unfiltered
+    if (Gb.is_log_level_rawdata_unfiltered
             or type(item_value_dict) is not dict):
         return item_value_dict
 
@@ -1269,7 +1277,7 @@ def _log(items, v1='+++', v2='', v3='', v4='', v5=''):
 #--------------------------------------------------------------------
 def _called_from(show_fct_name=False, trace=False):
 
-    if Gb.log_debug_flag is False and trace == False:
+    if Gb.is_log_level_debug is False and trace == False:
         return ''
 
     caller = None
@@ -1303,7 +1311,7 @@ def _called_from(show_fct_name=False, trace=False):
 #--------------------------------------------------------------------
 def _called_from_history(trace=False):
 
-    if Gb.log_debug_flag is False and trace == False:
+    if Gb.is_log_level_debug is False and trace == False:
         return ''
 
     level = 0

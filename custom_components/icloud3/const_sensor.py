@@ -31,11 +31,15 @@ from .const     import (CONF_SENSORS_DEVICE, CONF_SENSORS_TRACKING_UPDATE, CONF_
                         CONF_EXCLUDED_SENSORS,
                         )
 
-HA_EXCLUDE_SENSORS =    [SENSOR_EVENT_LOG_NAME, SENSOR_ALERTS_NAME, SENSOR_WAZEHIST_TRACK_NAME, ]
+# HA_EXCLUDE_SENSORS =    [SENSOR_EVENT_LOG_NAME, SENSOR_ALERTS_NAME, SENSOR_WAZEHIST_TRACK_NAME, ]
                         # '*_zone_datetime', '*_trigger', '*_info',
                         # '*_next_update', '*_last_update', '*_last_located', '*_interval',
                         # ]
 
+ICLOUD3_INTERNAL_SENSORS_ID = [
+                        'sensor.icloud3_alerts',
+                        'sensor.icloud3_event_log',
+                        'sensor.icloud3_wazehist_track', ]
 ICLOUD3_SENSORS    =    {SENSOR_EVENT_LOG_NAME: 'iCloud3 Event Log',
                         SENSOR_ALERTS_NAME: 'iCloud3 Alerts',
                         SENSOR_WAZEHIST_TRACK_NAME: 'iCloud3 Waze History Track',}

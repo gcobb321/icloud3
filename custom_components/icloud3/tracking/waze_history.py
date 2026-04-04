@@ -581,8 +581,8 @@ class WazeRouteHistory(object):
             self.wazehist_update_track_sensor()
 
             waze_process = 'Recalculate Travel Time/Distance'
-            if Gb.wazehist_recalculate_time_dist_flag:
-                Gb.wazehist_recalculate_time_dist_flag = False
+            if Gb.is_recalc_wazehist_time_dist:
+                Gb.is_recalc_wazehist_time_dist = False
                 self.wazehist_recalculate_time_dist_all_zones()
 
         except Exception as err:
@@ -759,7 +759,7 @@ class WazeRouteHistory(object):
 
         self.wazehist_recalculate_time_dist_running_flag = False
         self.wazehist_recalculate_time_dist_abort_flag   = False
-        Gb.wazehist_recalculate_time_dist_flag           = False
+        Gb.is_recalc_wazehist_time_dist           = False
 
 #--------------------------------------------------------------------
     def _cycle_through_wazehist_records(self, zone_id, zone_dname, zone_from_loc):

@@ -26,8 +26,8 @@ from ..utils.messaging      import (post_event, post_alert, post_monitor_msg, po
                                     log_request_data, log_exception, log_data_unfiltered, )
 from ..utils                import gps
 
-from .icloud_session        import iCloudSession
-from .apple_acct            import HEADERS, AppleAcctManager
+# from .icloud_session        import iCloudSession
+# from .apple_acct            import HEADERS, AppleAcctManager
 from .                      import apple_acct_support as aas
 from .                      import icloud_requests_io  as icloud_io
 
@@ -74,6 +74,7 @@ class ValidateAppleAcctUPW():
 #   VALIDATE Username-Password
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
     def validate_upw_all_apple_accts(self):
         '''
         Cycle through the apple accounts, Validate the Username-Password for each one.
@@ -100,9 +101,10 @@ class ValidateAppleAcctUPW():
             if is_empty(username) or is_empty(password):
                 continue
 
-            _username_id = username_id(username)
+            valid_upw = Gb.valid_upw_by_username.get(username, False)
 
-            valid_upw = self.validate_username_password(username, password)
+            if valid_upw is False:
+                valid_upw = self.validate_username_password(username, password)
 
             Gb.valid_upw_by_username[username] = valid_upw
 
@@ -111,12 +113,30 @@ class ValidateAppleAcctUPW():
             else:
                 crlf_symb = CRLF_RED_X
                 alert_msg = EVLOG_ALERT
+            _username_id = username_id(username)
             results_msg += f"{crlf_symb}{_username_id}, Validated-{yes_no(valid_upw)}, {self.method}"
 
         self.results_msg = f"{alert_msg}Apple Acct > Verify Username/Password{results_msg}"
         post_event(self.results_msg)
 
         Gb.startup_lists['Gb.valid_upw_by_username'] = Gb.valid_upw_by_username
+
+#----------------------------------------------------------------------------
+    async def async_validate_username_password(self, username, password):
+        '''
+        Verify the username and password are valid using the apple auth-url via an httpx request
+        This is used in config_flow to validate the Username-Password
+        '''
+        valid_upw = await self.async_validate_upw_via_auth_url_httpx(username, password)
+
+        if valid_upw:
+            return valid_upw
+
+        valid_upw = await Gb.hass.async_add_executor_job(
+                                        self.validate_username_password,
+                                        username, password)
+
+        return valid_upw
 
 #----------------------------------------------------------------------------
     def validate_username_password(self, username, password):
@@ -198,13 +218,13 @@ class ValidateAppleAcctUPW():
         '''
         url, headers = self._validate_upw_setup_url_headers(username, password)
 
-        log_request_data('Request HTTPX', 'Get', url, headers, username_id(username))
+        log_request_data('Request', 'Get', url, headers, username_id(username))
 
-        data = icloud_io.request(url, headers=headers)
+        data = icloud_io.request(url, headers=headers, no_log=True)
 
         valid_upw = self._validate_upw_check_results(data, username)
 
-        log_request_data('Response HTTPX', 'Get', url, data, username_id(username))
+        log_request_data('Response', 'Get', url, data, username_id(username))
 
         return valid_upw
 
@@ -251,24 +271,6 @@ class ValidateAppleAcctUPW():
         Gb.internet_error = data.get('error', '').startswith('InternetError')
 
         valid_upw = True if data['code'] == 409 else False
-
-        return valid_upw
-
-#----------------------------------------------------------------------------
-    async def async_validate_username_password(self, username, password):
-        '''
-        Verify the username and password are valid using the apple auth-url via an httpx request
-        This is used in config_flow to validate the Username-Password
-        '''
-        valid_upw = \
-            await self.async_validate_upw_via_auth_url_httpx(username, password)
-        if valid_upw:
-            return
-
-        valid_upw = await Gb.hass.async_add_executor_job(
-                                        self.validate_username_password,
-                                        username,
-                                        password)
 
         return valid_upw
 

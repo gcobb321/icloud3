@@ -2,7 +2,8 @@
 
 from .global_variables  import GlobalVariables as Gb
 from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DIR,
-                                NBSP, RARROW, PHDOT, CRLF_DOT, DOT, HDOT, PHDOT, CIRCLE_STAR, RED_X,
+                                PLATFORMS, PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR,
+                                NBSP, RARROW, PHDOT, CRLF, CRLF_DOT, DOT, HDOT, PHDOT, CIRCLE_STAR, RED_X,
                                 YELLOW_ALERT, RED_ALERT, EVLOG_NOTICE, EVLOG_ALERT, EVLOG_ERROR, LINK, LLINK, RLINK,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 IPHONE_FNAME, IPHONE, IPAD, WATCH, MAC, AIRPODS, ICLOUD, OTHER, HOME, FAMSHR,
@@ -15,9 +16,11 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DIR,
                                 CONF_PICTURE_WWW_DIRS,
                                 CONF_VERSION, CONF_EVLOG_CARD_DIRECTORY,
                                 CONF_EVLOG_BTNCONFIG_URL,
-                                CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT, CONF_TOTP_KEY,
+                                CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT,
+                                CONF_AUTH_METHODS, CONF_LAST_METHOD, PUSH,
+                                TEXT_1, TEXT_2, HWKEY_1, HWKEY_2,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
-                                CONF_DATA_SOURCE, CONF_VERIFICATION_CODE, CONF_LOCATE_ALL,
+                                CONF_DATA_SOURCE, CONF_AUTH_CODE, CONF_LOCATE_ALL,
                                 CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                 CONF_TRACK_FROM_ZONES, CONF_PASSWORD_SRP_ENABLED,
                                 CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
@@ -42,7 +45,7 @@ from .const             import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DIR,
                                 CONF_SENSORS_OTHER, CONF_EXCLUDED_SENSORS,
                                 CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
                                 CF_PROFILE, CF_TRACKING, CF_GENERAL, CF_DATA, CF_SENSORS,
-                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF, DEFAULT_APPLE_ACCOUNT_CONF, DEFAULT_DATA_CONF,
+                                DEFAULT_DEVICE_CONF, DEFAULT_GENERAL_CONF, DEFAULT_APPLE_ACCOUNT_CONF,
                                 DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE, DEFAULT_DEVICE_MOBAPP_DATA_SOURCE,
                                 DEFAULT_TRACKING_CONF, DEFAULT_SENSORS_CONF,
                                 )
@@ -56,10 +59,11 @@ from .utils.messaging   import (log_exception, log_debug_msg, log_info_msg, add_
                                 _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
                                 post_event, post_alert, post_monitor_msg, post_greenbar_msg,
                                 update_alert_sensor, )
+from .utils.time_util   import (time_now_secs, )
 
 from .configure         import forms
 from .configure         import selection_lists as lists
-from .configure         import sensors as config_sensors
+from .configure         import sensors as cf_sensors
 from .configure         import utils_configure as utils
 from .configure         import dashboard_builder as dbb
 from .configure.const_form_lists import *
@@ -71,7 +75,9 @@ from .                  import sensor as ic3_sensor
 from .                  import device_tracker as ic3_device_tracker
 from .startup           import start_ic3
 from .startup           import config_file
+from .support           import service_handler
 from .utils             import entity_io
+from .utils             import entity_reg_util as er_util
 from .utils             import file_io
 
 import logging
@@ -108,20 +114,21 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
     VERSION = 1
     def __init__(self):
-        self.step_id = ''           # step_id for the window displayed
-        self.errors  = {}           # Errors en.json error key
-        self.OptFlow = None
-        self.data_source = ICLOUD
+        self.step_id                        = ''           # step_id for the window displayed
+        self.errors                         = {}           # Errors en.json error key
+        self.OptFlow                        = None
+        self.data_source                    = ICLOUD
 
         # Items used in the REAUTH handler
-        self.username = ''
-        self.AppleAcct = None
-        self.apple_acct_reauth_username = ''
-        self.header_msg = ''
-        self.conf_apple_acct = {}
-        self.aa_idx = 0
-        self.apple_acct_items_by_username = {}
-        self.is_verification_code_needed  = False
+        self.username                       = ''
+        self.AppleAcct                      = None
+        self.apple_acct_reauth_username     = ''
+        self.header_msg                     = ''
+        self.conf_apple_acct                = {}
+        self.aa_idx                         = 0
+        self.apple_acct_items_by_username   = {}
+        self.apple_acct_auth_items_by_username = {}
+        self.is_auth_code_needed  = False
         self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
 
 
@@ -205,12 +212,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
                 _CF_LOGGER.info(f"iCloud3 Reinstallation, Initialize Apple Accounts and Device Configuration")
                 _OptFlow.reset_icloud3_config_file_tracking()
-                await _OptFlow.delete_all_files_and_remove_directory(Gb.icloud_cookie_directory)
+                await _OptFlow.delete_all_files_and_remove_directory(Gb.icloud_cookies_directory)
 
                 Gb.config_parms_update_control = ['tracking', 'restart']
                 await config_file.async_write_icloud3_configuration_file()
 
-            if Gb.restart_ha_flag:
+            if Gb.is_ha_restart_needed:
                 return await self.async_step_restart_ha()
 
             data = {}
@@ -249,6 +256,11 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
                     = None if the rquest is from another regular function during the normal
                         tracking operation.
         '''
+        self.step_id = 'reauth'
+        self.errors = errors or {}
+        self.errors_user_input = {}
+        user_input, action_item = utils.action_text_to_item(self, user_input)
+
         # Config_flow is only set up on the initial add. This reauth uses some of the OptionsFlowHandler
         # functions so we need to set up that link when a reauth is needed
         if Gb.OptionsFlowHandler is None:
@@ -256,58 +268,84 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         _OptFlow = Gb.OptionsFlowHandler
         self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, ICLOUD)
 
-        if user_input and 'account_selected' in user_input:
+        # When iCloud3 creates the AppleAcct object for the Apple account during startup,
+        # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
+        # job is run that tells HA to issue a notification.  The AppleAcct object is saved
+        # to be used here
+        if Gb.AppleAcct_needing_reauth_via_ha:
+            Gb.AppleAcct_needing_reauth_via_ha = None
+            AppleAcct = self.AppleAcct = Gb.AppleAcct_needing_reauth_via_ha
+            if AppleAcct:
+                username = AppleAcct.username
+
+        elif user_input:
             user_input = utils.option_text_to_parm(user_input,
                                                     'account_selected',
                                                     self.apple_acct_items_by_username)
-            ui_username = user_input['account_selected']
-            conf_apple_acct, aa_idx = config_file.conf_apple_acct(ui_username)
-            username  = conf_apple_acct[CONF_USERNAME]
-            password  = conf_apple_acct[CONF_PASSWORD]
-        else:
-            # When iCloud3 creates the AppleAcct object for the Apple account during startup,
-            # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
-            # job is run that tells HA to issue a notification.  The AppleAcct object is saved
-            # to be used here
-            user_input = None
-            username   = Gb.AppleAcct_needing_reauth_via_ha.get(CONF_USERNAME, '')
-            password   = Gb.AppleAcct_needing_reauth_via_ha.get(CONF_PASSWORD, '')
-            acct_owner = Gb.AppleAcct_needing_reauth_via_ha.get('account_owner', '')
+            username = user_input['account_selected']
+            AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username[username]
 
-        self.AppleAcct = Gb.AppleAcct_by_username.get(username, None)
         self.apple_acct_reauth_username = reauth_username = self.username = username
 
         log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
                             f"{username=} > UserInput-{user_input},  Errors-{errors}")
 
+        if action_item == 'manual_code_info':
+            return await self.async_step_reauth_manual_code_info()
+
         action_item, reauth_username, user_input, errors = \
-            await aascf.async_reauthenticate_apple_account(self,
+            await aascf.async_step_reauth_handler(self,
                                             user_input=user_input, errors=errors,
                                             return_to_step_id='reauth',
                                             reauth_username=reauth_username)
 
-
         if action_item == 'goto_previous':
-            return self.async_abort(reason="verification_code_cancelled")
+            return self.async_abort(reason="auth_code_cancelled")
 
-        else:
-            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
-                            f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
-            return self.async_show_form(step_id='reauth',
-                                        data_schema=forms.form_reauth(self,
-                                                reauth_username=reauth_username),
-                                        errors=self.errors)
+        log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
+                        f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+        return self.async_show_form(step_id='reauth',
+                                    data_schema=forms.form_reauth(self,
+                                            reauth_username=reauth_username),
+                                    errors=self.errors)
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            REAUTH MANUAL CODE INFO
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_reauth_manual_code_info(self, user_input=None, errors=None,
+                                        return_to_step_id=None, reauth_username=None):
+
+        self.step_id = 'reauth_manual_code_info'
+        self.errors = errors or {}
+        self.errors_user_input = {}
+        user_input, action_item = utils.action_text_to_item(self, user_input)
+
+        log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
+
+        if user_input is None:
+            return self.async_show_form(step_id='reauth_manual_code_info',
+                        data_schema=forms.form_reauth_manual_code_info(self),
+                        errors=self.errors,
+                        last_step=True)
+
+        if action_item == 'reset_trust_token_return':
+            await Gb.hass.async_add_executor_job(self.AppleAcct.untrust_session_and_authenticate)
+            self.AppleAcct.was_auth_code_requested = True
+
+        return self.async_show_form(step_id='reauth',
+                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
+                                    errors=self.errors)
 
 #........................................................................................
-    def _is_apple_acct_setup(self):
-        if self.username:
-            return True
-        elif is_empty(Gb.conf_apple_accounts):
-            return False
-        elif Gb.conf_apple_accounts[0].get(CONF_USERNAME, '') == '':
-            return False
+    # def _is_apple_acct_setup(self):
+    #     if self.username:
+    #         return True
+    #     elif is_empty(Gb.conf_apple_accounts):
+    #         return False
+    #     elif Gb.conf_apple_accounts[0].get(CONF_USERNAME, '') == '':
+    #         return False
 
-        return True
+    #     return True
 
 
 
@@ -352,73 +390,72 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self):
     # def __init__(self, settings=False):
-        self.initialize_options_required_flag = True
-        self.step_id        = ''       # step_id for the window displayed
-        self.errors         = {}       # Errors en.json error key
-        self.errors_entered_value = {}
-        self.config_file_commit_updates = False  # The config file has been updated and needs to be written
+        self.is_initialize_options_required = True
+        self.step_id                        = ''       # step_id for the window displayed
+        self.errors                         = {}       # Errors en.json error key
+        self.errors_entered_value           = {}
+        self.config_file_commit_updates     = False  # The config file has been updated and needs to be written
 
         self.initialize_options()
-        # if settings:
-        #     Gb.hass.async_create_task(self.async_step_menu())
 
     def initialize_options(self):
-        Gb.trace_prefix = 'CONFIG'
-        # self._set_initial_icloud3_device_tracker_area_id()
-        self.initialize_options_required_flag = False
-        # self.v2v3_migrated_flag               = False  # Set to True when the conf_profile[VERSION] = -1 when first loaded
+        Gb.trace_prefix                     = 'CONFIG'
+        self.is_initialize_options_required = False
 
-        self.errors                = {}     # Errors en.json error key
-        self.multi_form_hdr        = ''     # multi-form - text string displayed on the called form
-        self.multi_form_user_input = {}     # multi-form - user_input to be restored when returning to calling form
-        self.errors_user_input     = {}     # user_input text for a value with an error
-        self.step_id               = ''     # step_id for the window displayed
-        self.menu_item_selected    = [  MENU_KEY_TEXT_PAGE_0[MENU_PAGE_0_INITIAL_ITEM],
-                                        MENU_KEY_TEXT_PAGE_1[MENU_PAGE_1_INITIAL_ITEM]]
-        self.menu_page_no          = 0      # Menu currently displayed
-        self.header_msg            = None   # Message displayed on menu after update
-        self.return_to_step_id_1   = ''     # Form/Fct to return to when verifying the icloud auth code
-        self.return_to_step_id_2   = ''     # Form/Fct to return to when verifying the icloud auth code
+        self.errors                         = {}     # Errors en.json error key
+        self.multi_form_hdr                 = ''     # multi-form - text string displayed on the called form
+        self.multi_form_user_input          = {}     # multi-form - user_input to be restored when returning to calling form
+        self.errors_user_input              = {}     # user_input text for a value with an error
+        self.step_id                        = ''     # step_id for the window displayed
+        self.init_step_id                   = ''
+        self.menu_item_selected             = [ MENU_KEY_TEXT_PAGE_0[MENU_PAGE_0_INITIAL_ITEM],
+                                                MENU_KEY_TEXT_PAGE_1[MENU_PAGE_1_INITIAL_ITEM]]
+        self.menu_page_no                   = 0      # Menu currently displayed
+        self.header_msg                     = None   # Message displayed on menu after update
+        self.return_to_step_id_1            = ''     # Form/Fct to return to when verifying the icloud auth code
+        self.return_to_step_id_2            = ''     # Form/Fct to return to when verifying the icloud auth code
 
-        self.actions_list              = []     # Actions list at the bottom of the screen
-        self.actions_list_default      = ''     # Default action_items to reassign on screen redisplay
-        self.config_parms_update_control = []   # Stores the type of parameters that were updated, used to reinitialize parms
-        self.code_to_schema_pass_value = None
+        self.actions_list                   = []     # Actions list at the bottom of the screen
+        self.actions_list_default           = ''     # Default action_items to reassign on screen redisplay
+        self.config_parms_update_control    = []   # Stores the type of parameters that were updated, used to reinitialize parms
+        self.code_to_schema_pass_value      = None
         self.confirm_action = {
-                'yes_fct': None,
-                'yes_fct_async': None,
                 'action_desc': 'Confirm Action',
-                'return_to_tools_fct': self.async_step_tools,
-                'action_yes_next_fct': None}
+                'yes_func': None,
+                'yes_func_async': None,
+                'return_to_func_async': self.async_step_tools,
+                'return_to_next_yes_func_async': None}
 
         # Variables used for icloud_account update forms
-        self.logging_into_icloud_flag = False
+        self.logging_into_icloud_flag      = False
+        self.create_device_tracker_sensor_enities_on_exit = False
 
         # Variables used for device selection and update on the device_list and device_update forms
-        self.rebuild_ic3db_dashboards    = False    # Set when a devices is added or deleted. Used to update the Dashboards
-        self.device_items_by_devicename    = {}       # List of the apple_accts in the Gb.conf_tracking[apple_accts] parameter
-        self.device_items_displayed        = []       # List of the apple_accts displayed on the device_list form
-        self.dev_page_item                 = ['', '', '', '', ''] # Device's devicename last displayed on each page
-        self.dev_page_no                   = 0        # apple_accts List form page number, starting with 0
-        self.display_rarely_updated_parms     = False    # Display the fixed interval & track from zone parameters
+        self.rebuild_ic3db_dashboards       = False    # Set when a devices is added or deleted. Used to update the Dashboards
+        self.device_items_by_devicename     = {}       # List of the devices in the Gb.conf_tracking[device] parameter
+        self.device_items_displayed         = []       # List of the devices displayed on the device_list form
+        self.dev_page_last_selected_devicename = ['', ''] # Device's devicename last displayed on each page
+        self.dev_page_no                    = 0        # device List form page number, starting with 0
+        self.display_rarely_updated_parms   = False    # Display the fixed interval & track from zone parameters
 
-        self.ic3_devicename_being_updated  = ''         # Devicename currently being updated
-        self.conf_device                   = {}
-        self.conf_device_idx               = 0
-        self.update_device_ha_sensor_entity   = {}          # Contains info regarding update_device and needed entity changes
-        self.device_list_control_default   = 'select'    # Select the Return to main menu as the default
-        self.add_device_flag               = False
+        self.ic3_devicename_being_updated   = ' '         # Devicename currently being updated
+        self.conf_device                    = {}
+        self.conf_device_idx                =   0
+        self.update_device_ha_sensor_entity = {}          # Contains info regarding update_device and needed entity changes
+        self.device_list_control_default    = 'select'    # Select the Return to main menu as the default
+        self.add_device_flag                = False
+        self.is_deleting_device             = False       # Deleting device via config_flow, used in  er_util.remove_dev_listener
         self.add_device_enter_devicename_form_part_flag = False  # Add device started, True = form top part only displayed
 
-        self.device_trkr_by_entity_id_all  = {}         # other platform device_tracker used to validate the ic3 entity is not used
-
+        self.device_trkr_by_entity_id_all   = {}         # other platform device_tracker used to validate the ic3 entity is not us
         # Option selection lists on the Update apple_accts screen
         self.apple_acct_items_list          = []       # List of the apple_accts in the Gb.conf_tracking[apple_accts] parameter
         self.apple_acct_items_displayed     = []       # List of the apple_accts displayed on the device_list form
         self.aa_page_item                   = ['', '', '', '', '']  # Apple acct username last displayed on each page
         self.aa_page_no                     = 0        # apple_accts List form page number, starting with 0
         self.conf_apple_acct                = {}       # apple acct item selected
-        self.apple_acct_items_by_username   = {}       # Selection list for the apple accounts on data_sources and reauth screens
+        self.apple_acct_items_by_username   = {}       # Selection list for the apple accounts on data_sources screens
+        self.apple_acct_auth_items_by_username = {}    # Selection list for the apple accounts reauth screens
         self.aa_idx                         = 0
         self.apple_acct_reauth_username     = ''
         self.add_apple_acct_flag            = False
@@ -435,35 +472,35 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.opt_picture_file_name_list     = []
 
         self.mobapp_scan_for_for_devicename = 'None'
-        self.inactive_devices_key_text    = {}
-        self.log_level_devices_key_text   = {}
+        self.inactive_devices_key_text      = {}
+        self.log_level_devices_key_text     = {}
 
-        self.is_verification_code_needed  = False
+        self.is_auth_code_needed            = False
 
         # Variables used for the display_text_as update
-        self.dta_selected_idx      = UNSELECTED # Current conf index being updated
-        self.dta_selected_idx_page = [0, 5]    # Selected idx to display on each page
-        self.dta_page_no           = 0         # Current page being displayed
-        self.dta_working_copy      = {0: '', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '',}
+        self.dta_selected_idx               = UNSELECTED # Current conf index being updated
+        self.dta_selected_idx_page          = [0, 5]    # Selected idx to display on each page
+        self.dta_page_no                    = 0         # Current page being displayed
+        self.dta_working_copy               = {0: '', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '',}
 
         # EvLog Parameter screen, Change Device Order fields
-        self.cdo_devicenames   = {}
-        self.cdo_new_order_idx = {}
-        self.cdo_curr_idx      = 0
+        self.cdo_devicenames                = {}
+        self.cdo_new_order_idx              = {}
+        self.cdo_curr_idx                   = 0
 
         # Dashboard Builder
-        self.db_templates                = {}    # iCloud3 device templates from icloud3/dashboard folder
-        self.db_templates_used           = []    # Templates used in master-dashboard template
-        self.db_templates_used_by_device = []    # Templates used in master-dashboard template to be built
+        self.db_templates                   = {}    # iCloud3 device templates from icloud3/dashboard folder
+        self.db_templates_used              = []    # Templates used in master-dashboard template
+        self.db_templates_used_by_device    = []    # Templates used in master-dashboard template to be built
                                                     # by device rather than by template. the names start with
                                                     # template-device
-        self.master_dashboard            = {}    # Master Dashboard dictionary (json str --> dict)
-        self.dashboards                  = []    # List of dashboards (lovelace.icloud3_xxx files) in conig./storage)
-        self.icloud3_dashboards          = []    # List of iCloud3 dashboards created by the Dashboard Builder
-        self.ic3db_Dashboards_by_dbname  = {}    # HA Dashboard by dashboard name for Dashboards with Device-x available
-        self.AllDashboards_by_dbname  = {}    # All HA Dashboard objects by dashboard name
-        self.dbname                      = ''    # Dashboard  being created or updates
-        self.Dashboard                   = None
+        self.master_dashboard               = {}    # Master Dashboard dictionary (json str --> dict)
+        self.dashboards                     = []    # List of dashboards (lovelace.icloud3_xxx files) in conig./storage)
+        self.icloud3_dashboards             = []    # List of iCloud3 dashboards created by the Dashboard Builder
+        self.ic3db_Dashboards_by_dbname     = {}    # HA Dashboard by dashboard name for Dashboards with Device-x available
+        self.AllDashboards_by_dbname        = {}    # All HA Dashboard objects by dashboard name
+        self.dbname                         = ''    # Dashboard  being created or updates
+        self.Dashboard                      = None
 
         # These items are extracted from the main view when the dashboard is loaded. They are used to build to
         # selection list on the dashboard form
@@ -480,30 +517,33 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # Main View Info from the main_view_info_str on the Events Log view
         # These items are loaded when the ic3db dashboards are loaded. They are used to set ui_xxx values when
         # a device is added or deleted and the dashboards are recreated
-        self.main_view_info_style_by_dbname          = {}  # Devices on the Main view of the dashboard
-        self.main_view_info_dnames_by_dbname         = {}  # Devices on the Main view of the dashboard
+        self.main_view_info_style_by_dbname     = {}  # Devices on the Main view of the dashboard
+        self.main_view_info_dnames_by_dbname    = {}  # Devices on the Main view of the dashboard
         self.main_view_dbfile_length_by_dbname  = {}  # Length of the main view str from the Lovelace db file
         self.main_view_created_length_by_dbname = {}  # Length of the main view str right now
         self.main_view_infomsg_length_by_dbname = {}  # Length of the main view str right now
 
+        # Tools > Entity Registry Maintenance
+        self.tools_entity_reg_show_sensor_names_all = False
+        self.tools_entity_reg_check_all = None    # Show action check all instead of check none
 
         # away_time_zone_adjustment
-        self.away_time_zone_hours_key_text   = {}
-        self.away_time_zone_devices_key_text = {}
+        self.away_time_zone_hours_key_text       = {}
+        self.away_time_zone_devices_key_text     = {}
 
         # Variables used for the system_settings update
-        self.www_directory_list = []
+        self.www_directory_list                 = []
 
         # List of all sensors created by ic3 during startup by sensor.py that is used
         # in the exclude_sensors screen
         # Format: ('gary_iphone_zone_distance': 'Gary ZoneDistance (gary_iphone_zone_distance)')
-        self.sensors_fname_list     = []
-        self.excluded_sensors       = ['None']
-        self.excluded_sensors_removed = []
-        self.sensors_list_filter    = '?'
+        self.sensors_fname_list                 = []
+        self.excluded_sensors                   = []
+        self.excluded_sensors_removed           = []
+        self.sensors_list_filter                = '?'
 
-        self.abort_flag = ('version' not in Gb.conf_profile)
-        if self.abort_flag: return
+        self.is_aborting_config_flow = ('version' not in Gb.conf_profile)
+        if self.is_aborting_config_flow: return
 
         # AppleAcct object and variables. Using local variables rather than the Gb AppleAcct variables
         # in case the username/password is changed and another account is accessed. These will not
@@ -516,13 +556,16 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 #            INIT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_init(self, user_input=None):
-        if self.initialize_options_required_flag:
+        if self.is_initialize_options_required:
             self.initialize_options()
 
         self.errors = {}
-        self.header_msg = ''
+        self.header_msg = None
+        self.config_file_commit_updates = False
+        if Gb.AppleAcct_needing_reauth_via_ha:
+            self.init_step_id = 'reauth'
 
-        if self.abort_flag:
+        if self.is_aborting_config_flow:
             return await self.async_step_restart_ha()
 
         return await self.async_step_menu_0()
@@ -577,10 +620,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.menu_page_no = 0
         return await self.async_step_menu(user_input, errors)
 
+#...............................................................................
     async def async_step_menu_1(self, user_input=None, errors=None):
         self.menu_page_no = 1
         return await self.async_step_menu(user_input, errors)
 
+#...............................................................................
     async def async_step_menu(self, user_input=None, errors=None):
         self.step_id = f"menu_{self.menu_page_no}"
         self.return_to_step_id_1 = self.return_to_step_id_2 = ''
@@ -588,14 +633,17 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         await self._async_write_icloud3_configuration_file()
 
         Gb.trace_prefix = 'CONFIG'
-        Gb.config_flow_flag = True
+        Gb.is_config_flow_open = True
 
         if Gb.internet_error:
             self.header_msg = 'internet_error'
-        elif self.AppleAcct is None and self.username:
-            self.header_msg = 'apple_acct_not_logged_into'
-        elif self.is_verification_code_needed:
-            self.header_msg ='verification_code_needed'
+        elif Gb.conf_data_source_ICLOUD:
+            if len(Gb.conf_apple_accounts) == 0:
+                self.header_msg = 'apple_acct_not_set_up'
+            # elif self.AppleAcct is None and self.username:
+            #     self.header_msg = 'apple_acct_not_logged_into'
+            elif self.is_auth_code_needed:
+                self.header_msg ='auth_code_needed'
         else:
             for AppleAcct in Gb.AppleAcct_by_username.values():
                 if AppleAcct.terms_of_use_update_needed:
@@ -605,6 +653,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is None:
             self._set_inactive_devices_header_msg()
             utils.set_header_msg(self)
+
+            if self.init_step_id:
+                self.step_id = self.init_step_id
+                self.init_step_id = ''
 
             return self.async_show_form(step_id=self.step_id,
                                         data_schema=forms.form_menu(self),
@@ -642,7 +694,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             pass
         elif menu_item == 'data_source':
             return await self.async_step_data_source()
-        elif menu_item == 'verification_code':
+        elif menu_item == 'auth_code':
             return await self.async_step_reauth()
         elif menu_item == 'device_list':
             return await self.async_step_device_list()
@@ -677,15 +729,22 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
 #-------------------------------------------------------------------------------------------
     async def exit_configure_tasks(self):
-        Gb.config_flow_flag = False
-        self.initialize_options_required_flag = False
+        Gb.is_config_flow_open = False
+        self.is_initialize_options_required = False
 
         # If the initial config file was just installed, set it to 'has been reviewed'
         if Gb.conf_profile[CONF_VERSION] <= 0:
             Gb.conf_profile[CONF_VERSION] = 1
             list_add(self.config_parms_update_control, 'restart')
             user_input = {CONF_VERSION: 1}
-            self._update_config_file_tracking(user_input, update_config_flag=True)
+            self._update_config_file_tracking(user_input, force_config_update=True)
+
+        if self.create_device_tracker_sensor_enities_on_exit:
+            self.create_device_tracker_sensor_enities_on_exit = False
+            await config_file.async_build_conf_device_sensors_from_conf_sensors()
+            await ic3_device_tracker.async_create_Device_Tracker_objects()
+            await ic3_sensor.async_create_Sensor_objects()
+            self.rebuild_ic3db_dashboards = True
 
         # Update the *ic3db- dashboard views when devices have been added or deleted
         if self.rebuild_ic3db_dashboards:
@@ -708,8 +767,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.step_id = 'restart_icloud3'
         self.errors = errors or {}
         self.errors_user_input = {}
-        ic3_sensor.build_base_sensors_list_from_config_file()
-        await self._async_write_icloud3_configuration_file()
+        # await config_file.async_build_conf_device_sensors_from_conf_sensors()
 
         for devicename in Gb.sensors_removed_by_devicename.keys():
             ic3_sensor.log_sensors_added_deleted('ADDED', devicename)
@@ -751,6 +809,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             # If the polling loop has been set up, set the restart flag to trigger a restart when
             # no devices are being updated. Otherwise, there were probably no devices to track
             # when first loaded and a direct restart must be done.
+            Gb.config_parms_update_control = []
+            service_handler.reload_icloud3()
             return self.async_create_entry(title="iCloud3", data={})
 
         self._set_inactive_devices_header_msg()
@@ -802,13 +862,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     conf_device[CONF_TRACKING_MODE] = TRACK
 
                 if devicename not in Gb.DeviceTrackers_by_devicename:
-                    config_sensors.create_device_tracker_and_sensor_entities(self, devicename, conf_device)
+                    self.create_device_tracker_sensor_enities_on_exit = True
 
             self.header_msg = 'action_completed'
             list_add(self.config_parms_update_control, 'restart')
-            self._update_config_file_tracking(update_config_flag=True)
+            self._update_config_file_tracking(force_config_update=True)
             action_item = 'goto_previous'
-
 
         if action_item == 'goto_previous':
             if self.return_to_step_id_1 == 'restart_icloud3':
@@ -859,8 +918,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             user_input = self._validate_waze_main(user_input)
         elif self.step_id == "special_zones":
             user_input = self._validate_special_zones(user_input)
-        # elif self.step_id == "sensors":
-        #     config_sensors.remove_and_create_sensors(self, user_input)
 
         utils.log_step_info(self, user_input, action_item)
 
@@ -883,11 +940,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         Parametters:
             self.confirm_action = {
-                    'yes_fct': self.confirm_test_yes,
-                    'yes_fct_async': self.async_confirm_test_yes,
                     'action_desc': TOOL_LIST[acton_item],
-                    'return_to_tools_fct': self.async_step_tools,
-                    'action_yes_next_fct': self.async_step_tools}
+                    'yes_func': self.confirm_test_yes,
+                    'yes_func_async': self.async_confirm_test_yes,
+                    'return_to_func_async': self.async_step_tools,
+                    'return_to_next_yes_func_async': None}
 
         '''
         self.step_id = 'confirm_action'
@@ -905,26 +962,26 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         if action_item == 'confirm_action_no':
             self.errors = {'base': 'action_cancelled'}
-            return await self.confirm_action['return_to_tools_fct'](errors=self.errors)
+            return await self.confirm_action['return_to_func_async'](errors=self.errors)
 
         if action_item == 'confirm_action_yes':
             self.config_file_commit_updates = True
             list_add(self.config_parms_update_control, 'restart')
 
-            if self.confirm_action['yes_fct'] is not None:
-                self.confirm_action['yes_fct']()
+            if self.confirm_action['yes_func'] is not None:
+                self.confirm_action['yes_func']()
                 self.errors = {'base': 'action_completed'}
-                self.confirm_action['yes_fct'] = None
+                self.confirm_action['yes_func'] = None
 
-            elif self.confirm_action['yes_fct_async'] is not None:
-                await self.confirm_action['yes_fct_async']()
+            elif self.confirm_action['yes_func_async'] is not None:
+                await self.confirm_action['yes_func_async']()
                 self.errors = {'base': 'action_completed'}
-                self.confirm_action['yes_fct_async'] = None
+                self.confirm_action['yes_func_async'] = None
 
-            if self.confirm_action['action_yes_next_fct']:
-                return self.confirm_action['action_yes_next_fct'](errors=self.errors)
+            if self.confirm_action['return_to_next_yes_func_async']:
+                return await self.confirm_action['return_to_next_yes_func_async'](errors=self.errors)
 
-        return await self.confirm_action['return_to_tools_fct'](errors=self.errors)
+        return await self.confirm_action['return_to_func_async'](errors=self.errors)
 
 
 #-------------------------------------------------------------------------------------------
@@ -1086,6 +1143,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         if Gb.conf_sensors[CONF_EXCLUDED_SENSORS] == []:
             Gb.conf_sensors[CONF_EXCLUDED_SENSORS] = ['None']
+        if self.excluded_sensors == []:
+            self.excluded_sensors = Gb.conf_sensors[CONF_EXCLUDED_SENSORS].copy()
 
         if user_input is None:
             return self.async_show_form(step_id='sensors',
@@ -1101,7 +1160,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             user_input = DEFAULT_SENSORS_CONF.copy()
             utils.log_step_info(self, user_input, action_item)
 
-            ic3_sensor.build_base_sensors_list_from_config_file()
             return self.async_show_form(step_id='sensors',
                                         data_schema=forms.form_sensors(self, user_input=user_input),
                                         errors=self.errors)
@@ -1117,25 +1175,26 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 tfz_sensors.append(f"tfz_{sensor}")
         user_input[CONF_SENSORS_TRACK_FROM_ZONES] = tfz_sensors
 
-        self.excluded_sensors = Gb.conf_sensors[CONF_EXCLUDED_SENSORS].copy()
-
         if action_item == 'exclude_sensors':
-
             self.sensors_list_filter = '?'
+            self.excluded_sensors = user_input[CONF_EXCLUDED_SENSORS]
             return await self.async_step_exclude_sensors()
 
         if action_item == 'save_stay':
-            config_sensors.remove_and_create_sensors(self, user_input)
-            user_input[CONF_EXCLUDED_SENSORS] = \
-                ic3_sensor.validate_excluded_sensors(user_input)
+            (sensors_to_add, sensors_to_remove,
+            sensors_to_exclude, sensors_to_not_exclude) = \
+                        cf_sensors.identify_new_and_removed_sensors(self, user_input)
 
             self._update_config_file_general(user_input)
 
+            self.create_device_tracker_sensor_enities_on_exit = isnot_empty(sensors_to_add)
+            cf_sensors.remove_sensor_entities(sensors_to_remove)
+            cf_sensors.remove_sensors_from_excluded_sensors_list(sensors_to_exclude)
+            self.excluded_sensors = []
+
             return await self.async_step_sensors()
 
-
         utils.log_step_info(self, user_input, action_item)
-
 
         if utils.any_errors(self):
             self.errors['action_items'] = 'update_aborted'
@@ -1202,19 +1261,19 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         else:
             self.sensors_list_filter = sensors_list_filter or '?'
 
-        if action_item == 'cancel_goto_previous':
-            return await self.async_step_sensors()
-
-        if (action_item == 'save_stay'
-                or user_input[CONF_EXCLUDED_SENSORS] != self.excluded_sensors
+        if (user_input[CONF_EXCLUDED_SENSORS] != self.excluded_sensors
                 or user_input['filtered_sensors'] != []):
-            user_input = self._update_excluded_sensors(user_input)
+            self._update_excluded_sensors(user_input)
+            self.sensors_list_filter = '?'
 
-            self.common_form_handler(user_input, action_item, errors)
-            ic3_sensor.build_excluded_device_sensors(user_input[CONF_EXCLUDED_SENSORS])
             self.errors['excluded_sensors'] = 'excluded_sensors_ha_restart'
             list_add(self.config_parms_update_control, ['restart'])
 
+        if action_item == 'return_to_sensor_screen':
+            # return True
+            return await self.async_step_sensors()
+
+        if action_item == 'update_sensor_list':
             return await self.async_step_exclude_sensors()
 
         return self.async_show_form(step_id='exclude_sensors',
@@ -1244,9 +1303,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.excluded_sensors.remove('None')
 
         # Add filtered sensors just selected/unselected
-        user_input[CONF_EXCLUDED_SENSORS] = self.excluded_sensors.copy()
+        # user_input[CONF_EXCLUDED_SENSORS] = self.excluded_sensors.copy()
 
-        return user_input
+        return #user_input
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DISPLAY TEXT AS
@@ -1420,41 +1479,37 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_menu()
 
         self.confirm_action = {
-                'yes_fct': None,
-                'yes_fct_async': None,
                 'action_desc': TOOL_LIST[action_item],
-                'return_to_tools_fct': self.async_step_tools,
-                'action_yes_next_fct': None}
+                'yes_func': None,
+                'yes_func_async': None,
+                'return_to_func_async': self.async_step_tools,
+                'return_to_next_yes_func_async': None}
 
         if action_item == 'reset_data_source':
-            self.confirm_action['yes_fct'] = self._reset_all_devices_data_source_fields
+            self.confirm_action['yes_func'] = self._reset_all_devices_data_source_fields
 
         elif action_item == 'reset_tracking':
-            self.confirm_action['yes_fct'] = self.reset_icloud3_config_file_tracking
+            self.confirm_action['yes_func'] = self.reset_icloud3_config_file_tracking
 
         elif action_item == 'reset_general':
-            self.confirm_action['yes_fct'] = self.reset_icloud3_config_file_general
+            self.confirm_action['yes_func'] = self.reset_icloud3_config_file_general
 
         elif action_item == 'reset_config':
-            self.confirm_action['yes_fct'] = self.reset_icloud3_config_file_tracking_general
+            self.confirm_action['yes_func'] = self.reset_icloud3_config_file_tracking_general
 
         elif action_item == 'del_apple_acct_cookies':
-            self.confirm_action['yes_fct_async'] = self.async_delete_all_apple_cookie_files
-            self.confirm_action['action_yes_next_fct'] = self.async_step_restart_ha
+            self.confirm_action['yes_func_async'] = self.async_delete_all_apple_cookie_files
+            self.confirm_action['return_to_next_yes_func_async'] = self.async_step_restart_ha
 
         elif action_item == 'del_icloud3_config_files':
-            self.confirm_action['yes_fct_async'] = self.async_delete_all_ic3_configuration_files
-            self.confirm_action['action_yes_next_fct'] = self.async_step_restart_ha
+            self.confirm_action['yes_func_async'] = self.async_delete_all_ic3_configuration_files
+            self.confirm_action['return_to_next_yes_func_async'] = self.async_step_restart_ha
 
-        elif action_item == 'fix_entity_name_error':
-            if ic3_sensor.correct_sensor_entity_ids_with_2_extension(verify=True):
-                ic3_sensor.correct_sensor_entity_ids_with_2_extension()
-                self.errors['base'] ='fix_entity_name_complete'
-            else:
-                self.errors['base'] ='fix_entity_name_not_needed'
+        elif action_item == 'tools_entity_registry_cleanup':
+            return await self.async_step_tools_entity_registry_cleanup()
 
-        if (self.confirm_action['yes_fct']
-                or self.confirm_action['yes_fct_async']):
+        if (self.confirm_action['yes_func']
+                or self.confirm_action['yes_func_async']):
             return await self.async_step_confirm_action()
 
         elif action_item == 'restart_ha_reload_icloud3':
@@ -1478,7 +1533,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         Gb.conf_general = DEFAULT_GENERAL_CONF.copy()
         Gb.log_level    = Gb.conf_general[CONF_LOG_LEVEL]
 
-#................................................................................u
+#................................................................................
     def reset_icloud3_config_file_tracking_general(self):
 
         self.reset_icloud3_config_file_tracking()
@@ -1491,9 +1546,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         '''
 
         post_alert(f"All iCloud3 Configuration files are being deleted")
-        list_add(self.config_parms_update_control, ['restart_ha'])
+        # list_add(self.config_parms_update_control, ['restart_ha'])
 
-        return await self.delete_all_files_and_remove_directory(Gb.icloud_cookie_directory)
+        await self.delete_all_files_and_remove_directory(Gb.icloud_cookies_directory)
+        return await self.async_step_restart_ha_reload_icloud3()
 
 #................................................................................
     async def async_delete_all_ic3_configuration_files(self):
@@ -1529,6 +1585,130 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         except Exception as err:
             log_exception(err)
 
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#           TOOLS > ENTITY REGISTRY CLEANUP
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_tools_entity_registry_cleanup(self, user_input=None, errors=None):
+        self.step_id = 'tools_entity_registry_cleanup'
+        user_input, action_item = utils.action_text_to_item(self, user_input)
+        utils.log_step_info(self, user_input, action_item)
+
+        if user_input is None:
+            return self.async_show_form(step_id='tools_entity_registry_cleanup',
+                                        data_schema=forms.form_tools_entity_registry_cleanup(self),
+                                        errors=self.errors)
+
+        if action_item == 'check_all':
+            self.tools_entity_reg_check_all = True
+
+        elif action_item == 'check_none':
+            self.tools_entity_reg_check_all = False
+
+        elif action_item == 'show_sensor_names_all':
+            self.tools_entity_reg_show_sensor_names_all = True
+
+        elif action_item == 'show_sensor_names_some':
+            self.tools_entity_reg_show_sensor_names_all = False
+
+        elif action_item == 'goto_previous':
+            return await self.async_step_tools()
+
+        elif action_item == 'delete_device_sensors':
+            for status in list(user_input.keys()):
+                if isnot_empty(user_input[status]):
+                    break
+            else:
+                return await self.async_step_tools()
+
+            self._tools_delete_device_sensors(user_input)
+            self.repair_entity_show_check_all = False
+            er_util.scan_entity_reg_for_icloud3_items()
+            self.errors['base'] = self.errors['action_items'] = 'action_completed'
+
+        return self.async_show_form(step_id='tools_entity_registry_cleanup',
+                            data_schema=forms.form_tools_entity_registry_cleanup(self, user_input),
+                            errors=self.errors)
+
+#................................................................................
+    def _tools_delete_device_sensors(self, user_input):
+        '''
+        user_input contains the status groups and devices selected in each group.
+        Cycle through the status groups and delete the specified devices.
+
+        UserInput-{'active': ['lillian_ipad'], 'inactive': [], 'deleted_devices': ['bens_iphone],
+                    'deleted_sensors': ['lillian_ipad2]}
+
+        Active Devices: Delete and recreate the sensors for the selected device using
+                        using the same routines that are used to delete and add a device
+                        to the iC3 configuration since these devices are tracked. This is done
+                        after all other devices are deleted in case orphaned or disabled
+                        devices with the same name are also deleted. This ensures the entitity_id
+                        is assigned correctly.
+        All Others:     Delete from the device & entity registry as normal.
+        '''
+
+        # Cycle thru status groups, delete all devices selected in each group
+        for status in list(user_input.keys()):
+            if status != 'active' and isnot_empty(user_input[status]):
+                self._tools_delete_nonactive_devices(status, user_input[status])
+
+        # Delete active devices after the others have been deleted so they can be
+        # recreated correctly
+        if isnot_empty(user_input['active']):
+            self._tools_delete_active_devices(user_input['active'])
+
+#................................................................................
+    def _tools_delete_active_devices(self, devicenames):
+
+        for devicename in devicenames:
+            self.create_device_tracker_sensor_enities_on_exit = True
+
+            Device = Gb.Devices_by_devicename[devicename]
+            Device.pause_tracking
+            cf_sensors.remove_device_tracker_and_sensor_entities(
+                                                    self, devicename,
+                                                    rebuild_ic3db_dashboards=False)
+
+            Device.resume_tracking
+
+#................................................................................
+    def _tools_delete_nonactive_devices(self, status, devicenames):
+
+        for devicename in devicenames:
+            device_sensors = Gb.entity_reg_items_by_status[status][devicename]
+            for sensor, sensor_data in device_sensors.items():
+                platform   = sensor_data['platform']
+                entity_key = sensor_data["entity_key"]
+                entity_id  = sensor_data['entity_id']
+                device_id  = sensor_data["device_id"]
+
+                try:
+                    # Delete from device_registry
+                    _device_msg = ''
+                    if platform == PLATFORM_DEVICE_TRACKER:
+                        _device_msg = f"Device: device_tracker.{devicename}, "
+                        if device_id is not None:
+                            if status.startswith('deleted_') is False:
+                                er_util.remove_device(device_id)
+                            er_util.remove_deleted_device(device_id)
+
+                    # Delete from entity_registry
+                    if status.startswith('deleted_') is False:
+                        er_util.remove_sensor(entity_key)
+                    er_util.remove_deleted_entity(entity_key)
+
+                except Exception as err:
+                    log_exception(err)
+
+            _sensors = list(device_sensors.keys())
+            _deleted_msg = (f"{_device_msg}"
+                            f"BaseName: sensor.{devicename}_",
+                            f"Count: {len(_sensors)}, "
+                            f"Entities: {list_to_str(_sensors)}")
+
+            log_info_msg(f"ENTITIES REMOVED ({status}): {_deleted_msg}")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            RESTART HA
@@ -1580,18 +1760,17 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             await Gb.hass.services.async_call("homeassistant", "restart")
             return self.async_abort(reason="ha_restarting")
 
-        # elif action_item == 'reload_icloud3':
-        #     post_event("RELOAD ICLOUD3")
-        #     write_config_file_to_ic3log()
-        #     await config_file.async_write_icloud3_configuration_file()
-        #     close_ic3log_file()
+        elif action_item == 'reload_icloud3':
+            service_handler.reload_icloud3()
 
-        #     await Gb.hass.services.async_call(
-        #             "homeassistant",
-        #             "reload_config_entry",
-        #             {'device_id': Gb.ha_device_id_by_devicename[DOMAIN]},)
+            # write_config_file_to_ic3log()
 
-        #     return self.async_abort(reason="ic3_reloading")
+            # Gb.icloud3_reload_requested = True
+            # Gb.icloud3_reload_requested_secs = time_now_secs() + 5
+
+            # Gb.hass.config_entries.async_schedule_reload(Gb.config_entry_id)
+
+            return self.async_abort(reason="ic3_reloading")
 
         return await self.async_step_menu()
 
@@ -1616,7 +1795,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         self.config_file_commit_updates = False
         self.header_msg = 'conf_updated'
-        self.errors['base'] = 'conf_updated'
+        self.errors['base'] = self.errors['action_items'] = 'conf_updated'
 
         # Updating the config file will encode the password. Make sure the
         # password is deoded in the self.conf_apple_acct variable in case it
@@ -1626,18 +1805,18 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     decode_password(self.conf_apple_acct[CONF_PASSWORD])
 
 #-------------------------------------------------------------------------------------------
-    def _update_config_file_general(self, user_input, update_config_flag=None):
+    def _update_config_file_general(self, user_input, force_config_update=None):
         '''
         Update the configuration parameters and write to the icloud3.configuration file
 
         Parameters:
-            update_config_flag - The config_tracking, conf_devices or conf_apple_accounts
+            force_config_update - The config_tracking, conf_devices or conf_apple_accounts
                 has already been updated. Make sure the changes are saved.
         '''
         # The username/password may be in the user_input from the update_data_sources form
         # or it's subforms. If so, make sure it is set the the primary username/password
-        update_config_flag = False if update_config_flag is None else True
-        config_file_chg_flag = False
+        force_config_update = False if force_config_update is None else True
+        was_config_fle_changed = False
 
         if CONF_USERNAME in user_input:
             conf_apple_acct, _idx = config_file.conf_apple_acct(0)
@@ -1660,13 +1839,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 if pname == CONF_PASSWORD:
                     pvalue = encode_password(pvalue)
                 if Gb.conf_tracking[pname] != pvalue:
-                    config_file_chg_flag = True
+                    was_config_fle_changed = True
                     Gb.conf_tracking[pname] = pvalue
                     list_add(self.config_parms_update_control, ['tracking', 'restart'])
 
             if pname in Gb.conf_general:
                 if Gb.conf_general[pname] != pvalue:
-                    config_file_chg_flag = True
+                    was_config_fle_changed = True
                     Gb.conf_general[pname] = pvalue
                     list_add(self.config_parms_update_control, 'general')
                     if 'special_zones' in self.step_id:
@@ -1682,27 +1861,27 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             if pname in Gb.conf_sensors:
                 if Gb.conf_sensors[pname] != pvalue:
-                    config_file_chg_flag = True
+                    was_config_fle_changed = True
                     Gb.conf_sensors[pname] = pvalue
-                    list_add(self.config_parms_update_control, 'sensors')
+                    self.create_device_tracker_sensor_enities_on_exit = True
 
             if pname in Gb.conf_profile:
                 if Gb.conf_profile[pname] != pvalue:
-                    config_file_chg_flag = True
+                    was_config_fle_changed = True
                     Gb.conf_profile[pname] = pvalue
                     list_add(self.config_parms_update_control, ['profile', 'evlog'])
 
-        # if self.config_parms_update_control or update_config_flag:
-        if config_file_chg_flag or update_config_flag:
+        # if self.config_parms_update_control or force_config_update:
+        if was_config_fle_changed or force_config_update:
             if Gb.conf_profile[CONF_VERSION] <= 0:
                 Gb.conf_profile[CONF_VERSION] = 1
 
             self.config_file_commit_updates = True
 
-        return config_file_chg_flag
+        return was_config_fle_changed
 
 #-------------------------------------------------------------------------------------------
-    def _update_config_file_tracking(self, user_input=None, update_config_flag=None):
+    def _update_config_file_tracking(self, user_input=None, force_config_update=None):
         '''
         Update the configuration parameters and write to the icloud3.configuration file
 
@@ -1710,7 +1889,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         in the config file That requires an iCloud3 restart
 
         Parameters:
-            update_config_flag - The config_tracking, conf_devices or conf_apple_accounts
+            force_config_update - The config_tracking, conf_devices or conf_apple_accounts
                 has already been updated. Make sure the changes are saved.
         '''
         if user_input is None:
@@ -1725,7 +1904,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             conf_password_0_encoded = encode_password(conf_password_0)
 
         updated_parms = {''}
-        update_config_flag = False if update_config_flag is None else True
+        force_config_update = False if force_config_update is None else True
 
         for pname, pvalue in user_input.items():
             if pname not in Gb.conf_tracking:
@@ -1741,9 +1920,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             elif Gb.conf_tracking[pname] != pvalue:
                 Gb.conf_tracking[pname] = pvalue
-                update_config_flag = True
+                force_config_update = True
 
-        if update_config_flag:
+        if force_config_update:
             if Gb.conf_apple_accounts:
                 Gb.conf_tracking[CONF_USERNAME] = Gb.conf_apple_accounts[0][CONF_USERNAME]
                 Gb.conf_tracking[CONF_PASSWORD] = Gb.conf_apple_accounts[0][CONF_PASSWORD]
@@ -2077,7 +2256,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.password = self.conf_apple_acct[CONF_PASSWORD]
         self.AppleAcct = Gb.AppleAcct_by_username.get(self.username)
 
-        if Gb.log_debug_flag:
+        if Gb.is_log_level_debug:
             log_user_input = user_input.copy()
             log_debug_msg(  f"⭐ {self.step_id.upper()} ({action_item}) > "
                             f"UserInput-{log_user_input}, Errors-{errors}")
@@ -2086,7 +2265,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.aa_page_item[self.aa_page_no] = self.conf_apple_acct[CONF_USERNAME]
             return await self.async_step_update_apple_acct()
 
-        if action_item == 'verification_code':
+        if action_item == 'auth_code':
             self.apple_acct_reauth_username = self.username
             return await self.async_step_reauth(return_to_step_id='data_source')
 
@@ -2168,11 +2347,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 AppleAcct.error_next_retry_secs = 0
             user_input = None
             post_alert(f"Apple Acct > {AppleAcct.username_id}, Retry Login Canceled")
-            self.errors['base'] = 'conf_updated'
+            self.errors['base'] = self.errors['action_items'] = 'conf_updated'
             return await self.async_step_update_apple_acct(
                                             user_input=user_input, errors=self.errors)
 
         if (user_input is None
+                or Gb.internet_error
                 or instr(self.errors.get(CONF_USERNAME, ''), 'invalid')
                 or instr(self.errors.get(CONF_USERNAME, ''), 'error')
                 or instr(self.errors.get(CONF_USERNAME, ''), 'required')
@@ -2183,7 +2363,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input = utils.option_text_to_parm(user_input,
                                 'account_selected', self.apple_acct_items_by_username)
-        user_input = utils.strip_spaces(user_input, [CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY])
+        user_input = utils.strip_spaces(user_input, [CONF_USERNAME, CONF_PASSWORD])
         if CONF_SERVER_LOCATION in user_input:
             user_input = utils.option_text_to_parm(user_input,
                                     CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)
@@ -2212,7 +2392,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_data_source(user_input=None)
 
         user_input[CONF_USERNAME] = user_input[CONF_USERNAME].lower()
-        user_input[CONF_TOTP_KEY] = ''      #user_input[CONF_TOTP_KEY].upper()
         ui_username = user_input[CONF_USERNAME]
         ui_password = user_input[CONF_PASSWORD]
 
@@ -2220,7 +2399,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         ui_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
         ui_apple_acct[CONF_USERNAME]   = ui_username
         ui_apple_acct[CONF_PASSWORD]   = ui_password
-        ui_apple_acct[CONF_TOTP_KEY]   = user_input[CONF_TOTP_KEY]
         ui_apple_acct[CONF_LOCATE_ALL] = user_input[CONF_LOCATE_ALL]
         ui_apple_acct[CONF_SERVER_LOCATION] = user_input[CONF_SERVER_LOCATION]
 
@@ -2232,7 +2410,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         add_log_file_filter(ui_username.upper(), f"**{self.aa_idx}**")
         add_log_file_filter(ui_password)
 
-        if Gb.log_debug_flag:
+        if Gb.is_log_level_debug:
             log_user_input = user_input.copy()
             log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{log_user_input}, Errors-{errors}")
 
@@ -2299,8 +2477,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     or Gb.AppleAcct_by_username.get(ui_username) is None):
                 aa_login_info_changed = True
 
-            if (user_input[CONF_LOCATE_ALL] != self.conf_apple_acct[CONF_LOCATE_ALL]
-                    or user_input[CONF_TOTP_KEY] != self.conf_apple_acct[CONF_TOTP_KEY]):
+            if (user_input[CONF_LOCATE_ALL] != self.conf_apple_acct[CONF_LOCATE_ALL]):
                 other_flds_changed = True
 
             # if valid_upw:
@@ -2332,7 +2509,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
                 if valid_upw is False:
                     self.actions_list_default = 'add_change_apple_acct'
-                    self.errors['base'] = ''
+                    self.errors['base'] = self.errors['action_items'] = ''
                     self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
 
                     # App Specific Password (ASP) format: uqvf-gguc-tzpd-knor
@@ -2358,6 +2535,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             # been saved
 
             if successful_login:
+                list_add(self.config_parms_update_control, ['restart'])
                 self.errors[CONF_USERNAME] = ''
 
             AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username.get(ui_username)
@@ -2381,12 +2559,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     ui_username in Gb.AppleAcct_error_by_username):
                 self.errors['base'] = 'apple_acct_updated_not_logged_into'
 
-            if AppleAcct.auth_2fa_code_needed:
-                action_item = 'verification_code'
+            if AppleAcct.is_auth_code_needed:
+                action_item = 'auth_code'
             else:
                 return await self.async_step_data_source(user_input=None)
 
-        if action_item == 'verification_code':
+        if action_item == 'auth_code':
             self.apple_acct_reauth_username = ui_username
             return await self.async_step_reauth(return_to_step_id='data_source')
 
@@ -2430,7 +2608,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         if remove_acct_flag is False:
             self.conf_apple_acct[CONF_USERNAME]   = user_input[CONF_USERNAME]
             self.conf_apple_acct[CONF_PASSWORD]   = encode_password(user_input[CONF_PASSWORD])
-            self.conf_apple_acct[CONF_TOTP_KEY]   = user_input[CONF_TOTP_KEY]
             self.conf_apple_acct[CONF_LOCATE_ALL] = user_input[CONF_LOCATE_ALL]
             self.conf_apple_acct[CONF_SERVER_LOCATION] = user_input[CONF_SERVER_LOCATION]
 
@@ -2466,7 +2643,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.aa_idx = 0
 
         user_input['account_selected'] = self.aa_idx
-        self._update_config_file_tracking(update_config_flag=True)
+        self._update_config_file_tracking(force_config_update=True)
         lists.build_apple_accounts_list(self)
         lists.build_devices_list(self)
         config_file.build_log_file_filters()
@@ -2536,7 +2713,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 updated_conf_devices.append(conf_device)
 
             elif device_action == 'delete_devices':
-                config_sensors.remove_device_tracker_entity(self, devicename)
+                cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
 
             elif device_action == 'set_devices_inactive':
                 conf_device[CONF_APPLE_ACCOUNT] = ''
@@ -2557,7 +2734,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 updated_conf_devices.append(conf_device)
 
         Gb.conf_devices = updated_conf_devices
-        self._update_config_file_tracking(user_input={}, update_config_flag=True)
+        self._update_config_file_tracking(user_input={}, force_config_update=True)
 
         aas.delete_AppleAcct_Gb_variables_username(conf_username)
         self._update_conf_apple_accounts(self.aa_idx, user_input, remove_acct_flag=True)
@@ -2573,7 +2750,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.aa_page_item[self.aa_page_no] = ''
 
         self.reset_all_devices_data_source_fields(reset_mobapp=False)
-        self._update_config_file_tracking(user_input={}, update_config_flag=True)
+        self._update_config_file_tracking(user_input={}, force_config_update=True)
         lists.build_apple_accounts_list(self)
         lists.build_devices_list(self)
         config_file.build_log_file_filters()
@@ -2612,26 +2789,55 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.errors = errors or {}
         self.errors_user_input = {}
         self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
+        await config_file.async_write_icloud3_configuration_file()
 
         action_item, reauth_username, user_input, errors = \
-            await aascf.async_reauthenticate_apple_account(self, user_input=user_input, errors=errors,
+            await aascf.async_step_reauth_handler(self, user_input=user_input, errors=errors,
                                             return_to_step_id=return_to_step_id, reauth_username=reauth_username)
-
 
         if action_item == 'goto_previous':
             return self.async_show_form(step_id=self.return_to_step_id_1,
                                             data_schema=self.form_schema(self.return_to_step_id_1),
                                             errors=self.errors)
 
-        else:
-            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
-                            f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
-            if user_input and 'account_selected' in user_input:
-                reauth_username = user_input['account_selected']
-            return self.async_show_form(step_id='reauth',
-                                        data_schema=forms.form_reauth(self, reauth_username=reauth_username),
-                                        errors=self.errors)
+        if action_item == 'manual_code_info':
+            return await self.async_step_reauth_manual_code_info()
 
+        log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
+                        f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+        if user_input and 'account_selected' in user_input:
+            reauth_username = user_input['account_selected']
+
+        return self.async_show_form(step_id='reauth',
+                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
+                                    errors=self.errors)
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            REAUTH MANUAL CODE INFO
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_reauth_manual_code_info(self, user_input=None, errors=None,
+                                        return_to_step_id=None, reauth_username=None):
+
+        self.step_id = 'reauth_manual_code_info'
+        self.errors = errors or {}
+        self.errors_user_input = {}
+        user_input, action_item = utils.action_text_to_item(self, user_input)
+
+        log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
+
+        if user_input is None:
+            return self.async_show_form(step_id='reauth_manual_code_info',
+                        data_schema=forms.form_reauth_manual_code_info(self),
+                        errors=self.errors,
+                        last_step=True)
+
+        if action_item == 'reset_trust_token_return':
+            await Gb.hass.async_add_executor_job(self.AppleAcct.untrust_session_and_authenticate)
+            self.AppleAcct.was_auth_code_requested = True
+
+        return self.async_show_form(step_id='reauth',
+                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
+                                    errors=self.errors)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DEVICE LIST
@@ -2685,6 +2891,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             action_item = ''
 
         if action_item == 'goto_menu':
+            self.dev_page_no = 0
             self.update_device_ha_sensor_entity = {}
             return await self.async_step_menu()
 
@@ -2695,12 +2902,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.actions_list_default = 'move_down'
             return await self.async_step_change_device_order()
 
-        if user_input['devices'].startswith('➤ OTHER'):
+        if user_input['devices'].startswith('➤ OTHER DEVICES'):
             if action_item == 'delete_device':
                 action_item = 'update_device'
-            self.dev_page_no += 1
-            if self.dev_page_no > int(len(self.device_items_list)/5):
-                self.dev_page_no = 0
+            self.dev_page_no = 1 if self.dev_page_no == 0 else 0
             return await self.async_step_device_list()
 
         if user_input['devices'].startswith('➤ ADD'):
@@ -2723,10 +2928,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             action_desc = ( f"Delete Device > {self.conf_device[CONF_FNAME]} "
                             f"({self.conf_device[CONF_IC3_DEVICENAME]})")
             self.confirm_action = {
-                'yes_fct': self._delete_device,
                 'action_desc': action_desc,
-                'return_to_tools_fct': self.async_step_tools,
-                'action_yes_next_fct': self.async_step_device_list}
+                'yes_func': self._delete_device,
+                'return_to_func_async': self.async_step_device_list,
+                'return_to_next_yes_func_async': self.async_step_device_list}
 
             return await self.async_step_confirm_action()
 
@@ -2780,11 +2985,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if len(Gb.conf_devices) <= 1:
                 return self._delete_all_devices()
 
-            config_sensors.remove_device_tracker_entity(self, devicename)
+            cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
 
-            self.dev_page_item[self.dev_page_no] = ''
+            self.dev_page_last_selected_devicename[self.dev_page_no] = ''
             Gb.conf_devices.pop(self.conf_device_idx)
-            self._update_config_file_tracking(update_config_flag=True)
+            self._update_config_file_tracking(force_config_update=True)
 
             if devicename in Gb.log_level_devices:
                 list_del(Gb.log_level_devices, devicename)
@@ -2799,12 +3004,23 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if devicename in Gb.conf_device_sensors:
                 del Gb.conf_device_sensors[devicename]
 
-            # Remove any excluded sensors for the device
-            excluded_sensors = ic3_sensor.get_excluded_device_sensors(devicename)
-            if isnot_empty(excluded_sensors):
-                undated_excluded_sensors = [sensor  for sensor in Gb.sensors[CONF_EXCLUDED_SENSORS]
-                                                    if sensor.startswith(devicename) is False]
-                Gb.sensors[CONF_EXCLUDED_SENSORS] = undated_excluded_sensors
+            # Remove any excluded sensors for this device from the conf_sensors and conf_device_sensors
+            # excluded sensors list
+            if instr(str(Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS]), devicename):
+                deleted_excluded_sensors = []
+                for excluded_sensor in Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS].copy():
+                    _devicename, _sensor_base = er_util.get_devicename_sensor_base(excluded_sensor)
+                    if devicename == _devicename:
+                        list_del(Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS], devicename)
+                        list_add(deleted_excluded_sensors, excluded_sensor)
+
+                if isnot_empty(deleted_excluded_sensors):
+                    for excluded_sensor_text in Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS].copy():
+                        for deleted_excluded_sensor in deleted_excluded_sensors:
+                            if instr(excluded_sensor_text, deleted_excluded_sensor):
+                                list_del(Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS], excluded_sensor_text)
+                                break
+
 
         except Exception as err:
             log_exception(err)
@@ -2819,15 +3035,15 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         try:
             for conf_device in Gb.conf_devices:
                 devicename = conf_device[CONF_IC3_DEVICENAME]
-                config_sensors.remove_device_tracker_entity(self, devicename)
+                cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
 
             Gb.conf_devices = []
-            self.device_items_by_devicename    = {}       # List of the apple_accts in the Gb.conf_tracking[apple_accts] parameter
-            self.device_items_displayed        = []       # List of the apple_accts displayed on the device_list form
-            self.dev_page_item                 = ['', '', '', '', ''] # Device's devicename last displayed on each page
-            self.dev_page_no                   = 0        # apple_accts List form page number, starting with 0
+            self.device_items_by_devicename = {}       # List of the Devices in the Gb.conf_tracking[apple_accts] parameter
+            self.device_items_displayed     = []       # List of the Devices displayed on the device_list form
+            self.dev_page_last_selected_devicename = ['', ''] # Device's devicename last displayed on each page
+            self.dev_page_no                = 0        # Device List form page number, starting with 0
 
-            self._update_config_file_tracking(update_config_flag=True)
+            self._update_config_file_tracking(force_config_update=True)
 
         except Exception as err:
             log_exception(err)
@@ -2845,7 +3061,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if reset_mobapp:
                 conf_device.update(DEFAULT_DEVICE_MOBAPP_DATA_SOURCE)
 
-        self._update_config_file_tracking(update_config_flag=True)
+        self._update_config_file_tracking(force_config_update=True)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2909,26 +3125,14 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
         user_input = self._set_other_device_field_values(user_input)
 
+        self.create_device_tracker_sensor_enities_on_exit = True
         self.conf_device.update(user_input)
         Gb.conf_devices.append(self.conf_device)
 
-        # This is the first device being added,
-        # we need to set up the device_tracker platform, which will add it
-        ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
-        if Gb.async_add_entities_device_tracker is None:
-            await Gb.hass.config_entries.async_forward_entry_setups(Gb.config_entry, ['device_tracker'])
-
-            sensors_list = config_sensors.build_all_sensors_list()
-            config_sensors.create_sensor_entity(ui_devicename, self.conf_device, sensors_list)
-
-        else:
-            config_sensors.create_device_tracker_and_sensor_entities(self, ui_devicename, self.conf_device)
-            ic3_device_tracker.get_ha_device_ids_from_device_registry(Gb.hass)
-
         # Add the new device to the device_list form and and set it's position index
         self.conf_device_idx = len(Gb.conf_devices) - 1
-        self.dev_page_no = int(self.conf_device_idx / 5)
-        ui_devicename = user_input[CONF_IC3_DEVICENAME]
+        self.dev_page_no     = 1 if self.dev_page_no == 0 else 0
+        ui_devicename        = user_input[CONF_IC3_DEVICENAME]
         self.device_items_by_devicename[ui_devicename] = \
                     lists.format_device_list_item(self, self.conf_device)
 
@@ -2959,9 +3163,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 and user_input[CONF_MOBILE_APP_DEVICE] != 'None'):
             mobapp_dname = user_input[CONF_MOBILE_APP_DEVICE]
             if mobapp_dname in Gb.device_info_by_mobapp_dname:
-                device_type = Gb.device_info_by_mobapp_dname[mobapp_dname][2].lower()
-                if device_type in DEVICE_TYPE_FNAMES:
-                    device_type = DEVICE_TYPE_FNAMES[device_type].lower()
+                _device_type = Gb.device_info_by_mobapp_dname[mobapp_dname][2].lower() # ipad6,3 --> ipad
+                for device_type, device_type_fname in DEVICE_TYPE_FNAMES.items():
+                    if _device_type.startswith(device_type):
+                        break
 
         # Get device_type from ic3_devicename
         if device_type == '':
@@ -3007,7 +3212,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         utils.log_step_info(self, user_input, action_item)
 
         if self.add_device_flag is False:
-            self.dev_page_item[self.dev_page_no] = self.conf_device[CONF_IC3_DEVICENAME]
+            self.dev_page_last_selected_devicename[self.dev_page_no] = self.conf_device[CONF_IC3_DEVICENAME]
 
         if action_item == 'cancel_goto_select_device':
             return await self.async_step_device_list()
@@ -3077,8 +3282,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     f"{self.conf_device[CONF_FNAME]}/"
                     f"{DEVICE_TYPE_FNAME(self.conf_device[CONF_DEVICE_TYPE])}")
 
-        self.dev_page_item[self.dev_page_no] = ui_devicename
-        self._update_config_file_tracking(update_config_flag=True)
+        self.dev_page_last_selected_devicename[self.dev_page_no] = ui_devicename
+        self._update_config_file_tracking(force_config_update=True)
 
         # Rebuild this list in case anything changed
         Gb.devicenames_by_icloud_dname = {}
@@ -3100,8 +3305,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # Update the device_tracker & sensor entities now that the configuration has been updated
         if self.add_device_flag is False:
             self._update_changed_sensor_entities()
-
-        ic3_sensor.build_device_sensors_list_from_base_sensors(devicename, self.conf_device)
 
         if action_item == 'update_other_device_parameters':
             return await self.async_step_update_other_device_parameters()
@@ -3130,6 +3333,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         '''
 
         # Get the dname_apple_acct key from the value description of FAMSHR_DEVICENAME field
+        if user_input[CONF_FAMSHR_DEVICENAME] == 'nodev':
+            user_input[CONF_FAMSHR_DEVICENAME] = 'None'
+        if user_input[CONF_MOBILE_APP_DEVICE] == 'nodev':
+            user_input[CONF_MOBILE_APP_DEVICE] = 'None'
+
         _icloud_dname_apple_acct = [icloud_dname_apple_acct
                             for icloud_dname_apple_acct, v in self.icloud_list_text_by_fname.items()
                             if (v == user_input[CONF_FAMSHR_DEVICENAME])]
@@ -3385,23 +3593,28 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # devicename and add them for new_devicename
         if devicename != new_devicename:
             self._update_config_file_tracking()
-            config_sensors.create_device_tracker_and_sensor_entities(self, new_devicename, self.conf_device)
-            config_sensors.remove_device_tracker_entity(self, devicename)
-            if devicename in Gb.conf_device_sensors:
-                del Gb.conf_device_sensors[devicename]
+            self.create_device_tracker_sensor_enities_on_exit = True
+
+            cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
 
         # If the device was 'inactive' it's entity may not exist since they are not created for
         # inactive devices. If so, create it now if it is no longer 'inactive'.
         elif (tracking_mode == INACTIVE
                 and new_tracking_mode != INACTIVE
                 and new_devicename not in Gb.DeviceTrackers_by_devicename):
-            config_sensors.create_device_tracker_and_sensor_entities(self, new_devicename, self.conf_device)
+            self.create_device_tracker_sensor_enities_on_exit = True
+
+        # If the device is now 'inactive' it's entity exists, delete iit
+        elif (new_tracking_mode == INACTIVE
+                and tracking_mode != INACTIVE
+                and new_devicename in Gb.DeviceTrackers_by_devicename):
+            cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
 
         # If the device was 'monitored' and is now tracked, create the tracked sensors
         elif (tracking_mode == MONITOR
                 and new_tracking_mode == TRACK):
-            sensors_list = config_sensors.build_all_sensors_list()
-            config_sensors.create_sensor_entity(devicename, self.conf_device, sensors_list)
+            sensors_list = cf_sensors.build_all_sensors_list()
+            self.create_device_tracker_sensor_enities_on_exit = True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            UPDATE OTHER DEVICE PARAMETERS
@@ -3447,8 +3660,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.conf_device.update(user_input)
 
             if tfz_changed:
-                config_sensors.update_track_from_zones_sensors(self, user_input)
-                ic3_sensor.build_device_sensors_list_from_base_sensors(devicename, self.conf_device)
+                cf_sensors.update_track_from_zones_sensors(self, user_input)
 
         if self.add_device_flag:
             return await self.async_step_device_list()
@@ -3486,7 +3698,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # See if there are any track_from_zone changes that will be processed after the
         # device is updated
         new_tfz_zones_list, remove_tfz_zones_list = \
-                    config_sensors.devices_form_identify_new_and_removed_tfz_zones(self, user_input)
+                    cf_sensors.devices_form_identify_new_and_removed_tfz_zones(self, user_input)
 
         self.update_device_ha_sensor_entity['new_tfz_zones']    = new_tfz_zones_list
         self.update_device_ha_sensor_entity['remove_tfz_zones'] = remove_tfz_zones_list
@@ -3535,10 +3747,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             Gb.conf_devices = new_conf_devices
             config_file.set_conf_devices_index_by_devicename()
-            self._update_config_file_tracking(update_config_flag=True)
+            self._update_config_file_tracking(force_config_update=True)
             lists.build_devices_list(self)
             list_add(self.config_parms_update_control, ['restart', 'profile'])
-            self.errors['base'] = 'conf_updated'
+            self.errors['base'] = self.errors['action_items'] = 'conf_updated'
             return await self.async_step_device_list()
 
         self.cdo_curr_idx = self.cdo_devicenames.index(user_input['device_desc'])

@@ -14,15 +14,60 @@ Gary
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
+🍎 iCloud3 v3.4 (3/25/2026)
+### 📢 Improvements
+1. **Configure > Authenticate Apple Account Sign-in_ screen** - Addresses the changes Apple has made account authentication and how authentication codes are delivered. The following changes have been made to address these issues:
+ - **IPv6 vs IPv4** - Apple supports IPv6 requests for signing into the Apple Account and refreshing a devices location. The Apple servers that handle authentication respond to IPv4 requests only. iCloud3 sends authentication requests via IPv4, all others use IPv4 or IPv6.
+ - **Code via Text Message** - You can now get the authentication code via a text message if the normal Push Notification is not be issued by Apple.
+ - **Manual Code Generation** - Instructions for generating the authentication code have been added if Apple does not send a code using the text message or Push Notification.
+ - Only Aple accounts that are logged into are displayed on the Account Selection list.
+ - The _Log into the Apple account_ Action has been removed. This has to be done on the _Update Apple Account_ screen.
 
-## iCloud3 v3.3.4.4 ()
+2. **Starting/Restarting iCloud3** - Reduced the time it takes to Start and Restart iCloud3.
+
+3. **HA Device/Sensor::iCloud3 Device/Sensor conflicts** - iCloud3 manages the device and sensor entities on the Device and Sensor screens. Disabling a device or sensor on the HA Settings screens creates a conflict with iCloud3 because it does not know they were disabled and tries to recreate them on the next restart. It is very difficult to resolve this conflict since HA stores the disabled information in it's device and entity registries.
+
+     iCloud3 now detects when a device or sensor is disabled on the HA Settings. It now sets the device to an 'Inactive' status and adds a sensor to the 'Excluded Sensors' list on the Configure screens. The disabled device and sensor is also removed from the HA registry files so they can not be reenabled on the HA settings screens. Enabling them is now done on the iCloud3 Configure Device and Sensor screens. The new _Cleanup HA Entity Registry_ screen detects the disabled entities and includes tools to delete them.
+
+4. **Added the _Configure > Tools > Cleanup HA Entity Registry_ screen** - This screen scans the HA Entity and Device registries and displays iCloud3 entities in following the categories:
+     - Active - Devices being tracked or monitored
+     - Inactive - Devices that are set to `Inactive` and not tracked by iCloud3
+     - Orphaned - Sensors that once existed but are no longer associated with the iCloud3 Integration
+     - Disabled - Devices & Sensors that have been disabled on the HA Devices, Entity or iCloud3 Integration screen
+     - Suffix Errors - Sensors that have been duplicated by HA and are now unavailable
+     - Deleted Devices - Sensors that were used by a device that has been deleted from iCloud3
+     - Deleted Sensors - Sensors that belong to an iCloud3 device that are no longer used
+
+      The Devices and Sensors in the non-Active categories can be removed from the Registry files. Those that are Active are removed and then recreated.
+
+     Removing all traces of a device or sensor from the HA Registries can solve various problems, including:
+     - Devices and sensors with duplicate entities not being created
+     - Sensors not being creating because they have been disabled in HA but Active in iCloud3
+     - Unused sensors are preventing new sensors with the same name for a new device not being created
+
+5. **Added the _Configure Tools > Reload iCloud3, Restart HA screen_** - iCloud can now be reloaded to reinitialize all settings without resting HA. This does not load a new code release, it only restarts the code that has already been loaded.
+
+6. **Number of iCloud3 devices** - The 10-device limit for the number of iCloud3 devices that can be tracked and monitored has been removed.
+
+### 🐞 Bug Fixes
+1. Fixed a bug preventing iCloud3 from loading in rare cases.
+2. Fixed a bug where no sensors would be created if there were several track_from_zone sensors that started with the same name (home, home2, home3).
+3. Fixed a bug preventing the iCloud3 Alerts sensor showing an Apple account needed to be authenticating from being cleared after the authentication was completed.
+4. Various minor bugs have been fixed.
+5. Other internal organization items.
+
+
+
+
+
+🍎 iCloud3 v3.3.4.4 (1/10/2026)
 ### 🐞 Bug Fixes
 - **Configure > Tools**
     - Fixed a bug handling a 'No' response when confirming the action for several items
-    - Fixed a bug where the results message was not displayed when the _Fix _2 Sensors Entity Name Errors_ was selected. The 'fix' operation was ran correctly.
+    - Fixed a bug where the results message was not displayed when the *Fix _2 Sensors Entity Name Errors* was selected. The 'fix' operation was ran correctly.
 
 
-## iCloud3 v3.3.4.3 ()
+🍎 iCloud3 v3.3.4.3 (1/5/2026)
 ### 🐞 Bug Fixes
 - **Sensors**:
     - Fixes the Undefined Sensors error created in v3.3.4.2
@@ -37,12 +82,12 @@ Gary
 
 
 
-## 🍎 iCloud3 v3.3.4.1 (12/10/2025)
+🍎 iCloud3 v3.3.4.1 (12/10/2025)
 - Reverted to an unobscured Apple account on the _Update Apple Account_ and _Authenticate Apple Account Signon_ screens.
 
 
 
-## iCloud3 v3.3.4 (12/9/2025)
+🍎 iCloud3 v3.3.4 (12/9/2025)
 ### 🍎 Improved Apple Accounts Handling
 - Errors occurring when validating a username/password or authenticating Apple account have been enhanced to provide more information.
 - Updated the PasswordSRP Authentication method to display more information messages if an error occurred.
@@ -60,7 +105,7 @@ Gary
 
 
 
-## iCloud3 v3.3.3 (11/22/2025)
+🍎 iCloud3 v3.3.3 (11/22/2025)
 ### Account Reauthentication
 - Fixed a `Config flow could not be loaded: 500 Internal Server Error Server got itself in trouble` error when trying to reauthenticate the Apple account after selecting the Orange Reauthentication button on _Devices & settings > iCloud3_. It did not occur when selecting the _Authenticate Apple Account Sign-In_ screen.
 ### Startup
@@ -82,14 +127,14 @@ Gary
 
 
 
-### iCloud3 ➤ v3.3.1
+🍏 iCloud3 ➤ v3.3.1
 ### 🚩 Updates to iCloud3 v3.3
 - Fixed the _TypeError: iCloudSession.request() got an unexpected keyword argument 'retry_cnt'_ error
 - Reverted displaying Security Key messages on the Authenticate Apple Account Sign-in screen
 - Changed the way Apple cookie files were handled to see if it helped cure the 'Server Not Available 503' error. It didn't.
 - The Apple Cookies are now being logged in the _icloud3.log_ file when the Apple account is logged into.
 
-### iCloud3 ➤ v3.3
+🍏 iCloud3 ➤ v3.3
 ### 📢🚩✨💥🚀🎁 iCloud3 works again, you can log into your Apple Account
 - **Comments**
     - I believe Apple reimplemented the authentication process they introduced last November that caused the same errors. This time, however, the native Python PyiCloud interface had already incorporated the changes that solved the problem. Thanks go to the PyiCloud team headed by @timlaing. It also helped that I was home and not on a cruise ship off the western coast of Africa like last time.

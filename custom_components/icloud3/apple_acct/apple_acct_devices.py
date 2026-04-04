@@ -178,9 +178,9 @@ class iCloud_AppleAcctDevices():
                         "shouldLocate": True,
                         "selectedDevice": device_id,
                         "deviceListVersion": 1, },
-                    "accountCountryCode": AppleAcct.session_data_token.get("account_country"),
-                    "dsWebAuthToken": AppleAcct.session_data_token.get("session_token"),
-                    "trustToken": AppleAcct.session_data_token.get("trust_token", ""),
+                    "accountCountryCode": AppleAcct.token_pw_data.get("account_country"),
+                    "dsWebAuthToken": AppleAcct.token_pw_data.get("session_token"),
+                    "trustToken": AppleAcct.token_pw_data.get("trust_token", ""),
                     "extended_login": True,}
 
             try:
@@ -236,8 +236,13 @@ class iCloud_AppleAcctDevices():
 
                 if (device_data_name in Gb.conf_icloud_dnames
                         and requested_by_devicename != 'reload_all_devices'
-                        and Gb.start_icloud3_inprocess_flag):
+                        and Gb.is_icloud3_startup_inprocess):
                     pass
+
+                elif Gb.was_icloud3_reloaded:
+                    if Device := Gb.Devices_by_icloud_device_id.get(device_id):
+                        if Device.is_inactive:
+                            pass
 
                 # only check tracked/monitored devices for location data
                 elif (LOCATION not in device_data
@@ -268,7 +273,7 @@ class iCloud_AppleAcctDevices():
 
                 # The iCloudSession is not recreated on a restart if it already is valid but we need to
                 # initialize all devices, not just tracked ones on an iC3 restart.
-                elif Gb.start_icloud3_inprocess_flag:
+                elif Gb.is_icloud3_startup_inprocess:
                     device_msg = self._initialize_iCloud_AADevData_object(device_id, device_data_name, device_data)
                     monitor_msg += device_msg
                     #continue
@@ -316,7 +321,7 @@ class iCloud_AppleAcctDevices():
                         event_msg += f"{_Device.dev_data_battery_level}%{RARROW}"
                     event_msg += f"{_AADevData.battery_level}%"
 
-                if Gb.start_icloud3_inprocess_flag is True:
+                if Gb.is_icloud3_startup_inprocess is True:
                     pass
 
                 elif requested_by_devicename == _Device.devicename:
@@ -413,7 +418,7 @@ class iCloud_AppleAcctDevices():
 
         log_hdr = f"{self.AppleAcct.account_name}{LINK}{_AADevData.fname}{RLINK}, iCloud Data"
         log_data(log_hdr, _AADevData.device_data,
-                    data_source='icloud', log_rawdata_flag=True, filter_id=self.AppleAcct.username)
+                    data_source='icloud', is_log_level_rawdata=True, filter_id=self.AppleAcct.username)
 
         return (f"{CRLF_DOT}INITIALIZED > {device_data_name}, {_AADevData.loc_time_gps}")
 

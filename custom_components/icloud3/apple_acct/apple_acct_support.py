@@ -7,7 +7,7 @@ from ..const            import (HIGH_INTEGER,
                                     RED_ALERT, CRLF_RED_ALERT, CRLF_CHK,
                                     ICLOUD,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
-                                    CONF_USERNAME, CONF_PASSWORD, CONF_TOTP_KEY, CONF_LOCATE_ALL,
+                                    CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
                                     CONF_SERVER_LOCATION,
                                     CONF_TRACKING_MODE, INACTIVE,
                                     )
@@ -24,7 +24,8 @@ from ..utils.messaging  import (post_event, post_alert, post_alert, post_error_m
                                 internal_error_msg2, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_age, secs_to_hhmm,
                                 format_time_age, )
-from ..utils.utils      import (instr, list_to_str, list_add, list_del, is_empty, isnot_empty,
+from ..utils.utils      import (instr, list_to_str, list_add, list_del, dict_del, 
+                                is_empty, isnot_empty,
                                 username_id, is_running_in_event_loop,)
 from ..startup          import config_file
 
@@ -68,6 +69,7 @@ def retry_apple_acct_login_after_error():
             update_alert_sensor(AppleAcct.username_id, alert_msg, replace_alert_msg=True)
 
 
+#--------------------------------------------------------------------
 def log_into_apple_account(username, password, apple_server_location, locate_all_devices=None):
     '''
     Log in and Authenticate the Apple Account via pyicloud
@@ -172,13 +174,27 @@ def refresh_AppleAcct_AADdevices_data(AppleAcct):
 def create_AppleAcct(username, password, apple_server_location, locate_all_devices):
     try:
         AppleAcct = Gb.AppleAcct_by_username.get(username)
+        if AppleAcct:
+            AppleAcct.__init__(
+                                username,
+                                password,
+                                apple_server_location=apple_server_location,
+                                locate_all_devices=locate_all_devices,
+                                cookie_directory=Gb.icloud_cookies_directory,
+                                session_directory=Gb.icloud_session_directory)
+
+        if AppleAcct and AppleAcct.is_AADevices_setup_complete is False:
+            dict_del(Gb.AppleAcct_by_username, username)
+            dict_del(Gb.AppleAcct_password_by_username, username)
+            AppleAcct = None
+
         if AppleAcct is None:
             AppleAcct = AppleAcctManager(
                                 username,
                                 password,
                                 apple_server_location=apple_server_location,
                                 locate_all_devices=locate_all_devices,
-                                cookie_directory=Gb.icloud_cookie_directory,
+                                cookie_directory=Gb.icloud_cookies_directory,
                                 session_directory=Gb.icloud_session_directory)
 
     except Exception as err:
@@ -266,27 +282,24 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
     '''
     if AppleAcct is None:
         return False
-    elif AppleAcct.auth_2fa_code_needed:
+    elif AppleAcct.is_auth_code_needed:
         pass
     elif Gb.conf_data_source_MOBAPP is False:
         return False
     elif initial_setup:
         pass
-    elif Gb.start_icloud3_inprocess_flag:
+    elif Gb.is_icloud3_startup_inprocess:
         return False
 
     alert_msg = ''
     if (new_2fa_authentication_code_requested(AppleAcct, initial_setup)
-            and AppleAcct.new_2fa_code_already_requested_flag is False):
-        alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.auth_2fa_code_needed_secs)})"
-
+            and AppleAcct.was_ha_auth_code_alert_sent is False):
+        alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_auth_code_needed_secs)})"
         post_alert(f"{AppleAcct.username_id_short} > {alert_msg}")
         update_alert_sensor(AppleAcct.username_id, alert_msg)
 
-        Gb.AppleAcct_needing_reauth_via_ha = {
-                    CONF_USERNAME: AppleAcct.username,
-                    CONF_PASSWORD: AppleAcct.password,
-                    'account_owner': AppleAcct.account_owner}
+        if Gb.AppleAcct_needing_reauth_via_ha is None:
+            Gb.AppleAcct_needing_reauth_via_ha = AppleAcct
 
     if AppleAcct.terms_of_use_update_needed:
         alert_msg = "Apple Acct > Accept `Terms of Use` needed (Auth Code entry screen)"
@@ -341,9 +354,9 @@ def new_2fa_authentication_code_requested(AppleAcct, initial_setup=False):
                 event_msg =(f"{EVLOG_ALERT}iCloud Web Svcs Error, Interface has not been setup, "
                             "resetting iCloud")
                 post_error_msg(event_msg)
-                Gb.restart_icloud3_request_flag = True
+                Gb.was_icloud3_restart_requested = True
 
-            elif Gb.restart_icloud3_request_flag:         # via service call
+            elif Gb.was_icloud3_restart_requested:         # via service call
                 event_msg =("iCloud Restarting, Reset command issued")
                 post_error_msg(event_msg)
 
@@ -356,7 +369,7 @@ def new_2fa_authentication_code_requested(AppleAcct, initial_setup=False):
             return True
 
         #See if 2fa Verification needed
-        if AppleAcct.auth_2fa_code_needed is False:
+        if AppleAcct.is_auth_code_needed is False:
             return False
 
         return True
@@ -390,12 +403,26 @@ def reset_AppleAcct_Gb_variables():
     Gb.Devices_by_username            = {}
     Gb.owner_device_ids_by_username   = {}
     Gb.owner_Devices_by_username      = {}
-    Gb.AppleAcct_needing_reauth_via_ha = {}
+    Gb.AppleAcct_needing_reauth_via_ha = None
 
     Gb.AppleAcct_logging_in_usernames = []
     Gb.conf_usernames                 = set()
 
     config_file.decode_all_passwords()
+
+#--------------------------------------------------------------------
+def cleanup_unknown_AppleAcct_Gb_variables_username():
+    '''
+    Verify the Apple acct 'by_username' dicts contain only real Apple accts.
+    If an invalid Apple acct was added and then corrected, the invalid one
+    still exists in the 'by_username' tables. Check and remove them.
+
+    Invalid/Unknown accts are in Gb.valid_upw_by_username
+    '''
+    conf_usernames = [conf_apple_acct[CONF_USERNAME] for conf_apple_acct in Gb.conf_apple_accounts]
+    for username in Gb.valid_upw_by_username.copy().keys():
+        if username not in conf_usernames:
+            delete_AppleAcct_Gb_variables_username(username)
 
 #--------------------------------------------------------------------
 def delete_AppleAcct_Gb_variables_username(username):
@@ -405,24 +432,22 @@ def delete_AppleAcct_Gb_variables_username(username):
     '''
     log_info_msg("Resetting Apple Acct objects and variables")
 
-    AppleAcct = Gb.AppleAcct_by_username.pop(username, None)
-    if AppleAcct:
-        del AppleAcct.iCloudSession
-        del AppleAcct
-
-    _ = Gb.AppleAcct_by_devicename.pop(username, None)
-    _ = Gb.AppleAcct_password_by_username.pop(username, None)
-    _ = Gb.AppleAcct_error_by_username.pop(username, None)
-    _ = Gb.iCloudSession_by_username.pop(username, None)
-    _ = Gb.Devices_by_username.pop(username, None)
-    _ = Gb.owner_device_ids_by_username.pop(username, None)
-    _ = Gb.owner_Devices_by_username.pop(username, None)
-    _ = Gb.AppleAcct_needing_reauth_via_ha.pop(username, None)
-
+    dict_del(Gb.valid_upw_by_username, username)
+    dict_del(Gb.AppleAcct_by_devicename, username)
+    dict_del(Gb.AppleAcct_password_by_username, username)
+    dict_del(Gb.AppleAcct_error_by_username, username)
+    dict_del(Gb.iCloudSession_by_username, username)
+    dict_del(Gb.Devices_by_username, username)
+    dict_del(Gb.owner_device_ids_by_username, username)
+    dict_del(Gb.owner_Devices_by_username, username)
     list_del(Gb.AppleAcct_logging_in_usernames, username)
     list_del(Gb.conf_usernames, username)
 
-    config_file.decode_all_passwords()
+    AppleAcct = Gb.AppleAcct_by_username.pop(username, None)
+    if AppleAcct:
+        if  Gb.AppleAcct_needing_reauth_via_ha == AppleAcct:
+            Gb.AppleAcct_needing_reauth_via_ha = None
+        del AppleAcct.iCloudSession
+        del AppleAcct
 
-    if Gb.AppleAcct_needing_reauth_via_ha.get(CONF_USERNAME) == username:
-        Gb.AppleAcct_needing_reauth_via_ha = {}
+    config_file.decode_all_passwords()

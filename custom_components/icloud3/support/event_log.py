@@ -21,9 +21,9 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_URL_LIST,
                                     EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR, EVLOG_TRACE,
-                                    EVLOG_INIT_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
+                                    EVLOG_ATTENTION, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
                                     EVLOG_ALERT, EVLOG_WARNING, EVLOG_ERROR, EVLOG_NOTICE,
-                                    EVLOG_HIGHLIGHT, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR,
+                                    EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR,
                                     EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
                                     CONF_EVLOG_BTNCONFIG_URL,
                                     )
@@ -61,9 +61,9 @@ MAX_EVLOG_RECD_LENGTH = 2000
 # EVLOG_ERROR       = '^e^'
 # EVLOG_ALERT       = '^a^'
 # EVLOG_WARNING     = '^w^'
-# EVLOG_INIT_HDR    = '^i^'       # iC3 initialization start/complete event
+# EVLOG_ATTENTION    = '^i^'       # iC3 initialization start/complete event
 # EVLOG_HIGHLIGHT   = '^h^'       # Display item in green highlight bar
-# EVLOG_IC3_STARTING  = '^i^'
+# EVLOG_ATTENTION  = '^i^'
 # EVLOG_IC3_STAGE_HDR = '^g^'
 
 MONITORED_DEVICE_EVENT_FILTERS = [
@@ -95,8 +95,8 @@ class EventLog(object):
         self.fnames_by_devicename    = {}
         self.clear_secs              = HIGH_INTEGER
         self.trk_monitors_flag       = False
-        self.log_debug_flag          = False
-        self.log_rawdata_flag           = False
+        self.is_log_level_debug          = False
+        self.is_log_level_rawdata           = False
         self.last_refresh_secs       = 0
         self.last_refresh_devicename = ''
         self.dist_to_devices_recd_found_flag = False    # Display only the last DistTo Devices > stmt
@@ -150,6 +150,9 @@ class EventLog(object):
         self.evlog_attrs["logs"]            = []
 
         self.devicename_cnts = {}
+
+        Gb.evlog_btnconfig_url              = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
+        Gb.evlog_version                    = Gb.conf_profile['event_log_version']
 
     def __repr__(self):
         return (f"<EventLog: {self.fnames_by_devicename}>")
@@ -219,7 +222,7 @@ class EventLog(object):
 #------------------------------------------------------
     def format_evlog_device_fname(self, Device):
         # verified = Gb.evlog_alert_by_devicename.get(Device.devicename, '')
-        # verified = f"{RED_X} " if Device.verified_flag is False else ''
+        # verified = f"{RED_X} " if Device.was_verified is False else ''
         tz_offset = '' if Device.away_time_zone_offset == 0 else f" {CLOCK_FACE}"
         tracked  = '' if Device.is_tracked else f" {circle_letter('m')}"
         return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}{tz_offset}"
@@ -239,9 +242,9 @@ class EventLog(object):
 
         if event_text == '+':
             event_text = devicename_or_Device
-            devicename = "*" if Gb.start_icloud3_inprocess_flag else '**'
+            devicename = "*" if Gb.is_icloud3_startup_inprocess else '**'
         elif devicename_or_Device is None or devicename_or_Device in ['', '*']:
-            devicename = "*" if Gb.start_icloud3_inprocess_flag else '**'
+            devicename = "*" if Gb.is_icloud3_startup_inprocess else '**'
 
         if (instr(event_text, "▼") or instr(event_text, "▲")
                 or len(event_text) == 0
@@ -298,12 +301,12 @@ class EventLog(object):
                 pass
             #if (event_text.startswith(EVLOG_UPDATE_START)
             elif (event_text.startswith(EVLOG_UPDATE_END)
-                    or event_text.startswith(EVLOG_IC3_STARTING)
+                    or event_text.startswith(EVLOG_ATTENTION)
                     or event_text.startswith(EVLOG_IC3_STAGE_HDR)):
                 this_update_time = dt_util.now().strftime('%a')
-                if Gb.log_rawdata_flag:
+                if Gb.is_log_level_rawdata:
                     this_update_time += ',Raw'
-                elif Gb.log_debug_flag:
+                elif Gb.is_log_level_debug:
                     this_update_time += ',Dbug'
 
 
@@ -318,7 +321,7 @@ class EventLog(object):
                         Device.last_evlog_msg_secs = time_now_secs()
                         from_zone_dname = Device.FromZone_BeingUpdated.from_zone_dname
                         if event_text.startswith(EVLOG_TIME_RECD):
-                            this_update_time = f"»{from_zone_dname[:6]}"# 
+                            this_update_time = f"»{from_zone_dname[:6]}"#
                             if (Device.FromZone_BeingUpdated is Device.FromZone_TrackFrom
                                     and Device.FromZone_BeingUpdated is not Device.FromZone_Home):
                                 this_update_time = this_update_time.upper()
@@ -450,9 +453,9 @@ class EventLog(object):
 
         try:
             log_attr_text = ""
-            if Gb.evlog_trk_monitors_flag: log_attr_text += 'monitor,'
-            if Gb.log_debug_flag:          log_attr_text += 'debug,'
-            if Gb.log_rawdata_flag:        log_attr_text += 'rawdata,'
+            if Gb.is_evlog_trk_monitors_displayed: log_attr_text += 'monitor,'
+            if Gb.is_log_level_debug:          log_attr_text += 'debug,'
+            if Gb.is_log_level_rawdata:        log_attr_text += 'rawdata,'
 
             self.evlog_attrs['log_level_debug'] = log_attr_text
 
@@ -590,7 +593,7 @@ class EventLog(object):
         event_text = event_recd[ELR_TEXT]
         if Device:
             if event_text.startswith(EVLOG_UPDATE_END):
-                event_text=(f"{EVLOG_IC3_STARTING}{Device.fname} > "
+                event_text=(f"{EVLOG_ATTENTION}{Device.fname} > "
                             f"{event_text[3:]}")
                 if instr(event_text, ','):
                     event_text = event_text.split(',')[0]
@@ -699,7 +702,7 @@ class EventLog(object):
             devicename = self.devicename
         time_text_recds = self._extract_filtered_evlog_recds(devicename)
 
-        if Gb.display_gps_lat_long_flag is False:
+        if Gb.is_gps_lat_long_displayed is False:
             time_text_recds = [self._apply_gps_filter(el_recd) for el_recd in time_text_recds]
 
         if max_recds < HIGH_INTEGER:
@@ -719,7 +722,7 @@ class EventLog(object):
         time_text_recds.append(CONTROL_RECD)
         time_text_recds_str = str(time_text_recds)
 
-        if Gb.evlog_trk_monitors_flag:
+        if Gb.is_evlog_trk_monitors_displayed:
             time_text_recds_str = time_text_recds_str.replace(EVLOG_MONITOR, EVLOG_BLUE)
 
         return time_text_recds_str
@@ -733,14 +736,14 @@ class EventLog(object):
         the resulting list to be passed to the Event Log
         '''
 
-        # The evlog_startup_log_flag is set in the service_handler when Show
+        # The is_evlog_startup_log_displayed is set in the service_handler when Show
         # Startup Log, Errors & Alerts is selected on the EvLog screen
-        if Gb.evlog_startup_log_flag:
+        if Gb.is_evlog_startup_log_displayed:
             self.greenbar_alert_msg=(   f"Start up log, alerts and èrrors"
                                         f"{RARROW}Refresh to close")
             el_recds = [el_recd[1:3] for el_recd in self.startup_event_recds
                                         if (self.is_monitor_recd(el_recd) is False
-                                            or Gb.evlog_trk_monitors_flag)]
+                                            or Gb.is_evlog_trk_monitors_displayed)]
             return el_recds
 
         elif Gb.EvLog.greenbar_alert_msg.startswith('Start up log'):
@@ -789,7 +792,7 @@ class EventLog(object):
         elr_devicename, elr_time, elr_text = el_recd
 
         # Return all of the time/text items if 'Show Tracking Monitors' was selected in the EvLog
-        if Gb.evlog_trk_monitors_flag:
+        if Gb.is_evlog_trk_monitors_displayed:
             return True
         # if instr(el_recd[ELR_TEXT], 'Acct Auth'):
         #     return True
@@ -834,7 +837,7 @@ class EventLog(object):
         '''
         elr_time_text = el_recd[1:3]
 
-        if Gb.display_gps_lat_long_flag is False:
+        if Gb.is_gps_lat_long_displayed is False:
             elr_time_text = self._apply_gps_filter(elr_time_text)
         if Device:
             elr_time_text = self._apply_home_to_away_time_zone_update(elr_time_text, Device.away_time_zone_offset)
@@ -986,7 +989,7 @@ class EventLog(object):
 
                 # iCloud3 Startup Records
                 if log_section == 'startup':
-                    if text[0:3] in [EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR]:
+                    if text[0:3] in [EVLOG_ATTENTION, EVLOG_IC3_STAGE_HDR]:
                         text = f"{SP(9)}{format_header_box(text[3:], indent=12, evlog_export=True)}"
                     elif text.startswith('^'):
                         text = f"{SP(4)}{filter_special_chars(text[3:], evlog_export=True)}"

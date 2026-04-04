@@ -313,7 +313,7 @@ def _trigger_monitored_device_update(StatZone, Device, action):
             continue
 
         if event_msg:
-            _Device.icloud_force_update_flag = True
+            _Device.is_force_icloud_update = True
             det_interval.update_all_device_fm_zone_sensors_interval(_Device, 5)
             _Device.icloud_update_reason = event_msg
             _Device.write_ha_sensors_state([NEXT_UPDATE, INTERVAL])

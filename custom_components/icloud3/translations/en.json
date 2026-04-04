@@ -4,18 +4,18 @@
     "abort": {
       "translation_file_by": "@gcobb321",
 
-      "config_update_complete": "✔️ iCloud3 configuration updated successfully",
+      "config_update_complete": "XX✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "The Apple account is not log into",
       "login_error_ipv6": "Apple Account login timeout error, IPv6 is not supported - Go to HA Devices & Settings > System > Network. Disable IPv6 and restart HA.",
       "login_error_503": "Apple Account Login Error 503, Server Refused/Rejected Request.",
       "login_error_other": "An unknown error occurred logging into the Apple Account.",
-      "verification_code_requested": "The code was requested. Waiting for it to be entered and sent to Apple",
-      "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
-      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
-      "verification_code_cancelled": "The Authenticate Apple Account Sign-in process was completed",
+      "auth_code_requested": "The code was requested. Waiting for it to be entered and sent to Apple",
+      "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
+      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
+      "auth_code_accepted": "✅ The Verification Code was accepted. Reauthentication is complete",
+      "auth_code_cancelled": "The Authenticate Apple Account Sign-in process was completed",
       "update_cancelled": "Update Cancelled",
       "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3",
       "reauth_apple_acct_unknown": "Apple account requesting Verification Code is unknown",
@@ -24,20 +24,20 @@
     "error": {
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
 
-      "SK-verification_code_send_error": "Failed to send the Code/Security Key",
-      "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
-      "SK-verification_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
+      "SK-auth_code_send_error": "Failed to send the Code/Security Key",
+      "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
+      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
+      "SK-auth_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
 
-      "verification_code_send_error": "Failed to send the Verification Code",
-      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
-      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
-      "verification_code_needed": "An Apple Account needs to be Authenticated",
-      "verification_code_cancelled": "The Apple Account authentication was cancelled",
+      "auth_code_send_error": "Failed to send the Verification Code",
+      "auth_code_accepted": "✅ The Verification Code was accepted. Reauthentication is complete",
+      "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "auth_code_invalid": "The Verification Code is not correct. Reenter or request a new code",
+      "auth_code_needed": "An Apple Account needs to be Authenticated",
+      "auth_code_cancelled": "The Apple Account authentication was cancelled",
 
       "apple_acct_not_logged_into": "The Apple Account is not logged into",
-      "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
+      "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Apple Acct screen)",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
       "apple_acct_login_error_503": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request",
@@ -61,18 +61,29 @@
           "reset_tracking": "The iCloud3 Configuration has been previously set up and is normally used when adding the iCloud3 Integration again. Check this option if you want to remove the Apple account and Devices configuration and start over"
         }
       },
+
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
         "description": "Enter the 6-digit Verification Code to approve signing into the Apple Account",
         "SK-description": "Enter the 6-digit Verification Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
         "data": {
           "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "verification_code": "6-DIGIT VERIFICATION CODE - Sign-in Code displayed on the Trusted Devices ",
+          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
+          "auth_code": "VERIFICATION CODE - Verification Code displayed on the Trusted Devices",
           "fido2_key_name": "SECURITY KEY (YUBIKEY) - Name of the Security Key used to authenticate the Apple Account sign-in",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
+      "reauth_manual_code_info": {
+          "title": "Get an Auth Code Manually",
+          "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the \nText Message never arrives, generate a code with a trusted device using the following steps: \n\n**Sign into your Apple Account** \n1. Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n• If you are already signed in, sign out \n• If you use Face ID, cover the camera so you are not automatically signed into your account again.\n2. Tap _**Use a different Apple Account**_. This will reset the Trust Token and display the window with the code you will use later on.\n3. Enter your **username**, tap _**Continue**_. Enter your **password**, tap _**Sign-in**_.\n\n**Signing in on a Trusted Device (iPhone, iPad, Mac)**\n1. The *Apple Acct Sign-in is Requested* window is displayed. Tap _**Allow**_ to display the code you will use later on in iCloud3. _**Do not enter the code here**_.\n2. Tap _**OK**_ to close the window\n\n**Signing in on Windows**\n1. You are done here, close the tab, continue with _Authentication iCloud3_ below.\n2. The code is displayed on your trusted device (iPhone, iPad, Mac) in the *Apple Acct Sign-in is Requested* window. Get the code, you will use it later on.\n\n**Authenticating iCloud3** \n1. Select **Reset Trust Token, Return to Enter & Send the Code to Apple** below to go to back to the _Authenticate Apple Account Sign-in_ screen. Tap _**Submit**_. \n2. Enter the code and send to Apple for verification.\n \nFor more information, see https://www.wikihow.com/Verify-Apple-ID",
+          "data": {
+            "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          }
+      },
+
       "restart_ha": {
         "title": "Confirm Restarting Home Assistant",
         "description": "iCloud3 needs to restart Home Assistant to prevent device_tracker entity name conflicts",
@@ -91,20 +102,20 @@
   },
   "options": {
     "abort": {
-      "config_update_complete": "✔️ iCloud3 configuration updated successfully",
+      "config_update_complete": "XX✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
-      "ic3_reloading": "RELOADING ICLOUD3",
-      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
-      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete"
+      "ic3_reloading": "iCloud3 Reload has been started",
+      "auth_code_accepted": "✅ The Verification Code was accepted. Reauthentication is complete",
+      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete"
     },
     "error": {
       "unknown_action": "Selected Action could not be identified",
       "action_not_available": "Internet Connection Error > Action not Available",
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
-      "conf_updated": "✔️ iCloud3 Configuration Parameters were updated successfully",
+      "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
 
       "apple_acct_logging_into": "Logging into Apple Account",
@@ -134,20 +145,20 @@
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id and name on the device (Settings > General > About) can not be exactly the same (letters & case)",
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
       "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
-      "apple_acct_terms_update_accepted": "✔️ Apple Acct `Terms of Use` Update Accepted",
+      "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth AQpple Acct screen)",
 
-      "SK-verification_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-verification_code_accepted": "✔️ The Code/Security Key was accepted. Reauthentication is complete",
-      "SK-verification_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
-      "SK-verification_code_send_error": "❌ Failed to send the Code/Security Key",
+      "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
+      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
+      "SK-auth_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
+      "SK-auth_code_send_error": "❌ Failed to send the Code/Security Key",
 
-      "verification_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
-      "verification_code_needed": "An Apple Account needs to be Authenticated",
-      "verification_code_cancelled": "The Apple Account authentication was cancelled",
-      "verification_code_accepted": "✔️ The Verification Code was accepted. Reauthentication is complete",
-      "verification_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
-      "verification_code_send_error": "❌ Failed to send the Verification Code",
+      "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "auth_code_needed": "An Apple Account needs to be Authenticated",
+      "auth_code_cancelled": "The Apple Account authentication was cancelled",
+      "auth_code_accepted": "✅ The Verification Code was accepted. Reauthentication is complete",
+      "auth_code_invalid": "❌ The Verification Code was not correct. Reenter or request a new code",
+      "auth_code_send_error": "❌ Failed to send the Verification Code",
 
       "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
       "already_assigned": "This selection is already assigned to another device",
@@ -204,7 +215,7 @@
       "action_completed": "Requested Action has been completed",
       "action_cancelled": "Requested Action has been cancelled",
       "restart_ha": "Home Assistant needs to be restarted to continue",
-      "excluded_sensors_ha_restart": "✔️ Excluded Sensors will not be created on next HA restart",
+      "excluded_sensors_ha_restart": "✅ Excluded Sensors will not be created on next HA restart",
 
       "fix_entity_name_complete": "Sensor Entity Name Corrected completed",
       "fix_entity_name_not_needed": "No Sensor Entity Name Errors were found",
@@ -212,7 +223,7 @@
       "dashboard_device_keyword_error": "Could not update dashboard. Device Keyword not available",
       "dashboard_created_initial": "The Initial iCloud3 Dashboard was created",
       "dashboard_created": "The Dashboard was created",
-      "dashboard_updated": "✔️ The Dashboard was updated",
+      "dashboard_updated": "✅ The Dashboard was updated",
       "dashboard_name_used": "This Dashboard Name is assigned to another Dashboard",
       "dashboard_main_2_devices": "Only 2 Devices can be selected for the Main view screen",
       "dashboard_error": "An error occurred updating the Dashboard",
@@ -270,8 +281,8 @@
       },
 
       "restart_ha_reload_icloud3": {
-        "title": "Restart Home Assistant or iCloud3",
-        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
+        "title": "Reload iCloud3, Restart Home Assistant",
+        "description": "Reload and reinitialize the iCloud3 Integration or restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
         "data": {
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
@@ -306,7 +317,6 @@
           "username": "USERNAME - Email address/username used to sign in to the Apple Account",
           "password": "PASSWORD - Account Password",
           "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
-          "totp_key": "TOTP KEY - Time Based One-Time Password Key used to generate the 6-digit authentication code",
           "locate_all": "LOCATE ALL DEVICES (Only applies with multiple Apple Accounts)",
           "url_suffix_china": "CHINA USERS - Use Apple Acct Servers located in China (.cn URL suffix)",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
@@ -343,24 +353,25 @@
         "SK-description": "Enter the 6-digit Verification Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
         "data": {
           "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "verification_code": "6-DIGIT VERIFICATION CODE - Sign-in Code displayed on the Trusted Devices ",
+          "auth_method": "AUTH METHODS - Change the Auth Method (Push Popup, SMS Text Msg, Hardware Key)",
+          "auth_code": "VERIFICATION CODE - Sign-in Code displayed on the Trusted Devices",
           "fido2_key_name": "SECURITY KEY (YUBIKEY) - Name of the Security Key used to authenticate the Apple Account sign-in",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
 
-      "trusted_device": {
-        "title": "Apple Account Trusted Devices",
-        "description": "Select your Trusted Device",
+      "reauth_manual_code_info": {
+        "title": "Get an Auth Code Manually",
+        "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the \nText Message never arrives, generate a code with a trusted device using the following steps: \n\n**Sign into your Apple Account** \n1. Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n• If you are already signed in, sign out \n• If you use Face ID, cover the camera so you are not automatically signed into your account again.\n2. Tap _**Use a different Apple Account**_. This will reset the Trust Token and display the window with the code you will use later on.\n3. Enter your **username**, tap _**Continue**_. Enter your **password**, tap _**Sign-in**_.\n\n**Signing in on a Trusted Device (iPhone, iPad, Mac)**\n1. The *Apple Acct Sign-in is Requested* window is displayed. Tap _**Allow**_ to display the code you will use later on in iCloud3. _**Do not enter the code here**_.\n2. Tap _**OK**_ to close the window\n\n**Signing in on Windows**\n1. You are done here, close the tab, continue with _Authentication iCloud3_ below.\n2. The code is displayed on your trusted device (iPhone, iPad, Mac) in the *Apple Acct Sign-in is Requested* window. Get the code, you will use it later on.\n\n**Authenticating iCloud3** \n1. Select **Reset Trust Token, Return to Enter & Send the Code to Apple** below to go to back to the _Authenticate Apple Account Sign-in_ screen. Tap _**Submit**_. \n2. Enter the code and send to Apple for verification.\n \nFor more information, see https://www.wikihow.com/Verify-Apple-ID",
         "data": {
-          "trusted_device": "Trusted Device"
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
 
       "device_list": {
         "title": "iCloud3 Devices",
-        "description": "Up to 10 devices can be tracked or monitored by iCloud3. They are listed here.\n\nThis screen is used to select a device that needs to be updated, add a new device and delete a device that should not be tracked any longer.",
+        "description": "This screen is used to select a device that needs to be updated, add a new device or to a device that should no longer be tracked or monitored.",
         "data": {
           "devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
@@ -505,8 +516,8 @@
       },
 
       "tools": {
-        "title": "Maintenance Tools",
-        "description": "Maintenance Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
+        "title": "Tools",
+        "description": "Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
         "data": {
           "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",
           "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud Device Data to the log file for only these devices",
@@ -514,6 +525,22 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TOOLS"
         },
         "data_description": {
+        }
+      },
+      "tools_entity_registry_cleanup": {
+        "title": "Cleanup HA Entity Registry Devices & Sensors",
+        "description": "This screen is used to delete unwanted iCloud3 device_tracker and sensor entities from the HA Device and Entity Registries. The entities are analyzed and displayed the following groups: active, inactive, orphaned, deleted devices, deleted sensors, disabled and HA duplicates (those with a `_2` suffix). ",
+        "data": {
+          "active": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  ACTIVE DEVICES - Devices that are being tracked by iCloud3. 🛈These devices will be deleted and then recreated.",
+          "inactive": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  INACTIVE DEVICES - Devices that are set to `Inactive` and not tracked by iCloud3.",
+          "orphaned": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  ORPHANED SENSORS - Sensors that once existed but are no longer associated with the iCloud3 Integration",
+          "disabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  DISABLED DEVICES & SENSORS - Devices & Sensors that have been disabled on the HA Devices, Enriry or iCloud3 Integration screen",
+          "deleted_devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  DELETED DEVICES - Sensors that were used by a device that has been deleted from iCloud3",
+          "deleted_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  DELETED SENSORS - Sensors that belong to an iCloud3 device that are no longer used",
+          "suffix_error": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  SUFFIX ERRORS > Sensors that have been duplicated by HA and are now Unavailable (`[sensor]` & `[sensor_2]`)",
+          "other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  OTHER SENSORS > Sensors that were not in the other groups",
+          "check_all": " ",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
 

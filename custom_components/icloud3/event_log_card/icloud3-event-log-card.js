@@ -12,8 +12,11 @@
 //  If they do not match, the one in the 'custom_components\icloud3' is copied
 //  to the 'www\custom_cards' directory.
 //
-//  v3.1.1 - Fixed problem creating btnConfig url
-//  v3.2.0 - Removed references to v2 -> v3 conversion
+//  v3.1.1  - Fixed problem creating btnConfig url
+//  v3.2.0  - Removed references to v2 -> v3 conversion
+//  3/1/2026: Did not change version number
+//          - Changed Heading (iCloud3 v3 --> iCloud3)
+//          - Changed background gradient of body from .05 to .08 to be a little darker
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -26,7 +29,7 @@ class iCloud3EventLogCard extends HTMLElement {
     //---------------------------------------------------------------------------
     setConfig(config) {
         const version = "3.2.0"
-        const cardTitle = "iCloud3 v3 - Event Log"
+        const cardTitle = "iCloud3 - Event Log"
 
         const root = this.shadowRoot
         const hass = this._hass
@@ -530,16 +533,27 @@ class iCloud3EventLogCard extends HTMLElement {
                                 }
             .highlightEdgeBar   {border-left: 2px solid darkseagreen;}
 
-            .iC3StartingHdr     {color: white;
+            .iC3StartingHdrOld  {color: white;
                                 background-color: chocolate;
                                 font-weight: 500;
                                 border-top: 1px solid chocolate;
                                 border-bottom: 1px solid chocolate;
                                 }
-            .iC3StartingHdrTime {color: black;
+            .attentionHdr      {color: white;
+                                background-color: orchid;
+                                font-weight: 500;
+                                border-top: 1px solid orchid;
+                                border-bottom: 1px solid orchid;
+                                }
+            .iC3StartingHdrTimeOld {color: black;
                                 background-color: chocolate;
                                 border-top: 1px solid chocolate;
                                 border-bottom: 1px solid chocolate;
+                                }
+            .attentionHdrTime   {color: #d55dd1;
+                                background-color: orchid;
+                                border-top: 1px solid orchid;
+                                border-bottom: 1px solid orchid;
                                 }
             .stageRecdHdr       {color: white;
                                 background-color: peru;
@@ -736,8 +750,8 @@ class iCloud3EventLogCard extends HTMLElement {
 
             .noTopBorder {border: 1px solid transparent;}
             .rowBorder {border-left: 2px solid cyan;}
-            .tblEvlogBody tr:nth-child(even) {background-color: rgba(var(--rgb-primary-text-color), 0.05);}
             .tblEvlogBody tr:nth-child(odd) {background-color: var(--primary-background-color);}
+            .tblEvlogBody tr:nth-child(even) {background-color: rgba(var(--rgb-primary-text-color), 0.075);}
 
             /* Browser Text */
             .colTime        {width: 66.67px; vertical-align: text-top;}
@@ -1469,7 +1483,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     // ^i^ = iCloud3 Initialization Started/Completed
                 } else if (tText.startsWith("^i^")) {
                     cancelEdgeBarFlag = (tText.indexOf("started") >= 0)
-                    classHeaderBar = ' iC3StartingHdr'
+                    classHeaderBar = ' attentionHdr'
                     classEdgeBar = ' stageEdgeBar'
 
                 // ^h^ - special green highlight bar
@@ -1594,7 +1608,7 @@ class iCloud3EventLogCard extends HTMLElement {
                         classTime = classTime.replace("colTimeTextRow", "")
                         classTime = classTime.replace("updateRecdHdr", "updateRecdHdrTime")
                         classTime = classTime.replace("stageRecdHdr", "stageRecdHdrTime")
-                        classTime = classTime.replace("iC3StartingHdr", "iC3StartingHdrTime")
+                        classTime = classTime.replace("attentionHdr", "attentionHdrTime")
                         // tTime = ''
                     }
                     var classTextColor = classHeaderBar + classSpecialTextColor + classTable + classErrorMsg

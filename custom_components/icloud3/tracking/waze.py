@@ -35,11 +35,11 @@ WAZE_STATUS_FNAME ={WAZE_USED: 'Used',
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Waze(object):
-    def __init__(self, distance_method_waze_flag, waze_min_distance, waze_max_distance,
+    def __init__(self, is_waze_dist_method_used, waze_min_distance, waze_max_distance,
                     waze_realtime, waze_region):
 
         self.waze_status                = WAZE_USED
-        self.distance_method_waze_flag  = distance_method_waze_flag
+        self.is_waze_dist_method_used  = is_waze_dist_method_used
         self.waze_realtime              = waze_realtime
         self.waze_region                = waze_region.upper()
         self.waze_min_distance          = waze_min_distance
@@ -50,7 +50,7 @@ class Waze(object):
         self.internet_error_displayed = False
 
         self.waze_manual_pause_flag        = False  #If Paused via iCloud command
-        self.waze_close_to_zone_pause_flag = False  #pause if dist from zone < 1 flag
+        self.is_waze_paused_close_to_zone = False  #pause if dist from zone < 1 flag
         self.WazeRouteCalc                 = None
         self.error_server_unavailable_secs = 0       # Time (secs) of first  Server unavailable error
         self.error_server_unavailable_cnt  = 0       # Count of  things error occurred
@@ -61,9 +61,9 @@ class Waze(object):
 
         except Exception as err:
             post_internal_error('Waze Route Info', traceback.format_exc)
-            self.distance_method_waze_flag = False
+            self.is_waze_dist_method_used = False
 
-        if self.distance_method_waze_flag:
+        if self.is_waze_dist_method_used:
             self.waze_status = WAZE_USED
             config_server_fname = WAZE_SERVERS_FNAME.get(self.waze_region.lower(), self.waze_region.lower())
             event_msg = (f"Setting Up Waze > Server-{config_server_fname} ({self.waze_region.upper()}), "
@@ -80,7 +80,7 @@ class Waze(object):
     @property
     def is_status_USED(self):
         return (self.waze_status == WAZE_USED
-                and Gb.Waze.distance_method_waze_flag)
+                and Gb.Waze.is_waze_dist_method_used)
 
     @property
     def is_historydb_USED(self):
@@ -136,7 +136,7 @@ class Waze(object):
         '''
 
         try:
-            if not self.distance_method_waze_flag:
+            if not self.is_waze_dist_method_used:
                 return (WAZE_NOT_USED, 0, 0, 0)
             elif self.is_status_PAUSED:
                 return (WAZE_PAUSED, 0, 0, 0)
@@ -224,7 +224,7 @@ class Waze(object):
             except Exception as err:
                 post_internal_error('Waze Route Info', traceback.format_exc)
                 if err == "Name 'WazeRouteCalculator' is not defined":
-                    self.distance_method_waze_flag = False
+                    self.is_waze_dist_method_used = False
                     return (WAZE_NOT_USED, 0, 0, 0)
 
                 return (WAZE_NO_DATA, 0, 0, 0)

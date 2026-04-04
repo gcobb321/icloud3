@@ -5,39 +5,50 @@ from ..const            import (
                                 RARROW, RARROW2, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE,
                                 ICLOUD, MOBAPP, NO_MOBAPP, NO_IOSAPP, HOME,
                                 CONF_PARAMETER_TIME_STR,
-                                CONF_PICTURE_WWW_DIRS,
+                                CONF_PICTURE_WWW_DIRS, CONF_SENSORS_HASH,
                                 CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
                                 CONF_IC3_VERSION, VERSION, VERSION_BETA,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
                                 CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE,
-                                CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_TOTP_KEY,
+                                CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
                                 CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
-                                CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_SETUP_ICLOUD_SESSION_EARLY,
+                                CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_FNAME,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
                                 CONF_DATA_SOURCE, CONF_LOG_ZONES,
                                 CONF_APPLE_ACCOUNT, CONF_FAMSHR_DEVICENAME,
                                 CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
-                                CONF_TRACKING_MODE, CONF_PASSWORD_SRP_ENABLED,
+                                CONF_TRACKING_MODE, CONF_PASSWORD_SRP_ENABLED, CONF_EXCLUDED_SENSORS,
                                 CONF_PICTURE, CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES,
                                 CONF_DISPLAY_TEXT_AS,
                                 CONF_TRACK_FROM_BASE_ZONE,
                                 CF_DEFAULT_IC3_CONF_FILE,
                                 DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF, DEFAULT_DEVICE_CONF,
-                                DEFAULT_SENSORS_CONF, DEFAULT_DATA_CONF,
+                                DEFAULT_SENSORS_CONF, DEFAULT_DEVICE_SENSORS_CONF, BASE,
                                 RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
                                 CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS, CF_DEVICE_SENSORS,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
                                 IC3LOG_FILENAME,
+                                BASE, TRACKED, MONITORED, EXCLUDED, TRACK, MONITOR,
+                                NLSP4, ZONE,
+                                CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES,
+
+                                )
+from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
+                                SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
+                                SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
+                                SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS,
+                                CONF_NON_TRACKING_GROUPS,
                                 )
 
 from ..startup          import start_ic3
-# from ..tracking         import waze
-from ..utils.utils      import (instr, ordereddict_to_dict, isbetween, list_add, is_empty,
-                                list_to_str, )
+from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dict, isbetween,
+                                list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
+                                username_id, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, )
 
+from ..utils            import entity_reg_util as er_util
 from ..utils            import file_io
 
 #--------------------------------------------------------------------
@@ -62,7 +73,7 @@ def load_icloud3_configuration_file():
 
     # Make the .storage/icloud3 directory if it does not exist
     file_io.make_directory(Gb.ha_storage_icloud3)
-    file_io.make_directory(Gb.icloud_cookie_directory)
+    file_io.make_directory(Gb.icloud_cookies_directory)
 
     if file_io.file_exists(Gb.icloud3_config_filename) is False:
         _LOGGER.info(f"Creating Configuration File-{Gb.icloud3_config_filename}")
@@ -70,6 +81,7 @@ def load_icloud3_configuration_file():
         initialize_icloud3_configuration_file()
 
     success = read_icloud3_configuration_file()
+    build_conf_device_sensors_from_conf_sensors()
 
     if success:
         write_icloud3_configuration_file('_backup')
@@ -169,7 +181,7 @@ async def async_write_icloud3_configuration_file(filename_suffix=None):
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
 
         success = await file_io.async_save_json_file(filename, Gb.conf_file_data)
-        log_debug_msg(f"Configuration File > Update Succerssful-{success}")
+        log_debug_msg(f"Configuration File > Update Successful-{success}")
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -246,6 +258,7 @@ def _add_parms_and_check_config_file():
         update_config_file_flag = _config_file_check_new_ic3_version() or update_config_file_flag
         update_config_file_flag = _delete_obsolete_parameters()        or update_config_file_flag
         update_config_file_flag = _update_profile()                    or update_config_file_flag
+        update_config_file_flag = _update_sensors()                    or update_config_file_flag
         update_config_file_flag = _update_tracking_parameters()        or update_config_file_flag
         update_config_file_flag = _update_apple_acct_parameters()      or update_config_file_flag
         update_config_file_flag = _update_device_parameters()          or update_config_file_flag
@@ -254,7 +267,9 @@ def _add_parms_and_check_config_file():
         update_config_file_flag = _verify_general_parameter_values()   or update_config_file_flag
         update_config_file_flag = _verify_tracking_parameters_values() or update_config_file_flag
         update_config_file_flag = _verify_device_parameters_values()   or update_config_file_flag
+
         if update_config_file_flag:
+            Gb.conf_profile[CONF_SENSORS_HASH] = ''
             write_icloud3_configuration_file()
 
         decode_all_passwords()
@@ -280,6 +295,7 @@ def set_conf_devices_index_by_devicename():
     for index, conf_device in enumerate(Gb.conf_devices):
         Gb.conf_devices_idx_by_devicename[conf_device[CONF_IC3_DEVICENAME]] = index
 
+#--------------------------------------------------------------------
 def get_conf_device(devicename):
     idx = Gb.conf_devices_idx_by_devicename.get(devicename, -1)
     if idx == -1:
@@ -401,20 +417,15 @@ def conf_apple_acct(idx_or_username):
 
         # Get conf_apple_acct by it's username
         elif type(idx_or_username) is str:
-            conf_apple_acct = [apple_acct   for apple_acct in Gb.conf_apple_accounts
-                                            if apple_acct[CONF_USERNAME] == idx_or_username]
-            if is_empty(conf_apple_acct):
+            if is_empty(Gb.conf_apple_accounts):
                 return (DEFAULT_APPLE_ACCOUNT_CONF.copy(), -1)
 
-            # Get it's index
-            conf_apple_acct_usernames = [apple_acct[CONF_USERNAME]
-                                            for apple_acct in Gb.conf_apple_accounts]
-            conf_apple_acct_idx = conf_apple_acct_usernames.index(idx_or_username)
-
-            if conf_apple_acct != []:
-                conf_apple_acct = conf_apple_acct[0]
-                conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
-                return (conf_apple_acct, conf_apple_acct_idx)
+            conf_apple_acct_idx = -1
+            for conf_apple_acct in Gb.conf_apple_accounts:
+                conf_apple_acct_idx += 1
+                if conf_apple_acct[CONF_USERNAME] == idx_or_username:
+                    conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
+                    return (conf_apple_acct, conf_apple_acct_idx)
 
     except Exception as err:
         log_exception(err)
@@ -454,6 +465,256 @@ def apple_acct_password_for_username(username):
                                 if apple_acct[CONF_USERNAME] == username][0]
     except:
         return ''
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   CONFIGURE THE CONF_DEVICE_SENSORS DICTIONARY FRO CONF_SENSORS
+#   HANDLE VARIOUS EXCLUDED SENSORS LIST TASKS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+async def async_build_conf_device_sensors_from_conf_sensors():
+
+    rebuild_flag = build_conf_device_sensors_from_conf_sensors()
+    if rebuild_flag is False:
+        return
+
+    await async_write_icloud3_configuration_file()
+
+#--------------------------------------------------------------------
+def build_conf_device_sensors_from_conf_sensors():
+
+    if (CF_DEVICE_SENSORS not in Gb.conf_data
+            or BASE in Gb.conf_device_sensors):
+        Gb.conf_profile[CONF_SENSORS_HASH] = '*'
+
+    conf_sensors_hash = get_string_hash(str(Gb.conf_sensors))
+    if (Gb.conf_profile[CONF_SENSORS_HASH] == conf_sensors_hash
+            and isnot_empty(Gb.conf_device_sensors)):
+        return False
+
+    validate_and_correct_excluded_sensors_list()
+
+    Gb.conf_device_sensors = DEFAULT_DEVICE_SENSORS_CONF.copy()
+    Gb.conf_device_sensors[TRACK]   = get_tracked_sensors_from_conf_sensors()
+    Gb.conf_device_sensors[MONITOR] = get_monitored_sensors_from_conf_sensors()
+    Gb.conf_device_sensors[CONF_TRACK_FROM_ZONES] = get_from_zone_sensors_from_conf_sensors()
+    Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS] = get_excluded_sensors()
+
+    log_msg  = (f"Device Sensors List > Rebuilt:"
+                f"{NLSP4}SENSORS:"
+                f"{NLSP4}{Gb.conf_device_sensors}")
+    log_info_msg(log_msg)
+
+    # post_event('Sensors List > Sensor Change Detected, Base List Rebuilt')
+
+    return True
+
+#--------------------------------------------------------------------
+def get_tracked_sensors_from_conf_sensors(sensors_list=None):
+    '''
+    Extract tracked sensors from configuration file
+    '''
+    try:
+        if sensors_list is None:
+            sensors_list = Gb.conf_sensors
+
+        sensors = SENSOR_LIST_ALWAYS.copy()
+        sensors_from_conf = []
+        for sensor_group, sensor_list in sensors_list.items():
+            if sensor_group not in CONF_NON_TRACKING_GROUPS:
+                sensors_from_conf.extend(sensor_list)
+
+        for sensor in sensors_from_conf:
+            if sensor not in SENSOR_DEFINITION:
+                continue
+
+            if sensor in SENSOR_GROUPS:
+                list_add(sensors, SENSOR_GROUPS[sensor])
+            else:
+                list_add(sensors, sensor)
+
+        if 'last_zone' in sensors:
+            if 'zone' not in sensors_list[ZONE]:   list_del(sensors, 'last_zone')
+            if 'zone_name' in sensors_list[ZONE]:  list_add(sensors, 'last_zone_name')
+            if 'zone_fname' in sensors_list[ZONE]: list_add(sensors, 'last_zone_fname')
+
+        sensors.sort()
+
+    except Exception as err:
+        log_exception(err)
+
+    return sensors
+
+#--------------------------------------------------------------------
+def get_monitored_sensors_from_conf_sensors():
+    '''
+    Extract monitored sensors from configuration file
+    '''
+    try:
+        if is_empty(Gb.conf_sensors[CONF_SENSORS_MONITORED_DEVICES]):
+            return []
+
+        sensors = []
+        for md_sensor in Gb.conf_sensors[CONF_SENSORS_MONITORED_DEVICES]:
+            sensor = md_sensor[3:]
+
+            if md_sensor in SENSOR_GROUPS:
+                sensors.extend(SENSOR_GROUPS[md_sensor])
+            elif sensor in SENSOR_DEFINITION:
+                sensors.append(sensor)
+
+        sensors = list(set(sensors))
+        sensors.sort()
+
+    except Exception as err:
+        log_exception(err)
+
+    return sensors
+
+#--------------------------------------------------------------------
+def get_from_zone_sensors_from_conf_sensors():
+    '''
+    Extract track_from_zone sensors from configuration file
+    '''
+    try:
+        if is_empty(Gb.conf_sensors[CONF_SENSORS_TRACK_FROM_ZONES]):
+            return []
+
+        sensors = []
+        for tfz_sensor in Gb.conf_sensors[CONF_SENSORS_TRACK_FROM_ZONES]:
+            sensor = tfz_sensor[4:]
+
+            if tfz_sensor in SENSOR_GROUPS:
+                sensors.extend(SENSOR_GROUPS[tfz_sensor])
+            elif sensor in SENSOR_DEFINITION:
+                sensors.append(sensor)
+
+        sensors = list(set(sensors))
+        sensors.sort()
+
+    except Exception as err:
+        log_exception(err)
+
+    return sensors
+
+#--------------------------------------------------------------------
+def get_disabled_sensors_list():
+    er_util.scan_entity_reg_for_icloud3_items()
+    if 'disabled' not in Gb.entity_reg_items_by_status:
+        return []
+
+    disabled_sensors = []
+    for devicename, device_sensors in Gb.entity_reg_items_by_status['disabled'].items():
+        for sensor, sensor_data_item in list(device_sensors.items()):
+            list_add(disabled_sensors, sensor_data_item['entity_id'].split('.')[1])
+
+    return disabled_sensors
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   EXCLUDED SENSORS LIST SUPPORT FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def get_excluded_sensors():
+    '''
+    Extract a list of devicename_sensors from the excluded sensors in
+    Gb.conf_sensors[CONF_EXCLUDED_SENSORS]
+    devicename_sensors
+
+    "Gary-AirPods Battery (gary_airpods_battery)" --> gary_airpods_battery
+
+    Return:
+        - List of devicename_sensors from Gb.conf_sensors[CONF_EXCLUDED_SENSORS]
+    '''
+    if is_empty(Gb.conf_sensors[CONF_EXCLUDED_SENSORS]):
+        return []
+
+    devicename_sensors = []
+    for fname_devicename_sensor in Gb.conf_sensors[CONF_EXCLUDED_SENSORS]:
+        devicename_sensor = get_excluded_sensor_devicename_sensor(fname_devicename_sensor)
+        list_add(devicename_sensors, devicename_sensor)
+
+    return devicename_sensors
+
+#-------------------------------------------------------------------------------------------
+def get_excluded_sensor_devicename_sensor(fname_devicename_sensor):
+    if instr(fname_devicename_sensor, '(') is False:
+        devicename_sensor = fname_devicename_sensor
+
+    else:
+        devicename_sensor = fname_devicename_sensor.split('(')[1]
+        devicename_sensor += ')'
+        devicename_sensor = devicename_sensor.split(')')[0]
+    return devicename_sensor
+
+#-------------------------------------------------------------------------------------------
+def rebuild_excluded_sensors_fname_sensors_list(devicename_sensors=None):
+    '''
+    Build the list of excluded sensors fname (devicename_sensor) from a list of
+    devicename_sensors
+
+    gary_airpods_battery --> "Gary-AirPods Battery (gary_airpods_battery)"
+
+    Return:
+        - List of fname_devicename_sensors for Gb.conf_sensors[CONF_EXCLUDED_SENSORS]
+    '''
+    if devicename_sensors is None:
+        devicename_sensors = get_excluded_sensors()
+
+    fnames_by_devicename = {conf_device[CONF_IC3_DEVICENAME]: conf_device[CONF_FNAME]
+                                    for conf_device in Gb.conf_devices}
+
+    fname_devicename_sensors = []
+    excluded_list_changed = False
+    for devicename_sensor in devicename_sensors:
+        devicename, sensor = er_util.get_devicename_sensor_base(devicename_sensor)
+
+        fname_devicename_sensor = (f"{fnames_by_devicename.get(devicename, devicename)} "
+                                    f"{get_sensor_fname(sensor)} "
+                                    f"({devicename_sensor})")
+        list_add(fname_devicename_sensors, fname_devicename_sensor)
+
+    if Gb.conf_sensors[CONF_EXCLUDED_SENSORS] != fname_devicename_sensors:
+        excluded_list_changed = True
+        Gb.conf_sensors[CONF_EXCLUDED_SENSORS] = fname_devicename_sensors
+        Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS] = devicename_sensors
+
+    return excluded_list_changed
+
+#.........................................................................................
+def get_sensor_fname(sensor):
+    try:
+        return SENSOR_DEFINITION[sensor][SENSOR_FNAME]
+
+    except:
+        return sensor.replace('_', ' ').title()
+
+#-------------------------------------------------------------------------------------------
+def validate_and_correct_excluded_sensors_list():
+    '''
+    The excluded sensors list has the fname and the devicename_sensors to be excluded,
+    i.e., fname_devicename_sensor = "Lillian-iPad BatteryStatus (lillian_ipad_battery_status)"
+
+    Make sure that the devicename is still being tracked. If not, remove the item from the list.
+    '''
+
+    devicenames = [conf_device[CONF_IC3_DEVICENAME]
+                        for conf_device in Gb.conf_devices]
+
+    devicename_sensors = get_excluded_sensors()
+
+    valid_devicename_sensors = []
+    excluded_list_changed = False
+    for devicename_sensor in devicename_sensors:
+        devicename, sensor = er_util.get_devicename_sensor_base(devicename_sensor)
+        if devicename in devicenames:
+            list_add(valid_devicename_sensors, devicename_sensor)
+
+    excluded_list_changed = rebuild_excluded_sensors_fname_sensors_list(valid_devicename_sensors)
+
+    return excluded_list_changed
+
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -630,18 +891,56 @@ def _delete_obsolete_parameters():
     return update_config_file_flag
 
 #--------------------------------------------------------------------
+def _new_items_in_conf_dict(conf_item, default_conf_item):
+    '''
+    Cycle through the configuration dictionary and identify items that were
+    added
+
+    Return:
+        item - Items that were added
+        were_items_added - True/False
+    '''
+    new_items = [item   for item in default_conf_item
+                        if item not in conf_item]
+
+    return new_items, isnot_empty(new_items)
+
+
+#--------------------------------------------------------------------
+def _delete_items_from_conf_dict(conf_item, default_conf_item):
+    '''
+    Cycle through the configuration dictionary and identify items that are
+    no longer being used.
+
+    Return:
+        conf_item - An updated conf_item
+        were_items_deleted - True/False
+    '''
+
+    del_items = [item   for item in conf_item
+                        if item not in default_conf_item]
+
+    if is_empty(del_items):
+        return conf_item, False
+
+    for item in del_items:
+        dict_del(conf_item, item)
+
+    return conf_item, True
+
+#--------------------------------------------------------------------
 def _update_profile():
     '''
     Update Gb.conf_profile with new fields
     '''
 
-    new_items = [item   for item in DEFAULT_PROFILE_CONF
-                        if item not in Gb.conf_profile]
+    Gb.conf_profile, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
+    new_items, were_items_added         = _new_items_in_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
 
-    if is_empty(new_items):
+    if were_items_deleted is False and were_items_added is False:
         return False
 
-    log_info_msg(f"Updating Configuration File with New items (Profile) > {new_items}")
+    log_info_msg(f"Updated Configuration File items (Profile)")
 
     for item in new_items:
         before_item = _place_item_before(item, DEFAULT_PROFILE_CONF, CONF_PICTURE_WWW_DIRS)
@@ -653,20 +952,56 @@ def _update_profile():
                                             before= before_item)
 
     return True
+#--------------------------------------------------------------------
+def _update_sensors():
+    '''
+    Update Gb.conf_sensors with new fields
+    '''
+
+    Gb.conf_sensors, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
+    new_items, were_items_added         = _new_items_in_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
+
+    if were_items_deleted is False and were_items_added is False:
+        return False
+
+    log_info_msg(f"Updated Configuration File items (Sensors)")
+
+    for item in new_items:
+        before_item = _place_item_before(item, DEFAULT_SENSORS_CONF, CONF_EXCLUDED_SENSORS)
+
+        Gb.conf_file_data[CF_SENSORS][item] = DEFAULT_SENSORS_CONF[item]
+        Gb.conf_sensors = _insert_into_conf_dict_parameter(
+                                            Gb.conf_sensors, item,
+                                            DEFAULT_SENSORS_CONF[item],
+                                            before= before_item)
+
+    return True
+
+#--------------------------------------------------------------------
+def _update_device_sensors():
+    '''
+    Update Gb.conf_device_sensors with new fields
+    '''
+    if (CF_DEVICE_SENSORS not in Gb.conf_data
+            or is_empty(Gb.conf_device_sensors)
+            or CONF_EXCLUDED_SENSORS not in Gb.conf_device_sensors):
+        Gb.conf_device_sensors = DEFAULT_DEVICE_SENSORS_CONF.copy()
+        return True
+
+    return False
 
 #-------------------------------------------------------------------
 def _update_tracking_parameters():
     '''
     Update Gb.conf_tracking with new fields
     '''
+    Gb.conf_tracking, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
+    new_items, were_items_added          = _new_items_in_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
 
-    new_items = [item   for item in DEFAULT_TRACKING_CONF
-                        if item not in Gb.conf_tracking]
-
-    if is_empty(new_items):
+    if were_items_deleted is False and were_items_added is False:
         return False
 
-    log_info_msg(f"Updating Configuration File with New items (Tracking) > {new_items}")
+    log_info_msg(f"Updated Configuration File items (Tracking)")
 
     for item in new_items:
         Gb.conf_tracking = _insert_into_conf_dict_parameter(
@@ -694,13 +1029,13 @@ def _update_apple_acct_parameters():
     for conf_apple_acct in conf_apple_accts:
         cd_idx += 1
 
-        new_items = [item   for item in DEFAULT_APPLE_ACCOUNT_CONF
-                            if item not in conf_apple_acct]
+        conf_apple_acct, were_items_deleted = _delete_items_from_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
+        new_items, were_items_added         = _new_items_in_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
 
-        if is_empty(new_items):
-            return False
+        if were_items_deleted is False and were_items_added is False:
+            continue
 
-        log_info_msg(f"Updating Configuration File with New items (Apple Acct) > {new_items}")
+        log_info_msg(f"Updated Configuration File items ({username_id(conf_apple_acct[CONF_USERNAME])})")
 
         for item in new_items:
             conf_apple_acct = _insert_into_conf_dict_parameter(
@@ -722,13 +1057,13 @@ def _update_device_parameters():
     for conf_device in conf_devices:
         cd_idx += 1
 
-        new_items = [item   for item in DEFAULT_DEVICE_CONF
-                            if item not in conf_device]
+        conf_device, were_items_deleted = _delete_items_from_conf_dict(conf_device, DEFAULT_DEVICE_CONF)
+        new_items, were_items_added     = _new_items_in_conf_dict(conf_device, DEFAULT_DEVICE_CONF)
 
-        if is_empty(new_items):
-            return False
+        if were_items_deleted is False and were_items_added is False:
+            continue
 
-        log_info_msg(f"Updating Configuration File with New items (Device) > {new_items}")
+        log_info_msg(f"Updated Configuration File items ({conf_device[CONF_IC3_DEVICENAME]})")
 
         for item in new_items:
             # v3.1.0 'apple_account' and other fields
@@ -775,13 +1110,13 @@ def _update_general_parameters():
     Update Gb.conf_general with new fields
     '''
 
-    new_items = [item   for item in DEFAULT_GENERAL_CONF
-                        if item not in Gb.conf_general]
+    Gb.conf_general, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
+    new_items, were_items_added         = _new_items_in_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
 
-    if is_empty(new_items):
+    if were_items_deleted is False and were_items_added is False:
         return False
 
-    log_info_msg(f"Updating Configuration File with New items (General) > {new_items}")
+    log_info_msg(f"Updated Configuration File items (General)")
 
     for item in new_items:
         before_item = _place_item_before(item, DEFAULT_GENERAL_CONF, CONF_DISPLAY_TEXT_AS)
@@ -850,6 +1185,7 @@ def _insert_into_conf_dict_parameter(dict_parameter,
         dict_parameter[new_item] = initial_value
         return dict_parameter
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Password encode/decode functions
@@ -886,7 +1222,7 @@ def encode_password(password):
     '''
     try:
         if (password == ''
-                or Gb.encode_password_flag is False
+                or Gb.is_password_encoded is False
                 or password.startswith('««')
                 or password.endswith('»»')):
             return password
@@ -928,7 +1264,7 @@ def decode_password(password):
     try:
         # If the password in the configuration file is not encoded (no '««' or '»»')
         # and it should be encoded, save the configuration file which will encode it
-        if (Gb.encode_password_flag
+        if (Gb.is_password_encoded
                 and password != ''
                 and (password.startswith('««') is False or password.endswith('»»') is False)):
             password = password.replace('«', '').replace('»', '')

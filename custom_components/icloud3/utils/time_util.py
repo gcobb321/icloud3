@@ -163,8 +163,27 @@ def secs_to_hhmm(secs_utc):
             return time_local(secs_utc+30)[:-3]
 
         hhmmss = time_to_12hrtime(time_local(secs_utc+30))
-        hhmm = hhmmss[:-4] + hhmmss[-1:]
-        hhmm += secs_to_days(secs_utc, '-d')
+        hhmm   = hhmmss[:-4] + hhmmss[-1:]
+        hhmm  += secs_to_days(secs_utc, '-d')
+
+        return hhmm
+
+    except:
+        return '00:00'
+
+#--------------------------------------------------------------------
+def secs_to_ddmm_hhmm(secs_utc):
+    ''' secs --> dd/mm hh:mm or dd/mm hh:mma or hh:mmp '''
+
+    try:
+        if isnot_valid(secs_utc): return '00/00 00:00'
+
+        if Gb.time_format_24_hour:
+            return time_local(secs_utc+30)[:-3]
+
+        hhmmss = time_to_12hrtime(time_local(secs_utc+30))
+        hhmm   = hhmmss[:-4] + hhmmss[-1:]
+        hhmm  += secs_to_days(secs_utc, '-d')
 
         return hhmm
 
@@ -199,14 +218,14 @@ def secs_to_days(secs, days_text):
         return ''
 
     if days_text.startswith('-'):
-        return f"-{days:.0f}{days_text[:1]}"
+        return f"-{days:.0f}{days_text[1:]}"
     else:
         return f"{days:.0f}{days_text}"
 
 #--------------------------------------------------------------------
 def next_min_mark_secs(mark_mins, plus_mins=0):
     '''
-    now to next mins mark in secs 
+    now to next mins mark in secs
         10:23:23 --> 10:23:25 (5)
         10:23:23 --> 10:23:35 (5, 10)
         10:23:23 --> 10:23:30 (10)
@@ -411,10 +430,12 @@ def format_day_date():
     return f"{dt_util.now().strftime('%a, %b %-d')}"
 
 #--------------------------------------------------------------------
-def format_day_date_now():
-    ''' Saturday, June 14, 4:30p '''
+def format_date_time(secs):
+    ''' June 14, 4:30p '''
 
-    return f"{format_day_date()}, {secs_to_hhmm(time_now_secs())}"
+    date = datetime.fromtimestamp(secs).strftime('%b %d')
+
+    return f"{date}, {secs_to_hhmm(secs)}"
 
 #--------------------------------------------------------------------
 def format_age_hrs(secs, xago=None):

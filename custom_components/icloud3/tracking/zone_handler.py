@@ -119,13 +119,13 @@ def update_current_zone(Device, display_zone_msg=True):
         # The zone changed, update the enter/exit zone times if the
         # Device does not use the Mobile App
         if zone_selected == NOT_HOME:
-            if (Device.mobapp_monitor_flag is False
+            if (Device.is_mobapp_monitored is False
                     or Device.mobapp_zone_exit_secs == 0):
                 Device.mobapp_zone_exit_secs = time_now_secs()
                 Device.mobapp_zone_exit_time = time_now()
 
         else:
-            if (Device.mobapp_monitor_flag is False
+            if (Device.is_mobapp_monitored is False
                     or Device.mobapp_zone_enter_secs == 0):
                 Device.mobapp_zone_enter_secs = time_now_secs()
                 Device.mobapp_zone_enter_time = time_now()
@@ -334,19 +334,19 @@ def is_outside_zone_no_exit(Device, zone, trigger, latitude, longitude):
     and no Exit Trigger was received, it has probably wandered due to
     GPS errors. If so, discard the poll and try again later
 
-    Updates:    Set the Device.outside_no_exit_trigger_flag
+    Updates:    Set the Device.is_outside_zone_no_exit_trigger
                 Increase the old_location_poor_gps count when this innitially occurs
     Return:     Reason message
     '''
-    if Device.mobapp_monitor_flag is False:
+    if Device.is_mobapp_monitored is False:
         return ''
 
     trigger = Device.trigger if trigger == '' else trigger
     if (instr(trigger, ENTER_ZONE)
             or Device.sensor_zone == NOT_SET
             or zone not in Gb.HAZones_by_zone
-            or Device.icloud_initial_locate_done is False):
-        Device.outside_no_exit_trigger_flag = False
+            or Device.was_icloud_initial_locate_done is False):
+        Device.is_outside_zone_no_exit_trigger = False
         return ''
 
     Zone           = Gb.Zones_by_zone[zone]
@@ -356,17 +356,17 @@ def is_outside_zone_no_exit(Device, zone, trigger, latitude, longitude):
 
     info_msg = ''
     if (dist_fm_zone_m > zone_radius_m
-            and Device.got_exit_trigger_flag is False
+            and Device.got_exit_trigger is False
             and Zone.is_statzone is False):
         if (dist_fm_zone_m < zone_radius_accuracy_m
-                and Device.outside_no_exit_trigger_flag == False):
-            Device.outside_no_exit_trigger_flag = True
+                and Device.is_outside_zone_no_exit_trigger == False):
+            Device.is_outside_zone_no_exit_trigger = True
             Device.old_loc_cnt += 1
 
             info_msg = ("Outside of Zone without MobApp `Exit Zone` Trigger, "
                         f"Keeping in Zone-{Zone.dname} > ")
         else:
-            Device.got_exit_trigger_flag = True
+            Device.got_exit_trigger = True
             info_msg = ("Outside of Zone without MobApp `Exit Zone` Trigger "
                         f"but outside threshold, Exiting Zone-{Zone.dname} > ")
 
@@ -375,8 +375,8 @@ def is_outside_zone_no_exit(Device, zone, trigger, latitude, longitude):
                     f"to {format_dist_m(zone_radius_accuracy_m)}, "
                     f"Located-{Device.loc_data_time_age}")
 
-    if Device.got_exit_trigger_flag:
-        Device.outside_no_exit_trigger_flag = False
+    if Device.got_exit_trigger:
+        Device.is_outside_zone_no_exit_trigger = False
 
     return info_msg
 
@@ -489,7 +489,7 @@ def request_update_devices_no_mobapp_same_zone_on_exit(Device):
         return
 
     for _Device in devices_to_update:
-        _Device.icloud_force_update_flag = True
+        _Device.is_force_icloud_update = True
         _Device.trigger = 'Check Zone Exit'
         _Device.check_zone_exit_secs = time_now_secs()
         det_interval.update_all_device_fm_zone_sensors_interval(_Device, 15)
@@ -527,7 +527,7 @@ def ha_removed_zone_entity_id(event):
 
         if (zone == HOME
                 or zone not in Gb.HAZones_by_zone
-                or Gb.start_icloud3_inprocess_flag):
+                or Gb.is_icloud3_startup_inprocess):
             return
 
         Zone = Gb.HAZones_by_zone[zone]
@@ -552,7 +552,7 @@ def ha_removed_zone_entity_id(event):
 
     except Exception as err:
         log_exception(err)
-        Gb.restart_icloud3_request_flag = True
+        Gb.was_icloud3_restart_requested = True
         post_event( f"Zone Deleted Error > Zone-{Zone.dname},"
                     f"An error was encountered deleting the zone, "
                     f"iCloud3 will be restarted")

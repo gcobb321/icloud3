@@ -169,7 +169,7 @@ def determine_interval(Device, FromZone):
     # Reset got zone exit trigger since now in a zone for next
     # exit distance check. Also reset Stat Zone timer and dist moved.
     if isin_zone:
-        Device.got_exit_trigger_flag = False
+        Device.got_exit_trigger = False
         Device.statzone_clear_timer
 
     waze_time_msg = 'NotUsed'
@@ -192,7 +192,7 @@ def determine_interval(Device, FromZone):
     interval_method = ''
     interval_multiplier = 1
 
-    if Device.state_change_flag:
+    if Device.was_state_changed:
         if isin_zone:
             #inzone & old location
             if Device.is_location_old_or_gps_poor and battery10_flag is False:
@@ -236,7 +236,7 @@ def determine_interval(Device, FromZone):
     #inzone & poor gps & check gps accuracy when inzone
     elif (Device.is_gps_poor
             and isin_zone
-            and Gb.discard_poor_gps_inzone_flag is False):
+            and Gb.is_poor_gps_inzone_discarded is False):
         interval_method = '3.PoorGPSinZone'
         interval_secs   = _get_interval_for_error_retry_cnt(Device, OLD_LOCATION_CNT)
 
@@ -320,9 +320,9 @@ def determine_interval(Device, FromZone):
 
     if (dir_of_travel == AWAY_FROM
             and calc_dist_from_zone_km >= 3
-            and Device.state_change_flag is False
+            and Device.was_state_changed is False
             and Device.is_gps_good
-            and not Gb.Waze.distance_method_waze_flag
+            and not Gb.Waze.is_waze_dist_method_used
             and Device.fixed_interval_secs == 0):
         interval_method += '+6.AwayFm+Calc'
         interval_multiplier = 2    #calc-increase timer
@@ -332,9 +332,9 @@ def determine_interval(Device, FromZone):
         interval_secs    = 180
 
     #Turn off waze close to zone flag to use waze after leaving zone or getting more than 1km from it
-    if Gb.Waze.waze_close_to_zone_pause_flag:
+    if Gb.Waze.is_waze_paused_close_to_zone:
         if isin_zone or calc_dist_from_zone_km >= 1:
-            Gb.Waze.waze_close_to_zone_pause_flag = False
+            Gb.Waze.is_waze_paused_close_to_zone = False
 
     #if triggered by Mobile App (Zone Enter/Exit, Manual, Fetch, etc.)
     if (Device.mobapp_update_flag
@@ -344,7 +344,7 @@ def determine_interval(Device, FromZone):
         interval_secs    = 180
 
     #if changed zones on this poll reset multiplier
-    # if Device.state_change_flag:
+    # if Device.was_state_changed:
     #     interval_multiplier = 1
 
     #Check accuracy again to make sure nothing changed, update counter
@@ -450,7 +450,7 @@ def determine_interval(Device, FromZone):
 
     #--------------------------------------------------------------------------------
     # if poor gps and moved less than 1km, redisplay last distances
-    if (Device.state_change_flag is False
+    if (Device.was_state_changed is False
             and Device.is_gps_poor
             and dist_moved_km < 1):
         dist_from_zone_km      = FromZone.zone_dist_km
@@ -474,7 +474,7 @@ def determine_interval(Device, FromZone):
             and waze_dist_from_zone_km > FromZone.max_dist_km):
         FromZone.max_dist_km = waze_dist_from_zone_km
 
-    if Device.mobapp_monitor_flag:
+    if Device.is_mobapp_monitored:
         # If monitored and the mobapp state is before the last update, reset it since
         # the mobapp is not really used for monitored devices
         if (Device.is_monitored
@@ -530,9 +530,7 @@ def _sensor_arrival_time(Device, FromZone):
     if (Device.isin_zone
             and is_statzone(Device.loc_data_zone) is False
             and Device.loc_data_zone == FromZone.from_zone):
-        days = secs_since(Device.zone_change_secs)/86400
-        day_adj = f"-{days:.0f}d" if days >= 1 else ''
-        return f"@{secs_to_hhmm(Device.zone_change_secs)}{day_adj}"
+        return f"@{secs_to_hhmm(Device.zone_change_secs)}"
 
     if Gb.waze_status != WAZE_USED:
         return ''
@@ -596,13 +594,13 @@ def post_results_message_to_event_log(Device, FromZone):
 
     event_msg += f"{'✓' if Device.went_3km else '×'}Went3km, "
 
-    if Gb.log_debug_flag and FromZone.interval_method and Device.is_tracked:
+    if Gb.is_log_level_debug and FromZone.interval_method and Device.is_tracked:
         event_msg += f"Method-{FromZone.interval_method}, "
 
     if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
         event_msg += f"WazeMsg-{Gb.Waze.range_msg(FromZone.zone_dist_km)}, "
 
-    if (Device.mobapp_monitor_flag
+    if (Device.is_mobapp_monitored
             and secs_since(Device.mobapp_data_secs) > 3600):
         event_msg += f"MobAppLocated-{format_age(Device.mobapp_data_secs)}, "
 
@@ -640,9 +638,9 @@ def post_zone_time_dist_event_msg(Device, FromZone):
     Event Log
     '''
 
-    if Device.mobapp_device_unavailable_flag:
+    if Device.is_mobapp_device_unavailable:
         mobapp_state = 'Unavail...'
-    elif Device.mobapp_monitor_flag is False:
+    elif Device.is_mobapp_monitored is False:
         mobapp_state = 'NotUsed'
     else:
         mobapp_state = zone_dname(Device.mobapp_data_state)
@@ -997,7 +995,7 @@ def _get_distance_data(Device, FromZone):
                         INZONE
         Device.statzone_reset_timer
         Gb.Waze.waze_status = WAZE_PAUSED
-        Gb.Waze.waze_close_to_zone_pause_flag = True
+        Gb.Waze.is_waze_paused_close_to_zone = True
         distance_data = [VALID_DATA,
                         0.0,                        # dist_from_zone_km,
                         dist_from_zone_m,           # dist_from_zone_m,
@@ -1011,7 +1009,7 @@ def _get_distance_data(Device, FromZone):
         return distance_data
 
     #--------------------------------------------------------------------------------
-    Gb.Waze.waze_status = WAZE_USED if Gb.Waze.distance_method_waze_flag else WAZE_NOT_USED
+    Gb.Waze.waze_status = WAZE_USED if Gb.Waze.is_waze_dist_method_used else WAZE_NOT_USED
     waze_source_msg = ''
     if Gb.Waze.is_status_USED:
         # See if this location hasn't changed or is in the history db
@@ -1035,7 +1033,7 @@ def _get_distance_data(Device, FromZone):
                 and Device.loc_data_zone == from_zone
                 and FromZone.is_going_towards):
             Gb.Waze.waze_status = WAZE_PAUSED
-            Gb.Waze.waze_close_to_zone_pause_flag = True
+            Gb.Waze.is_waze_paused_close_to_zone = True
             dist_from_zone_km = calc_dist_from_zone_km
 
         #Determine if Waze should be used based on calculated distance
@@ -1235,7 +1233,7 @@ def device_will_update_in_15secs(Device=None, update_in_secs=None, only_icloud_d
     update_in_secs = 15 if update_in_secs is None else update_in_secs
     for _Device in _Devices_to_check:    #Gb.Devices_by_devicename_tracked.values():
 
-        if _Device.icloud_initial_locate_done is False:
+        if _Device.was_icloud_initial_locate_done is False:
             return _Device
 
         secs_to_next_update = secs_to(_Device.next_update_secs)
@@ -1361,7 +1359,7 @@ def update_near_device_info(Device):
     '''
     if (len(Gb.Devices) == 1
             or len(Device.dist_to_other_devices) == 0
-            or Gb.distance_between_device_flag is False):
+            or Gb.is_dist_between_devices_calc is False):
         return
 
     Device.NearDevice           = None
@@ -1602,7 +1600,7 @@ def locate_nearby_device_after_zone_exit(Device):
 
     nearby_non_mobapp_Devices = [_Device
                 for _Device in Gb.Devices_by_nearby_group[Device.near_device_group]
-                if (_Device.mobapp_monitor_flag is False
+                if (_Device.is_mobapp_monitored is False
                     and secs_to(_Device.next_update_secs) > 120
                     and _Device.device_type in DEVICE_TYPES_CELL_SVC
                     and _Device.is_tracked)]

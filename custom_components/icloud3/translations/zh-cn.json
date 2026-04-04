@@ -307,7 +307,6 @@
           "username": "用户名 - 用于登录 Apple 账户的邮箱地址/用户名",
           "password": "密码 - 账户密码",
           "server_location": "APPLE 服务器位置 - 托管此账户 Apple 服务器的国家",
-          "totp_key": "TOTP 密钥 - 用于生成 6 位认证码的基于时间的一次性密码密钥",
           "locate_all": "定位所有设备（仅适用于多个 Apple 账户）",
           "url_suffix_china": "中国用户 - 使用位于中国的 Apple iCloud 服务器（.cn URL 后缀）",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ 操作命令"

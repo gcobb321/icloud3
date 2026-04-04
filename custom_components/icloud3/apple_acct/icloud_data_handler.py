@@ -44,7 +44,7 @@ def no_icloud_update_needed_tracking(Device):
 
 #----------------------------------------------------------------------------
 def no_icloud_update_needed_setup(Device):
-    if Device.verified_flag is False:
+    if Device.was_verified is False:
         Device.icloud_no_update_reason = 'Not Verified'
 
     return (Device.icloud_no_update_reason != '')
@@ -80,20 +80,20 @@ def is_icloud_update_needed_timers(Device):
 
 #----------------------------------------------------------------------------
 def is_icloud_update_needed_general(Device):
-    if Gb.icloud_force_update_flag:
-        Device.icloud_force_update_flag = True
+    if Gb.is_force_icloud_update:
+        Device.is_force_icloud_update = True
         Device.icloud_update_reason = 'Immediate Update Requested'
 
     elif Device.is_tracking_resumed:
         Device.icloud_update_reason = 'Resume Tracking'
 
-    elif Device.outside_no_exit_trigger_flag:
-        Device.outside_no_exit_trigger_flag = False
-        Device.icloud_force_update_flag = True
+    elif Device.is_outside_zone_no_exit_trigger:
+        Device.is_outside_zone_no_exit_trigger = False
+        Device.is_force_icloud_update = True
         Device.icloud_update_reason = "Verify Location"
 
     elif (Device.loc_data_secs < Device.last_update_loc_secs
-            and Device.icloud_initial_locate_done):
+            and Device.was_icloud_initial_locate_done):
         Device.icloud_update_reason = (f"Old Location-{Device.loc_data_time}")
 
     # There is no data for the device and the initial zone is not_set and
@@ -108,10 +108,10 @@ def is_icloud_update_needed_general(Device):
     elif (Device.is_online
             and Device.next_update_secs == 0
             and (Device.sensor_zone == NOT_SET
-                or Device.icloud_initial_locate_done is False)):
+                or Device.was_icloud_initial_locate_done is False)):
         Device.icloud_update_reason = f"Initial iCloud Locate@{Gb.this_update_time}"
 
-    elif Device.icloud_update_retry_flag:
+    elif Device.is_retry_icloud_update:
         Device.icloud_update_reason  = "Retrying Location Refresh"
 
     log_debug_msg(Device, Device.icloud_update_reason)
@@ -142,10 +142,10 @@ def request_icloud_data_update(Device):
     devicename = Device.devicename
 
     try:
-        if Device.icloud_update_reason or Device.icloud_force_update_flag:
+        if Device.icloud_update_reason or Device.is_force_icloud_update:
             Device.display_info_msg("Requesting iCloud Location Update")
 
-            Device.icloud_devdata_useable_flag = update_AADevData_data(Device)
+            Device.is_icloud_devdata_useable = update_AADevData_data(Device)
 
             if Gb.internet_error:
                 for Device in Gb.Devices:
@@ -153,11 +153,11 @@ def request_icloud_data_update(Device):
                 return False
 
             # Retry in an error occurs
-            if (Device.icloud_devdata_useable_flag is False
-                    and Device.icloud_initial_locate_done is False):
-                Device.icloud_devdata_useable_flag = update_AADevData_data(Device)
+            if (Device.is_icloud_devdata_useable is False
+                    and Device.was_icloud_initial_locate_done is False):
+                Device.is_icloud_devdata_useable = update_AADevData_data(Device)
 
-            if Device.icloud_devdata_useable_flag is False:
+            if Device.is_icloud_devdata_useable is False:
                 Device.display_info_msg("iCloud Location Not Available")
                 if Gb.icloud_acct_error_cnt > 5:
                     error_msg = (f"iCloud3 Error > No Location Returned for {devicename}. "
@@ -167,8 +167,8 @@ def request_icloud_data_update(Device):
         return True
 
     except (AppleAcct2FARequiredException, AppleAcctAPIResponseException) as err:
-        Device.icloud_acct_error_flag      = True
-        Device.icloud_devdata_useable_flag = False
+        Device.is_icloud_acct_error      = True
+        Device.is_icloud_devdata_useable = False
 
         # log_exception(err)
         error_msg = ("iCloud3 Location Request Error > An error occured refreshing the iCloud "
@@ -177,8 +177,8 @@ def request_icloud_data_update(Device):
         post_error_msg(Device.devicename, error_msg)
 
     except Exception as err:
-        Device.icloud_acct_error_flag      = True
-        Device.icloud_devdata_useable_flag = False
+        Device.is_icloud_acct_error      = True
+        Device.is_icloud_devdata_useable = False
 
         # log_exception(err)
 
@@ -230,7 +230,7 @@ def update_AADevData_data(Device, results_msg_flag=True):
             if ((loc_data_stale and secs_since(Device.AppleAcct.last_refresh_secs) >= 5)
                         # and ((icloud_loc_secs != Device.loc_data_secs
                         #       or Device.next_update_secs > (icloud_loc_secs + 5))))
-                    or Device.icloud_initial_locate_done is False):
+                    or Device.was_icloud_initial_locate_done is False):
 
                 device_id = None if Device.AppleAcct.locate_all_devices else Device.icloud_device_id
 
@@ -255,8 +255,8 @@ def update_AADevData_data(Device, results_msg_flag=True):
             _err_msg = HTTP_RESPONSE_CODES.get(Device.AppleAcct.Session.response_code,
                             'Unknown Error')
 
-            Device.icloud_acct_error_flag      = True
-            Device.icloud_devdata_useable_flag = False
+            Device.is_icloud_acct_error      = True
+            Device.is_icloud_devdata_useable = False
 
             error_msg = (f"{EVLOG_ALERT}iCloud3 Location Request Error > An error occured "
                         f"refreshing the iCloud Location. iCloud may be down or there is an "
@@ -270,8 +270,8 @@ def update_AADevData_data(Device, results_msg_flag=True):
             post_error_msg(error_msg)
 
         except Exception as err:
-            Device.icloud_acct_error_flag      = True
-            Device.icloud_devdata_useable_flag = False
+            Device.is_icloud_acct_error      = True
+            Device.is_icloud_devdata_useable = False
             # log_exception(err)
 
         return False
@@ -335,7 +335,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
             Update_Devices = [Device]
 
         for _Device in Update_Devices:
-            if _Device.verified_flag and _Device.is_data_source_ICLOUD:
+            if _Device.was_verified and _Device.is_data_source_ICLOUD:
                 _AADevData = get_icloud_AADevData_to_use(_Device)
                 if _AADevData is None:
                     continue
@@ -360,7 +360,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                     _get_devdata_useable_status(Device, ICLOUD)
 
             # Add info for the Device that requested the update
-            _Device.icloud_acct_error_flag = False
+            _Device.is_icloud_acct_error = False
             if is_AADevData_data_useable(Device, results_msg_flag=False) is False:
                 if _Device is Device:
                     if (_Device.is_offline
@@ -436,7 +436,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
             if icloud_loc_secs > 0 and Gb.used_data_source_ICLOUD and _Device.dev_data_source != 'iCloud':
                 other_times += f"iCloud-{icloud_loc_time}"
 
-            if _Device.mobapp_monitor_flag and _Device.dev_data_source != 'MobApp':
+            if _Device.is_mobapp_monitored and _Device.dev_data_source != 'MobApp':
                 if other_times != "": other_times += ", "
                 other_times += f"MobApp-{_Device.mobapp_data_time_gps}"
 
@@ -485,8 +485,8 @@ def is_AADevData_data_useable(Device, results_msg_flag=True):
         icloud_gps_accuracy, icloud_loc_time = \
                     _get_devdata_useable_status(Device, ICLOUD)
 
-    if Gb.icloud_force_update_flag or Device.icloud_force_update_flag:
-        Gb.icloud_force_update_flag = False
+    if Gb.is_force_icloud_update or Device.is_force_icloud_update:
+        Gb.is_force_icloud_update = False
         is_useable_flag = False
         useable_msg     = 'Update Required'
         return False
@@ -551,7 +551,7 @@ def _get_devdata_useable_status(Device, data_source):
 
     loc_secs     = AADevData.location_secs
     loc_age_secs = secs_since(loc_secs)
-    loc_time_ok  = ((loc_age_secs <= Device.old_loc_threshold_secs) and Device.icloud_force_update_flag is False)
+    loc_time_ok  = ((loc_age_secs <= Device.old_loc_threshold_secs) and Device.is_force_icloud_update is False)
 
     # If loc time is under threshold, check to see if the loc time is older than the interval
     # The interval may be < 15 secs if just trying to force a quick update with the current data. If so, do not check it
@@ -616,7 +616,7 @@ def get_icloud_AADevData_to_use(_Device):
             error_msg = 'Paused'
 
         if error_msg:
-            if Gb.log_debug_flag:
+            if Gb.is_log_level_debug:
                 event_msg =(f"Location data not updated > {error_msg}, Will Retry")
                 post_monitor_msg(_Device.devicename, event_msg)
             _AADevData = None

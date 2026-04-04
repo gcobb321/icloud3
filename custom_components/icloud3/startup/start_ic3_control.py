@@ -3,7 +3,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 NOT_SET, IC3LOG_FILENAME,
                                 CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CRLF_RED_ALERT,
                                 NL, NL_DOT, LINK, YELLOW_ALERT, RED_ALERT, CRLF_CHK,
-                                EVLOG_ALERT, EVLOG_ERROR, EVLOG_IC3_STARTING, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
+                                EVLOG_ALERT, EVLOG_ERROR, EVLOG_ATTENTION, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                 CONF_SENSORS_HASH,
@@ -22,13 +22,14 @@ from ..utils.messaging  import (broadcast_info_msg,
                                 _evlog, _log, more_info, format_filename,
                                 write_config_file_to_ic3log,
                                 open_ic3log_file, )
-from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, format_day_date_now, )
+from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, format_day_date_time_now, )
 
 from ..apple_acct       import apple_acct_support as aas
 from ..mobile_app       import mobapp_interface
 from ..                 import sensor as ic3_sensor
-from ..startup          import start_ic3
 from ..startup          import config_file
+from ..startup          import restore_state
+from ..startup          import start_ic3
 from ..tracking         import determine_interval as det_interval
 
 #--------------------------------------------------------------------
@@ -58,25 +59,13 @@ def stage_1_setup_variables():
         config_file.load_icloud3_configuration_file()
         write_config_file_to_ic3log()
 
-        try:
-            # conf_sensors_hash = get_string_hash(str(Gb.conf_sensors))
-            # if Gb.conf_profile[CONF_SENSORS_HASH] != conf_sensors_hash:
-            ic3_sensor.initialize_conf_device_sensors()
-            post_event('Device Sensors List > Sensors List Rebuilt on Restart')
-            post_event(f"Set up Sensors > Count-{ic3_sensor.total_sensors_cnt()}±")
-            post_event(f"Set up Devices > Count-{len(Gb.conf_devices)}")
-        except:
-            pass
-
         start_ic3.initialize_global_variables()
         start_ic3.set_global_variables_from_conf_parameters()
 
         # Run these setup items on a restart. Do not then when initially starting iC3
-        if Gb.initial_icloud3_loading_flag is False:
+        if Gb.is_icloud3_initial_startup is False:
             Gb.EvLog.startup_event_recds = []
             Gb.EvLog.startup_event_save_recd_flag = True
-            post_event( f"{EVLOG_IC3_STARTING}Restarting > {ICLOUD3_VERSION_MSG}, "
-                        f"{format_day_date_now()}")
 
         if Gb.ha_config_directory != '/config':
             post_event(f"Base Config Directory > {CRLF_DOT}{Gb.ha_config_directory}")
@@ -159,6 +148,19 @@ def stage_3_setup_configured_devices():
         Gb.EvLog.display_user_message(stage_title)
         broadcast_info_msg(stage_title)
 
+        Gb.InternetError.is_internet_available()
+        event_msg = f"Internet Connection Test > Connected-{yes_no(not Gb.internet_error)}"
+        post_event(event_msg)
+        log_data(event_msg, Gb.InternetError.data)
+        if Gb.internet_error:
+            # Gb.iCloud3.rerun_stage_3 = True
+            return
+        # else:
+        #     Gb.iCloud3.rerun_stage_3 = False
+
+        start_ic3.initialize_data_source_variables()
+        restore_state.load_icloud3_restore_state_file()
+
         # Make sure a full restart is done if all of the devices were not found in the iCloud data
         Gb.startup_alerts_by_source = {}
         data_sources = f"Apple Account-{yes_no(Gb.conf_data_source_ICLOUD)}, "
@@ -166,10 +168,12 @@ def stage_3_setup_configured_devices():
         post_event(f"Data Sources > {data_sources}")
 
         # Reinitialize AppleAcct to recreate all Apple Acct objects
-        if Gb.restart_requested_by == 'user':
+        # if Gb.restart_requested_by == 'user':
+        if Gb.was_icloud3_reloaded is False:
             aas.reset_AppleAcct_Gb_variables()
 
-        # start_ic3.setup_validate_apple_accts_upw()
+        aas.cleanup_unknown_AppleAcct_Gb_variables_username()
+
         Gb.ValidateAppleAcctUPW.validate_upw_all_apple_accts()
 
         if Gb.config_track_devices_change_flag:
@@ -177,7 +181,7 @@ def stage_3_setup_configured_devices():
         elif (Gb.conf_data_source_ICLOUD
                 and Gb.icloud_device_verified_cnt < len(Gb.Devices)):
             Gb.config_track_devices_change_flag = True
-        elif Gb.log_debug_flag:
+        elif Gb.is_log_level_debug:
             Gb.config_track_devices_change_flag = True
 
         start_ic3.create_Devices_object()
@@ -199,6 +203,10 @@ def stage_4_setup_data_sources():
 
     for Device in Gb.Devices:
         Device.set_fname_alert('')
+        if is_empty(Device.Sensors):
+            Device.Sensors           = Gb.Sensors_by_devicename[Device.devicename]
+            Device.Sensors_from_zone = Gb.Sensors_by_devicename_from_zone[Device.devicename]
+
 
     data_sources = f"Apple Account-{yes_no(Gb.conf_data_source_ICLOUD)}, "
     data_sources += f"Mobile App-{yes_no(Gb.conf_data_source_MOBAPP)}"
@@ -230,6 +238,18 @@ def stage_4_setup_data_sources():
                                     f"your account to reauthorize location services.")
                     update_alert_sensor(AppleAcct.username_id, "Apple Acct is Locked")
 
+            # Tell HA to generate reauth needed notification that will be handled
+            # handled in config_flow
+            if Gb.AppleAcct_needing_reauth_via_ha:
+                try:
+                    Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
+                except Exception as err:
+                    log_exception(err)
+
+                Gb.AppleAcct_needing_reauth_via_ha.was_ha_auth_code_alert_sent = True
+                post_event( f"Apple Acct > {Gb.AppleAcct_needing_reauth_via_ha.account_owner}, "
+                            f"Auth request submitted to HA")
+
         stage_title = f"Stage 4 > Connect to Mobile App Integration"
         log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.display_user_message(stage_title)
@@ -245,16 +265,16 @@ def stage_4_setup_data_sources():
         Gb.EvLog.display_user_message(stage_title)
 
         start_ic3.set_devices_verified_status()
-        all_verified_flag = start_ic3.are_all_devices_verified()
+        were_all_verified = start_ic3.are_all_devices_verified()
 
     except Exception as err:
         log_exception(err)
-        all_verified_flag = False
+        were_all_verified = False
 
     post_event(f"{EVLOG_IC3_STAGE_HDR} {stage_title}")
     Gb.EvLog.update_event_log_display("")
 
-    return all_verified_flag
+    return were_all_verified
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -348,8 +368,8 @@ def stage_7_initial_locate():
 
     for Device in Gb.Devices:
         post_greenbar_msg(f"Initial Locate > {Device.fname_devicename}")
-        Device.update_sensors_flag = True
-        Device.icloud_initial_locate_done = True
+        Device.can_update_sensors = True
+        Device.was_icloud_initial_locate_done = True
 
         if Device.AADevData_icloud:
             Device.update_dev_loc_data_from_raw_data_ICLOUD(Device.AADevData_icloud)
@@ -397,15 +417,15 @@ def reinitialize_icloud_devices():
         if Gb.reinitialize_icloud_devices_cnt > 2:
             return
 
-        Gb.start_icloud3_inprocess_flag = False
+        Gb.is_icloud3_startup_inprocess = False
         Gb.reinitialize_icloud_devices_flag = False
-        Gb.initial_icloud3_loading_flag = False
+        Gb.is_icloud3_initial_startup = False
 
         alert_msg = f"{EVLOG_ALERT}"
         if Gb.conf_data_source_ICLOUD:
             unverified_devices = [devicename
                         for devicename, Device in Gb.Devices_by_devicename.items() \
-                        if Device.verified_flag is False]
+                        if Device.was_verified is False]
 
             alert_msg +=(f"UNVERIFIED DEVICES > One or more devices was not verified. "
                         f"Apple Account access may be down, slow to respond or the internet may be down."

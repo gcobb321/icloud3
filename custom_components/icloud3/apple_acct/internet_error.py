@@ -1,7 +1,8 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (CRLF, NBSP2, CRLF_DOT, NL3, NL4, RED_ALERT,
-                                EVLOG_ALERT, EVLOG_BROWN_BAR, NOT_SET,
+                                EVLOG_ALERT, EVLOG_ATTENTION, NOT_SET,
+                                APPLE_SERVER_ENDPOINT_IPv4,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 NOTIFY)
 
@@ -12,7 +13,7 @@ from ..utils.time_util  import (time_now, time_now_secs, mins_since, format_time
 from ..utils.messaging  import (_evlog, _log, more_info, add_log_file_filter,
                                 post_event, post_alert, post_greenbar_msg, post_error_msg, update_alert_sensor,
                                 log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                log_data, log_exception, log_data_unfiltered, )
+                                log_data, log_exception, log_data_unfiltered, log_request_data, )
 
 from ..utils            import file_io
 from .                  import icloud_requests_io  as icloud_io
@@ -174,8 +175,9 @@ class InternetConnection_ErrorHandler:
 
         url = 'https://setup.icloud.com/setup/authenticate/interneterrortest'
 
+
         self.data = icloud_io.request(url)
-        #log_data(, self.data)
+
 
         Gb.internet_error = self.data['error'].startswith('InternetError')
         self.internet_error_code = self.data['code']
@@ -244,13 +246,13 @@ class InternetConnection_ErrorHandler:
         # the session is now invalid or the connection has been
         # If no connection during startup, restart. Otherwise, resume all tracking
         if (isnot_empty(data_source_not_set_Devices)
-                or Gb.initial_icloud3_loading_flag
+                or Gb.is_icloud3_initial_startup
                 or self.icloud3_restart_needed):
             event_msg =(f"Internet Connection Available at {secs_to_time(time_now_secs())}, "
                         f"Down for-{format_age(self.internet_went_offline_secs, xago=False)}, "
                         f"Restarting")
 
-            Gb.restart_icloud3_request_flag = True
+            Gb.was_icloud3_restart_requested = True
             Gb.AppleAcct_by_username = {}
             Gb.iCloudSession_by_username = {}
             Gb.valid_upw_by_username = {}
@@ -269,11 +271,9 @@ class InternetConnection_ErrorHandler:
 
         self.reset_internet_error(reset_test_control_flags=True)
 
-        post_event(f"{EVLOG_BROWN_BAR}{event_msg}")
+        post_event(f"{EVLOG_ATTENTION}{event_msg}")
         log_error_msg(f"iCloud3 Alert > {event_msg}")
 
-        # update_alert_sensor(ALERT_CRITICAL, f"Internet Connection Available at "
-        #                                     f"{secs_to_time(time_now_secs())}")
         update_alert_sensor(ALERT_CRITICAL, "")
 
 #----------------------------------------------------------------------------
@@ -291,17 +291,17 @@ class InternetConnection_ErrorHandler:
         self.status_msg_bar = f"{status_bar_base}{STATUS_MESSAGE_DOTS[:status_msg_dot_cnt]}"
 
         if self.all_apple_accts_refreshed:
-            mode_msg = '⚡ Internet Check'
+            mode_msg = '⚡ Internet Test'
         else:
-            mode_msg = (f"⚡ Internet Check Completed, Connection Available"
-                        f"{CRLF}🍎 icloud.com Check")
+            mode_msg = (f"⚡ Internet Test Completed, Connection Available"
+                        f"{CRLF}🍎 icloud.com Test")
 
         post_greenbar_msg(
                 f"Internet Error detected at "
                 f"{format_time_age(self.internet_error_secs, xago=True)}, Trk Paused"
                 f"{CRLF}{mode_msg} "
-                f"#{self.status_check_cnt+1} "
-                f"in {self.status_check_secs:0>2}s"
+                f"#{self.status_check_cnt+1} > "
+                f"{self.status_check_secs:0>2}s"
                 f"{NBSP2}{self.status_msg_bar}")
 
 #----------------------------------------------------------------------------
@@ -378,30 +378,55 @@ class InternetConnection_ErrorHandler:
     def display_internet_error_msg(self):
 
         if Gb.icloud_io_request_secs > 0:
-            ipv6_info = self.ha_system_network_ipv6_info()
-            if ipv6_info:
-                alert_msg =(f"{RED_ALERT}IPv6 DETECTED > Apple location server does not respond to "
-                            f"IPv6 requests. HA Network setting for IPv6 `{ipv6_info[0]}` is `{ipv6_info[1]}`.")
+            ipv6_info   = self.ha_system_network_ipv6_info()
+            is_ipv4_url = (Gb.last_url_requested.startswith('https://idmsa.apple.com')
+                            or Gb.last_url_requested.startswith('https://appleid.apple.com')
+                            or Gb.last_url_requested.startswith('https://auth.apple.com'))
+
+            # This should never ovvur since these urls are using IPv4 but check anyway
+            if ipv6_info and is_ipv4_url:
+                alert_msg =(f"{RED_ALERT}IPv6 DETECTED > Apple Authentication "
+                            f"server does not support IPv6 requests."
+                            f" HA Network setting for IPv6 "
+                            f"`{ipv6_info[0]}` is `{ipv6_info[1]}`.")
             else:
-                alert_msg =(f"{RED_ALERT}ERROR REQUESTING LOCATION > Either an error occurred sending "
-                            f"the the location request or the Apple location server did not respond."
-                            f"This can be caused by IPv6 being enabled in HA.")
-            alert_msg+=(f"{CRLF}1. Go to HA Devices & settings > System > Network"
-                        f"{CRLF}2. Change IPv6 to `disabled`. Then Restart HA")
+                alert_msg =(f"{RED_ALERT}ERROR REQUESTING APPLE DATA > "
+                            f"Either an error occurred sending "
+                            f"the the Authentication or Location request "
+                            f"or the Apple location server did not respond.")
+            # alert_msg+=(f"{CRLF}1. Go to HA Devices & settings > System > Network"
+            #             f"{CRLF}2. Change IPv6 to `disabled`. Then Restart HA")
             post_alert(alert_msg)
+
+        # HTTPSConnectionPool(host='p123-fmipweb.icloud.com', port=443):
+        # Max retries exceeded with url:
+        # /fmipservice/client/web/refreshClient
+        # ?clientBuildNumber=2021Project52&clientMasteringNumber=2021B29
+        # &ckjsBuildVersion=17DProjectDev77&clientId=8e21d75c-ed78-11f0-83e0-2ccf674e40a8
+        # &dsid=186297810 (Caused by NameResolutionError("HTTPSConnection(host=
+        # 'p123-fmipweb.icloud.com', port=443):
+        # Failed to resolve 'p123-fmipweb.icloud.com' ([Errno -3] Try again)")),
+        try:
+            # Result msg = HTTPSConnectionPool Error, Max retries exceeded with url,
+            # Failed to resolve 'p123-fmipweb.icloud.com' ([Errno -3] Try again)
+            _internet_error_msg = self.internet_error_msg.split(':')
+            _display_msg =  _internet_error_msg[0].split('(')[0] + 'Error, '
+            _display_msg += _internet_error_msg[1].lstrip() + ', '
+            _display_msg += _internet_error_msg[3].lstrip()
+        except:
+            _display_msg = self.internet_error_msg
 
         post_alert( f"INTERNET ERROR DETECTED > "
                     f"Checking status every 20-secs, Tracking Paused, "
-                    f"{self.internet_error_msg}, "
+                    f"{_display_msg}, "
                     f"Error Code-{self.internet_error_code}, Possible causes:"
-                    f"{CRLF_DOT}An Internet Connection Error (Internet, WiFi, Router is down)"
+                    f"{CRLF_DOT}An Internet Conn Error (Internet, WiFi, Router is down)"
                     f"{CRLF_DOT}Apple is not available (`www.icloud.com` is down)"
                     f"{CRLF}")
 
 
-        post_event( f"{EVLOG_BROWN_BAR}Internet Error detected at "
+        post_event( f"{EVLOG_ATTENTION}Internet Error detected at "
                     f"{secs_to_time(self.internet_error_secs)}, "
-                    f"Tracking Paused, "
                     f"{self.internet_error_msg}, "
                     f"Error-{self.internet_error_code}")
 

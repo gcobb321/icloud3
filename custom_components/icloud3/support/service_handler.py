@@ -6,7 +6,7 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOMAIN,
-                                RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT, EVLOG_IC3_STARTING,
+                                RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT, EVLOG_ATTENTION,
                                 ICLOUD3_VERSION_MSG,
                                 CMD_RESET_PYICLOUD_SESSION,
                                 LOCATION, NEXT_UPDATE_TIME, NEXT_UPDATE, INTERVAL,
@@ -17,7 +17,7 @@ from ..const            import (DOMAIN,
 from ..utils.utils      import (instr, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 post_greenbar_msg, clear_greenbar_msg,
-                                more_info,
+                                more_info, write_config_file_to_ic3log,
                                 log_info_msg, log_debug_msg, log_exception,
                                 _evlog, _log, )
 from ..utils.time_util  import (secs_to_time, time_str_to_secs, datetime_now, secs_since,
@@ -285,7 +285,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
     """
     # Ignore Action requests during startup. They are caused by the devicename changes
     # to the EvLog attributes indicating the startup stage.
-    if (Gb.start_icloud3_inprocess_flag
+    if (Gb.is_icloud3_startup_inprocess
             or action_entry is None):
         return
 
@@ -323,7 +323,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
         _post_device_event_msg(devicename_msg, event_msg)
 
     if action_msg == 'Restart iCloud3':
-        post_event(f"{EVLOG_IC3_STARTING}Restart Requested > {ICLOUD3_VERSION_MSG}")
+        post_event(f"{EVLOG_ALERT}iCloud3 {ICLOUD3_VERSION_MSG} > Restart Requested")
 
     if action in GLOBAL_ACTIONS:
         _handle_global_action(action, action_option)
@@ -339,7 +339,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
         if action == CMD_PAUSE:
             if devicename is None:
-                Gb.all_tracking_paused_flag = True
+                Gb.is_all_tracking_paused = True
                 Gb.all_tracking_paused_secs = time_now_secs()
             for Device in Devices:
                 Device.pause_tracking()
@@ -347,7 +347,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
         elif action == CMD_RESUME:
             Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
 
-            Gb.all_tracking_paused_flag = False
+            Gb.is_all_tracking_paused = False
             Gb.all_tracking_paused_secs = 0
             Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
             for Device in Devices:
@@ -377,7 +377,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
     # Display the startup log selected
     if devicename == 'startup_log':
-        Gb.evlog_startup_log_flag = True
+        Gb.is_evlog_startup_log_displayed = True
         pass
 
     # Another option selected, startup log already displayed
@@ -386,11 +386,11 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
             and action == 'log_level'
             and action_option == 'monitor'):
         devicename = 'startup_log'
-        Gb.evlog_startup_log_flag = True
+        Gb.is_evlog_startup_log_displayed = True
 
     # Regular event log displayed
     else:
-        Gb.evlog_startup_log_flag = False
+        Gb.is_evlog_startup_log_displayed = False
 
     Gb.EvLog.update_event_log_display(devicename)
 
@@ -403,9 +403,9 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 def _handle_global_action(global_action, action_option):
 
     if global_action == CMD_RESTART:
-        Gb.log_debug_flag_restart         = Gb.log_debug_flag
-        Gb.log_rawdata_flag_restart       = Gb.log_rawdata_flag
-        Gb.restart_icloud3_request_flag   = True
+        Gb.is_log_level_debug_restart         = Gb.is_log_level_debug
+        Gb.is_log_level_rawdata_restart       = Gb.is_log_level_rawdata
+        Gb.was_icloud3_restart_requested   = True
         Gb.restart_requested_by           = 'user'
         Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
         post_greenbar_msg(f"Restarting {ICLOUD3_VERSION_MSG}")
@@ -444,15 +444,15 @@ def _handle_global_action(global_action, action_option):
             event_msg+="Stopped"
             post_event(event_msg)
 
-        elif Gb.wazehist_recalculate_time_dist_flag:
+        elif Gb.is_recalc_wazehist_time_dist:
             event_msg+=("Starting Immediately"
                         f"{CRLF_DOT}SELECT AGAIN TO STOP")
             post_event(event_msg)
-            Gb.wazehist_recalculate_time_dist_flag = False
+            Gb.is_recalc_wazehist_time_dist = False
             Gb.WazeHist.wazehist_recalculate_time_dist_all_zones()
 
         else:
-            Gb.wazehist_recalculate_time_dist_flag = True
+            Gb.is_recalc_wazehist_time_dist = True
             event_msg+=(f"Scheduled to run tonight at Midnight "
                         f"{CRLF_DOT}SELECT AGAIN TO RUN IMMEDIATELY")
             post_event(event_msg)
@@ -469,28 +469,28 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
 
     # Show/Hide Tracking Monitors
     if instr(action_option, 'monitor'):
-        Gb.evlog_trk_monitors_flag = not Gb.evlog_trk_monitors_flag
+        Gb.is_evlog_trk_monitors_displayed = not Gb.is_evlog_trk_monitors_displayed
         return
 
-    new_log_debug_flag   = Gb.log_debug_flag
-    new_log_rawdata_flag = Gb.log_rawdata_flag
+    new_is_log_level_debug   = Gb.is_log_level_debug
+    new_is_log_level_rawdata = Gb.is_log_level_rawdata
 
     # Log Level Debug
     if instr(action_option, 'debug'):
-        new_log_debug_flag   = (not Gb.log_debug_flag)
-        new_log_rawdata_flag = False
+        new_is_log_level_debug   = (not Gb.is_log_level_debug)
+        new_is_log_level_rawdata = False
 
     # Log Level Rawdata
     if instr(action_option, 'rawdata'):
-        new_log_rawdata_flag = (not Gb.log_rawdata_flag)
-        new_log_debug_flag   = new_log_rawdata_flag
+        new_is_log_level_rawdata = (not Gb.is_log_level_rawdata)
+        new_is_log_level_debug   = new_is_log_level_rawdata
 
-    if new_log_rawdata_flag is False:
-        Gb.log_rawdata_flag_unfiltered = False
+    if new_is_log_level_rawdata is False:
+        Gb.is_log_level_rawdata_unfiltered = False
 
     # Log Level Rawdata Auto Reset at midnight
-    new_log_level = 'rawdata-auto-reset' if new_log_rawdata_flag \
-        else 'debug-auto-reset' if new_log_debug_flag \
+    new_log_level = 'rawdata-auto-reset' if new_is_log_level_rawdata \
+        else 'debug-auto-reset' if new_is_log_level_debug \
         else 'info'
 
     start_ic3.set_log_level(new_log_level)
@@ -512,7 +512,7 @@ def _handle_action_device_location_mobapp(Device):
 
     Device.display_info_msg('Updating Location')
 
-    if Device.mobapp_monitor_flag:
+    if Device.is_mobapp_monitored:
         Device.mobapp_data_change_reason = f"Location Requested@{time_now()}"
         mobapp_interface.request_location(Device, force_request=True)
 
@@ -547,7 +547,7 @@ def _handle_action_device_locate(Device, action_option):
         interval_secs = 5
 
     if Device.is_tracking_paused:
-        Gb.all_tracking_paused_flag = False
+        Gb.is_all_tracking_paused = False
         Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
         Device.resume_tracking()
 
@@ -652,3 +652,17 @@ def display_message_alert_service_handler(devicename, message, sounds=False):
 
             post_event(devicename, "iCloud Display Message Alert sent")
             return
+
+#--------------------------------------------------------------------
+def reload_icloud3():
+    '''
+    Reload iCloud3 via HA reload integration request
+    '''
+    # .write_config_file_to_ic3log()
+    config_file.write_icloud3_configuration_file()
+
+    Gb.icloud3_reload_requested = True
+    #Gb.icloud3_reload_requested_secs = time_now_secs() + 5
+
+    Gb.hass.add_job(Gb.hass.config_entries.async_schedule_reload,
+                    Gb.config_entry_id)
