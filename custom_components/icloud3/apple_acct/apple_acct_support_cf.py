@@ -621,7 +621,7 @@ async def async_step_reauth_handler(self,
             if self.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] != auth_method:
                 self.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = auth_method
                 user_input[CONF_AUTH_METHODS] = self.conf_apple_acct[CONF_AUTH_METHODS]
-                Gb.OptionsFlowHandler._update_config_file_tracking(user_input, update_config_flag=True)
+                Gb.OptionsFlowHandler._update_config_file_tracking(user_input, force_config_update=True)
 
             self.errors['account_selected'] = 'auth_code_requested'
             post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
