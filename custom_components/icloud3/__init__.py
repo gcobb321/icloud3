@@ -107,7 +107,7 @@ async def async_initialize_icloud3(hass, entry):
     Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
     post_event( f"{ICLOUD3_ATTENTION_MSG} > Initial Start-up")
 
-    await async_setup_device_tracker_sensor_platforms()
+    await async_create_device_tracker_sensor_platforms()
     Gb.is_icloud3_initial_startup = True
     await start_icloud3_on_init_load_only()
     await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
@@ -244,7 +244,7 @@ def setup_event_listeners():
 
 
 #-------------------------------------------------------------------------------------------
-async def async_setup_device_tracker_sensor_platforms():
+async def async_create_device_tracker_sensor_platforms():
     '''
     Create iCloud3 internal sensors (icloud3_event_log, icloud3_alerts, icloud3_wazehist_track)
     All other device sensors are created after the devices are created

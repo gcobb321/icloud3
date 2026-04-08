@@ -311,7 +311,7 @@ def form_data_source_parameters(self):
 def form_update_apple_acct(self):
     lists.build_apple_accounts_list(self)
 
-    retry_login_AA = [AA    for AA in Gb.AppleAcct_error_by_username.values() 
+    retry_login_AA = [AA    for AA in Gb.AppleAcct_error_by_username.values()
                             if AA.error_next_retry_secs > 0]
     if isnot_empty(retry_login_AA):
         self.actions_list = [ACTION_LIST_OPTIONS['stop_login_retry']]
@@ -558,9 +558,12 @@ def form_reauth_manual_code_info(self):
     11. Enter the code in the _Verification Code_ field \n
     12. Select _Send the code to Apple_, then tap _Submit_ \n \n
     For more information, see https://www.wikihow.com/Verify-Apple-ID",
+
+    "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the Text Message never arrives, go the following to generate a code: \n\n**Sign into your Apple Account** \n1. Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n• If you are already signed in, sign out \n• If you use Face ID, cover the camera so you are not automatically signed into your account again.\n2. Tap _**Use a different Apple Account**_. This will reset the Trust Token and display the window with the code you will use later on.\n3. Enter your **username**, tap _**Continue**_. Enter your **password**, tap _**Sign-in**_.\n\n**Signing in on a Trusted Device (iPhone, iPad, Mac)**\n1. The *Apple Acct Sign-in is Requested* window is displayed. Tap _**Allow**_ to display the code you will use later on in iCloud3. _**Do not enter the code here**_.\n2. Tap _**OK**_ to close the window\n\n**Signing in on Windows**\n1. You are done here, close the tab, continue with _Authentication iCloud3_ below.\n2. The code is displayed on your trusted device (iPhone, iPad, Mac) in the *Apple Acct Sign-in is Requested* window. Get the code, you will use it later on.\n\n**Authenticating iCloud3** \n1. Select **Reset Trust Token, Return to Enter & Send the Code to Apple** below to go to back to the _Authenticate Apple Account Sign-in_ screen. Tap _**Submit**_. \n2. Enter the code and send to Apple for verification.\n \nFor more information, see https://www.wikihow.com/Verify-Apple-ID",
     '''
     self.actions_list = REAUTH_MANUAL_CODE_INFO.copy()
-    action_default = 'reset_trust_token_return'
+    # action_default = 'reset_trust_token_return'
+    action_default = 'goto_previous'
 
     return vol.Schema({
             vol.Required('action_items',

@@ -305,7 +305,7 @@ async def async_get_fido2_key_names(AppleAcct=None):
     for AppleAcct in _AppleAcct_list:
         try:
             _fido2_key_names = await Gb.hass.async_add_executor_job(AppleAcct.get_fido2_key_names)
-            _log(f'{AppleAcct.username} {_fido2_key_names=} {AppleAcct.fido2_key_names=}')
+            # _log(f'{AppleAcct.username} {_fido2_key_names=} {AppleAcct.fido2_key_names=}')
 
             # if _fido2_key_names is not None:
             #     _trusted_session = await Gb.hass.async_add_executor_job(AppleAcct.trust_session)
@@ -330,7 +330,7 @@ async def async_confirm_fido2_security_key(AppleAcct, fido2_key_name):
     '''
 
     try:
-        _log(f'{AppleAcct=} {fido2_key_name=}')
+        # _log(f'{AppleAcct=} {fido2_key_name=}')
         valid_key = await Gb.hass.async_add_executor_job(
                                                 AppleAcct.confirm_fido2_security_key,
                                                 fido2_key_name)
@@ -339,7 +339,7 @@ async def async_confirm_fido2_security_key(AppleAcct, fido2_key_name):
         log_exception(err)
         valid_key = False
 
-    _log(f'{valid_key=}')
+    # _log(f'{valid_key=}')
 
     return valid_key
 
@@ -488,6 +488,7 @@ async def async_step_reauth_handler(self,
 
     try:
         user_input, action_item = utils.action_text_to_item(self, user_input)
+
         user_input = utils.strip_spaces(user_input, [CONF_AUTH_CODE])
         user_input = utils.option_text_to_parm(user_input, 'account_selected',
                                                 self.apple_acct_auth_items_by_username)
@@ -501,10 +502,12 @@ async def async_step_reauth_handler(self,
         else:
             user_input['fido2_key_name'] = ['']
 
-        ui_account_selected = user_input.get('account_selected')
-        ui_conf_auth_code   = user_input.get(CONF_AUTH_CODE, '')
-        ui_conf_fido_key_name     = user_input['fido2_key_name']
-        if 'terms_of_use' not in user_input: user_input['terms_of_use'] = False
+        ui_account_selected   = user_input.get('account_selected')
+        ui_conf_auth_code     = user_input.get(CONF_AUTH_CODE, '')
+        ui_conf_fido_key_name = user_input['fido2_key_name']
+        if 'terms_of_use' not in user_input:
+            user_input['terms_of_use'] = False
+
         log_debug_msg(  f"⭐ REAUTH HANDLER (From={return_to_step_id}, "
                         f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
 
@@ -576,7 +579,8 @@ async def async_step_reauth_handler(self,
             self.apple_acct_reauth_username = ''
             return 'goto_previous', '', None, errors
 
-        if action_item == 'refresh_screen':
+        if (action_item == 'refresh_screen'
+                or action_item is None):
             pass
 
         elif AppleAcct is None:
@@ -621,7 +625,8 @@ async def async_step_reauth_handler(self,
             if self.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] != auth_method:
                 self.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = auth_method
                 user_input[CONF_AUTH_METHODS] = self.conf_apple_acct[CONF_AUTH_METHODS]
-                Gb.OptionsFlowHandler._update_config_file_tracking(user_input, update_config_flag=True)
+                Gb.OptionsFlowHandler._update_config_file_tracking(user_input,
+                        force_config_update=True)
 
             self.errors['account_selected'] = 'auth_code_requested'
             post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "

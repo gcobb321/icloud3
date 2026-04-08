@@ -256,24 +256,64 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
                     = None if the rquest is from another regular function during the normal
                         tracking operation.
         '''
-        self.step_id = 'reauth'
-        self.errors = errors or {}
-        self.errors_user_input = {}
-        user_input, action_item = utils.action_text_to_item(self, user_input)
+        try:
+            self.step_id = 'reauth'
+            self.errors = errors or {}
+            self.errors_user_input = {}
+            self.return_to_step_id_1 = 'reauth'
 
-        # Config_flow is only set up on the initial add. This reauth uses some of the OptionsFlowHandler
-        # functions so we need to set up that link when a reauth is needed
-        if Gb.OptionsFlowHandler is None:
-            Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
-        _OptFlow = Gb.OptionsFlowHandler
-        self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, ICLOUD)
+            # Config_flow is only set up on the initial add. This reauth uses some of the OptionsFlowHandler
+            # functions so we need to set up that link when a reauth is needed
+            if Gb.OptionsFlowHandler is None:
+                Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+            _OptFlow = Gb.OptionsFlowHandler
+            self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, ICLOUD)
 
-        # When iCloud3 creates the AppleAcct object for the Apple account during startup,
-        # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
-        # job is run that tells HA to issue a notification.  The AppleAcct object is saved
-        # to be used here
+            # When iCloud3 creates the AppleAcct object for the Apple account during startup,
+            # a 2fa needed check is made. If it is needed, a reauthentication is needed executive
+            # job is run that tells HA to issue a notification.  The AppleAcct object is saved
+            # to be used here
+
+            AppleAcct, username = self._get_username_needing_reauth(user_input)
+            self.apple_acct_reauth_username = reauth_username = self.username = username
+
+            log_debug_msg(  f"⭐ HA REAUTH (From={return_to_step_id}, "
+                                f"{username=} > UserInput-{user_input},  Errors-{errors}")
+
+
+            action_item, reauth_username, user_input, errors = \
+                await aascf.async_step_reauth_handler(self,
+                                                user_input=user_input, errors=errors,
+                                                return_to_step_id='reauth',
+                                                reauth_username=reauth_username)
+
+            if action_item == 'goto_previous':
+                return self.async_abort(reason="auth_code_cancelled")
+
+            if action_item == 'manual_code_info':
+                return await self.async_step_reauth_manual_code_info()
+
+            log_debug_msg(  f"⭐ HA REAUTH (From={return_to_step_id}, "
+                            f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+
+            if user_input and 'account_selected' in user_input:
+                reauth_username = user_input['account_selected']
+
+            return self.async_show_form(step_id='reauth',
+                                        data_schema=forms.form_reauth(self,
+                                                reauth_username=reauth_username),
+                                        errors=self.errors)
+
+        except Exception as err:
+            log_exception(err)
+
+#.........................................................................................
+    def _get_username_needing_reauth(self, user_input):
+        '''
+        Return the AppleAcct and username needing reauthentication
+        '''
         if Gb.AppleAcct_needing_reauth_via_ha:
-            Gb.AppleAcct_needing_reauth_via_ha = None
+            # Gb.AppleAcct_needing_reauth_via_ha = None
             AppleAcct = self.AppleAcct = Gb.AppleAcct_needing_reauth_via_ha
             if AppleAcct:
                 username = AppleAcct.username
@@ -282,31 +322,46 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
             user_input = utils.option_text_to_parm(user_input,
                                                     'account_selected',
                                                     self.apple_acct_items_by_username)
-            username = user_input['account_selected']
+            username  = user_input['account_selected']
             AppleAcct = self.AppleAcct = Gb.AppleAcct_by_username[username]
 
-        self.apple_acct_reauth_username = reauth_username = self.username = username
+        else:
+            AppleAcct = None
+            username  = ''
 
-        log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
-                            f"{username=} > UserInput-{user_input},  Errors-{errors}")
+        return AppleAcct, username
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            REAUTH OPT FLOW
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_reauth_opt_flow(self, user_input=None, errors=None,
+                                        return_to_step_id=None, reauth_username=None):
+
+        self.step_id = 'reauth'
+        self.errors = errors or {}
+        self.errors_user_input = {}
+        self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
+        await config_file.async_write_icloud3_configuration_file()
+
+        action_item, reauth_username, user_input, errors = \
+            await aascf.async_step_reauth_handler(self, user_input=user_input, errors=errors,
+                                            return_to_step_id=return_to_step_id, reauth_username=reauth_username)
+
+        if action_item == 'goto_previous':
+            return self.async_show_form(step_id=self.return_to_step_id_1,
+                                            data_schema=self.form_schema(self.return_to_step_id_1),
+                                            errors=self.errors)
 
         if action_item == 'manual_code_info':
             return await self.async_step_reauth_manual_code_info()
 
-        action_item, reauth_username, user_input, errors = \
-            await aascf.async_step_reauth_handler(self,
-                                            user_input=user_input, errors=errors,
-                                            return_to_step_id='reauth',
-                                            reauth_username=reauth_username)
-
-        if action_item == 'goto_previous':
-            return self.async_abort(reason="auth_code_cancelled")
-
         log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
                         f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+        if user_input and 'account_selected' in user_input:
+            reauth_username = user_input['account_selected']
+
         return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(self,
-                                            reauth_username=reauth_username),
+                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
                                     errors=self.errors)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -335,18 +390,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         return self.async_show_form(step_id='reauth',
                                     data_schema=forms.form_reauth(self, reauth_username=reauth_username),
                                     errors=self.errors)
-
-#........................................................................................
-    # def _is_apple_acct_setup(self):
-    #     if self.username:
-    #         return True
-    #     elif is_empty(Gb.conf_apple_accounts):
-    #         return False
-    #     elif Gb.conf_apple_accounts[0].get(CONF_USERNAME, '') == '':
-    #         return False
-
-    #     return True
-
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -745,6 +788,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             await ic3_device_tracker.async_create_Device_Tracker_objects()
             await ic3_sensor.async_create_Sensor_objects()
             self.rebuild_ic3db_dashboards = True
+            list_add(self.config_parms_update_control, 'restart')
 
         # Update the *ic3db- dashboard views when devices have been added or deleted
         if self.rebuild_ic3db_dashboards:
@@ -861,7 +905,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 if devicename in devicename_list:
                     conf_device[CONF_TRACKING_MODE] = TRACK
 
-                if devicename not in Gb.DeviceTrackers_by_devicename:
+                if Gb.DeviceTrackers_by_devicename.get(devicename) is None:
                     self.create_device_tracker_sensor_enities_on_exit = True
 
             self.header_msg = 'action_completed'
@@ -3578,7 +3622,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # Inactive devices were not created so they are not in Gb.DeviceTrackers_by_devicename
         if (devicename == new_devicename
                 and CONF_FNAME in self.update_device_ha_sensor_entity
-                and devicename in Gb.DeviceTrackers_by_devicename):
+                and Gb.DeviceTrackers_by_devicename.get(devicename)):
             DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
             DeviceTracker.update_entity_attribute(new_fname=self.conf_device[CONF_FNAME])
 
@@ -3592,7 +3636,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # devicename was changed - delete device_tracker and all sensors for
         # devicename and add them for new_devicename
         if devicename != new_devicename:
-            self._update_config_file_tracking()
+            self._update_config_file_tracking(force_config_update=True)
             self.create_device_tracker_sensor_enities_on_exit = True
 
             cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
@@ -3601,13 +3645,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # inactive devices. If so, create it now if it is no longer 'inactive'.
         elif (tracking_mode == INACTIVE
                 and new_tracking_mode != INACTIVE
-                and new_devicename not in Gb.DeviceTrackers_by_devicename):
+                and Gb.DeviceTrackers_by_devicename.get(new_devicename) is None):
             self.create_device_tracker_sensor_enities_on_exit = True
 
         # If the device is now 'inactive' it's entity exists, delete iit
         elif (new_tracking_mode == INACTIVE
                 and tracking_mode != INACTIVE
-                and new_devicename in Gb.DeviceTrackers_by_devicename):
+                and Gb.DeviceTrackers_by_devicename.get(new_devicename)):
             cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
 
         # If the device was 'monitored' and is now tracked, create the tracked sensors

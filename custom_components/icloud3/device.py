@@ -108,7 +108,7 @@ class iCloud3_Device(TrackerEntity):
         self.track_from_base_zone  = HOME    # Name of secondary tracked from base zone (normally Home)
         self.NearDevice            = None    # Device in the same location as this Device
         self.NearDeviceUsed        = None
-        self.DeviceTracker         = None    # Device's device_tracker entity object
+
 
         # Gb.Sensors_by_devicename is created in the Sensors platform in __init__. The Device object is
         # created in Startup Stage 3, also run in __init__. Since the Sensors platform can be run in a
@@ -121,6 +121,10 @@ class iCloud3_Device(TrackerEntity):
         #   -   link the Sensors here if the Sensors for the device is available or
         #   -   Create an empty devicename field that will create the link to be filled in
         #       if the Device was created before the Sensors are available.
+        if devicename not in Gb.DeviceTrackers_by_devicename:
+            Gb.DeviceTrackers_by_devicename[devicename] = None
+        self.DeviceTracker = Gb.DeviceTrackers_by_devicename[self.devicename]
+
         if devicename not in Gb.Sensors_by_devicename:
             Gb.Sensors_by_devicename[devicename]           = {}
             Gb.Sensors_by_devicename_from_zone[devicename] = {}
@@ -512,14 +516,9 @@ class iCloud3_Device(TrackerEntity):
         # This permits access to the sensors & attrs values.
 
         # Link the DeviceTracker-Device objects
-        if self.devicename in Gb.DeviceTrackers_by_devicename:
+        if Gb.DeviceTrackers_by_devicename[self.devicename]:
             self.DeviceTracker = Gb.DeviceTrackers_by_devicename[self.devicename]
             self.DeviceTracker.Device = self
-            try:
-                self.DeviceTracker.device_id = Gb.ha_device_id_by_devicename[self.devicename]
-                self.DeviceTracker.area_id   = Gb.ha_area_id_by_devicename[self.devicename]
-            except:
-                pass
 
         # Cycle through all sensors for this device.
         # Link the Sensor-Device objects to provide access the sensors dictionary

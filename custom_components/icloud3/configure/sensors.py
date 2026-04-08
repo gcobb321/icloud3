@@ -119,7 +119,7 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
 
     # Inactive devices were not created so they are not in Gb.DeviceTrackers_by_devicename
     er_util.update_ha_device_id_by_devicename()
-    if devicename not in Gb.DeviceTrackers_by_devicename:
+    if Gb.DeviceTrackers_by_devicename.get(devicename) is None:
         return
 
     if devicename in Gb.Sensors_by_devicename:
