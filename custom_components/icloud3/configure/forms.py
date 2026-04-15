@@ -12,8 +12,8 @@ from ..const            import (RED_ALERT, LINK, RLINK, RARROW, CRLF, NL, NBSP6,
                                 CONF_VERSION,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_BTNCONFIG_URL,
                                 CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
-                                CONF_AUTH_METHODS, CONF_LAST_METHOD, PUSH,
-                                TEXT_1, TEXT_2, HWKEY_1, HWKEY_2,
+                                CONF_AUTH_METHODS, CONF_LAST_METHOD,
+                                PUSH, TEXT_1, TEXT_2, HWKEY_1, HWKEY_2,
                                 CONF_DATA_SOURCE, CONF_AUTH_CODE,
                                 CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                 CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
@@ -144,7 +144,7 @@ def form_confirm_action(self, action_desc=None):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=[action_desc], mode='list')),
         vol.Required('action_items',
-                    default=utils.action_default_text(actions_list_default)):
+                    default=utils.default_action_text(actions_list_default)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=actions_list, mode='list')),
         })
@@ -163,7 +163,7 @@ def form_restart_icloud3(self):
 
     self.actions_list.append(ACTION_LIST_OPTIONS['restart_ic3_later'])
 
-    actions_list_default = utils.action_default_text(restart_default)
+    actions_list_default = utils.default_action_text(restart_default)
     if self._inactive_device_cnt() > 0:
         inactive_devices = [conf_device[CONF_IC3_DEVICENAME]
                     for conf_device in Gb.conf_devices
@@ -202,7 +202,7 @@ def form_review_inactive_devices(self, start_cnt=None):
                     cv.multi_select(self.inactive_devices_key_text),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('goto_previous')):
+                    default=utils.default_action_text('goto_previous')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -258,7 +258,7 @@ def form_data_source(self):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.apple_acct_items_displayed, mode='list')),
         vol.Required('action_items',
-                    default=utils.action_default_text(default_action)):
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -299,7 +299,7 @@ def form_data_source_parameters(self):
                     selector.BooleanSelector(),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -320,9 +320,9 @@ def form_update_apple_acct(self):
     self.actions_list.extend(USERNAME_PASSWORD_ACTIONS)
 
     if Gb.internet_error:
-        action_default = 'cancel_goto_previous'
+        default_action = 'cancel_goto_previous'
     else:
-        action_default = 'save_log_into_apple_acct'
+        default_action = 'save_log_into_apple_acct'
 
     errs_ui = self.errors_user_input
     username   = errs_ui.get(CONF_USERNAME)   or self.conf_apple_acct[CONF_USERNAME] or ' '
@@ -390,7 +390,7 @@ def form_update_apple_acct(self):
                     default=locate_all):
                     cv.boolean,
         vol.Required('action_items',
-                    default=utils.action_default_text(action_default)):
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -428,7 +428,7 @@ def form_delete_apple_acct(self):
                             options=dict_value_to_list(DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS),
                             mode='list')),
         vol.Required('action_items',
-                    default=utils.action_default_text('cancel_goto_previous')):
+                    default=utils.default_action_text('cancel_goto_previous')):
                     selector.SelectSelector(
                         selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
         })
@@ -459,38 +459,35 @@ def form_reauth(self, reauth_username=None):
 
     if AppleAcct:
         reauth_username = self.apple_acct_reauth_username = AppleAcct.username
-        is_auth_code_needed    = (AppleAcct.is_auth_code_needed
-                                    or AppleAcct.is_challenge_required)
         was_auth_code_requested = AppleAcct.was_auth_code_requested
+        is_auth_code_needed     = (AppleAcct.is_auth_code_needed
+                                    or AppleAcct.is_challenge_required)
 
     self.actions_list = []
     if terms_of_use_update_needed:
         self.actions_list.append(ACTION_LIST_OPTIONS['accept_terms_of_use'])
     self.actions_list.extend(REAUTH_ACTIONS)
 
-    if Gb.internet_error:
-        action_list_default = 'goto_previous'
-    elif AppleAcct is None:
-        action_list_default = 'goto_previous'
+    if (Gb.internet_error
+            or AppleAcct is None
+            or is_auth_code_needed is False):
+        default_action = 'goto_previous'
     elif terms_of_use_update_needed:
-        action_list_default = 'accept_terms_of_use'
+        default_action = 'accept_terms_of_use'
 
     elif was_auth_code_requested is False:
-        if AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] == PUSH:
-            action_list_default = 'request_auth_code_push'
-        else:
-            action_list_default = 'request_auth_code_text'
+        default_action = 'request_auth_code'
     elif is_auth_code_needed or was_auth_code_requested:
-        action_list_default = 'send_auth_code'
+        default_action = 'send_auth_code'
     else:
-        action_list_default = 'goto_previous'
+        default_action = 'goto_previous'
 
     # If No Apple accts are set up yet
     if AppleAcct is None or is_empty(self.apple_acct_auth_items_by_username):
         default_acct_selected = 'No Apple Accounts have been set up'
         self.apple_acct_auth_items_by_username = {'.noacctssetup': default_acct_selected}
         self.errors['base'] = 'apple_acct_not_set_up'
-        action_list_default = 'goto_previous'
+        default_action = 'goto_previous'
         AppleAcct = None
 
     else:
@@ -504,9 +501,7 @@ def form_reauth(self, reauth_username=None):
                         mode='dropdown')),
             vol.Optional(CONF_AUTH_CODE, default=' '):
                     selector.TextSelector(),
-        #     vol.Optional(CONF_AUTH_CODE, default=' '):
-        #             selector.TextSelector(),
-            # vol.Optional('auth_method',
+            # vol.Optional('reauth_method',
             #         default=auth_methods[default_auth_method]):
             #         selector.SelectSelector(selector.SelectSelectorConfig(
             #             options=dict_value_to_list(auth_methods), mode='dropdown')),
@@ -529,7 +524,7 @@ def form_reauth(self, reauth_username=None):
 
     schema.update({
         vol.Optional('action_items',
-                    default=utils.action_default_text(action_list_default)):
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -538,45 +533,65 @@ def form_reauth(self, reauth_username=None):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            REAUTH MANUAL CODE INFO
+#            REAUTH CODE BY SIGNING INTO APPLE.COM
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_reauth_manual_code_info(self):
+def form_reauth_code_from_applecom_login(self):
     '''
-    "description": "If you request an Authentication Code but the Push Notification window or the \nText Message never arrives, generate a code with a trusted device using the following steps: \n\n
-
-    1. Go to your Apple Account Sign-in screen here https://appleid.apple.com/ in a web browser \n
-    2. If you are signed in, sign out of your account\n
-    3. If you use Face ID, cover the camera so you are not automatically signed into your account again\n
-    4. Select *Use a different Apple Account*. This will reset the Trust Token for your Apple account and display the Push Notification window with the code later on \n
-    5. Enter your *username*, then tap _Continue_\n
-    6. Enter your *password*, then tap _Sign-in_ \n
-    7. Tap _Allow_, the code is then displayed \n
-    8. *Do not enter the code here*. This is the code you will enter in iCloud3 on the Authenticate Apple Account Sign-in screen \n
-    9. Tap _OK_ to close the window \n
-    10. Return to the _Authenticate Apple Account Sign-in_ screen \n
-    11. Select _Reset Trust Token, Request Auth Code_, then tap _Submit_ \n
-    11. Enter the code in the _Verification Code_ field \n
-    12. Select _Send the code to Apple_, then tap _Submit_ \n \n
-    For more information, see https://www.wikihow.com/Verify-Apple-ID",
-
-    "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the Text Message never arrives, go the following to generate a code: \n\n**Sign into your Apple Account** \n1. Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n• If you are already signed in, sign out \n• If you use Face ID, cover the camera so you are not automatically signed into your account again.\n2. Tap _**Use a different Apple Account**_. This will reset the Trust Token and display the window with the code you will use later on.\n3. Enter your **username**, tap _**Continue**_. Enter your **password**, tap _**Sign-in**_.\n\n**Signing in on a Trusted Device (iPhone, iPad, Mac)**\n1. The *Apple Acct Sign-in is Requested* window is displayed. Tap _**Allow**_ to display the code you will use later on in iCloud3. _**Do not enter the code here**_.\n2. Tap _**OK**_ to close the window\n\n**Signing in on Windows**\n1. You are done here, close the tab, continue with _Authentication iCloud3_ below.\n2. The code is displayed on your trusted device (iPhone, iPad, Mac) in the *Apple Acct Sign-in is Requested* window. Get the code, you will use it later on.\n\n**Authenticating iCloud3** \n1. Select **Reset Trust Token, Return to Enter & Send the Code to Apple** below to go to back to the _Authenticate Apple Account Sign-in_ screen. Tap _**Submit**_. \n2. Enter the code and send to Apple for verification.\n \nFor more information, see https://www.wikihow.com/Verify-Apple-ID",
+    Get an auth code by signing into your apple account. Then enter it and send to
+    Apple
     '''
-    self.actions_list = REAUTH_MANUAL_CODE_INFO.copy()
-    # action_default = 'reset_trust_token_return'
-    action_default = 'goto_previous'
+    self.actions_list = REAUTH_CODE_FROM_APPLECOM_LOGIN.copy()
+    # default_action = 'reset_trust_token_return'
+    default_action = 'send_auth_code'
 
     return vol.Schema({
-            vol.Required('action_items',
-                    default=utils.action_default_text(action_default)):
+        vol.Optional(CONF_AUTH_CODE, default=' '):
+                    selector.TextSelector(),
+
+        vol.Required('action_items',
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
     })
 
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            REAUTH CHANGE AUTH METHOD
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def form_reauth_change_auth_method(self, reauth_username=None):
+    default_acct_selected = self.apple_acct_auth_items_by_username[reauth_username]
+    self.actions_list = CHANGE_AUTH_METHOD.copy()
+    default_action = 'save'
+
+    lists.build_aa_auth_methods_list(self, self.AppleAcct)
+
+    default_auth_method = self.AppleAcct.reauth_method
+    if default_auth_method not in self.aa_auth_methods_by_auth_method:
+        default_auth_method = 'push'
+
+    schema = ({
+        vol.Optional('account_selected',
+                    default=default_acct_selected):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=[default_acct_selected],
+                        mode='dropdown')),
+        vol.Optional('reauth_method',
+                    default=self.aa_auth_methods_by_auth_method[default_auth_method]):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=dict_value_to_list(self.aa_auth_methods_by_auth_method),
+                        mode='list')),
+        vol.Optional('action_items',
+                    default=utils.default_action_text(default_action)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=self.actions_list, mode='list')),
+        })
+
+    return vol.Schema(schema)
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DEVICE LIST
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_device_list(self):
-    action_default = 'update_device'
+    default_action = 'update_device'
     self.actions_list = DEVICE_LIST_ACTIONS.copy()
 
     # Build list of all devices
@@ -602,7 +617,7 @@ def form_device_list(self):
                         selector.SelectSelector(selector.SelectSelectorConfig(
                             options=self.device_items_displayed, mode='list')),
             vol.Required('action_items',
-                    default=utils.action_default_text(action_default)):
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
     })
@@ -705,7 +720,7 @@ def form_add_device(self):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
         vol.Required('action_items',
-                default=utils.action_default_text('add_device')):
+                default=utils.default_action_text('add_device')):
                 selector.SelectSelector(selector.SelectSelectorConfig(
                     options=self.actions_list, mode='list')),
         })
@@ -839,7 +854,7 @@ def form_update_device(self):
 
     schema.update({
         vol.Required('action_items',
-                default=utils.action_default_text('save')):
+                default=utils.default_action_text('save')):
                 selector.SelectSelector(selector.SelectSelectorConfig(
                     options=self.actions_list, mode='list')),
         })
@@ -888,7 +903,7 @@ def form_update_other_device_parameters(self):
                         options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -901,7 +916,7 @@ def form_update_other_device_parameters(self):
 def form_dashboard_builder(self):
     dbname = self.ui_selected_dbname
     self.actions_list = []
-    action_default = 'create_dashboard'
+    default_action = 'create_dashboard'
     self.actions_list.append(ACTION_LIST_OPTIONS['create_dashboard'])
     self.actions_list.append(ACTION_LIST_OPTIONS['cancel_goto_menu'])
 
@@ -935,7 +950,7 @@ def form_dashboard_builder(self):
                     cv.multi_select(six_item_dict(self.dbf_main_view_devices_key_text)),
 
         vol.Required('action_items',
-                    default=utils.action_default_text(action_default)):
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(
                         selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
         })
@@ -946,7 +961,7 @@ def form_dashboard_builder(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_tools(self):
     self.actions_list = TOOL_LIST_ITEMS.copy()
-    action_default = 'goto_menu'
+    default_action = 'goto_menu'
 
     lists.build_log_level_devices_list(self)
     if Gb.conf_general[CONF_LOG_LEVEL_DEVICES] != 'all':
@@ -966,7 +981,7 @@ def form_tools(self):
                     cv.multi_select(six_item_dict(self.log_level_devices_key_text)),
 
         vol.Required('action_items',
-                    default=utils.action_default_text(action_default)):
+                    default=utils.default_action_text(default_action)):
                     selector.SelectSelector(
                         selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
         })
@@ -1134,7 +1149,7 @@ def form_tracking_parameters(self):
                         options=dict_value_to_list(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT), mode='dropdown')),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1189,7 +1204,7 @@ def form_format_settings(self):
                     selector.TextSelector(),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1210,7 +1225,7 @@ def form_change_device_order(self):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.cdo_devicenames, mode='list')),
         vol.Required('action_items',
-                    default=utils.action_default_text(self.actions_list_default)):
+                    default=utils.default_action_text(self.actions_list_default)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1287,7 +1302,7 @@ def form_picture_dir_filter(self):
 
     schema.update({
         vol.Required('action_items',
-                default=utils.action_default_text('save')):
+                default=utils.default_action_text('save')):
                 selector.SelectSelector(selector.SelectSelectorConfig(
                     options=self.actions_list, mode='list')),})
 
@@ -1318,7 +1333,7 @@ def form_away_time_zone(self):
                         options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1354,7 +1369,7 @@ def form_display_text_as(self):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dta_page_display_list)),
         vol.Required('action_items',
-                    default=utils.action_default_text('select_text_as')):
+                    default=utils.default_action_text('select_text_as')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1383,7 +1398,7 @@ def form_display_text_as_update(self):
                     default=text_to):
                     selector.TextSelector(),
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1421,7 +1436,7 @@ def form_inzone_intervals(self):
                         min=5, max=480, step=5, unit_of_measurement='minutes')),
 
         vol.Optional('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1468,7 +1483,7 @@ def form_waze_main(self):
                         options=dict_value_to_list(WAZE_HISTORY_TRACK_DIRECTION_OPTIONS), mode='dropdown')),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save')):
+                    default=utils.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1525,7 +1540,7 @@ def form_special_zones(self):
                         selector.BooleanSelector(),
 
             vol.Required('action_items',
-                        default=utils.action_default_text('save')):
+                        default=utils.default_action_text('save')):
                         selector.SelectSelector(selector.SelectSelectorConfig(
                             options=self.actions_list, mode='list')),
             })
@@ -1581,7 +1596,7 @@ def form_sensors(self, user_input=None):
                         mode='list', multiple=True)),
 
         vol.Required('action_items',
-                    default=utils.action_default_text('save_stay')):
+                    default=utils.default_action_text('save_stay')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1634,7 +1649,7 @@ def form_exclude_sensors(self):
                         options=filtered_sensors_fname_list, mode='list', multiple=True)),
 
         vol.Required('action_items',
-                    default=utils.action_default_text(default_action_item)):
+                    default=utils.default_action_text(default_action_item)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -1656,7 +1671,7 @@ def form_restart_ha(self):
     else:
         self.actions_list.append(ACTION_LIST_OPTIONS['exit'])
 
-    actions_list_default = utils.action_default_text('restart_ha')
+    actions_list_default = utils.default_action_text('restart_ha')
 
     return vol.Schema({
         vol.Required('action_items',
@@ -1675,7 +1690,7 @@ def form_restart_ha_reload_icloud3(self):
     self.actions_list.append(ACTION_LIST_OPTIONS['restart_ha'])
     self.actions_list.append(ACTION_LIST_OPTIONS['exit'])
 
-    actions_list_default = utils.action_default_text('exit')
+    actions_list_default = utils.default_action_text('exit')
 
     return vol.Schema({
         vol.Required('action_items',

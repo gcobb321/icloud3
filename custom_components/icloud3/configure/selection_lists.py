@@ -8,8 +8,8 @@ from ..const            import (RARROW, CRLF_DOT, DOT, HDOT, CIRCLE_STAR, RED_X,
                                 DEVICE_TYPES, DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, DEVICE_TRACKER_DOT,
                                 TRACK, MONITOR, INACTIVE,
                                 CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT,
-                                CONF_AUTH_METHODS, CONF_LAST_METHOD, PUSH,
-                                TEXT_1, TEXT_2, HWKEY_1, HWKEY_2,
+                                CONF_AUTH_METHODS, CONF_LAST_METHOD,
+                                PUSH, TEXT, TEXT_1, TEXT_2, HWKEY, HWKEY_1, HWKEY_2,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_AUTH_CODE, CONF_LOCATE_ALL,
                                 CONF_TRACK_FROM_ZONES, CONF_PICTURE_WWW_DIRS,
@@ -136,22 +136,46 @@ def build_apple_accounts_auth_list(self):
             auth_not_needed_items_by_username[username] = \
                 f"{username_base(username)}{RARROW}{aa_text}"
 
-    self.apple_acct_auth_items_by_username      = auth_needed_items_by_username
+    self.apple_acct_auth_items_by_username = auth_needed_items_by_username
     self.apple_acct_auth_items_by_username.update(auth_not_needed_items_by_username)
 
 #...............................................................................
 def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
-    aa_text = ''
-    aa_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
-    aa_text += f"Method-{aa_auth_methods[CONF_LAST_METHOD].title()}, "
-    if AppleAcct.is_auth_code_needed:
-        aa_text += f"{RED_ALERT}AUTHENTICATION NEEDED"
+    build_aa_auth_methods_list(self, AppleAcct)
 
-    cookie_info = AppleAcct.iCloudSession.cookies.get_trust_cookie_info()
-    if cookie_info['expired'] is False:
-        aa_text += f"TrustToken Expires-{cookie_info['expire_in_days']} days"
+    aa_text = ''
+    # aa_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
+    # reauth_method = aa_auth_methods[CONF_LAST_METHOD]
+    # reauth_method = AppleAcct.reauth_method
+    aa_text += f"{self.aa_auth_methods_by_auth_method[AppleAcct.reauth_method]}"
+    if AppleAcct.is_auth_code_needed:
+        aa_text = aa_text.split('> ')[0]
+        aa_text += f"> {RED_ALERT}AUTH NEEDED"
 
     return aa_text
+
+#...............................................................................
+def build_aa_auth_methods_list(self, AppleAcct):
+
+    self.aa_auth_methods_by_auth_method = {}
+    self.aa_auth_methods_by_auth_method['push'] =  ('Push Notification > '
+                                                    'From `Apple Account Sign-in Requested` popup window')
+    for auth_method, method_info in AppleAcct.conf_apple_acct[CONF_AUTH_METHODS].items():
+        if method_info == '':
+            continue
+        if auth_method.startswith(TEXT):
+            self.aa_auth_methods_by_auth_method[auth_method] = (
+                                        f"Text Msg to Device #{auth_method[-1:]} ({method_info}) > "
+                                        f"Send a Text Message to this Trusted Device")
+        elif auth_method.startswith(HWKEY):
+            self.aa_auth_methods_by_auth_method[auth_method] = (
+                                        f"Hardware Key #{auth_method[-1:]} ({method_info}) > "
+                                        f"Authenticate with this Hardware Key (YubiKey)")
+
+    return self.aa_auth_methods_by_auth_method
+
+
+
 
 #-------------------------------------------------------------------------------------------
 def tracked_untracked_form_msg(username):

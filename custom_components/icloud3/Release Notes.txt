@@ -14,7 +14,34 @@ Gary
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
-🍎 iCloud3 v3.4 (3/25/2026)
+
+🍎 iCloud3 v3.4.2 (4/13/25/2026)
+### 📢 Improvements
+1. Improved **Configure > Authenticate Apple Account Sign-in_ > _Apple Did Not Send Me a Code_** screen:
+    - Simplified the instructions for getting a code so they are much easier to understand and follow
+    - Added an _Authentication Code_ field. You can now enter the code and send it to Apple on this screen
+
+2. Added the **Configure > Authenticate Apple Account Sign-in_ > _Change Authentication Method_** screen:
+    - Text Message authentication would send the code request to Trusted Device #1. You can now select the Trusted Device to use for authentication from the list of Trusted Devices in your Apple Account.
+
+3. Improved **Configure > Authenticate Apple Account Sign-in_** screen:
+    - Removed the _Request Code using a Text Method_ Action
+    - Requesting an Authentication Code uses the Reauthentication Method selected on the Change Authentication Method screen. Defaul is a Push Notiication.
+
+Note: Apple changed the Push Notification Authentication Method to improve their security process. This has caused the normal Request an Authentication code to not deliver one. I am working on finding a solution to this problem. Another program has found a solution but it is very complicated and will be difficult to implement.
+
+
+
+🍎 iCloud3 v3.4.1 (4/8/25/2026)
+### 🐞 Bug Fixes
+1. Fixed a bug where the device_tracker state (zone) and attributes (location and a lot of other stuff) were not being updated.
+2. Fixed a bug authenticating access to the Apple Account.
+3. Fixed a bug where the orange Reauthenticate button was not displaying when displaying the iCloud3 Configure Settings screen was displayed.
+4. Fixed several other minor problems.
+
+
+🍎 iCloud3 v3.4 (4/4/2026)
+
 ### 📢 Improvements
 1. **Configure > Authenticate Apple Account Sign-in_ screen** - Addresses the changes Apple has made account authentication and how authentication codes are delivered. The following changes have been made to address these issues:
  - **IPv6 vs IPv4** - Apple supports IPv6 requests for signing into the Apple Account and refreshing a devices location. The Apple servers that handle authentication respond to IPv4 requests only. iCloud3 sends authentication requests via IPv4, all others use IPv4 or IPv6.

@@ -99,7 +99,7 @@ FILTER_FIELDS = [
         'identifiers', 'labels', 'model', 'name_by_user', 'area_id', 'manufacturer', 'sw_version',
         'keyNames', 'securityCode', 'trustedPhoneNumbers', 'trustedPhoneNumber',
         'deviceType', 'areaCode', 'phoneNumber', 'deviceId',
-        'authenticationType',
+        'authenticationType', 'pushSupported',
         'username', 'password', 'accountName', 'salt', 'protocols', 'protocol', 'iteration',
         'a', 'A', 'b', 'B', 'c', 'm1', 'M1', 'm2', 'M2', 'g', 'K', 'N', 'u', 'v',
         ]

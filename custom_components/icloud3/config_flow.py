@@ -290,8 +290,11 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
             if action_item == 'goto_previous':
                 return self.async_abort(reason="auth_code_cancelled")
 
-            if action_item == 'manual_code_info':
-                return await self.async_step_reauth_manual_code_info()
+            if action_item == 'auth_code_from_applecom_login':
+                return await self.async_step_reauth_code_from_applecom_login()
+
+            if action_item == 'change_auth_method':
+                return await self.async_step_reauth_change_auth_method(reauth_username=reauth_username)
 
             log_debug_msg(  f"⭐ HA REAUTH (From={return_to_step_id}, "
                             f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
@@ -331,46 +334,49 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
         return AppleAcct, username
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            REAUTH OPT FLOW
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth_opt_flow(self, user_input=None, errors=None,
-                                        return_to_step_id=None, reauth_username=None):
 
-        self.step_id = 'reauth'
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            REAUTH CODE FROM APPLE.COM LOGIN
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_reauth_code_from_applecom_login(self, user_input=None, errors=None):
+
+        self.step_id = 'reauth_code_from_applecom_login'
         self.errors = errors or {}
         self.errors_user_input = {}
-        self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
-        await config_file.async_write_icloud3_configuration_file()
+        user_input, action_item = utils.action_text_to_item(self, user_input)
 
-        action_item, reauth_username, user_input, errors = \
-            await aascf.async_step_reauth_handler(self, user_input=user_input, errors=errors,
-                                            return_to_step_id=return_to_step_id, reauth_username=reauth_username)
+        log_debug_msg(  f"⭐ {self.step_id.upper()} ({action_item}) > "
+                        f"UserInput-{user_input}, Errors-{errors}")
 
-        if action_item == 'goto_previous':
-            return self.async_show_form(step_id=self.return_to_step_id_1,
-                                            data_schema=self.form_schema(self.return_to_step_id_1),
-                                            errors=self.errors)
+        if user_input is None:
+            return self.async_show_form(step_id='reauth_code_from_applecom_login',
+                        data_schema=forms.form_reauth_code_from_applecom_login(self),
+                        errors=self.errors,
+                        last_step=True)
 
-        if action_item == 'manual_code_info':
-            return await self.async_step_reauth_manual_code_info()
+        user_input = utils.strip_spaces(user_input, [CONF_AUTH_CODE])
 
-        log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
-                        f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
-        if user_input and 'account_selected' in user_input:
-            reauth_username = user_input['account_selected']
+        if action_item == 'send_auth_code':
+            await aascf.async_send_applecom_login_auth_code(self, user_input)
 
-        return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
+            if self.errors.get(CONF_AUTH_CODE) == 'auth_code_invalid':
+                return await self.async_step_reauth_code_from_applecom_login(errors=self.errors)
+
+        if (action_item == 'goto_previous'
+                or instr(str(self.apple_acct_auth_items_by_username), 'AUTH')):
+            return self.async_show_form(step_id='reauth',
+                                    data_schema=forms.form_reauth(self),
                                     errors=self.errors)
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            REAUTH MANUAL CODE INFO
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth_manual_code_info(self, user_input=None, errors=None,
-                                        return_to_step_id=None, reauth_username=None):
+        return self.async_abort(reason="auth_code_cancelled")
 
-        self.step_id = 'reauth_manual_code_info'
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            CHANGE AUTH METHOD
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_reauth_change_auth_method(self, user_input=None, errors=None, reauth_username=None):
+
+        self.step_id = 'reauth_change_auth_method'
         self.errors = errors or {}
         self.errors_user_input = {}
         user_input, action_item = utils.action_text_to_item(self, user_input)
@@ -378,17 +384,22 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
 
         if user_input is None:
-            return self.async_show_form(step_id='reauth_manual_code_info',
-                        data_schema=forms.form_reauth_manual_code_info(self),
+            return self.async_show_form(step_id='reauth_change_auth_method',
+                        data_schema=forms.form_reauth_change_auth_method(self, reauth_username),
                         errors=self.errors,
                         last_step=True)
 
-        if action_item == 'reset_trust_token_return':
-            await Gb.hass.async_add_executor_job(self.AppleAcct.untrust_session_and_authenticate)
-            self.AppleAcct.was_auth_code_requested = True
+        user_input = utils.option_text_to_parm(user_input, 'auth_method', self.aa_auth_methods_by_auth_method)
 
+        reauth_method = user_input['reauth_method']
+        if self.AppleAcct.reauth_method != reauth_method:
+            self.AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = reauth_method
+            Gb.OptionsFlowHandler._update_config_file_tracking(force_config_update=True)
+            await Gb.OptionsFlowHandler._async_write_icloud3_configuration_file()
+
+        # if action_item == 'save':
         return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
+                                    data_schema=forms.form_reauth(self),
                                     errors=self.errors)
 
 
@@ -2844,11 +2855,15 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                             data_schema=self.form_schema(self.return_to_step_id_1),
                                             errors=self.errors)
 
-        if action_item == 'manual_code_info':
-            return await self.async_step_reauth_manual_code_info()
+        if action_item == 'auth_code_from_applecom_login':
+            return await self.async_step_reauth_code_from_applecom_login()
+
+        if action_item == 'change_auth_method':
+            return await self.async_step_reauth_change_auth_method(reauth_username=reauth_username)
 
         log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
                         f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+
         if user_input and 'account_selected' in user_input:
             reauth_username = user_input['account_selected']
 
@@ -2857,12 +2872,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                                     errors=self.errors)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            REAUTH MANUAL CODE INFO
+#            REAUTH CODE FROM APPLE.COM LOGIN
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth_manual_code_info(self, user_input=None, errors=None,
-                                        return_to_step_id=None, reauth_username=None):
+    async def async_step_reauth_code_from_applecom_login(self, user_input=None, errors=None):
 
-        self.step_id = 'reauth_manual_code_info'
+        self.step_id = 'reauth_code_from_applecom_login'
         self.errors = errors or {}
         self.errors_user_input = {}
         user_input, action_item = utils.action_text_to_item(self, user_input)
@@ -2870,18 +2884,57 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
 
         if user_input is None:
-            return self.async_show_form(step_id='reauth_manual_code_info',
-                        data_schema=forms.form_reauth_manual_code_info(self),
+            return self.async_show_form(step_id='reauth_code_from_applecom_login',
+                        data_schema=forms.form_reauth_code_from_applecom_login(self),
                         errors=self.errors,
                         last_step=True)
 
-        if action_item == 'reset_trust_token_return':
-            await Gb.hass.async_add_executor_job(self.AppleAcct.untrust_session_and_authenticate)
-            self.AppleAcct.was_auth_code_requested = True
+        user_input = utils.strip_spaces(user_input, [CONF_AUTH_CODE])
+
+        if action_item == 'send_auth_code':
+            await aascf.async_send_applecom_login_auth_code(self, user_input)
+
+            if self.errors.get(CONF_AUTH_CODE) == 'auth_code_invalid':
+                return await self.async_step_reauth_code_from_applecom_login(errors=self.errors)
+
+        # if (action_item == 'goto_previous'
+        #         or instr(str(self.apple_acct_auth_items_by_username), 'AUTH')):
+        return self.async_show_form(step_id='reauth',
+                                    data_schema=forms.form_reauth(self),
+                                    errors=self.errors)
+
+        return await self.async_step_menu()
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            CHANGE AUTH METHOD
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_reauth_change_auth_method(self, user_input=None, errors=None, reauth_username=None):
+
+        self.step_id = 'reauth_change_auth_method'
+        self.errors = errors or {}
+        self.errors_user_input = {}
+        user_input, action_item = utils.action_text_to_item(self, user_input)
+
+        log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
+
+        if user_input is None:
+            return self.async_show_form(step_id='reauth_change_auth_method',
+                        data_schema=forms.form_reauth_change_auth_method(self, reauth_username),
+                        errors=self.errors,
+                        last_step=True)
+
+        user_input = utils.option_text_to_parm(user_input, 'auth_method', self.aa_auth_methods_by_auth_method)
+
+        reauth_method = user_input['reauth_method']
+        if self.AppleAcct.reauth_method != reauth_method:
+            self.AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = reauth_method
+            self._update_config_file_tracking(force_config_update=True)
 
         return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(self, reauth_username=reauth_username),
+                                    data_schema=forms.form_reauth(self),
                                     errors=self.errors)
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DEVICE LIST

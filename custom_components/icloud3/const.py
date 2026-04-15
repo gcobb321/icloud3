@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.4.1'
+VERSION                         = '3.4.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -861,6 +861,7 @@ PUSH                       = 'push'
 TEXT                       = 'text'
 TEXT_1                     = 'text_1'
 TEXT_2                     = 'text_2'
+HWKEY                      = 'hwkey'
 HWKEY_1                    = 'hwkey_1'
 HWKEY_2                    = 'hwkey_2'
 

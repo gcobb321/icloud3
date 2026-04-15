@@ -31,8 +31,8 @@ MENU_PAGE_TITLE = [
 MENU_KEY_TEXT = {
         'data_source':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
         'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
-        'auth_code':    'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Verification Code to Apple for account access verification',
-        'SK-auth_code': 'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Verification Code/Security Key Name to Apple for verification. Refresh expired codes/Security Key approval requests',
+        'auth_code':    'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code to Apple for account access verification',
+        'SK-auth_code': 'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code/Security Key Name to Apple for verification. Refresh expired codes/Security Key approval requests',
         'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
         'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
         'dashboard_builder':    'DASHBOARD BUILDER > Build a Lovelace Dashboard to display device tracking information',
@@ -47,7 +47,7 @@ MENU_KEY_TEXT = {
         'inzone_intervals':     'DEFAULT INZONE INTERVALS > inZone Interval assigned to new devices',
 
         'select':               'SELECT > Select the parameter update form',
-        'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request Verification Code; Change Device Order; Sensors; Action Commands',
+        'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request an Authentication Code; Change Device Order; Sensors; Action Commands',
         'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Display Settings & Other Parameters, Display Text As, Waze Route Distance/Time & History, Special Zones, Default inZone Intervals',
         'exit':                 'EXIT AND RESTART ICLOUD3',
         'exit_update_dashboards': 'EXIT AND RESTART ICLOUD3, UPDATE DASHBOARDS WITH DEVICE CHANGES',
@@ -90,23 +90,23 @@ ACTION_LIST_OPTIONS = {
         'save_log_into_apple_acct': 'SAVE & LOG INTO APPLE ACCT > Save any configuration changes, Log into the Apple Account',
         'log_into_apple_acct':      'LOG INTO APPLE ACCT > Log into the Apple Account, Save any configuration changes',
         'stop_using_apple_acct':    'STOP USING AN APPLE ACCOUNT > Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it',
-        'auth_code':                'AUTHENTICATE APPLE ACCT SIGN-IN > Send/Request the 6-digit Verification Code',
+        'auth_code':                'AUTHENTICATE APPLE ACCT SIGN-IN > Send/Request the 6-digit Authentication Code',
         'delete_apple_acct':        'DELETE APPLE ACCOUNT > Delete the selected Apple Account. Delete or reassign iCloud3 devices using it',
         'stop_login_retry':         'STOP RETRYING LOGIN > Stop retrying to log into the Apple Account',
         'data_source_parameters':   'OTHER APPLE ACCOUNT PARAMETERS > Set run time or other config parameters (China Apple Server Location)',
 
-        'send_auth_code':           'SEND THE CODE TO APPLE TO AUTHENTICATE SIGN-IN > Send the Verification Code back to Apple to confirm access to the Apple Account',
-        'request_auth_code':        'REQUEST A NEW CODE > Display the `Apple Acct Sign-in is Requested` window or send a Text Message with the code to the Trusted Devices',
-        'request_auth_code_push':   'RESET TRUST TOKEN, REQUEST AUTH CODE (PUSH NOTIFICATION) > Delete the Trust Token. Display the `Apple Acct Sign-in is Requested` window',
-        'request_auth_code_text':   'REQUEST AUTH CODE (TEXT MESSAGE) > Get a Text Message with the Authentication Code',
-
+        'send_auth_code':           'SEND THE CODE TO APPLE TO AUTHENTICATE SIGN-IN > Send the Authentication Code back to Apple to confirm access to the Apple Account',
+        'request_auth_code':        'REQUEST AUTHENTICATION CODE > Delete the Trust Token. Get the Authenticate code from the Apple using the selected method',
+        'X-request_auth_code_push':   'RESET TRUST TOKEN, REQUEST AUTHENTICATION CODE (PUSH NOTIFICATION) > Delete the Trust Token. Display the `Apple Acct Sign-in is Requested` window',
+        'X-request_auth_code_text':   'REQUEST AUTHENTICATION CODE (TEXT MESSAGE) > Get a Text Message with the Authentication Code',
+        'change_auth_method':       'CHANGE THE AUTHENTICATION METHOD > Change the method of getting the Authentication Code (Push Notification, Text Message)',
         'reset_trust_token_return': 'RESET TRUST TOKEN, RETURN TO ENTER & SEND THE CODE TO APPLE > Resets the Trust Token. Return to the Authenticate Apple Sign-in screen',
-        'manual_code_info':         'APPLE DID NOT SEND A CODE, GET ONE MANUALLY > Apple never sent an Auth Code. Follow these instructions to generate one by signing into your Apple Account',
+        'auth_code_from_applecom_login': 'APPLE DID NOT SEND A CODE, GET ONE FROM APPLE.COM > Apple never sent an Auth Code. Sign into your Apple Acct, get the code, enter it here and send to Apple',
 
-        'SK-send_auth_code':        'SEND CODE/KEY TO APPLE TO AUTHENTICATE SIGN-IN > Send the Verification Code or Security Key being used back to Apple to confirm access to the Apple Account',
+        'SK-send_auth_code':        'SEND CODE/KEY TO APPLE TO AUTHENTICATE SIGN-IN > Send the Authentication Code or Security Key being used back to Apple to confirm access to the Apple Account',
         'SK-request_auth_code':     'REQUEST NEW CODE/REFRESH SECURITY KEY LIST > Display `Apple Acct Sign-in is Requested` on a Trusted Device to get a new Code or to confirm using a Security Key',
 
-        'cancel_auth_entry':        'CANCEL > Cancel the Verification Code Entry and Close this screen',
+        'cancel_auth_entry':        'CANCEL > Cancel the Authentication Code Entry and Close this screen',
         'accept_terms_of_use':      'ACCEPT `TERMS OF USE` > Send `I Agree` to Apple updates to the `Terms of Use`',
 
         'update_device':            'SELECT THE DEVICE > Update the selected device, Add a new device to be tracked by iCloud3, Display more Devices on the next page',
@@ -195,20 +195,17 @@ USERNAME_PASSWORD_ACTIONS = [
         ACTION_LIST_OPTIONS['delete_apple_acct'],
         ACTION_LIST_OPTIONS['auth_code'],
         ACTION_LIST_OPTIONS['cancel_goto_previous']]
-REAUTH_CONFIG_FLOW_ACTIONS = [
-        ACTION_LIST_OPTIONS['send_auth_code'],
-        ACTION_LIST_OPTIONS['request_auth_code_push'],
-        ACTION_LIST_OPTIONS['request_auth_code_text'],
-        ACTION_LIST_OPTIONS['cancel_auth_entry']]
 REAUTH_ACTIONS = [
         ACTION_LIST_OPTIONS['send_auth_code'],
-        ACTION_LIST_OPTIONS['request_auth_code_push'],
-        ACTION_LIST_OPTIONS['request_auth_code_text'],
-        ACTION_LIST_OPTIONS['manual_code_info'],
+        ACTION_LIST_OPTIONS['request_auth_code'],
+        ACTION_LIST_OPTIONS['auth_code_from_applecom_login'],
+        ACTION_LIST_OPTIONS['change_auth_method'],
         ACTION_LIST_OPTIONS['goto_previous']]
-REAUTH_MANUAL_CODE_INFO = [
-        ACTION_LIST_OPTIONS['reset_trust_token_return'],
+REAUTH_CODE_FROM_APPLECOM_LOGIN = [
+        ACTION_LIST_OPTIONS['send_auth_code'],
         ACTION_LIST_OPTIONS['goto_previous']]
+CHANGE_AUTH_METHOD = [
+        ACTION_LIST_OPTIONS['save']]
 DEVICE_LIST_ACTIONS = [
         ACTION_LIST_OPTIONS['update_device'],
         ACTION_LIST_OPTIONS['delete_device'],

@@ -72,7 +72,8 @@ def strip_spaces(user_input, parm_list=[]):
                             if type(pvalue) is str and pvalue != '']
 
     for parm in parm_list:
-        user_input[parm] = user_input[parm].strip()
+        if parm in user_input:
+            user_input[parm] = user_input[parm].strip()
 
     return user_input
 
@@ -420,7 +421,7 @@ def parm_with_example_text(config_parameter, input_select_list_KEY_TEXT):
     return input_select_list_KEY_TEXT[0]
 
 #--------------------------------------------------------------------
-def action_default_text(action_item, action_OPTIONS=None):
+def default_action_text(action_item, action_OPTIONS=None):
     if action_OPTIONS:
         return action_OPTIONS.get(action_item, 'UNKNOWN ACTION > Unknown Action')
     else:
@@ -433,7 +434,7 @@ def discard_changes(user_input):
     selected. Discard changes is the last item in the list.
     '''
     if user_input:
-        return (user_input.get('action_item') == action_default_text('cancel_goto_menu'))
+        return (user_input.get('action_item') == default_action_text('cancel_goto_menu'))
     else:
         return False
 
