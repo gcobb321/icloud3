@@ -501,7 +501,7 @@ def form_reauth(self, reauth_username=None):
                         mode='dropdown')),
             vol.Optional(CONF_AUTH_CODE, default=' '):
                     selector.TextSelector(),
-            # vol.Optional('reauth_method',
+            # vol.Optional('auth_method',
             #         default=auth_methods[default_auth_method]):
             #         selector.SelectSelector(selector.SelectSelectorConfig(
             #             options=dict_value_to_list(auth_methods), mode='dropdown')),
@@ -565,7 +565,7 @@ def form_reauth_change_auth_method(self, reauth_username=None):
 
     lists.build_aa_auth_methods_list(self, self.AppleAcct)
 
-    default_auth_method = self.AppleAcct.reauth_method
+    default_auth_method = self.AppleAcct.auth_method
     if default_auth_method not in self.aa_auth_methods_by_auth_method:
         default_auth_method = 'push'
 
@@ -575,7 +575,7 @@ def form_reauth_change_auth_method(self, reauth_username=None):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=[default_acct_selected],
                         mode='dropdown')),
-        vol.Optional('reauth_method',
+        vol.Optional('auth_method',
                     default=self.aa_auth_methods_by_auth_method[default_auth_method]):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.aa_auth_methods_by_auth_method),

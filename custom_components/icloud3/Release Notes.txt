@@ -15,20 +15,27 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-🍎 iCloud3 v3.4.2 (4/13/25/2026)
+🍎 iCloud3 v3.4.3 (4/8/25/2026)
+### 🐞 Bug Fixes
+1. Fixed several bugs introduced in v3.4.2
+
+🍎 iCloud3 v3.4.2 (4/15/25/2026)
 ### 📢 Improvements
-1. Improved **Configure > Authenticate Apple Account Sign-in_ > _Apple Did Not Send Me a Code_** screen:
+1. **Improved _Configure > Authenticate Apple Account Sign-in_ > _Apple Did Not Send Me a Code_** screen:
     - Simplified the instructions for getting a code so they are much easier to understand and follow
     - Added an _Authentication Code_ field. You can now enter the code and send it to Apple on this screen
 
-2. Added the **Configure > Authenticate Apple Account Sign-in_ > _Change Authentication Method_** screen:
+2. **Added the _Configure > Authenticate Apple Account Sign-in_ > _Change Authentication Method_** screen:
     - Text Message authentication would send the code request to Trusted Device #1. You can now select the Trusted Device to use for authentication from the list of Trusted Devices in your Apple Account.
 
-3. Improved **Configure > Authenticate Apple Account Sign-in_** screen:
+3. **Improved _Configure > Authenticate Apple Account Sign-in_** screen:
     - Removed the _Request Code using a Text Method_ Action
-    - Requesting an Authentication Code uses the Reauthentication Method selected on the Change Authentication Method screen. Defaul is a Push Notiication.
+    - Requesting an Authentication Code uses the Reauthentication Method selected on the Change Authentication Method screen. Default is a Push Notification.
 
-Note: Apple changed the Push Notification Authentication Method to improve their security process. This has caused the normal Request an Authentication code to not deliver one. I am working on finding a solution to this problem. Another program has found a solution but it is very complicated and will be difficult to implement.
+Note regarding the Apple Authentication Code:
+Apple changed the Push Notification Authentication Method to improve their security process. This has caused the normal Request an Authentication code to not deliver one. I am working on finding a solution to this problem. Another program has found a solution but it is very complicated and will be difficult to implement.
+
+The HA iCloud Integration also fails to provide an authentication code. And yes, icloud.com and other apps provide one. They live in the Apple ecosphere, not Home Assistant.
 
 
 

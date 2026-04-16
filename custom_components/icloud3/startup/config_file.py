@@ -27,6 +27,7 @@ from ..const            import (
                                 RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
                                 CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS, CF_DEVICE_SENSORS,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
+                                CONF_AUTH_METHODS, CONF_LAST_METHOD, PUSH,
                                 IC3LOG_FILENAME,
                                 BASE, TRACKED, MONITORED, EXCLUDED, TRACK, MONITOR,
                                 NLSP4, ZONE,
@@ -266,6 +267,7 @@ def _add_parms_and_check_config_file():
 
         update_config_file_flag = _verify_general_parameter_values()   or update_config_file_flag
         update_config_file_flag = _verify_tracking_parameters_values() or update_config_file_flag
+        update_config_file_flag = _verify_apple_acct_parameters_values() or update_config_file_flag
         update_config_file_flag = _verify_device_parameters_values()   or update_config_file_flag
 
         if update_config_file_flag:
@@ -833,6 +835,21 @@ def _verify_tracking_parameters_values():
         update_configuration_flag = True
 
     return update_configuration_flag
+
+#--------------------------------------------------------------------
+def _verify_apple_acct_parameters_values():
+    '''
+    Cycle thru the conf_apple_accounts and verify that the settings are valid
+    '''
+    update_configuration_flag = False
+
+    for conf_apple_acct in Gb.conf_apple_accounts:
+        if conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] not in \
+                conf_apple_acct[CONF_AUTH_METHODS]:
+            conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = PUSH
+            update_configuration_flag = True
+
+        return update_configuration_flag
 
 #--------------------------------------------------------------------
 def _verify_device_parameters_values():

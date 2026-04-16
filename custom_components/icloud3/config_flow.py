@@ -391,10 +391,10 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
 
         user_input = utils.option_text_to_parm(user_input, 'auth_method', self.aa_auth_methods_by_auth_method)
 
-        reauth_method = user_input['reauth_method']
-        if self.AppleAcct.reauth_method != reauth_method:
-            self.AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = reauth_method
-            Gb.OptionsFlowHandler._update_config_file_tracking(force_config_update=True)
+        auth_method = user_input['auth_method']
+        if self.AppleAcct.auth_method != auth_method:
+            self.AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = auth_method
+            Gb.OptionsFlowHandler.update_config_file_tracking(force_config_update=True)
             await Gb.OptionsFlowHandler._async_write_icloud3_configuration_file()
 
         # if action_item == 'save':
@@ -791,7 +791,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             Gb.conf_profile[CONF_VERSION] = 1
             list_add(self.config_parms_update_control, 'restart')
             user_input = {CONF_VERSION: 1}
-            self._update_config_file_tracking(user_input, force_config_update=True)
+            self.update_config_file_tracking(user_input, force_config_update=True)
 
         if self.create_device_tracker_sensor_enities_on_exit:
             self.create_device_tracker_sensor_enities_on_exit = False
@@ -921,7 +921,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             self.header_msg = 'action_completed'
             list_add(self.config_parms_update_control, 'restart')
-            self._update_config_file_tracking(force_config_update=True)
+            self.update_config_file_tracking(force_config_update=True)
             action_item = 'goto_previous'
 
         if action_item == 'goto_previous':
@@ -1936,7 +1936,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         return was_config_fle_changed
 
 #-------------------------------------------------------------------------------------------
-    def _update_config_file_tracking(self, user_input=None, force_config_update=None):
+    def update_config_file_tracking(self, user_input=None, force_config_update=None):
         '''
         Update the configuration parameters and write to the icloud3.configuration file
 
@@ -2333,7 +2333,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             if action_item == 'save':
                 if self.data_source != Gb.conf_tracking[CONF_DATA_SOURCE]:
-                    self._update_config_file_tracking(user_input)
+                    self.update_config_file_tracking(user_input)
 
                 return await self.async_step_menu()
 
@@ -2359,7 +2359,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         user_input[CONF_DATA_SOURCE] = self.data_source
 
         if self.data_source != Gb.conf_tracking[CONF_DATA_SOURCE]:
-            self._update_config_file_tracking(user_input)
+            self.update_config_file_tracking(user_input)
 
         return user_input
 
@@ -2698,7 +2698,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.aa_idx = 0
 
         user_input['account_selected'] = self.aa_idx
-        self._update_config_file_tracking(force_config_update=True)
+        self.update_config_file_tracking(force_config_update=True)
         lists.build_apple_accounts_list(self)
         lists.build_devices_list(self)
         config_file.build_log_file_filters()
@@ -2789,7 +2789,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 updated_conf_devices.append(conf_device)
 
         Gb.conf_devices = updated_conf_devices
-        self._update_config_file_tracking(user_input={}, force_config_update=True)
+        self.update_config_file_tracking(user_input={}, force_config_update=True)
 
         aas.delete_AppleAcct_Gb_variables_username(conf_username)
         self._update_conf_apple_accounts(self.aa_idx, user_input, remove_acct_flag=True)
@@ -2805,7 +2805,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.aa_page_item[self.aa_page_no] = ''
 
         self.reset_all_devices_data_source_fields(reset_mobapp=False)
-        self._update_config_file_tracking(user_input={}, force_config_update=True)
+        self.update_config_file_tracking(user_input={}, force_config_update=True)
         lists.build_apple_accounts_list(self)
         lists.build_devices_list(self)
         config_file.build_log_file_filters()
@@ -2823,7 +2823,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_data_source()
 
         if action_item == 'save':
-            self._update_config_file_tracking(user_input)
+            self.update_config_file_tracking(user_input)
             # Gb.password_srp_enabled = user_input[CONF_PASSWORD_SRP_ENABLED]
             return await self.async_step_data_source()
 
@@ -2924,12 +2924,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                         errors=self.errors,
                         last_step=True)
 
-        user_input = utils.option_text_to_parm(user_input, 'auth_method', self.aa_auth_methods_by_auth_method)
+        user_input = utils.option_text_to_parm(user_input, 'auth_method', 
+                                                self.aa_auth_methods_by_auth_method)
 
-        reauth_method = user_input['reauth_method']
-        if self.AppleAcct.reauth_method != reauth_method:
-            self.AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = reauth_method
-            self._update_config_file_tracking(force_config_update=True)
+        auth_method = user_input['auth_method']
+        if self.AppleAcct.auth_method != auth_method:
+            self.AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = auth_method
+            self.update_config_file_tracking(force_config_update=True)
 
         return self.async_show_form(step_id='reauth',
                                     data_schema=forms.form_reauth(self),
@@ -3086,7 +3087,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             self.dev_page_last_selected_devicename[self.dev_page_no] = ''
             Gb.conf_devices.pop(self.conf_device_idx)
-            self._update_config_file_tracking(force_config_update=True)
+            self.update_config_file_tracking(force_config_update=True)
 
             if devicename in Gb.log_level_devices:
                 list_del(Gb.log_level_devices, devicename)
@@ -3140,7 +3141,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             self.dev_page_last_selected_devicename = ['', ''] # Device's devicename last displayed on each page
             self.dev_page_no                = 0        # Device List form page number, starting with 0
 
-            self._update_config_file_tracking(force_config_update=True)
+            self.update_config_file_tracking(force_config_update=True)
 
         except Exception as err:
             log_exception(err)
@@ -3158,7 +3159,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
             if reset_mobapp:
                 conf_device.update(DEFAULT_DEVICE_MOBAPP_DATA_SOURCE)
 
-        self._update_config_file_tracking(force_config_update=True)
+        self.update_config_file_tracking(force_config_update=True)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -3380,7 +3381,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                     f"{DEVICE_TYPE_FNAME(self.conf_device[CONF_DEVICE_TYPE])}")
 
         self.dev_page_last_selected_devicename[self.dev_page_no] = ui_devicename
-        self._update_config_file_tracking(force_config_update=True)
+        self.update_config_file_tracking(force_config_update=True)
 
         # Rebuild this list in case anything changed
         Gb.devicenames_by_icloud_dname = {}
@@ -3689,7 +3690,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         # devicename was changed - delete device_tracker and all sensors for
         # devicename and add them for new_devicename
         if devicename != new_devicename:
-            self._update_config_file_tracking(force_config_update=True)
+            self.update_config_file_tracking(force_config_update=True)
             self.create_device_tracker_sensor_enities_on_exit = True
 
             cf_sensors.remove_device_tracker_and_sensor_entities(self, devicename)
@@ -3844,7 +3845,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
 
             Gb.conf_devices = new_conf_devices
             config_file.set_conf_devices_index_by_devicename()
-            self._update_config_file_tracking(force_config_update=True)
+            self.update_config_file_tracking(force_config_update=True)
             lists.build_devices_list(self)
             list_add(self.config_parms_update_control, ['restart', 'profile'])
             self.errors['base'] = self.errors['action_items'] = 'conf_updated'

@@ -68,7 +68,7 @@
         "SK-description": "Enter the 6-digit Authenticate Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
         "data": {
           "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "reauth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
+          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
           "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
           "fido2_key_name": "SECURITY KEY (YUBIKEY) - Name of the Security Key used to authenticate the Apple Account sign-in",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
@@ -76,12 +76,12 @@
         }
       },
 
-      "reauth_change_reauth_method": {
+      "reauth_change_auth_method": {
         "title": "Change Apple Account Authentication Method",
         "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a hardware key (YubiKey). iCloud3 will use the authentication method selected on this screen",
         "data": {
           "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED",
-          "reauth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
+          "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -364,7 +364,7 @@
         "SK-description": "Enter the 6-digit Authenticate Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
         "data": {
           "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "reauth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
+          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
           "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
           "fido2_key_name": "SECURITY KEY (YUBIKEY) - Name of the Security Key used to authenticate the Apple Account sign-in",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
@@ -372,12 +372,12 @@
         }
       },
 
-      "reauth_change_reauth_method": {
+      "reauth_change_auth_method": {
         "title": "Change Apple Account Authentication Method",
         "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a hardware key (YubiKey). iCloud3 will use the authentication method selected on this screen",
         "data": {
           "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED",
-          "reauth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
+          "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },

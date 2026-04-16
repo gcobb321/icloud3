@@ -598,13 +598,13 @@ async def async_step_reauth_handler(self,
 
         #.......................................................................
         elif action_item.startswith('request_auth_code'):
-            reauth_method = self.AppleAcct.reauth_method
+            auth_method = self.AppleAcct.auth_method
 
             self.errors['account_selected'] = 'auth_code_requested'
             post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
                         f"Requested a new Verification Code "
-                        f"({self.AppleAcct.reauth_method.title()}-"
-                        f"({self.AppleAcct.reauth_method_info}")
+                        f"({self.AppleAcct.auth_method.title()}-"
+                        f"({self.AppleAcct.auth_method_info}")
 
             # comment out cookie list
             # AppleAcct.iCloudSession.cookies.list()
@@ -673,19 +673,19 @@ async def async_request_new_auth_code(self, AppleAcct):
             AppleAcct.is_auth_alert_displayed = True
 
         # AppleAcct.iCloudSession.cookies.list()
-        reauth_method = AppleAcct.reauth_method
-        if reauth_method not in AppleAcct.conf_apple_acct[CONF_AUTH_METHODS]:
-            reauth_method = AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = PUSH
+        auth_method = AppleAcct.auth_method
+        if auth_method not in AppleAcct.conf_apple_acct[CONF_AUTH_METHODS]:
+            auth_method = AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = PUSH
 
-        if AppleAcct.reauth_method_PUSH:
+        if AppleAcct.auth_method_PUSH:
             AppleAcct.iCloudSession.cookies.list()
             await Gb.hass.async_add_executor_job(AppleAcct.untrust_session_and_authenticate)
 
         # Send a code via a text message
-        elif AppleAcct.reauth_method_TEXT:
+        elif AppleAcct.auth_method_TEXT:
             Gb.hass.async_add_executor_job(AppleAcct.request_auth_code_via_text_msg, auth_method)
 
-        elif AppleAcct.reauth_method_HWKEY:
+        elif AppleAcct.auth_method_HWKEY:
             pass
 
         # await async_get_fido2_key_names(AppleAcct)
@@ -719,12 +719,12 @@ async def send_auth_code_back_to_apple(caller_self, AppleAcct, auth_code, force_
         AppleAcct = caller_self.AppleAcct
         AppleAcct.was_ha_auth_code_alert_sent = False
 
-        if AppleAcct.reauth_method_PUSH or force_PUSH:
+        if AppleAcct.auth_method_PUSH or force_PUSH:
             auth_successful = await Gb.hass.async_add_executor_job(
                                     AppleAcct.validate_2fa_push_popup_window_code,
                                     auth_code)
 
-        elif AppleAcct.reauth_method_TEXT:
+        elif AppleAcct.auth_method_TEXT:
             auth_successful = await Gb.hass.async_add_executor_job(
                                     AppleAcct.validate_2fa_text_code,
                                     auth_code)
