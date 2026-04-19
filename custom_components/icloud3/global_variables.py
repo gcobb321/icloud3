@@ -210,7 +210,6 @@ class GlobalVariables(object):
     DeviceTrackers_by_devicename    = {}  # HA device_tracker.[devicename] entity objects
     ha_device_id_by_devicename      = {}  # HA device_registry device_id
     devicename_by_ha_device_id      = {}  # HA device_registry device_id
-    ha_area_id_by_devicename        = {}  # HA device_registry area_id
 
     # Sensor fields
     Sensor_EventLog                 = None    # Event Log sensor object
@@ -398,7 +397,6 @@ class GlobalVariables(object):
     sensors_created_cnt         = 0               # Number of sensors that have been set up (incremented in sensor.py)
     device_trackers_cnt         = 0               # Number of device_trackers that will be creted (__init__.py)
     device_trackers_created_cnt = 0               # Number of device_trackers that have been set up (incremented in device_tracker.py)
-    area_id_personal_device     = None
 
     # restore_state file
     restore_state_commit_time = 0               # Set a callback timmer to commit te changes to the restore_state file

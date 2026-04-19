@@ -844,12 +844,16 @@ def _verify_apple_acct_parameters_values():
     update_configuration_flag = False
 
     for conf_apple_acct in Gb.conf_apple_accounts:
+        if (conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] == 'text'
+                and 'text_1'in conf_apple_acct[CONF_AUTH_METHODS]):
+            conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = 'text_1'
+            update_configuration_flag = True
         if conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] not in \
                 conf_apple_acct[CONF_AUTH_METHODS]:
             conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = PUSH
             update_configuration_flag = True
 
-        return update_configuration_flag
+    return update_configuration_flag
 
 #--------------------------------------------------------------------
 def _verify_device_parameters_values():

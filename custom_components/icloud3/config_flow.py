@@ -120,6 +120,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
         self.data_source                    = ICLOUD
 
         # Items used in the REAUTH handler
+        self.ha_initial_setup               = True
         self.username                       = ''
         self.AppleAcct                      = None
         self.apple_acct_reauth_username     = ''
@@ -277,15 +278,22 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler, domain=DOMAIN):
             AppleAcct, username = self._get_username_needing_reauth(user_input)
             self.apple_acct_reauth_username = reauth_username = self.username = username
 
-            log_debug_msg(  f"⭐ HA REAUTH (From={return_to_step_id}, "
+            log_debug_msg(  f"⭐ HA REAUTH CONF FLOW (From={return_to_step_id}, "
                                 f"{username=} > UserInput-{user_input},  Errors-{errors}")
 
+
+            if self.ha_initial_setup:
+                self.ha_initial_setup = False
+                return self.async_abort(reason="auth_code_cancelled")
 
             action_item, reauth_username, user_input, errors = \
                 await aascf.async_step_reauth_handler(self,
                                                 user_input=user_input, errors=errors,
                                                 return_to_step_id='reauth',
-                                                reauth_username=reauth_username)
+                                                reauth_username=reauth_username,
+                                                config_flow_reauth=True)
+
+            _log(f'{reauth_username=} {action_item=} {user_input=} {errors=}')
 
             if action_item == 'goto_previous':
                 return self.async_abort(reason="auth_code_cancelled")
@@ -617,12 +625,19 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.header_msg = None
         self.config_file_commit_updates = False
         if Gb.AppleAcct_needing_reauth_via_ha:
-            self.init_step_id = 'reauth'
+            self.menu_item_selected[0] = MENU_KEY_TEXT['auth_code']
 
         if self.is_aborting_config_flow:
             return await self.async_step_restart_ha()
+        _log(f'optflow init to menu-0')
 
         return await self.async_step_menu_0()
+        # await self.async_step_menu_0()
+
+        # return await self.async_show_form(step_id='menu',
+        #                     data_schema=forms.form_menu(self),
+        #                     errors=self.errors,
+        #                     last_step=False)
 
 #-------------------------------------------------------------------------------------------
     def _logui(self, user_input):
@@ -672,12 +687,19 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                 self.header_msg = 'dashboard_created_initial'
 
         self.menu_page_no = 0
+        self.step_id='menu'
+
         return await self.async_step_menu(user_input, errors)
 
 #...............................................................................
     async def async_step_menu_1(self, user_input=None, errors=None):
         self.menu_page_no = 1
+        self.step_id='menu'
         return await self.async_step_menu(user_input, errors)
+        # return await self.async_show_form(step_id='menu',
+        #                     data_schema=forms.form_menu(self),
+        #                     errors=self.errors,
+        #                     last_step=False)
 
 #...............................................................................
     async def async_step_menu(self, user_input=None, errors=None):
@@ -2915,6 +2937,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         self.errors = errors or {}
         self.errors_user_input = {}
         user_input, action_item = utils.action_text_to_item(self, user_input)
+        _log(f'{reauth_username=} {self.AppleAcct.conf_apple_acct=}')
 
         log_debug_msg(f"⭐ {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
 
@@ -2924,7 +2947,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
                         errors=self.errors,
                         last_step=True)
 
-        user_input = utils.option_text_to_parm(user_input, 'auth_method', 
+        user_input = utils.option_text_to_parm(user_input, 'auth_method',
                                                 self.aa_auth_methods_by_auth_method)
 
         auth_method = user_input['auth_method']
@@ -3964,6 +3987,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow):
         Return the step_id form schema for the data entry forms
         '''
         log_debug_msg(f"⭐ Show Form-{step_id}, Errors-{self.errors}")
+        _log(f'{step_id=}')
         schema = {}
         self.actions_list = actions_list or ACTION_LIST_ITEMS_BASE.copy()
 

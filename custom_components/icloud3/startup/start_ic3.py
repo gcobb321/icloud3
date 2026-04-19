@@ -1408,7 +1408,7 @@ def log_into_apple_accounts():
             if AppleAcct:
                 if AppleAcct.is_authenticated:
                     results_msg += (f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, "
-                                    f"Login Successful, {AppleAcct.reauth_method}"
+                                    f"Login Successful, {AppleAcct.login_auth_method}"
                                     f"{CRLF_HDOT}Trust Token Expires "
                                     f"{AppleAcct.trust_token_expire_date_time}")
             else:

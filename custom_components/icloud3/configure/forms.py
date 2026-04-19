@@ -507,13 +507,13 @@ def form_reauth(self, reauth_username=None):
             #             options=dict_value_to_list(auth_methods), mode='dropdown')),
     })
 
-    if Gb.fido2_security_keys_enabled:
-        schema.update({
-            vol.Required('fido2_key_name',
-                    default=self.reauth_form_fido2_key_names_list[0]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.reauth_form_fido2_key_names_list, mode='dropdown')),
-        })
+    # if Gb.fido2_security_keys_enabled:
+    #     schema.update({
+    #         vol.Required('fido2_key_name',
+    #                 default=self.reauth_form_fido2_key_names_list[0]):
+    #                 selector.SelectSelector(selector.SelectSelectorConfig(
+    #                     options=self.reauth_form_fido2_key_names_list, mode='dropdown')),
+    #     })
 
     if terms_of_use_update_needed:
         schema.update({
@@ -558,12 +558,16 @@ def form_reauth_code_from_applecom_login(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            REAUTH CHANGE AUTH METHOD
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_reauth_change_auth_method(self, reauth_username=None):
-    default_acct_selected = self.apple_acct_auth_items_by_username[reauth_username]
+def form_reauth_change_auth_method(self, account_selected=None):
+    default_acct_selected = self.apple_acct_auth_items_by_username[account_selected]
     self.actions_list = CHANGE_AUTH_METHOD.copy()
     default_action = 'save'
+    _log(f'{account_selected=} {default_acct_selected=}')
+    _log(f'{self.AppleAcct=}')
+    _log(f'{self.username=} {self.AppleAcct.conf_apple_acct=}')
 
     lists.build_aa_auth_methods_list(self, self.AppleAcct)
+
 
     default_auth_method = self.AppleAcct.auth_method
     if default_auth_method not in self.aa_auth_methods_by_auth_method:
@@ -587,6 +591,8 @@ def form_reauth_change_auth_method(self, reauth_username=None):
         })
 
     return vol.Schema(schema)
+
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DEVICE LIST
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

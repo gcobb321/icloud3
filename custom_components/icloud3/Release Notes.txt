@@ -15,7 +15,14 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-🍎 iCloud3 v3.4.3 (4/8/25/2026)
+🍎 iCloud3 v3.4.3.1 (4/19/25/2026)
+### 🐞 Bug Fixes
+1. Fixed a `KeyError: text_1` error caused by a no Trusted Device Phone Numbers in the Apple account.
+2. Fixed an `area_id` variable not being defined when loading the _Configure > Tools > Cleanup Entity Registry_ screen.
+3. Fixed a problem displaying the selected Apple Account in the _Configure > Authenticate Apple Account Sign-in_ screen when there are 2+ Apple accounts, only one needs to be authenticated and the one not needing authentication is selected.
+4. Fixed a problem displaying the _Configure > Menu_ screen when there is an Apple account that needs to be authenticated.
+
+🍎 iCloud3 v3.4.3 (4/15/2026)
 ### 🐞 Bug Fixes
 1. Fixed several bugs introduced in v3.4.2
 

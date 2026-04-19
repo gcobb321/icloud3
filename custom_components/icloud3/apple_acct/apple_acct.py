@@ -38,7 +38,7 @@ from ..utils.messaging      import (post_event, post_alert, post_alert, post_mon
 from ..utils                import gps
 from ..startup              import config_file
 from .apple_acct_devices    import iCloud_AppleAcctDevices
-from .icloud_fido           import iCloud_Fido2
+# from .icloud_fido           import iCloud_Fido2
 from .srp_password          import SrpPassword
 # from .srp_encode_password   import SrpEncodePassword as SrpPassword
 from .                      import icloud_requests_io  as icloud_io
@@ -241,15 +241,15 @@ class AppleAcctManager(object):
             self.was_auth_code_requested = False
             self.is_auth_code_needed = False        # This is set during the authentication function
             self.is_auth_code_needed_secs = 0       # Time the auth code needed first detectedfunction
-            self.reauth_method        = ""
+            self.login_auth_method    = ""
             self.login_successful     = False
             self.login_successful_srp = False
             self.is_authenticated     = False        # ICloud access has been authenticated via password or token
             self.auth_failed_503      = False
 
-            self.Fido2                = iCloud_Fido2(self)
-            self.fido2_devices        = None
-            self.fido2_key_names      = None
+            # self.Fido2                = None    #iCloud_Fido2(self)
+            # self.fido2_devices        = None
+            # self.fido2_key_names      = None
 
             # Keep the last time an internet request was made. Check time since
             # in icloud3_main. Longer than 1-minute indicates internet is down.
@@ -374,7 +374,7 @@ class AppleAcctManager(object):
 
         if self.login_successful:
             self.setup_error(None)
-            self.get_fido2_key_names()
+            # self.get_fido2_key_names()
             self.get_trusted_devices()
 
             post_greenbar_msg(f"Apple Acct > {self.username_base}, Refresh Location Data")
@@ -521,6 +521,13 @@ class AppleAcctManager(object):
     def account_owner_link(self):
         name = self.account_name or self.username_base6
         return f"{LINK}{name}{RLINK}"
+
+    @property
+    def auth_methods(self)-> list[{dict}]:
+        '''
+        return the auth_methods list
+        '''
+        return self.conf_apple_acct[CONF_AUTH_METHODS]
 
     @property
     def auth_method(self):
@@ -773,7 +780,7 @@ class AppleAcctManager(object):
         subsequent logins will not cause additional e-mails from Apple.
         '''
         login_successful      = False
-        self.reauth_method    = ""
+        self.login_auth_method    = ""
         self.auth_failed_503  = False
         self.response_code_pw = 0
 
@@ -789,30 +796,30 @@ class AppleAcctManager(object):
         if (refresh_session is False
                 and self.session_data.get('session_token')
                 and 'dsid' in self.params):
-            self.reauth_method = "ValidToken"
+            self.login_auth_method = "ValidToken"
             login_successful = self._validate_token()
 
-            log_debug_msg(f"{self.username_base}, {self.reauth_method}, {login_successful=}")
+            log_debug_msg(f"{self.username_base}, {self.login_auth_method}, {login_successful=}")
 
         # Authenticate - Sign into Apple Account (POST=/signin)
         if login_successful is False:
-            self.reauth_method = "TrustToken"
+            self.login_auth_method = "TrustToken"
             login_successful = self._authenticate_with_token()
 
-            log_debug_msg(f"{self.username_base}, {self.reauth_method}, {login_successful=}")
+            log_debug_msg(f"{self.username_base}, {self.login_auth_method}, {login_successful=}")
 
         if login_successful is False:
-            self.reauth_method = 'Password'
+            self.login_auth_method = 'Password'
             login_successful = self.authenticate_with_password_srp()
 
         #TESTCODE
         # login_successful = False
 
         # if login_successful is False:
-        #     self.reauth_method = 'Password'
+        #     self.login_auth_method = 'Password'
         #     login_successful = self.authenticate_with_password()
 
-        #     log_debug_msg(f"{self.username_base}, {self.reauth_method}, {login_successful=}")
+        #     log_debug_msg(f"{self.username_base}, {self.login_auth_method}, {login_successful=}")
 
         #     self.response_code_pw = self.response_code
 
@@ -820,7 +827,7 @@ class AppleAcctManager(object):
             # if login_successful:
             #     login_successful = self._authenticate_with_token()
 
-            #     log_debug_msg(f"{self.username_base}, {self.reauth_method}/TrustToken, {login_successful=}")
+            #     log_debug_msg(f"{self.username_base}, {self.login_auth_method}/TrustToken, {login_successful=}")
 
         self.is_auth_code_needed = self._set_is_auth_code_needed
         self._update_token_pw(CONF_PASSWORD, encode_password(self.token_password))
@@ -829,18 +836,18 @@ class AppleAcctManager(object):
 
         time_between_token_auth    = format_age(self.last_token_auth_secs)
         time_between_password_auth = format_age(self.last_password_auth_secs)
-        if instr(self.reauth_method, 'Token'):
+        if instr(self.login_auth_method, 'Token'):
             self.token_auth_cnt += 1
             self.last_token_auth_secs = time_now_secs()
-        elif instr(self.reauth_method, 'Password'):
+        elif instr(self.login_auth_method, 'Password'):
             self.password_auth_cnt += 1
             self.last_password_auth_secs = time_now_secs()
 
-            post_event( f"{EVLOG_NOTICE}Apple Acct {self.reauth_method} Auth > {self.account_owner}, "
+            post_event( f"{EVLOG_NOTICE}Apple Acct {self.login_auth_method} Auth > {self.account_owner}, "
                         f"#{self.password_auth_cnt} ({time_between_password_auth}), "
                         f"{CRLF_DOT}Apple Time-{apple_server_time()}")
 
-        post_monitor_msg(   f"Apple Acct {self.reauth_method} Auth > {self.account_owner}, "
+        post_monitor_msg(   f"Apple Acct {self.login_auth_method} Auth > {self.account_owner}, "
                             f"TokenAuth-#{self.token_auth_cnt} ({time_between_token_auth}), "
                             f"PasswordAuth-#{self.password_auth_cnt} ({time_between_password_auth})")
 
@@ -1083,7 +1090,7 @@ class AppleAcctManager(object):
         self.login_successful_srp = True
         self._authenticate_with_token()
         self.get_trusted_devices()
-        log_debug_msg(  f"{self.username_base}, {self.reauth_method}/TrustToken, "
+        log_debug_msg(  f"{self.username_base}, {self.login_auth_method}/TrustToken, "
                         f"login_successful=True")
         return True
 
@@ -1283,6 +1290,8 @@ class AppleAcctManager(object):
 #            FIDO SECURITY KEY SETUP AND AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def get_fido2_key_names(self):
+        return None
+
 
         if Gb.fido2_security_keys_enabled is False:
             return None
@@ -1294,6 +1303,7 @@ class AppleAcctManager(object):
 
 #----------------------------------------------------------------------------
     def confirm_fido2_security_key(self, fido2_key_name):
+        return False
 
         self.Fido2.confirm_security_key(fido2_key_name)
 
@@ -1460,7 +1470,7 @@ class AppleAcctManager(object):
         authentication routine. To force this to happen, all cookies and session
         files must be deleted so they will be recreated.
         '''
-        if self.conf_apple_acct[CONF_AUTH_METHODS][TEXT_1] == '':
+        if self.auth_methods.get(TEXT_1, '') == '':
             self.delete_cookie_and_session_files()
         else:
             self.iCloudSession.cookies.delete('X-APPLE-WEBAUTH-HSA-TRUST')
@@ -1665,14 +1675,23 @@ class AppleAcctManager(object):
                 self.trusted_phone_data = self.token_pw_data.get('trusted_phone_data', [])
 
         # Delete and readd 'text_' items in case anything changed
-        self.conf_apple_acct[CONF_AUTH_METHODS] = {k: v
-                                for k, v in self.conf_apple_acct[CONF_AUTH_METHODS].items()
-                                if k.startswith('text') is False}
+        conf_auth_methods = self.conf_apple_acct[CONF_AUTH_METHODS]
 
+        # Clear Text_x phone number
+        for auth_method, method_info in conf_auth_methods.items():
+            if auth_method.startswith(TEXT):
+                conf_auth_methods[auth_method] = ''
+
+        # Reset Text_x phone number
         for trusted_phone_item in self.trusted_phone_data:
             auth_method_key = f"text_{trusted_phone_item['deviceId']}"
-            self.conf_apple_acct[CONF_AUTH_METHODS][auth_method_key] = \
+            conf_auth_methods[auth_method_key] = \
                         trusted_phone_item['phoneNumber'][-4:]
+
+        # Make sure text_1 is in the conf_auth_methods list
+        if TEXT_1 not in self.auth_methods:
+            conf_auth_methods[TEXT_1] = ''
+
 
         return
 
