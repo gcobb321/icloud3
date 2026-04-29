@@ -569,6 +569,15 @@ def update_ha_device_id_by_devicename():
     Gb.ha_device_id_by_devicename = \
         extract_item_from_device_reg_items('active', 'device_id', PLATFORM_DEVICE_TRACKER)
 
+#-------------------------------------------------------------------------------------------
+def update_ha_area_id_by_devicename():
+    '''
+    Get the device_id and area_id by devicename from the device_registry
+    '''
+    extract_icloud3_device_registry_items(scan_active_items=True)
+    Gb.ha_area_id_by_devicename = \
+        extract_item_from_device_reg_items('active', 'area_id', PLATFORM_DEVICE_TRACKER)
+
 #-------------------------------------------------------------------
 def extract_item_from_device_reg_items(status, data_item, platform):
     '''
@@ -844,6 +853,7 @@ def _set_entity_reg_data(entity_key, entity_data):
     data_item['sensor_base']     = sensor_base                 # badge
     data_item['unique_id']       = entity_data.unique_id       # icloud_lillian_ipad_badge
     data_item['device_id']       = device_id                   # cf5b6825965dc8c6f643c...
+    data_item['area_id']         = entity_data.area_id         # None
     data_item['entity_key']      = entity_key
     data_item['config_entry_id'] = entity_data.config_entry_id # 01JVRX6TFZRYRRMAHHE8MPYKB3
     data_item['disabled_by']     = entity_data.disabled_by     # None, user
@@ -965,6 +975,7 @@ def _set_device_reg_data(device_data):
     data_item['sensor_base']     = devicename
     data_item['unique_id']       = None
     data_item['device_id']       = device_data.id
+    data_item['area_id']         = device_data.area_id
     data_item['entity_key']      = None
     data_item['config_entry_id'] = set_item(device_data.config_entries)
     data_item['disabled_by']     = device_data.disabled_by
@@ -1081,6 +1092,7 @@ class iCloud3RegistryData:
     sensor_base:      str       # badge
     unique_id:        str       # icloud_lillian_ipad_badge
     device_id:        str       # cf5b6825965dc8c6f643c...
+    area_id:          str       # None
     entity_key:       str       # entity_id, device_id, [domain, platform, unique_id]
     config_entry_id:  str       # 01JVRX6TFZRYRRMAHHE8MPYKB3
     disabled_by:      str       # None, user

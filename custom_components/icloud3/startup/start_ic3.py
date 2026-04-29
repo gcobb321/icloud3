@@ -134,8 +134,8 @@ def initialize_directory_filenames():
 #------------------------------------------------------------------------------
 def handle_config_parms_update():
 
-    if is_empty(Gb.config_parms_update_control):
-        return
+    # if is_empty(Gb.config_parms_update_control):
+    #     return
 
 
     # Make copy and Reinitialize so it will not be run again from the 5-secs loop
@@ -157,7 +157,7 @@ def handle_config_parms_update():
     if 'general' in config_parms_update_control:
         set_global_variables_from_conf_parameters()
 
-    if 'special_zone' in Gb.config_parms_update_control:
+    if 'special_zone' in config_parms_update_control:
         set_zone_display_as()
 
     if 'evlog' in config_parms_update_control:
@@ -174,13 +174,13 @@ def handle_config_parms_update():
     if 'waze' in config_parms_update_control:
         set_waze_conf_parameters()
 
-    if 'tracking' in config_parms_update_control:
+    if ('tracking' in config_parms_update_control
+            or 'devices' in config_parms_update_control):
         post_event("Tracking parameters updated")
         initialize_data_source_variables()
 
-    elif 'devices' in config_parms_update_control:
+    if 'devices' in config_parms_update_control:
         post_event("Device parameters updated")
-        initialize_data_source_variables()
         update_devices_non_tracked_fields()
         Gb.EvLog.setup_event_log_trackable_device_info()
 
@@ -434,7 +434,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.statzone_inzone_interval_secs  = Gb.conf_general[CONF_STAT_ZONE_INZONE_INTERVAL] * 60
         Gb.is_statzone_used               = (14400 > Gb.statzone_still_time_secs > 0)
 
-        # Time Zone offset
+        # Away Time Zone offset
         Gb.away_time_zone_1_offset        = Gb.conf_general[CONF_AWAY_TIME_ZONE_1_OFFSET]
         Gb.away_time_zone_1_devices       = Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES].copy()
         Gb.away_time_zone_2_offset        = Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET]
@@ -552,7 +552,7 @@ def initialize_data_source_variables():
     Gb.primary_data_source        = ICLOUD if Gb.use_data_source_ICLOUD else MOBAPP
 
     Gb.devices                    = Gb.conf_devices
-    Gb.is_force_icloud_update   = False
+    Gb.is_force_icloud_update     = False
     Gb.get_ICLOUD_devices_retry_cnt = 0
 
 #------------------------------------------------------------------------------
@@ -2716,7 +2716,7 @@ def display_all_devices_config_info(selected_devicenames=None):
         apple_acct_err_msg = icloud_dname_err_msg = ''
 
         # Get Apple acct owner from AppleAcct
-        if username in Gb.AppleAcct_error_by_username:
+        if username == '' or username in Gb.AppleAcct_error_by_username:
             pass
         elif (Device.conf_apple_acct_username in Gb.AppleAcct_by_username
                 and Device.verified_ICLOUD is False):
@@ -2725,7 +2725,7 @@ def display_all_devices_config_info(selected_devicenames=None):
                     f"{Device.fname_devicename}, "
                     f"{icloud_dname} Not in Apple Acct ({apple_acct})")
         # Not using Apple as a data source
-        elif apple_acct == '':
+        elif apple_acct == '' or apple_acct.startswith('Not used'):
             apple_acct = 'None (NOT SPECIFIED)'
 
         elif Gb.internet_error:
@@ -2747,8 +2747,8 @@ def display_all_devices_config_info(selected_devicenames=None):
 
         # Build the Apple acct evlog msg
         evlog_msg += f"{CRLF_DOT}Apple Acct/iCloud Configuration:"
-        if (apple_acct == ''
-                and icloud_dname == ''):
+
+        if apple_acct == '' and icloud_dname == '':
             evlog_msg += f"{CRLF_HDOT}Not used as a location data source"
 
         else:

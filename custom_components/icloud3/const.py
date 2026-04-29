@@ -12,7 +12,7 @@
 
 # from homeassistant.const import (Platform)
 
-VERSION                         = '3.4.3.1'
+VERSION                         = '3.5'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -681,7 +681,7 @@ TIMESTAMP                  = 'timestamp'
 TIMESTAMP_SECS             = 'timestamp_secs'
 TIMESTAMP_TIME             = 'timestamp_time'
 LOCATION_TIME              = 'location_time'
-TRACKING_METHOD            = 'data_source'
+#TRACKING_METHOD            = 'data_source'
 DATA_SOURCE                = 'data_source'
 DATETIME                   = 'date_time'
 AGE                        = 'age'
@@ -779,8 +779,8 @@ LAST_ZONE_DATETIME = "last_zone_changed"
 CF_PROFILE         = 'profile'
 CF_DATA            = 'data'
 CF_TRACKING        = 'tracking'
-CF_DATA_DEVICES    = 'devices'
-CF_DATA_APPLE_ACCOUNTS = 'apple_accounts'
+CF_APPLE_ACCOUNTS  = 'apple_accounts'
+CF_DEVICES         = 'devices'
 CF_GENERAL         = 'general'
 CF_SENSORS         = 'sensors'
 CF_DEVICE_SENSORS  = 'device_sensors'
@@ -1087,7 +1087,7 @@ RANGE_GENERAL_CONF = {
         CONF_PASSTHRU_ZONE_TIME: [0, 5],
 
         # Waze Configuration Parameters
-        CONF_WAZE_MIN_DISTANCE: [0, 1000, 5, 'km'],
+        CONF_WAZE_MIN_DISTANCE: [0, 20, 1, 'km'],
         CONF_WAZE_MAX_DISTANCE: [0, 1000, 5, 'km'],
         CONF_WAZE_HISTORY_MAX_DISTANCE: [0, 1000, 5, 'km'],
 
@@ -1318,27 +1318,3 @@ FAMSHR_LOCATION_FIELDS = [
         ICLOUD_HORIZONTAL_ACCURACY,
         ICLOUD_VERTICAL_ACCURACY,
         ICLOUD_BATTERY_STATUS, ]
-
-X_LOG_RAWDATA_FIELDS = [
-        LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD, DATA_SOURCE, NEAR_DEVICE_USED,
-        ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
-        TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
-        TRIGGER, BATTERY, BATTERY_LEVEL, BATTERY_STATUS,
-        INTERVAL, ZONE_DISTANCE, HOME_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
-        TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME, DIR_OF_TRAVEL, MOVED_DISTANCE,
-        DEVICE_STATUS, LOW_POWER_MODE,
-        TRACKING, DEVICENAME_MOBAPP,
-        AUTHENTICATED,
-        LAST_UPDATE_TIME, LAST_UPDATE_DATETIME, NEXT_UPDATE_TIME, LAST_LOCATED_DATETIME,
-        INFO, GPS_ACCURACY, GPS, POLL_COUNT, VERT_ACCURACY, ALTITUDE,
-        ICLOUD3_VERSION,
-        BADGE,
-        DEVICE_ID, ID,
-        ICLOUD_HORIZONTAL_ACCURACY, ICLOUD_VERTICAL_ACCURACY, ICLOUD_POSITION_TYPE,
-        ICLOUD_BATTERY_LEVEL, ICLOUD_BATTERY_STATUS,
-        ICLOUD_DEVICE_CLASS, ICLOUD_DEVICE_STATUS, ICLOUD_LOW_POWER_MODE, ICLOUD_TIMESTAMP,
-        NAME, 'emails', 'firstName', 'laststName',
-        'prsId', 'batteryLevel', 'isOld', 'isInaccurate', 'phones',
-        'invitationAcceptedByEmail', 'invitationFromEmail', 'invitationSentToEmail', 'data',
-        'original_name', 'name_by_user',
-        ]

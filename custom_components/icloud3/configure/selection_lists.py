@@ -27,7 +27,7 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_
                                 _log, _evlog, )
 
 from ..apple_acct       import apple_acct_support_cf as aascf
-from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, NOT_LOGGED_IN, )
+from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, AWAY_FROM_ZONE_OPTIONS, )
 from ..startup          import config_file
 from ..utils            import file_io
 
@@ -788,9 +788,7 @@ def build_away_time_zone_hours_list(self):
 #-------------------------------------------------------------------------------------------
 def build_away_time_zone_devices_list(self):
 
-    self.away_time_zone_devices_key_text = {
-                    'none': 'None > All devices are at Home',
-                    'all': 'All > All device are away from home'}
+    self.away_time_zone_devices_key_text = AWAY_FROM_ZONE_OPTIONS.copy()
     self.away_time_zone_devices_key_text.update(devices_selection_list())
 
 #-------------------------------------------------------------------------------------------

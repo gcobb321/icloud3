@@ -15,14 +15,26 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
-🍎 iCloud3 v3.4.3.1 (4/19/25/2026)
-### 🐞 Bug Fixes
-1. Fixed a `KeyError: text_1` error caused by a no Trusted Device Phone Numbers in the Apple account.
-2. Fixed an `area_id` variable not being defined when loading the _Configure > Tools > Cleanup Entity Registry_ screen.
-3. Fixed a problem displaying the selected Apple Account in the _Configure > Authenticate Apple Account Sign-in_ screen when there are 2+ Apple accounts, only one needs to be authenticated and the one not needing authentication is selected.
-4. Fixed a problem displaying the _Configure > Menu_ screen when there is an Apple account that needs to be authenticated.
+🍎 iCloud3 v3.5 ()
+### 📢 Improvements to _Configure > Authenticate Apple Account Sign-in_ screen
+1. **Authentication with a Push Notification is working again**
+    - This method works again!!!!! Click _Request Authentication Code_ and the Apple Account Verification Cod_ pop-up window displays on all Trusted Devices like it did before the iOS 2026.4 update. Thanks @COsm0cats for figuring out what needed to be done
 
-🍎 iCloud3 v3.4.3 (4/15/2026)
+2. **Improved  the _Apple Did Not Send Me a Code_ screen**:
+    - Simplified the instructions for getting the code. They are much easier to understand and follow
+    - You can now enter and send the code back to Apple on this screen
+
+3. **Added the _Change Authentication Method_ screen**:
+    - Text Message authentication would send the code request to Trusted Device #1. You can now select the Trusted Device to use for authentication from the list of Trusted Devices in your Apple Account.
+    - Requesting an Authentication Code uses the Reauthentication Method selected on this screen. Default is a Push Notification.
+
+4. **All Configuration Screens**:
+    - You can now click the 'X' in the upper-left corner to quickly exit the _Configure Screens_ and go back to iCloud3 without going back through the _Exit_ options on the various screens and menus.
+    - Completely reorganized the _Configuration Screen_ code.
+
+
+
+🍎 iCloud3 v3.4.3 (4/8/25/2026)
 ### 🐞 Bug Fixes
 1. Fixed several bugs introduced in v3.4.2
 

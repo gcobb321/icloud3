@@ -33,7 +33,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 CONF_APPLE_ACCOUNT,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS,
-                                LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD,
+                                LATITUDE,  LONGITUDE, LOCATION_SOURCE,
                                 ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
                                 TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
                                 TRIGGER, BATTERY, BATTERY_LEVEL, BATTERY_STATUS,
@@ -66,7 +66,7 @@ FILTER_DATA_LISTS = ['devices', 'content', 'followers', 'following', 'contactDet
                     'keyNames', 'trustedPhoneNumbers', ]
 FILTER_FIELDS = [
         ICLOUD3_VERSION, AUTHENTICATED,
-        LATITUDE,  LONGITUDE, LOCATION_SOURCE, TRACKING_METHOD,
+        LATITUDE,  LONGITUDE, LOCATION_SOURCE,
         ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
         TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
         TRIGGER, BATTERY, BATTERY_LEVEL, BATTERY_STATUS,

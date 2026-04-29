@@ -576,22 +576,6 @@ class AppleAcctManager(object):
         return Gb.conf_apple_accounts[0][CONF_USERNAME] == self.username
 
 #----------------------------------------------------------------------------
-    def untrust_session_and_authenticate(self):
-        '''
-        Initialize the session file and authenticate the apple account access. This
-        will force Apple to display a new verification code
-        '''
-
-        self.session_data['session_token'] = ''
-        self.session_data['trust_token']   = ''
-        self.session_token = ''
-        self.trust_token   = ''
-
-        self.delete_trust_cookie()
-
-        self.authenticate()
-
-#----------------------------------------------------------------------------
     def setup_new_apple_account_session(self):
         '''
         Initialize the session file and authenticate the apple account access. This
@@ -604,171 +588,6 @@ class AppleAcctManager(object):
         self.trust_token        = ''
 
         self.authenticate()
-
-#----------------------------------------------------------------------------
-#TESTCODE
-    def test_request_auth_code_via_trusted_device(self):
-        '''
-        Trigger Apple to push the 6-digit verification code popup to all
-        trusted Apple devices (iPhone, iPad, Mac).
-
-        The hsa2 push popup is triggered by GET /appleauth/auth — Apple
-        interprets this as "client is waiting for 2FA" and dispatches the
-        push to all trusted devices. The response also returns trusted phone
-        numbers and security code state which we capture.
-
-        Returns:
-            True  - Push dispatched, trusted device data captured
-            False - Session expired or other error; fall back to SMS
-        '''
-        if self.is_session_still_trusted() is False:
-            log_warning_msg(f"{self.username_base}, "
-                            f"Request Auth Code via Trusted Device > "
-                            f"Session expired, scnt/session_id missing")
-            return False
-
-        headers = self._get_auth_headers()
-        # url     = f"{self.AUTH_ENDPOINT}/auth"
-        url     = f"{self.AUTH_ENDPOINT}"
-
-        try:
-            log_info_msg(f"{self.username_base}, Requesting Auth Code via Trusted Device Push")
-            post_greenbar_msg(f"Apple Acct > {self.username_base}, Sending Code to Trusted Devices")
-
-            data = icloud_io.get(self, url, headers=headers)
-
-            if self.response_code not in (200, 409):
-                log_warning_msg(f"{self.username_base}, "
-                                f"Trusted Device push failed ({self.response_code})")
-                return False
-
-            # Capture security code state from response — useful for UI feedback
-            if data:
-                sec_code = data.get('securityCode', {})
-                self.security_code_locked   = sec_code.get('securityCodeLocked', False)
-                self.security_code_cooldown = sec_code.get('securityCodeCooldown', False)
-
-                if self.security_code_locked:
-                    log_warning_msg(f"{self.username_base}, "
-                                    f"Trusted Device push blocked — security code is locked")
-                    return False
-
-                if self.security_code_cooldown:
-                    log_warning_msg(f"{self.username_base}, "
-                                    f"Trusted Device push blocked — too many codes sent (cooldown)")
-                    return False
-
-            log_info_msg(f"{self.username_base}, Auth Code push dispatched to trusted devices")
-            self.was_auth_code_requested = True
-            return True
-
-        except AppleAcctAPIResponseException as err:
-            log_warning_msg(f"{self.username_base}, "
-                            f"Trusted Device push API error ({self.response_code}) > {err}")
-        except Exception as err:
-            log_exception(err)
-
-        return False
-
-# #----------------------------------------------------------------------------
-
-# Code from Gemini
-# import requests
-# import json
-
-# # Apple's authentication endpoint for the 'Bridge'
-# AUTH_URL = "https://setup.icloud.com/setup/authenticate"
-
-    def test_trigger_apple_2fa_popup(session, apple_id):
-        '''
-        Triggers the 2FA popup window on trusted devices.
-        Note: iCloud3 handles this via its internal 'account_auth.py' module.
-        '''
-
-        # Apple now requires IPv4 for the authentication bridge to work.
-        # In a custom script, you would force requests to use IPv4 here.
-
-        # 1. Request the challenge (The "Bridge" trigger)
-        # This headers/payload mimics the iCloud3 v3.4 'PasswordSRP' method
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Apple-Widget-Key': 'd2d76cfd05edc153c396c56b9b32e093', # Standard iCloud Widget Key
-        }
-
-        # This specific request tells Apple: "I am logged in, now send the push"
-        response = session.get(
-            "https://setup.icloud.com/setup/2sv/trusteddevice",
-            headers=headers
-        )
-
-        if response.status_code == 200:
-            devices = response.json().get('devices', [])
-            print(f"Bridge established. Found {len(devices)} trusted devices.")
-
-            # 2. Trigger the Push Notification
-            # We select the first device or a specific 'push' type
-            for device in devices:
-                if device.get('pushSupported'):
-                    trigger_payload = {"device": device}
-                    session.post(
-                        "https://setup.icloud.com/setup/2sv/sendcode",
-                        json=trigger_payload,
-                        headers=headers
-                    )
-                    print(f"Popup sent to {device.get('deviceName')}!")
-                    return True
-        return False
-
-# Example usage context:
-# session = requests.Session()
-# trigger_apple_2fa_popup(session, "your_email@icloud.com")
-#----------------------------------------------------------------------------
-#     code from claude
-
-#     def test_request_auth_code_via_trusted_device(self):
-#         '''
-#         Trigger Apple to send a 6-digit push notification verification code
-#         to ALL trusted Apple devices (iPhone, iPad, Mac) simultaneously.
-
-#         This fires the "A verification code was sent to your devices" popup.
-#         Uses the idmsa /2sv/trusteddevice endpoint — Apple handles the fan-out
-#         to all push-capable devices; no per-device loop is needed.
-
-#         Returns:
-#             True  - Code pushed successfully (200 or 204)
-#             False - Failed (session expired, no scnt, etc.)
-#         '''
-#         if self.is_session_still_trusted() is False:
-#             log_warning_msg(f"{self.username_base}, "
-#                             f"Request Auth Code via Trusted Device > "
-#                             f"Session expired, full re-auth needed")
-#             return False
-
-#         headers = self._get_auth_headers()
-#         url     = f"{self.AUTH_ENDPOINT}/2sv/trusteddevice"
-
-#         try:
-#             log_info_msg(f"{self.username_base}, Requesting Auth Code via Trusted Device Push")
-
-#             icloud_io.get(self, url, headers=headers)
-
-#             if self.response_code in (200, 204):
-#                 log_info_msg(f"{self.username_base}, Auth Code pushed to all trusted devices")
-#                 self.was_auth_code_requested = True
-#                 return True
-
-#             log_warning_msg(f"{self.username_base}, "
-#                             f"Trusted Device push failed ({self.response_code})")
-#             return False
-
-#         except AppleAcctAPIResponseException as err:
-#             log_warning_msg(f"{self.username_base}, "
-#                             f"Trusted Device push API error > {err}")
-#         except Exception as err:
-#             log_exception(err)
-
-#         return False
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1286,28 +1105,6 @@ class AppleAcctManager(object):
             headers.update(overrides)
         return headers
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            FIDO SECURITY KEY SETUP AND AUTHENTICATION
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def get_fido2_key_names(self):
-        return None
-
-
-        if Gb.fido2_security_keys_enabled is False:
-            return None
-
-        self.fido2_key_names = self.Fido2.security_key_names
-        self.fido2_devices   = self.Fido2.fido2_devices
-
-        return self.fido2_key_names
-
-#----------------------------------------------------------------------------
-    def confirm_fido2_security_key(self, fido2_key_name):
-        return False
-
-        self.Fido2.confirm_security_key(fido2_key_name)
-
-        return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            HANDLE ACCEPTING TERMS OF USE
@@ -1654,6 +1451,17 @@ class AppleAcctManager(object):
         return icloud_dnames
 
 #----------------------------------------------------------------------------
+    def _get_webservice_url(self, ws_key):
+        '''Get webservice URL, raise an exception if not exists.'''
+        try:
+            if self.webservices.get(ws_key) is None:
+                return None
+
+            return self.webservices[ws_key]["url"]
+        except:
+            return None
+
+#----------------------------------------------------------------------------
     def get_trusted_devices(self):
         '''
         Returns devices trusted for two-step authentication.
@@ -1692,31 +1500,28 @@ class AppleAcctManager(object):
         if TEXT_1 not in self.auth_methods:
             conf_auth_methods[TEXT_1] = ''
 
-
         return
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            HANDLE 6-DIGIT VERIFICATION CODE AND TRUST SESSION TASKS
+#            PUSH NOTIFICATION AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def send_authentication_code(self, deviceId):
-        '''Requests that a verification code is sent to the given device.'''
+    def request_auth_code_via_push_notification(self):
 
-        url  = f"{self.SETUP_ENDPOINT}/sendVerificationCode"
-        data = deviceId
+        headers = self._get_auth_headers({"Accept": "application/json"})
+        url     = f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode"
 
-        self.data = icloud_io.post(self, url, params=self.params, data=data)
+        icloud_io.put(self, url, headers=headers)
 
-        return self.data.get("success", False)
+        return self.response_code in (200, 204)
 
 #----------------------------------------------------------------------------
     def validate_2fa_push_popup_window_code(self, code):
         '''Verifies a verification code received via Apple's 2FA system (HSA2).'''
 
         headers = self._get_auth_headers()      #{"Accept": "application/json"})
-
-        url  = f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode"
-        data = {"securityCode": {"code": code}}
+        url     = f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode"
+        data    = {"securityCode": {"code": code}}
 
         try:
             data = icloud_io.post(self, url, data=data, headers=headers,)
@@ -1725,7 +1530,7 @@ class AppleAcctManager(object):
             # Wrong verification code
             if error.code == -21669:
                 log_error_msg(  f"Apple Acct > {self.account_owner}, "
-                                f"Incorrect verification code")
+                                f"Incorrect Authentication Code")
                 return False
 
         except Exception as err:
@@ -1744,8 +1549,9 @@ class AppleAcctManager(object):
         # Return true if 2fa code was successful
         return not self.is_auth_code_needed
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            HANDLE 6-DIGIT VERIFICATION CODE AND TRUST SESSION TASKS
+#            TEXT MESSAGE AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def request_auth_code_via_text_msg(self, auth_method):
         '''
@@ -1754,8 +1560,6 @@ class AppleAcctManager(object):
 
         phone_id: The 'id' value from trustedPhoneNumbers (defaults to first available)
         '''
-        # self.iCloudSession.cookies.list()
-        # self.untrust_session_and_authenticate()
         phone_id = int(auth_method[-1:])
 
         headers = self._get_auth_headers()
@@ -1765,26 +1569,28 @@ class AppleAcctManager(object):
         try:
             icloud_io.put(self, url, data=data, headers=headers)
             log_info_msg(f"{self.username_base}, Text Verification Code sent to Phone-{phone_id}")
+
             return self.response_code in (200, 204)
 
         except Exception as err:
             log_exception(err)
+
         return False
 
 #----------------------------------------------------------------------------
-    def validate_2fa_text_code(self, code, phone_id=None):
+    def validate_2fa_text_code(self, auth_code):
         '''
         Validate the Text verification code entered by the user (hsa2 phone path).
         This is separate from validate_2fa_code() which uses the trusted device path.
         '''
         self.iCloudSession.cookies.list()
-        phone_id = 1
+        phone_id = int(self.auth_method[-1:])
 
         headers = self._get_auth_headers()
         url     = f"{self.AUTH_ENDPOINT}/verify/phone/securitycode"
         data    = {
             "phoneNumber":  {"id": phone_id},
-            "securityCode": {"code": code},
+            "securityCode": {"code": auth_code},
             "mode":         "sms"
         }
 
@@ -1793,7 +1599,7 @@ class AppleAcctManager(object):
 
         except AppleAcctAPIResponseException as err:
             if err.code == -21669:
-                log_error_msg(f"{self.username_base}, Incorrect Text verification code")
+                log_error_msg(f"{self.username_base}, Incorrect Text Authentication Code")
             return False
         except Exception as err:
             log_exception(err)
@@ -1804,8 +1610,9 @@ class AppleAcctManager(object):
         self.is_auth_code_needed = self._set_is_auth_code_needed
         return not self.is_auth_code_needed
 
-
-#----------------------------------------------------------------------------
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            TRUSE/UNTRUST SESSION
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def trust_session(self):
         '''
         Request session trust to avoid user log in going forward
@@ -1827,15 +1634,59 @@ class AppleAcctManager(object):
         return False
 
 #----------------------------------------------------------------------------
-    def _get_webservice_url(self, ws_key):
-        '''Get webservice URL, raise an exception if not exists.'''
-        try:
-            if self.webservices.get(ws_key) is None:
-                return None
+    def untrust_session(self):
+        '''
+        Initialize the session file and authenticate the apple account access. This
+        will force Apple to display a new verification code
+        '''
 
-            return self.webservices[ws_key]["url"]
-        except:
+        self.session_data['session_token'] = ''
+        self.session_data['trust_token']   = ''
+        self.session_token = ''
+        self.trust_token   = ''
+
+        self.delete_trust_cookie()
+
+#----------------------------------------------------------------------------
+    def untrust_session_and_authenticate(self):
+        '''
+        Initialize the session file and authenticate the apple account access. This
+        will force Apple to display a new verification code
+        '''
+
+        self.session_data['session_token'] = ''
+        self.session_data['trust_token']   = ''
+        self.session_token = ''
+        self.trust_token   = ''
+
+        self.delete_trust_cookie()
+
+        self.authenticate()
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            FIDO SECURITY KEY AUTHENTICATION
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def get_fido2_key_names(self):
+        return None
+
+
+        if Gb.fido2_security_keys_enabled is False:
             return None
+
+        self.fido2_key_names = self.Fido2.security_key_names
+        self.fido2_devices   = self.Fido2.fido2_devices
+
+        return self.fido2_key_names
+
+#----------------------------------------------------------------------------
+    def confirm_fido2_security_key(self, fido2_key_name):
+        return False
+
+        self.Fido2.confirm_security_key(fido2_key_name)
+
+        return True
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            HANDLE APPLE ACCOUNT DATA REQUESTS

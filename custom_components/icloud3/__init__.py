@@ -335,7 +335,6 @@ def startup_test_code_after_complete():
     '''
 
     try:
-
         pass
 
     except Exception as err:

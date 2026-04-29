@@ -4,7 +4,7 @@
     "abort": {
       "translation_file_by": "@gcobb321",
 
-      "config_update_complete": "XX✅ iCloud3 configuration updated successfully",
+      "config_update_complete": "✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "The Apple account is not log into",
@@ -12,9 +12,12 @@
       "login_error_503": "Apple Account Login Error 503, Server Refused/Rejected Request.",
       "login_error_other": "An unknown error occurred logging into the Apple Account.",
       "auth_code_requested": "The code was requested. Waiting for it to be entered and sent to Apple",
+      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
       "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
       "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
+      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
+      "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_cancelled": "The Authenticate Apple Account Sign-in process was completed",
       "update_cancelled": "Update Cancelled",
       "icloud3_init_error": "A problem was encountered initializing the iCloud3 Configure Settings screens. iCloud3 has probably encountered an error during initialization and was not started. Check the 'home-assistant.log' file for any errors related to iCloud3",
@@ -31,7 +34,10 @@
 
       "auth_code_send_error": "Failed to send the Authentication Code",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
+      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
+      "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
       "auth_code_invalid": "The Authentication Code is not correct. Reenter or request a new code",
       "auth_code_needed": "An Apple Account needs to be Authenticated",
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
@@ -113,12 +119,14 @@
   },
   "options": {
     "abort": {
-      "config_update_complete": "XX✅ iCloud3 configuration updated successfully",
+      "config_update_complete": "✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
       "ic3_reloading": "iCloud3 Reload has been started",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
+      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
+      "auth_code_complete": "✅ The Authentication Code process is complete",
       "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete"
     },
     "error": {
@@ -165,9 +173,12 @@
       "SK-auth_code_send_error": "❌ Failed to send the Code/Security Key",
 
       "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
+      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
       "auth_code_needed": "An Apple Account needs to be Authenticated",
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
+      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
+      "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
       "auth_code_send_error": "❌ Failed to send the Authentication Code",
 
@@ -307,7 +318,7 @@
         }
       },
 
-      "data_source": {
+      "apple_accounts": {
         "title": "Apple Account & Mobile App - Data Source",
         "description": "The Apple Acct and Mobile App provide location and other information iCloud3 uses to track the iDevice.",
         "data": {
@@ -337,7 +348,7 @@
         }
       },
 
-      "data_source_parameters": {
+      "other_apple_acct_parameters": {
         "title": "Apple Account Parameters",
         "data": {
           "password_srp_enabled": "PASSWORD SRP PROTOCOL - Use the PasswordSRP protocol to verify the Apple Account Password when logging in.",

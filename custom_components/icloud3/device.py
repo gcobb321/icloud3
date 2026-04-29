@@ -339,7 +339,7 @@ class iCloud3_Device(TrackerEntity):
         # If self.sensors exists, this device has been initialized during the initial
         # load or when iC3 is restarted and it is not a new device.
         try:
-            see_if_exists = self.sensors[CONF_BATTERY]
+            see_if_exists = self.sensors[BATTERY]
             if self.sensors != {}:
                 return
         except:

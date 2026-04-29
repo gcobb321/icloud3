@@ -1,6 +1,6 @@
 
-from ..global_variables  import GlobalVariables as Gb
-from ..const             import (NAME, BATTERY, WAZE_SERVERS_FNAME, )
+from ..global_variables     import GlobalVariables as Gb
+from ..const                import (NAME, BATTERY, WAZE_SERVERS_FNAME, )
 
 #----------------------------------------------------------------------------------------
 # Dashboard constants
@@ -29,14 +29,14 @@ MENU_PAGE_TITLE = [
         'Parameters Menu'
         ]
 MENU_KEY_TEXT = {
-        'data_source':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
+        'apple_accounts':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
         'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
-        'auth_code':    'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code to Apple for account access verification',
-        'SK-auth_code': 'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code/Security Key Name to Apple for verification. Refresh expired codes/Security Key approval requests',
+        'auth_code':            'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code to Apple for account access verification',
+        'SK-auth_code':         'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code/Security Key Name to Apple for verification. Refresh expired codes/Security Key approval requests',
         'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
         'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
         'dashboard_builder':    'DASHBOARD BUILDER > Build a Lovelace Dashboard to display device tracking information',
-        'tools':                'TOOLS > Log Level, Cleanup HA Device & Sensor Entity Registry, Reload iCloud3, Delete Apple Acct & Device Assignment, Delete Apple Acct Cookie & iCloud3 Config files',
+        'tools':                'TOOLS > Log Level, Cleanup HA Device & Entity Registry, Reload iCloud3, Delete Apple Acct & Device Assignment, Delete Apple Acct Cookie & iCloud3 Config files',
 
         'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
         'tracking_parameters':  'TRACKING PARAMETERS > Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals',
@@ -48,7 +48,7 @@ MENU_KEY_TEXT = {
 
         'select':               'SELECT > Select the parameter update form',
         'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request an Authentication Code; Change Device Order; Sensors; Action Commands',
-        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Display Settings & Other Parameters, Display Text As, Waze Route Distance/Time & History, Special Zones, Default inZone Intervals',
+        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Display Settings & Other Parameters, Display Text As, Waze Route Distance/Time & History, Special Zones',
         'exit':                 'EXIT AND RESTART ICLOUD3',
         'exit_update_dashboards': 'EXIT AND RESTART ICLOUD3, UPDATE DASHBOARDS WITH DEVICE CHANGES',
         'exit_add_dev_trkrs_sensors': 'EXIT AND RESTART ICLOUD3, ADD NEW DEVICES & SENSORS, UPDATE DASHBOARDS'
@@ -56,7 +56,7 @@ MENU_KEY_TEXT = {
 
 MENU_PAGE_0_INITIAL_ITEM = 2
 MENU_KEY_TEXT_PAGE_0 = [
-        MENU_KEY_TEXT['data_source'],
+        MENU_KEY_TEXT['apple_accounts'],
         MENU_KEY_TEXT['auth_code'],
         MENU_KEY_TEXT['device_list'],
         MENU_KEY_TEXT['sensors'],
@@ -93,15 +93,13 @@ ACTION_LIST_OPTIONS = {
         'auth_code':                'AUTHENTICATE APPLE ACCT SIGN-IN > Send/Request the 6-digit Authentication Code',
         'delete_apple_acct':        'DELETE APPLE ACCOUNT > Delete the selected Apple Account. Delete or reassign iCloud3 devices using it',
         'stop_login_retry':         'STOP RETRYING LOGIN > Stop retrying to log into the Apple Account',
-        'data_source_parameters':   'OTHER APPLE ACCOUNT PARAMETERS > Set run time or other config parameters (China Apple Server Location)',
+        'other_apple_acct_parameters': 'OTHER APPLE ACCOUNT PARAMETERS > Set other config parameters (China Apple Server Location)',
 
         'send_auth_code':           'SEND THE CODE TO APPLE TO AUTHENTICATE SIGN-IN > Send the Authentication Code back to Apple to confirm access to the Apple Account',
         'request_auth_code':        'REQUEST AUTHENTICATION CODE > Delete the Trust Token. Get the Authenticate code from the Apple using the selected method',
-        'X-request_auth_code_push':   'RESET TRUST TOKEN, REQUEST AUTHENTICATION CODE (PUSH NOTIFICATION) > Delete the Trust Token. Display the `Apple Acct Sign-in is Requested` window',
-        'X-request_auth_code_text':   'REQUEST AUTHENTICATION CODE (TEXT MESSAGE) > Get a Text Message with the Authentication Code',
         'change_auth_method':       'CHANGE THE AUTHENTICATION METHOD > Change the method of getting the Authentication Code (Push Notification, Text Message)',
         'reset_trust_token_return': 'RESET TRUST TOKEN, RETURN TO ENTER & SEND THE CODE TO APPLE > Resets the Trust Token. Return to the Authenticate Apple Sign-in screen',
-        'auth_code_from_applecom_login': 'APPLE DID NOT SEND A CODE, GET ONE FROM APPLE.COM > Apple never sent an Auth Code. Sign into your Apple Acct, get the code, enter it here and send to Apple',
+        'auth_code_from_applecom_login': 'APPLE DID NOT SEND A CODE (PUSH/TEXT), GET ONE FROM APPLE.COM > Sign into your Apple Acct, get a code, enter it here and send to Apple',
 
         'SK-send_auth_code':        'SEND CODE/KEY TO APPLE TO AUTHENTICATE SIGN-IN > Send the Authentication Code or Security Key being used back to Apple to confirm access to the Apple Account',
         'SK-request_auth_code':     'REQUEST NEW CODE/REFRESH SECURITY KEY LIST > Display `Apple Acct Sign-in is Requested` on a Trusted Device to get a new Code or to confirm using a Security Key',
@@ -147,6 +145,7 @@ ACTION_LIST_OPTIONS = {
 
         'cancel_goto_previous':     'RETURN > Return to the previous screen. Cancel any unsaved changes',
         'goto_previous':            'RETURN > Return to the previous screen',
+        'goto_ha_auth_done':        'UPDATE COMPLETE > Configuration updates are complete. Return HA',
         'cancel_goto_menu':         'MENU > Return to the Menu screen. Cancel any unsaved changes',
         'goto_menu':                'MENU > Return to the Menu screen',
         'cancel_goto_select_device': 'BACK TO DEVICE SELECTION > Return to the Device Selection screen. Cancel any unsaved changes',
@@ -186,7 +185,7 @@ ADD = UNSELECTED = -1
 APPLE_ACCOUNT_ACTIONS = [
         ACTION_LIST_OPTIONS['update_apple_acct'],
         ACTION_LIST_OPTIONS['delete_apple_acct'],
-        ACTION_LIST_OPTIONS['data_source_parameters']]
+        ACTION_LIST_OPTIONS['other_apple_acct_parameters']]
 APPLE_ACCOUNT_DELETE_ACTIONS = [
         ACTION_LIST_OPTIONS['delete_apple_acct'],
         ACTION_LIST_OPTIONS['cancel_goto_previous']]
@@ -198,9 +197,8 @@ USERNAME_PASSWORD_ACTIONS = [
 REAUTH_ACTIONS = [
         ACTION_LIST_OPTIONS['send_auth_code'],
         ACTION_LIST_OPTIONS['request_auth_code'],
-        ACTION_LIST_OPTIONS['auth_code_from_applecom_login'],
         ACTION_LIST_OPTIONS['change_auth_method'],
-        ACTION_LIST_OPTIONS['goto_previous']]
+        ACTION_LIST_OPTIONS['auth_code_from_applecom_login']]
 REAUTH_CODE_FROM_APPLECOM_LOGIN = [
         ACTION_LIST_OPTIONS['send_auth_code'],
         ACTION_LIST_OPTIONS['goto_previous']]
@@ -330,6 +328,9 @@ LOG_ZONES_KEY_TEXT = {
         'name-device-zone': '⋙ Device+Zone (2026-gary_iphone-warehouse.csv)',
         'name-zone-device': '⋙ Zone+Device (2026-warehouse-gary_iphone.csv)',
         }
+AWAY_FROM_ZONE_OPTIONS = {
+        'none': 'All at Home',
+        'all': 'All are Away'}
 TRACKING_MODE_OPTIONS = {
         'track':    'Track - Request Location and track the device',
         'monitor':  'Monitor - Report location only when another tracked device is updated',
