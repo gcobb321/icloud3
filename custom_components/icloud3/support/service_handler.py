@@ -427,10 +427,10 @@ def _handle_global_action(global_action, action_option):
     elif global_action == CMD_RESET_PYICLOUD_SESSION:
         # This will be handled in the 5-second ic3 loop
         # Gb.evlog_action_request = CMD_RESET_PYICLOUD_SESSION
-        post_event(f"{EVLOG_ERROR}The `Action > Request Apple Verification Code` "
+        post_event(f"{EVLOG_ERROR}The `Action > Request Apple Auth Code` "
                         "is no longer available. This must be done using the "
-                        "`Configuration > Enter/Request An Apple Account Verification "
-                        "Code` screen")
+                        "`Configuration > Authenticate Apple Acct Sign-in "
+                        "e` screen")
         return
 
     elif global_action == CMD_LOG_LEVEL:

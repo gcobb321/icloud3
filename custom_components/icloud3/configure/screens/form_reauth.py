@@ -38,7 +38,6 @@ def form_reauth(self, user_input=None, reauth_username=None):
     was_auth_code_requested    = False
 
     AppleAcct, reauth_username = self.get_username_needing_reauth(reauth_username)
-    _log(f'{reauth_username=} {user_input=} {self.errors=}')
 
     # is_auth_code_needed        = AppleAcct.is_auth_code_needed or AppleAcct.is_challenge_required
     is_auth_code_needed        = AppleAcct.is_auth_code_needed or self.is_another_auth_code_needed()

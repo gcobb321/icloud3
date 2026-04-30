@@ -57,7 +57,7 @@ HEADER_DATA = {
 
 DEVICE_STATUS_ERROR_500 = 500
 INVALID_GLOBAL_SESSION_421 = 421
-APPLE_ID_VERIFICATION_CODE_INVALID_404 = 404
+APPLE_ID_AUTH_CODE_INVALID_404 = 404
 AUTHENTICATION_NEEDED_421_450_500 = [421, 450, 500]
 AUTHENTICATION_NEEDED_450 = 450
 CONNECTION_ERROR_503 = 503
@@ -66,15 +66,15 @@ HTTP_RESPONSE_CODES = {
     0: 'Unknown Error',
     200: 'Successful Response',
     201: 'Device Offline',
-    204: 'Verification Code Accepted',
+    204: 'Authentication Code Accepted',
     302: 'Apple Server not Available (Connection Error)',
-    400: 'Invalid Verification Code',
+    400: 'Invalid Authentication Code',
     401: 'Invalid  Username/Password',
-    403: 'Verification Code Requested',
+    403: 'Authentication Code Requested',
     404: 'Apple http Error, Web Page not Found',
-    421: 'Verification Code May Be Needed',
-    450: 'Verification Code May Be Needed',
-    500: 'Verification Code May Be Needed',
+    421: 'Authentication Code May Be Needed',
+    450: 'Authentication Code May Be Needed',
+    500: 'Authentication Code May Be Needed',
     503: 'Apple Server Refused Password Validation Request',
     -2:  'Apple Server not Available (Connection Error)',
     }
@@ -495,11 +495,11 @@ class iCloudSession(Session):
             api_error = AppleAcctManagerNotActivatedException(reason, code)
 
         elif code in AUTHENTICATION_NEEDED_421_450_500: #[204, 421, 450, 500]:
-            # log_info_msg(f"Apple Account Verification Code may be needed ({code})")
+            # log_info_msg(f"Apple Account Authentication Code may be needed ({code})")
             return
 
         elif reason ==  'Missing X-APPLE-WEBAUTH-TOKEN cookie':
-            log_info_msg(f"Apple Account Verification Code may be needed, No WebAuth Token")
+            log_info_msg(f"Apple Account Authentication Code may be needed, No WebAuth Token")
             return
 
         # 2fa needed that has already been requested and processed
@@ -507,11 +507,11 @@ class iCloudSession(Session):
             return
 
         elif code == 403:
-            reason = f"Apple Verification Code not requested ({code})"
+            reason = f"Apple Authentication Code not requested ({code})"
             return
 
         elif code == 400:
-            reason = f"Apple Verification Code Invalid ({code})"
+            reason = f"Apple Authentication Code Invalid ({code})"
 
         elif code == 404:
             reason = f"iCloud Web Page not Found ({code})"
@@ -527,8 +527,11 @@ class iCloudSession(Session):
 
         if api_error is None:
             api_error = AppleAcctAPIResponseException(reason, code)
+        elif api_error == 'Invalid Session Token':
+            log_debug_msg(api_error)
+        else:
+            log_error_msg(f"iCloud3 Error > Apple Acct Session Error-{api_error}")
 
-        log_error_msg(f"{api_error}")
         return
         raise api_error
 

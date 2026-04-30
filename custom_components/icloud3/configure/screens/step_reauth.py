@@ -45,7 +45,8 @@ class OptionsFlow_Reauth_Steps:
             user_input = self._unpack_ui_reauth(user_input)
             user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 
-            log_debug_msg(f"⭐ ENTER {self.step_id.upper()} ({action_item}) > UserInput-{user_input}, Errors-{errors}")
+            log_debug_msg(  f"⭐ REAUTH ENTER {self.step_id.upper()} ({action_item}) > "
+                            f"UserInput-{user_input}, Errors-{errors}")
 
             # Set up the reauthentication process based on the entry point - iCloud3_ConfigFlow
             # from the HA notifications or iCloud3_OptionsFlow from the iCloud3 Menu. 'self.return_to_step_id_1'
@@ -84,8 +85,7 @@ class OptionsFlow_Reauth_Steps:
             self.errors[CONF_AUTH_CODE] = ''
 
             log_debug_msg(  f"⭐ REAUTH HANDLER ({action_item}) > "
-                            f"From-{return_to_step_id}, "
-                            f"UserInput-{user_input}, Errors-{errors}")
+                            f"From-{return_to_step_id}, UserInput-{user_input}, Errors-{errors}")
 
             # ui_conf_fido_key_name = user_input['fido2_key_name']
             # if Gb.fido2_security_keys_enabled:
@@ -98,7 +98,7 @@ class OptionsFlow_Reauth_Steps:
                     or action_item in ['goto_previous', 'goto_ha_auth_done']):
                 self.apple_acct_reauth_username = ''
                 self.is_another_auth_code_needed()
-                return await self._reauth_goto_previous()
+                return self._reauth_goto_previous()
 
             if action_item == 'auth_code_from_applecom_login':
                 return await self.async_step_reauth_code_from_applecom_login()
@@ -136,17 +136,23 @@ class OptionsFlow_Reauth_Steps:
                 auth_successful = await self.send_auth_code_back_to_apple(AppleAcct, ui_auth_code)
 
                 if auth_successful is False:
-                    # self.errors[CONF_AUTH_CODE] = 'auth_code_invalid'
-                    # user_input[CONF_AUTH_CODE] = ''
                     return await self.async_step_reauth(errors=self.errors)
+
+                if self.is_another_auth_code_needed() is False:
+                    if self.is_config_flow_handler:
+                        # Close the config flow reauth window
+                        return self._reauth_goto_previous()
+                    else:
+                        self._clear_ha_reauth_banner()
 
             #.......................................................................
             elif action_item == 'request_auth_code':
                 self.errors[CONF_AUTH_CODE] = 'auth_code_requested'
+                auth_method = f"{self.AppleAcct.auth_method.title()}"
+                if AppleAcct.auth_method_PUSH is False:
+                    auth_method = f": {self.AppleAcct.auth_method_info}"
                 post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
-                            f"Requested a new Verification Code "
-                            f"({self.AppleAcct.auth_method.title()}-"
-                            f"({self.AppleAcct.auth_method_info}")
+                            f"Requested a new Auth Code, {auth_method}")
 
                 await self.async_request_new_auth_code(AppleAcct)
 
@@ -155,13 +161,12 @@ class OptionsFlow_Reauth_Steps:
 
                 return await self.async_step_reauth(user_input=user_input, errors=self.errors)
 
-            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, "
-                            f"{action_item}) > UserInput-{user_input}, Errors-{errors}")
+            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, {action_item}) > "
+                            f"UserInput-{user_input}, Errors-{errors}")
 
             if user_input and 'account_selected' in user_input:
                 reauth_username = user_input['account_selected']
 
-            _log(f'{reauth_username=} {user_input=} {self.errors=}')
             return self.async_show_form(step_id='reauth',
                             data_schema=forms.form_reauth(self, reauth_username=reauth_username),
                             errors=self.errors)
@@ -185,7 +190,7 @@ class OptionsFlow_Reauth_Steps:
     async def async_request_new_auth_code(self, AppleAcct):
         '''
         Reset the current session and authenticate to restart pyicloud_ic3
-        and enter a new verification code
+        and enter a new Authentication code
 
         The username & password are specified in case the Apple acct is not logged
         into because of an error
@@ -217,10 +222,9 @@ class OptionsFlow_Reauth_Steps:
             # AppleAcct.auth_code = None
 
             AppleAcct.was_auth_code_requested = True
-            self._display_ha_reauth_banner()
             Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
             post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.username_id}, "
-                        f"Waiting for the 6-digit Verification Code to be entered")
+                        f"Waiting for the Authentication Code to be entered")
             alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_auth_code_needed_secs)})"
             update_alert_sensor(AppleAcct.username_id, alert_msg)
 
@@ -249,15 +253,12 @@ class OptionsFlow_Reauth_Steps:
                                         AppleAcct.validate_2fa_text_code,
                                         auth_code)
 
-            # Do not restart iC3 right now if the username/password was changed on the
-            # iCloud setup screen. If it was changed, another account is being logged into
-            # and it will be restarted when exiting the configurator.
             if auth_successful is False:
                 if auth_code != '':
                     AppleAcct.was_auth_code_requested = False
                     self.errors[CONF_AUTH_CODE] = 'auth_code_invalid'
                     post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
-                                f"Verification Code invalid "
+                                f"Auth Code invalid "
                                 f"({auth_code})")
                 return False
 
@@ -270,10 +271,10 @@ class OptionsFlow_Reauth_Steps:
                     f"Authentication Successful")
 
         # Refresh the device list if the apple acct is being setup for the first time
-        # If AppleAcct.device_id_by_icloud_dname is empty, a verification code was needed
+        # If AppleAcct.device_id_by_icloud_dname is empty, a Authentication code was needed
         # when first logged in and the apple acct data was not authenticated and it's
         # device data was never loaded/initialized by refreshed_icloud_data. This
-        # prevents the device's list tables to never be initialized and location data
+        # prevents the device's list tables to ever be initialized and location data
         # is not available. Do this now.
         if (is_empty(AppleAcct.device_id_by_icloud_dname)
                 or (AppleAcct.terms_of_use_update_needed and AppleAcct.terms_of_use_accepted)):
@@ -283,19 +284,15 @@ class OptionsFlow_Reauth_Steps:
         lists.build_apple_accounts_auth_list(self)
 
         self.errors[CONF_AUTH_CODE] = 'auth_code_accepted'
-        self._clear_ha_reauth_banner()
+        AppleAcct.was_auth_code_requested = False
+        Gb.EvLog.clear_greenbar_msg()
+        Gb.is_force_icloud_update = True
+        update_alert_sensor(AppleAcct.username_id, '')
 
         if self.is_another_auth_code_needed():
             self.errors['action_items'] = 'auth_code_another_auth_needed'
         else:
             self.errors['action_items'] = ''
-            if not self.is_config_flow_handler:
-                await self._clear_ha_reauth_banner()
-
-        AppleAcct.was_auth_code_requested = False
-        Gb.EvLog.clear_greenbar_msg()
-        Gb.is_force_icloud_update = True
-        update_alert_sensor(AppleAcct.username_id, '')
 
         return True
 
@@ -310,8 +307,11 @@ class OptionsFlow_Reauth_Steps:
         return user_input
 
 #------------------------------------------------------------------------------
-    async def _reauth_goto_previous(self):
+    def _reauth_goto_previous(self):
         '''Flow result returned when the user navigates back from reauth.'''
+        log_debug_msg(  f"⭐ REAUTH EXIT {self.step_id.upper()} ({self.return_to_step_id_1}) > "
+                            f"Errors-{self.errors}")
+
         return_to_step_id = f'{self.return_to_step_id_1}'
         self.return_to_step_id_1 = ''
 
@@ -336,8 +336,7 @@ class OptionsFlow_Reauth_Steps:
             AppleAcct = self.AppleAcct = Gb.AppleAcct_needing_reauth_via_ha
             return AppleAcct, AppleAcct.username
 
-        self.is_another_auth_code_needed()
-        if Gb.AppleAcct_needing_reauth_via_ha:
+        if self.is_another_auth_code_needed():
             AppleAcct = self.AppleAcct = Gb.AppleAcct_needing_reauth_via_ha
             return AppleAcct, AppleAcct.username
 
@@ -351,24 +350,22 @@ class OptionsFlow_Reauth_Steps:
             if AppleAcct.is_auth_code_needed:
                 Gb.AppleAcct_needing_reauth_via_ha = AppleAcct
                 Gb.AppleAcct_needing_reauth_via_ha.was_ha_auth_code_alert_sent = True
-                self._display_ha_reauth_banner()
+
                 return True
         else:
             if Gb.AppleAcct_needing_reauth_via_ha:
                 Gb.AppleAcct_needing_reauth_via_ha = None
-                if Gb.ConfigFlowHandler:
-                    Gb.ConfigFlowHandler.async_abort(reason="auth_code_cancelled")
                 clear_AppleAcct_auth_alerts()
                 post_greenbar_msg('')
 
         return False
 
 #------------------------------------------------------------------------------
-    async def _display_ha_reauth_banner(self):
+    def _display_ha_reauth_banner(self):
         Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
 
 #------------------------------------------------------------------------------
-    async def _clear_ha_reauth_banner(self):
+    def _clear_ha_reauth_banner(self):
         '''
         Clear the orange Reauthentication notification button that will launch
         the ConfigFlow step_reauth routine
@@ -376,6 +373,8 @@ class OptionsFlow_Reauth_Steps:
 
         Gb.AppleAcct_needing_reauth_via_ha = None
         clear_AppleAcct_auth_alerts()
+        if self.is_config_flow_handler:
+            return
 
         try:
             for flow in Gb.hass.config_entries.flow.async_progress():

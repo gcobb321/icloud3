@@ -16,7 +16,6 @@
       "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
       "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_cancelled": "The Authenticate Apple Account Sign-in process was completed",
       "update_cancelled": "Update Cancelled",
@@ -34,7 +33,6 @@
 
       "auth_code_send_error": "Failed to send the Authentication Code",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
       "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
@@ -125,7 +123,6 @@
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
       "ic3_reloading": "iCloud3 Reload has been started",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_complete": "✅ The Authentication Code process is complete",
       "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete"
     },
@@ -177,7 +174,6 @@
       "auth_code_needed": "An Apple Account needs to be Authenticated",
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
       "auth_code_send_error": "❌ Failed to send the Authentication Code",

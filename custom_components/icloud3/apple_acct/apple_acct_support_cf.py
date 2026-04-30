@@ -33,8 +33,8 @@ from os                 import path
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_log_into_apple_account(self, user_input, return_to_step_id=None):
     '''
-    Log into the icloud account and check to see if a verification code is needed.
-    If so, show the verification form, get the code from the user, verify it and
+    Log into the icloud account and check to see if a Authentication code is needed.
+    If so, show the Authentication form, get the code from the user, verify it and
     return to the 'return_to_step_id' (icloud_account).
 
     Input:
@@ -47,7 +47,7 @@ async def async_log_into_apple_account(self, user_input, return_to_step_id=None)
 
     Exception:
         The self.AppleAcct.requres_2fa must be checked after a login to see if the account
-        access needs to be verified. If so, the verification code entry form must be displayed.
+        access needs to be verified. If so, the Authentication code entry form must be displayed.
 
     Returns:
         self.Pyicloud object
@@ -141,7 +141,7 @@ async def async_log_into_apple_account(self, user_input, return_to_step_id=None)
         start_ic3.dump_startup_lists_to_log()
 
         if AppleAcct.is_auth_code_needed or return_to_step_id is None:
-            log_info_msg(f"Apple Acct > {username}, 2fa Verification Needed, {self.AppleAcct}")
+            log_info_msg(f"Apple Acct > {username}, 2fa Authentication Needed, {self.AppleAcct}")
             alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_auth_code_needed_secs)})"
             update_alert_sensor(AppleAcct.username_id, alert_msg)
             return True
@@ -258,7 +258,7 @@ def clear_AppleAcct_auth_alerts():
 async def async_finish_authentication_and_data_refresh(caller_self):
     '''
     Refresh the device list if the apple acct is being setup for the first time
-    If AppleAcct.device_id_by_icloud_dname is empty, a verification code was needed
+    If AppleAcct.device_id_by_icloud_dname is empty, a Authentication code was needed
     when first logged in and the apple acct data was not authenticated and it's
     device data was never loaded/initialized by refreshed_icloud_data. This
     prevents the device's list tables to never be initialized and location data
@@ -358,7 +358,7 @@ def login_err_msg(AppleAcct, username):
 #--------------------------------------------------------------------
 async def async_delete_icloud_session_requests_file(username=None):
     '''
-    Delete the cookies and session files as part of the reset_session and request_verification_code
+    Delete the cookies and session files as part of the reset_session and request_Authentication_code
     This is called from config_flow/setp_reauth and pyicloud_reset_session
     '''
 

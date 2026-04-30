@@ -106,9 +106,9 @@ HTTP_RESPONSE_CODES = {
     -2:  'Server not Available',
     200: 'Accepted',
     201: 'Device Offline',
-    204: 'Verification Code Accepted',
+    204: 'Authentication Code Accepted',
     302: 'Server can not be accessed',
-    400: 'Invalid Verification Code',
+    400: 'Invalid Authentication Code',
     401: 'Invalid Username-Password',
     403: 'ACCESS DENIED/ACCT LOCKED?',
     404: 'URL/Web Page not Found',
@@ -579,7 +579,7 @@ class AppleAcctManager(object):
     def setup_new_apple_account_session(self):
         '''
         Initialize the session file and authenticate the apple account access. This
-        will force Apple to display a new verification code
+        will force Apple to display a new Authentication code
         '''
         self.session_data       = {}
         self.session_data_token = {}
@@ -823,7 +823,7 @@ class AppleAcctManager(object):
 #----------------------------------------------------------------------------
     def authenticate_with_password_srp(self, username=None, password=None):
         '''
-        Sign into Apple account with password via Secure Remote Password verification
+        Sign into Apple account with password via Secure Remote Password Authentication
 
         Return:
             True - Successful login
@@ -1162,7 +1162,7 @@ class AppleAcctManager(object):
         '''
 
         # If password was changed, delete the session file to generate a new 6-digit
-        # verification code from Apple when the new session is created
+        # Authentication code from Apple when the new session is created
         self.read_token_pw_file()
 
         self._update_token_pw(CONF_USERNAME, self.username)
@@ -1260,7 +1260,7 @@ class AppleAcctManager(object):
     def delete_trust_cookie(self):
         '''
         Delete the X-APPLE-WEBAUTH-HSA-TRUST cookie to cause Apple to display the
-        Push Notification Verification Code window.
+        Push Notification Authentication Code window.
 
         But, If Text-1 Device phone number has not been set up, it means the
         X-APPLE-WEBAUTH-HSA-LOGIN cookie was never created by the PasswordSrp
@@ -1278,7 +1278,7 @@ class AppleAcctManager(object):
     The token password file stores the encoded password associated with the session
     token. It is used to see if the user is changing the username's password. It so,
     the session and it's token must be deleted to create a session token and cause a
-    2fa verification. It this is not done, the user will be logged into the session
+    2fa Authentication. It this is not done, the user will be logged into the session
     without checking the password and a password change will not be handled until the
     token wxpires.
     '''
@@ -1517,7 +1517,7 @@ class AppleAcctManager(object):
 
 #----------------------------------------------------------------------------
     def validate_2fa_push_popup_window_code(self, code):
-        '''Verifies a verification code received via Apple's 2FA system (HSA2).'''
+        '''Verifies a Authentication code received via Apple's 2FA system (HSA2).'''
 
         headers = self._get_auth_headers()      #{"Accept": "application/json"})
         url     = f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode"
@@ -1527,7 +1527,7 @@ class AppleAcctManager(object):
             data = icloud_io.post(self, url, data=data, headers=headers,)
 
         except AppleAcctAPIResponseException as error:
-            # Wrong verification code
+            # Wrong Authentication code
             if error.code == -21669:
                 log_error_msg(  f"Apple Acct > {self.account_owner}, "
                                 f"Incorrect Authentication Code")
@@ -1543,7 +1543,7 @@ class AppleAcctManager(object):
         self.is_auth_code_needed = self._set_is_auth_code_needed
 
         valid_msg = 'Rejected' if self.is_auth_code_needed else 'Accepted'
-        log_debug_msg(f"{self.username_base}, Verification Code {valid_msg}")
+        log_debug_msg(f"{self.username_base}, Auth Code {valid_msg}")
         post_greenbar_msg('')
 
         # Return true if 2fa code was successful
@@ -1555,7 +1555,7 @@ class AppleAcctManager(object):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def request_auth_code_via_text_msg(self, auth_method):
         '''
-        Request Apple send a 6-digit Text verification code to a trusted phone number.
+        Request Apple send a 6-digit Text Authentication code to a trusted phone number.
         This is the hsa2 path. Use when the trusted device popup does not appear.
 
         phone_id: The 'id' value from trustedPhoneNumbers (defaults to first available)
@@ -1568,7 +1568,7 @@ class AppleAcctManager(object):
 
         try:
             icloud_io.put(self, url, data=data, headers=headers)
-            log_info_msg(f"{self.username_base}, Text Verification Code sent to Phone-{phone_id}")
+            log_info_msg(f"{self.username_base}, Text Authentication Code sent to Phone-{phone_id}")
 
             return self.response_code in (200, 204)
 
@@ -1580,7 +1580,7 @@ class AppleAcctManager(object):
 #----------------------------------------------------------------------------
     def validate_2fa_text_code(self, auth_code):
         '''
-        Validate the Text verification code entered by the user (hsa2 phone path).
+        Validate the Text Authentication code entered by the user (hsa2 phone path).
         This is separate from validate_2fa_code() which uses the trusted device path.
         '''
         self.iCloudSession.cookies.list()
@@ -1637,7 +1637,7 @@ class AppleAcctManager(object):
     def untrust_session(self):
         '''
         Initialize the session file and authenticate the apple account access. This
-        will force Apple to display a new verification code
+        will force Apple to display a new Authentication code
         '''
 
         self.session_data['session_token'] = ''
@@ -1651,7 +1651,7 @@ class AppleAcctManager(object):
     def untrust_session_and_authenticate(self):
         '''
         Initialize the session file and authenticate the apple account access. This
-        will force Apple to display a new verification code
+        will force Apple to display a new Authentication code
         '''
 
         self.session_data['session_token'] = ''

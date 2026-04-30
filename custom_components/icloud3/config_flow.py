@@ -91,8 +91,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
     VERSION = 1
     def __init__(self):
         self.is_config_flow_handler         = True
-        Gb.ConfigFlowHandler                = self
-        _log(f'{Gb.ConfigFlowHandler=}')
         self.step_id                        = ''           # step_id for the window displayed
         self.errors                         = {}           # Errors en.json error key
         self.OptFlow                        = None
@@ -138,6 +136,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
     def flow_closed(self) -> None:
         """Called when the user dismisses the config flow with 'X'."""
+        return self._reauth_goto_previous(exit_by_x_click=True)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -149,9 +148,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
         self.handler = 'icloud3' from domain name in manifest.json
         '''
-        _log(f'{Gb.ConfigFlowHandler=}')
-        Gb.ConfigFlowHandler = self
-        _log(f'{Gb.ConfigFlowHandler=}')
         _OptFlow = Gb.OptionsFlowHandler
         disabled_by = added_datetime = None
 
@@ -231,9 +227,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         '''
 
         try:
-            _log(f'{Gb.ConfigFlowHandler=}')
-            Gb.ConfigFlowHandler = self
-            _log(f'{Gb.ConfigFlowHandler=}')
             self.return_to_step_id_1 = 'reauth'
             self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, ICLOUD)
             AppleAcct, reauth_username = self.get_username_needing_reauth()
@@ -249,10 +242,15 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         return None
 
     #.........................................................................................
-    async def _reauth_goto_previous(self):
+    def _reauth_goto_previous(self, exit_by_x_click=False):
         self.return_to_step_id_1 = ''
+        log_debug_msg(  f"⭐ CF REAUTH EXIT {self.step_id.upper()} ({self.return_to_step_id_1}) > "
+                            f"XClick-{exit_by_x_click}, Errors-{self.errors}")
+
         if Gb.AppleAcct_needing_reauth_via_ha is None:
-            return self.async_abort(reason="auth_code_complete")
+            return self.async_abort(reason="auth_code_accepted")
+
+        self._display_ha_reauth_banner()
         return self.async_abort(reason="auth_code_cancelled")
 
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -262,8 +260,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         '''
         A restart is required if there were devicenames in known_devices.yaml
         '''
-        # if Gb.OptionsFlowHandler is None:
-        #     Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         _OptFlow = Gb.OptionsFlowHandler
 
         self.step_id = 'restart_ha'
@@ -752,7 +748,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                 or self._set_inactive_devices_header_msg() in ['all', 'most']):
             if exit_by_x_click:
                 user_input = {'action_items': 'restart_ic3_now'}
-                #user_input = {'action_items': ACTION_LIST_OPTIONS['restart_ic3_now']}l
             else:
                 user_input = None
             return await self.async_step_restart_icloud3(user_input)
