@@ -206,8 +206,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
             if Gb.is_ha_restart_needed:
                 return await self.async_step_restart_ha()
 
-            data = {'flow': self,
-                    'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
+            data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
 
             return self.async_create_entry(title=CONFIG_UPDATE_COMPLETE_MSG, data=data)
 
@@ -381,9 +380,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.header_msg                     = None   # Message displayed on menu after update
         self.return_to_step_id_1            = ''     # Form/Fct to return to when verifying the icloud auth code
         self.return_to_step_id_2            = ''     # Form/Fct to return to when verifying the icloud auth code
-        # self.return_to_step_id_form         = {
-        #         'update_apple_acct': forms_aa.update_apple_acct
-        # }
 
         self.actions_list                   = []     # Actions list at the bottom of the screen
         self.actions_list_default           = ''     # Default action_items to reassign on screen redisplay
