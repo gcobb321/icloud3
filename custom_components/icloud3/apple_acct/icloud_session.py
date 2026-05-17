@@ -253,6 +253,12 @@ class iCloudSession(Session):
                 retry_cnt=retry_cnt)
 
     def _request(self, method, url, **kwargs, ):
+        # Prevent SyncWorker threads from blocking indefinitely on hung remote
+        # endpoints. Without a socket-level timeout, requests.Session can wait
+        # forever inside ssl.do_handshake() / sock.recv(), exhausting HA's
+        # thread pool. See issue #552 (segfault / connectivity hang reports).
+        kwargs.setdefault("timeout", 30)
+
         # callee.function and callee.lineno provice calling function and the line number
         callee = inspect.stack()[2]
         module = inspect.getmodule(callee[0])
