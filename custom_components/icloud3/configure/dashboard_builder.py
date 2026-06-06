@@ -17,7 +17,7 @@ from ..utils.messaging      import (log_exception, log_debug_msg, log_info_msg, 
 from ..utils                import file_io
 
 from .const_form_lists      import *
-from .                      import utils_configure as utils
+from .                      import utils_cf as utils
 from .                      import selection_lists as lists
 
 #-------------------------------------------------------------------------------------------

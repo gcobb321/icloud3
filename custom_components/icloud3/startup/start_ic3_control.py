@@ -243,12 +243,12 @@ def stage_4_setup_data_sources():
             if Gb.AppleAcct_needing_reauth_via_ha:
                 try:
                     Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
+
+                    Gb.AppleAcct_needing_reauth_via_ha.was_ha_auth_code_alert_sent = True
+                    post_event( f"Apple Acct > {Gb.AppleAcct_needing_reauth_via_ha.account_owner}, "
+                                f"Auth request submitted() to HA")
                 except Exception as err:
                     log_exception(err)
-
-                Gb.AppleAcct_needing_reauth_via_ha.was_ha_auth_code_alert_sent = True
-                post_event( f"Apple Acct > {Gb.AppleAcct_needing_reauth_via_ha.account_owner}, "
-                            f"Auth request submitted to HA")
 
         stage_title = f"Stage 4 > Connect to Mobile App Integration"
         log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")

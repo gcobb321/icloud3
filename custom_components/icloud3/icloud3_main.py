@@ -275,7 +275,7 @@ class iCloud3:
             service_handler.reload_icloud3()
             return
 
-        if Gb.config_parms_update_control != {''}:
+        if isnot_empty(Gb.config_parms_update_control):
             start_ic3.handle_config_parms_update()
 
         # Exit 5-sec loop if no devices, updating a device now, or restarting iCloud3

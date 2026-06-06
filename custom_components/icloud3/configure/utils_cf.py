@@ -28,6 +28,9 @@ def any_errors(self):
     return (isnot_empty(self.errors)
                 and self.errors.get('base') not in VALID_ERROR_MSG)
 
+def no_errors(self):
+    return not any_errors(self)
+
 #--------------------------------------------------------------------
 def menu_text_to_item(self, user_input, selection_list):
     '''
@@ -68,11 +71,14 @@ def strip_spaces(user_input, parm_list=[]):
     Remove leading or trailing spaces from items in the parameter list
 
     '''
+    if user_input is None: return None
+
     parm_list = [pname  for pname, pvalue in user_input.items()
                             if type(pvalue) is str and pvalue != '']
 
     for parm in parm_list:
-        user_input[parm] = user_input[parm].strip()
+        if parm in user_input:
+            user_input[parm] = user_input[parm].strip()
 
     return user_input
 
@@ -138,30 +144,35 @@ def action_text_to_item(self, user_input):
 
     # If the actions_list is set up as an {value: key, label: text} item, the action_selection value
     # will be the action_item
-    if action_selection in ACTION_LIST_ITEM_KEYS:
+    if action_selection in ACTION_LIST_OPTIONS:
         return user_input, action_selection
 
-    # If the actions_list is set up as an [display text] item, scan the actions_list table
-    # for a match. Then get action_item value
-    action_item = ACTION_LIST_ITEMS_KEY_BY_TEXT.get(action_selection)
+    try:
+        # If the actions_list is set up as an [display text] item, scan the actions_list table
+        # for a match. Then get action_item value
+        action_item = ACTION_LIST_ITEMS_KEY_BY_TEXT.get(action_selection)
 
-    # Action item was not found in the list of action items and may include
-    # special text updated at run time. The special text iss inserted by replacing
-    # a text string starting with a ^. Cycle back through the action items looking
-    # for one that starts with the text before the ^.
-    if action_item is None:
-        action_item = [action_item_key
-                        for action_item_key, action_item_text in ACTION_LIST_OPTIONS.items()
-                        if action_selection.startswith(action_item_text[:action_item_text.find('^')])]
+        # Action item was not found in the list of action items and may include
+        # special text updated at run time. The special text iss inserted by replacing
+        # a text string starting with a ^. Cycle back through the action items looking
+        # for one that starts with the text before the ^.
+        if action_item is None:
+            action_item = [action_item_key
+                            for action_item_key, action_item_text in ACTION_LIST_OPTIONS.items()
+                            if action_selection.startswith(action_item_text[:action_item_text.find('^')])]
 
-        if isnot_empty(action_item):
-            action_item = action_item[0]
-        else:
-            action_item = 'cancel_goto_menu'
-            self.base = 'unknown_action'
+            if isnot_empty(action_item):
+                action_item = action_item[0]
 
-    if action_item == 'cancel_goto_menu':
-        self.header_msg = None
+            else:
+                action_item = 'cancel_goto_menu'
+                self.base = 'unknown_action'
+
+        if action_item == 'cancel_goto_menu':
+            self.header_msg = None
+
+    except Exception as err:
+        log_exception(err)
 
     return user_input, action_item
 
@@ -301,6 +312,7 @@ def option_text_to_parm(user_input, pname, option_list_key_text):
         if user_input is None:
             return None
         if pname not in user_input:
+            #user_input[pname] = ''
             return user_input
 
         pvalue_text = user_input[pname]
@@ -420,7 +432,7 @@ def parm_with_example_text(config_parameter, input_select_list_KEY_TEXT):
     return input_select_list_KEY_TEXT[0]
 
 #--------------------------------------------------------------------
-def action_default_text(action_item, action_OPTIONS=None):
+def default_action_text(action_item, action_OPTIONS=None):
     if action_OPTIONS:
         return action_OPTIONS.get(action_item, 'UNKNOWN ACTION > Unknown Action')
     else:
@@ -433,7 +445,7 @@ def discard_changes(user_input):
     selected. Discard changes is the last item in the list.
     '''
     if user_input:
-        return (user_input.get('action_item') == action_default_text('cancel_goto_menu'))
+        return (user_input.get('action_item') == default_action_text('cancel_goto_menu'))
     else:
         return False
 

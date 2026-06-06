@@ -58,7 +58,7 @@ from .utils.time_util   import (time_to_12hrtime, time_remove_am_pm, format_time
                                 adjust_time_hour_values, adjust_time_hour_value)
 from .utils.dist_util   import (km_to_mi, m_to_ft, m_to_um, set_precision, reformat_um, )
 
-# from .configure         import sensors as config_sensors
+# from .configure         import sensors_cf as config_sensors
 from .startup           import config_file
 from .startup           import start_ic3
 from .utils             import entity_io
@@ -107,9 +107,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     disabled_devices = er_util.extract_item_from_device_reg_items(
                                     'disabled', 'entity_id', PLATFORM_SENSOR)
 
-    # Initialize these now so they will be available before the HA Sensors and iC3 
+    # Initialize these now so they will be available before the HA Sensors and iC3
     # Device objects are created. This insures everything can be linked properly
-    # later on. 
+    # later on.
     for devicename in Gb.conf_devicenames:
         if devicename not in Gb.Sensors_by_devicename:
             Gb.Sensors_by_devicename[devicename]           = {}

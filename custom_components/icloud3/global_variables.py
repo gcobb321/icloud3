@@ -110,6 +110,7 @@ class GlobalVariables(object):
     MobileApp_devices               = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
 
     config_entry_id                 = None
+    ConfigFlowHandler               = None
     OptionsFlowHandler              = None  # OptionsFlowHandler (config_flow)
 
     EvLog                           = None   # Event Log

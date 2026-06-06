@@ -383,6 +383,9 @@ def strip_lead_comma(text):
 
 #--------------------------------------------------------------------
 def username_id(username):
+    if username == '':
+        return ''
+
     _username_base = f"{username}@".split('@')[0]
     _username_base = username_base(username)
 

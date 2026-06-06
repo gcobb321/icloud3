@@ -136,8 +136,8 @@ class iCloud_Fido2():
     @property
     def fido2_devices(self) -> List[CtapHidDevice]:
         """List the available FIDO2 devices."""
-        _log(f"{CtapHidDevice.__dict__=}")
-        _log(f"{CtapHidDevice.list_devices()=}")
+        # _log(f"{CtapHidDevice.__dict__=}")
+        # _log(f"{CtapHidDevice.list_devices()=}")
         return list(CtapHidDevice.list_devices())
 
 #--------------------------------------------------------------------
