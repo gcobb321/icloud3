@@ -114,6 +114,13 @@ def request_get_post(url, **kwargs):
             occurred
     '''
 
+    # Prevent SyncWorker threads from blocking indefinitely on hung remote
+    # endpoints (notably the connectivity check in internet_error.py). Without
+    # a socket-level timeout, requests.get / requests.post can wait forever
+    # inside ssl.do_handshake() / sock.recv(), saturating HA's thread pool and
+    # leading to the symptoms reported in issue #552.
+    kwargs.setdefault("timeout", 30)
+
     try:
         error = 'InternetError-'
         code  = 104
