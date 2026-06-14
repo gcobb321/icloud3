@@ -50,7 +50,10 @@
       "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
       "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
       "icloud_no_devices": "No devices were found in the iCloud `Family Sharing` list",
-      "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later"
+      "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later",
+
+      "hwkey_auth_failed": "❌ Hardware Key authentication failed or timed out — try again or use a different method",
+      "hwkey_names_refreshed": "✅ Hardware Key names refreshed from Apple"
     },
     "step": {
       "user": {
@@ -88,6 +91,11 @@
           "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
+      },
+
+      "reauth_hwkey_progress": {
+        "title": "Touch the Hardware Security Key",
+        "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
       },
 
       "reauth_code_from_applecom_login": {
@@ -177,6 +185,9 @@
       "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
       "auth_code_send_error": "❌ Failed to send the Authentication Code",
+
+      "hwkey_auth_failed": "❌ Hardware Key authentication failed or timed out — try again or use a different method",
+      "hwkey_names_refreshed": "✅ Hardware Key names refreshed from Apple",
 
       "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
       "already_assigned": "This selection is already assigned to another device",
@@ -387,6 +398,11 @@
           "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
+      },
+
+      "reauth_hwkey_progress": {
+        "title": "Touch the Hardware Security Key",
+        "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
       },
 
       "reauth_code_from_applecom_login": {

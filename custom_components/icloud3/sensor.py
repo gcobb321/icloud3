@@ -1119,7 +1119,7 @@ class DeviceSensor_Base():
             if self.enabled is False:
                 return
 
-            self.schedule_update_ha_state()
+            self.schedule_update_ha_state(force_refresh=True)
 
         except Exception as err:
             log_exception(err)
@@ -1613,7 +1613,7 @@ class iCloud3Sensor_Base():
             return
 
         try:
-            self.schedule_update_ha_state()
+            self.schedule_update_ha_state(force_refresh=True)
 
         except (RuntimeError, AttributeError):
             pass

@@ -65,8 +65,6 @@ class OptionsFlow_Parameters_Steps:
     async def async_step_away_time_zone(self, user_input=None, errors=None):
         user_input = self._unpack_ui_away_time_zone(user_input)
         user_input, action_item = self.initialize_step('away_time_zone', user_input, errors)
-        # self.step_id = 'away_time_zone'
-        # user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 
         lists.build_away_time_zone_devices_list(self)
         lists.build_away_time_zone_hours_list(self)

@@ -30,22 +30,22 @@ WAZE_STATUS_FNAME ={WAZE_USED: 'Used',
                     WAZE_PAUSED: '×Paused',
                     WAZE_OUT_OF_RANGE: '×OutOfRange',
                     WAZE_NO_DATA: '×NoData',
-                    Waze_UNDER_MIN: '×Under1km',
-                    Waze_OVER_MAX: '×Over100km'}
+                    Waze_UNDER_MIN: '×<1km',
+                    Waze_OVER_MAX: '×>100km'}
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Waze(object):
     def __init__(self, is_waze_dist_method_used, waze_min_distance, waze_max_distance,
                     waze_realtime, waze_region):
 
-        self.waze_status                = WAZE_USED
-        self.is_waze_dist_method_used  = is_waze_dist_method_used
-        self.waze_realtime              = waze_realtime
-        self.waze_region                = waze_region.upper()
-        self.waze_min_distance          = waze_min_distance
-        self.waze_max_distance          = waze_max_distance
-        WAZE_STATUS_FNAME[Waze_UNDER_MIN] = f"×Under{waze_min_distance}km"
-        WAZE_STATUS_FNAME[Waze_OVER_MAX] = f"×Over{waze_max_distance}km"
+        self.waze_status                  = WAZE_USED
+        self.is_waze_dist_method_used     = is_waze_dist_method_used
+        self.waze_realtime                = waze_realtime
+        self.waze_region                  = waze_region.upper()
+        self.waze_min_distance            = waze_min_distance
+        self.waze_max_distance            = waze_max_distance
+        WAZE_STATUS_FNAME[Waze_UNDER_MIN] = f"×<{waze_min_distance:.0f}km"
+        WAZE_STATUS_FNAME[Waze_OVER_MAX]  = f"×>{waze_max_distance:.0f}km"
 
         self.internet_error_displayed = False
 

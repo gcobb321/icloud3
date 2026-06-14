@@ -154,7 +154,7 @@ more_info_text = {
         f"{CRLF}{NBSP3}1. Press Ctrl+Shift+Del, Clear Data, Refresh"
         f"{CRLF}{NBSP3}2. On Settings tab, check Clear Images and File, then Click Clear Data, Refresh"
         f"{CRLF}{NBSP3}3. Select the Home Assistant tab, then Refresh the display"
-        f"{CRLF_DOT}Refresh the Mobile App on iPhones, iPads, etc:"
+        f"{CRLF}{CRLF_DOT}Refresh the Mobile App on iPhones, iPads, etc:"
         f"{CRLF}{NBSP3}1. HA Sidebar, Configuration, Companion App"
         f"{CRLF}{NBSP3}2. Debugging, Reset frontend cache, Settings, Done"
         f"{CRLF}{NBSP3}3. Close Companion App, Redisplay iCloud3 screen"

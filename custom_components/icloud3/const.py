@@ -10,9 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-# from homeassistant.const import (Platform)
-
-VERSION                         = '3.5.1'
+VERSION                         = '3.6'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -59,6 +57,7 @@ NOTIFY                          = 'notify'
 DISTANCE_TO_DEVICES             = 'distance_to'
 DISTANCE_TO_OTHER_DEVICES       = 'distance_to_other_devices'
 DISTANCE_TO_OTHER_DEVICES_DATETIME = 'distance_to_other_devices_datetime'
+TRUST_COOKIE_NAME               = 'X-APPLE-WEBAUTH-HSA-TRUST'
 
 
 # General constants
@@ -274,7 +273,7 @@ RANGE_UM = 3
 MOBAPP_DT_ENTITY = True
 ICLOUD_DT_ENTITY = False
 ICLOUD_LOCATION_DATA_ERROR   = False
-TRUST_TOKEN_EXPIRE_WARNING_DAYS = 20    #   Start warning user trust cookie will expire in x days
+TRUST_TOKEN_EXPIRE_WARNING_DAYS = 88    #   Start warning user trust cookie will expire in x days
 CMD_RESET_PYICLOUD_SESSION   = 'reset_session'
 NEAR_DEVICE_DISTANCE         = 25       # Distance between nearby devices  (det_interval)
 PASS_THRU_ZONE_INTERVAL_SECS = 60       # Delay time before moving into a non-tracked zone to see if if just passing thru
@@ -352,7 +351,6 @@ EVLOG_PINK        = '^4^'
 EVLOG_RED         = '^5^'
 EVLOG_BLUE        = '^6^'       # DO NOT USE - EventLog uses ^6^
 
-EVLOG_TIME_RECD   = '^t^'       # MobileApp State, ic3 Zone, interval, travel time, distance event
 EVLOG_UPDATE_HDR  = '^u^'       # update start-to-complete highlight and edge bar block
 EVLOG_UPDATE_START= '^s^'       # update start-to-complete highlight and edge bar block
 EVLOG_UPDATE_END  = '^c^'       # update start-to-complete highlight and edge bar block
@@ -384,11 +382,16 @@ CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', '
 '''
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
 dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 ✪"
+⓪ ① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯ ⑰ ⑱ ⑲ ⑳ ㉑ ㉒ ㉓ ㉔ ㉕
+㉖ ㉗ ㉘ ㉙ ㉚ ㉛ ㉜ ㉝ ㉞ ㉟ ㊱ ㊲ ㊳ ㊴ ㊵ ㊶ ㊷ ㊸ ㊹ ㊺ ㊻ ㊼ ㊽ ㊾ ㊿
 Symbols = ±▪•●▬⮾ ⊗⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
 Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔☁️🍎🔻⮽➕⚙️
-🔵🔴🟠🟡🟢🟣🟤🟦🟥🟧🟨🟩🟪🟫🔶🔷🔸🔹🔺🔻
+🔵🔴🟠🟡🟢🟣🟤
+🟦🟥🟧🟨🟩🟪🟫
+🔶🔷🔸🔹🔺🔻
 ✅❎☑️🅰️🍏⛅☁🌤
 🔁🔄➡️🔃⬇️🔗▶️⏩⏪⏫⏬⏭⏮⏯⏰⏱⏸⏹⏺
+☖☗⌂
 
 https://www.fileformat.info/info/unicode/block/braille_patterns/utf8test.htm
 https://www.htmlsymbols.xyz/unit-symbols
@@ -415,6 +418,7 @@ LLINK             = ''
 RLINK             = ''
 LINK              = '⟢'
 CLOCK_FACE        = '🕓'
+HOME_ICON         = '☖'
 INFO              = '🛈'
 CHECK_MARK        = '✓ '
 RED_X             = '❌'
@@ -862,15 +866,17 @@ TEXT                       = 'text'
 TEXT_1                     = 'text_1'
 TEXT_2                     = 'text_2'
 HWKEY                      = 'hwkey'
-HWKEY_1                    = 'hwkey_1'
-HWKEY_2                    = 'hwkey_2'
+# HWKEY_1                    = 'hwkey_1'
+# HWKEY_2                    = 'hwkey_2'
+# SWKEY                      = 'swkey'
+# SWKEY_1                    = 'swkey_1'
+# SWKEY_2                    = 'swkey_2'
 
 DEFAULT_AUTH_METHODS = {
         CONF_LAST_METHOD: PUSH,
         TEXT_1: '',
         TEXT_2: '',
-        HWKEY_1: '',
-        HWKEY_2: ''
+        HWKEY: '',
 }
 
 DEFAULT_APPLE_ACCOUNT_CONF = {

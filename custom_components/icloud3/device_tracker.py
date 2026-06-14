@@ -35,8 +35,7 @@ from .startup           import start_ic3
 from .startup           import config_file
 
 #--------------------------------------------------------------------
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
-from homeassistant.components.device_tracker import device_trigger
+from homeassistant.components.device_tracker import (TrackerEntity, device_trigger)
 from homeassistant.config_entries       import ConfigEntry
 from homeassistant.core                 import HomeAssistant
 from homeassistant.helpers.entity       import DeviceInfo
@@ -481,9 +480,9 @@ class iCloud3_DeviceTracker(TrackerEntity):
             extra_attrs['last_timestamp']= f"{self._get_sensor_value(LAST_LOCATED_SECS)}"
 
             extra_attrs[f"{'-'*5} ICLOUD3 CONFIGURATION {'-'*19}"] = ''
-            extra_attrs['icloud3_devices']   = ', '.join(Gb.Devices_by_devicename.keys())
+            extra_attrs['icloud3_devices']      = ', '.join(Gb.Devices_by_devicename.keys())
             extra_attrs[f'{icloud3}_version']   = f"v{Gb.version}"
-            extra_attrs['event_log_version'] = f"v{Gb.version_evlog}"
+            extra_attrs['event_log_version']    = f"v{Gb.version_evlog}"
             extra_attrs[f'{icloud3}_directory'] = Gb.icloud3_directory
 
             return extra_attrs

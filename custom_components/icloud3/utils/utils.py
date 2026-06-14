@@ -161,6 +161,9 @@ def instr(string, substring):
     '''
     if type(substring) is str:
         try:
+            if string == '' or string is None or substring == '' or substring is None:
+                return False
+
             return substring in string
         except:
             return False

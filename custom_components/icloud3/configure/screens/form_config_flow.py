@@ -102,26 +102,30 @@ def form_menu(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             CONFIRM ACTION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_confirm_action(self, action_desc=None):
+def form_confirm_action(self):
     '''
     confirm_action form uses information in the self.confirm_action{}
     '''
 
-    actions_list = CONFIRM_ACTIONS.copy()
-    actions_list_default = 'confirm_action_no'
-    action_desc = action_desc if action_desc is not None else\
+    try:
+        actions_list = CONFIRM_ACTIONS.copy()
+        actions_list_default = 'confirm_action_no'
+        action_desc = self.confirm_action.get('action_desc') or \
                     'Do you want to perform the selected action?'
 
-    return vol.Schema({
-        vol.Required('action_desc',
+        return vol.Schema({
+            vol.Required('action_desc',
                     default=action_desc):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=[action_desc], mode='list')),
-        vol.Required('action_items',
+            vol.Required('action_items',
                     default=utils_cf.default_action_text(actions_list_default)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=actions_list, mode='list')),
-        })
+            })
+    except Exception as err:
+        log_exception(err)
+
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

@@ -98,8 +98,8 @@ def form_tools_entity_registry_cleanup(self, user_input=None):
                 hdr_bar = f"{'_'*100}"
             else:
                 hdr_bar = ''
-                if len(sensors_str) > 140-len(devicename):
-                    sensors_str = f"{sensors_str[0:(140-len(devicename))]}, {DOTS}"
+                if len(sensors_str) > 130-len(devicename):
+                    sensors_str = f"{sensors_str[0:(130-len(devicename))]}, {DOTS}"
 
             if self.tools_entity_reg_check_all:
                 list_add(checked_device_sensors[status], devicename)

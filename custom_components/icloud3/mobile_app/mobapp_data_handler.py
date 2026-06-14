@@ -45,7 +45,7 @@ def check_mobapp_state_trigger_change(Device):
     'timestamp_secs': 1680103760.0, 'timestamp_time': '11:29:20a'}
     '''
     try:
-        Device.was_mobapp_data_updated = False
+        Device.was_mobapp_data_updated   = False
         Device.mobapp_data_change_reason = ''
         Device.mobapp_data_reject_reason = ''
 
@@ -56,15 +56,21 @@ def check_mobapp_state_trigger_change(Device):
         if device_trkr_attrs is None:
             return
 
-        mobapp_data_state      = device_trkr_attrs[DEVICE_TRACKER]
-        mobapp_data_state_secs = device_trkr_attrs[f"state_{TIMESTAMP_SECS}"]
-        mobapp_data_state_time = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
-        mobapp_data_state_time = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
+        mobapp_data_state        = device_trkr_attrs[DEVICE_TRACKER]
+        mobapp_data_state_secs   = device_trkr_attrs[f"state_{TIMESTAMP_SECS}"]
+        mobapp_data_state_time   = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
+        mobapp_data_state_time   = device_trkr_attrs[f"state_{TIMESTAMP_TIME}"]
+        mobapp_data_trigger      = device_trkr_attrs["trigger"]                   = 'None'
+        mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = 0
+        mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = HHMMSS_ZERO
 
         # State change will create enter/exit Zone trigger
-        if Device.mobapp_data_state != mobapp_data_state:
-            mobapp_data_trigger      = device_trkr_attrs["trigger"] = EXIT_ZONE \
-                            if mobapp_data_state == NOT_HOME else     ENTER_ZONE
+        if Device.isin_statzone and mobapp_data_state == NOT_HOME:
+            pass
+
+        elif Device.mobapp_data_state != mobapp_data_state:
+            enter_exit_zone = EXIT_ZONE if mobapp_data_state == NOT_HOME else ENTER_ZONE
+            mobapp_data_trigger      = device_trkr_attrs["trigger"] = enter_exit_zone
             mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = mobapp_data_state_secs
             mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = mobapp_data_state_time
 
@@ -78,10 +84,7 @@ def check_mobapp_state_trigger_change(Device):
             mobapp_data_trigger      = device_trkr_attrs["trigger"]                   = entity_io.get_state(entity_id)
             mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = entity_io.get_last_changed_time(entity_id)
             mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = secs_to_time(mobapp_data_trigger_secs)
-        else:
-            mobapp_data_trigger      = device_trkr_attrs["trigger"]                   = 'None'
-            mobapp_data_trigger_secs = device_trkr_attrs[f"trigger_{TIMESTAMP_SECS}"] = 0
-            mobapp_data_trigger_time = device_trkr_attrs[f"trigger_{TIMESTAMP_TIME}"] = HHMMSS_ZERO
+
 
         # Get the latest of the state time or trigger time for the new data (rc9)
         if (mobapp_data_state_not_set_flag

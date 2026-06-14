@@ -20,15 +20,14 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CLOCK_FACE,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_URL_LIST,
-                                    EVLOG_TIME_RECD, EVLOG_HIGHLIGHT, EVLOG_MONITOR, EVLOG_TRACE,
                                     EVLOG_ATTENTION, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
                                     EVLOG_ALERT, EVLOG_WARNING, EVLOG_ERROR, EVLOG_NOTICE,
-                                    EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR,
+                                    EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR, EVLOG_TRACE, EVLOG_MONITOR,
                                     EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
                                     CONF_EVLOG_BTNCONFIG_URL,
                                     )
 
-from ..utils.utils        import instr, circle_letter, str_to_list, list_to_str, isbetween
+from ..utils.utils        import (instr, circle_letter, is_empty, isnot_empty, list_to_str, )
 from ..utils.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _log, _evlog,
                                     filter_special_chars, format_header_box, )
 from ..utils.time_util    import (time_to_12hrtime, datetime_now, time_now_secs, datetime_for_filename,
@@ -54,7 +53,6 @@ MAX_EVLOG_RECD_LENGTH = 2000
 # ^4^ - DeepPink
 # ^5^ - MediumVioletRed
 # ^6^ - --dark-primary-color
-# EVLOG_TIME_RECD   = '^t^'       # MobileApp State, ic3 Zone, interval, travel time, distance event
 # EVLOG_UPDATE_HDR  = '^u^'       # update start-to-complete highlight and edge bar block
 # EVLOG_UPDATE_START= '^s^'       # update start-to-complete highlight and edge bar block
 # EVLOG_UPDATE_END  = '^c^'       # update start-to-complete highlight and edge bar block
@@ -90,13 +88,13 @@ class EventLog(object):
         self.startup_event_recds     = []   # All Event recds during startup
         self.event_recds_max_cnt     = EVENT_RECDS_MAX_CNT_BASE
 
-        self.devicename              = ''
-        self.fname_selected          = ''
-        self.fnames_by_devicename    = {}
+        self.fnames_by_devicename    = {'Setup': 'Waiting for HA to Finish Loading'}
+        self.devicename              = 'Setup'
+        self.fname_selected          = 'Waiting for HA to Finish Loading'
         self.clear_secs              = HIGH_INTEGER
         self.trk_monitors_flag       = False
-        self.is_log_level_debug          = False
-        self.is_log_level_rawdata           = False
+        self.is_log_level_debug      = False
+        self.is_log_level_rawdata    = False
         self.last_refresh_secs       = 0
         self.last_refresh_devicename = ''
         self.dist_to_devices_recd_found_flag = False    # Display only the last DistTo Devices > stmt
@@ -127,32 +125,47 @@ class EventLog(object):
         self.evlog_url_list['urlConfig']    = Gb.evlog_btnconfig_url
 
         self.evlog_attrs                    = {}
-        self.evlog_attrs["update_time"]     = ''
-        self.evlog_attrs["alert"]           = ""
-        self.evlog_attrs["alerts"]          = ""
-        self.evlog_attrs["alert_startup"]   = ""
-        self.evlog_attrs["alert_tracked"]   = ""
-        self.evlog_attrs["alert_monitored"] = ""
-        self.evlog_attrs["user_message"]    = self.user_message
+        self.evlog_attrs['update_time']     = ''
+        self.evlog_attrs['alert']           = ""
+        self.evlog_attrs['alerts']          = ""
+        self.evlog_attrs['alert_startup']   = ""
+        self.evlog_attrs['alert_tracked']   = ""
+        self.evlog_attrs['alert_monitored'] = ""
+        self.evlog_attrs['user_message']    = self.user_message
+
+        self.evlog_attrs['selected_dname']  = self.devicename
+        self.evlog_attrs['selected_fname']  = self.fname_selected
+        self.evlog_attrs['buttons_dname']   = 'Setup'
+        self.evlog_attrs['buttons_fname']   = 'Waiting for HA to Finish Loading'
+        self.evlog_attrs['filtername']      = 'Initialize'
+        self.evlog_attrs['parameters']      = '3'    # button rows,
+
+        self.evlog_attrs['version_ic3']     = Gb.version
+        self.evlog_attrs['version_evlog']   = Gb.version_evlog
+        self.evlog_attrs['log_level_debug'] = ''
+        self.evlog_attrs['run_mode']        = 'Initialize'
+        self.evlog_attrs['evlog_url_list']  = self.evlog_url_list
+
+        self.evlog_attrs['logs']            = []
+
+        #  Unused items in EvLog card v3.6+ included for comparability
         self.evlog_attrs["devicename"]      = ''
         self.evlog_attrs["fname"]           = ''
         self.evlog_attrs["fnames"]          = {'Setup': 'Waiting for HA to Finish Loading'}
-        self.evlog_attrs["filtername"]      = 'Initialize'
-        self.evlog_attrs["version_ic3"]     = Gb.version
-        self.evlog_attrs["version_evlog"]   = Gb.version_evlog
-        self.evlog_attrs["versionEvLog"]    = Gb.version_evlog
-        self.evlog_attrs["log_level_debug"] = ''
-        self.evlog_attrs["run_mode"]        = 'Initialize'
-        self.evlog_attrs["evlog_url_list"]  = self.evlog_url_list
-        self.evlog_attrs["name"]            = {"Browser Refresh is Required":
-                                                "Browser Refresh is Required"}
-        self.evlog_attrs["names"]           = browser_refresh_msg
-        self.evlog_attrs["logs"]            = []
+
 
         self.devicename_cnts = {}
 
         Gb.evlog_btnconfig_url              = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
         Gb.evlog_version                    = Gb.conf_profile['event_log_version']
+
+    @property
+    def buttons_dname(self):
+        return list_to_str(self.fnames_by_devicename.keys(), '|')
+
+    @property
+    def buttons_fname(self):
+        return list_to_str(self.fnames_by_devicename.values(), '|')
 
     def __repr__(self):
         return (f"<EventLog: {self.fnames_by_devicename}>")
@@ -169,48 +182,43 @@ class EventLog(object):
         '''
 
         try:
-            self.devicename = ''
+            self.devicename     = ''
             self.fname_selected = ''
-            self.fnames_by_devicename = {}
-            self.event_recds_max_cnt  = EVENT_RECDS_MAX_CNT_BASE
 
-            self.fnames_by_devicename.update({devicename: self.format_evlog_device_fname(Device)
-                            for devicename, Device in Gb.Devices_by_devicename_tracked.items()
-                            if devicename != ''})
-
-            self.fnames_by_devicename.update({devicename: self.format_evlog_device_fname(Device)
-                            for devicename, Device in Gb.Devices_by_devicename_monitored.items()
-                            if devicename != ''})
-
+            self.event_recds_max_cnt = EVENT_RECDS_MAX_CNT_BASE
             tfz_cnt = sum([len(Device.FromZones_by_zone) for Device in Gb.Devices])
             self.event_recds_max_cnt = EVENT_RECDS_MAX_CNT_ZONE*tfz_cnt
 
+            self.build_fnames_by_devicename()
             if self.fnames_by_devicename == {}:
                 self.user_message_alert_flag = True
-                self.evlog_attrs["user_message"] = 'No Devices have been configured'
-                self.fnames_by_devicename["nodevices"] = 'No Devices have been configured'
+                self.evlog_attrs['user_message'] = 'No Devices have been configured'
+                self.fnames_by_devicename['nodevices'] = 'No Devices have been configured'
                 self.fname_selected = "NoDevices"
 
             elif self.devicename == '':
-                self.devicename = next(iter(self.fnames_by_devicename))
+                self.devicename     = next(iter(self.fnames_by_devicename))
                 self.fname_selected = self.fnames_by_devicename[self.devicename]
 
-            if Gb.evlog_version.startswith('3'):
-                self.evlog_attrs["name"] = ''
-                self.evlog_attrs["names"] = ''
+            self.evlog_attrs['update_time']    = "setup"
+            self.evlog_attrs['user_message']   = self.user_message
+            self.evlog_attrs['selected_dname'] = self.devicename
+            self.evlog_attrs['selected_fname'] = self.fname_selected
+            self.evlog_attrs['buttons_dname']  = self.buttons_dname
+            self.evlog_attrs['buttons_fname']  = self.buttons_fname
+            self.evlog_attrs['filtername']     = 'Initialize'
+            self.evlog_attrs['parameters']     = '3'    # button rows,
+            self.evlog_attrs['version_ic3']    = Gb.version
+            self.evlog_attrs['version_evlog']  = Gb.version_evlog
+            self.evlog_attrs['run_mode']       = "Initialize"
+            self.evlog_url_list['urlConfig']   = Gb.evlog_btnconfig_url
+            self.evlog_attrs['evlog_url_list'] = self.evlog_url_list
+            self.evlog_attrs['logs']           = []
 
-            self.evlog_attrs["update_time"]    = "setup"
-            self.evlog_attrs["user_message"]   = self.user_message
+            #  Unused items in EvLog card v3.6+ included for comparability
             self.evlog_attrs["devicename"]     = self.devicename
             self.evlog_attrs["fname"]          = self.fname_selected
             self.evlog_attrs["fnames"]         = self.fnames_by_devicename
-            self.evlog_attrs["filtername"]     = 'Initialize'
-            self.evlog_attrs["version_ic3"]    = Gb.version
-            self.evlog_attrs["version_evlog"]  = Gb.version_evlog
-            self.evlog_attrs["versionEvLog"]   = Gb.version_evlog
-            self.evlog_attrs["run_mode"]       = "Initialize"
-            self.evlog_url_list['urlConfig']   = Gb.evlog_btnconfig_url
-            self.evlog_attrs["evlog_url_list"] = self.evlog_url_list
 
             Gb.EvLogSensor.async_update_sensor()
 
@@ -219,15 +227,42 @@ class EventLog(object):
 
         return
 
-#------------------------------------------------------
-    def format_evlog_device_fname(self, Device):
-        # verified = Gb.evlog_alert_by_devicename.get(Device.devicename, '')
-        # verified = f"{RED_X} " if Device.was_verified is False else ''
-        tz_offset = '' if Device.away_time_zone_offset == 0 else f" {CLOCK_FACE}"
-        tracked  = '' if Device.is_tracked else f" {circle_letter('m')}"
-        return f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}{tz_offset}"
+#...................................................................
+    def build_fnames_by_devicename(self):
 
-#------------------------------------------------------
+        self.fnames_by_devicename = {}
+        self.fnames_by_devicename.update(
+            self._fnames_by_devicename_for_devices(Gb.Devices_by_devicename_tracked))
+        self.fnames_by_devicename.update(
+            self._fnames_by_devicename_for_devices(Gb.Devices_by_devicename_monitored))
+
+#...................................................................
+    def update_fnames_by_devicename(self, Device):
+        try:
+            self.fnames_by_devicename[Device.devicename] = self.format_evlog_device_fname(Device)
+
+        except Exception as err:
+            log_exception(err)
+
+#...................................................................
+    def _fnames_by_devicename_for_devices(self, _Devices_by_devicename):
+        return ({devicename: self.format_evlog_device_fname(Device)
+                        for devicename, Device in _Devices_by_devicename.items()
+                        if devicename != ''})
+
+#...................................................................
+    def format_evlog_device_fname(self, Device):
+        suffix  = '' if Device.evlog_fname_suffix_char == '' else f" {Device.evlog_fname_suffix_char}"
+        tracked = '' if Device.is_tracked else f" {circle_letter('m')}"
+        fname_text = f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}{suffix}"
+
+        return fname_text
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   POST NEW EVENT TO THE EVLOG
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def post_event(self, devicename_or_Device, event_text='+'):
         '''
         Add records to the Event Log table the device. If the device="*",
@@ -276,7 +311,6 @@ class EventLog(object):
                 in_last_few_recds = [v for v in self.event_recds[:8] \
                                         if (v[ELR_DEVICENAME] == devicename \
                                             and v[ELR_TEXT] == event_text \
-                                            and v[ELR_TEXT].startswith(EVLOG_TIME_RECD) is False
                                             and v[ELR_TEXT].startswith(EVLOG_TRACE) is False
                                             and v[ELR_TEXT].startswith('Battery') is False)]
                 if in_last_few_recds != []:
@@ -304,30 +338,13 @@ class EventLog(object):
                     or event_text.startswith(EVLOG_ATTENTION)
                     or event_text.startswith(EVLOG_IC3_STAGE_HDR)):
                 this_update_time = dt_util.now().strftime('%a')
-                if Gb.is_log_level_rawdata:
-                    this_update_time += ',Raw'
-                elif Gb.is_log_level_debug:
-                    this_update_time += ',Dbug'
-
+                if Device:
+                    space = '' if Device.dev_data_battery_level == 100 else ' '
+                    this_update_time += f",{space}{Device.dev_data_battery_level}%"
 
             else:
                 this_update_time = dt_util.now().strftime('%H:%M:%S')
                 this_update_time = time_to_12hrtime(this_update_time)
-
-                # If tracking from more than one zone and the tfz results are being displayed,
-                # display tfz zone name in the time field. Capitalize if going towards
-                if devicename.startswith('*') is False:
-                    if Device := Gb.Devices_by_devicename.get(devicename):
-                        Device.last_evlog_msg_secs = time_now_secs()
-                        from_zone_dname = Device.FromZone_BeingUpdated.from_zone_dname
-                        if event_text.startswith(EVLOG_TIME_RECD):
-                            this_update_time = f"»{from_zone_dname[:6]}"#
-                            if (Device.FromZone_BeingUpdated is Device.FromZone_TrackFrom
-                                    and Device.FromZone_BeingUpdated is not Device.FromZone_Home):
-                                this_update_time = this_update_time.upper()
-
-                        elif Device.FromZone_BeingUpdated is not Device.FromZone_Home:
-                            this_update_time = f"»{from_zone_dname[:6]}"
 
         except Exception as err:
             log_exception(err)
@@ -335,9 +352,6 @@ class EventLog(object):
         try:
             if (instr(type(event_text), 'dict') or instr(type(event_text), 'list')):
                 event_text = str(event_text)
-
-            if event_text.startswith(EVLOG_TIME_RECD):
-                event_text = event_text.replace('N/A', '')
 
             if len(event_text) == 0: event_text = 'Info Message'
             event_text = self._replace_special_chars(event_text)
@@ -467,15 +481,21 @@ class EventLog(object):
                 devicename = self.devicename
 
             elif devicename == 'startup_log':
-                self.evlog_attrs['fname'] = 'Startup Events'
+                self.evlog_attrs['selected_fname'] = 'Startup Events'
+                self.evlog_attrs['fname'] = self.evlog_attrs['selected_fname']
 
             elif devicename in ['', '*', '**', 'Initialize']:
                 self.evlog_attrs['run_mode'] = 'Initialize'
 
             else:
                 self.evlog_attrs['run_mode']   = 'Display'
-                self.evlog_attrs['devicename'] = self.devicename = devicename
-                self.evlog_attrs['fname']      = self.fname_selected = self.fnames_by_devicename[devicename]
+                self.evlog_attrs['selected_dname']  = self.devicename = devicename
+                self.evlog_attrs['selected_fname']  = self.fname_selected \
+                                                    = self.fnames_by_devicename[devicename]
+
+                self.evlog_attrs['devicename']      = self.evlog_attrs['selected_dname']
+                self.evlog_attrs['fname']           = self.evlog_attrs['selected_fname']
+
 
             self.evlog_sensor_state_value = devicename
 
@@ -525,6 +545,11 @@ class EventLog(object):
 
         self.user_message = user_message
         self.evlog_attrs['logs'] = self._filtered_evlog_recds(self.devicename, HIGH_INTEGER)
+        if ('Setup' in self.fnames_by_devicename
+                or is_empty(self.fnames_by_devicename)):
+            pass
+        else:
+            self.evlog_attrs['buttons_fname'] = self.buttons_fname
 
         self.update_evlog_sensor()
 
@@ -534,8 +559,15 @@ class EventLog(object):
         # Lovelace card. If the state does not change, the new information
         # is not displayed. Add the update time is added in sensor.py to make it unique.
 
-        self.evlog_attrs["update_time"]  = self.log_update_time()
-        self.evlog_attrs["user_message"] = self.user_message
+        self.evlog_attrs['update_time']  = self.log_update_time()
+        self.evlog_attrs['user_message'] = self.user_message
+        self.evlog_attrs['buttons_dname'] = self.buttons_dname
+        self.evlog_attrs['buttons_fname'] = self.buttons_fname
+
+        # TESTCODE
+        # btnX = 4
+        # self.evlog_attrs['buttons_dname'] = ((self.buttons_dname + '|')* btnX)[:-1]
+        # self.evlog_attrs['buttons_fname'] = ((self.buttons_fname + '|')* btnX)[:-1]
 
         # Update EvLog sensor to display all log records
         if Gb.EvLogSensor:
@@ -1005,18 +1037,18 @@ class EventLog(object):
                     time = (time + SP(8))[:8]
                     text = self._reformat_device_recd(log_section, time, text)
 
-                    if time.startswith('»Home'):
-                        pass
+                    # if time.startswith('»Home'):
+                    #     pass
 
-                    # Start of tfz group header
-                    elif time.startswith('»') and time != last_tfz_zone:
-                        text = f"{SP(4)}⡇{' ~ '*18}\n{time}{text}"
-                        last_tfz_zone = time
+                    # # Start of tfz group header
+                    # elif time.startswith('»') and time != last_tfz_zone:
+                    #     text = f"{SP(4)}⡇{' ~ '*18}\n{time}{text}"
+                    #     last_tfz_zone = time
 
-                    # End of tfz group trailer
-                    elif last_tfz_zone.startswith('»') and time != last_tfz_zone:
-                        text = f"{last_tfz_zone}{SP(4)}⡇{' ~ '*18}\n{time}{text}"
-                        time = last_tfz_zone = ''
+                    # # End of tfz group trailer
+                    # elif last_tfz_zone.startswith('»') and time != last_tfz_zone:
+                    #     text = f"{last_tfz_zone}{SP(4)}⡇{' ~ '*18}\n{time}{text}"
+                    #     time = last_tfz_zone = ''
 
                 if text != '':
                     record_str += f"{time}{text}\n"
@@ -1043,26 +1075,13 @@ class EventLog(object):
             text = f"{SP(4)}{format_header_box(text[3:], indent=12, start_finish='finish', evlog_export=True)}"
             return text
 
-        elif text.startswith(EVLOG_TIME_RECD):
-            tfz_adj = '  ' if (time.startswith('»') and time.startswith('»Home')) is False else ''
-            text = text[3:]
-            item = text.split(',')
-            text = (f"{' '*(11-len(time))}{tfz_adj}⡇ "
-                    f"MobApp-{item[0]}, "
-                    f"iCloud3-{item[1]}, "
-                    f"Interval-{item[2]}, "
-                    f"TravTime-{item[3]}, "
-                    f"Dist-{item[4]}")
-            return text
-
-        tfz_adj = '  ' if time.startswith('»') else ''
         group_char= '' if text.startswith('⡇') else \
                     '⡇ ' if Gb.trace_group else \
                     ''
 
         text = filter_special_chars(text, evlog_export=True)
 
-        return f"{SP(4)}{tfz_adj}{group_char}{text}"
+        return f"{SP(4)}{group_char}{text}"
 
 #--------------------------------------------------------------------
     @staticmethod

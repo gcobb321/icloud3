@@ -62,7 +62,7 @@ class GlobalVariables(object):
     Define global variables used to enable testing iCloud3 functions
     '''
     disable_upw_filter = False # Disable filtering passwords in the icloud3.log file
-    fido2_security_keys_enabled = False
+    hwkey_authentication_enabled = True
 
     # This variable provides a mechanism of testing Internet Connection Errors when iCloud3 is
     # starting without an actual error.

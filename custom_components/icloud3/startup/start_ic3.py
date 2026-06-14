@@ -887,7 +887,8 @@ def _read_event_log_card_js_file(evlog_filename):
         for evlog_recd in evlog_file:
             recd_no += 1
 
-            if instr(evlog_recd, 'const version'):
+            if (instr(evlog_recd, 'const version')
+                    or instr(evlog_recd, 'this._version')):
                 break
 
             #exit if find 'class' recd before 'version' recd
@@ -1311,7 +1312,7 @@ def _verify_away_time_zone_devicenames():
     else:
         for devicename in Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]:
             if devicename not in Gb.Devices_by_devicename:
-                Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES].remove(devicename)
+                list_del(Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES], devicename)
                 update_conf_file_flag = True
 
         if Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES] == []:
@@ -1324,7 +1325,7 @@ def _verify_away_time_zone_devicenames():
     else:
         for devicename in Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES]:
             if devicename not in Gb.Devices_by_devicename:
-                Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES].remove(devicename)
+                list_del(Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES], devicename)
                 update_conf_file_flag = True
 
         if Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES] == []:
@@ -1929,7 +1930,6 @@ def _post_evlog_apple_acct_tracked_devices_info(AppleAcct):
             device_msg += ( f"({_AADevData.icloud_device_display_name})"
                             f"{exception_msg}"
                             f"{offline_msg}")
-            # _evlog(f"{len(device_msg)} {device_msg[:65]}")
 
             devices_assigned_msg += device_msg
 

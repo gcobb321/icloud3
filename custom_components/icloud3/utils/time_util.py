@@ -306,6 +306,11 @@ def time_to_24hrtime(hhmmss):
 #       Time_Age - An item like 10:23:45 (10 mins ago)
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def format_time_units(time_str):
+    time, units = time_str.split(' ')
+    return f"{time}{units[0]}"
+
+#--------------------------------------------------------------------
 def format_timer(secs):
     ''' secs --> 4.5 days/hrs/mins/secs '''
 

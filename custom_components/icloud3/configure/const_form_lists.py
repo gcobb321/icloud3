@@ -29,10 +29,9 @@ MENU_PAGE_TITLE = [
         'Parameters Menu'
         ]
 MENU_KEY_TEXT = {
-        'apple_accounts':          'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
+        'apple_accounts':       'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
         'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
-        'auth_code':            'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code to Apple for account access verification',
-        'SK-auth_code':         'AUTHENTICATE APPLE ACCT SIGN-IN > Send the 6-digit Authentication Code/Security Key Name to Apple for verification. Refresh expired codes/Security Key approval requests',
+        'auth_code':            'AUTHENTICATE APPLE ACCT SIGN-IN > Authenticate account access, Request a verification code, Change Authentication Method',
         'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
         'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
         'dashboard_builder':    'DASHBOARD BUILDER > Build a Lovelace Dashboard to display device tracking information',
@@ -95,14 +94,12 @@ ACTION_LIST_OPTIONS = {
         'stop_login_retry':         'STOP RETRYING LOGIN > Stop retrying to log into the Apple Account',
         'other_apple_acct_parameters': 'OTHER APPLE ACCOUNT PARAMETERS > Set other config parameters (China Apple Server Location)',
 
-        'send_auth_code':           'SEND THE CODE TO APPLE TO AUTHENTICATE SIGN-IN > Send the Authentication Code back to Apple to confirm access to the Apple Account',
-        'request_auth_code':        'REQUEST AUTHENTICATION CODE > Delete the Trust Token. Get the Authenticate code from the Apple using the selected method',
-        'change_auth_method':       'CHANGE THE AUTHENTICATION METHOD > Change the method of getting the Authentication Code (Push Notification, Text Message)',
+        'send_auth_code':           'AUTHENTICATE > Send the Authentication Code back to Apple or Confirm the Security Key security code',
+        'request_auth_code':        'REQUEST AUTHENTICATION CODE or SECURITY KEY KEYPRESS > Untrust the Apple Acct. Get a new Authentication code or Start the Hardware Key keypress Process',
+        'change_auth_method':       'CHANGE AUTHENTICATION METHOD, REFRESH SECURITY KEY NAMES > Select a new method (Pop-up Window, Text Message, Security Key), Load Security Key names',
         'reset_trust_token_return': 'RESET TRUST TOKEN, RETURN TO ENTER & SEND THE CODE TO APPLE > Resets the Trust Token. Return to the Authenticate Apple Sign-in screen',
         'auth_code_from_applecom_login': 'APPLE DID NOT SEND A CODE (PUSH/TEXT), GET ONE FROM APPLE.COM > Sign into your Apple Acct, get a code, enter it here and send to Apple',
-
-        'SK-send_auth_code':        'SEND CODE/KEY TO APPLE TO AUTHENTICATE SIGN-IN > Send the Authentication Code or Security Key being used back to Apple to confirm access to the Apple Account',
-        'SK-request_auth_code':     'REQUEST NEW CODE/REFRESH SECURITY KEY LIST > Display `Apple Acct Sign-in is Requested` on a Trusted Device to get a new Code or to confirm using a Security Key',
+        'refresh_hwkey_names':      'REFRESH SECURITY KEY NAMES > Get registered Security Key names from Apple',
 
         'cancel_auth_entry':        'CANCEL > Cancel the Authentication Code Entry and Close this screen',
         'accept_terms_of_use':      'ACCEPT `TERMS OF USE` > Send `I Agree` to Apple updates to the `Terms of Use`',
@@ -160,7 +157,8 @@ ACTION_LIST_OPTIONS = {
 
         "divider1": "═══════════════════════════════════════",
         "divider2": "═══════════════════════════════════════",
-        "divider3": "═══════════════════════════════════════"
+        "divider3": "═══════════════════════════════════════",
+
         }
 
 ACTION_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in ACTION_LIST_OPTIONS.items()}
@@ -195,15 +193,17 @@ USERNAME_PASSWORD_ACTIONS = [
         ACTION_LIST_OPTIONS['auth_code'],
         ACTION_LIST_OPTIONS['cancel_goto_previous']]
 REAUTH_ACTIONS = [
-        ACTION_LIST_OPTIONS['send_auth_code'],
         ACTION_LIST_OPTIONS['request_auth_code'],
+        ACTION_LIST_OPTIONS['send_auth_code'],
         ACTION_LIST_OPTIONS['change_auth_method'],
         ACTION_LIST_OPTIONS['auth_code_from_applecom_login']]
 REAUTH_CODE_FROM_APPLECOM_LOGIN = [
         ACTION_LIST_OPTIONS['send_auth_code'],
         ACTION_LIST_OPTIONS['goto_previous']]
 CHANGE_AUTH_METHOD = [
-        ACTION_LIST_OPTIONS['save']]
+        ACTION_LIST_OPTIONS['refresh_hwkey_names'],
+        ACTION_LIST_OPTIONS['save'],
+        ]
 DEVICE_LIST_ACTIONS = [
         ACTION_LIST_OPTIONS['update_device'],
         ACTION_LIST_OPTIONS['delete_device'],
@@ -282,14 +282,10 @@ DATA_SOURCE_OPTIONS = {
         'MobApp':   'HA MOBILE APP - Location data and zone enter/exit triggers from devices with the Mobile App'
         }
 REAUTH_AUTH_METHODS = {
-        'last_method': 'LAST METHOD - Use the last method (Shown on the on Account line)',
-        'push':     'PUSH NOTFICATION - Display the code in the Code popup screen',
-        'text_1':   'TEXT MESSAGE 1 - Send a Text msg to the Trusted Device (Primary)',
-        'text_2':   'TEXT MESSAGE 2 - Send a Text msg to the Trusted Device (Other)'
+        'push':     'Authentication Code popup window',
+        'text':     'Text Message to `……{method_info}`',
+        'hwkey':    'Security Key ({method_info})'
         }
-        # 'hwkey_1':  'HARDWARE KEY 1 - Use a Hardware Key #1 (YubiKey)',
-        # 'hwkey_2':  'HARDWARE KEY 2 - Use a Hardware Key #2 (YubiKey)',
-        # }
 
 # Apple Server Endpoint value - Add onto the Server URL in AppleAcct_ic3 if this starts with a period ('.')
 APPLE_SERVER_LOCATION_OPTIONS = {
@@ -329,8 +325,8 @@ LOG_ZONES_KEY_TEXT = {
         'name-zone-device': '⋙ Zone+Device (2026-warehouse-gary_iphone.csv)',
         }
 AWAY_FROM_ZONE_OPTIONS = {
-        'none': 'All at Home',
-        'all': 'All are Away'}
+        'none': 'Not used',
+        'all': 'All are Away and in the same Time Zone'}
 TRACKING_MODE_OPTIONS = {
         'track':    'Track - Request Location and track the device',
         'monitor':  'Monitor - Report location only when another tracked device is updated',

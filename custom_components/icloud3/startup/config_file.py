@@ -273,6 +273,7 @@ def _add_parms_and_check_config_file():
         if update_config_file_flag:
             Gb.conf_profile[CONF_SENSORS_HASH] = ''
             write_icloud3_configuration_file()
+            write_icloud3_configuration_file(f'_v{Gb.conf_profile[CONF_IC3_VERSION]}')
 
         decode_all_passwords()
         build_log_file_filters()
@@ -755,6 +756,7 @@ def _config_file_check_new_ic3_version():
     '''
     new_icloud3_version_flag = False
     if Gb.conf_profile[CONF_IC3_VERSION] != f"{VERSION}{VERSION_BETA}":
+        write_icloud3_configuration_file(f'_v{Gb.conf_profile[CONF_IC3_VERSION]}')
         Gb.conf_profile[CONF_IC3_VERSION] = f"{VERSION}{VERSION_BETA}"
         Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         new_icloud3_version_flag = True
@@ -1045,28 +1047,45 @@ def _update_apple_acct_parameters():
     Update Gb.conf_apple_account with new fields
     '''
 
+    update_recd = False
     cd_idx = -1
     conf_apple_accts = Gb.conf_apple_accounts.copy()
     for conf_apple_acct in conf_apple_accts:
         cd_idx += 1
 
+        # v3.6-Change hwkey from list to str, delete hwkey_1 & hwkey_2
+        conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
+        try:
+            if type(conf_auth_methods['hwkey']) == str:
+                continue
+
+            dict_del(conf_auth_methods, 'hwkey')
+            dict_del(conf_auth_methods, 'hwkey_1')
+            dict_del(conf_auth_methods, 'hwkey_2')
+            conf_auth_methods['hwkey'] = ''
+            update_recd = True
+        except:
+            continue
+
         conf_apple_acct, were_items_deleted = _delete_items_from_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
         new_items, were_items_added         = _new_items_in_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
 
-        if were_items_deleted is False and were_items_added is False:
-            continue
+        if were_items_deleted or were_items_added:
+            update_recd = True
 
-        log_info_msg(f"Updated Configuration File items ({username_id(conf_apple_acct[CONF_USERNAME])})")
+            for item in new_items:
+                conf_apple_acct = _insert_into_conf_dict_parameter(
+                                        conf_apple_acct, item,
+                                        DEFAULT_APPLE_ACCOUNT_CONF[item],
+                                        before=CONF_DATA_SOURCE)
 
-        for item in new_items:
-            conf_apple_acct = _insert_into_conf_dict_parameter(
-                                    conf_apple_acct, item,
-                                    DEFAULT_APPLE_ACCOUNT_CONF[item],
-                                    before=CONF_DATA_SOURCE)
+        if update_recd:
+            log_info_msg(   f"Updated Configuration File items "
+                            f"({username_id(conf_apple_acct[CONF_USERNAME])})")
 
-        Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
+            Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
 
-    return True
+    return update_recd
 
 #--------------------------------------------------------------------
 def _update_device_parameters():

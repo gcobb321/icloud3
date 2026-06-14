@@ -91,8 +91,9 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
     VERSION = 1
     def __init__(self):
         self.is_config_flow_handler         = True
-        self.step_id                        = ''           # step_id for the window displayed
-        self.errors                         = {}           # Errors en.json error key
+        self.step_id                        = ''     # step_id for the window displayed
+        self.errors                         = {}     # Errors en.json error key
+        self.errors_info_msg                 = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
         self.OptFlow                        = None
         self.data_source                    = ICLOUD
 
@@ -107,8 +108,9 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         self.aa_idx                         = 0
         self.apple_acct_items_by_username   = {}
         self.apple_acct_auth_items_by_username = {}
-        self.is_auth_code_needed  = False
-        self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
+        self.is_auth_code_needed            = False
+        self.aa_auth_methods_by_auth_method = {}
+        # self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
 
         Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
 
@@ -270,7 +272,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
             if action_item.startswith('restart_ha'):
                 await Gb.hass.services.async_call("homeassistant", "restart")
 
-            data = {}
             data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
 
             return self.async_create_entry(title=CONFIG_UPDATE_COMPLETE_MSG, data=data)
@@ -358,9 +359,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
     def __init__(self):
         self.is_config_flow_handler         = False
         self.is_initialize_options_required = True
-        self.step_id                        = ''       # step_id for the window displayed
-        self.errors                         = {}       # Errors en.json error key
-        self.errors_entered_value           = {}
         self.config_file_commit_updates     = False  # The config file has been updated and needs to be written
 
         self.initialize_options()
@@ -373,6 +371,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.multi_form_hdr                 = ''     # multi-form - text string displayed on the called form
         self.multi_form_user_input          = {}     # multi-form - user_input to be restored when returning to calling form
         self.errors_user_input              = {}     # user_input text for a value with an error
+        self.errors_entered_value           = {}
+        self.errors_info_msg                 = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
         self.step_id                        = ''     # step_id for the window displayed
         self.menu_item_selected             = [ MENU_KEY_TEXT_PAGE_0[MENU_PAGE_0_INITIAL_ITEM],
                                                 MENU_KEY_TEXT_PAGE_1[MENU_PAGE_1_INITIAL_ITEM]]
@@ -425,8 +425,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.aa_idx                         = 0
         self.apple_acct_reauth_username     = ''
         self.add_apple_acct_flag            = False
+        self.aa_auth_methods_by_auth_method = {}        # Authentication methods for an Aple acct
         # self.scanned_for_fido2_key_names    = False
-        self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
+        # self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
 
         self.icloud_list_text_by_fname      = {}
         self.icloud_list_text_by_fname2     = {}
@@ -804,7 +805,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                 await dbb.update_ic3db_dashboards_new_deleted_devices(self)
                 self.rebuild_ic3db_dashboards = False
 
-            data = {}
             data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
 
             log_debug_msg(f"⭐ Exit Configure Settings, UpdateParms-{Gb.config_parms_update_control}")
@@ -898,11 +898,17 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.errors = {}
         self.errors_user_input = {}
 
+        log_debug_msg(  f"⭐ {self.step_id.upper()} ENTER > "
+                            f"UserInput-{user_input}, Errors-{errors}, "
+                            f"{self.confirm_action=}")
+
         if user_input is None or 'action_items' not in user_input:
-            return self.async_show_form(step_id='confirm_action',
-                                        data_schema=forms.form_confirm_action(
-                                            self, action_desc=self.confirm_action['action_desc']),
+            try:
+                return self.async_show_form(step_id='confirm_action',
+                                        data_schema=forms.form_confirm_action(self),
                                         errors=self.errors)
+            except Exception as err:
+                log_exception(err)
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
         utils_cf.log_step_info(self, user_input, action_item)

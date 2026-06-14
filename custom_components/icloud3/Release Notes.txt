@@ -15,6 +15,33 @@ Gary
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 
+🍎 iCloud3 v3.6 ()
+### 📢 Improvements
+
+2. **Authentication Method**
+    - Fixed a bug displaying the *Authenticate Apple Account screen*  when the last Authentication Method is no longer available.
+    - Simplified the Authentication Method description
+
+3. **Event Log**:
+    - Updated the Event Log to improve the readability and reduce duplicate information displayed in the tracking results area.
+    - Improved support of the 'dark mode' theme.
+    - The device names are displayed at the top of the screen on 2-lines like they always have. Since the number of tracked devices has expanded, a drop down list is used to select those that do not fit on these 2-lines
+    - Performance improvements
+    - Changes to iPhone and iPad orientation is supported
+    - Note: A browser refresh will be needed on all devices to install this update
+
+4. **Away Time Zone**
+    - Updated description/status selection text
+    - Away Time Zone will be automatically cleared when entering the Home zone.
+
+5. **Other Changes**
+    - Resolved the HA warning message about device_tracker code that will be removed in the HA 2027.06 release.
+    - Added a default timeout value for requesting data from Apple (@timk75)
+
+
+### 🐞 Bug Fixes
+
+
 🍎 iCloud3 v3.5 ()
 ### 📢 Improvements to _Configure > Authenticate Apple Account Sign-in_ screen
 1. **Authentication with a Push Notification is working again**

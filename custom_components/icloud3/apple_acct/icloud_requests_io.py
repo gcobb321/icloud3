@@ -114,7 +114,6 @@ def request_get_post(url, **kwargs):
             occurred
     '''
 
-
     # Prevent SyncWorker threads from blocking indefinitely on hung remote
     # endpoints (notably the connectivity check in internet_error.py). Without
     # a socket-level timeout, requests.get / requests.post can wait forever

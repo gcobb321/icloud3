@@ -19,9 +19,9 @@ by various people to include:
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK,
                                     DOTS, RED_X, NL3, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
-                                    APPLE_SERVER_ENDPOINT,
+                                    APPLE_SERVER_ENDPOINT, TRUST_COOKIE_NAME,
                                     CONF_AUTH_METHODS, CONF_LAST_METHOD,
-                                    PUSH, TEXT, TEXT_1, TEXT_2, HWKEY, HWKEY_1, HWKEY_2,
+                                    PUSH, TEXT, TEXT_1, TEXT_2, HWKEY,
                                     CONF_USERNAME, CONF_PASSWORD, HIGH_INTEGER,
                                     TRUST_TOKEN_EXPIRE_WARNING_DAYS, )
 from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del, list_to_str, dict_del,
@@ -38,13 +38,12 @@ from ..utils.messaging      import (post_event, post_alert, post_alert, post_mon
 from ..utils                import gps
 from ..startup              import config_file
 from .apple_acct_devices    import iCloud_AppleAcctDevices
-# from .icloud_fido           import iCloud_Fido2
 from .srp_password          import SrpPassword
-# from .srp_encode_password   import SrpEncodePassword as SrpPassword
+from .icloud_hwkey          import iCloud_HwKey
 from .                      import icloud_requests_io  as icloud_io
-
 from .icloud_cookie_jar     import PyiCloudCookieJar
 import http.cookiejar as cookielib
+
 #--------------------------------------------------------------------
 from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
 from uuid                   import uuid1
@@ -247,9 +246,10 @@ class AppleAcctManager(object):
             self.is_authenticated     = False        # ICloud access has been authenticated via password or token
             self.auth_failed_503      = False
 
-            # self.Fido2                = None    #iCloud_Fido2(self)
-            # self.fido2_devices        = None
-            # self.fido2_key_names      = None
+            self.HwKey                = iCloud_HwKey(self)
+            self.hwkey_names          = ''
+            self.hwkey_devices        = ''
+            self.fido2_key_available  = ''
 
             # Keep the last time an internet request was made. Check time since
             # in icloud3_main. Longer than 1-minute indicates internet is down.
@@ -374,7 +374,6 @@ class AppleAcctManager(object):
 
         if self.login_successful:
             self.setup_error(None)
-            # self.get_fido2_key_names()
             self.get_trusted_devices()
 
             post_greenbar_msg(f"Apple Acct > {self.username_base}, Refresh Location Data")
@@ -535,8 +534,9 @@ class AppleAcctManager(object):
         return the last auth_method
             - 'push'
             - 'text_1'
-            - 'hwkey_2'
+            - 'hwkey'
         '''
+
         return self.conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD]
 
     @property
@@ -545,7 +545,7 @@ class AppleAcctManager(object):
         return the last auth_method and it's info vlaue
             - 'push' = ''
             - 'text_1' = '**66'
-            - 'hwkey_2' = 'pink'
+            - 'hwkey' = 'green, pink'
         '''
         return self.conf_apple_acct[CONF_AUTH_METHODS].get(self.auth_method, '')
 
@@ -559,7 +559,7 @@ class AppleAcctManager(object):
 
     @property
     def auth_method_HWKEY(self):
-        return self.auth_method.startswith(HWKEY)
+        return self.auth_method == HWKEY
 
 #----------------------------------------------------------------------------
     @property
@@ -781,7 +781,7 @@ class AppleAcctManager(object):
         log_info_msg(f"{self.username_base}, Authenticate with Password")
         post_greenbar_msg(f"Apple Acct > {self.username_base}, Auth with Password")
 
-        headers = self._get_auth_headers()
+        headers = self.get_auth_headers()
 
         url = f"{self.AUTH_ENDPOINT}/signin"
         params = {"isRememberMeEnabled": "true"}
@@ -940,7 +940,7 @@ class AppleAcctManager(object):
     def _srp_icloud_io(self, url_suffix, username, data, params=None):
 
         url     = f"{self.AUTH_ENDPOINT}/signin/{url_suffix}"
-        headers = self._get_auth_headers()
+        headers = self.get_auth_headers()
         headers["Accept"] = "application/json, text/javascript"
         data.update({"accountName": username})
 
@@ -970,20 +970,17 @@ class AppleAcctManager(object):
 
         This is run in authentication() and icloud_main.timer_tasks_midnight()
         '''
+        if (self.login_auth_method != "TrustToken"
+                or Gb.is_icloud3_startup_inprocess):
+            self.list_cookies()
+        else:
+            self.list_cookies(TRUST_COOKIE_NAME)
+
         if self.is_auth_code_needed:
             self.trust_token_expire_in_days = -1
             return
 
         self.trust_token_expire_in_days = self.iCloudSession.cookies.expire_in_days()
-
-        if self.trust_token_expire_in_days <= TRUST_TOKEN_EXPIRE_WARNING_DAYS:
-            post_event( f"AppleAcct {self.account_owner} > "
-                        f"Trust Token Expires in {self.trust_token_expire_in_days} days, "
-                        f"Authenticating now")
-            # update_alert_sensor(self.owner,
-            #                     f"Trust Token Expires in {self.trust_token_expire_in_days} days")
-            if self.trust_token_expire_in_days > 0:
-                self.authenticate()
 
         return self.trust_token_expire_in_days
 
@@ -1035,7 +1032,7 @@ class AppleAcctManager(object):
             True  - Session has expired; full re-auth needed
             False - Push re-sent, session still valid, phone numbers re-captured
         '''
-        headers = self._get_auth_headers()
+        headers = self.get_auth_headers()
         url     = f"{self.AUTH_ENDPOINT}/auth"
 
         try:
@@ -1089,7 +1086,7 @@ class AppleAcctManager(object):
         return True
 
 #----------------------------------------------------------------------------
-    def _get_auth_headers(self, overrides=None):
+    def get_auth_headers(self, overrides=None):
 
         headers = HEADERS.copy()
         headers["X-Apple-OAuth-State"] = self.client_id
@@ -1105,6 +1102,16 @@ class AppleAcctManager(object):
             headers.update(overrides)
         return headers
 
+#----------------------------------------------------------------------------
+    def get_trusted_devices(self):
+        '''
+        Returns devices trusted for two-step authentication.
+        [{'deviceType': 'SMS', 'areaCode': '', 'phoneNumber': '********66', 'deviceId': '1'},
+            {'deviceType': 'SMS', 'areaCode': '', 'phoneNumber': '********65', 'deviceId': '2'}]
+        '''
+
+        self.get_text_message_phone_numbers()
+        self.get_hwkey_names()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            HANDLE ACCEPTING TERMS OF USE
@@ -1235,12 +1242,12 @@ class AppleAcctManager(object):
         return True
 
 #----------------------------------------------------------------------------
-    def list_cookies(self):
+    def list_cookies(self, selected_cookie=None):
         if Gb.is_log_level_debug is False:
             return
 
         try:
-            self.iCloudSession.cookies.list()
+            self.iCloudSession.cookies.list(selected_cookie)
         except:
             (f"\n⠂  ❗ _.Cookie.file-{self.cookies_filename}, None")
 
@@ -1461,54 +1468,12 @@ class AppleAcctManager(object):
         except:
             return None
 
-#----------------------------------------------------------------------------
-    def get_trusted_devices(self):
-        '''
-        Returns devices trusted for two-step authentication.
-        [{'deviceType': 'SMS', 'areaCode': '', 'phoneNumber': '********66', 'deviceId': '1'},
-            {'deviceType': 'SMS', 'areaCode': '', 'phoneNumber': '********65', 'deviceId': '2'}]
-        '''
-        self.trusted_phone_data = self.token_pw_data.get('trusted_phone_data', [])
-
-        if self.iCloudSession.cookies.exists('X-APPLE-WEBAUTH-HSA-LOGIN'):
-            url = f"{self.SETUP_ENDPOINT}/listDevices"
-
-            try:
-                data = icloud_io.get(self, url, params=self.params)
-
-                self.trusted_phone_data = data.get('devices', [])
-                self._update_token_pw('trusted_phone_data', self.trusted_phone_data)
-
-            except:
-                self.trusted_phone_data = self.token_pw_data.get('trusted_phone_data', [])
-
-        # Delete and readd 'text_' items in case anything changed
-        conf_auth_methods = self.conf_apple_acct[CONF_AUTH_METHODS]
-
-        # Clear Text_x phone number
-        for auth_method, method_info in conf_auth_methods.items():
-            if auth_method.startswith(TEXT):
-                conf_auth_methods[auth_method] = ''
-
-        # Reset Text_x phone number
-        for trusted_phone_item in self.trusted_phone_data:
-            auth_method_key = f"text_{trusted_phone_item['deviceId']}"
-            conf_auth_methods[auth_method_key] = \
-                        trusted_phone_item['phoneNumber'][-4:]
-
-        # Make sure text_1 is in the conf_auth_methods list
-        if TEXT_1 not in self.auth_methods:
-            conf_auth_methods[TEXT_1] = ''
-
-        return
-
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            PUSH NOTIFICATION AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def request_auth_code_via_push_notification(self):
 
-        headers = self._get_auth_headers({"Accept": "application/json"})
+        headers = self.get_auth_headers({"Accept": "application/json"})
         url     = f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode"
 
         icloud_io.put(self, url, headers=headers)
@@ -1519,7 +1484,7 @@ class AppleAcctManager(object):
     def validate_2fa_push_popup_window_code(self, code):
         '''Verifies a Authentication code received via Apple's 2FA system (HSA2).'''
 
-        headers = self._get_auth_headers()      #{"Accept": "application/json"})
+        headers = self.get_auth_headers()      #{"Accept": "application/json"})
         url     = f"{self.AUTH_ENDPOINT}/verify/trusteddevice/securitycode"
         data    = {"securityCode": {"code": code}}
 
@@ -1553,6 +1518,58 @@ class AppleAcctManager(object):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            TEXT MESSAGE AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def get_text_message_phone_numbers(self):
+        '''
+        Get the trusted_device id and phone number information from the data received
+        from Apple. Then extract them and update the configuration file Text entries.
+            - conf_apple_acct[text_1/text_2/etc] fields.
+        '''
+
+        self.trusted_phone_data = self.token_pw_data.get('trusted_phone_data', [])
+
+        if self.iCloudSession.cookies.exists('X-APPLE-WEBAUTH-HSA-LOGIN'):
+            url = f"{self.SETUP_ENDPOINT}/listDevices"
+
+            try:
+                data = icloud_io.get(self, url, params=self.params)
+
+                self.trusted_phone_data = data.get('devices', [])
+                self._update_token_pw('trusted_phone_data', self.trusted_phone_data)
+
+            except:
+                self.trusted_phone_data = self.token_pw_data.get('trusted_phone_data', [])
+
+        # Delete and readd 'text_' items in case anything changed
+        conf_auth_methods = self.conf_apple_acct[CONF_AUTH_METHODS]
+
+        # Clear Text_x phone number
+        for auth_method, method_info in conf_auth_methods.items():
+            if auth_method.startswith(TEXT):
+                conf_auth_methods[auth_method] = ''
+
+        # Reset Text_x phone numbers
+        default_text_method = None
+        for trusted_phone_item in self.trusted_phone_data:
+            auth_method_key = f"text_{trusted_phone_item['deviceId']}"
+            conf_auth_methods[auth_method_key] = \
+                        trusted_phone_item['phoneNumber'][-4:]
+            if default_text_method is None:
+                default_text_method = auth_method_key
+
+        # Make sure text_1 is in the conf_auth_methods list
+        if TEXT_1 not in self.auth_methods:
+            conf_auth_methods[TEXT_1] = ''
+
+        # Make sure last auth is still available if it is text
+        last_auth_method = conf_auth_methods[CONF_LAST_METHOD]
+        if (last_auth_method.startswith(TEXT)
+                and conf_auth_methods.get(last_auth_method, '')) == '':
+            conf_auth_methods[CONF_LAST_METHOD] = default_text_method or PUSH
+
+        return
+
+
+#----------------------------------------------------------------------------
     def request_auth_code_via_text_msg(self, auth_method):
         '''
         Request Apple send a 6-digit Text Authentication code to a trusted phone number.
@@ -1562,7 +1579,7 @@ class AppleAcctManager(object):
         '''
         phone_id = int(auth_method[-1:])
 
-        headers = self._get_auth_headers()
+        headers = self.get_auth_headers()
         url     = f"{self.AUTH_ENDPOINT}/verify/phone"
         data    = {"phoneNumber": {"id": phone_id}, "mode": "sms"}
 
@@ -1586,7 +1603,7 @@ class AppleAcctManager(object):
         self.iCloudSession.cookies.list()
         phone_id = int(self.auth_method[-1:])
 
-        headers = self._get_auth_headers()
+        headers = self.get_auth_headers()
         url     = f"{self.AUTH_ENDPOINT}/verify/phone/securitycode"
         data    = {
             "phoneNumber":  {"id": phone_id},
@@ -1618,7 +1635,7 @@ class AppleAcctManager(object):
         Request session trust to avoid user log in going forward
         '''
         url     = f"{self.AUTH_ENDPOINT}/2sv/trust"
-        headers = self._get_auth_headers()
+        headers = self.get_auth_headers()
 
         try:
             icloud_io.get(self, url, headers=headers)
@@ -1663,29 +1680,143 @@ class AppleAcctManager(object):
 
         self.authenticate()
 
+#----------------------------------------------------------------------------
+    # The trusted session values (session/trust tokens, session_id, scnt, etc)
+    # are persisted in token_pw_data and the [username].tpw file. They can be
+    # snapshotted and restored to re-establish a trusted session.
+    TRUSTED_SESSION_KEYS = ['session_token', 'trust_token', 'session_id',
+                            'scnt', 'account_country', 'dsid']
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            FIDO SECURITY KEY AUTHENTICATION
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def get_fido2_key_names(self):
-        return None
-
-
-        if Gb.fido2_security_keys_enabled is False:
-            return None
-
-        self.fido2_key_names = self.Fido2.security_key_names
-        self.fido2_devices   = self.Fido2.fido2_devices
-
-        return self.fido2_key_names
+    def snapshot_trusted_session(self):
+        '''
+        Return a copy of the persisted trusted-session values from token_pw_data
+        so they can be restored later (see restore_trusted_session). Used before
+        a forced password sign-in that would otherwise overwrite them.
+        '''
+        return {key: self.token_pw_data.get(key)
+                    for key in self.TRUSTED_SESSION_KEYS}
 
 #----------------------------------------------------------------------------
-    def confirm_fido2_security_key(self, fido2_key_name):
-        return False
+    def restore_trusted_session(self, saved_session):
+        '''
+        Re-establish the trusted session from values previously captured by
+        snapshot_trusted_session. Authenticates with the saved trust token
+        which, if still valid, re-issues the X-APPLE-WEBAUTH-HSA-TRUST cookie
+        and avoids forcing the user back into a 2FA prompt.
 
-        self.Fido2.confirm_security_key(fido2_key_name)
+        Return:
+            True  - Trusted session restored
+            False - Saved trust token no longer valid (account remains NEEDS-2FA)
+        '''
+        if is_empty(saved_session.get('trust_token')):
+            return False
+
+        for key, value in saved_session.items():
+            if value is not None:
+                self.session_data[key] = value
+                self.token_pw_data[key] = value
+
+        self.session_token = saved_session.get('session_token', '')
+        self.trust_token   = saved_session.get('trust_token', '')
+
+        login_successful = self._authenticate_with_token()
+        self.is_auth_code_needed = self._set_is_auth_code_needed
+
+        log_debug_msg(f"{self.username_base}, Restore Trusted Session > "
+                        f"Successful-{login_successful}, 2fa Needed-{self.is_auth_code_needed}")
+
+        return login_successful
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            HARDWARE KEY (FIDO2) AND SOFTWARE KEY AUTHENTICATION
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def get_hwkey_names(self):
+        '''
+        Get the registered hardware key names from Apple (AUTH_ENDPOINT GET) from the data received
+        from Apple. Then extract them and update the configuration file HwKey entries.
+            - conf_apple_acct[CONF_AUTH_METHODS][HWKEY] field.
+        '''
+        if Gb.hwkey_authentication_enabled is False:
+            return False
+
+        self.hwkey_names = self.auth_method_info
+
+        # /appleauth/auth only returns keyNames when a fresh SRP sign-in has put
+        # the idmsa session into the 2FA-pending (409) state. On the TrustToken
+        # path it always returns 401, so keep the cached value (auth_method_info)
+        # instead of overwriting it with an empty result.
+        if self.login_successful_srp:
+            url     = self.AUTH_ENDPOINT
+            headers = self.get_auth_headers()
+
+            data    = icloud_io.get(self, url, headers=headers)
+
+            # A 200 response is the authoritative account state. An empty or
+            # absent keyNames means the security keys were removed from the Apple
+            # Account, so reset hwkey_names to '' rather than keeping the stale
+            # cached value. Only the non-200 (401 TrustToken) path keeps the cache.
+            if self.response_code == 200 and data is not None:
+                self.hwkey_names = list_to_str(data.get('keyNames') or [])
+
+        self.token_pw_data[HWKEY] = self.hwkey_names
+        self._write_token_pw_file()
 
         return True
+
+#............................................................................
+    def refresh_hwkey_names_preserve_trust(self):
+        '''
+        Refresh the registered security key (hwkey) names without permanently
+        losing the trusted session.
+
+        Reading the key names requires Apple's /appleauth/auth 2FA-challenge
+        state, which can only be reached by a password (SRP) sign-in that is not
+        backed by a trust token. That sign-in puts the account into a NEEDS-2FA
+        state. To avoid forcing the user to re-enter a 2FA code, the trusted
+        session values (persisted in token_pw_data/.tpw) are snapshotted before
+        the sign-in and restored afterward via a TrustToken authentication.
+
+        Return:
+            True - hwkey names refreshed (self.hwkey_names updated)
+        '''
+        # Snapshot before the forced password sign-in overwrites these values
+        saved_session = self.snapshot_trusted_session()
+        was_trusted   = isnot_empty(saved_session.get('trust_token'))
+
+        # Force the 2FA-challenge state and read the key names from /appleauth/auth
+        # (untrust_session_and_authenticate runs PasswordSRP which sets
+        # login_successful_srp, so get_hwkey_names will query the auth endpoint).
+        self.untrust_session_and_authenticate()
+        self.get_hwkey_names()
+
+        # Restore the trusted session so the user is not knocked into a 2FA prompt.
+        # Must run after get_hwkey_names (re-trusting makes /appleauth/auth 401).
+        if was_trusted:
+            self.restore_trusted_session(saved_session)
+
+        return True
+
+#--------------------------------------------------------------------
+    # def get_webauthn_options(self):
+
+    #     url     = self.AUTH_ENDPOINT
+    #     headers = self.get_auth_headers()
+
+    #     data    = icloud_io.get(self, url, headers=headers)
+
+    #     return data
+
+#............................................................................
+    def authenticate_with_hwkey(self):
+        '''
+        Authenticate sign-on using a security key
+        '''
+
+        self.hwkey_auth_status = False
+        self.hwkey_auth_status = self.HwKey.security_key_assertion_ceremony(self.hwkey_names)
+
+        return self.hwkey_auth_status
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

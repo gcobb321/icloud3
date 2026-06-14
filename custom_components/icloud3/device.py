@@ -8,7 +8,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 NOTIFY, DISTANCE_TO_DEVICES, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 HOME, HOME_FNAME, NOT_HOME, NOT_SET, UNKNOWN, NOT_HOME_ZONES,
-                                DOT, RED_X, RARROW, RED_STOP, RED_ALERT, CRLF_DOT, CRLF_HDOT,
+                                DOT, RED_X, RARROW, RED_STOP, RED_ALERT, CRLF_DOT, CRLF_HDOT, CLOCK_FACE,
                                 EVLOG_ALERT, BLANK_SENSOR_FIELD,
                                 TOWARDS, AWAY, AWAY_FROM, INZONE, STATIONARY, STATIONARY_FNAME,
                                 TOWARDS_HOME, AWAY_FROM_HOME, INZONE_HOME, INZONE_STATZONE,
@@ -75,7 +75,8 @@ from .utils.dist_util   import (gps_distance_m, gps_distance_km,
 from .utils.format      import (icon_circle, icon_box, )
 
 #--------------------------------------------------------------------
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from homeassistant.components.device_tracker import TrackerEntity
+#from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.util import slugify
 from collections        import OrderedDict
 import traceback
@@ -538,6 +539,7 @@ class iCloud3_Device(TrackerEntity):
         self.tracking_mode        = conf_device.get(CONF_TRACKING_MODE, TRACK)
         self.sensors['dev_id']    = self.devicename
         self.evlog_fname_alert_char = ''          # Character added to the fname in the EvLog (❗❌⚠️)
+        self.evlog_fname_suffix_char = ''         # Character after the fname in the EvLog (🕓)
 
         self._initialize_data_source_fields(conf_device)
         self.initialize_non_tracking_config_fields(conf_device)
@@ -570,6 +572,7 @@ class iCloud3_Device(TrackerEntity):
         except Exception as err:
             log_exception(err)
 
+#------------------------------------------------------------------------------
     def _extract_devicename(self, device_field):
         # The xxx_device field will contain a '>' if it is a valid devicename that will be used
         if instr(device_field, '>'):
@@ -620,14 +623,19 @@ class iCloud3_Device(TrackerEntity):
         self.device_type          = conf_device.get(CONF_DEVICE_TYPE, 'iphone')
         self.log_zones            = conf_device.get(CONF_LOG_ZONES, ['none'])
 
-        if (self.devicename in Gb.away_time_zone_1_devices
-                or 'all' in Gb.away_time_zone_1_devices):
+        self.away_time_zone_offset = 0
+        if 'all' in Gb.away_time_zone_1_devices:
+            list_add(Gb.away_time_zone_1_devices, self.devicename)
+        elif 'all' in Gb.away_time_zone_2_devices:
+            list_add(Gb.away_time_zone_2_devices, self.devicename)
+
+        if self.devicename in Gb.away_time_zone_1_devices:
             self.away_time_zone_offset = Gb.away_time_zone_1_offset
-        elif (self.devicename in Gb.away_time_zone_2_devices
-                or 'all' in Gb.away_time_zone_2_devices):
+        elif self.devicename in Gb.away_time_zone_2_devices:
             self.away_time_zone_offset = Gb.away_time_zone_2_offset
-        else:
-            self.away_time_zone_offset = 0
+        if self.away_time_zone_offset != 0:
+            self.set_evlog_fname_suffix_char(CLOCK_FACE)
+            # self.evlog_fname_suffix_char = CLOCK_FACE
 
 #--------------------------------------------------------------------
     def _initialize_data_source_fields(self, conf_device):
@@ -1251,6 +1259,10 @@ class iCloud3_Device(TrackerEntity):
         return (self.loc_data_zone not in NOT_HOME_ZONES)
 
     @property
+    def isin_zone_home(self):
+        return (self.loc_data_zone == HOME)
+
+    @property
     def isnotin_zone(self):
         return (self.loc_data_zone in NOT_HOME_ZONES)
 
@@ -1344,6 +1356,7 @@ class iCloud3_Device(TrackerEntity):
         self.statzone_reset_timer
         self.statzone_timer = 0
 
+#--------------------------------------------------------------------
     def update_distance_moved(self, distance):
         self.statzone_dist_moved_km = self.distance_km(self.statzone_latitude, self.statzone_longitude)
 
@@ -2156,7 +2169,7 @@ class iCloud3_Device(TrackerEntity):
         post_event(self.devicename,
                     f"Battery Info > Level-{battery_msg} ({self.dev_data_battery_source})")
 
-        if Gb.EvLog.evlog_attrs["devicename"] == self.devicename:
+        if Gb.EvLog.evlog_attrs['selected_dname'] == self.devicename:
             Gb.EvLog.update_event_log_display(self.devicename)
 
         return True
@@ -2275,6 +2288,7 @@ class iCloud3_Device(TrackerEntity):
     def display_update_location_msg(self):
 
         return
+
         if self.loc_data_time_gps == self.last_loc_data_time_gps:
             return
 
@@ -2283,8 +2297,6 @@ class iCloud3_Device(TrackerEntity):
                         f"Selected > "
                         f"{self.last_loc_data_time_gps}"
                         f"{RARROW}{self.dev_data_source}-{self.loc_data_time_gps}")
-
-        #self.last_loc_data_time_gps = f"{self.dev_data_source}-{self.loc_data_time_gps} "
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def update_sensor_values_from_data_fields(self):
@@ -2463,7 +2475,6 @@ class iCloud3_Device(TrackerEntity):
                 self.sensors_icon[ARRIVAL_TIME] = icon_box(self.sensors[FROM_ZONE])
 
 
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   INFO MESSAGES AND OTHER SUPPORT FUNCTIONSS
@@ -2489,6 +2500,17 @@ class iCloud3_Device(TrackerEntity):
             return Zone.fname
 
         return None
+
+#----------------------------------------------------------------------------
+    def set_evlog_fname_suffix_char(self, char, add_char=False):
+        return
+        # _evlog(f'{self.devicename} {char=} {self.evlog_fname_suffix_char=} {add_char=}')
+        if char != '' and instr(char, self.evlog_fname_suffix_char):
+            return
+        self.evlog_fname_suffix_char += char if add_char else char
+        # _evlog(f'{self.devicename} {char=} {self.evlog_fname_suffix_char=} {add_char=}')
+
+        Gb.EvLog.update_fnames_by_devicename(self)
 
 #----------------------------------------------------------------------------
     @property

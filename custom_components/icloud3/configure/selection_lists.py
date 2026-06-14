@@ -9,7 +9,7 @@ from ..const            import (RARROW, CRLF_DOT, DOT, HDOT, CIRCLE_STAR, RED_X,
                                 TRACK, MONITOR, INACTIVE,
                                 CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT,
                                 CONF_AUTH_METHODS, CONF_LAST_METHOD,
-                                PUSH, TEXT, TEXT_1, TEXT_2, HWKEY, HWKEY_1, HWKEY_2,
+                                PUSH, TEXT, TEXT_1, TEXT_2, HWKEY,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_AUTH_CODE, CONF_LOCATE_ALL,
                                 CONF_TRACK_FROM_ZONES, CONF_PICTURE_WWW_DIRS,
@@ -27,7 +27,8 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_
                                 _log, _evlog, )
 
 from ..apple_acct       import apple_acct_support_cf as aascf
-from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, AWAY_FROM_ZONE_OPTIONS, )
+from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, AWAY_FROM_ZONE_OPTIONS,
+                                REAUTH_AUTH_METHODS, )
 from ..startup          import config_file
 from ..utils            import file_io
 
@@ -144,10 +145,17 @@ def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
     build_aa_auth_methods_list(self, AppleAcct)
 
     aa_text = ''
-    aa_text += f"{self.aa_auth_methods_by_auth_method[AppleAcct.auth_method]}"
+    if (AppleAcct.auth_method in AppleAcct.auth_methods
+            and AppleAcct.auth_method_info != ''):
+        auth_method = AppleAcct.auth_method
+    else:
+        auth_method = PUSH
+
+    aa_text += f"{self.aa_auth_methods_by_auth_method[auth_method]}"
+
     if AppleAcct.is_auth_code_needed:
         aa_text = aa_text.split('> ')[0]
-        aa_text += f"> {RED_ALERT}AUTH NEEDED"
+        aa_text += f" {RED_ALERT}AUTH NEEDED"
 
     return aa_text
 
@@ -155,24 +163,20 @@ def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
 def build_aa_auth_methods_list(self, AppleAcct):
 
     self.aa_auth_methods_by_auth_method = {}
-    self.aa_auth_methods_by_auth_method['push'] =  ('Push Notification > '
-                                                    'From `Apple Account Sign-in Requested` popup window')
+    self.aa_auth_methods_by_auth_method[PUSH] = REAUTH_AUTH_METHODS[PUSH]
+
     for auth_method, method_info in AppleAcct.conf_apple_acct[CONF_AUTH_METHODS].items():
         if method_info == '':
-            continue
-        if auth_method.startswith(TEXT):
+            pass
+        elif auth_method.startswith(TEXT):
             self.aa_auth_methods_by_auth_method[auth_method] = (
-                                        f"Text Msg to Device #{auth_method[-1:]} ({method_info}) > "
-                                        f"Send a Text Message to this Trusted Device")
-        elif auth_method.startswith(HWKEY):
-            self.aa_auth_methods_by_auth_method[auth_method] = (
-                                        f"Hardware Key #{auth_method[-1:]} ({method_info}) > "
-                                        f"Authenticate with this Hardware Key (YubiKey)")
+                            REAUTH_AUTH_METHODS[TEXT].replace('{method_info}', method_info))
+
+        elif auth_method == HWKEY:
+            self.aa_auth_methods_by_auth_method[HWKEY] = (
+                            REAUTH_AUTH_METHODS[HWKEY].replace('{method_info}', method_info))
 
     return self.aa_auth_methods_by_auth_method
-
-
-
 
 #-------------------------------------------------------------------------------------------
 def tracked_untracked_form_msg(username):
@@ -755,8 +759,8 @@ async def build_zone_selection_list(self):
 
 #-------------------------------------------------------------------------------------------
 def build_away_time_zone_hours_list(self):
-    if self.away_time_zone_hours_key_text != {}:
-        return
+    # if self.away_time_zone_hours_key_text != {}:
+    #     return
 
     ha_time = int(Gb.this_update_time[0:2])
     for hh in range(ha_time-12, ha_time+13):

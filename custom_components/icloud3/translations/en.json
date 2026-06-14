@@ -13,8 +13,6 @@
       "login_error_other": "An unknown error occurred logging into the Apple Account.",
       "auth_code_requested": "The code was requested. Waiting for it to be entered and sent to Apple",
       "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
-      "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
       "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_complete": "✅ The Authentication Code process is complete",
@@ -27,20 +25,23 @@
     "error": {
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
 
-      "SK-auth_code_send_error": "Failed to send the Code/Security Key",
-      "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
-      "SK-auth_code_invalid": "The Code/Security Key is not correct. Reenter or request a new code",
 
-      "auth_code_send_error": "Failed to send the Authentication Code",
-      "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
-      "auth_code_complete": "✅ The Authentication Code process is complete",
-      "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
-      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
-      "auth_code_invalid": "The Authentication Code is not correct. Reenter or request a new code",
       "auth_code_needed": "An Apple Account needs to be Authenticated",
+      "auth_code_requested": "⛔ WAITING…… ① ENTER CODE, ② SELECT AUTHENTICATE ⛔ ",
+      "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
+      "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
+      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
+      "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
+      "auth_code_send_error": "❌ Failed to send the Authentication Code",
+      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
+
+      "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
+      "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
+      "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
+      "hwkey_names_none": "❌ No Security Keys were found in the Apple Account",
+      "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
+      "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
       "apple_acct_not_logged_into": "The Apple Account is not logged into",
       "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
@@ -53,6 +54,7 @@
       "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
       "icloud_no_devices": "No devices were found in the iCloud `Family Sharing` list",
       "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later"
+
     },
     "step": {
       "user": {
@@ -70,13 +72,11 @@
 
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
-        "description": "Enter the 6-digit Authenticate Code to approve signing into the Apple Account",
-        "SK-description": "Enter the 6-digit Authenticate Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
+        "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
         "data": {
-          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
+          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED > AUTHENTICATION METHOD",
+          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
           "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
-          "fido2_key_name": "SECURITY KEY (YUBIKEY) - Name of the Security Key used to authenticate the Apple Account sign-in",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
@@ -84,12 +84,17 @@
 
       "reauth_change_auth_method": {
         "title": "Change Apple Account Authentication Method",
-        "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a hardware key (YubiKey). iCloud3 will use the authentication method selected on this screen",
+        "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
         "data": {
-          "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED",
+          "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED > AUTHENTICATION METHOD",
           "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
+      },
+
+      "reauth_hwkey_progress": {
+        "title": "Touch the Security Security Key",
+        "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
       },
 
       "reauth_code_from_applecom_login": {
@@ -126,8 +131,7 @@
       "ic3_reloading": "iCloud3 Reload has been started",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
       "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
-      "auth_code_complete": "✅ The Authentication Code process is complete",
-      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete"
+      "auth_code_complete": "✅ The Authentication Code process is complete"
     },
     "error": {
       "unknown_action": "Selected Action could not be identified",
@@ -167,20 +171,22 @@
       "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth AQpple Acct screen)",
 
-      "SK-auth_code_requested": "The Code/Key was requested. Waiting for it to be entered and sent to Apple",
-      "SK-auth_code_accepted": "✅ The Code/Security Key was accepted. Reauthentication is complete",
-      "SK-auth_code_invalid": "❌ The Code/Security Key was not correct. Reenter or request a new code",
-      "SK-auth_code_send_error": "❌ Failed to send the Code/Security Key",
-
-      "auth_code_requested": "The Code was requested. Waiting for it to be entered and sent to Apple",
-      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
       "auth_code_needed": "An Apple Account needs to be Authenticated",
-      "auth_code_cancelled": "The Apple Account authentication was cancelled",
+      "auth_code_requested": "⛔ WAITING…… ① ENTER CODE, ② SELECT AUTHENTICATE ⛔ ",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_complete": "✅ The Authentication Code process is complete",
+      "auth_code_cancelled": "The Apple Account authentication was cancelled",
+      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
       "auth_code_send_error": "❌ Failed to send the Authentication Code",
+      "auth_code_requested_423": "Too many codes have been requested. Use the last code or try again later",
+
+      "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
+      "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
+      "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
+      "hwkey_names_none": "❌ No Security Keys were found in the Apple Account",
+      "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
+      "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
       "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
       "already_assigned": "This selection is already assigned to another device",
@@ -371,13 +377,11 @@
 
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
-        "description": "Enter the 6-digit Authenticate Code to approve signing into the Apple Account",
-        "SK-description": "Enter the 6-digit Authenticate Code or use the Security Key (YubiKey) to approve signing into the Apple Account",
+        "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
         "data": {
-          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Hardware Key",
+          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED > AUTHENTICATION METHOD",
+          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
           "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
-          "fido2_key_name": "SECURITY KEY (YUBIKEY) - Name of the Security Key used to authenticate the Apple Account sign-in",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
@@ -385,12 +389,17 @@
 
       "reauth_change_auth_method": {
         "title": "Change Apple Account Authentication Method",
-        "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a hardware key (YubiKey). iCloud3 will use the authentication method selected on this screen",
+        "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
         "data": {
-          "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED",
+          "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED > AUTHENTICATION METHOD",
           "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
+      },
+
+      "reauth_hwkey_progress": {
+        "title": "Touch the Security Security Key",
+        "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
       },
 
       "reauth_code_from_applecom_login": {

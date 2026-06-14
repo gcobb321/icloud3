@@ -1028,7 +1028,7 @@ class iCloud3:
             zone_handler.log_zone_enter_exit_activity(Device)
 
             # Refresh the EvLog if this is an initial locate or the devicename is displayed
-            if (devicename == Gb.EvLog.evlog_attrs["devicename"]
+            if (devicename == Gb.EvLog.evlog_attrs['selected_dname']
                     or (self.initial_locate_complete_flag == False
                         and devicename == Gb.Devices[0].devicename)):
                 Gb.EvLog.update_event_log_display(devicename)
@@ -1108,15 +1108,17 @@ class iCloud3:
 
             self._post_before_update_monitor_msg(Device)
 
-            if self._determine_interval_and_next_update(Device):
-                Device.update_sensor_values_from_data_fields()
+            self._determine_interval_and_next_update(Device)
+            # if self._determine_interval_and_next_update(Device):
+            #     Device.update_sensor_values_from_data_fields()
 
             update_requested_by = 'Tracking' if Device.is_tracked else 'Monitor'
             from_zone = Device.FromZone_TrackFrom.from_zone
 
-            post_event(devicename, (
-                        f"{EVLOG_UPDATE_END}{Device.dev_data_source} Results > "
-                        f"{self._results_special_msg(Device)}"))
+            # post_event(devicename, (f"{EVLOG_ORANGE}{self._results_special_msg(Device)}"))
+
+            self.post_tracking_results_header_bar(Device)
+
 
         if Device.dev_data_source == ICLOUD and Device.AppleAcct:
             acct_name = Device.AppleAcct.account_owner_link
@@ -1130,6 +1132,43 @@ class iCloud3:
         det_interval.post_near_devices_msg(Device)
 
 #...............................................................................
+    def post_tracking_results_header_bar(self, Device):
+
+        if Device.is_offline:
+            header_msg = 'Offline'
+
+        elif is_empty(Device.sensors[ARRIVAL_TIME]):
+            # return (f"Update in {format_timer(Device.FromZone_TrackFrom.interval_secs)} "
+            header_msg = (  f"Update in {Device.interval_str} "
+                            f"at {Device.FromZone_TrackFrom.next_update_time}")
+
+        elif (Device.isin_zone
+                and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
+            header_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} > "
+                    f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
+                    f"NextUpdate at {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
+
+        elif Device.FromZone_TrackFrom.dir_of_travel != AWAY_FROM:
+            if Device.FromZone_TrackFrom.waze_time > 0:
+                arrival_secs = Device.FromZone_TrackFrom.waze_time * 60 + time_now_secs()
+                arrival_time = (f"in {format_timer(secs_to(arrival_secs))} "
+                                f"at {secs_to_hhmm(arrival_secs)}")
+            else:
+                arrival_time = (f"~{Device.sensors[ARRIVAL_TIME]}, "
+                                f"Update {format_timer(secs_to(Device.FromZone_TrackFrom.next_update_secs))}")
+
+            header_msg = (  f"Arrive {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
+                            f"{arrival_time}, "
+                            f"{Device.FromZone_Home.zone_distance_str} away")
+
+
+        else:
+            header_msg = (  f"Arrive {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
+                            f"around {Device.sensors[ARRIVAL_TIME]}")
+
+        post_event(Device, f"{EVLOG_UPDATE_END}{header_msg}")
+
+#...............................................................................
     def _results_special_msg(self, Device):
         if Device.is_offline:
             return 'Offline'
@@ -1141,9 +1180,9 @@ class iCloud3:
 
         if (Device.isin_zone
                 and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
-            special_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} "
+            special_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} > "
                     f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
-                    f"Update at {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
+                    f"NextUpdate at {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
             return special_msg
 
         if Device.FromZone_TrackFrom.dir_of_travel != AWAY_FROM:
@@ -1200,11 +1239,14 @@ class iCloud3:
             # Cycle thru each Track From Zone get the interval and all other data
             devicename = Device.devicename
 
-            for from_zone, FromZone in Device.FromZones_by_zone.items():
-                det_interval.determine_interval(Device, FromZone)
+            det_interval.determine_interval_from_zones(Device)
 
             # Determine zone to be tracked from now that all of the zone distances have been determined
             det_interval.determine_TrackFrom_zone(Device)
+
+            Device.update_sensor_values_from_data_fields()
+
+            det_interval.post_tracking_results_info(Device)
 
             # Save the source/time summary of the update for the next update msg
             Device.last_loc_data_time_gps = f"{Device.dev_data_source}-{Device.loc_data_time_gps} "
@@ -1262,7 +1304,7 @@ class iCloud3:
         Tracked device screen displayed - Show  all alert messages
         Monitored device screen displayed - Show only that devices alerts
         '''
-        if (Gb.EvLog.evlog_attrs['fname'] == 'Startup Events'
+        if (Gb.EvLog.evlog_attrs['selected_fname'] == 'Startup Events'
                 or Gb.EvLog.greenbar_alert_msg.startswith('Start up log')
                 or Gb.WazeHist.wazehist_recalculate_time_dist_running_flag):
             return
@@ -1461,7 +1503,11 @@ class iCloud3:
 
         for username, AppleAcct in Gb.AppleAcct_by_username.items():
             AppleAcct.auth_cnt = 0
-            AppleAcct.set_trust_token_expire_in_days()
+            expire_days = AppleAcct.trust_token_expire_in_days 
+            if (expire_days < TRUST_TOKEN_EXPIRE_WARNING_DAYS or (expire_days % 7)):
+                alert = EVLOG_ALERT if expire_days < 5 else ''
+                post_event( f"{alert}{AppleAcct.account_owner} > "
+                            f"Trust Token expires in {expire_days} days")
 
         if (Gb.WazeHist
                 and Gb.WazeHist.is_historydb_USED

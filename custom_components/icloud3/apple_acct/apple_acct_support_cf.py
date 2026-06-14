@@ -380,61 +380,22 @@ async def async_delete_icloud_session_requests_file(username=None):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            FIDO2 HARDWARE KEY
+#            HARDWARE KEY AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_get_fido2_key_names(AppleAcct=None):
+async def async_get_hwkey_names(self, AppleAcct=None):
     '''
-    Update the fido2 Security Key Names list in all or the selected AppleAcct account.
-
-    THIS IS RUNNING IN THE EVENT LOOP. CALL AppleAcct.get_fido2_key_names TO GET THE KEY NAMES
-    SINCE IT IS NOT RUNNING IN THE EVENT LOOP AND CAN DO REQUEST CALLS
+    Retrieve HwKey names from Apple and update conf_auth_methods.
+    Runs AppleAcct.get_hwkey_names() in executor (not in event loop).
     '''
-
-    return None
-
-    if Gb.fido2_security_keys_enabled is False:
-        return None
 
     _AppleAcct_list = Gb.AppleAcct_by_username.values() if AppleAcct is None else [AppleAcct]
-
-    for AppleAcct in _AppleAcct_list:
+    for _AppleAcct in _AppleAcct_list:
         try:
-            _fido2_key_names = await Gb.hass.async_add_executor_job(AppleAcct.get_fido2_key_names)
-            # _log(f'{AppleAcct.username} {_fido2_key_names=} {AppleAcct.fido2_key_names=}')
-
-            # if _fido2_key_names is not None:
-            #     _trusted_session = await Gb.hass.async_add_executor_job(AppleAcct.trust_session)
-            #     _log(f'{AppleAcct.username} {_trusted_session=}')
-
-            #     _fido2_key_names = await Gb.hass.async_add_executor_job(AppleAcct.get_fido2_key_names)
-            #     _log(f'{AppleAcct.username} {_fido2_key_names=}')
-
-            #     _trusted_devices = await Gb.hass.async_add_executor_job(AppleAcct.trusted_devices)
-            #     _log(f'{AppleAcct.username} {_trusted_devices=}')
+            await Gb.hass.async_add_executor_job(_AppleAcct.get_hwkey_names)
 
         except Exception as err:
             log_exception(err)
 
-
-#--------------------------------------------------------------------
-async def async_confirm_fido2_security_key(AppleAcct, fido2_key_name):
-    '''
-    Update the fido2 Security Key Names list in all or the selected AppleAcct account.
-    Use a AppleAcct non-Event Loop function to do the actual fido2 call to prevent
-    running in Event Loop errors.
-    '''
     return
 
-    try:
-        # _log(f'{AppleAcct=} {fido2_key_name=}')
-        valid_key = await Gb.hass.async_add_executor_job(
-                                                AppleAcct.confirm_fido2_security_key,
-                                                fido2_key_name)
 
-    except Exception as err:
-        log_exception(err)
-        valid_key = False
-
-    # _log(f'{valid_key=}')
-
-    return valid_key

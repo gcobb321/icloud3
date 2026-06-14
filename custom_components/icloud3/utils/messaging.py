@@ -18,10 +18,10 @@ set reject_attr = [ 'integration', 'icon', 'sensor_updated', 'friendly_name' ] %
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
                                 ICLOUD3_ERROR_MSG, EVLOG_DEBUG, EVLOG_ERROR, EVLOG_ATTENTION, EVLOG_MONITOR,
-                                EVLOG_TIME_RECD, EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
+                                EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
                                 EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR,
                                 ALERT_CRITICAL, ALERT_OTHER,
-                                IC3LOG_FILENAME, EVLOG_TIME_RECD, EVLOG_TRACE,
+                                IC3LOG_FILENAME, EVLOG_TRACE,
                                 CRLF, CRLF_DOT, CRLF_HDOT,
                                 NL, NL3, NL4, NLSP4, NL3U, NL3D, NL3_DATA, NL4_DATA,
                                 NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6,
@@ -215,10 +215,6 @@ def post_event(devicename_or_Device, event_msg='+'):
         event_msg = (f"{devicename}{str(event_msg)}")
         log_info_msg(event_msg)
 
-    elif event_msg.startswith(EVLOG_TIME_RECD) is False:
-        event_msg = (f"{devicename}{str(event_msg)}")
-        log_debug_msg(event_msg)
-
 #--------------------------------------------------------------------
 def post_alert(devicename_or_Device, event_msg="+"):
     '''
@@ -288,8 +284,8 @@ def post_greenbar_msg(Device_or_greenbar_msg, greenbar_msg='+'):
 
     # Device was specified, check to see if this is the screen displayed
     if Device:
-        fname = Device.fname if Device.is_tracked else f"{Device.fname} 🅜"
-        if Gb.EvLog.evlog_attrs["fname"] != fname:
+        fname_text = Gb.EvLog.format_evlog_device_fname(Device)
+        if Gb.EvLog.evlog_attrs['selected_fname'] != fname_text:
             return
 
     # if greenbar_msg.startswith('Internet Error') is False:
@@ -794,7 +790,6 @@ def filter_special_chars(log_msg, evlog_export=False):
 
     if log_msg.find('^') == -1: return log_msg.strip()
 
-    log_msg = log_msg.replace(EVLOG_TIME_RECD , '')
     log_msg = log_msg.replace(EVLOG_UPDATE_HDR, '')
     log_msg = log_msg.replace(EVLOG_UPDATE_START, '')
     log_msg = log_msg.replace(EVLOG_UPDATE_END  , '')

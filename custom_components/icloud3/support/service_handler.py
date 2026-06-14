@@ -359,7 +359,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
                 Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
                 Gb.test_internet_error = True
                 Gb.icloud_io_request_secs = time_now_secs() + 70
-                Device = Gb.Devices_by_devicename.get(Gb.EvLog.evlog_attrs["devicename"])
+                Device = Gb.Devices_by_devicename.get(Gb.EvLog.evlog_attrs['selected_dname'])
                 if Device:
                     _handle_action_device_locate(Device, '')
                 return
@@ -382,7 +382,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
     # Another option selected, startup log already displayed
     # Keep Startup log display but also display other selection
-    elif (Gb.EvLog.evlog_attrs['fname'] == 'Startup Events'
+    elif (Gb.EvLog.evlog_attrs['selected_fname'] == 'Startup Events'
             and action == 'log_level'
             and action_option == 'monitor'):
         devicename = 'startup_log'

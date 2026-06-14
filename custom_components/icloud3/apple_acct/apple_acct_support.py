@@ -30,6 +30,7 @@ from ..utils.utils      import (instr, list_to_str, list_add, list_del, dict_del
 from ..startup          import config_file
 
 #--------------------------------------------------------------------
+import asyncio
 import traceback
 from re import match
 
@@ -451,3 +452,4 @@ def delete_AppleAcct_Gb_variables_username(username):
         del AppleAcct
 
     config_file.decode_all_passwords()
+
