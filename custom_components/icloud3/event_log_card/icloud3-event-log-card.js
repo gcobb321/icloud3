@@ -2806,11 +2806,11 @@ class iCloud3EventLogCard extends HTMLElement {
         const optOAhdr   = root.getElementById("optOAhdr")
         const optVERhdr  = root.getElementById("optVERhdr")
 
-        optADEVhdr.text = '__ ALL DEVICES __'
-        optSDEVhdr.text = '_ SELECTED DEV _'
-        optEVLhdr.text  = '__ EVENT LOG __'
+        optADEVhdr.text = '__ALL DEVICES__'
+        optSDEVhdr.text = '_SELECTED DEV_'
+        optEVLhdr.text  = '__EVENT LOG __'
         optOAhdr.text   = '___ OTHER ___'
-        optVERhdr.text  = '___ VERSION ___'
+        optVERhdr.text  = '___VERSION ___'
 
 
 
