@@ -33,7 +33,7 @@ from .const                 import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DI
                                     )
 
 from .utils.utils           import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
-                                    is_running_in_event_loop, isbetween, list_del, list_add,
+                                    is_running_in_event_loop, is_between, list_del, list_add,
                                     sort_dict_by_values, username_id,
                                     encode_password, decode_password, )
 from .utils.messaging       import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
@@ -51,6 +51,7 @@ from .utils                 import file_io
 
 from .configure.screens     import form_config_flow as forms
 from .configure.screens     import form_apple_acct  as forms_aa
+from .configure.screens     import form_icloud3_device  as forms_ic3_dev
 from .configure             import utils_cf
 from .configure             import dashboard_builder as dbb
 
@@ -93,7 +94,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         self.is_config_flow_handler         = True
         self.step_id                        = ''     # step_id for the window displayed
         self.errors                         = {}     # Errors en.json error key
-        self.errors_info_msg                 = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
+        self.errors_info_msg                = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
         self.OptFlow                        = None
         self.data_source                    = ICLOUD
 
@@ -110,7 +111,6 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         self.apple_acct_auth_items_by_username = {}
         self.is_auth_code_needed            = False
         self.aa_auth_methods_by_auth_method = {}
-        # self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
 
         Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
 
@@ -372,7 +372,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.multi_form_user_input          = {}     # multi-form - user_input to be restored when returning to calling form
         self.errors_user_input              = {}     # user_input text for a value with an error
         self.errors_entered_value           = {}
-        self.errors_info_msg                 = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
+        self.errors_info_msg                = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
         self.step_id                        = ''     # step_id for the window displayed
         self.menu_item_selected             = [ MENU_KEY_TEXT_PAGE_0[MENU_PAGE_0_INITIAL_ITEM],
                                                 MENU_KEY_TEXT_PAGE_1[MENU_PAGE_1_INITIAL_ITEM]]
@@ -426,8 +426,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.apple_acct_reauth_username     = ''
         self.add_apple_acct_flag            = False
         self.aa_auth_methods_by_auth_method = {}        # Authentication methods for an Aple acct
-        # self.scanned_for_fido2_key_names    = False
-        # self.reauth_form_fido2_key_names_list = {}        # Fido2 key names for REAUTH form
+        self.imported_aa_ic3_conf_devices   = {}        # Used on aa_ic3_add_devices screen to add  all unknown aa devices
+        self.imported_aadevices_sel_list    = {}        # Used on aa_ic3_add_devices screen to add  all unknown aa devices
 
         self.icloud_list_text_by_fname      = {}
         self.icloud_list_text_by_fname2     = {}
@@ -642,9 +642,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
 
         self.menu_item_selected[self.menu_page_no] = user_input['menu_items']
         user_input, menu_item = utils_cf.menu_text_to_item(self, user_input, 'menu_items')
-        user_input, menu_action_item = utils_cf.menu_text_to_item(self, user_input, 'action_items')
 
-        if menu_action_item.startswith('exit'):
+        if menu_item.startswith('exit'):
             await self.exit_configure_tasks()
 
             # if ('restart' in self.config_parms_update_control
@@ -660,10 +659,10 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             data = {'updated': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
             return self.async_create_entry(title=CONFIG_UPDATE_COMPLETE_MSG, data={})
 
-        elif menu_action_item == 'next_page_0':
+        elif menu_item == 'menu_page_0':
             self.menu_page_no = 0
             self.step_id = 'menu_0'
-        elif menu_action_item == 'next_page_1':
+        elif menu_item == 'menu_page_1':
             self.menu_page_no = 1
             self.step_id = 'menu_1'
 
@@ -1146,5 +1145,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             return forms_aa.form_apple_accounts(self)
         elif step_id == 'update_apple_acct':
             return forms_aa.form_update_apple_acct(self)
+        elif step_id == 'device_list':
+            return forms_ic3_dev.form_device_list(self)
         else:
             return forms.form_menu(self)

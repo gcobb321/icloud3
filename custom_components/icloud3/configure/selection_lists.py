@@ -3,24 +3,25 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (RARROW, CRLF_DOT, DOT, HDOT, CIRCLE_STAR, RED_X, INACTIVE_SYMB, MONITOR_SYMB,
                                 YELLOW_ALERT, RED_ALERT, YELLOW_WARNING,
-                                EVLOG_NOTICE, EVLOG_ALERT, EVLOG_ERROR, LINK, LLINK, RLINK,
-                                IPHONE_FNAME, IPHONE, IPAD, WATCH, MAC, AIRPODS, ICLOUD, OTHER, HOME, FAMSHR,
-                                DEVICE_TYPES, DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, DEVICE_TRACKER_DOT,
-                                TRACK, MONITOR, INACTIVE,
+                                EVLOG_NOTICE, EVLOG_ALERT, EVLOG_ERROR, LINK, LLINK, RLINK, LCBRACE, RCBRACE,
+                                IPHONE_DN, IPHONE, IPAD, WATCH, MAC, AIRPODS, ICLOUD, OTHER, HOME, FAMSHR,
+                                DEVICE_TYPES, DEVICE_TYPE_DN, DEVICE_TYPE_DNS, DEVICE_TRACKER_DOT,
+                                TRACK, MONITOR, INACTIVE, TRACKING_MODE_DN, TRACKING_MODES,
                                 CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCOUNT,
-                                CONF_AUTH_METHODS, CONF_LAST_METHOD,
+                                CONF_AUTH_METHODS, CURRENT,
                                 PUSH, TEXT, TEXT_1, TEXT_2, HWKEY,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
                                 CONF_DATA_SOURCE, CONF_AUTH_CODE, CONF_LOCATE_ALL,
                                 CONF_TRACK_FROM_ZONES, CONF_PICTURE_WWW_DIRS,
                                 CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                                 CONF_PICTURE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE, CONF_FMF_EMAIL,CONF_FMF_DEVICE_ID,
+                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
+                                CONF_MODEL_DISPLAY_NAME,
                                 CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL,
                                 )
 
 from ..utils.utils      import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
-                                is_statzone, zone_dname, isbetween, list_del, list_add,
+                                is_statzone, zone_dname, is_between, list_del, list_add,
                                 sort_dict_by_values, username_id, username_base,
                                 encode_password, decode_password, )
 from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
@@ -46,7 +47,7 @@ def build_apple_accounts_list(self):
     Apple Account or add a new one.
 
     Parameters:
-        include_icloud_dnames:
+        include_aadevice_dnames:
             True - Add a list of the devices in the Apple Account and add a
                     new account option
 
@@ -101,7 +102,7 @@ def build_apple_accounts_auth_list(self):
     Apple Account or add a new one.
 
     Parameters:
-        include_icloud_dnames:
+        include_aadevice_dnames:
             True - Add a list of the devices in the Apple Account and add a
                     new account option
 
@@ -121,21 +122,21 @@ def build_apple_accounts_auth_list(self):
     aa_idx = -1
     for conf_apple_acct in Gb.conf_apple_accounts:
         aa_idx += 1
-        username = conf_apple_acct[CONF_USERNAME]
-        AppleAcct = Gb.AppleAcct_by_username.get(username)
+        aausername = conf_apple_acct[CONF_USERNAME]
+        AppleAcct  = Gb.AppleAcct_by_username.get(aausername)
 
-        if aa_idx == 0 and username == '':
+        if aa_idx == 0 and aausername == '':
             break
-        elif AppleAcct is None or username == '':
+        elif AppleAcct is None or aausername == '':
             continue
 
         aa_text = _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct)
         if AppleAcct.is_auth_code_needed:
-            auth_needed_items_by_username[username] = \
-                f"{username_base(username)}{RARROW}{aa_text}"
+            auth_needed_items_by_username[aausername] = \
+                f"{username_base(aausername)}{RARROW}{aa_text}"
         else:
-            auth_not_needed_items_by_username[username] = \
-                f"{username_base(username)}{RARROW}{aa_text}"
+            auth_not_needed_items_by_username[aausername] = \
+                f"{username_base(aausername)}{RARROW}{aa_text}"
 
     self.apple_acct_auth_items_by_username = auth_needed_items_by_username
     self.apple_acct_auth_items_by_username.update(auth_not_needed_items_by_username)
@@ -145,9 +146,9 @@ def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
     build_aa_auth_methods_list(self, AppleAcct)
 
     aa_text = ''
-    if (AppleAcct.auth_method in AppleAcct.auth_methods
-            and AppleAcct.auth_method_info != ''):
-        auth_method = AppleAcct.auth_method
+    if (AppleAcct.current_auth_method in AppleAcct.auth_methods
+            and AppleAcct.current_auth_method_value != ''):
+        auth_method = AppleAcct.current_auth_method
     else:
         auth_method = PUSH
 
@@ -165,45 +166,49 @@ def build_aa_auth_methods_list(self, AppleAcct):
     self.aa_auth_methods_by_auth_method = {}
     self.aa_auth_methods_by_auth_method[PUSH] = REAUTH_AUTH_METHODS[PUSH]
 
+    if AppleAcct.is_auth_method_PUSH and AppleAcct.hwkey_names != '':
+        self.update_auth_method(HWKEY)
+
     for auth_method, method_info in AppleAcct.conf_apple_acct[CONF_AUTH_METHODS].items():
         if method_info == '':
-            pass
-        elif auth_method.startswith(TEXT):
+            continue
+
+        if auth_method.startswith(TEXT):
             self.aa_auth_methods_by_auth_method[auth_method] = (
                             REAUTH_AUTH_METHODS[TEXT].replace('{method_info}', method_info))
 
-        elif auth_method == HWKEY:
+        if auth_method == HWKEY:
             self.aa_auth_methods_by_auth_method[HWKEY] = (
                             REAUTH_AUTH_METHODS[HWKEY].replace('{method_info}', method_info))
 
     return self.aa_auth_methods_by_auth_method
 
 #-------------------------------------------------------------------------------------------
-def tracked_untracked_form_msg(username):
+def tracked_untracked_form_msg(aausername):
     '''
     This is used in the config_flow_forms to fill in the tracked and untracked devices
     on the Apple Acct Username Password form
     '''
 
-    AppleAcct = Gb.AppleAcct_by_username.get(username)
+    AppleAcct = Gb.AppleAcct_by_username.get(aausername)
     if AppleAcct is None:
         return [0, '', 0, '']
 
-    icloud_dnames = AppleAcct.icloud_dnames if AppleAcct else []
+    aadevice_dnames = AppleAcct.aadevice_dnames if AppleAcct else []
 
-    devicenames_by_username, icloud_dnames_by_username = get_conf_device_names_by_username(username)
-    tracked_devices = [icloud_dname
-                            for icloud_dname in icloud_dnames
-                            if icloud_dname in icloud_dnames_by_username]
-    untracked_devices = [icloud_dname
-                            for icloud_dname in icloud_dnames
-                            if icloud_dname not in icloud_dnames_by_username]
+    devicenames_by_username, aadevice_dnames_by_username = get_conf_device_names_by_username(aausername)
+    tracked_devices = [aadevice_dname
+                            for aadevice_dname in aadevice_dnames
+                            if aadevice_dname in aadevice_dnames_by_username]
+    untracked_devices = [aadevice_dname
+                            for aadevice_dname in aadevice_dnames
+                            if aadevice_dname not in aadevice_dnames_by_username]
 
     return [len(tracked_devices), list_to_str(tracked_devices),
             len(untracked_devices), list_to_str(untracked_devices)]
 
 #--------------------------------------------------------------------
-def get_conf_device_names_by_username(username):
+def get_conf_device_names_by_username(aausername):
     '''
     Cycle through the conf_devices and build a list of device names by the
     apple account usernames
@@ -211,20 +216,20 @@ def get_conf_device_names_by_username(username):
     Parameter:
         username
     Return:
-        {devicenames_by_username}, {icloud_dnames_by_username}
+        {devicenames_by_username}, {aadevice_dnames_by_username}
     '''
     devicenames_by_username = [conf_device[CONF_IC3_DEVICENAME]
                                 for conf_device in Gb.conf_devices
-                                if conf_device[CONF_APPLE_ACCOUNT] == username]
+                                if conf_device[CONF_APPLE_ACCOUNT] == aausername]
 
-    icloud_dnames_by_username = [conf_device[CONF_FAMSHR_DEVICENAME]
+    aadevice_dnames_by_username = [conf_device[CONF_FAMSHR_DEVICENAME]
                                     for conf_device in Gb.conf_devices
-                                    if conf_device[CONF_APPLE_ACCOUNT] == username]
+                                    if conf_device[CONF_APPLE_ACCOUNT] == aausername]
 
     devicenames_by_username.sort()
-    icloud_dnames_by_username.sort()
+    aadevice_dnames_by_username.sort()
 
-    return devicenames_by_username, icloud_dnames_by_username
+    return devicenames_by_username, aadevice_dnames_by_username
 
 #-------------------------------------------------------------------------------------------
 def build_devices_list(self):
@@ -256,33 +261,35 @@ def format_device_list_item(self, conf_device):
                     f" ({conf_device[CONF_IC3_DEVICENAME]}){RARROW}")
 
     if conf_device[CONF_TRACKING_MODE] == MONITOR:
-        device_text += F" {MONITOR_SYMB} MONITOR, "
+        device_text += f"{MONITOR_SYMB} MONITOR, "
     elif conf_device[CONF_TRACKING_MODE] == INACTIVE:
-        device_text += f" {INACTIVE_SYMB} INACTIVE, "
+        device_text += f"{INACTIVE_SYMB} INACTIVE, "
 
     if conf_device[CONF_FAMSHR_DEVICENAME] != 'None':
-        icloud_dname_apple_acct, status_msg = \
+        aadevice_dname_aausername, status_msg = \
                         format_apple_acct_device_info(self, conf_device)
-        device_text += (f"iCloud > "
-                        f"({icloud_dname_apple_acct}{status_msg}), ")
+        device_text += (f"AppleDevice–"
+                        f"({aadevice_dname_aausername}){status_msg}, ")
 
     if conf_device[CONF_MOBILE_APP_DEVICE] != 'None':
         mobapp_dname = conf_device[CONF_MOBILE_APP_DEVICE]
-        device_text += "MobApp > "
+        device_text += "MobApp–"
         if mobapp_dname.startswith('ScanFor:'):
             device_text += f"({mobapp_dname}), "
         elif mobapp_dname in Gb.device_info_by_mobapp_dname:
             device_text += f"({Gb.device_info_by_mobapp_dname[mobapp_dname][0]}), "
         else:
-            device_text += f"{mobapp_dname} ({RED_ALERT}UNKNOWN MOBAPP ENTITY), "
+            device_text += f"){mobapp_dname} {RED_ALERT}UNKNOWN MOBAPP ENTITY), "
+
+    device_text += f"{conf_device[CONF_MODEL_DISPLAY_NAME]}, "
 
     if conf_device[CONF_TRACK_FROM_BASE_ZONE] != HOME:
         tfhbz = conf_device[CONF_TRACK_FROM_BASE_ZONE]
-        device_text +=  f"PrimaryHomeZone > {zone_dname(tfhbz)}, "
+        device_text +=  f"PrimaryHomeZone–({zone_dname(tfhbz)}), "
 
     if conf_device[CONF_TRACK_FROM_ZONES] != [HOME]:
         tfz_fnames = [zone_dname(z) for z in conf_device[CONF_TRACK_FROM_ZONES]]
-        device_text +=  f"TrackFromZones > {list_to_str(tfz_fnames)}, "
+        device_text +=  f"TrackFromZones–({list_to_str(tfz_fnames)}), "
 
     # device_text = device_text.replace(' , ', ' ')
     if device_text.endswith(', '): device_text = device_text[:-2]
@@ -292,7 +299,7 @@ def format_device_list_item(self, conf_device):
 #----------------------------------------------------------------------
 def format_apple_acct_device_info(self, conf_device):
     '''
-    Format the icloud_dname><apple_account field based on the device's
+    Format the aadevice_dname><apple_account field based on the device's
     CONF_FAMSHR_DEVICENAME and CONF_APPLE_ACCOUNT configuration values
     and the status of AppleAcct state and the devices available in AppleAcct
 
@@ -300,36 +307,37 @@ def format_apple_acct_device_info(self, conf_device):
         - device confiuration
 
     Return:
-        - icloud_dname><apple_account
+        - aadevice_dname><apple_account
         - status message
     '''
 
-    icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
-    apple_acct   = conf_device[CONF_APPLE_ACCOUNT]
-    apple_acct_base = f"{apple_acct}@".split('@')[0]
+    aadevice_dname = conf_device[CONF_FAMSHR_DEVICENAME]
+    aausername     = conf_device[CONF_APPLE_ACCOUNT]
+    # aausername_base = f"{aausername}@".split('@')[0]
     status_msg   = ''
 
-    if AppleAcct := Gb.AppleAcct_by_username.get(apple_acct):
-        icloud_dname_apple_acct = f"{icloud_dname}{AppleAcct.account_owner_link}"
-        if icloud_dname in AppleAcct.device_id_by_icloud_dname:
+    if AppleAcct := Gb.AppleAcct_by_username.get(aausername):
+        # aadevice_dname_aausername = f"{aadevice_dname}{AppleAcct.account_owner_link}"
+        aadevice_dname_aausername = f"{aadevice_dname}{LINK}{username_id(aausername)}"
+        if aadevice_dname in AppleAcct.device_id_by_icloud_dname:
             pass
         elif is_empty(AppleAcct.device_id_by_icloud_dname):
             status_msg = f" {RED_ALERT}APPLE ACCT UNAVAILABLE"
         else:
-            status_msg = f" {RED_ALERT}`{icloud_dname}` DEVICE NOT IN APPLE ACCT"
+            status_msg = f" {RED_ALERT}`{aadevice_dname}` DEVICE NOT IN APPLE ACCT"
 
     elif self._is_apple_acct_setup() is False:
-        icloud_dname_apple_acct = f"{icloud_dname}{LINK}NOAPPLEACCTS{RLINK}"
+        aadevice_dname_aausername = f"{aadevice_dname}{LINK}NOAPPLEACCTS"
         status_msg = f" {RED_ALERT}NO APPLE ACCTS SET UP"
 
     elif instr(self.data_source, ICLOUD) is False:
-        icloud_dname_apple_acct = f"{icloud_dname}{LINK}{apple_acct_base}{RLINK}"
+        aadevice_dname_aausername = f"{aadevice_dname}{LINK}{username_id(aausername)}"
         status_msg = f" {RED_ALERT}APPLE DATA SOURCE DISABLED"
     else:
-        icloud_dname_apple_acct = f"{icloud_dname}{LINK}{apple_acct_base}{RLINK}"
+        aadevice_dname_aausername = f"{aadevice_dname}{LINK}{username_id(aausername)}"
         status_msg = f" {RED_ALERT}UNKNOWN APPLE ACCT"
 
-    return icloud_dname_apple_acct, status_msg
+    return aadevice_dname_aausername, status_msg
 
 #----------------------------------------------------------------------
 async def build_update_device_selection_lists(self, selected_devicename=None):
@@ -369,7 +377,7 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
     all_devices_this_device = {}
     all_devices_unknown_device = {}
     username_hdr_available = {}
-    selected_device_icloud_dname = 'None' if is_empty(Gb.conf_devices) else ''
+    selected_device_aadevice_dname = 'None' if is_empty(Gb.conf_devices) else ''
     selected_device_apple_acct = None
 
     # Get the list of devices with unknown apple accts
@@ -378,22 +386,22 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
         if conf_device[CONF_FAMSHR_DEVICENAME] == 'None':
             continue
 
-        icloud_dname_apple_acct, status_msg = \
+        aadevice_dname_aausername, status_msg = \
                     format_apple_acct_device_info(self, conf_device)
 
         if status_msg == '':
             continue
 
-        apple_acct = conf_device[CONF_APPLE_ACCOUNT] if conf_device[CONF_APPLE_ACCOUNT] != '' else 'NONE'
-        device_list_item_key = f"{devicename}{LINK}{apple_acct}"
+        aausername = conf_device[CONF_APPLE_ACCOUNT] if conf_device[CONF_APPLE_ACCOUNT] != '' else 'NONE'
+        device_list_item_key = f"{devicename}{LINK}{aausername}"
         all_devices_not_available[device_list_item_key] = (
                     f"{conf_device[CONF_FNAME]} ({devicename}) > "
-                    f"{icloud_dname_apple_acct}{status_msg}")
+                    f"{aadevice_dname_aausername}{status_msg}")
 
         # Save the FamShr config parameter in case it is not found
         if devicename == selected_devicename:
             selected_device_apple_acct   = conf_device[CONF_APPLE_ACCOUNT]
-            selected_device_icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
+            selected_device_aadevice_dname = conf_device[CONF_FAMSHR_DEVICENAME]
 
     max_len_aa_owner_msg = 0
     for _AppleAcct in Gb.AppleAcct_by_username.values():
@@ -407,15 +415,15 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
     # Get the list of devices with valid apple accounts
     aa_idx = 0
 
-    for apple_acct in Gb.conf_apple_accounts:
-        username = apple_acct[CONF_USERNAME]
+    for conf_apple_account in Gb.conf_apple_accounts:
+        aausername = conf_apple_account[CONF_USERNAME]
         aa_idx += 1
         aa_idx_dots = '.'*aa_idx
 
-        if Gb.valid_upw_by_username.get(username, False) is False:
+        if Gb.valid_upw_by_username.get(aausername, False) is False:
             continue
 
-        AppleAcct = Gb.AppleAcct_by_username.get(username)
+        AppleAcct = Gb.AppleAcct_by_username.get(aausername)
         if AppleAcct is None:
             continue
 
@@ -425,7 +433,7 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
                                     AppleAcct)
 
         if AppleAcct:
-            # self._check_finish_v2v3conversion_for_icloud_dname()
+            # self._check_finish_v2v3conversion_for_aadevice_dname()
 
             devices_available, devices_used, devices_not_available, this_device = \
                     get_icloud_devices_list_avail_used_this(
@@ -498,21 +506,21 @@ def get_icloud_devices_list_avail_used_this(aa_idx, AppleAcct, apple_acct_owner,
     aa_idx_dots = '.'*aa_idx
 
     devices_assigned = {}
-    selected_device_icloud_dname = ''
+    selected_device_aadevice_dname = ''
     for _conf_device in Gb.conf_devices:
         devicename   = _conf_device[CONF_IC3_DEVICENAME]
-        icloud_dname = _conf_device[CONF_FAMSHR_DEVICENAME]
-        username     = _conf_device[CONF_APPLE_ACCOUNT]
-        if (icloud_dname == 'None'
-                or AppleAcct.username != username):
+        aadevice_dname = _conf_device[CONF_FAMSHR_DEVICENAME]
+        aausername     = _conf_device[CONF_APPLE_ACCOUNT]
+        if (aadevice_dname == 'None'
+                or AppleAcct.username != aausername):
             continue
 
-        devices_assigned[icloud_dname] = devicename
-        devices_assigned[devicename]   = icloud_dname
+        devices_assigned[aadevice_dname] = devicename
+        devices_assigned[devicename]   = aadevice_dname
 
     try:
-        for icloud_dname, device_model in AppleAcct.device_model_name_by_icloud_dname.items():
-            device_id = AppleAcct.device_id_by_icloud_dname[icloud_dname]
+        for aadevice_dname, device_model in AppleAcct.device_model_name_by_icloud_dname.items():
+            device_id = AppleAcct.device_id_by_icloud_dname[aadevice_dname]
             _AADevData  = AppleAcct.AADevData_by_device_id[device_id]
             conf_apple_acct, conf_aa_idx = config_file.conf_apple_acct(AppleAcct.username)
             locate_all_sym = '' if conf_apple_acct[CONF_LOCATE_ALL] else 'ⓧ '
@@ -520,38 +528,38 @@ def get_icloud_devices_list_avail_used_this(aa_idx, AppleAcct, apple_acct_owner,
             if family_device  and locate_all_sym:
                 family_device = 'FamilyDevice, APPLE ACCT NOT LOCATING ALL DEVICES'
 
-            device_list_item_key = f"{icloud_dname}{LINK}{AppleAcct.username}"
-            icloud_dname_owner   = f"{icloud_dname}{LINK}{AppleAcct.account_owner}{RLINK}"
-            icloud_dname_owner_model = f"{icloud_dname_owner}{family_device}, {device_model}"
+            device_list_item_key = f"{aadevice_dname}{LINK}{AppleAcct.username}"
+            aadevice_dname_owner = f"{aadevice_dname}{LINK}{AppleAcct.account_owner}"
+            aadevice_dname_owner_model = f"{aadevice_dname_owner}{family_device}, {device_model}"
 
             # If not assigned to an ic3 device
-            if icloud_dname not in devices_assigned:
+            if aadevice_dname not in devices_assigned:
                 if family_device:
                     available_family[device_list_item_key] = (
                                     f"{locate_all_sym}"
-                                    f"{icloud_dname_owner_model}"
+                                    f"{aadevice_dname_owner_model}"
                                     f"{aa_idx_dots}")
                 else:
                     available_owner[device_list_item_key] = (
-                                    f"{icloud_dname_owner_model}"
+                                    f"{aadevice_dname_owner_model}"
                                     f"{aa_idx_dots}")
                 continue
 
             # Is the icloud device name assigned to the current device being updated
-            devicename = devices_assigned[icloud_dname]
+            devicename = devices_assigned[aadevice_dname]
             if devicename == selected_devicename:
-                err = RED_ALERT if instr(icloud_dname_owner_model, 'NOT LOCATING') else ''
+                err = RED_ALERT if instr(aadevice_dname_owner_model, 'NOT LOCATING') else ''
                 this_device[device_list_item_key] = (
-                            f"{err}{icloud_dname_owner}{family_device}, "
+                            f"{err}{aadevice_dname_owner}{family_device}, "
                             f"{device_model}"
                             f"{aa_idx_dots}")
                 continue
 
             # Assigned to another device
-            _assigned_to_fname = icloud_device_assigned_to(AppleAcct, icloud_dname)
-            err = RED_ALERT if instr(icloud_dname_owner_model, 'NOT LOCATING') else ''
+            _assigned_to_fname = icloud_device_assigned_to(AppleAcct, aadevice_dname)
+            err = RED_ALERT if instr(aadevice_dname_owner_model, 'NOT LOCATING') else ''
             devices_used[device_list_item_key] = (
-                            f"{err}{icloud_dname_owner}{RARROW}"
+                            f"{err}{aadevice_dname_owner}{RARROW}"
                             f"{_assigned_to_fname}{family_device}, "
                             f"{device_model}")
 
@@ -565,11 +573,11 @@ def get_icloud_devices_list_avail_used_this(aa_idx, AppleAcct, apple_acct_owner,
     return devices_available, devices_used, devices_not_available, this_device
 
 #----------------------------------------------------------------------
-def icloud_device_assigned_to(AppleAcct, icloud_dname):
+def icloud_device_assigned_to(AppleAcct, aadevice_dname):
     _assigned_to_fname = [f"{conf_device[CONF_FNAME]} ({conf_device[CONF_IC3_DEVICENAME]})"
                             for conf_device in Gb.conf_devices
                             if (AppleAcct.username == conf_device[CONF_APPLE_ACCOUNT]
-                                    and icloud_dname == conf_device[CONF_FAMSHR_DEVICENAME])]
+                                    and aadevice_dname == conf_device[CONF_FAMSHR_DEVICENAME])]
 
     if _assigned_to_fname:
         return _assigned_to_fname[0]
@@ -700,6 +708,9 @@ async def build_picture_filename_selection_list(self):
                 list_del(Gb.picture_www_dirs, www_gb_dir_unknown)
             Gb.conf_profile[CONF_PICTURE_WWW_DIRS] = Gb.picture_www_dirs
 
+        if Gb.www_evlog_js_directory not in Gb.picture_www_dirs:
+            list_add(Gb.picture_www_dirs, Gb.www_evlog_js_directory)
+
         sorted_image_filenames = []
         over_25_warning_msgs = []
         for image_filename in image_filenames:
@@ -806,6 +817,39 @@ def build_log_level_devices_list(self):
 def devices_selection_list():
     return {conf_device[CONF_IC3_DEVICENAME]: (
                     f"{conf_device[CONF_FNAME]} "
-                    f"({DEVICE_TYPE_FNAME(conf_device[CONF_DEVICE_TYPE])})")
+                    f"({DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])})")
                 for conf_device in Gb.conf_devices
                 if conf_device[CONF_IC3_DEVICENAME] in Gb.Devices_by_devicename}
+
+
+#-------------------------------------------------------------------------------------------
+def build_import_apple_devices_selection_list(self):
+    '''
+    Build the selection list for importing Apple Devices. This includes all items with an item
+    key that is used for sorting the list and separating the items into tracked, monitored and
+    inactive selection categories.
+
+    item_key = 0,05,Gary-AirPods where:
+                Tracking_mode: position in ['track', 'monitor', 'inactive]
+                DeviceType   : Position in CONF_MODEL_DISPLAY_NAME
+                AppleFName   : Gary-AirPods
+    '''
+    self.imported_aadevices_sel_list  = {}
+    self.imported_aa_ic3_conf_devices = {}
+    for AppleAcct in Gb.AppleAcct_by_username.values():
+        self.imported_aa_ic3_conf_devices.update(
+                        aascf.build_import_devices_config_from_aadevices(self, AppleAcct))
+
+    for sort_key, ic3_conf_device in self.imported_aa_ic3_conf_devices.items():
+        aausername     = ic3_conf_device[CONF_APPLE_ACCOUNT]
+        aadevice_dname = ic3_conf_device[CONF_FAMSHR_DEVICENAME]
+        mobapp_dname   = ic3_conf_device.get(CONF_MOBILE_APP_DEVICE)
+
+        sel_line = (f"{ic3_conf_device[CONF_FNAME]} ({ic3_conf_device[CONF_IC3_DEVICENAME]}){RARROW}"
+                    f"AppleDevice–({aadevice_dname}{LINK}{username_id(aausername)}), ")
+        if mobapp_dname != 'None':
+            sel_line += f"MobApp–({Gb.device_info_by_mobapp_dname[mobapp_dname][0]}), "
+
+        sel_line += f"{ic3_conf_device[CONF_MODEL_DISPLAY_NAME]}, "
+
+        self.imported_aadevices_sel_list[sort_key] = sel_line

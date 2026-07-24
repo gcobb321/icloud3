@@ -1,7 +1,7 @@
 
 
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (DEVICE_TYPE_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
+from ..const             import (DEVICE_TYPE_DN, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
                                 CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
                                 CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                 )
@@ -11,7 +11,7 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
 
-from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT,
+from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, MENU_PAGE_TITLE,
                                 ACTION_LIST_ITEM_KEYS, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 
@@ -47,7 +47,9 @@ def menu_text_to_item(self, user_input, selection_list):
     if selection_list in user_input:
         selected_text = user_input[selection_list]
         selected_text_len = 35 if len(selected_text) > 35 else len(selected_text)
-        menu_item = [k for k, v in MENU_KEY_TEXT.items() if v.startswith(selected_text[:selected_text_len])][0]
+
+        menu_item = [k  for k, v in MENU_KEY_TEXT.items()
+                        if v.startswith(selected_text[:selected_text_len])][0]
 
         user_input.pop(selection_list)
     else:
@@ -225,7 +227,7 @@ def parm_or_device(self, pname, suggested_value=''):
                             or suggested_value
 
         if pname == 'device_type':
-            parm_displayed = DEVICE_TYPE_FNAME(parm_displayed)
+            parm_displayed = DEVICE_TYPE_DN(parm_displayed)
         parm_displayed = ' ' if parm_displayed == '' else parm_displayed
 
     except Exception as err:

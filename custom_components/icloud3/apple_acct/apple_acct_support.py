@@ -24,7 +24,7 @@ from ..utils.messaging  import (post_event, post_alert, post_alert, post_error_m
                                 internal_error_msg2, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_age, secs_to_hhmm,
                                 format_time_age, )
-from ..utils.utils      import (instr, list_to_str, list_add, list_del, dict_del, 
+from ..utils.utils      import (instr, list_to_str, list_add, list_del, dict_del,
                                 is_empty, isnot_empty,
                                 username_id, is_running_in_event_loop,)
 from ..startup          import config_file
@@ -34,7 +34,7 @@ import asyncio
 import traceback
 from re import match
 
-
+APPLE_ACCT_ALERT_MSG_REAUTH_DAYS = [-5, 10, 20, 88, 89, 86, 87]
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   APPLE ACCT INTERFACE FUNCTIONS
@@ -67,7 +67,7 @@ def retry_apple_acct_login_after_error():
                         f"at {secs_to_hhmm(AppleAcct.error_next_retry_secs)}")
             alert_msg =(f"Apple Login Failed, {AppleAcct.error_reason}, "
                         f"Retry at {secs_to_hhmm(AppleAcct.error_next_retry_secs)}")
-            update_alert_sensor(AppleAcct.username_id, alert_msg, replace_alert_msg=True)
+            update_alert_sensor(AppleAcct.username_id, alert_msg)
 
 
 #--------------------------------------------------------------------
@@ -128,7 +128,7 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
             except Exception as err:
                 log_exception(err)
 
-        verify_icloud_device_info_received(AppleAcct)
+        verify_aa_device_info_received(AppleAcct)
         is_authentication_2fa_code_needed(AppleAcct, initial_setup=True)
 
         return AppleAcct
@@ -248,7 +248,7 @@ def setup_status_msg(AppleAcct, setup_method, username=None):
     log_debug_msg(  f"APPLE ACCT SETUP > Devices-{list_to_str(aadevdata_items)}")
 
 #--------------------------------------------------------------------
-def verify_icloud_device_info_received(AppleAcct):
+def verify_aa_device_info_received(AppleAcct):
     if (AppleAcct is None
             or AppleAcct.AADevices is None):
         return False
@@ -380,6 +380,26 @@ def new_2fa_authentication_code_requested(AppleAcct, initial_setup=False):
         return True
 
 #--------------------------------------------------------------------
+def issue_reauth_in_days_alert_msg(evlog_msg=False):
+    '''
+    Check to see if an Apple acct is approaching  it's
+    reauthentication date. if it is,  issue an alert warning message
+    '''
+    for AppleAcct in Gb.AppleAcct_by_username.values():
+        reauth_in_days, reauth_msg = \
+                AppleAcct.get_next_reauth_in_days_info_msg(APPLE_ACCT_ALERT_MSG_REAUTH_DAYS)
+        if (AppleAcct.is_auth_code_needed is False
+                and reauth_in_days <= 10
+                and reauth_msg is not None):
+            alert_msg = (f"AppleAcct {reauth_msg}")
+            update_alert_sensor(AppleAcct.username_id, alert_msg)
+
+            if evlog_msg:
+                post_event( f"{EVLOG_ALERT}Apple Acct > "
+                            f"{AppleAcct.account_owner}, "
+                            f"Reauth Warning, {reauth_msg}")
+
+#--------------------------------------------------------------------
 def reset_AppleAcct_Gb_variables():
     '''
     Delete all Apple account objects and clear all dictionaries
@@ -452,4 +472,3 @@ def delete_AppleAcct_Gb_variables_username(username):
         del AppleAcct
 
     config_file.decode_all_passwords()
-

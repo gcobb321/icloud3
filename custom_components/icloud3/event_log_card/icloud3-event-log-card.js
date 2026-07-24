@@ -23,7 +23,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
     constructor() {
         super()
-        this._version        = "3.6"
+        this._version        = "3.7"
         this._latestVersion  = ''
         this._buttonCount    = 0
         this._thisButtonId   = ''
@@ -424,6 +424,10 @@ class iCloud3EventLogCard extends HTMLElement {
         statusName.innerText = "Select Person"
         statusName.style.color = "firebrick"
 
+        const debugMsg = document.createElement("div")
+        debugMsg.id = "debugMsg"
+        debugMsg.innerText = ""
+
         const statusTime = document.createElement("div")
         statusTime.id = "statusTime"
         statusTime.innerText = "setup"
@@ -638,25 +642,46 @@ class iCloud3EventLogCard extends HTMLElement {
             /* Message Bar setup - Name & Time below Name & Acion Buttons */
             #statusBar {
                 position: relative;
-                /*width: 100%;*/
-                /*border: 1px solid dodgerblue;*/
+                width: 100%;
+                margin: 0px 0px 4px 0px:
+                padding: 0px 0px 2px 0px:
+                border: 1px solid green;
             }
+            /* STATUS BAR */
             #statusName {
-                width: 55%;
+                width: 40%;
                 color: firebrick;
+                /*border: 1px solid dodgerblue;*/
                 float: left;
+                display: inline-block;
                 font-size: 14px;
                 font-weight: 400;
                 margin: 2px 0px 4px 0px;
-                z-index: 9999;
+                /*z-index: 9999;*/
+            }
+            #debugMsg {
+                color: white; text-shadow: 1px 1px var(--dark-primary-color);
+                background-color: darkmagenta;
+                display: inline-block;
+                font-size: 12px;
+                font-weight: 400;
+                margin: 3px 0px 0px 0px;
+                padding: 0px 4px 0px 4px;
+                border: 1px solid mediumorchid;
+                border-radius: 3px;
+                box-sizing: border-box;
             }
             #statusTime {
+                /*width: 40%;*/
                 /*color: firebrick;*/
+                /*border: 1px solid dodgerblue;*/
                 float: right;
+                display: inline-block;
                 font-size: 14px;
                 font-weight: 400;
-                margin: 2px px 0px 0px;
+                margin: 2px 0px 0px 0px;
             }
+
             .statusMsgPopup {
                 position: relative;
                 width: 85%;
@@ -749,17 +774,24 @@ class iCloud3EventLogCard extends HTMLElement {
                 display: block;
                 table-layout: fixed;
                 width: 100%;
-                /*height: 554px;*/
                 height: 582px;
                 border-collapse: collapse;
                 border: 1px solid rgba(var(--rgb-primary-text-color), 0.3);
-                border-top: 4px double rgba(var(--rgb-primary-text-color), 0.60);
+                /*border-top: 4px double rgba(var(--rgb-primary-text-color), 0.65);*/
+                border-top: 3px solid transparent;
+                border-image: linear-gradient(
+                    to right,
+                    rgba(var(--rgb-primary-text-color), 0.3) 0%,   /* Light Left */
+                    rgba(179, 0, 179, 0.8) 35%,     /* Middle Darkred */
+                    rgba(179, 0, 179, 0.8) 65%,     /* Middle Darkred */
+                    rgba(var(--rgb-primary-text-color), 0.3) 100%  /* Light Right */
+                    ) 1;
                 overflow-y: scroll;
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
             }
             .tblEvlogBody tr {
-                line-height: 1.4em;
+                line-height: 1.3em;
                 z-index: 1;
             }
 
@@ -770,12 +802,13 @@ class iCloud3EventLogCard extends HTMLElement {
             .tblEvlogBody tr:nth-child(odd) {
                 border-right: 1px solid rgba(var(--rgb-primary-text-color), 0.3);
                 border-left: 1px solid rgba(var(--rgb-primary-text-color), 0.3);
-                background-color: var(--primary-background-color);
-            }
+                background-color: rgba(var(--rgb-primary-text-color), 0.025);
+                }
             .tblEvlogBody tr:nth-child(even) {
                 border-right: 1px solid rgba(var(--rgb-primary-text-color), 0.3);
                 border-left: 1px solid rgba(var(--rgb-primary-text-color), 0.3);
-                background-color: rgba(var(--rgb-primary-text-color), 0.075);
+                background-color: rgba(var(--rgb-primary-text-color), 0.0875);
+                background-color: rgba(var(--rgb-primary-text-color), 0.1);
             }
 
             /* EvLog body Text */
@@ -788,6 +821,7 @@ class iCloud3EventLogCard extends HTMLElement {
                             color: white; text-shadow: 1px 1px black;
                             padding-left: 4px;}
             .hdrBase        {text-align: left; color: white; text-shadow: 1px 1px black;}
+            */
 
             /* Base Select Button */
             #btnHelp, #btnRefresh, #btnHeart, #btnConfig, #btnIssues, #btnBuyMeACoffee  {
@@ -842,10 +876,10 @@ class iCloud3EventLogCard extends HTMLElement {
             .btnNotSelected {
                 color: var(--primary-text-color); text-shadow: 1px 1px transparent;
                 background-color: rgba(var(--rgb-primary-text-color), 0.15);
-                border: 1px solid rgba(var(--rgb-primary-text-color), 0.70);
+                border: 1px solid rgba(var(--rgb-primary-text-color), 0.40);
                 }
             .btnHoverName {
-                color: black; /*text-shadow: 1px 1px white;*/.
+                color: black; text-shadow: 1px 1px transparent;
                 border: 1px solid #145214;
                 background-color: #cce698;
                 background-color: sandybrown;
@@ -861,6 +895,8 @@ class iCloud3EventLogCard extends HTMLElement {
             .btnHidden {
                 display: none !important;
             }
+            .hidden {visibility: hidden;}
+            .visible {visibility: visible;}
 
             /* Action Select Button — darkred body with white text. The down-chevron
                 sits on the RIGHT, drawn by the .btnActionContainer::before pseudo-
@@ -1017,13 +1053,15 @@ class iCloud3EventLogCard extends HTMLElement {
                 top: 50%;
                 width: 6px;
                 height: 6px;
-                border-bottom: 2px solid var(--primary-text-color);
-                border-left: 2px solid var(--primary-text-color);
+                border-bottom: 2px solid black;
+                border-left: 2px solid black;
                 transform: rotate(-45deg);
                 margin: -6px 0 0 0;
                 pointer-events: none;
                 z-index: 1;
             }
+            /* White chevron when a device is displayed (darkred btnSelected
+               background); black for the '+ N Devices' placeholder state. */
             .btnNameMoreContainer:has(.btnSelected)::before {
                 border-bottom-color: white;
                 border-left-color: white;
@@ -1058,18 +1096,6 @@ class iCloud3EventLogCard extends HTMLElement {
                 color: white; text-shadow: 1px 1px transparent);
                 background-color: darkred;
             }
-            #XbtnNameMore:hover {
-                color: black;
-                border: 1px solid #145214;
-                background-color: #cce698;
-                background-color: sandybrown;
-            }
-            .XbtnNameMore.btnHoverName {
-                color: black;
-                border: 1px solid #145214;
-                background-color: #cce698;
-                background-color: sandybrown;
-            }
             #btnNameMore option {
                 background-color: var(--primary-background-color);
                 color: var(--primary-text-color);
@@ -1102,12 +1128,11 @@ class iCloud3EventLogCard extends HTMLElement {
                 cursor: pointer;
                 text-align: left;
                 overflow: hidden;
-                transition: 0.4s;
+                transition: width 0.4s;   /* animate resize only; hover colors snap like other buttons */
             }
             #btnNameMore::-ms-expand {
                 display: none;
             }
-            #XbtnNameMore:hover,
             #btnNameMore:focus {
                 background-color: #dddddd;
                 border: 2px solid #dddddd;
@@ -1116,10 +1141,13 @@ class iCloud3EventLogCard extends HTMLElement {
             /*  Hover-name override: needs ID-level specificity to beat
                 #btnNameMore:hover, and must use the background shorthand
                 (not background-color) so it isn't reset by the :hover rule. */
-                #XbtnNameMore.btnHoverName,
+                #btnNameMore.btnHoverName,
                 #btnNameMore.btnHoverName:hover,
-                #XbtnNameMore.btnHoverName:focus {
-                    color: black; /*text-shadow: 1px 1px white;*/
+                #btnNameMore.btnHoverName:focus,
+                #btnNameMore.btnSelected.btnHoverName,
+                #btnNameMore.btnSelected.btnHoverName:hover,
+                #btnNameMore.btnSelected.btnHoverName:focus {
+                    color: black; text-shadow: 1px 1px transparent;
                     border: 1px solid #145214;
                     background-color: #cce698;
                     background-color: sandybrown;
@@ -1129,13 +1157,13 @@ class iCloud3EventLogCard extends HTMLElement {
                 color: white; text-shadow: 1px 1px black;
                 background-color: darkred;
                 border: 2px solid darkred;
+                padding-right: 4px;   /* no chevron when selected — reclaim its space */
             }
             #btnNameMore.btnNotSelected {
                 color: var(--primary-text-color); text-shadow: 1px 1px transparent;
                 background-color: rgba(var(--rgb-primary-text-color), 0.15);
                 border: 1px solid rgba(var(--rgb-primary-text-color), 0.70);
             }
-            #XbtnNameMore.btnSelected:hover,
             #btnNameMore.btnSelected:focus {
                 color: white; text-shadow: 1px 1px black;
                 background-color: darkred;
@@ -1168,12 +1196,16 @@ class iCloud3EventLogCard extends HTMLElement {
 
                 ha-card         {padding: 4px 4px 4px 4px;}
                 .title          {font-size: 18px;}
-                .btnBaseFormat  {margin: 0px 2px 4px 0px; padding: 1px 3px;)
+                .btnBaseFormat  {margin: 4px 4px 0px 0px; padding: 1px 3px;}
+                /* Keep btnNameMore/Action top-aligned with the device buttons
+                   (all margin-top:4px) so they don't collide vertically, and
+                   trim btnNameMore's trailing margin so it reclaims a few px to
+                   fit on the last row instead of wrapping to line 4. */
+                .btnNameMoreContainer {margin: 4px 2px 0px 0px;}
                 .btnAction      {width: 45px; height: 22px;}
                 .updateRecd     {font-weight: 500;}
 
                 .ic3StartupMsg  {font-weight: 500;}
-                .tblEvlogBody tr:nth-child(even) {background-color: #EEF2F5;}
                 ::-webkit-scrollbar {width: 1px;}
                 ::-webkit-scrollbar-thumb {background-color: rgba(var(--rgb-accent-color), 0.7);}
             }
@@ -1185,7 +1217,6 @@ class iCloud3EventLogCard extends HTMLElement {
                     .updateRecd  {font-weight: 500;}
                     .blueResultsEdge {border-left-width: 2px;}
                     .ic3StartupMsg {font-weight: 500;}
-                    .tblEvlogBody tr:nth-child(even) {background-color: #EEF2F5;}
                     ::-webkit-scrollbar {width: 1px;}
                     ::-webkit-scrollbar-thumb {background-color: rgba(var(--rgb-accent-color), 0.7);}
                 }
@@ -1228,6 +1259,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
         // Build Message Bar
         statusBar.appendChild(statusName)
+        statusBar.appendChild(debugMsg)
         statusBar.appendChild(statusTime)
         statusBar.appendChild(statusMsgPopup)
 
@@ -1511,7 +1543,8 @@ class iCloud3EventLogCard extends HTMLElement {
             Monitored devices always go into the overflow select, listed after
             any spilled tracked devices.
         */
-        const MONITOR_CHAR = 'Ⓜ'   // Ⓜ
+        var MONITOR_CHAR = 'Ⓜ'   // Ⓜ
+        var MONITOR_CHAR_DARK = '🅜'   // Ⓜ for iPhones and iPads
 
         const hass         = this._hass
         const root         = this.shadowRoot
@@ -1552,14 +1585,53 @@ class iCloud3EventLogCard extends HTMLElement {
         if (this._displayUserMsgFlag == false) { userMessage = '' }
 
         // get button row count
-        const ROW_CNT = _parameters[0]
+        const ROW_CNT = parseInt(_parameters[0], 10) || 3
 
         // Hide overflow up front — only revealed at the end if it has items
         this._classListAdd('btnNameMoreContainer', 'btnHidden')
 
-        // Make DOM match device count (one btnName<i> per device, all start hidden)
+        // Classify devices, preserving original index for service-call lookups.
+        // entry.width is measured once here and reused for every fit/overflow/
+        // promotion decision below — no per-button re-measuring. The split also
+        // drives DOM button order (tracked first, then monitored) so the bar
+        // renders grouped left-to-right.
+        const tracked   = []
+        const monitored = []
+
+        for (let i = 0; i < buttonsCnt; i++) {
+            const fname = fnamesList[i] || ''
+
+            // Display text. On non-desktop (iPhone/iPad) devices, swap the
+            // monitored marker Ⓜ for its dark variant 🅜 so it stays legible on
+            // touch UIs. Keep `fname` raw for classification and selection
+            // comparisons; only `text` carries the substituted glyph.
+            const text  = this._isDesktop ? fname
+                                          : fname.split(MONITOR_CHAR).join(MONITOR_CHAR_DARK)
+
+            const entry = { idx: i, fname: fname, dname: dnamesList[i], text: text,
+                            width: this._measureButtonWidth(text) }
+
+            if (fname.includes(MONITOR_CHAR)) {
+                monitored.push(entry)
+            } else {
+                tracked.push(entry)
+            }
+        }
+
+        // DOM insertion order for the dynamic btnName<i> elements: every device
+        // index except 0 (btnName0 is hardcoded and pinned to the front),
+        // tracked first then monitored. Passed to _rebuildNameButtons so the
+        // buttons are created in grouped order — because .btnBaseFormat is
+        // display:inline-block, DOM order is on-screen order, so no post-hoc
+        // DOM shuffling is needed each pass.
+        const orderedIdx = []
+        for (let i = 0; i < tracked.length;   i++) { if (tracked[i].idx   !== 0) { orderedIdx.push(tracked[i].idx) } }
+        for (let i = 0; i < monitored.length; i++) { if (monitored[i].idx !== 0) { orderedIdx.push(monitored[i].idx) } }
+
+        // Make DOM match device count (one btnName<i> per device, all start
+        // hidden), created in tracked-then-monitored order.
         if (buttonsCnt !== this._buttonCount) {
-            this._rebuildNameButtons(buttonsCnt)
+            this._rebuildNameButtons(buttonsCnt, orderedIdx)
         }
 
         // User-message branch — show message in btnName0, hide all other btnName<i>, exit
@@ -1581,34 +1653,49 @@ class iCloud3EventLogCard extends HTMLElement {
             return
         }
 
-        // Classify devices, preserving original index for service-call lookups
-        const tracked   = []
-        const monitored = []
-        for (let i = 0; i < buttonsCnt; i++) {
-            const fname = fnamesList[i] || ''
-            const entry = { idx: i, fname: fname, dname: dnamesList[i] }
-            if (fname.includes(MONITOR_CHAR)) {
-                monitored.push(entry)
-            } else {
-                tracked.push(entry)
+        // Pack tracked devices onto the bar within the full multi-line width budget;
+        // any that don't fit overflow into btnNameMore. The monitored greedy pass
+        // below fills whatever bar space the tracked devices leave.
+        // Positive px shaved off each row's usable width so sub-pixel rounding
+        // (clientWidth is integer, button widths are ceil'd) can't let one extra
+        // button "fit" per row that physically wraps — which on the narrow
+        // iPhone-portrait bar was spilling btnNameMore onto line 4.
+        const SAFETY       = 8
+
+        const budgetInfo   = this._computeButtonBarBudget()
+        const rowCap       = budgetInfo.barWidth - SAFETY   // usable px on one row
+
+        // Row-fill simulation that mirrors CSS inline-block wrapping. `rowFill`
+        // is the px already used on the current row; row 1 starts pre-charged
+        // with the floated Actions select. consume() places a button of width
+        // btnW: if it fits the current row it's charged directly; if not, the
+        // unused tail (rowCap - rowFill) is wasted, so that gap is charged
+        // against `remaining` too before the button wraps to a fresh row.
+        // Charging the wasted tail is what stops the pure area budget from
+        // over-packing buttons onto a phantom extra row — the bug that pushed
+        // btnNameMore to line 4 on the wide iPad-landscape bar. Returns false
+        // (state unchanged) when the button can't fit within ROW_CNT rows.
+        let remaining = (rowCap * ROW_CNT) - budgetInfo.actionW
+        let rowFill   = budgetInfo.actionW
+
+        const consume = (btnW) => {
+            if (rowFill + btnW <= rowCap) {
+                // fits on the current row
+                if (btnW > remaining) { return false }
+                rowFill   += btnW
+                remaining -= btnW
+                return true
             }
+            // would wrap: charge the wasted tail, then the button on a new row
+            if (btnW > rowCap) { return false }          // can't fit any single row
+            const waste = rowCap - rowFill
+            if (waste + btnW > remaining) { return false }
+            remaining -= waste + btnW
+            rowFill    = btnW
+            return true
         }
 
-        // Pack tracked devices onto the bar within the width budget; remainder overflow.
-        // MORE_RESERVE is held back from the pack budget so btnNameMore has somewhere
-        // to land if overflow is non-empty. Track line-1 consumption separately so the
-        // promotion step can decide whether overflow items would fit on line 1 alone.
-        const MORE_RESERVE = 95
-        const SAFETY       = 12
-        const budgetInfo   = this._computeButtonBarBudget()
-        const line1Capacity      = budgetInfo.barWidth - budgetInfo.actionW - SAFETY
-        const line1TrackedBudget = line1Capacity - MORE_RESERVE
-        const totalBudget        = (budgetInfo.barWidth * ROW_CNT) - budgetInfo.actionW - SAFETY - MORE_RESERVE
-
         const overflowTracked = []
-        let remaining   = totalBudget
-        let line1Used   = 0
-        let stillLine1  = true
 
         for (let i = 0; i < tracked.length; i++) {
             const entry    = tracked[i]
@@ -1616,26 +1703,16 @@ class iCloud3EventLogCard extends HTMLElement {
             const btn      = root.getElementById(buttonId)
             if (!btn) { continue }
 
-            btn.innerText = entry.fname
+            btn.innerText = entry.text
             this._classListRemove(buttonId, 'btnUserMessage')
 
-            const btnW = this._measureButtonWidth(entry.fname)
-            if (btnW <= remaining) {
+            if (consume(entry.width)) {
                 this._classListRemove(buttonId, 'btnHidden')
                 if (fnameSelected == entry.fname) {
                     this._highlightSelectedNameButton(buttonId)
                 } else {
                     this._classListRemove(buttonId, 'btnSelected')
                     this._classListAdd(buttonId, 'btnNotSelected')
-                }
-                remaining -= btnW
-
-                // Mirror the browser's inline-block wrap: once a button no longer
-                // fits on line 1, all subsequent placed buttons go to line 2.
-                if (stillLine1 && line1Used + btnW <= line1TrackedBudget) {
-                    line1Used += btnW
-                } else {
-                    stillLine1 = false
                 }
             } else {
                 this._classListAdd(buttonId, 'btnHidden')
@@ -1643,97 +1720,58 @@ class iCloud3EventLogCard extends HTMLElement {
             }
         }
 
-        // Monitored devices never appear on the bar (initially hidden — promotion
-        // step below may un-hide them if they fit alongside the tracked buttons).
+        // Monitored devices start hidden. The greedy pass below places as many as
+        // fit onto the bar — filling the space the tracked devices left across all
+        // ROW_CNT lines — and the remainder stays in btnNameMore at the end.
         for (let i = 0; i < monitored.length; i++) {
             const buttonId = 'btnName' + monitored[i].idx
             this._classListAdd(buttonId, 'btnHidden')
             this._classListRemove(buttonId, 'btnUserMessage')
         }
 
-        const overflowAll = overflowTracked.concat(monitored)
-
-        // Promotion: btnNameMore (~95px with chevron) can be wider than the
-        // device buttons it contains, causing it to wrap to row 2 when the
-        // buttons themselves would have fit on row 1. Promote overflow items
-        // to the bar only when ALL of them fit on line 1 in the space the
-        // btnNameMore select would have occupied. If they don't all fit on
-        // line 1, leave them in btnNameMore — promoting some-but-not-all just
-        // fills line 2 and hides btnNameMore, which is not what we want.
-        const line1RoomForPromotion = line1Capacity - line1Used
-        let overflowItemsW = 0
-        for (let i = 0; i < overflowAll.length; i++) {
-            overflowItemsW += this._measureButtonWidth(overflowAll[i].fname)
-        }
-        if (overflowAll.length > 0 && overflowItemsW <= line1RoomForPromotion) {
-            for (let i = 0; i < overflowAll.length; i++) {
-                const entry    = overflowAll[i]
-                const buttonId = 'btnName' + entry.idx
-                const btn      = root.getElementById(buttonId)
-                if (!btn) { continue }
-                btn.innerText = entry.fname
-                this._classListRemove(buttonId, 'btnHidden')
-                this._classListRemove(buttonId, 'btnUserMessage')
-                if (fnameSelected == entry.fname) {
-                    this._highlightSelectedNameButton(buttonId)
-                } else {
-                    this._classListRemove(buttonId, 'btnSelected')
-                    this._classListAdd(buttonId, 'btnNotSelected')
-                }
+        // Un-hide a device button on the bar and apply its selected style.
+        const placeOnBar = (entry) => {
+            const buttonId = 'btnName' + entry.idx
+            const btn      = root.getElementById(buttonId)
+            if (!btn) { return false }
+            btn.innerText = entry.text
+            this._classListRemove(buttonId, 'btnHidden')
+            this._classListRemove(buttonId, 'btnUserMessage')
+            if (fnameSelected == entry.fname) {
+                this._highlightSelectedNameButton(buttonId)
+            } else {
+                this._classListRemove(buttonId, 'btnSelected')
+                this._classListAdd(buttonId, 'btnNotSelected')
             }
-            overflowAll.length = 0
+            return true
         }
 
-        // Line-2/3 promotion: btnNameMore is on line 2/3 either because tracked
-        // buttons wrapped (stillLine1 = false), or because btnNameMore's actual
-        // rendered width — driven by its longest option text — exceeds the
-        // line-1 remaining space (MORE_RESERVE is only a 95px floor estimate).
-        // In either case we have a (mostly) empty line 2/3 to fill with overflow
-        // items, leaving moreActualW for btnNameMore itself.
-        if (overflowAll.length > 0) {
-            let moreActualW = this._measureButtonWidth('+ ' + overflowAll.length + ' Devices') + 10
-            for (let i = 0; i < overflowAll.length; i++) {
-                const w = this._measureButtonWidth('• ' + overflowAll[i].fname) + 10
-                if (w > moreActualW) { moreActualW = w }
-            }
-            if (moreActualW < 80) { moreActualW = 80 }
-            moreActualW += 6   // container right margin
+        // Tracked devices that already overflowed go into btnNameMore first; any
+        // monitored leftovers follow them.
+        const overflowAll = overflowTracked.slice()
 
-            const line1Remaining = line1Capacity - line1Used
-            const moreOnLine2    = !stillLine1 || line1Remaining < moreActualW
+        // Reserve the btnNameMore slot (through the same row-aware accounting)
+        // the moment we know it will be shown, so the monitored fill can't claim
+        // the space the select needs and bump it onto another row. Its footprint
+        // is an upper bound over everything that could land in it.
+        let moreReserved = false
+        const reserveMore = () => {
+            if (moreReserved) { return }
+            const reserveSet  = overflowTracked.concat(monitored)
+            consume(this._overflowMoreWidth(reserveSet, fnameSelected) + 6)
+            moreReserved = true
+        }
+        if (overflowTracked.length > 0) { reserveMore() }
 
-            if (moreOnLine2) {
-                // Promotion budget = line-2/3 width minus btnNameMore's real width.
-                // remaining was computed assuming MORE_RESERVE; if the real width
-                // is larger, subtract the under-reservation so we don't push
-                // btnNameMore onto a third line.
-                let promotionBudget = remaining - Math.max(0, moreActualW - MORE_RESERVE)
-                const stillOverflow = []
-                for (let i = 0; i < overflowAll.length; i++) {
-                    const entry = overflowAll[i]
-                    const btnW  = this._measureButtonWidth(entry.fname)
-                    if (btnW > promotionBudget) {
-                        stillOverflow.push(entry)
-                        continue
-                    }
-                    const buttonId = 'btnName' + entry.idx
-                    const btn      = root.getElementById(buttonId)
-                    if (!btn) { stillOverflow.push(entry); continue }
-                    btn.innerText = entry.fname
-                    this._classListRemove(buttonId, 'btnHidden')
-                    this._classListRemove(buttonId, 'btnUserMessage')
-                    if (fnameSelected == entry.fname) {
-                        this._highlightSelectedNameButton(buttonId)
-                    } else {
-                        this._classListRemove(buttonId, 'btnSelected')
-                        this._classListAdd(buttonId, 'btnNotSelected')
-                    }
-                    promotionBudget -= btnW
-                }
-                overflowAll.length = 0
-                for (let i = 0; i < stillOverflow.length; i++) {
-                    overflowAll.push(stillOverflow[i])
-                }
+        // Greedily place monitored devices in whatever bar space remains; the
+        // first one that doesn't fit means btnNameMore is needed, so reserve it.
+        for (let i = 0; i < monitored.length; i++) {
+            const entry = monitored[i]
+            if (consume(entry.width)) {
+                placeOnBar(entry)
+            } else {
+                reserveMore()
+                overflowAll.push(entry)
             }
         }
 
@@ -1743,21 +1781,7 @@ class iCloud3EventLogCard extends HTMLElement {
         // narrower than btnNameMore (which it replaces), so it tends to fit
         // in the space btnNameMore would have occupied.
         if (overflowAll.length === 1) {
-            const entry    = overflowAll[0]
-            const buttonId = 'btnName' + entry.idx
-            const btn      = root.getElementById(buttonId)
-            if (btn) {
-                btn.innerText = entry.fname
-                this._classListRemove(buttonId, 'btnHidden')
-                this._classListRemove(buttonId, 'btnUserMessage')
-                if (fnameSelected == entry.fname) {
-                    this._highlightSelectedNameButton(buttonId)
-                } else {
-                    this._classListRemove(buttonId, 'btnSelected')
-                    this._classListAdd(buttonId, 'btnNotSelected')
-                }
-                overflowAll.length = 0
-            }
+            if (placeOnBar(overflowAll[0])) { overflowAll.length = 0 }
         }
 
         // Rebuild overflow options — spilled tracked first, then monitored
@@ -1766,7 +1790,7 @@ class iCloud3EventLogCard extends HTMLElement {
             const entry = overflowAll[i]
             const opt   = document.createElement("option")
             opt.value   = 'btnName' + entry.idx
-            opt.text    = '• ' + entry.fname
+            opt.text    = '• ' + entry.text
             opt.classList.add("btnActionOption")
             btnNameMore.appendChild(opt)
         }
@@ -1775,17 +1799,17 @@ class iCloud3EventLogCard extends HTMLElement {
         btnNameMore.options[0].text  = '+ ' + overflowAll.length + ' Devices'
         btnNameMore.options[0].value = 'none'
 
-        // If the selected device is in overflow, show its name in the select
+        // If the selected device is in overflow, point the select at its option
+        // so the closed display shows that device. Every option keeps its '• '
+        // prefix — including the selected one shown closed — so nothing is
+        // mutated per-selection. (Previously the selected option's bullet was
+        // stripped for the closed display, but that left the just-unselected
+        // option bullet-less when the user re-picked from the dropdown, since no
+        // rebuild runs while btnNameMore has focus.)
         let selInOverflow = false
         for (let i = 0; i < overflowAll.length; i++) {
             if (fnameSelected == overflowAll[i].fname) {
                 btnNameMore.value = 'btnName' + overflowAll[i].idx
-                // Native <select> shows the selected option's text in the closed
-                // display. Rewrite that option's text without the '• ' prefix so
-                // the closed display reads just the device name. Other options
-                // keep their bullets in the dropdown list.
-                const selOpt = btnNameMore.options[btnNameMore.selectedIndex]
-                if (selOpt) { selOpt.text = overflowAll[i].fname }
                 this._classListAdd('btnNameMore', 'btnSelected')
                 this._classListRemove('btnNameMore', 'btnNotSelected')
                 selInOverflow = true
@@ -1799,14 +1823,10 @@ class iCloud3EventLogCard extends HTMLElement {
         }
 
         // Show the overflow select only when it has at least one device option.
-        // Width is set to the longest option text so the select size is stable.
+        // Width is the same rendered width reserved for it during promotion.
         if (overflowAll.length > 0) {
-            let maxW = 80
-            for (let i = 0; i < btnNameMore.options.length; i++) {
-                const w = this._measureButtonWidth(btnNameMore.options[i].text) + 10
-                if (w > maxW) { maxW = w }
-            }
-            btnNameMore.widthstyle = maxW + 'px'
+            const maxW = this._overflowMoreWidth(overflowAll, fnameSelected)
+            btnNameMore.style.width = maxW + 'px'
             const btnNameMoreContainer = root.getElementById("btnNameMoreContainer")
             btnNameMoreContainer.style.width = maxW + 'px'
             this._classListRemove('btnNameMoreContainer', 'btnHidden')
@@ -1822,45 +1842,97 @@ class iCloud3EventLogCard extends HTMLElement {
         */
         const root      = this.shadowRoot
         const buttonBar = root.getElementById("buttonBar")
+        const tblEvlogBody = root.getElementById("tblEvlogBody")
         const btnActionContainer = root.getElementById("btnActionContainer")
 
         let barWidth = buttonBar.clientWidth
+        let tblEvlogBodyW = tblEvlogBody.clientWidth
+
         if (!barWidth) {
             if (this._iPhoneP)      { barWidth = 360 }
             else if (this._iPhoneL) { barWidth = 700 }
             else if (this._iPadP)   { barWidth = 820 }
-            else if (this._iPadL)   { barWidth = 1100 }
+            else if (this._iPadL)   { barWidth = 1000 }
             else                    { barWidth = 640 }
         }
 
         const actionW = btnActionContainer ? btnActionContainer.offsetWidth || 86 : 86
 
+
         return { barWidth: barWidth, actionW: actionW }
     }
 
     //---------------------------------------------------------------------------
-    _measureButtonWidth(text) {
-        /*  Pixel width the device-name button will consume on the bar, including
-            padding, border and the right-side margin gap. Uses a cached canvas
-            context so we don't have to round-trip through the DOM per button.
+    _measureTextW(text) {
+        /*  Raw text advance (no button chrome) via a cached canvas context, so we
+            don't round-trip through the DOM per button. Used both for button
+            widths and for the constant '• ' dropdown-bullet width.
         */
         if (!this._measureCtx) {
             const canvas = document.createElement('canvas')
             this._measureCtx = canvas.getContext('2d')
             this._measureCtx.font = '500 14px Roboto, sans-serif'
         }
-        const textW = this._measureCtx.measureText(text || '').width
+        return this._measureCtx.measureText(text || '').width
+    }
+
+    _measureButtonWidth(text) {
+        /*  Pixel width the device-name button will consume on the bar, including
+            padding, border and the right-side margin gap.
+        */
         // padding 4+4 + border 1+1 + right-margin 6 + slack 4
-        return Math.ceil(textW) + 17.5
-        return Math.ceil(textW) + 20
+        return Math.ceil(this._measureTextW(text)) + 17.5
     }
 
     //---------------------------------------------------------------------------
-    _rebuildNameButtons(deviceCount) {
+    _overflowMoreWidth(overflowAll, fnameSelected) {
+        /*  Rendered width btnNameMore's <select> is given for a set of overflow
+            devices, floored, minus the chevron overlay (ARROW_ADJ). Single source
+            of truth so the promotion reservation and the assigned select width
+            can't drift apart.
+
+            The closed control only ever shows the '+ N Devices' placeholder, or
+            the selected device's name when that device sits in overflow. On touch
+            (iOS/iPadOS) the option list is a native self-sizing popup, so the
+            closed control does NOT need to fit the widest option — only the text
+            it actually displays. On desktop the dropdown inherits the control
+            width, so there we still widen to the longest option.
+        */
+        // Width the closed <select> needs to show a string without clipping,
+        // matching the #btnNameMore box model: text advance + left padding (4) +
+        // right chevron gutter (22) + border (2+2), plus 2px slack.
+        const SELECT_CHROME = 28
+        const fit = (text) => Math.ceil(this._measureTextW(text)) + SELECT_CHROME
+
+        // The closed control shows the '+ N Devices' placeholder...
+        let maxW = fit('+ ' + overflowAll.length + ' Devices')
+
+        for (let i = 0; i < overflowAll.length; i++) {
+            const entry = overflowAll[i]
+            if (this._isDesktop) {
+                const w = fit('• ' + entry.text)         // option carries a '• ' prefix
+                if (w > maxW) { maxW = w }
+            } else if (fnameSelected != null && fnameSelected == entry.fname) {
+                const w = fit('• ' + entry.text)         // selected name shown closed (bulleted)
+                if (w > maxW) { maxW = w }
+            }
+        }
+        if (maxW < 84) { maxW = 84 }
+        return maxW
+    }
+
+    //---------------------------------------------------------------------------
+    _rebuildNameButtons(deviceCount, orderedIdx) {
         /*  Create or remove dynamic btnName1..N elements to match deviceCount.
             One DOM button is created per device (indexed by original device
-            position). All buttons start hidden; _setupButtonNames decides which
-            ones become visible on the bar each pass.
+            position, so the id stays tied to the service-call index). The
+            buttons are inserted in orderedIdx order — tracked devices first,
+            then monitored — so the bar renders grouped left-to-right. btnName0
+            is hardcoded in setConfig and stays pinned at the front. All buttons
+            start hidden; _setupButtonNames decides which become visible each
+            pass. orderedIdx is supplied by _setupButtonNames from its
+            tracked/monitored classification; if omitted, fall back to natural
+            index order.
         */
         const root                 = this.shadowRoot
         const buttonBar            = root.getElementById("buttonBar")
@@ -1872,9 +1944,18 @@ class iCloud3EventLogCard extends HTMLElement {
             if (btn) { buttonBar.removeChild(btn) }
         }
 
-        // Create one button per device beyond btnName0 (hardcoded in setConfig)
-        for (let i = 1; i < deviceCount; i++) {
-            const buttonId = 'btnName' + i
+        // Order to create the dynamic buttons in. Defaults to natural index
+        // order (1..N) when the caller doesn't pass a grouped order.
+        let order = orderedIdx
+        if (!order) {
+            order = []
+            for (let i = 1; i < deviceCount; i++) { order.push(i) }
+        }
+
+        // Create one button per device beyond btnName0 (hardcoded in setConfig),
+        // inserting in grouped order so DOM order == on-screen order.
+        for (let k = 0; k < order.length; k++) {
+            const buttonId = 'btnName' + order[k]
             const btn = document.createElement('btnName')
             btn.id = buttonId
             btn.classList.add("btnBaseFormat")
@@ -2000,7 +2081,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 }
                 if (sameTextCnt > 10) {
                     tTime = firstTime
-                    tText += ' (+' + sameTextCnt + ' more times)'
+                    tText += ' (+' + sameTextCnt + ' times)'
                     sameTextCnt = 0
                 }
 
@@ -2358,6 +2439,7 @@ class iCloud3EventLogCard extends HTMLElement {
         */
         const root          = this.shadowRoot
         const btnNameMore   = root.getElementById("btnNameMore")
+        const btnNameMoreContainer = root.getElementById("btnNameMoreContainer")
         var currentButtonId = this._currentButtonId()
 
         const [devicename, fname] = this._getButtonDevicename(buttonPressId)
@@ -2383,6 +2465,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 btnNameMore.selectedIndex = 0
                 this._classListRemove('btnNameMore', 'btnSelected')
                 this._classListAdd('btnNameMore', 'btnNotSelected')
+
             }
             this._classListRemove(buttonPressId, 'btnNotSelected')
             this._classListRemove(buttonPressId, 'btnHoverName')
@@ -2647,15 +2730,15 @@ class iCloud3EventLogCard extends HTMLElement {
         const root    = this.shadowRoot
         const button  = root.getElementById(buttonId)
 
-        if (button.classList.contains('btnSelected')) {
-            this._classListRemove(buttonId, 'btnHoverName'
+        if (buttonId == "btnNameMore") {
+            // btnNameMore shows the hover style in both states (selected and not)
+            this._classListAdd(buttonId, 'btnHoverName')
 
-            )
+        } else if (button.classList.contains('btnSelected')) {
+            this._classListRemove(buttonId, 'btnHoverName')
+
         } else if (buttonId == "btnAction") {
             this._displayInfoText("Show Action Command List")
-
-        } else if (buttonId == "btnNameMore" && button.classList.contains('btnNotSelected')) {
-                this._classListAdd(buttonId, 'btnHoverName')
 
         } else {
             this._classListAdd(buttonId, 'btnHoverName')
@@ -2811,10 +2894,8 @@ class iCloud3EventLogCard extends HTMLElement {
         optEVLhdr.text  = '__EVENT LOG __'
         optOAhdr.text   = '___ OTHER ___'
         optVERhdr.text  = '___VERSION ___'
-
-
-
     }
+
     //---------------------------------------------------------------------------
     _displayDevicenameMsgL(msg) {
         // Display text below name button
@@ -2829,7 +2910,7 @@ class iCloud3EventLogCard extends HTMLElement {
             statusName.style.setProperty('color', 'green')
             statusTime.innerText = ''
         } else {
-            statusName.style.setProperty('width', '55%')
+            statusName.style.setProperty('width', '40%')
             statusName.style.setProperty('color', 'firebrick')
             this._displayTimeMsgR('')
         }
@@ -2844,25 +2925,28 @@ class iCloud3EventLogCard extends HTMLElement {
                 - Alert or Error = Display the message in the devicename field on the Left
                 - Other = Display the text
         */
-        const root       = this.shadowRoot
-        const hass       = this._hass
-        const statusTime = root.getElementById("statusTime")
-        const statusName = root.getElementById("statusName")
-        const updateTime   = hass.states['sensor.icloud3_event_log'].attributes['update_time'].slice(0, -7)
+        const root          = this.shadowRoot
+        const hass          = this._hass
+        const statusTime    = root.getElementById("statusTime")
+        const debugMsg      = root.getElementById("debugMsg")
+        const updateTime    = hass.states['sensor.icloud3_event_log'].attributes['update_time'].slice(0, -7)
         const logLevelDebug = hass.states['sensor.icloud3_event_log'].attributes['log_level_debug']
+
+        if (logLevelDebug.includes("rawdata")) {
+            debugMsg.innerText = "RawData Logging"
+            debugMsg.classList.remove("btnHidden")
+
+        } else if (logLevelDebug.includes("debug")) {
+            debugMsg.innerText = "Debug Logging"
+            debugMsg.classList.remove("btnHidden")
+
+        } else {
+            debugMsg.classList.add("btnHidden")
+        }
+
 
         if (this._isUserMessageDisplayed()) {
             return
-
-        } else if (logLevelDebug.includes("rawdata")) {
-            msg = "RawData Logging"
-            this._classListAdd('statusTime', 'alertText')
-            this._classListRemove('statusTime', 'red')
-
-        } else if (logLevelDebug.includes("debug")) {
-            msg = "Debug Logging"
-            this._classListAdd('statusTime', 'alertText')
-            this._classListRemove('statusTime', 'red')
 
         } else {
             msg = updateTime
@@ -2878,7 +2962,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const root   = this.shadowRoot
         const logMsg = root.getElementById("logMsg")
 
-        const displayMsg = lineNo + '-' + msg + '; '
+        const displayMsg = lineNo + '-' + msg + ' »» '
         if (logMsg.innerText.startsWith(displayMsg)) {return}
         if (logMsg.widthstyle > 500) {logMsg.innerText = ''}
         logMsg.innerText = displayMsg + logMsg.innerText

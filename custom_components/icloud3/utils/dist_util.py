@@ -102,11 +102,11 @@ def format_dist_km(dist_km):
     if dist_km < 0:
         dist_km = abs(dist_km)
 
-    if dist_km >= 100: return f"{dist_km:.0f}km".replace('.0', '')
+    if dist_km >= 100: return f"{dist_km:,.0f}km"
     if dist_km >= 10:  return f"{dist_km:.1f}km"
     if dist_km >= 1:   return f"{dist_km:.2f}km"
     dist_m = dist_km * 1000
-    if dist_m >= 1:    return f"{dist_m:.0f}m"
+    if dist_m >= 1:    return f"{dist_m:,.0f}m"
     if round_to_zero(dist_km) == 0: return f"0.0km"
     return f"{dist_m:.1f}m"
 
@@ -116,7 +116,7 @@ def format_dist_mi(dist_mi):
     if dist_mi < 0:
         dist_mi = abs(dist_mi)
 
-    if dist_mi >= 100:     return f"{dist_mi:.0f}mi".replace('.0', '')
+    if dist_mi >= 100:     return f"{dist_mi:,.0f}mi"
     if dist_mi >= 10:      return f"{dist_mi:.1f}mi"
     if dist_mi >= 1:       return f"{dist_mi:.1f}mi"
     if dist_mi >= .0947:   return f"{dist_mi:.2f}mi"

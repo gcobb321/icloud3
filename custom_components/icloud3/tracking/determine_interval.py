@@ -36,9 +36,10 @@ from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONE
                                     NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
                                     LAST_LOCATED,
                                     CONF_AWAY_TIME_ZONE_1_DEVICES, CONF_AWAY_TIME_ZONE_2_DEVICES,
+                                    CONF_SENSORS_MONITORED_DEVICES,
                                     )
 
-from ..utils.utils          import (instr, isbetween, round_to_zero, is_zone, is_statzone, isnot_zone,
+from ..utils.utils          import (instr, is_between, round_to_zero, is_zone, is_statzone, isnot_zone,
                                     zone_dname, list_add, list_to_str, )
 from ..utils.messaging      import (post_event, post_alert, post_error_msg,
                                     post_greenbar_msg, clear_greenbar_msg,
@@ -160,7 +161,6 @@ def determine_interval(Device, FromZone):
                 f"Dir-{dir_of_travel}{awayfrom_override_star}, "
                 f"DirHist-{FromZone.dir_of_travel_history[-40:]}")
     log_debug_msg(devicename, log_msg)
-
 
     #--------------------------------------------------------------------------------
     # The following checks the distance from home and assigns a
@@ -322,7 +322,7 @@ def determine_interval(Device, FromZone):
         interval_secs   = calc_interval_secs
 
     # if (dir_of_travel in ('', ' ', '___', AWAY_FROM)
-    #         and isbetween(interval_secs, 30, 180)):
+    #         and is_between(interval_secs, 30, 180)):
     #     interval_method += '+6.AwayFm+<3min'
     #     interval_secs = 180
 
@@ -585,6 +585,8 @@ def post_results_message_to_event_log(Device, FromZone):
     '''
     Device.last_update_msg_secs = time_now_secs()
 
+    log_tracking_results(Device, FromZone)
+
     if Device.only_track_from_home:
         event_msg = f"Results > "
     else:
@@ -626,8 +628,6 @@ def post_results_message_to_event_log(Device, FromZone):
 
     post_event(Device, event_msg[:-2])
 
-    log_tracking_results(Device, FromZone)
-
 #--------------------------------------------------------------------------------
 def post_tracking_results_info(Device):
     '''
@@ -635,9 +635,12 @@ def post_tracking_results_info(Device):
     '''
     Device.last_update_msg_secs = time_now_secs()
 
+    went3k_msg = '' if Device.loc_data_zone == HOME \
+                    else f"{'✓' if Device.went_3km else '×'}Went3km, "
+
     event_msg =(f"Status > "
                 f"{zone_dname(Device.loc_data_zone)}, "
-                f"{'✓' if Device.went_3km else '×'}Went3km, ")
+                f"{went3k_msg}")
     if Device.is_statzone_timer_set and Device.is_tracked and Gb.is_statzone_used:
         event_msg += f"IntoStatZone-{secs_to_time(Device.statzone_timer)}, "
 
@@ -748,6 +751,7 @@ def determine_interval_monitored_device_offline(Device):
     if Device.is_online:
         Device.offline_secs = 0
         return False
+
 
     if (Device.is_offline and Device.offline_secs == 0):
         Device.offline_secs = Gb.this_update_secs
@@ -1053,7 +1057,6 @@ def _get_distance_data(Device, FromZone):
     if Device.no_location_data:
         post_event(Device, "No location data available, will retry")
         return (ERROR, {})
-
 
     calc_dist_from_zone_km = dist_from_zone_km   = FromZone.distance_km
     dist_from_zone_m       = dist_from_zone_km * 1000
@@ -1763,7 +1766,10 @@ def post_near_devices_msg(Device):
 
                 ndg_list = list_to_str([ndg_Device.fname for ndg_Device in ndg_Devices])
                 for ndg_Device in ndg_Devices:
-                    post_event(ndg_Device, f"Near Devices > {ndg_list}")
+                    if ndg_list != Device.near_device_msg:
+                        post_event(ndg_Device, f"Near Devices > {ndg_list}")
+                        Device.near_device_msg = ndg_list
+
     except Exception as err:
         log_exception(err)
         pass

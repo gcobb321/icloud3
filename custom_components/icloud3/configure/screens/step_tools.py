@@ -289,22 +289,29 @@ class OptionsFlow_Tools_Steps:
 
         # Delete active devices after the others have been deleted so they can be
         # recreated correctly
-        if isnot_empty(user_input['active']):
+        if 'active' in user_input and isnot_empty(user_input['active']):
             self._tools_delete_active_devices(user_input['active'])
 
 #......................................................
     def _tools_delete_active_devices(self, devicenames):
 
-        for devicename in devicenames:
-            self.create_device_tracker_sensor_enities_on_exit = True
+        try:
+            for devicename in devicenames:
+                self.create_device_tracker_sensor_enities_on_exit = True
 
-            Device = Gb.Devices_by_devicename[devicename]
-            Device.pause_tracking
-            sensors_cf.remove_device_tracker_and_sensor_entities(
-                                                    self, devicename,
-                                                    rebuild_ic3db_dashboards=False)
+                if Device := Gb.Devices_by_devicename.get(devicename):
+                    Device.pause_tracking
 
-            Device.resume_tracking
+                sensors_cf.remove_device_tracker_and_sensor_entities(
+                                                        self, devicename,
+                                                        rebuild_ic3db_dashboards=False)
+
+                if Device:
+                    Device.resume_tracking
+
+        except Exception as err:
+            log_exception(err)
+            pass
 
 #......................................................
     def _tools_delete_nonactive_devices(self, status, devicenames):

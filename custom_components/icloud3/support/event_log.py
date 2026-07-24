@@ -20,18 +20,19 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CLOCK_FACE,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_URL_LIST,
-                                    EVLOG_ATTENTION, EVLOG_UPDATE_START, EVLOG_UPDATE_END,
+                                    EVLOG_ATTENTION, EVLOG_UPDATE_START, EVLOG_UPDATE_END, EVLOG_UPDATE_BARS,
                                     EVLOG_ALERT, EVLOG_WARNING, EVLOG_ERROR, EVLOG_NOTICE,
                                     EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR, EVLOG_TRACE, EVLOG_MONITOR,
                                     EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
                                     CONF_EVLOG_BTNCONFIG_URL,
+                                    CONF_SENSORS_MONITORED_DEVICES,
                                     )
 
 from ..utils.utils        import (instr, circle_letter, is_empty, isnot_empty, list_to_str, )
 from ..utils.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _log, _evlog,
                                     filter_special_chars, format_header_box, )
 from ..utils.time_util    import (time_to_12hrtime, datetime_now, time_now_secs, datetime_for_filename,
-                                    adjust_time_hour_value, adjust_time_hour_values, )
+                                    adjust_time_hour_value, adjust_time_hour_values, time_now, )
 
 
 import time
@@ -287,11 +288,11 @@ class EventLog(object):
             return
 
         if devicename_or_Device in Gb.Devices:
-            Device = devicename_or_Device
+            Device     = devicename_or_Device
             devicename = Device.devicename
         elif devicename_or_Device in Gb.Devices_by_devicename:
             devicename = devicename_or_Device
-            Device = Gb.Devices_by_devicename[devicename]
+            Device     = Gb.Devices_by_devicename[devicename]
         else:
             Device = None
 
@@ -303,6 +304,15 @@ class EventLog(object):
                 if event_text[start_pos:].startswith(filter_text):
                     return
 
+            # ----> Keeping this test to filter monitored device records
+            # ----> filters the unwanted events but it causes a problem
+            # ----> changing the EvLog display from one monitored device to another
+            # ----> The display will not refresh to display the newly selected
+            # ----> device without first selecting a tracked device.
+            # if Device.monitor_evlog_display_event_msg(event_text) is False:
+            #     return
+
+
         # Drop duplicate event_text item that has already been displayed. Also,
         # if a ^c^ start header is immediately follows an ^s^ header, the group is empty,
         # delete the ^s^ header and throw the current record (^c^ header) away.
@@ -312,7 +322,7 @@ class EventLog(object):
                                         if (v[ELR_DEVICENAME] == devicename \
                                             and v[ELR_TEXT] == event_text \
                                             and v[ELR_TEXT].startswith(EVLOG_TRACE) is False
-                                            and v[ELR_TEXT].startswith('Battery') is False)]
+                                            and instr(v[ELR_TEXT], 'Battery') is False)]
                 if in_last_few_recds != []:
                     return
 
@@ -326,14 +336,14 @@ class EventLog(object):
                         if self.is_monitor_recd(self.event_recds[idx]) is False:
                             break
         except Exception as err:
-            # log_exception(err)
+            log_exception(err)
             pass
 
         try:
             this_update_time = ''
             if len(event_text) <= 5:
                 pass
-            #if (event_text.startswith(EVLOG_UPDATE_START)
+
             elif (event_text.startswith(EVLOG_UPDATE_END)
                     or event_text.startswith(EVLOG_ATTENTION)
                     or event_text.startswith(EVLOG_IC3_STAGE_HDR)):
@@ -467,9 +477,12 @@ class EventLog(object):
 
         try:
             log_attr_text = ""
-            if Gb.is_evlog_trk_monitors_displayed: log_attr_text += 'monitor,'
-            if Gb.is_log_level_debug:          log_attr_text += 'debug,'
-            if Gb.is_log_level_rawdata:        log_attr_text += 'rawdata,'
+            if Gb.is_evlog_trk_monitors_displayed:
+                log_attr_text += 'monitor,'
+            if Gb.is_log_level_rawdata:
+                log_attr_text += 'rawdata,'
+            elif Gb.is_log_level_debug:
+                log_attr_text += 'debug,'
 
             self.evlog_attrs['log_level_debug'] = log_attr_text
 

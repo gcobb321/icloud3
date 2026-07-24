@@ -267,8 +267,10 @@ def post_zone_selected_msg(Device, ZoneSelected, zone_selected,
                 f"{gps_accuracy_msg}"
                 f"GPS-{Device.loc_data_fgps}")
 
-    if zone_selected == Device.log_zone:
-        zones_msg += ' (Logged)'
+    if (zone_selected == Device.log_zone
+            and Device.log_zone_enter_secs > Gb.this_update_secs-4
+            and instr(Device.trigger, ENTER_ZONE)):
+        zones_msg += ', LogZoneEnter'
 
     post_event(Device, zones_msg)
 

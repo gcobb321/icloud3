@@ -26,7 +26,7 @@ from ...const               import (MONITOR, INACTIVE,
                                     )
 
 from ...utils.utils         import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
-                                    is_running_in_event_loop, isbetween, list_del, list_add,
+                                    is_running_in_event_loop, is_between, list_del, list_add,
                                     sort_dict_by_values, username_id,
                                     encode_password, decode_password, )
 from ...utils.messaging     import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,

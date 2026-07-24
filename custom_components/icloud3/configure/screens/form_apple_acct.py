@@ -27,7 +27,7 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           ICLOUD3 APPLE ACCOUNT CONFIG FLOW FORMS
 #
-#           - form_data_source
+#           - form_apple_accounts
 #           - form_update_apple_acct
 #           - form_delete_apple_acct
 #           - form_other_apple_acct_parameters
@@ -37,7 +37,7 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #              DATA SOURCE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_data_source(self):
+def form_apple_accounts(self):
     lists.build_apple_accounts_list(self)
 
     self.actions_list = []

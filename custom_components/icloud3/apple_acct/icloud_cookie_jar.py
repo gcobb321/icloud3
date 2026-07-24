@@ -155,7 +155,7 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
             if cookie.expires is None:
                 result['is_session_cookie'] = True
                 result['expired']           = False
-                result['expire_date_time']       = 'Session cookie (expires on HA restart)'
+                result['expire_date_time']  = 'Session cookie (expires on HA restart)'
                 result['expire_in_secs']    = HIGH_INTEGER
                 result['expire_in_days']    = HIGH_INTEGER
                 result['expire_in_text']    = '99999 days'
@@ -167,6 +167,8 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
             #                             '%m-%d %H:%M:%S')
 
             secs_remaining = cookie.expires - now_secs
+            rd = round(secs_remaining / 86400, 1)
+
             result['expired']         = secs_remaining <= 0
             result['expire_in_secs']  = int(secs_remaining)
             if secs_remaining < 86400:

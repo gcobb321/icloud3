@@ -784,6 +784,7 @@ def extract_icloud3_entity_registry_items(scan_active_items):
         status  = _get_entity_status(scan_active_items, RegData)
         RegData.status = status
 
+
         devicename     = RegData.devicename
 
         # The device_tracker entity in the sensor entity_registry is managed by the device_registry
@@ -827,10 +828,11 @@ def _get_entity_status(scan_active_items, RegData):
     if RegData.devicename in Gb.inactive_fname_by_devicename:
         return 'inactive'
 
-    if (RegData.device_id in Gb.devicename_by_ha_device_id
-            or RegData.sensor_base in Gb.Sensors_by_devicename.get(RegData.devicename, {})
+    # if (RegData.device_id in Gb.devicename_by_ha_device_id
+    if (RegData.sensor_base in Gb.Sensors_by_devicename.get(RegData.devicename, {})
             or RegData.devicename in Gb.DeviceTrackers_by_devicename):
         return 'active'
+
 
     return 'other'
 

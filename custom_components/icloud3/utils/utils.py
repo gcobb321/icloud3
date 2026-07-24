@@ -106,6 +106,19 @@ def delete_from_list(list_value, item):
     return list_value
 
 #--------------------------------------------------------------------
+def sort_dict_by_keys(dict_items):
+    '''
+    Return a dictionary sorted by the item keys/values
+    '''
+    if (type(dict_items) is not dict
+            or dict_items == {}):
+        return {}
+
+    sorted_dict = dict(sorted(dict_items.items()))
+
+    return sorted_dict
+
+#--------------------------------------------------------------------
 def sort_dict_by_values(dict_value):
     '''
     Return a dictionary sorted by the item values
@@ -206,7 +219,7 @@ def yes_no(true_false):
         return 'No'
 
 #--------------------------------------------------------------------
-def isbetween(number, min_value, max_value):
+def is_between(number, min_value, max_value):
     '''
     Return True if the the number is between the other two numbers
     including the min_value and max_value number)

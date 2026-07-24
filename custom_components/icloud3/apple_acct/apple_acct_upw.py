@@ -1,6 +1,6 @@
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (AIRPODS_FNAME, NONE_FNAME,
+from ..const                import (AIRPODS_DN, NONE_FNAME,
                                     EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS, CRLF_RED_ALERT, CRLF_RED_X,
                                     HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                     ICLOUD, NAME, ID,

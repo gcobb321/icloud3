@@ -27,7 +27,7 @@ from ..const            import (
                                 RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
                                 CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS, CF_DEVICE_SENSORS,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
-                                CONF_AUTH_METHODS, CONF_LAST_METHOD, PUSH,
+                                CONF_AUTH_METHODS, CURRENT, PUSH, HWKEY, TEXT, CURRENT,
                                 IC3LOG_FILENAME,
                                 BASE, TRACKED, MONITORED, EXCLUDED, TRACK, MONITOR,
                                 NLSP4, ZONE,
@@ -42,7 +42,7 @@ from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_D
                                 )
 
 from ..startup          import start_ic3
-from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dict, isbetween,
+from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dict, is_between,
                                 list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
                                 username_id, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
@@ -410,7 +410,7 @@ def conf_apple_acct(idx_or_username):
 
         # Get conf_apple_acct by it's index
         if type(idx_or_username) is int:
-            if isbetween(idx_or_username, 0, len(Gb.conf_apple_accounts)-1):
+            if is_between(idx_or_username, 0, len(Gb.conf_apple_accounts)-1):
                 conf_apple_acct = Gb.conf_apple_accounts[idx_or_username].copy()
                 conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
                 return (conf_apple_acct, idx_or_username)
@@ -846,13 +846,18 @@ def _verify_apple_acct_parameters_values():
     update_configuration_flag = False
 
     for conf_apple_acct in Gb.conf_apple_accounts:
-        if (conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] == 'text'
-                and 'text_1'in conf_apple_acct[CONF_AUTH_METHODS]):
-            conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = 'text_1'
+        conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
+        current_method    = conf_auth_methods[CURRENT]
+
+
+        if (current_method == 'text' and 'text_1' in conf_auth_methods):
+            current_method = 'text_1'
             update_configuration_flag = True
-        if conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] not in \
-                conf_apple_acct[CONF_AUTH_METHODS]:
-            conf_apple_acct[CONF_AUTH_METHODS][CONF_LAST_METHOD] = PUSH
+        if current_method not in conf_auth_methods:
+            current_method = PUSH
+            update_configuration_flag = True
+        if (current_method != HWKEY and conf_auth_methods[HWKEY] != ''):
+            current_method = HWKEY
             update_configuration_flag = True
 
     return update_configuration_flag
@@ -877,7 +882,7 @@ def _verify_device_parameters_values():
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
             update_configuration_flag = True
-        if isbetween(conf_device[CONF_FIXED_INTERVAL], 1, 2):
+        if is_between(conf_device[CONF_FIXED_INTERVAL], 1, 2):
             conf_device[CONF_FIXED_INTERVAL] = 3.0
             update_configuration_flag = True
 
@@ -1055,17 +1060,24 @@ def _update_apple_acct_parameters():
 
         # v3.6-Change hwkey from list to str, delete hwkey_1 & hwkey_2
         conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
-        try:
-            if type(conf_auth_methods['hwkey']) == str:
-                continue
 
-            dict_del(conf_auth_methods, 'hwkey')
+        try:
+            if (HWKEY in conf_auth_methods and type(conf_auth_methods[HWKEY]) != str):
+                dict_del(conf_auth_methods, HWKEY)
             dict_del(conf_auth_methods, 'hwkey_1')
             dict_del(conf_auth_methods, 'hwkey_2')
-            conf_auth_methods['hwkey'] = ''
+
+            if 'current' not in conf_auth_methods:
+                conf_auth_methods[CURRENT] = conf_auth_methods.get('last_method', PUSH)
+                dict_del(conf_auth_methods, 'last_method')
+
+            if HWKEY not in conf_auth_methods:
+                conf_auth_methods[HWKEY] = ''
             update_recd = True
-        except:
-            continue
+
+        except Exception as err:
+            log_exception(err)
+            #continue
 
         conf_apple_acct, were_items_deleted = _delete_items_from_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
         new_items, were_items_added         = _new_items_in_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)

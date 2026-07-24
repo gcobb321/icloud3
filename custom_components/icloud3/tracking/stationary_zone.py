@@ -13,11 +13,11 @@ from ..const            import (HIGH_INTEGER, NOT_SET, RARROW,
                                 STATZONE_RADIUS_1M,
                                 ENTER_ZONE, EXIT_ZONE, NEXT_UPDATE, INTERVAL, )
 
-from ..utils.utils      import (isbetween, is_statzone, format_gps, zone_dname,
+from ..utils.utils      import (is_between, is_statzone, format_gps, zone_dname,
                                 is_empty, isnot_empty, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_debug_msg, log_exception, log_data, _evlog, _log, )
-from ..utils.time_util  import (datetime_now, )
+from ..utils.time_util  import (time_now_secs, datetime_now, )
 from ..utils.dist_util  import (format_dist_m, gps_distance_km, )
 
 from ..mobile_app       import mobapp_interface
@@ -115,7 +115,7 @@ def move_device_into_statzone(Device):
     # Set Stationary Zone at new location
     Device.StatZone           = StatZone
     Device.loc_data_zone      = StatZone.zone
-    Device.into_zone_datetime = datetime_now()
+    Device.zone_datetime      = datetime_now()
     Device.selected_zone_results = []
 
     mobapp_interface.request_location(Device)

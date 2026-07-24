@@ -44,8 +44,8 @@ class OptionsFlow_AppleAccount_Steps:
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #              DATA SOURCE
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_apple_accounts(   self, user_input=None, errors=None,
-                                        return_to_step_id=None):
+    async def async_step_apple_accounts(self, user_input=None, errors=None,
+                                            return_to_step_id=None):
         '''
         Updata Data Sources form enables/disables finddev and mobile app data sources and
         adds/updates/removes an Apple account using the Update Username/Password screen
@@ -72,7 +72,7 @@ class OptionsFlow_AppleAccount_Steps:
         if user_input is None:
             self.actions_list_default = 'update_apple_acct'
             return self.async_show_form(step_id='apple_accounts',
-                                        data_schema=forms.form_data_source(self),
+                                        data_schema=forms.form_apple_accounts(self),
                                         errors=self.errors)
 
         user_input = self._update_data_source(user_input)
@@ -107,12 +107,15 @@ class OptionsFlow_AppleAccount_Steps:
 
         utils_cf.log_step_info(self, user_input, action_item)
 
+        if action_item == 'import_apple_devices':
+            return await self.async_step_import_apple_devices(return_to_step_id=self.step_id)
+
         if action_item == 'delete_apple_acct':
             # Drop the tracked/untracked part from the current heading (user_input['account_selected'])
             # Ex: account_selected = 'GaryCobb (gcobb321) -> 4 of 7 iCloud Devices Tracked, Tracked-(Gary-iPad ..'
             confirm_action_form_hdr = ( f"Delete Apple Account - {user_input['apple_accts']}")
             if self.AppleAcct:
-                confirm_action_form_hdr += f", Devices-{list_to_str(self.AppleAcct.icloud_dnames)}"
+                confirm_action_form_hdr += f", Devices-{list_to_str(self.AppleAcct.aadevice_dnames)}"
             self.multi_form_user_input = user_input.copy()
 
             return await self.async_step_delete_apple_acct(user_input=user_input)
@@ -161,7 +164,7 @@ class OptionsFlow_AppleAccount_Steps:
 
         self.step_id = 'apple_accounts'
         return self.async_show_form(step_id='apple_accounts',
-                            data_schema=forms.form_data_source(self),
+                            data_schema=forms.form_apple_accounts(self),
                             errors=self.errors)
 
 #...........................................................
@@ -334,7 +337,7 @@ class OptionsFlow_AppleAccount_Steps:
             # Ex: account_selected = 'GaryCobb (gcobb321) -> 4 of 7 iCloud Devices Tracked, Tracked-(Gary-iPad ..'
             confirm_action_form_hdr = ( f"Delete Apple Account - {user_input['account_selected']}")
             if self.AppleAcct:
-                confirm_action_form_hdr += f", Devices-{list_to_str(self.AppleAcct.icloud_dnames)}"
+                confirm_action_form_hdr += f", Devices-{list_to_str(self.AppleAcct.aadevice_dnames)}"
             self.multi_form_user_input = user_input.copy()
 
             return await self.async_step_delete_apple_acct(user_input=user_input)

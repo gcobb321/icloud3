@@ -126,6 +126,7 @@ class iCloud3_DeviceFmZone():
         self.sensors[MOVED_DISTANCE]       = 0
         self.sensors[ZONE_INFO]            = ''
 
+
         Sensors_from_zone      = Gb.Sensors_by_devicename_from_zone.get(self.devicename, {})
         from_this_zone_sensors = {k:v   for k, v in Sensors_from_zone.items()
                                         if v.from_zone == self.from_zone}

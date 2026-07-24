@@ -21,7 +21,8 @@ Thanks to all
 from .global_variables  import GlobalVariables as Gb
 from .const             import (VERSION, VERSION_BETA, ICLOUD3_VERSION_MSG,
                                 HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, LT, NBSP3, CLOCK_FACE, LINK,
-                                CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_LBDOT, CRLF_LHDOT, CRLF_HDOT2, CRLF_LX, CRLF_LRED_ALERT, CRLF_LDIAMOND, CRLF_LASTERISK, NBSP,
+                                CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_LBDOT, CRLF_LHDOT, CRLF_HDOT2, CRLF_LX,
+                                CRLF_LRED_ALERT, CRLF_LDIAMOND, CRLF_LASTERISK, NBSP,
                                 EVLOG_IC3_STAGE_HDR, RED_ALERT,
                                 EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
@@ -32,7 +33,7 @@ from .const             import (VERSION, VERSION_BETA, ICLOUD3_VERSION_MSG,
                                 CMD_RESET_PYICLOUD_SESSION, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
                                 OLD_LOCATION_CNT, AUTH_ERROR_CNT, DEVICE_TYPES_CELL_SVC,
-                                MOBAPP_UPDATE, ICLOUD_UPDATE, ARRIVAL_TIME, TOWARDS, AWAY_FROM,
+                                MOBAPP_UPDATE, ICLOUD_UPDATE, ARRIVAL_TIME, TOWARDS, AWAY_FROM, AWAY, INZONE_STATZONE,
                                 EVLOG_UPDATE_START, EVLOG_UPDATE_END, EVLOG_ERROR, EVLOG_ALERT, EVLOG_NOTICE,
                                 ICLOUD, MOBAPP, TRUST_TOKEN_EXPIRE_WARNING_DAYS,
                                 ENTER_ZONE, EXIT_ZONE, INTERVAL, NEXT_UPDATE, NOTIFY,
@@ -54,7 +55,7 @@ from .tracking          import stationary_zone as statzone
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
 from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone, yes_no,
-                                list_to_str, isbetween, username_id, zone_dname, is_running_in_event_loop, )
+                                list_to_str, is_between, username_id, zone_dname, is_running_in_event_loop, )
 from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
 from .utils.messaging   import (broadcast_info_msg,
                                 post_event, post_alert, post_error_msg, post_monitor_msg, post_internal_error,
@@ -1109,16 +1110,13 @@ class iCloud3:
             self._post_before_update_monitor_msg(Device)
 
             self._determine_interval_and_next_update(Device)
-            # if self._determine_interval_and_next_update(Device):
-            #     Device.update_sensor_values_from_data_fields()
 
             update_requested_by = 'Tracking' if Device.is_tracked else 'Monitor'
             from_zone = Device.FromZone_TrackFrom.from_zone
 
-            # post_event(devicename, (f"{EVLOG_ORANGE}{self._results_special_msg(Device)}"))
-
             self.post_tracking_results_header_bar(Device)
 
+        self._post_after_update_monitor_msg(Device)
 
         if Device.dev_data_source == ICLOUD and Device.AppleAcct:
             acct_name = Device.AppleAcct.account_owner_link
@@ -1128,77 +1126,73 @@ class iCloud3:
                                         Device.dev_data_source,
                                         f"CurrZone-{Device.sensor_zone}")
 
-        self._post_after_update_monitor_msg(Device)
         det_interval.post_near_devices_msg(Device)
 
 #...............................................................................
     def post_tracking_results_header_bar(self, Device):
 
+        next_update_secs = Device.FromZone_TrackFrom.next_update_secs
+        dist_str         = f"{Device.FromZone_Home.zone_distance_str}"
+        zone_name        = Device.FromZone_TrackFrom.from_zone_dname[:8]
+        dir_of_travel    = Device.FromZone_TrackFrom.dir_of_travel
+        update_in        = format_timer(secs_to(next_update_secs))
+        update_at        = secs_to_hhmm(next_update_secs)
+        battery_level    = f"{Device.dev_data_battery_level}%"
+
+        if Device.FromZone_TrackFrom.waze_time > 0:
+            arrival_secs = Device.FromZone_TrackFrom.waze_time * 60 + time_now_secs()
+            arrival_in_str = (f"in {format_timer(secs_to(arrival_secs))} at {secs_to_hhmm(arrival_secs)}")
+            arrival_at_str = (f"at {secs_to_hhmm(arrival_secs)}")
+        else:
+            arrival_in_str = arrival_at_str = ''
+            # arrival_time = (f"{Device.sensors[ARRIVAL_TIME]}")
+
         if Device.is_offline:
-            header_msg = 'Offline'
+            header_bar_msg = 'Offline'
+
+        elif (Device.isin_zone and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
+            header_bar_msg = (  f"{zone_name} "
+                                f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
+                                f"Update in {update_in} at {update_at}, "
+                                f"{battery_level}")
+
+        elif Device.mobapp_zone_exit_zone != '':
+            header_bar_msg = (  f"Left {zone_dname(Device.mobapp_zone_exit_zone)[:8]} > "
+                                f"{format_time_age(Device.mobapp_zone_exit_secs)}, "
+                                f"{dist_str} away, "
+                                f"{battery_level}")
+
+        elif dir_of_travel == TOWARDS:
+            header_bar_msg = (  f"Arrive {zone_name} "
+                                f"{arrival_in_str}, "
+                                f"{dist_str} away")
+                                # f"Update {update_in}")
+
+        # Going Towards, not away, inzone, statzone
+        elif dir_of_travel in [AWAY_FROM, INZONE_STATZONE]:
+            header_bar_msg = (  f"Away > {dist_str} "
+                                f"from {zone_name}, "
+                                f"Update in {update_in}, "
+                                f"{battery_level}")
 
         elif is_empty(Device.sensors[ARRIVAL_TIME]):
-            # return (f"Update in {format_timer(Device.FromZone_TrackFrom.interval_secs)} "
-            header_msg = (  f"Update in {Device.interval_str} "
-                            f"at {Device.FromZone_TrackFrom.next_update_time}")
+            header_bar_msg = (  f"Away > {dist_str} "
+                                f"from {zone_name}, "
+                                f"Update in {update_in}, "
+                                f"{battery_level}")
 
-        elif (Device.isin_zone
-                and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
-            header_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} > "
-                    f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
-                    f"NextUpdate at {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
-
-        elif Device.FromZone_TrackFrom.dir_of_travel != AWAY_FROM:
-            if Device.FromZone_TrackFrom.waze_time > 0:
-                arrival_secs = Device.FromZone_TrackFrom.waze_time * 60 + time_now_secs()
-                arrival_time = (f"in {format_timer(secs_to(arrival_secs))} "
-                                f"at {secs_to_hhmm(arrival_secs)}")
-            else:
-                arrival_time = (f"~{Device.sensors[ARRIVAL_TIME]}, "
-                                f"Update {format_timer(secs_to(Device.FromZone_TrackFrom.next_update_secs))}")
-
-            header_msg = (  f"Arrive {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
-                            f"{arrival_time}, "
-                            f"{Device.FromZone_Home.zone_distance_str} away")
-
+            # header_bar_msg = (  f"Update in {Device.interval_str} "
+            #                     f"at {Device.FromZone_TrackFrom.next_update_time}")
 
         else:
-            header_msg = (  f"Arrive {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
-                            f"around {Device.sensors[ARRIVAL_TIME]}")
-
-        post_event(Device, f"{EVLOG_UPDATE_END}{header_msg}")
-
-#...............................................................................
-    def _results_special_msg(self, Device):
-        if Device.is_offline:
-            return 'Offline'
-
-        if is_empty(Device.sensors[ARRIVAL_TIME]):
-            # return (f"Update in {format_timer(Device.FromZone_TrackFrom.interval_secs)} "
-            return (f"Update in {Device.interval_str} "
-                    f"at {Device.FromZone_TrackFrom.next_update_time}")
-
-        if (Device.isin_zone
-                and Device.loc_data_zone == Device.FromZone_TrackFrom.from_zone):
-            special_msg = (f"{Device.FromZone_TrackFrom.from_zone_dname[:8]} > "
-                    f"Since {Device.sensors[ARRIVAL_TIME].replace('@', '')}, "
-                    f"NextUpdate at {secs_to_hhmm(Device.FromZone_TrackFrom.next_update_secs)}")
-            return special_msg
-
-        if Device.FromZone_TrackFrom.dir_of_travel != AWAY_FROM:
-            if Device.FromZone_TrackFrom.waze_time > 0:
-                arrival_secs = Device.FromZone_TrackFrom.waze_time * 60 + time_now_secs()
-                arrival_time = (f"in {format_timer(secs_to(arrival_secs))} "
-                                f"at {secs_to_hhmm(arrival_secs)}")
-            else:
-                arrival_time = (f"~{Device.sensors[ARRIVAL_TIME]}, "
-                                f"Update {format_timer(secs_to(Device.FromZone_TrackFrom.next_update_secs))}")
-            return (f"Arrive {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
-                    f"{arrival_time}")
+            header_bar_msg = (  f"{zone_dname(Device.loc_data_zone)}, "
+                                f"Arrive {zone_name} "
+                                f"at {Device.sensors[ARRIVAL_TIME]}, "
+                                f"{dist_str} away, "
+                                f"{battery_level}")
 
 
-        return (f"Arrive {Device.FromZone_TrackFrom.from_zone_dname[:8]} "
-                f"around {Device.sensors[ARRIVAL_TIME]}")
+        post_event(Device, f"{EVLOG_UPDATE_END}{header_bar_msg}")
 
 #-------------------------------------------------------------------------------
     def _determine_interval_and_next_update(self, Device):
@@ -1316,25 +1310,9 @@ class iCloud3:
                 or Gb.InternetError.internet_error_secs > 0):
             return
 
-        # if Gb.icloud3_reload_requested_secs > 0:
-        #     general_alert_msg += (  f"{CRLF_LHDOT}iCloud3 will Reload in about "
-        #                             f"{secs_to(Gb.icloud3_reload_requested_secs)} secs")
-        #     if secs_since(Gb.icloud3_reload_requested_secs) > 60:
-        #         Gb.icloud3_reload_requested_secs = 0
-        # elif Gb.icloud3_reload_requested_secs < -10:
-        #     Gb.icloud3_reload_requested_secs = 0
-
         if Gb.version_hacs:
             general_alert_msg += (  f"{CRLF_LHDOT}iCloud3 {Gb.version_hacs} is available on HACS, "
                                     f"you are running v{Gb.version}")
-
-        for AppleAcct in Gb.AppleAcct_by_username.values():
-            if (AppleAcct.is_auth_code_needed is False
-                    and AppleAcct.trust_token_expire_in_days > 0
-                    and AppleAcct.trust_token_expire_in_days <= TRUST_TOKEN_EXPIRE_WARNING_DAYS):
-                alert_msg = f"Trust Token Expires in {AppleAcct.trust_token_expire_in_days} days"
-                general_alert_msg += (  f"{CRLF_LHDOT}AppleAcct > {AppleAcct.account_owner}, "
-                                        f"{alert_msg}")
         if Gb.disable_upw_filter:
             general_alert_msg += f"{RED_ALERT}PASSWORD LOG FILTER DISABLED (Gb.disable_upw_filter)"
 
@@ -1364,7 +1342,7 @@ class iCloud3:
                 elif mins_since(Device.loc_data_secs) > 300:
                     age_hrs = int(mins_since(Device.loc_data_secs)/60)
                     poor_location_msg += f"{Device.fname} (> {age_hrs} hrs ago), "
-            if isbetween(Device.dev_data_battery_level, 1, 19):
+            if is_between(Device.dev_data_battery_level, 1, 19):
                 device_alert_msg = f"{Device.fname} > Low Battery ({Device.dev_data_battery_level}%)"
 
             if device_alert_msg:
@@ -1501,13 +1479,7 @@ class iCloud3:
             start_ic3.set_log_level('info')
             start_ic3.update_conf_file_log_level('info')
 
-        for username, AppleAcct in Gb.AppleAcct_by_username.items():
-            AppleAcct.auth_cnt = 0
-            expire_days = AppleAcct.trust_token_expire_in_days 
-            if (expire_days < TRUST_TOKEN_EXPIRE_WARNING_DAYS or (expire_days % 7)):
-                alert = EVLOG_ALERT if expire_days < 5 else ''
-                post_event( f"{alert}{AppleAcct.account_owner} > "
-                            f"Trust Token expires in {expire_days} days")
+        aas.issue_reauth_in_days_alert_msg(evlog_msg=True)
 
         if (Gb.WazeHist
                 and Gb.WazeHist.is_historydb_USED

@@ -382,6 +382,7 @@ class iCloudSession(Session):
 
 
         log_request_data('Response', method, url, kwargs, self.AppleAcct, response)
+        #_log(f"{self.data=}")
 
         # Validating the username/password, code=409 is valid, code=401 is invalid
         if (url.startswith(APPLE_SERVER_ENDPOINT['auth_url'])

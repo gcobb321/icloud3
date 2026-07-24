@@ -25,32 +25,32 @@ DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 #----------------------------------------------------------------------------------------
 MENU_PAGE_TITLE = [
-        'Devices & Sensors Menu',
-        'Parameters Menu'
+        'DEVICES & SENSORS MENU',
+        'PARAMETERS MENU'
         ]
 MENU_KEY_TEXT = {
-        'apple_accounts':       'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Monitoring the Mobile App ',
-        'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices',
-        'auth_code':            'AUTHENTICATE APPLE ACCT SIGN-IN > Authenticate account access, Request a verification code, Change Authentication Method',
-        'change_device_order':  'CHANGE DEVICE ORDER > Change the Event Log Device display and tracking update sequence',
-        'sensors':              'SENSORS > Set Sensors created by iCloud3, Exclude Specific Sensors from being created',
-        'dashboard_builder':    'DASHBOARD BUILDER > Build a Lovelace Dashboard to display device tracking information',
-        'tools':                'TOOLS > Log Level, Cleanup HA Device & Entity Registry, Reload iCloud3, Delete Apple Acct & Device Assignment, Delete Apple Acct Cookie & iCloud3 Config files',
+        'apple_accounts':       'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Mobile App Usage',
+        'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices, Import Apple Devices into iCloud3',
+        'auth_code':            'AUTHENTICATE APPLE ACCT SIGN-IN > Authenticate Apple Account access, Request a new Auth Code, Change Authentication Method',
+        'change_device_order':  'CHANGE DEVICE ORDER > Change the order devices displayed on the Event Log',
+        'sensors':              'SENSORS > Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors',
+        'dashboard_builder':    'DASHBOARD BUILDER > Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates',
+        'tools':                'TOOLS > Log Level, Cleanup HA Registry Files, Cleanup/Reset iCloud3 Device Parameters, Apple Acct Cookies & iCloud3 Config File',
 
-        'away_time_zone':       'AWAY TIME ZONE > Select the displayed time zone for devices away from Home',
-        'tracking_parameters':  'TRACKING PARAMETERS > Nearby Device Info, Accuracy Thresholds & Other Location Request Intervals',
-        'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS > Zone Display & Device Tracker State formats, Unit of Measure/Time & Distance formats, Picture Dir Filters, etc',
+        'away_time_zone':       'AWAY TIME ZONE > Change the time displayed in the Event Log to the local time when away from Home',
+        'tracking_parameters':  'TRACKING PARAMETERS > Specify the tracking parameters used to control how device location data is verified and displayed',
+        'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS > Specify how tracking results are displayed in the Event Log, sensors and device_tracker entities',
         'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement',
-        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Route Server and Parameters, Waze History Database Parameters and Controls',
-        'special_zones':        'SPECIAL ZONES > Enter Zone Delay Time. Stationary Zone. Primary Track-from-Home Zone Override',
-        'inzone_intervals':     'DEFAULT INZONE INTERVALS > inZone Interval assigned to new devices',
+        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Specify how the Waze Route Server is used and enable the Waze Tracking History Database',
+        'special_zones':        'SPECIAL ZONES > Configure special zone handling - Delay zone enter triggers, Set up Stationary Zones for non-moving devices, Override the Home zone',
+        'inzone_intervals':     'DEFAULT INZONE INTERVALS > inZone Interval assigned to new devices',
 
         'select':               'SELECT > Select the parameter update form',
-        'next_page_0':          f'{MENU_PAGE_TITLE[0].upper()} > iCloud Account & Mobile App, iCloud3 Devices, Enter & Request an Authentication Code; Change Device Order; Sensors; Action Commands',
-        'next_page_1':          f'{MENU_PAGE_TITLE[1].upper()} > Tracking Parameters, Display Settings & Other Parameters, Display Text As, Waze Route Distance/Time & History, Special Zones',
-        'exit':                 'EXIT AND RESTART ICLOUD3',
-        'exit_update_dashboards': 'EXIT AND RESTART ICLOUD3, UPDATE DASHBOARDS WITH DEVICE CHANGES',
-        'exit_add_dev_trkrs_sensors': 'EXIT AND RESTART ICLOUD3, ADD NEW DEVICES & SENSORS, UPDATE DASHBOARDS'
+        'menu_page_0':          'MENU > DEVICES & SENSORS > Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
+        'menu_page_1':          'MENU > CONFIGURE PARAMETERS > Tracking, Sensor Display Parameters, Display Text As, Waze Route Service, Special Zones',
+        'exit':                 'EXIT > Close the iCloud3 Configure screens',
+        'exit_update_dashboards': 'EXIT > Close, Update the iCloud3 Dashboards, Restart iCloud3',
+        'exit_add_dev_trkrs_sensors': 'EXIT > Close, Add new devices and sensors, Update the iCloud3 Dashboards, Restart iCloud3'
 }
 
 MENU_PAGE_0_INITIAL_ITEM = 2
@@ -61,6 +61,8 @@ MENU_KEY_TEXT_PAGE_0 = [
         MENU_KEY_TEXT['sensors'],
         MENU_KEY_TEXT['dashboard_builder'],
         MENU_KEY_TEXT['tools'],
+        MENU_KEY_TEXT['menu_page_1'],
+        MENU_KEY_TEXT['exit']
         ]
 MENU_PAGE_1_INITIAL_ITEM = 0
 MENU_KEY_TEXT_PAGE_1 = [
@@ -70,11 +72,7 @@ MENU_KEY_TEXT_PAGE_1 = [
         MENU_KEY_TEXT['display_text_as'],
         MENU_KEY_TEXT['waze'],
         MENU_KEY_TEXT['special_zones'],
-        # MENU_KEY_TEXT['inzone_intervals'],
-        ]
-MENU_ACTION_ITEMS = [
-        MENU_KEY_TEXT['select'],
-        MENU_KEY_TEXT['next_page_1'],
+        MENU_KEY_TEXT['menu_page_0'],
         MENU_KEY_TEXT['exit']
         ]
 
@@ -96,19 +94,22 @@ ACTION_LIST_OPTIONS = {
 
         'send_auth_code':           'AUTHENTICATE > Send the Authentication Code back to Apple or Confirm the Security Key security code',
         'request_auth_code':        'REQUEST AUTHENTICATION CODE or SECURITY KEY KEYPRESS > Untrust the Apple Acct. Get a new Authentication code or Start the Hardware Key keypress Process',
-        'change_auth_method':       'CHANGE AUTHENTICATION METHOD, REFRESH SECURITY KEY NAMES > Select a new method (Pop-up Window, Text Message, Security Key), Load Security Key names',
+        'change_auth_method':       'CHANGE AUTHENTICATION METHOD > Select a new method (Pop-up Window, Text Message, Security Key), Refresh Trusted Phone Numbers & Security Key names',
         'reset_trust_token_return': 'RESET TRUST TOKEN, RETURN TO ENTER & SEND THE CODE TO APPLE > Resets the Trust Token. Return to the Authenticate Apple Sign-in screen',
         'auth_code_from_applecom_login': 'APPLE DID NOT SEND A CODE (PUSH/TEXT), GET ONE FROM APPLE.COM > Sign into your Apple Acct, get a code, enter it here and send to Apple',
-        'refresh_hwkey_names':      'REFRESH SECURITY KEY NAMES > Get registered Security Key names from Apple',
+        'refresh_hwkey_names':      'REFRESH TRUSTED PHONE NUMBERS/SECURITY KEY NAMES > Get the Trusted Phone Numbers or the registered Security Key names from Apple',
 
         'cancel_auth_entry':        'CANCEL > Cancel the Authentication Code Entry and Close this screen',
         'accept_terms_of_use':      'ACCEPT `TERMS OF USE` > Send `I Agree` to Apple updates to the `Terms of Use`',
 
-        'update_device':            'SELECT THE DEVICE > Update the selected device, Add a new device to be tracked by iCloud3, Display more Devices on the next page',
-        'add_device':               'ADD DEVICE > Continue to the `‘Update Devices`’ screen to finish setting up the new device',
+        'update_device':            'UPDATE THE DEVICE > Update the selected device, Display more Devices on the next page',
+        'add_device':               'ADD A NEW DEVICE > Add a new device to be tracked by iCloud3',
         'delete_device':            'DELETE DEVICE > Delete the selected device',
         'change_device_order':      'CHANGE DEVICE ORDER > Change the tracking order of the Devices and their display sequence on the Event Log',
         'update_other_device_parameters': 'UPDATE OTHER DEVICE PARAMETERS > (^otp_msg)',
+
+        'import_apple_devices':     'IMPORT APPLE DEVICES > Create iCloud3 devices from the devices in the Apple Accounts',
+        'add_imported_apple_devices': 'ADD IMPORTED APPLE DEVICES > Create iCloud3 device_tracker entities from imported Apple devices',
 
         'inactive_to_track':        'TRACK ALL OR SELECTED > Change the `Tracking Mode‘ of all of the devices (or the selected devices) from `Inactive‘ to `Tracked‘',
         'inactive_keep_inactive':   'DO NOT TRACK, KEEP INACTIVE > None of these devices should be `Tracked‘ and should remain `Inactive‘',
@@ -182,6 +183,7 @@ ADD = UNSELECTED = -1
 # Action List Items for all screens
 APPLE_ACCOUNT_ACTIONS = [
         ACTION_LIST_OPTIONS['update_apple_acct'],
+        ACTION_LIST_OPTIONS['import_apple_devices'],
         ACTION_LIST_OPTIONS['delete_apple_acct'],
         ACTION_LIST_OPTIONS['other_apple_acct_parameters']]
 APPLE_ACCOUNT_DELETE_ACTIONS = [
@@ -202,16 +204,21 @@ REAUTH_CODE_FROM_APPLECOM_LOGIN = [
         ACTION_LIST_OPTIONS['goto_previous']]
 CHANGE_AUTH_METHOD = [
         ACTION_LIST_OPTIONS['refresh_hwkey_names'],
-        ACTION_LIST_OPTIONS['save'],
-        ]
+        ACTION_LIST_OPTIONS['save']]
+
 DEVICE_LIST_ACTIONS = [
         ACTION_LIST_OPTIONS['update_device'],
+        # ACTION_LIST_OPTIONS['add_device'],
+        ACTION_LIST_OPTIONS['import_apple_devices'],
         ACTION_LIST_OPTIONS['delete_device'],
         ACTION_LIST_OPTIONS['change_device_order'],
         ACTION_LIST_OPTIONS['goto_menu']]
 DEVICE_ADD_ACTIONS = [
         ACTION_LIST_OPTIONS['add_device'],
         ACTION_LIST_OPTIONS['cancel_goto_menu']]
+IMPORT_APPLE_DEVICES = [
+        ACTION_LIST_OPTIONS['add_imported_apple_devices'],
+        ACTION_LIST_OPTIONS['goto_previous']]
 DEVICE_LIST_ACTIONS_NO_ADD = [
         ACTION_LIST_OPTIONS['update_device'],
         ACTION_LIST_OPTIONS['delete_device'],
@@ -227,7 +234,6 @@ SENSORS_EXCLUDE_ACTIONS_= [
         ACTION_LIST_OPTIONS['filter_sensors'],
         ACTION_LIST_OPTIONS['update_sensor_list'],
         ACTION_LIST_OPTIONS['return_to_sensor_screen']]
-
 
 REVIEW_INACTIVES = [
         ACTION_LIST_OPTIONS['inactive_to_track'],
@@ -319,10 +325,10 @@ DASHBOARD_MAIN_VIEW_DEVICES_BASE = {
         }
 LOG_ZONES_KEY_TEXT = {
         '.hdr':             '⎯⎯⎯⎯⎯⎯ ACTIVITY FILE NAME ⎯⎯⎯⎯⎯⎯',
-        'name-zone':        '⋙ Zone (2026-warehouse.csv)',
-        'name-device':      '⋙ Device (2026-gary.csv)',
-        'name-device-zone': '⋙ Device+Zone (2026-gary_iphone-warehouse.csv)',
-        'name-zone-device': '⋙ Zone+Device (2026-warehouse-gary_iphone.csv)',
+        'name-zone':        '⋙ Zone ([year]-[zone].csv) ',
+        'name-device':      '⋙ Device ([year]-[device].csv)',
+        'name-device-zone': '⋙ Device+Zone ([year]-[device]-[zone].csv)',
+        'name-zone-device': '⋙ Zone+Device ([year]-[zone]-[device].csv)',
         }
 AWAY_FROM_ZONE_OPTIONS = {
         'none': 'Not used',

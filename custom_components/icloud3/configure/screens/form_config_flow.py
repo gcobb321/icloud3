@@ -62,21 +62,21 @@ def form_config_option_user(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_menu(self):
     menu_title = MENU_PAGE_TITLE[self.menu_page_no]
-    menu_action_items = MENU_ACTION_ITEMS.copy()
+    # menu_action_items = MENU_ACTION_ITEMS.copy()
+    menu_items = self.menu_item_selected[self.menu_page_no]
     if self.create_device_tracker_sensor_enities_on_exit:
-        list_del(menu_action_items, MENU_KEY_TEXT['exit'])
-        list_add(menu_action_items, MENU_KEY_TEXT['exit_add_dev_trkrs_sensors'])
+        list_del(menu_items, MENU_KEY_TEXT['exit'])
+        list_add(menu_items, MENU_KEY_TEXT['exit_add_dev_trkrs_sensors'])
 
     if self.rebuild_ic3db_dashboards:
         dbb.load_ic3db_dashboards_from_ha_data(self)
 
         if isnot_empty(self.ic3db_Dashboards_by_dbname):
-            list_del(menu_action_items, MENU_KEY_TEXT['exit'])
-            list_add(menu_action_items, MENU_KEY_TEXT['exit_update_dashboards'])
+            list_del(menu_items, MENU_KEY_TEXT['exit'])
+            list_add(menu_items, MENU_KEY_TEXT['exit_update_dashboards'])
 
     if self.menu_page_no == 0:
         menu_key_text  = MENU_KEY_TEXT_PAGE_0
-        menu_action_items[1] = MENU_KEY_TEXT['next_page_1']
 
         if (self.username == '' or self.password == ''):
             self.menu_item_selected[0] = MENU_KEY_TEXT['apple_accounts']
@@ -85,17 +85,13 @@ def form_menu(self):
             self.menu_item_selected[0] = MENU_KEY_TEXT['device_list']
     else:
         menu_key_text  = MENU_KEY_TEXT_PAGE_1
-        menu_action_items[1] = MENU_KEY_TEXT['next_page_0']
+        # menu_action_items[1] = MENU_KEY_TEXT['next_page_0']
 
     return vol.Schema({
         vol.Required("menu_items",
                     default=self.menu_item_selected[self.menu_page_no]):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=menu_key_text, mode='list')),
-        vol.Required("action_items",
-                    default=menu_action_items[0]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=menu_action_items, mode='list')),
         })
 
 

@@ -7,7 +7,7 @@ from homeassistant.components.lovelace.const import (LOVELACE_DATA,
                                                     STORAGE_DASHBOARD_UPDATE_FIELDS)
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (IPHONE_FNAME, DEVICE_TYPES, IPHONE,
+from ..const                import (IPHONE_DN, DEVICE_TYPES, IPHONE,
                                     CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_DEVICE_TYPE,
                                     TRACK, INACTIVE)
 

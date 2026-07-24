@@ -374,28 +374,37 @@ class iCloud3_StationaryZone(iCloud3_Zone):
     def write_ha_zone_state(self, attrs):
         '''
         Update the zone entity with the new attributes (lat/long, passive, radius, etc)
+        This is called from StatZone when creating a new Stationary Zone
         '''
         try:
-            Gb.hass.states.async_set(f"zone.{self.zone}", 0, attrs, force_update=True)
+            # Gb.hass.states.async_set(f"zone.{self.zone}", 0, attrs, force_update=True)
+            Gb.hass.add_job(
+                Gb.hass.states.async_set,
+                    f"zone.{self.zone}", 0, attrs, True)
 
         except Exception as err:
-            pass
-            # log_exception(err)
+            # pass
+            log_exception(err)
 
 #--------------------------------------------------------------------
     def remove_ha_zone(self):
         '''
         Remove the zone entity from HA when there are no Devices in it
+        This is called from StatZone when removing a new Stationary Zone
         '''
 
         try:
-            Gb.hass.states.async_remove(f"zone.{self.zone}")
+            # Gb.hass.states.async_remove(f"zone.{self.zone}")
+            Gb.hass.add_job(
+                Gb.hass.states.async_remove,
+                    f"zone.{self.zone}")
+
             Gb.hass.services.call(ZONE, "reload")
 
             post_event(f"Removed HA Zone > {self.fname_id}")
 
         except Exception as err:
-            # log_exception(err)
-            pass
+            log_exception(err)
+            # pass
 
 #--------------------------------------------------------------------

@@ -2,9 +2,9 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (RED_ALERT, LINK, RARROW, HOME, NONE, INACTIVE_SYMB, MONITOR_SYMB,
-                                    DEVICE_TYPE_FNAME, DEVICE_TYPE_FNAMES, INACTIVE,
+                                    DEVICE_TYPE_DN, DEVICE_TYPE_DNS, INACTIVE,
                                     PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
-                                    CONF_APPLE_ACCOUNT,
+                                    CONF_APPLE_ACCOUNT, CONF_USERNAME,
                                     CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
                                     CONF_TRACK_FROM_BASE_ZONE,
                                     CONF_PICTURE, CONF_ICON, CONF_DEVICE_TYPE,
@@ -24,6 +24,7 @@ from ..const_form_lists     import *
 from ..                     import utils_cf
 from ..                     import selection_lists as lists
 
+from homeassistant.util     import slugify
 from homeassistant.helpers  import selector
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -40,6 +41,7 @@ import voluptuous as vol
 #           - form_change_device_order
 #           - form_picture_dir_filter
 #           - form_review_inactive_devices
+#           - form_import_apple_devices
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -61,6 +63,9 @@ def form_device_list(self):
         self.device_items_displayed = self.device_items_list
     else:
         _build_device_items_displayed_over_6(self)
+
+    if self._device_cnt() == 0:
+        list_add(self.device_items_displayed, '➤ IMPORT APPLE ACCOUNT DEVICES')
     list_add(self.device_items_displayed, '➤ ADD A NEW DEVICE')
 
     default_key  = self.dev_page_last_selected_devicename[self.dev_page_no]
@@ -192,7 +197,7 @@ def form_update_device(self):
     # Build Other Tracking Parameters values text
     log_zones_fnames = [zone_dname(zone) for zone in self.conf_device[CONF_LOG_ZONES] if zone.startswith('name') is False]
     tfz_fnames = [zone_dname(zone) for zone in self.conf_device[CONF_TRACK_FROM_ZONES]]
-    device_type_fname = DEVICE_TYPE_FNAME(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
+    device_type_fname = DEVICE_TYPE_DN(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
     otp_msg =  (f"Type ({device_type_fname}), "
                 f"inZoneInterval ({format_timer(self.conf_device[CONF_INZONE_INTERVAL]*60)})")
     otp_msg += ", FixedInterval"
@@ -220,7 +225,7 @@ def form_update_device(self):
 
 
     devicename    = utils_cf.parm_or_device(self, CONF_IC3_DEVICENAME)
-    icloud3_fname = utils_cf.parm_or_device(self, CONF_FNAME) or ' '
+    # icloud3_fname = utils_cf.parm_or_device(self, CONF_FNAME) or ' '
 
     # iCloud Devices list default item
     apple_acct    = utils_cf.parm_or_device(self, CONF_APPLE_ACCOUNT)
@@ -335,12 +340,15 @@ def form_update_other_device_parameters(self):
     log_zones_key_text.update(zone_name_key_text)
     log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
 
-    device_type_fname = DEVICE_TYPE_FNAME(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
+    device_type_fname = DEVICE_TYPE_DN(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
     return vol.Schema({
+            vol.Optional(CONF_FNAME,
+                    default=utils_cf.parm_or_device(self, CONF_FNAME)):
+                    selector.TextSelector(),
             vol.Optional(CONF_DEVICE_TYPE,
-                    default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TYPE, DEVICE_TYPE_FNAMES)):
+                    default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TYPE, DEVICE_TYPE_DNS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DEVICE_TYPE_FNAMES), mode='dropdown')),
+                        options=dict_value_to_list(DEVICE_TYPE_DNS), mode='dropdown')),
             vol.Required(CONF_INZONE_INTERVAL,
                     default=self.conf_device[CONF_INZONE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
@@ -488,3 +496,70 @@ def form_review_inactive_devices(self, start_cnt=None):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#            IMPORT APPLE DEVICES
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def form_import_apple_devices(self, user_input=None, aa_username=None):
+
+    try:
+        self.actions_list = IMPORT_APPLE_DEVICES.copy()
+
+        lists.build_import_apple_devices_selection_list(self)
+
+        imported_aadevices_track           = []
+        imported_aadevices_monitor         = []
+        imported_aadevices_inactive        = []
+        default_imported_aadevices_track   = []
+        default_imported_aadevices_monitor = []
+
+        for item_key, sel_line in self.imported_aadevices_sel_list.items():
+            tracking_mode = int(item_key[0])
+            option_item   = [{"label": sel_line, "value": item_key}]
+
+            match tracking_mode:
+                case 0:
+                    imported_aadevices_track.extend(option_item)
+                    default_imported_aadevices_track.append(item_key)
+                case 1:
+                    imported_aadevices_monitor.extend(option_item)
+                    default_imported_aadevices_monitor.append(item_key)
+                case 2:
+                    imported_aadevices_inactive.extend(option_item)
+
+        default_action = 'add_imported_apple_devices'
+
+    except Exception as err:
+        log_exception(err)
+
+    schema = {}
+    if isnot_empty(imported_aadevices_track):
+        schema.update({
+            vol.Optional('imported_aadevices_track',
+                    default=default_imported_aadevices_track):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=imported_aadevices_track,
+                        multiple=True, mode='list')),})
+    if isnot_empty(imported_aadevices_monitor):
+        schema.update({
+            vol.Optional('imported_aadevices_monitor',
+                    default=default_imported_aadevices_monitor):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=imported_aadevices_monitor,
+                        multiple=True, mode='list')),})
+    if isnot_empty(imported_aadevices_inactive):
+        schema.update({
+            vol.Optional('imported_aadevices_inactive',
+                    default=[]):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=imported_aadevices_inactive,
+                        multiple=True, mode='list')),})
+
+    schema.update({
+        vol.Required('action_items',
+                    default=utils_cf.default_action_text(default_action)):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=self.actions_list, mode='list')),})
+
+    return vol.Schema(schema)

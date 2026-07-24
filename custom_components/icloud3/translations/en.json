@@ -39,7 +39,7 @@
       "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
       "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
       "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
-      "hwkey_names_none": "❌ No Security Keys were found in the Apple Account",
+      "text_or_hwkey_none": "❌ No Trusted Phone Numbers or Security Keys were found in the Apple Account",
       "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
       "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
@@ -74,7 +74,7 @@
         "title": "Authenticate Apple Account Sign-In",
         "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
         "data": {
-          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED > AUTHENTICATION METHOD",
+          "account_selected": "APPLE ACCOUNT",
           "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
           "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
@@ -86,8 +86,8 @@
         "title": "Change Apple Account Authentication Method",
         "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
         "data": {
-          "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED > AUTHENTICATION METHOD",
-          "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
+          "account_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT",
+          "auth_method": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ AUTHENTICATION METHOD - Method used to authenticate the Apple Account",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -164,6 +164,7 @@
       "apple_acct_not_set_up": "No Apple Accts are set up. See `Apple Accounts & Mobile App` screen",
       "apple_acct_parm_error": "Apple Account parameter error. Update it on the `Apple Accounts & Mobile App` screen",
       "apple_acct_no_data_source": "❌ No Data Sources have been selected (Apple Account or Mobile App)",
+      "import_aa_no_devices_avail": "All Apple Account devices have been configured",
 
       "ic3_icloud_same_name": "iCloud3 dev_trkr.entity_id and name on the device (Settings > General > About) can not be exactly the same (letters & case)",
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
@@ -188,17 +189,17 @@
       "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
       "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
-      "duplicate_ic3_devicename": "This name is already used by another iCloud3 device",
+      "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
+      "used_by_other_integration": "This name is already used by Integration {info_msg}",
       "already_assigned": "This selection is already assigned to another device",
       "mobapp_search_error": "WARNING: Search Failure - No Mobile App device that starts with the iCloud3 or Apple Acct devicename was found. Select 'None' or the device to be used.",
-      "duplicate_other_devicename": "This name is already used in another integration or platform",
 
       "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
       "inactive_all_devices": "✪✪ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ✪✪",
       "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
       "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
       "inactive_few_devices": "A Few Devices are INACTIVE and will not be located or tracked",
-      "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Add a New Device`, then select `Submit` to display the screen to add an iCloud3 device_tracker entity.",
+      "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Import Apple Account Devices` or `Add a New Device`, then select `Submit` to display the screen to add iCloud3 device_tracker entities.",
 
       "away_time_zone_dup_devices_1": "One of these devices is also selected in the Other Device List",
       "away_time_zone_dup_devices_2": "One of these devices is also selected in the Otner Device List",
@@ -261,8 +262,10 @@
       "menu": {
         "title": "Configure Devices & Sensors",
         "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MENU SELECTIONS",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS",
+          "xmenu_items":   "───┤\u00A0MENU\u00A0OPTIONS\u00A0├─────────────────────────────────────",
+          "xaction_items": "───┤\u00A0ACTION\u00A0COMMANDS\u00A0├─────────────────────────────────"
         }
       },
 
@@ -270,7 +273,7 @@
         "title": "Configure Devices & Sensors",
         "xdescription": "This menu contains items related to Apple Accounts, Tracked Devices, Apple Authentication, Sensors, iCloud3 Dashboard and Maintenance Tools",
         "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
+          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ PRIMARY MENU SELECTIONS",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -279,7 +282,7 @@
         "title": "Configure Parameters",
         "xdescription": "This menu contains items related to configuring how iCloud3 should track devices and how the results should be reported",
         "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
+          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ SECONDARY MENU SELECTIONS",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -379,7 +382,7 @@
         "title": "Authenticate Apple Account Sign-In",
         "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
         "data": {
-          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED > AUTHENTICATION METHOD",
+          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
           "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
           "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
           "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
@@ -391,8 +394,8 @@
         "title": "Change Apple Account Authentication Method",
         "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
         "data": {
-          "account_selected": "APPLE ACCOUNT BEING AUTHENTICATED > AUTHENTICATION METHOD",
-          "auth_method": "AUTHENTICATION METHOD - The Apple Account will be authenticated using this method",
+          "account_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT BEING AUTHENTICATED",
+          "auth_method": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ AUTHENTICATION METHOD - Method used to authenticate the Apple Account",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
@@ -413,7 +416,7 @@
 
       "device_list": {
         "title": "iCloud3 Devices",
-        "description": "This screen is used to select a device that needs to be updated, add a new device or to a device that should no longer be tracked or monitored.",
+        "description": "This screen is used to select a device that needs to be updated, add a new device or delete a device that should no longer be tracked or monitored. Apple Devices can also be imported into iCloud3 and the order of devices on the Event Log can be changed.",
         "data": {
           "devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
@@ -439,12 +442,23 @@
         }
       },
 
+      "import_apple_devices": {
+        "title": "Create iCloud3 Devices from Imported Apple Devices",
+        "description": "Import the devices from all Apple Accounts that have not been configured. Then create an iCloud3 device for those that are selected. The devices can be customized on the `Update Devices` screen.",
+        "data": {
+          "imported_aadevices_track":    "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TRACKED DEVICES - iCloud3 device_tracker entities that will be actively tracked",
+          "imported_aadevices_monitor":  "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MONITORED DEVICES - iCloud3 device_tracker entities that will be monitored",
+          "imported_aadevices_inactive": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ INACTIVE DEVICES - Apple Devices and Accessories that can not be tracked",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        }
+      },
+
       "update_device": {
         "title": "Update iCloud3 Device",
         "description": "This screen lets you configure each of the devices that can be tracked or monitored using iCloud3",
         "data": {
           "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-          "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
+          "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
           "famshr_devicename": "APPLE ACCOUNT iCLOUD DEVICE  - Apple iCloud device providing location data",
           "mobile_app_device": "MOBILE APP DEVICE - Mobile App device_tracker entity providing location data & zone triggers",
           "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
@@ -471,7 +485,7 @@
         "description": "This screen updates device parameters that are rearely updated",
         "data": {
           "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-          "fname": "FRIENDLY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
+          "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
           "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
           "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
           "inzone_interval": "INZONE INTERVAL",

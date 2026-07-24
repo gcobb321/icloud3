@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.6'
+VERSION                         = '3.7'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -116,15 +116,17 @@ IOSAPP                          = 'iosapp'
 NO_IOSAPP                       = 'no_iosapp'
 
 # Apple Device Types
-IPHONE_FNAME                    = 'iPhone'
-WATCH_FNAME                     = 'Watch-WiFi+Cell'
-WATCH_WIFI_FNAME                = 'Watch-WiFi'
-IPAD_FNAME                      = 'iPad-WiFi'
-IPAD_CELL_FNAME                 = 'iPad-WiFi+Cell'
-MAC_FNAME                       = 'Mac'
-IPOD_FNAME                      = 'iPod'
-AIRPODS_FNAME                   = 'AirPods'
-OTHER_FNAME                     = 'Other'
+IPHONE_DN                       = 'iPhone'
+WATCH_DN                        = 'Watch'
+WATCH_DN_WIFI_CELL              = 'Watch-WiFi+Cell'
+WATCH_DN_WIFI                   = 'Watch-WiFi'
+IPAD_DN                         = 'iPad'
+IPAD_DN_WIFI                    = 'iPad-WiFi'
+IPAD_DN_WIFI_CELL               = 'iPad-WiFi+Cell'
+MAC_DN                          = 'Mac'
+IPOD_DN                         = 'iPod'
+AIRPODS_DN                      = 'AirPods'
+OTHER_DN                        = 'Other'
 
 IPHONE                          = 'iphone'
 WATCH                           = 'watch'
@@ -139,29 +141,40 @@ OTHER                           = 'other'
 
 DEVICE_TYPES = [
         IPHONE, IPAD, IPAD_CELL, WATCH, WATCH_WIFI,
-        IPHONE_FNAME, IPAD_FNAME, IPAD_CELL_FNAME,
-        WATCH_FNAME, WATCH_WIFI_FNAME, APPLE_WATCH,
+        IPHONE_DN, IPAD_DN, IPAD_DN_WIFI, IPAD_DN_WIFI_CELL,
+        WATCH_DN, WATCH_DN_WIFI_CELL, WATCH_DN_WIFI, APPLE_WATCH,
         MAC, IPOD, AIRPODS,
-        MAC_FNAME, IPOD_FNAME, AIRPODS_FNAME,
+        MAC_DN, IPOD_DN, AIRPODS_DN,
         ICLOUD,
 ]
-DEVICE_TYPE_FNAMES = {
-        IPHONE: IPHONE_FNAME,
-        WATCH: WATCH_FNAME,
-        APPLE_WATCH: WATCH_FNAME,
-        WATCH_WIFI: WATCH_WIFI_FNAME,
-        IPAD: IPAD_FNAME,
-        IPAD_CELL: IPAD_CELL_FNAME,
-        AIRPODS: AIRPODS_FNAME,
-        MAC: MAC_FNAME,
-        IPOD: IPOD_FNAME,
-        OTHER: OTHER_FNAME,
+DEVICE_TYPE_DNS = {
+        IPHONE: IPHONE_DN,
+        WATCH: WATCH_DN_WIFI_CELL,
+        WATCH_WIFI: WATCH_DN_WIFI,
+        IPAD: IPAD_DN_WIFI,
+        IPAD_CELL: IPAD_DN_WIFI_CELL,
+        AIRPODS: AIRPODS_DN,
+        MAC: MAC_DN,
+        IPOD: IPOD_DN,
+        OTHER: OTHER_DN,
 }
 DEVICE_TYPES_CELL_SVC = {
         IPHONE, WATCH, IPAD_CELL,
 }
-def DEVICE_TYPE_FNAME(device_type):
-        return DEVICE_TYPE_FNAMES.get(device_type, device_type)
+def DEVICE_TYPE_DN(device_type):
+        return DEVICE_TYPE_DNS.get(device_type, device_type)
+
+DEVICE_TYPE_PICTURE_FILENAMES = {
+        IPHONE: "iphone.png",
+        IPAD: "ipad-landscape.png",
+        IPAD_CELL: "ipad-landscape.png",
+        WATCH: "watch-light.png",
+        WATCH_WIFI: "watch-light.png",
+        AIRPODS: "airpods.png",
+        MAC : "",
+        IPOD: "",
+        OTHER: ""
+}
 
 DEVICE_TYPE_ICONS = {
         IPHONE: "mdi:cellphone",
@@ -354,6 +367,7 @@ EVLOG_BLUE        = '^6^'       # DO NOT USE - EventLog uses ^6^
 EVLOG_UPDATE_HDR  = '^u^'       # update start-to-complete highlight and edge bar block
 EVLOG_UPDATE_START= '^s^'       # update start-to-complete highlight and edge bar block
 EVLOG_UPDATE_END  = '^c^'       # update start-to-complete highlight and edge bar block
+EVLOG_UPDATE_BARS = [EVLOG_UPDATE_HDR, EVLOG_UPDATE_START, EVLOG_UPDATE_END]
 EVLOG_ERROR       = '^e^'
 EVLOG_ALERT       = '^a^'       # Red letters on yellow background
 EVLOG_WARNING     = '^w^'
@@ -361,11 +375,11 @@ EVLOG_ATTENTION   = '^i^'       # White Letters on orchid bar
 EVLOG_HIGHLIGHT   = '^h^'       # Green highlight bar
 EVLOG_IC3_STAGE_HDR = '^g^'
 
-
 EVLOG_NOTICE      = '^6^'
 EVLOG_TRACE       = '^3^'
 EVLOG_DEBUG       = '^6^'
 EVLOG_MONITOR     = '^m^'
+
 
 # SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
 SETTINGS_INTEGRATIONS_MSG   = '`Settings > Devices & Services > Integrations`'
@@ -385,6 +399,7 @@ dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 �
 ⓪ ① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯ ⑰ ⑱ ⑲ ⑳ ㉑ ㉒ ㉓ ㉔ ㉕
 ㉖ ㉗ ㉘ ㉙ ㉚ ㉛ ㉜ ㉝ ㉞ ㉟ ㊱ ㊲ ㊳ ㊴ ㊵ ㊶ ㊷ ㊸ ㊹ ㊺ ㊻ ㊼ ㊽ ㊾ ㊿
 Symbols = ±▪•●▬⮾ ⊗⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
+〔 〕《》᚛-᚜ ｟ ｠ 〈 〉 ◹◿ ◢◥ ⩓⩔ v^△▽▿▴▾ ↘⇗ ⩠⩢
 Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔☁️🍎🔻⮽➕⚙️
 🔵🔴🟠🟡🟢🟣🟤
 🟦🟥🟧🟨🟩🟪🟫
@@ -440,6 +455,8 @@ PDOT              = '•'
 SQUARE_DOT        = '▪'
 HDOT              = '◦ '
 PHDOT             = '◦'
+LCBRACE           = '{'
+RCBRACE           = '}'
 LT                = '&lt;'
 GT                = '&gt;'
 LTE               = '≤'
@@ -487,6 +504,8 @@ CRLF_DASH_75      = f'{CRLF}{"-"*75}'
 
 NEAR_DEVICE_USEABLE_SYM = '✓'
 BLANK_SENSOR_FIELD = '———'
+ENDASH             = '–'
+EMDASH             = '—'
 RARROW            = ' → '       #U+27F6 (Long Arrow Right)  ⟹ ⟾
 RARROW2           = '→'         #U+27F6 (Long Arrow Right)  ⟹ ⟾
 LARROW            = ' <-- '     #U+27F5 (Long Arrow Left) ⟸ ⟽
@@ -505,11 +524,8 @@ OPT_NONE          = 0
 TRACK               = 'track'
 MONITOR             = 'monitor'
 INACTIVE            = 'inactive'
-TRACKING_MODE_FNAME = {
-        TRACK: 'Tracked',
-        MONITOR: 'Monitored',
-        INACTIVE: 'INACTIVE',
-}
+TRACKING_MODES      = [TRACK, MONITOR, INACTIVE]
+TRACKING_MODE_DN    = {TRACK: 'Tracked', MONITOR: 'Monitored', INACTIVE: 'INACTIVE',}
 
 # Zone field names
 NAME              = 'name'
@@ -685,7 +701,6 @@ TIMESTAMP                  = 'timestamp'
 TIMESTAMP_SECS             = 'timestamp_secs'
 TIMESTAMP_TIME             = 'timestamp_time'
 LOCATION_TIME              = 'location_time'
-#TRACKING_METHOD            = 'data_source'
 DATA_SOURCE                = 'data_source'
 DATETIME                   = 'date_time'
 AGE                        = 'age'
@@ -762,9 +777,6 @@ DEVTRKR_ONLY_MONITOR = 'devtrkr_only_monitored_devices'
 
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1
-
-# Platform
-
 
 DISTANCE           = 'distance'
 CONF_SENSORS_ZONE  = 'zone'
@@ -855,25 +867,28 @@ DEFAULT_TRACKING_CONF = {
 #-------------------------------------------------------------------
 # #     CONF_APPLE_ACCTS-
 #--------------------------------------------------------------------
-CONF_LOCATE_ALL                 = 'locate_all'
-CONF_AUTH_CODE                  = 'auth_code'
-CONF_SERVER_LOCATION            = 'server_location'
+CONF_LOCATE_ALL         = 'locate_all'
+CONF_AUTH_CODE          = 'auth_code'
+CONF_SERVER_LOCATION    = 'server_location'
 
-CONF_AUTH_METHODS               = 'auth_methods'
-CONF_LAST_METHOD                = 'last_method'
-PUSH                       = 'push'
-TEXT                       = 'text'
-TEXT_1                     = 'text_1'
-TEXT_2                     = 'text_2'
-HWKEY                      = 'hwkey'
-# HWKEY_1                    = 'hwkey_1'
-# HWKEY_2                    = 'hwkey_2'
-# SWKEY                      = 'swkey'
-# SWKEY_1                    = 'swkey_1'
-# SWKEY_2                    = 'swkey_2'
+CONF_AUTH_METHODS       = 'auth_methods'
+CURRENT                 = 'current'
+PUSH                    = 'push'
+TEXT                    = 'text'
+TEXT_1                  = 'text_1'
+TEXT_2                  = 'text_2'
+HWKEY                   = 'hwkey'
+AUTH_METHOD_FNAME       = {
+        PUSH: 'Push',
+        TEXT_1: 'Text-1',
+        TEXT_2: 'Text-2',
+        'text_3': 'Text-3',
+        'text_4': 'Text-4',
+        HWKEY: 'SecurityKey'
+}
 
 DEFAULT_AUTH_METHODS = {
-        CONF_LAST_METHOD: PUSH,
+        CURRENT: PUSH,
         TEXT_1: '',
         TEXT_2: '',
         HWKEY: '',

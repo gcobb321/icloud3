@@ -63,7 +63,7 @@ def form_tools(self):
         })
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#           TOOLS ENTITY REGISTRY MAINTENANCE
+#           TOOLS ENTITY CLEANUP REGISTRY ERRORS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_tools_entity_registry_cleanup(self, user_input=None):
     self.actions_list = ACTIONS_REPAIR_ENTITY_ERRORS.copy()
@@ -119,6 +119,8 @@ def form_tools_entity_registry_cleanup(self, user_input=None):
 
     self.tools_entity_reg_check_all = None
 
+    # ENTITY_STATUS_TYPES = ['active', 'inactive', 'other', 'disabled', 'orphaned',
+    #                           'suffix_error', 'deleted_devices', 'deleted_sensors']
     schema = {}
     for status in er_util.ENTITY_STATUS_TYPES:
         if status not in selected_devicename_by_status:

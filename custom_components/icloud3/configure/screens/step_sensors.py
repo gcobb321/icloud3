@@ -42,6 +42,7 @@ class OptionsFlow_Sensors_Steps:
         self.errors = errors or {}
         await self.async_write_icloud3_configuration_file()
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
+
         utils_cf.log_step_info(self, user_input, action_item)
 
         if Gb.conf_sensors[CONF_EXCLUDED_SENSORS] == []:
@@ -69,33 +70,37 @@ class OptionsFlow_Sensors_Steps:
 
         # TfZ Sensors are not configured via config_flow but built in
         # config_flow from the distance, time & zone sensors
-        tfz_sensors_base = ['zone_info']
-        tfz_sensors_base.extend(user_input[CONF_SENSORS_TRACKING_TIME])
-        tfz_sensors_base.extend(user_input[CONF_SENSORS_TRACKING_DISTANCE])
-        tfz_sensors = []
-        for sensor in tfz_sensors_base:
-            if sensor in SENSOR_GROUPS['track_from_zone']:
-                tfz_sensors.append(f"tfz_{sensor}")
-        user_input[CONF_SENSORS_TRACK_FROM_ZONES] = tfz_sensors
+        try:
+            tfz_sensors_base = ['zone_info']
+            tfz_sensors_base.extend(user_input[CONF_SENSORS_TRACKING_TIME])
+            tfz_sensors_base.extend(user_input[CONF_SENSORS_TRACKING_DISTANCE])
+            tfz_sensors = []
+            for sensor in tfz_sensors_base:
+                if sensor in SENSOR_GROUPS['track_from_zone']:
+                    tfz_sensors.append(f"tfz_{sensor}")
+            user_input[CONF_SENSORS_TRACK_FROM_ZONES] = tfz_sensors
 
-        if action_item == 'exclude_sensors':
-            self.sensors_list_filter = '?'
-            self.excluded_sensors = user_input[CONF_EXCLUDED_SENSORS]
-            return await self.async_step_exclude_sensors()
+            if action_item == 'exclude_sensors':
+                self.sensors_list_filter = '?'
+                self.excluded_sensors = user_input[CONF_EXCLUDED_SENSORS]
+                return await self.async_step_exclude_sensors()
 
-        if action_item == 'save_stay':
-            (sensors_to_add, sensors_to_remove,
-            sensors_to_exclude, sensors_to_not_exclude) = \
-                        sensors_cf.identify_new_and_removed_sensors(self, user_input)
+            if action_item == 'save_stay':
+                (sensors_to_add, sensors_to_remove,
+                sensors_to_exclude, sensors_to_not_exclude) = \
+                            sensors_cf.identify_new_and_removed_sensors(self, user_input)
 
-            self._update_config_file_general(user_input)
+                self._update_config_file_general(user_input)
 
-            self.create_device_tracker_sensor_enities_on_exit = isnot_empty(sensors_to_add)
-            sensors_cf.remove_sensor_entities(sensors_to_remove)
-            sensors_cf.remove_sensors_from_excluded_sensors_list(sensors_to_exclude)
-            self.excluded_sensors = []
+                self.create_device_tracker_sensor_enities_on_exit = isnot_empty(sensors_to_add)
+                sensors_cf.remove_sensor_entities(sensors_to_remove)
+                sensors_cf.remove_sensors_from_excluded_sensors_list(sensors_to_exclude)
+                self.excluded_sensors = []
 
-            return await self.async_step_sensors()
+                return await self.async_step_sensors()
+
+        except Exception as err:
+            log_exception(err)
 
         utils_cf.log_step_info(self, user_input, action_item)
 
@@ -112,16 +117,23 @@ class OptionsFlow_Sensors_Steps:
         '''
         Always check default sensors
         '''
-        if BATTERY not in user_input[CONF_SENSORS_DEVICE]:
-            user_input[CONF_SENSORS_DEVICE].append(BATTERY)
+        if 'md_badge' not in user_input[CONF_SENSORS_MONITORED_DEVICES]:
+            user_input[CONF_SENSORS_MONITORED_DEVICES].append('md_badge')
         if 'md_battery' not in user_input[CONF_SENSORS_MONITORED_DEVICES]:
             user_input[CONF_SENSORS_MONITORED_DEVICES].append('md_battery')
+
+        if 'badge' not in user_input[CONF_SENSORS_DEVICE]:
+            user_input[CONF_SENSORS_DEVICE].append('badge')
+        if BATTERY not in user_input[CONF_SENSORS_DEVICE]:
+            user_input[CONF_SENSORS_DEVICE].append(BATTERY)
+
         if ARRIVAL_TIME not in user_input[CONF_SENSORS_TRACKING_TIME]:
             user_input[CONF_SENSORS_TRACKING_TIME].append(ARRIVAL_TIME)
         if TRAVEL_TIME not in user_input[CONF_SENSORS_TRACKING_TIME]:
             user_input[CONF_SENSORS_TRACKING_TIME].append(TRAVEL_TIME)
         if HOME_DISTANCE not in user_input[CONF_SENSORS_TRACKING_DISTANCE]:
             user_input[CONF_SENSORS_TRACKING_DISTANCE].append(HOME_DISTANCE)
+
         if NEXT_UPDATE not in user_input[CONF_SENSORS_TRACKING_UPDATE]:
             user_input[CONF_SENSORS_TRACKING_UPDATE].append(NEXT_UPDATE)
 

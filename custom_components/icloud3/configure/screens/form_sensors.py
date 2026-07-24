@@ -37,7 +37,6 @@ import voluptuous as vol
 def form_sensors(self, user_input=None):
     self.actions_list = SENSORS_ACTIONS.copy()
 
-
     self.set_default_sensors(Gb.conf_sensors)
     sensors = user_input if user_input is not None else Gb.conf_sensors.copy()
     sensors[CONF_EXCLUDED_SENSORS] = self.excluded_sensors

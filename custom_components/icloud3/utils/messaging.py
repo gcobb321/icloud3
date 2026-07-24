@@ -184,8 +184,7 @@ def post_event(devicename_or_Device, event_msg='+'):
     devicename, event_msg = _resolve_devicename_log_msg(devicename_or_Device, event_msg)
 
     try:
-        if event_msg.endswith(', '):
-            event_msg = event_msg[:-2]
+        if event_msg.endswith(', '): event_msg = event_msg[:-2]
         event_msg = event_msg.replace(', , ', ', ')
     except:
         # Gb.HALogger.info(event_msg)
@@ -304,63 +303,61 @@ def clear_greenbar_msg():
     Gb.EvLog.display_user_message(Gb.EvLog.user_message)
 
 #-------------------------------------------------------------------------------------------
-def update_alert_sensor(type_or_key=None, alert_msg=None, update_sensor=False, replace_alert_msg=False):
+def update_alert_sensor(alert_key=None, alert_msg=None, update_sensor=False):
     '''
     Update the Gb.alerts_sensor_attrs dictionary
     Critical alerts (ALERT_CRITICAL) will replace any previous critical alerts instead of appending it
 
-    Type: Attribute to add or update
+    alert_key:
+        - ALERT_CRITICAL - Critical alerts not associated with Apple acct or device
+        - Apple acct username_id
+        - Device's devicename
+        - Other value
     '''
-    if type_or_key is None and alert_msg is None:
+    if alert_key is None and alert_msg is None:
         Gb.AlertsSensor.async_update_sensor()
         return
 
-    if type_or_key is None:
-        type_or_key = ALERT_OTHER
+    if alert_key is None:
+        alert_key = ALERT_OTHER
 
     update_sensor = False
 
     # Clear this message
     if alert_msg == '':
-        Gb.alerts_sensor_attrs.pop(type_or_key, None)
+        Gb.alerts_sensor_attrs.pop(alert_key, None)
         update_sensor = True
-
-    # Not critical alert - Only keep first alert for acct or device
-    elif (type_or_key != ALERT_CRITICAL
-            and type_or_key in Gb.alerts_sensor_attrs
-            and replace_alert_msg is False):
-        return
 
     # Add the alert
     else:
-        Gb.alerts_sensor_attrs[type_or_key] = alert_msg
+        Gb.alerts_sensor_attrs[alert_key] = alert_msg
 
         if Gb.is_icloud3_startup_inprocess is False or update_sensor:
             update_sensor = True
 
-    # Rebuild list so importing alerts are at the top
+    # Rebuild list so critical alerts are at the top
     if len(Gb.alerts_sensor_attrs) > 1:
         new_alerts_sensor_attrs = {}
         # Critical alerts
         new_alerts_sensor_attrs.update(
-            {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
-                            if _source == ALERT_CRITICAL})
+            {_alert_key: _msg  for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
+                            if _alert_key == ALERT_CRITICAL})
 
         # Apple Acct alerts (-source will be the filter value, change it back to the real value)
         new_alerts_sensor_attrs.update(
-            {_source: _msg
-                            for _source, _msg in Gb.alerts_sensor_attrs.items()
-                            if instr(_source, '@')})
+            {_alert_key: _msg
+                            for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
+                            if instr(_alert_key, '@')})
 
         # Device alerts
         new_alerts_sensor_attrs.update(
-            {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
-                            if _source in Gb.Devices_by_devicename})
+            {_alert_key: _msg  for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
+                            if _alert_key in Gb.Devices_by_devicename})
 
         # Other alerts
         new_alerts_sensor_attrs.update(
-            {_source: _msg  for _source, _msg in Gb.alerts_sensor_attrs.items()
-                            if _source not in new_alerts_sensor_attrs})
+            {_alert_key: _msg  for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
+                            if _alert_key not in new_alerts_sensor_attrs})
         Gb.alerts_sensor_attrs = new_alerts_sensor_attrs
 
     if update_sensor:
@@ -916,12 +913,15 @@ def log_data_unfiltered(_hdr, rawdata, data_source=None, filter_id=None):
 #--------------------------------------------------------------------
 def log_request_data(request_response_text, method, url, kwargs, AppleAcct=None, response=None):
 
-        is_log_level_rawdata = False if response is None else response.status_code != 200
+        is_log_level_rawdata = False if response is None else (response.status_code != 200)
 
         is_log_level_rawdata = is_log_level_rawdata or (url.endswith('refreshClient') is False)
         if Gb.is_log_level_rawdata or is_log_level_rawdata or Gb.is_icloud3_initial_startup:
             pass
         else:
+            # _log(f'{is_log_level_rawdata=}')
+            # _log(f"{(url.endswith('refreshClient') is False)=}")
+            # _log(f'{Gb.is_log_level_rawdata=}')
             return
 
         try:
@@ -1232,24 +1232,26 @@ def dummy_log():
     _log(None, None)
 
 #--------------------------------------------------------------------
-def _evlog(items=None):
+def _evlog(devicename_or_Device, event_msg='+'):
     '''
     Display a message or variable in the Event Log
     '''
-    if items is None:
+    devicename, event_msg = _resolve_devicename_log_msg(devicename_or_Device, event_msg)
+
+    if event_msg is None:
         return
 
-    if (type(items) is str) is False:
-        items = f"{items}"
+    if (type(event_msg) is str) is False:
+        event_msg = f"{event_msg}"
 
-    items       = items.replace('<', '&lt;')
+    event_msg   = event_msg.replace('<', '&lt;')
     called_from = _called_from(trace=True)
     function    = log_stack(return_function=True)
 
     if Gb.EvLog:
-        Gb.EvLog.post_event(f"{EVLOG_TRACE}{called_from} {items}")
+        Gb.EvLog.post_event(devicename, f"{EVLOG_TRACE}{called_from} {event_msg}")
 
-    _log(items)
+    _log(event_msg)
 
 #--------------------------------------------------------------------
 def _log(items, v1='+++', v2='', v3='', v4='', v5=''):

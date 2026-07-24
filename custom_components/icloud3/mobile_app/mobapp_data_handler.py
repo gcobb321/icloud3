@@ -593,8 +593,8 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     else:
         home_dist = ''
 
-    monitor_msg = (f"UPDATED MobApp > {Device.devicename}, {Device.mobapp_data_trigger}, "
-                    f"{CRLF_DOT}Loc-{Device.mobapp_data_time}, "
+    monitor_msg = (f"MobApp Location > {Device.mobapp_data_trigger}, "
+                    f"Loc-{Device.mobapp_data_time}, "
                     f"Home-{home_dist}, "
                     f"{Device.mobapp_data_fgps}")
     if monitor_msg != Device.update_mobapp_data_monitor_msg:

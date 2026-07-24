@@ -23,15 +23,15 @@ import time
 import traceback
 
 #--------------------------------------------------------------------
-Waze_UNDER_MIN = 'under_min'
-Waze_OVER_MAX  = 'over_max'
+WAZE_UNDER_MIN = 'under_min'
+WAZE_OVER_MAX  = 'over_max'
 WAZE_STATUS_FNAME ={WAZE_USED: 'Used',
-                    WAZE_NOT_USED: '×NotUsed',
-                    WAZE_PAUSED: '×Paused',
-                    WAZE_OUT_OF_RANGE: '×OutOfRange',
-                    WAZE_NO_DATA: '×NoData',
-                    Waze_UNDER_MIN: '×<1km',
-                    Waze_OVER_MAX: '×>100km'}
+                    WAZE_NOT_USED: 'NotUsed',
+                    WAZE_PAUSED: 'Paused',
+                    WAZE_OUT_OF_RANGE: 'OutOfRange',
+                    WAZE_NO_DATA: 'NoData',
+                    WAZE_UNDER_MIN: '<1km',
+                    WAZE_OVER_MAX: '>100km'}
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Waze(object):
@@ -44,13 +44,13 @@ class Waze(object):
         self.waze_region                  = waze_region.upper()
         self.waze_min_distance            = waze_min_distance
         self.waze_max_distance            = waze_max_distance
-        WAZE_STATUS_FNAME[Waze_UNDER_MIN] = f"×<{waze_min_distance:.0f}km"
-        WAZE_STATUS_FNAME[Waze_OVER_MAX]  = f"×>{waze_max_distance:.0f}km"
+        WAZE_STATUS_FNAME[WAZE_UNDER_MIN] = f"<{waze_min_distance:.0f}km"
+        WAZE_STATUS_FNAME[WAZE_OVER_MAX]  = f">{waze_max_distance:.0f}km"
 
         self.internet_error_displayed = False
 
         self.waze_manual_pause_flag        = False  #If Paused via iCloud command
-        self.is_waze_paused_close_to_zone = False  #pause if dist from zone < 1 flag
+        self.is_waze_paused_close_to_zone  = False  #pause if dist from zone < 1 flag
         self.WazeRouteCalc                 = None
         self.error_server_unavailable_secs = 0       # Time (secs) of first  Server unavailable error
         self.error_server_unavailable_cnt  = 0       # Count of  things error occurred
@@ -104,9 +104,9 @@ class Waze(object):
 
     def range_msg(self, dist_km):
         if dist_km > self.waze_max_distance:
-            return WAZE_STATUS_FNAME[Waze_OVER_MAX]
+            return WAZE_STATUS_FNAME[WAZE_OVER_MAX]
         elif dist_km < self.waze_min_distance:
-            return WAZE_STATUS_FNAME[Waze_UNDER_MIN]
+            return WAZE_STATUS_FNAME[WAZE_UNDER_MIN]
         else:
             return 'inRange'
 

@@ -10,7 +10,8 @@ from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3, ICLOUD3
                                 NAME, FNAME, PICTURE, ICON, ALERT,
                                 DEVICE_TRACKER, LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
                                 ZONE, ZONE_DATETIME,  LAST_ZONE, FROM_ZONE, ZONE_FNAME,
-                                BATTERY, BATTERY_LEVEL,
+                                NOT_HOME_ZONES,
+                                BATTERY,
                                 MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
                                 HOME_DISTANCE, ZONE_DISTANCE,
                                 DEVICE_STATUS,
@@ -27,7 +28,7 @@ from .utils.utils       import (instr, is_number, is_statzone, zone_dname, is_em
                                 is_running_in_event_loop, )
 from .utils.messaging   import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
-                                log_exception_HA, log_info_msg_HA, log_stack,
+                                log_exception_HA, log_info_msg_HA, log_stack, log_warning_msg_HA,
                                 _evlog, _log, )
 from .utils.time_util   import (adjust_time_hour_values, datetime_now, )
 from .utils             import entity_reg_util as er_util
@@ -254,6 +255,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             self.Device          = None   # Filled in after Device object has been created in start_ic3
             self.ha_device_id    = Gb.ha_device_id_by_devicename.get(self.devicename)
             self.ha_entity_id    = f"{PLATFORM_DEVICE_TRACKER}.{devicename}"
+            self.entity_id_base  = f"{PLATFORM_DEVICE_TRACKER}.{devicename}"   # desired entity_id
+            self.entity_id       = f"{PLATFORM_DEVICE_TRACKER}.{devicename}"   # tell HA to use it
             self.ha_disabled_by  = None
             self.ha_area_id      = Gb.ha_area_id_by_devicename.get(self.devicename)
 
@@ -359,9 +362,52 @@ class iCloud3_DeviceTracker(TrackerEntity):
         #         Gb.area_id_personal_device
         return self.area_id
 
-    @property
-    def location_name(self):
-        """Return the location name of the device."""
+    # ----------------------------------------------------------------------
+    # HA device_tracker zone/state reporting.
+    #
+    # HA Core 2026.7 deprecated the `location_name` property on TrackerEntity
+    # (it stops working in Core 2027.7) and replaced it with the `in_zones`
+    # property (a list of HA zone entity_ids, or None to let HA derive the
+    # state from the reported lat/long).
+    #
+    # To support BOTH new and old HA versions from the same code base, neither
+    # `location_name` nor `in_zones` is defined directly in the class body here
+    # (defining `location_name` in the class body is what triggers HA's
+    # deprecation warning). Instead the two helper methods below hold the logic,
+    # and exactly one of them is bound as a public property after the class
+    # definition, based on whether the installed HA supports `in_zones`.
+    # ----------------------------------------------------------------------
+    def _in_zones_value(self):
+        """Return the list of HA zone entity_ids the device is in (the modern
+        replacement for `location_name`). Return None to let HA derive the
+        state from the reported lat/long (iCloud3 'ha_gps' state source)."""
+        try:
+            # 'ha_gps' mode: let HA compute the zone/state from the GPS coordinates
+            if Gb.device_tracker_state_source == 'ha_gps':
+                return None
+
+            if self.Device is None:
+                return None
+
+            zone = self.Device.loc_data_zone
+
+            # Away / not_home / not_set -> empty list -> HA state becomes 'not_home'
+            if zone in NOT_HOME_ZONES:
+                return []
+
+            Zone = Gb.Zones_by_zone.get(zone)
+            if Zone and Zone.is_ha_zone:
+                return [Zone.zone_entity_id]    # e.g. 'zone.home', 'zone.gary_iphone_stationary'
+
+            # Unknown/undefined zone -> fall back to HA GPS-based derivation
+            return None
+
+        except Exception:
+            return None
+
+    def _location_name_value(self):
+        """Legacy state reporting for HA versions older than 2026.7 that do not
+        support the `in_zones` property."""
         try:
             return self.Device.sensors.get(DEVICE_TRACKER_STATE, None)
         except:
@@ -382,10 +428,10 @@ class iCloud3_DeviceTracker(TrackerEntity):
         """Return longitude value of the device."""
         return self._get_sensor_value(LONGITUDE, number=True)
 
-    @property
-    def battery_level(self):
-        """Return the battery level of the device."""
-        return self._get_sensor_value(BATTERY, number=True)
+    # Note: The `battery_level` property override was removed because Home Assistant
+    # deprecated `battery_level` on `BaseTrackerEntity`. Overriding it logs a deprecation
+    # warning and it will eventually be removed from HA. Battery level is already exposed
+    # as a dedicated `sensor.<device>_battery` entity (device_class: battery).
 
     @property
     def source_type(self):
@@ -642,6 +688,36 @@ class iCloud3_DeviceTracker(TrackerEntity):
         Gb.ha_device_id_by_devicename[self.devicename]   = self.ha_device_id
         Gb.devicename_by_ha_device_id[self.ha_device_id] = self.devicename
 
+        # HA assigns the entity_id it actually created. iCloud3 requested
+        # `device_tracker.{devicename}` (self.entity_id_base) but HA may have
+        # auto-generated a different one (e.g. a device-name-prefixed or `_2`
+        # suffixed id) if the entity already existed in the registry under that
+        # unique_id. Rename it back to the id iCloud3 expects.
+        if self.ha_entity_id != self.entity_id_base:
+            self.repair_entity_id()
+
+#-------------------------------------------------------------------------------------------
+    def repair_entity_id(self):
+        '''
+        iCloud3 expects the device_tracker entity_id to be `device_tracker.{devicename}`.
+        HA will assign a different one (a device-name-prefixed value or a `_2` suffix) if
+        an entity with that unique_id already exists in the registry.
+
+        Delete the entity registered with the expected id (if any), then rename the one HA
+        created to the expected id.
+
+        device_tracker.lillian_ipad_lillian_ipad_lillian_ipad --> device_tracker.lillian_ipad
+        '''
+        if er_util.is_entity_available(self.entity_id_base) is False:
+            er_util.remove_sensor(self.entity_id_base)
+
+        er_util.change_entity_id(self.ha_entity_id, self.entity_id_base)
+
+        extn = self.ha_entity_id.replace(self.entity_id_base, '')
+        log_debug_msg(f"Device Tracker entity, Named:  {self.entity_id_base}, (×{extn})")
+
+        self.ha_entity_id = self.entity_id_base
+
 #-------------------------------------------------------------------------------------------
     def after_removal_cleanup(self):
         '''
@@ -730,3 +806,16 @@ class iCloud3_DeviceTracker(TrackerEntity):
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
         return (f"<DeviceTracker: {self.devicename}/{self.device_type}>")
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# Bind the zone/state reporting property based on the installed HA version.
+#   - HA 2026.7+ supports the `in_zones` property on TrackerEntity. Bind it and
+#     do NOT define `location_name` (defining it would log a deprecation warning).
+#   - Older HA has no `in_zones` support. Bind the legacy `location_name` instead.
+# `hasattr(TrackerEntity, 'in_zones')` is True only on versions that added it.
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+if hasattr(TrackerEntity, 'in_zones'):
+    iCloud3_DeviceTracker.in_zones = property(iCloud3_DeviceTracker._in_zones_value)
+else:
+    iCloud3_DeviceTracker.location_name = property(iCloud3_DeviceTracker._location_name_value)

@@ -30,23 +30,23 @@ class iCloud_HwKey():
 
     def __init__(self, AppleAcct):
         self.AppleAcct    = AppleAcct
-        self.fido2_device = None
+        self.hwkey_device = None
         self.auth_error   = None
 
 #--------------------------------------------------------------------
-    def is_fido2_key_available(self) -> bool:
+    def is_hwkey_key_available(self) -> bool:
         """
         Determine if at least one FIDO2/USB HID security key is plugged in.
 
         Return: True/False
         Set:    fide2_device is product name of device plugged in
         """
-        self.fido2_device = None
+        self.hwkey_device = None
         if not FIDO2_AVAILABLE:
             return False
 
         for device in CtapHidDevice.list_devices():
-            self.fido2_device = device.descriptor.product_name
+            self.hwkey_device = device.descriptor.product_name
             device.close()      # release it right away — just probing
             return True
 
@@ -133,7 +133,7 @@ class iCloud_HwKey():
 
         # Phase 2: Find USB HID key on HA server
         try:
-            self.fido2_device = None
+            self.hwkey_device = None
             devices = list(CtapHidDevice.list_devices())
 
             if devices == []:
@@ -142,10 +142,10 @@ class iCloud_HwKey():
                 return False
 
             device = devices[0]
-            self.fido2_device = device.descriptor.product_name
+            self.hwkey_device = device.descriptor.product_name
 
-            self.fido2_device = device.descriptor.product_name
-            log_info_msg(f"HwKey > Phase2 using device: {self.fido2_device}, HwKeys: {hwkey_names}")
+            self.hwkey_device = device.descriptor.product_name
+            log_info_msg(f"HwKey > Phase2 using device: {self.hwkey_device}, HwKeys: {hwkey_names}")
 
         except Exception as err:
             self.error_msg = f"Phase2 failed — Error listing FIDO2 devices: {err}"

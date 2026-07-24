@@ -1,5 +1,5 @@
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (AIRPODS_FNAME, NONE_FNAME,
+from ..const            import (AIRPODS_DN, NONE_FNAME,
                                 EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS,
                                 HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                 ICLOUD, NAME, ID, LOCATION,  ICLOUD_DEVICE_STATUS,
@@ -411,7 +411,7 @@ class iCloud_AppleAcctDevices():
 
         self.set_apple_acct_device_data_fields(device_id, _AADevData)
 
-        post_greenbar_msg(f"409 Apple Acct > {self.AppleAcct.username_base}, {_AADevData.fname}")
+        post_greenbar_msg(f"Apple Acct > {self.AppleAcct.username_base}, {_AADevData.fname}")
         log_debug_msg(  f"Initialize AADevData_icloud object "
                         f"{self.AppleAcct.username_base}{LINK}<{_AADevData.fname}, "
                         f"{device_data_name}")
@@ -435,9 +435,9 @@ class iCloud_AppleAcctDevices():
         self.AppleAcct.AADevData_by_device_id[device_id]             = _AADevData
         self.AppleAcct.device_id_by_icloud_dname[_AADevData.fname]   = device_id
         self.AppleAcct.icloud_dname_by_device_id[device_id]          = _AADevData.fname
-        self.AppleAcct.device_info_by_icloud_dname[_AADevData.fname] = _AADevData.icloud_device_info
-        self.AppleAcct.device_model_info_by_fname[_AADevData.fname]  = _AADevData.icloud_device_model_info
-        self.AppleAcct.device_model_name_by_icloud_dname[_AADevData.fname] = _AADevData.icloud_device_display_name
+        self.AppleAcct.device_info_by_icloud_dname[_AADevData.fname] = _AADevData.aa_device_info
+        self.AppleAcct.device_model_info_by_fname[_AADevData.fname]  = _AADevData.aadevice_model_info
+        self.AppleAcct.device_model_name_by_icloud_dname[_AADevData.fname] = _AADevData.aa_device_display_name
 
 #----------------------------------------------------------------------
     @staticmethod

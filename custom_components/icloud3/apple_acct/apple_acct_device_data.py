@@ -1,6 +1,6 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (AIRPODS_FNAME, NONE_FNAME,
+from ..const            import (AIRPODS_DN, NONE_FNAME,
                                 EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS,
                                 HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                 ICLOUD, NAME, ID,
@@ -121,12 +121,21 @@ class iCloud_AppleAcctDeviceData():
 
         self.battery_level = 0
 
+        if self.device_data['modelDisplayName'] == 'Accessory':
+            if self.device_data['rawDeviceModel'].startswith(AIRPODS_DN):
+                self.device_data['modelDisplayName'] = AIRPODS_DN
+            elif self.device_data['rawDeviceModel'].startswith('AirTags'):
+                self.device_data['modelDisplayName'] = 'AirTags'
+        if self.device_data['rawDeviceModel'].startswith('Watch'):
+            self.device_data['modelDisplayName'] = 'Watch'
+
         self.set_located_time_battery_info()
         self.device_data[DATA_SOURCE] = self.data_source
         self.device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
+
         self.raw_model = self.device_data.get('rawDeviceModel', self.device_class).replace('_', '')
 
-        Gb.model_display_name_by_raw_model[self.raw_model] = self.icloud_device_display_name
+        Gb.model_display_name_by_raw_model[self.raw_model] = self.aa_device_display_name
 
 #----------------------------------------------------------------------
     @property
@@ -216,7 +225,7 @@ class iCloud_AppleAcctDeviceData():
 
 #----------------------------------------------------------------------
     @property
-    def icloud_device_info(self):
+    def aa_device_info(self):
         return f"{self.fname} ({self.device_identifier})"
 
 #----------------------------------------------------------------------
@@ -241,12 +250,12 @@ class iCloud_AppleAcctDeviceData():
         if self.is_data_source_ICLOUD:
             display_name = self.device_data['deviceDisplayName'].split(' (')[0]
             display_name = display_name.replace('Series ', '')
-            if self.device_data.get('rawDeviceModel').startswith(AIRPODS_FNAME):
-                device_class = AIRPODS_FNAME
+            if self.device_data.get('rawDeviceModel').startswith(AIRPODS_DN):
+                device_class = AIRPODS_DN
             else:
                 device_class = self.device_data.get('deviceClass', '')
 
-            return (f"{self.icloud_device_display_name}; {self.raw_model}").replace("’", "'")
+            return (f"{self.aa_device_display_name}; {self.raw_model}").replace("’", "'")
 
         else:
             return self.name.replace("’", "'")
@@ -254,14 +263,14 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def device_class(self):
-        if self.device_data.get('rawDeviceModel').startswith(AIRPODS_FNAME):
-            return AIRPODS_FNAME
+        if self.device_data.get('rawDeviceModel').startswith(AIRPODS_DN):
+            return AIRPODS_DN
         else:
             return self.device_data.get('deviceClass', '')
 
 #----------------------------------------------------------------------
     @property
-    def icloud_device_display_name(self):
+    def aa_device_display_name(self):
         display_name = self.device_data['deviceDisplayName']
         for from_str, to_str in DEVICE_DISPLAY_NAMES_FILTERS.items():
             display_name = display_name.replace(from_str, to_str)
@@ -275,10 +284,10 @@ class iCloud_AppleAcctDeviceData():
 
 #----------------------------------------------------------------------
     @property
-    def icloud_device_model_info(self):
+    def aadevice_model_info(self):
         return [self.device_data['rawDeviceModel'].replace("_", ""),    # iPhone15,2
                 self.device_data['modelDisplayName'],                   # iPhone
-                self.icloud_device_display_name]                        # iPhone 14 Pro
+                self.aa_device_display_name]                        # iPhone 14 Pro
 
 #----------------------------------------------------------------------
     @property

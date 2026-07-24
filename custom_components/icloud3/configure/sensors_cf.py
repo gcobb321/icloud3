@@ -119,16 +119,11 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
 
     # Inactive devices were not created so they are not in Gb.DeviceTrackers_by_devicename
     er_util.update_ha_device_id_by_devicename()
-    if Gb.DeviceTrackers_by_devicename.get(devicename) is None:
-        return
 
     if devicename in Gb.Sensors_by_devicename:
         for sensor, Sensor in Gb.Sensors_by_devicename[devicename].copy().items():
             er_util.remove_from_active_and_deleted_entity_registry(Sensor.entity_id)
             er_util.clear_sensor_gb_dicts(Sensor.entity_id)
-        #     er_util.remove_sensor(Sensor.entity_id)
-        #     del Sensor
-        # del Gb.Sensors_by_devicename[devicename]
 
     if devicename in Gb.Sensors_by_devicename_from_zone:
         for sensor, Sensor in Gb.Sensors_by_devicename_from_zone[devicename].copy().items():

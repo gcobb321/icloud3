@@ -74,6 +74,7 @@ def stage_1_setup_variables():
 
         start_ic3.display_platform_operating_mode_msg()
         start_ic3.check_ic3_event_log_file_version()
+        start_ic3.copy_icloud3_theme_file()
 
         post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
 
@@ -161,7 +162,7 @@ def stage_3_setup_configured_devices():
         start_ic3.initialize_data_source_variables()
         restore_state.load_icloud3_restore_state_file()
 
-        # Make sure a full restart is done if all of the devices were not found in the iCloud data
+        # Make sure a full restart is done if all of the devices were not found in the Apple data
         Gb.startup_alerts_by_source = {}
         data_sources = f"Apple Account-{yes_no(Gb.conf_data_source_ICLOUD)}, "
         data_sources += f"Mobile App-{yes_no(Gb.conf_data_source_MOBAPP)}"
@@ -345,14 +346,14 @@ def stage_6_initialization_complete():
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def stage_7_initial_locate():
     '''
-    The AppleAcct Authentication function updates the iCloud raw data after the account
+    The AppleAcct Authentication function updates the Apple raw data after the account
     has been authenticated. Requesting the initial data update there speeds up loading iC3
     since the Apple Acct login & authentication was started in the __init__ module.
 
-    This routine processes the new raw iCloud data and set the initial location.
+    This routine processes the new raw Apple data and set the initial location.
     '''
 
-    # The restart will be requested if using iCloud as a data source and no data was returned
+    # The restart will be requested if using Apple as a data source and no data was returned
     # from AppleAcct
     if is_empty(Gb.AppleAcct_by_username):
         return
@@ -378,9 +379,7 @@ def stage_7_initial_locate():
 
         Gb.iCloud3.process_updated_location_data(Device, ICLOUD)
 
-        post_event(Device,
-                    f"{Device.dev_data_source} Trigger > Initial Locate@"
-                    f"{Device.loc_data_time_gps}")
+        Device.display_battery_info_msg(force_display=True)
 
         if Device.no_location_data:
             post_event(Device, f"{EVLOG_ALERT}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE")
@@ -388,6 +387,9 @@ def stage_7_initial_locate():
                         "No GPS data was returned from iCloud Location "
                         "Service on the initial locate")
             log_warning_msg(error_msg)
+
+        # Restore other items enter the first locate
+        Device.restore_state_reset_other_items()
 
     post_greenbar_msg('')
 

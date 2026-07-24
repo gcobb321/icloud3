@@ -1,9 +1,9 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (CONF_AUTH_CODE, CONF_AUTH_METHODS, )
+from ...const               import (CONF_AUTH_CODE, CONF_AUTH_METHODS, CURRENT, PUSH, HWKEY, )
 
-from ...utils.utils         import (dict_value_to_list, )
+from ...utils.utils         import (dict_value_to_list, list_del, dict_del, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -47,6 +47,9 @@ def form_reauth(self, user_input=None, reauth_username=None):
     if terms_of_use_update_needed:
         self.actions_list.append(ACTION_LIST_OPTIONS['accept_terms_of_use'])
     self.actions_list.extend(REAUTH_ACTIONS)
+
+    # if AppleAcct.conf_apple_acct[CONF_AUTH_METHODS][CURRENT] != PUSH:
+    #     list_del(self.actions_list, ACTION_LIST_OPTIONS['auth_code_from_applecom_login'])
 
     default_action = 'goto_previous'
     if self.is_config_flow_handler:
@@ -133,7 +136,11 @@ def form_reauth_change_auth_method(self, account_selected=None):
 
     default_acct_selected = self.apple_acct_auth_items_by_username[account_selected]
 
-    default_auth_method = self.AppleAcct.auth_method
+    default_auth_method = self.AppleAcct.current_auth_method
+    if self.aa_auth_methods_by_auth_method.get(HWKEY):
+        default_auth_method = HWKEY
+        dict_del(self.aa_auth_methods_by_auth_method, PUSH)
+
     if default_auth_method not in self.aa_auth_methods_by_auth_method:
         default_auth_method = 'push'
 
@@ -142,7 +149,7 @@ def form_reauth_change_auth_method(self, account_selected=None):
                     default=default_acct_selected):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=[default_acct_selected],
-                        mode='dropdown')),
+                        mode='list')),
         vol.Optional('auth_method',
                     default=self.aa_auth_methods_by_auth_method[default_auth_method]):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -153,5 +160,6 @@ def form_reauth_change_auth_method(self, account_selected=None):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
+                        # options=dict_value_to_list(self.apple_acct_auth_items_by_username),
 
     return vol.Schema(schema)

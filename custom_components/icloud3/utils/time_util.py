@@ -172,6 +172,7 @@ def secs_to_hhmm(secs_utc):
         return '00:00'
 
 #--------------------------------------------------------------------
+# This is not used anywhere
 def secs_to_ddmm_hhmm(secs_utc):
     ''' secs --> dd/mm hh:mm or dd/mm hh:mma or hh:mmp '''
 
@@ -439,6 +440,25 @@ def format_date_time(secs):
     ''' June 14, 4:30p '''
 
     date = datetime.fromtimestamp(secs).strftime('%b %d')
+
+    return f"{date}, {secs_to_hhmm(secs)}"
+
+#--------------------------------------------------------------------
+def format_date(secs, fmt_code=None):
+    ''' secs --> 6/14
+        mmdd = 9/14
+        ddmm = 14/9
+        mmmdd = Sep 14
+    '''
+
+    if fmt_code is None:    #Sep 14
+        return datetime.fromtimestamp(secs).strftime('%b %-d')
+    if fmt_code == 'mmdd':  #9/14
+        return datetime.fromtimestamp(secs).strftime('%-m/%-d')
+    if fmt_code == 'ddmm':  #14/9
+        return datetime.fromtimestamp(secs).strftime('%-d/%-m')
+    if fmt_code == 'ddmm': #14Sep
+        return datetime.fromtimestamp(secs).strftime('%-d%')
 
     return f"{date}, {secs_to_hhmm(secs)}"
 
