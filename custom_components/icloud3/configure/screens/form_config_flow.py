@@ -6,7 +6,8 @@ from ...const               import (INACTIVE,
                                     CONF_IC3_DEVICENAME, CONF_TRACKING_MODE,
                                     )
 
-from ...utils.utils         import (list_to_str, list_add, list_del, isnot_empty, )
+from ...utils.utils         import (list_to_str, list_add, list_del, isnot_empty,
+                                    dict_value_to_list, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -61,37 +62,30 @@ def form_config_option_user(self):
 #             MENU
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_menu(self):
-    menu_title = MENU_PAGE_TITLE[self.menu_page_no]
-    # menu_action_items = MENU_ACTION_ITEMS.copy()
-    menu_items = self.menu_item_selected[self.menu_page_no]
+    menu_items =    MENU_KEY_TEXT_PAGE_0.copy() if self.menu_page_no == 0 else \
+                    MENU_KEY_TEXT_PAGE_1.copy()
+
     if self.create_device_tracker_sensor_enities_on_exit:
-        list_del(menu_items, MENU_KEY_TEXT['exit'])
-        list_add(menu_items, MENU_KEY_TEXT['exit_add_dev_trkrs_sensors'])
+        menu_items['exit'] = MENU_EXIT_ITEMS['exit_add_dev_trkrs_sensors']
 
     if self.rebuild_ic3db_dashboards:
         dbb.load_ic3db_dashboards_from_ha_data(self)
 
         if isnot_empty(self.ic3db_Dashboards_by_dbname):
-            list_del(menu_items, MENU_KEY_TEXT['exit'])
-            list_add(menu_items, MENU_KEY_TEXT['exit_update_dashboards'])
+            menu_items['exit'] = MENU_EXIT_ITEMS['exit_update_dashboards']
 
     if self.menu_page_no == 0:
-        menu_key_text  = MENU_KEY_TEXT_PAGE_0
-
         if (self.username == '' or self.password == ''):
-            self.menu_item_selected[0] = MENU_KEY_TEXT['apple_accounts']
+            self.menu_item_selected[0] = 'apple_accounts'
         elif (self.username and self.password
                 and (self._device_cnt() == 0 or self._device_cnt() == self._inactive_device_cnt())):
-            self.menu_item_selected[0] = MENU_KEY_TEXT['device_list']
-    else:
-        menu_key_text  = MENU_KEY_TEXT_PAGE_1
-        # menu_action_items[1] = MENU_KEY_TEXT['next_page_0']
+            self.menu_item_selected[0] = 'device_list'
 
     return vol.Schema({
         vol.Required("menu_items",
-                    default=self.menu_item_selected[self.menu_page_no]):
+                    default=menu_items[self.menu_item_selected[self.menu_page_no]]):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=menu_key_text, mode='list')),
+                        options=dict_value_to_list(menu_items), mode='list')),
         })
 
 

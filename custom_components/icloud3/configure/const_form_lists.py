@@ -24,57 +24,32 @@ DATA_ENTRY_ALERT_CHAR = '⛔'
 DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 #----------------------------------------------------------------------------------------
-MENU_PAGE_TITLE = [
-        'DEVICES & SENSORS MENU',
-        'PARAMETERS MENU'
-        ]
-MENU_KEY_TEXT = {
+MENU_KEY_TEXT_PAGE_0 = {
         'apple_accounts':       'APPLE ACCOUNTS & MOBILE APP > Add, Change and Delete Apple Accounts, Enable Mobile App Usage',
-        'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices, Import Apple Devices into iCloud3',
         'auth_code':            'AUTHENTICATE APPLE ACCT SIGN-IN > Authenticate Apple Account access, Request a new Auth Code, Change Authentication Method',
-        'change_device_order':  'CHANGE DEVICE ORDER > Change the order devices displayed on the Event Log',
+        'device_list':          'ICLOUD3 DEVICES  > Add, Change and Delete Tracked and Monitored Devices, Import Apple Devices into iCloud3',
         'sensors':              'SENSORS > Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors',
         'dashboard_builder':    'DASHBOARD BUILDER > Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates',
         'tools':                'TOOLS > Log Level, Cleanup HA Registry Files, Cleanup/Reset iCloud3 Device Parameters, Apple Acct Cookies & iCloud3 Config File',
-
+        'menu':                 'MENU > CONFIGURE PARAMETERS > Tracking, Sensor Display Parameters, Display Text As, Waze Route Service, Special Zones',
+        'exit':                 'EXIT > Close the iCloud3 Configure screens',
+}
+MENU_KEY_TEXT_PAGE_1 = {
         'away_time_zone':       'AWAY TIME ZONE > Change the time displayed in the Event Log to the local time when away from Home',
         'tracking_parameters':  'TRACKING PARAMETERS > Specify the tracking parameters used to control how device location data is verified and displayed',
         'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS > Specify how tracking results are displayed in the Event Log, sensors and device_tracker entities',
         'display_text_as':      'DISPLAY TEXT AS > Event Log Text Replacement',
         'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY > Specify how the Waze Route Server is used and enable the Waze Tracking History Database',
         'special_zones':        'SPECIAL ZONES > Configure special zone handling - Delay zone enter triggers, Set up Stationary Zones for non-moving devices, Override the Home zone',
-        'inzone_intervals':     'DEFAULT INZONE INTERVALS > inZone Interval assigned to new devices',
-
-        'select':               'SELECT > Select the parameter update form',
-        'menu_page_0':          'MENU > DEVICES & SENSORS > Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
-        'menu_page_1':          'MENU > CONFIGURE PARAMETERS > Tracking, Sensor Display Parameters, Display Text As, Waze Route Service, Special Zones',
+        'menu':                 'MENU > DEVICES & SENSORS > Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
         'exit':                 'EXIT > Close the iCloud3 Configure screens',
-        'exit_update_dashboards': 'EXIT > Close, Update the iCloud3 Dashboards, Restart iCloud3',
+}
+MENU_EXIT_ITEMS = {
+        'exit':                       'EXIT > Close the iCloud3 Configure screens',
+        'exit_update_dashboards':     'EXIT > Close, Update the iCloud3 Dashboards, Restart iCloud3',
         'exit_add_dev_trkrs_sensors': 'EXIT > Close, Add new devices and sensors, Update the iCloud3 Dashboards, Restart iCloud3'
 }
-
-MENU_PAGE_0_INITIAL_ITEM = 2
-MENU_KEY_TEXT_PAGE_0 = [
-        MENU_KEY_TEXT['apple_accounts'],
-        MENU_KEY_TEXT['auth_code'],
-        MENU_KEY_TEXT['device_list'],
-        MENU_KEY_TEXT['sensors'],
-        MENU_KEY_TEXT['dashboard_builder'],
-        MENU_KEY_TEXT['tools'],
-        MENU_KEY_TEXT['menu_page_1'],
-        MENU_KEY_TEXT['exit']
-        ]
-MENU_PAGE_1_INITIAL_ITEM = 0
-MENU_KEY_TEXT_PAGE_1 = [
-        MENU_KEY_TEXT['away_time_zone'],
-        MENU_KEY_TEXT['tracking_parameters'],
-        MENU_KEY_TEXT['format_settings'],
-        MENU_KEY_TEXT['display_text_as'],
-        MENU_KEY_TEXT['waze'],
-        MENU_KEY_TEXT['special_zones'],
-        MENU_KEY_TEXT['menu_page_0'],
-        MENU_KEY_TEXT['exit']
-        ]
+        # 'inzone_intervals':     'DEFAULT INZONE INTERVALS > inZone Interval assigned to new devices',
 
 ACTION_LIST_OPTIONS = {
         'next_page_items':          'NEXT PAGE ITEMS > ^add-text^',
@@ -228,7 +203,7 @@ DEVICE_LIST_ACTIONS_NO_ADD = [
 SENSORS_ACTIONS = [
         ACTION_LIST_OPTIONS['exclude_sensors'],
         ACTION_LIST_OPTIONS['set_to_default_sensors'],
-        ACTION_LIST_OPTIONS['save_stay'],
+        ACTION_LIST_OPTIONS['save'],
         ACTION_LIST_OPTIONS['goto_menu']]
 SENSORS_EXCLUDE_ACTIONS_= [
         ACTION_LIST_OPTIONS['filter_sensors'],
@@ -435,9 +410,9 @@ CONF_SENSORS_TRACKING_OTHER_KEY_TEXT = {
         'calc_distance':    '_calc_distance > Calculated straight line distance from a TrackFrom zone',
         }
 CONF_SENSORS_ZONE_KEY_TEXT = {
-        'zone_fname':       '_zone_fname > HA Zone entity Friendly Name (HA Config > Areas & Zones > Zones > Name)',
-        'zone':             '_zone > HA Zone entity_id (`the_shores`)',
-        'zone_name':        '_zone_name > Reformat the Zone entity_id, capitalize and remove `_`s (`the_shores` → `TheShores`)',
+        'zone_fname':       '_zone_fname > HA Zone Name (`Home`, `The Shores`) > From: HA Config > Areas & Zones > Zones > Name field',
+        'zone':             '_zone > HA Zone entity_id (`home`, `the_shores`)',
+        'zone_name':        '_zone_name > Reformat the Zone entity_id, capitalize and remove `_`s (`Home`, `TheShores`)',
         'zone_datetime':    '_zone_datetime > The time the Device entered the Zone',
         'last_zone':        '_last_zone_[...] > Create the same sensors for the device`s last HA Zone',
         }

@@ -13,7 +13,8 @@ from ..const                import (IPHONE_DN, DEVICE_TYPES, IPHONE,
 
 from ..utils.utils          import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     list_add, list_del, dict_value_to_list, six_item_list, six_item_dict, )
-from ..utils.messaging      import (log_exception, log_debug_msg, log_info_msg, _log,  _evlog, )
+from ..utils.messaging      import (post_error_msg, post_alert,
+                                    log_exception, log_debug_msg, log_info_msg, _log, _evlog, )
 from ..utils                import file_io
 
 from .const_form_lists      import *
@@ -90,34 +91,44 @@ async def update_ic3db_dashboards_new_deleted_devices(self):
     if is_empty(self.ic3db_Dashboards_by_dbname):
         return
 
-    try:
-        await _load_templates(self)
 
-        for dbname, Dashboard in self.ic3db_Dashboards_by_dbname.items():
-            self.dbname = dbname
-            self.ui_selected_dbname  = dbname
-            self.ui_main_view_style  = self.main_view_info_style_by_dbname[dbname]
-            self.ui_main_view_dnames = self.main_view_info_dnames_by_dbname[dbname]
+    await _load_templates(self)
 
-            updated_db_layout_str    = _build_updated_db_layout_all_views(self)
-            updated_db_layout_json   = file_io.str_to_json_str(self, updated_db_layout_str)
-            updated_db_layout_dict   = file_io.json_str_to_dict(updated_db_layout_json)
-            updated_db_views         = updated_db_layout_dict[DATA][CONFIG][VIEWS]
+    for dbname, Dashboard in self.ic3db_Dashboards_by_dbname.items():
+        dbtitle = Dashboard.config[TITLE]
+        self.dbname = dbname
+        self.ui_selected_dbname  = dbname
+        self.ui_main_view_style  = self.main_view_info_style_by_dbname[dbname]
+        self.ui_main_view_dnames = self.main_view_info_dnames_by_dbname[dbname]
+        log_info_msg(  f"Dashboard Update > [{dbtitle}/{dbname}], "
+                        f"MainViewStyle-[{self.ui_main_view_style}], "
+                        f"Devices-{self.ui_main_view_dnames}")
+
+        try:
+            updated_db_layout_str  = _build_updated_db_layout_all_views(self)
+            updated_db_layout_json = file_io.str_to_json_str(self, updated_db_layout_str)
 
             if file_io.is_valid_json_str(updated_db_layout_json) is False:
-                log_debug_msg(f"Error Preparing Initial Dashboard, Invalid Json string > {updated_db_layout_json}")
+                post_alert( f"Dashboard Update Error > [{dbtitle}/{dbname}], "
+                            f"Layout format error, Manual update may be needed")
+                log_info_msg(f"Dashboard Layout Source > {updated_db_layout_str}")
                 continue
+
+            updated_db_layout_dict = file_io.json_str_to_dict(updated_db_layout_json)
+            updated_db_views = updated_db_layout_dict[DATA][CONFIG][VIEWS]
 
             # Update all of the ic3db's with the current devices
             dashboard_dict = await _update_selected_views_from_master_dashboard(self, dbname, updated_db_views,
                                                                                 add_del_device_flag=True)
             await _write_lovelace_dashboard_layout_file(self, dbname, dashboard_dict)
             await _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict)
-            log_debug_msg(f"Updated Dashboard with Added/Deleted Devices-{dbname}")
+            log_debug_msg(f"Dashboard Update > ({dbname}, {dbtitle}), Rebuild Successful")
 
-    except Exception as err:
-        log_exception(err)
-        return False
+        except Exception as err:
+            post_alert( f"Dashboard Update Error > [{dbtitle}/{dbname}], "
+                        f"Layout format error, Manual update may be needed")
+            log_info_msg(f"Dashboard Layout Source > {updated_db_layout_str}")
+            continue
 
     return True
 
@@ -125,7 +136,7 @@ async def update_ic3db_dashboards_new_deleted_devices(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #           BUILD DASHBOARD
-#
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def update_or_create_dashboard(self):
 

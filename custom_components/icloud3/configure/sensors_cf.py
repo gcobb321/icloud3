@@ -26,8 +26,6 @@ from ..utils             import entity_reg_util as er_util
 from ..                  import sensor as ic3_sensor
 from ..                  import device_tracker as ic3_device_tracker
 
-from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
-                                    )
 
 from homeassistant.helpers  import (entity_registry as er,
                                     device_registry as dr, )
@@ -257,7 +255,7 @@ def remove_sensor_entities(sensors_to_remove, select_devicename=None):
 
         Sensors_list = [v for k, v in devicename_sensors.items() if k in device_sensors_list]
         for Sensor in Sensors_list:
-            er_util.remove_Sensor_and_clear_dicts(Sensor.entity_name)
+            er_util.remove_Sensor_and_clear_dicts(Sensor.entity_id)
 
         ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 
@@ -275,7 +273,7 @@ def remove_sensor_entities(sensors_to_remove, select_devicename=None):
 
         Sensors_list = [v for k, v in devicename_sensors.items() if k in tfz_sensors_list]
         for Sensor in Sensors_list:
-            er_util.remove_remove_Sensor_and_clear_dicts(Sensor.entity_id)
+            er_util.remove_Sensor_and_clear_dicts(Sensor.entity_id)
 
 #--------------------------------------------------------------------------------
 def build_all_sensors_list():

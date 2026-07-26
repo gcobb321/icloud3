@@ -11,8 +11,8 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, )
 
-from .const_form_lists   import (MENU_KEY_TEXT, ACTION_LIST_ITEMS_KEY_BY_TEXT, MENU_PAGE_TITLE,
-                                ACTION_LIST_ITEM_KEYS, ACTION_LIST_OPTIONS,
+from .const_form_lists   import (MENU_KEY_TEXT_PAGE_0, MENU_KEY_TEXT_PAGE_1,
+                                ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 
 VALID_ERROR_MSG = [ 'conf_updated',
@@ -48,12 +48,23 @@ def menu_text_to_item(self, user_input, selection_list):
         selected_text = user_input[selection_list]
         selected_text_len = 35 if len(selected_text) > 35 else len(selected_text)
 
-        menu_item = [k  for k, v in MENU_KEY_TEXT.items()
+        if selected_text.startswith('EXIT'):
+            user_input['menu_item'] = 'exit'
+            return user_input, 'exit'
+
+        if self.menu_page_no == 0:
+            menu_items = MENU_KEY_TEXT_PAGE_0
+        else:
+            menu_items = MENU_KEY_TEXT_PAGE_1
+
+        menu_item = [k  for k, v in menu_items.items()
                         if v.startswith(selected_text[:selected_text_len])][0]
 
         user_input.pop(selection_list)
     else:
         menu_item = self.menu_item_selected
+
+    user_input['menu_item'] = menu_item
 
     return user_input, menu_item
 

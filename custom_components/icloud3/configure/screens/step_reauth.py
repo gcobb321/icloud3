@@ -303,9 +303,6 @@ class OptionsFlow_Reauth_Steps:
             AppleAcct.was_ha_auth_code_alert_sent = False
             auth_successful = True
             log_info_msg(f"{AppleAcct.username_id} > Send Auth code, {AppleAcct.current_auth_method}")
-            _log(f'{AppleAcct.is_auth_method_PUSH=} {force_PUSH=}')
-            _log(f'{AppleAcct.is_auth_method_TEXT=} ')
-            _log(f'{AppleAcct.is_auth_method_HWKEY=} ')
 
             if AppleAcct.is_auth_method_PUSH or force_PUSH:
                 auth_successful = await Gb.hass.async_add_executor_job(

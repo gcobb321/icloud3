@@ -1641,7 +1641,6 @@ class AppleAcctManager(object):
         # Normalize to the internal {deviceId, phoneNumber} shape used below and
         # persisted to token_pw. Only overwrite the cached list on a real read so
         # an empty/failed fetch does not wipe previously discovered numbers.
-        _log(f'{auth_data=}')
         if auth_data is not None:
             trusted_phone_numbers = (auth_data.get('trustedPhoneNumbers', [])
                                 or  (auth_data.get('phoneNumberVerification', {})
@@ -1654,7 +1653,6 @@ class AppleAcctManager(object):
 
         # Delete and readd 'text_' items in case anything changed
         conf_auth_methods = self.conf_apple_acct[CONF_AUTH_METHODS]
-        _log(f'{self.current_auth_method=} {conf_auth_methods=}')
 
         # If hwkeys are available, change last_method to 'hwkey'
         if (self.is_auth_method_HWKEY is False and conf_auth_methods[HWKEY] != ''):

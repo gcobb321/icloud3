@@ -374,8 +374,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.errors_entered_value           = {}
         self.errors_info_msg                = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
         self.step_id                        = ''     # step_id for the window displayed
-        self.menu_item_selected             = [ MENU_KEY_TEXT_PAGE_0[MENU_PAGE_0_INITIAL_ITEM],
-                                                MENU_KEY_TEXT_PAGE_1[MENU_PAGE_1_INITIAL_ITEM]]
+        self.menu_item_selected             = ['device_list', 'away_time_zone']
         self.menu_page_no                   = 0      # Menu currently displayed
         self.header_msg                     = None   # Message displayed on menu after update
         self.return_to_step_id_1            = ''     # Form/Fct to return to when verifying the icloud auth code
@@ -541,7 +540,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.header_msg = None
         self.config_file_commit_updates = False
         if Gb.AppleAcct_needing_reauth_via_ha:
-            self.menu_item_selected[0] = MENU_KEY_TEXT['auth_code']
+            self.menu_item_selected[0] = 'auth_code'
 
         if self.is_aborting_config_flow:
             return await self.async_step_restart_ha()
@@ -640,33 +639,27 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                                         errors=self.errors,
                                         last_step=False)
 
-        self.menu_item_selected[self.menu_page_no] = user_input['menu_items']
         user_input, menu_item = utils_cf.menu_text_to_item(self, user_input, 'menu_items')
 
-        if menu_item.startswith('exit'):
+        if menu_item == 'menu':
+            if self.menu_page_no == 1:
+                self.menu_page_no = 0
+                self.step_id = 'menu_0'
+
+            elif self.menu_page_no == 1:
+                self.menu_page_no = 1
+                self.step_id = 'menu_1'
+
+        elif menu_item == 'exit':
             await self.exit_configure_tasks()
-
-            # if ('restart' in self.config_parms_update_control
-            #         or self._set_inactive_devices_header_msg() in ['all', 'most']):
-            #     return await self.async_step_restart_icloud3()
-
-            # else:
-            #     Gb.config_parms_update_control   = self.config_parms_update_control.copy()
-            #     self.config_parms_update_control = []
-            #     log_debug_msg(  f"⭐ Exit Configure Settings, UpdateParms-"
-            #                     f"{list_to_str(Gb.config_parms_update_control)}")
 
             data = {'updated': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
             return self.async_create_entry(title=CONFIG_UPDATE_COMPLETE_MSG, data={})
 
-        elif menu_item == 'menu_page_0':
-            self.menu_page_no = 0
-            self.step_id = 'menu_0'
-        elif menu_item == 'menu_page_1':
-            self.menu_page_no = 1
-            self.step_id = 'menu_1'
+        else:
+            self.menu_item_selected[self.menu_page_no] = menu_item
 
-        elif 'menu_item' == '':
+        if menu_item == '':
             pass
         elif menu_item == 'apple_accounts':
             return await self.async_step_apple_accounts()

@@ -919,9 +919,6 @@ def log_request_data(request_response_text, method, url, kwargs, AppleAcct=None,
         if Gb.is_log_level_rawdata or is_log_level_rawdata or Gb.is_icloud3_initial_startup:
             pass
         else:
-            # _log(f'{is_log_level_rawdata=}')
-            # _log(f"{(url.endswith('refreshClient') is False)=}")
-            # _log(f'{Gb.is_log_level_rawdata=}')
             return
 
         try:

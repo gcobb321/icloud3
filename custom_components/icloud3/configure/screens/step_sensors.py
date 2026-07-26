@@ -85,7 +85,7 @@ class OptionsFlow_Sensors_Steps:
                 self.excluded_sensors = user_input[CONF_EXCLUDED_SENSORS]
                 return await self.async_step_exclude_sensors()
 
-            if action_item == 'save_stay':
+            if action_item == 'save':
                 (sensors_to_add, sensors_to_remove,
                 sensors_to_exclude, sensors_to_not_exclude) = \
                             sensors_cf.identify_new_and_removed_sensors(self, user_input)
@@ -97,7 +97,8 @@ class OptionsFlow_Sensors_Steps:
                 sensors_cf.remove_sensors_from_excluded_sensors_list(sensors_to_exclude)
                 self.excluded_sensors = []
 
-                return await self.async_step_sensors()
+                return await self.async_step_menu()
+                # return await self.async_step_sensors()
 
         except Exception as err:
             log_exception(err)

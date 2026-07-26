@@ -380,6 +380,11 @@ def remove_from_active_and_deleted_entity_registry(entity_id):
 
 
 #................................................................................
+def remove_Sensor_and_clear_dicts(entity_id):
+    remove_sensor(entity_id)
+    clear_sensor_gb_dicts(entity_id)
+
+#................................................................................
 def clear_sensor_gb_dicts(entity_id, force_clear=False):
 
     platform, devicename_sensor = entity_id.split('.')

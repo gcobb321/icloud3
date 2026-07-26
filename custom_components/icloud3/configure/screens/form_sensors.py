@@ -79,7 +79,7 @@ def form_sensors(self, user_input=None):
                         mode='list', multiple=True)),
 
         vol.Required('action_items',
-                    default=utils_cf.default_action_text('save_stay')):
+                    default=utils_cf.default_action_text('save')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })

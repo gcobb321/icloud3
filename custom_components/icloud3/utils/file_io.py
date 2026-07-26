@@ -2,7 +2,7 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (CRLF_DOT, NL3, NL4, NL3D, NL3_DATA, NL3UD, )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
-from .messaging             import (log_exception, _evlog, _log, log_debug_msg,
+from .messaging             import (log_exception, _evlog, _log, log_debug_msg, log_warning_msg,
                                     log_data_unfiltered, write_ic3log_recd, )
 
 from collections            import OrderedDict
@@ -147,7 +147,9 @@ def is_valid_json_str(json_str):
     '''
     try:
         json.loads(json_str)
+
     except ValueError as err:
+        log_warning_msg(f"Invalid source data for json string, {err}")
         return False
     except Exception as err:
         log_exception(err)
