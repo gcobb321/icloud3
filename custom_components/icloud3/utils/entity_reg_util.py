@@ -739,6 +739,8 @@ def combine_device_tracker_deleted_device_and_sensor_items():
     ic3_entity_items_dict = Gb.entity_reg_items_by_status
     if 'deleted_devices' not in  ic3_entity_items_dict:
         return
+    if 'deleted_sensors' not in ic3_entity_items_dict:
+        return
 
     for devicename, device_sensors in ic3_entity_items_dict['deleted_sensors'].copy().items():
         if devicename in ic3_entity_items_dict['deleted_devices']:
