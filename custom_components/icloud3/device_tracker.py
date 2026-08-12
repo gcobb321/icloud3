@@ -26,7 +26,7 @@ from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3, ICLOUD3
 
 from .utils.utils       import (instr, is_number, is_statzone, zone_dname, is_empty, list_to_str,
                                 is_running_in_event_loop, )
-from .utils.messaging   import (post_event,
+from .utils.messaging   import (post_event, post_monitor_msg,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 log_exception_HA, log_info_msg_HA, log_stack, log_warning_msg_HA,
                                 _evlog, _log, )
@@ -102,6 +102,7 @@ async def async_create_Device_Tracker_objects():
     try:
         DeviceTrackersToAdd = []
         Gb.device_trackers_cnt = 0
+
         for conf_device in Gb.conf_devices:
             devicename = conf_device[CONF_IC3_DEVICENAME]
             if (devicename == ''
@@ -109,8 +110,10 @@ async def async_create_Device_Tracker_objects():
                 continue
 
             if Gb.DeviceTrackers_by_devicename.get(devicename):
+                post_monitor_msg(f"NOT ADDED DeviceTracker > {devicename}")
                 continue
 
+            post_monitor_msg(f"ADD DeviceTracker > {devicename}")
             DeviceTracker = iCloud3_DeviceTracker(devicename, conf_device)
 
             if DeviceTracker:
@@ -129,6 +132,7 @@ async def async_create_Device_Tracker_objects():
             post_event(f"Device Tracker Entities > Created-{Gb.device_trackers_cnt}")
 
         if DeviceTrackersToAdd != []:
+            post_monitor_msg(f"ADD DeviceTrackers to HA-{len(DeviceTrackersToAdd)}")
             Gb.async_add_entities_device_tracker(DeviceTrackersToAdd, True)
             er_util.update_ha_device_id_by_devicename()
 
@@ -270,8 +274,9 @@ class iCloud3_DeviceTracker(TrackerEntity):
             self.model_display_name = conf_device[CONF_MODEL_DISPLAY_NAME]  # iPhone 14 Pro
 
             try:
-                self.default_value = Gb.restore_state_devices[devicename]['sensors'][ZONE]
-            except:
+                self.default_value = Gb.restore_state_devices[devicename]['sensors']['device_tracker_state']
+            except Exception as err:
+                # log_exception(err)
                 self.default_value = BLANK_SENSOR_FIELD
 
             self.triggers           = None
@@ -351,6 +356,11 @@ class iCloud3_DeviceTracker(TrackerEntity):
         return self.device_fname
 
     @property
+    def has_entity_name(self):
+        return False
+
+
+    @property
     def get_device_id(self):
         return self.device_id
 
@@ -378,9 +388,13 @@ class iCloud3_DeviceTracker(TrackerEntity):
     # definition, based on whether the installed HA supports `in_zones`.
     # ----------------------------------------------------------------------
     def _in_zones_value(self):
-        """Return the list of HA zone entity_ids the device is in (the modern
+        """
+        DEVICE TRACKER STATE VALUE
+        Return the list of HA zone entity_ids the device is in (the modern
         replacement for `location_name`). Return None to let HA derive the
-        state from the reported lat/long (iCloud3 'ha_gps' state source)."""
+        state from the reported lat/long (iCloud3 'ha_gps' state source).
+        """
+
         try:
             # 'ha_gps' mode: let HA compute the zone/state from the GPS coordinates
             if Gb.device_tracker_state_source == 'ha_gps':
@@ -389,7 +403,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
             if self.Device is None:
                 return None
 
-            zone = self.Device.loc_data_zone
+            zone = self.Device.sensors[DEVICE_TRACKER_STATE]
 
             # Away / not_home / not_set -> empty list -> HA state becomes 'not_home'
             if zone in NOT_HOME_ZONES:
@@ -455,8 +469,9 @@ class iCloud3_DeviceTracker(TrackerEntity):
         return DeviceInfo(  identifiers  = {(DOMAIN, self.devicename)},
                             manufacturer = "Apple",
                             model        = self.raw_model,
-                            name         = f"{self.device_fname} ({self.devicename})",
+                            name         = self.device_fname,
                         )
+                            # name         = f"{self.device_fname} ({self.devicename})",
 
 #-------------------------------------------------------------------------------------------
     def _get_extra_attributes(self):
@@ -545,17 +560,19 @@ class iCloud3_DeviceTracker(TrackerEntity):
         try:
             not_set_value = 0 if number else BLANK_SENSOR_FIELD
 
-            if self.Device is None:
+            if self.Device is None or self.Device.sensors[DEVICE_TRACKER_STATE] is None:
                 return self._get_restore_or_default_value(sensor, not_set_value)
 
             sensor_value = self.Device.sensors.get(sensor, None)
-            if self.Device.away_time_zone_offset != 0:
+
+            if instr(sensor_value, ':') and self.Device.away_time_zone_offset != 0:
                 sensor_value = adjust_time_hour_values(sensor_value, self.Device.away_time_zone_offset)
 
-            if instr(sensor, DEVICE_TRACKER_STATE):
+            if (instr(sensor, DEVICE_TRACKER_STATE)
+                    or number is False):
                 return sensor_value
 
-            if number and instr(sensor_value, ' '):
+            if instr(sensor_value, ' '):
                 sensor_value = float(sensor_value.split(' ')[0])
 
             number = is_number(sensor_value)
@@ -662,7 +679,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
     """
 
         kwargs = {}
-        kwargs['name']         = f"{self.device_fname} ({self.devicename})"
+        kwargs['name']         = self.device_fname
+        # kwargs['name']         = f"{self.device_fname} ({self.devicename})"
         kwargs['name_by_user'] = ""
         # kwargs['area_id']      = self.ha_area_id
 

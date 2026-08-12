@@ -8,7 +8,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (HIGH_INTEGER, NOT_SET, RARROW,
+from ..const            import (HIGH_INTEGER, NOT_SET, RARROW, HHMMSS_ZERO,
                                 ZONE, LATITUDE, LONGITUDE, GPS, RADIUS,
                                 STATZONE_RADIUS_1M,
                                 ENTER_ZONE, EXIT_ZONE, NEXT_UPDATE, INTERVAL, )
@@ -17,7 +17,7 @@ from ..utils.utils      import (is_between, is_statzone, format_gps, zone_dname,
                                 is_empty, isnot_empty, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_debug_msg, log_exception, log_data, _evlog, _log, )
-from ..utils.time_util  import (time_now_secs, datetime_now, )
+from ..utils.time_util  import (time_now_secs, time_now, datetime_now, )
 from ..utils.dist_util  import (format_dist_m, gps_distance_km, )
 
 from ..mobile_app       import mobapp_interface
@@ -118,6 +118,13 @@ def move_device_into_statzone(Device):
     Device.zone_datetime      = datetime_now()
     Device.selected_zone_results = []
 
+    Device.zone_enter_name    = StatZone.zone
+    Device.zone_enter_secs    = time_now_secs()
+    Device.zone_enter_time    = time_now()
+    Device.zone_exit_name     = ''
+    Device.zone_exit_secs     = 0
+    Device.zone_exit_time     = HHMMSS_ZERO
+
     mobapp_interface.request_location(Device)
 
     # Move monitored devices into the new StatZone if they should be in it
@@ -182,6 +189,14 @@ def exit_statzone(Device):
 
     StatZone = Device.StatZone
     Device.StatZone = None
+
+    if is_statzone(Device.zone_enter_name):
+        Device.zone_exit_name     = Device.zone_enter_name
+        Device.zone_exit_secs     = time_now_secs()
+        Device.zone_exit_time     = time_now()
+        Device.zone_enter_name    = ''
+        Device.zone_enter_secs    = 0
+        Device.zone_enter_time    = HHMMSS_ZERO
 
     # If only  monitored devices left in the StatZone, take them out of the StatZone
     # so the zone will be removed

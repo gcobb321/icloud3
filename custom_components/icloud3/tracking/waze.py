@@ -158,12 +158,12 @@ class Waze(object):
                 route_dist_km     = 0
                 dist_moved_km     = 0
                 wazehist_save_msg = ''
-                waze_source_msg   = ""
+                results_msg       = ""
                 location_id       = 0
 
                 if self.is_historydb_USED:
                     waze_status, route_time, route_dist_km, dist_moved_km, \
-                            location_id, waze_source_msg = \
+                            location_id, results_msg = \
                             self.get_history_time_distance(Device, FromZone, check_hist_db=True)
 
                 # Get data from Waze if not in history and not being reused or if history is not used
@@ -201,7 +201,7 @@ class Waze(object):
                                                         Device.loc_data_longitude,
                                                         route_time,
                                                         route_dist_km)
-                            wazehist_save_msg =f" (Saved)"
+                            wazehist_save_msg = f"Saved"
                     except:
                         pass
 
@@ -239,15 +239,14 @@ class Waze(object):
                 route_dist_km = 0
                 dist_moved_km     = 0
                 route_time        = 0
-                waze_source_msg   = 'Error'
+                results_msg   = 'Error'
 
-            event_msg =(f"Waze Route Info > {waze_source_msg}")
-            if waze_source_msg == "":
-                event_msg += (  f"TravTime-{format_timer(route_time * 60)}, "
-                                f"Dist-{km_to_um(route_dist_km)}, "
-                                f"Moved-{km_to_um(dist_moved_km)}"
-                                f"{wazehist_save_msg}")
-            post_event(Device, event_msg)
+            # event_msg =(f"Waze Info > {FromZone.from_zone_dname}, {results_msg}")
+            # if results_msg == "":
+            #     event_msg += (  f"TravTime-{format_timer(route_time * 60)}, "
+            #                     f"Dist-{km_to_um(route_dist_km)}"
+            #                     f"{wazehist_save_msg}")
+            # post_event(Device, event_msg)
 
             FromZone.waze_results = (WAZE_USED, route_time, route_dist_km, dist_moved_km)
 
@@ -271,7 +270,7 @@ class Waze(object):
         route_time      = 0
         route_dist_km   = 0
         dist_moved_km   = 0
-        waze_source_msg = ''
+        results_msg     = ''
 
         if (Device.is_location_gps_good
                 and Device.loc_data_dist_moved_km <= .020        # 20m
@@ -283,9 +282,7 @@ class Waze(object):
                             FromZone.waze_results
 
             location_id = -2
-            #waze_source_msg = "Using Previous Waze Location Info "
-            waze_source_msg = ( f"Moved-{km_to_um(Device.loc_data_dist_moved_km)}, "
-                                f"Using previous results")
+            results_msg = "Previous"
 
         elif check_hist_db is False or self.is_historydb_USED is False:
             location_id = 0
@@ -303,13 +300,13 @@ class Waze(object):
                     and route_time > 0
                     and route_dist_km > 0):
                 Gb.WazeHist.update_usage_cnt(location_id)
-                waze_source_msg = f"Using Route History Database (#{location_id})"
+                results_msg = f"#{location_id}"
 
             else:
                 # Zone's location changed in WazeHist or invalid data. Get from Waze later
                 location_id = 0
 
-        return waze_status, route_time, route_dist_km, dist_moved_km, location_id, waze_source_msg
+        return waze_status, route_time, route_dist_km, dist_moved_km, location_id, results_msg
 
 #--------------------------------------------------------------------
     def get_waze_distance(self, Device, FromZone, from_lat, from_long,

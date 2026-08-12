@@ -59,7 +59,7 @@ ACTION_LIST_OPTIONS = {
         'select_form':              'SELECT > Select the parameter update form',
 
         'update_apple_acct':        'SELECT APPLE ACCOUNT > Update the Username/Password of the selected Apple Account, Add a new Apple Account, Remove the Apple Account',
-        'save_log_into_apple_acct': 'SAVE & LOG INTO APPLE ACCT > Save any configuration changes, Log into the Apple Account',
+        'save_log_into_apple_acct': 'SAVE, LOG IN & IMPORT APPLE DEVICES > Save any configuration changes, Log into the Apple Account, Import Apple devices',
         'log_into_apple_acct':      'LOG INTO APPLE ACCT > Log into the Apple Account, Save any configuration changes',
         'stop_using_apple_acct':    'STOP USING AN APPLE ACCOUNT > Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it',
         'auth_code':                'AUTHENTICATE APPLE ACCT SIGN-IN > Send/Request the 6-digit Authentication Code',

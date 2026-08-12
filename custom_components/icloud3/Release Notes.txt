@@ -7,12 +7,32 @@
 *Thanks to all of you who clicked the coffee cup icon on the Event Log and bought me a coffee.*
 Gary
 
+v3.7.2 lines of code = 46,514, 49,028 including comments
 
 📢🚩🐛✨💥🚀🎁
 
 
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
+
+
+🍎 iCloud3 v3.7.2 (7/26/2026)
+### 🐞 Bug Fixes
+1. Fixed a problem displaying the Configure Parameters menu
+2. Fixed a problem on the _Tools > Cleanup Registry Errors_ screen dealing with deleted devices & sensors (@FlyRenxing).
+3. Changed the way the sensor.friendly_name attribute was being set to conform to HA methods. For example, the value ended up being _Gary (gary_iphone) Gary HomeDistance_ when it should be just _Gary HomeDistance_.
+4. If you are within 1km of a tracked zone (Home), the next update interval is 15-secs and the Waze Route Service is not used. If Apple sent back your previous location instead of your new location, the distance moved would be 0km and the last Waze travel time and distance was being used when it should not have been.
+5. Fixed an error restoring the device_tracker and sensors state values when HA and iCloud3 are restarted.
+
+
+### 📢 Other Updates
+1. Tweaked the Tracking Results Status header line (Blue header on the Event Log) to provide more information.
+2. Reformatted some of the _Event Log_ items for clarity, to provide more information and to remove duplication.
+3. Changed the way the _Arrival_ sensor keeps track of when the device entered a zone so it survives HA and iCloud3 restarts. Also, the number of days ago that the zone was entered is now displayed (@2:25-2d = 2:25, 2 days ago, -3w4d = 3 weeks, 4 days ago).
+2. The devices sensor.info was providing miscellenous status information that was developed before the _Event Log_ a number of years ago. It now displays the last tracking result (blue bar item on the Event Log) and can be added to screens to show the devices status when the _Event Log_ is not displayed.
+3. When exporting the Event Log for a device, only the selected device is now exported instead of all devices. Also, the first 3-letters of the device's name was to the file name.
+
+
 
 
 🍎 iCloud3 v3.7.1 (7/26/2026)
@@ -22,6 +42,8 @@ Gary
 
 ### 📢 Other Updates
 1. Changed the iCloud3 Theme item text description color from orange to blue.
+
+
 
 
 

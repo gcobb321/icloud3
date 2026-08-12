@@ -133,8 +133,8 @@ async def async_start_icloud3(dummy_parameter):
 
     if Gb.was_icloud3_reloaded:
         starting_msg = 'Reloading'
-        log_info_msg(f"{'🔶'*5} ICLOUD3 IS RELOADING {'🔶'*5}")
-        log_info_msg("")
+        log_info_msg(f"{'<'*30}{'>'*30}")
+        log_info_msg(f"\n\n{'🔶'*5} ICLOUD3 IS RELOADING {'🔶'*5}\n\n")
         log_info_msg(f"{'<'*30}{'>'*30}")
 
         await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
@@ -191,6 +191,8 @@ async def start_icloud3_on_init_load_only():
         Gb.EvLog.display_user_message("Registering Services")
         Gb.EvLog.post_event('Seting up iCloud3 Actions/Services')
         Gb.hass.async_add_executor_job(register_icloud3_services)
+
+        # config_file.count_lines_of_code('custom_components/icloud3')
 
     except Exception as err:
         log_exception(err)

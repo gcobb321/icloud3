@@ -420,7 +420,6 @@ def request_location(Device, is_alive_check=False, force_request=False):
             Device.mobapp_request_loc_last_secs = Gb.this_update_secs
             Device.mobapp_request_loc_sent_secs = Gb.this_update_secs
             Device.write_ha_sensor_state(NEXT_UPDATE, 'LOC RQSTD')
-            Device.display_info_msg(event_msg)
         else:
             Device.mobapp_request_loc_last_secs = 0
             Device.mobapp_request_loc_sent_secs = 0

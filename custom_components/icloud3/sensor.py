@@ -696,6 +696,7 @@ class DeviceSensor_Base():
             self.sensor_fname    = (f"{conf_device[FNAME]} "
                                     f"{self._get_sensor_definition(sensor_base, SENSOR_FNAME)}"
                                     f"{self.from_zone_fname}")
+
             self._attr_native_unit_of_measurement = None
 
             self._state = self._get_restore_or_default_value(sensor_base)
@@ -729,7 +730,12 @@ class DeviceSensor_Base():
     @property
     def fname_entity_name(self):
         '''Sensor friendly name (devicename) '''
-        return f"{self.sensor_fname} ({self.entity_name})"
+        return f"{self.sensor_fname}"
+        # return f"{self.sensor_fname} ({self.entity_name})"
+
+    @property
+    def has_entity_name(self):
+        return False
 
     @property
     def icon(self):
@@ -744,8 +750,9 @@ class DeviceSensor_Base():
         return DeviceInfo(  identifiers  = {(DOMAIN, self.devicename)},
                             manufacturer = "Apple",
                             model        = self.conf_device[CONF_RAW_MODEL],
-                            name         = f"{self.conf_device[CONF_FNAME]} ({self.devicename})",
+                            name         = f"{self.conf_device[CONF_FNAME]}",
                         )
+                            # name         = f"{self.conf_device[CONF_FNAME]} ({self.devicename})",
 
 #-------------------------------------------------------------------------------------------
     @property

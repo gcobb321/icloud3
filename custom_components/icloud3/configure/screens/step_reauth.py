@@ -37,8 +37,7 @@ class OptionsFlow_Reauth_Steps:
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #            REAUTH
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth(self, user_input=None, errors=None,
-                                return_to_step_id=None, reauth_username=None,):
+    async def async_step_reauth(self, user_input=None, errors=None, reauth_username=None,):
 
 
         try:
@@ -60,17 +59,19 @@ class OptionsFlow_Reauth_Steps:
                             f"UserInput-{user_input}, Errors-{errors}")
 
             # Set up the reauthentication process based on the entry point - iCloud3_ConfigFlow
-            # from the HA notifications or iCloud3_OptionsFlow from the iCloud3 Menu. 'self.return_to_step_id_1'
-            # is set if this has already been done
-            if self.return_to_step_id_1 != '':
-                pass
-            elif self.is_config_flow_handler:
-                # Initialize using the config_flow info
-                await self._initialize_config_flow_reauth()
-                user_input = None
-            else:
-                # Initialize using the options_flow info
-                user_input = await self._initialize_options_flow_reauth(user_input, return_to_step_id)
+            # from the HA notifications or iCloud3_OptionsFlow from the iCloud3 Menu or the
+            # Apple Account screen.
+            #   ConfigFlow  - Initialize on the first pass ('is_reauth_initialized' is False).
+            #                 The ConfigFlow is exited (_reauth_goto_previous) when reauth is done.
+            #   OptionsFlow - The calling step added it's step_id to the 'return_to_step_id' list
+            #                 before branching here. It is removed and redisplayed when reauth is done.
+            if self.is_config_flow_handler:
+                if self.is_reauth_initialized is False:
+                    await self._initialize_config_flow_reauth()
+                    user_input = None
+
+            elif user_input is None:
+                await self.async_write_icloud3_configuration_file()
 
             if Gb.internet_error:
                 self.errors['base'] = 'internet_error_no_change'
@@ -97,7 +98,7 @@ class OptionsFlow_Reauth_Steps:
             self.errors[CONF_AUTH_CODE] = ''
 
             log_debug_msg(  f"⭐ REAUTH HANDLER ({action_item}) > "
-                            f"From-{return_to_step_id}, UserInput-{user_input}, Errors-{errors}")
+                            f"UserInput-{user_input}, Errors-{errors}")
 
             if self.AppleAcct is None:
                 self.errors['account_selected'] = 'reauth_apple_acct_unknown'
@@ -201,7 +202,7 @@ class OptionsFlow_Reauth_Steps:
                     else:
                         self._clear_ha_reauth_banner()
 
-            log_debug_msg(  f"⭐ REAUTH (From={return_to_step_id}, {action_item}) > "
+            log_debug_msg(  f"⭐ REAUTH ({action_item}) > "
                             f"UserInput-{user_input}, Errors-{errors}")
 
             if user_input and 'account_selected' in user_input:
@@ -410,27 +411,10 @@ class OptionsFlow_Reauth_Steps:
         return display_msg, evlog_msg
 
 #------------------------------------------------------------------------------
-    async def _initialize_options_flow_reauth(self, user_input, return_to_step_id):
-        '''
-        Sets self.return_to_step_id_1 and performs any per-class initialisation.
-        This runs the first tune the reauth is entered
-        '''
-        self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
-        await self.async_write_icloud3_configuration_file()
-        return user_input
-
-#------------------------------------------------------------------------------
     def _reauth_goto_previous(self):
         '''Flow result returned when the user navigates back from reauth.'''
-        log_debug_msg(  f"⭐ REAUTH EXIT {self.step_id.upper()} ({self.return_to_step_id_1}) > "
-                            f"Errors-{self.errors}")
-
-        return_to_step_id = f'{self.return_to_step_id_1}'
-        self.return_to_step_id_1 = ''
-
-        return self.async_show_form(step_id=return_to_step_id,
-                                    data_schema=self.return_to_step_id_form(return_to_step_id),
-                                    errors=self.errors)
+        return_to_step_id = self.get_return_to_step_id()
+        return self.show_return_to_form(return_to_step_id)
 
 #--------------------------------------------------------------------
     def get_username_needing_reauth(self, reauth_username=None):

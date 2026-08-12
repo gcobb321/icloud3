@@ -413,7 +413,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.device_tracker_state_source  = Gb.conf_general[CONF_DEVICE_TRACKER_STATE_SOURCE]
         Gb.display_zone_format          = Gb.conf_general[CONF_DISPLAY_ZONE_FORMAT]
         Gb.is_gps_lat_long_displayed    = Gb.conf_general[CONF_DISPLAY_GPS_LAT_LONG]
-        Gb.is_loc_centered_in_zone          = Gb.conf_general[CONF_CENTER_IN_ZONE]
+        Gb.is_loc_centered_in_zone      = Gb.conf_general[CONF_CENTER_IN_ZONE]
         Gb.max_interval_secs            = Gb.conf_general[CONF_MAX_INTERVAL] * 60
         Gb.exit_zone_interval_secs      = Gb.conf_general[CONF_EXIT_ZONE_INTERVAL] * 60
         Gb.offline_interval_secs        = Gb.conf_general[CONF_OFFLINE_INTERVAL] * 60
@@ -450,7 +450,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.log_level_devices              = Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
 
         # update the interval time for each of the interval types (i.e., ipad: 2 hrs, no_mobapp: 15 min)
-        inzone_intervals = Gb.conf_general[CONF_INZONE_INTERVALS]
+        inzone_intervals                    = Gb.conf_general[CONF_INZONE_INTERVALS]
         Gb.inzone_interval_secs = {}
         Gb.inzone_interval_secs[IPHONE]     = inzone_intervals[IPHONE] * 60
         Gb.inzone_interval_secs[IPAD]       = inzone_intervals[IPAD] * 60
@@ -1198,6 +1198,7 @@ def create_Devices_object():
                     update_alert_sensor(device_fname, error_msg)
 
                 else:
+                    # Open Apple Acct, Create Apple Acct Objects and login
                     password = conf_apple_acct[CONF_PASSWORD]
                     valid_upw = Gb.ValidateAppleAcctUPW.validate_username_password(username, password)
 
@@ -1230,14 +1231,13 @@ def create_Devices_object():
 
             # Reinitialize or add device, preserve the Sensor object if reinitializing
             if devicename in old_Devices_by_devicename:
+                post_monitor_msg(f"INITIALIZE Device > {devicename}")
                 Device = old_Devices_by_devicename[devicename]
                 Device.__init__(devicename, conf_device)
-                post_monitor_msg(f"INITIALIZED Device > {Device.fname_devicename}")
 
             else:
+                post_monitor_msg(f"ADD Device > {devicename}")
                 Device = iCloud3_Device(devicename, conf_device)
-
-                post_monitor_msg(f"ADDED Device > {Device.fname_devicename}")
 
             Gb.Devices.append(Device)
             Gb.conf_devicenames.append(devicename)
@@ -1449,6 +1449,7 @@ def log_into_apple_accounts():
         return False
 
     if (aa_login_error
+            or AppleAcct is None
             or is_empty(AppleAcct.AADevData_by_device_id)):
         pass
 
@@ -2715,7 +2716,6 @@ def display_all_devices_config_info(selected_devicenames=None):
             else:
                 Device.evlog_fname_alert_char = YELLOW_ALERT
 
-        Device.display_info_msg(f"Set Trackable Devices > {devicename}")
         if Device.was_verified:
             tracking_mode = ''
         else:
@@ -2926,9 +2926,6 @@ def display_platform_operating_mode_msg():
 
 #------------------------------------------------------------------------------
 def post_restart_icloud3_complete_msg():
-    for devicename, Device in Gb.Devices_by_devicename.items():   #
-        Device.display_info_msg("Setup Complete, Locating Device")
-
     post_event(f"{EVLOG_ATTENTION}Initializing {ICLOUD3_VERSION_MSG} > Complete")
 
     Gb.EvLog.update_event_log_display("")

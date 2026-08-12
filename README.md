@@ -1,6 +1,6 @@
 # iCloud3 - Development/Prerelease
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.7-orange.svg)](https://github.com/gcobb321/icloud3)   [![Released](https://img.shields.io/badge/Released-July,_2026-orange.svg)](https://github.com/gcobb321/icloud3) [![HACS](https://img.shields.io/badge/HACS-Standard_Installation-darkorange.svg)](https://github.com/gcobb321/icloud3)
+[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.7.2-orange.svg)](https://github.com/gcobb321/icloud3)   [![Released](https://img.shields.io/badge/Released-August,_2026-orange.svg)](https://github.com/gcobb321/icloud3) [![HACS](https://img.shields.io/badge/HACS-Standard_Installation-darkorange.svg)](https://github.com/gcobb321/icloud3)
 
  [![Type](https://img.shields.io/badge/Type-Custom_Component-forestgreen.svg)](https://github.com/gcobb321/icloud3)   [![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3) 
 
@@ -41,6 +41,13 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 - **Restore state values on restart** - The current device_tracker and sensor entity states are restored on a restart. The attributes are not restored but are reset on the first tracking Event. 
 - **Device_tracker and sensor entities** - iCloud3 devices and sensors are Home Assistant entities that are added, deleted and changed on the  *Update iCloud3 Devices* and *Sensors* configuration screens.
 - **Dashboard Builder** - iCloud3 Dashboards in various formats are added to Home Assistant when the iCloud3 Integration is first installed.
+- **Easy Setup**:
+  - Install iCloud3 (*HA Devices & services > +Add Integration*)
+  - Configure iCloud3 (*HA Devices & settings > iCloud3 > Configure*)
+  - Select the *Add Apple Accounts* screen - Add your Apple account
+  - *Authenticate Apple Account Sign-in* screen - Enter the authentication code
+  - *Import Apple Devices* screen - create your iCloud3 devices
+  - Exit and Done. The *iCloud3 Dashboards* screen is then selected from the HA Sidebar
 
 #### Device Tracking
 

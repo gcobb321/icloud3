@@ -94,6 +94,8 @@ def load_icloud3_configuration_file():
     Gb.www_evlog_js_directory = Gb.conf_profile[CONF_EVLOG_CARD_DIRECTORY]
     Gb.www_evlog_js_filename  = f"{Gb.www_evlog_js_directory}/{Gb.conf_profile[CONF_EVLOG_CARD_PROGRAM]}"
 
+    # count_lines_of_code('custom_components/icloud3')
+
     return
 
 #-------------------------------------------------------------------------------------------

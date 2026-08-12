@@ -172,6 +172,48 @@ def refresh_AppleAcct_AADdevices_data(AppleAcct):
     setup_status_msg(AppleAcct, "1, Refresh iCloud Devices")
 
 #....................................................................
+def create_AppleAcct_validate_upw(username, password):
+    '''
+    Create a lightweight, validate-only AppleAcctManager used solely to check
+    that a username/password is valid via a SRP signin/init+signin/complete
+    exchange (AppleAcct.validate_upw_via_srp).
+
+    The session is set up but the full login, data refresh and global AppleAcct
+    registration are skipped (srp_validate_only=True), so this does NOT replace
+    any real AppleAcct in Gb.AppleAcct_by_username.
+
+    Return:
+        - AppleAcctManager object (session ready for the SRP validation)
+        - None if an internet error occurred or the object could not be created
+    '''
+    AppleAcct = None
+    try:
+        AppleAcct = AppleAcctManager(
+                            username,
+                            password,
+                            apple_server_location='usa',
+                            locate_all_devices=False,
+                            cookie_directory=Gb.icloud_cookies_directory,
+                            session_directory=Gb.icloud_session_directory,
+                            srp_validate_only=True)
+
+    except Exception as err:
+        log_exception(err)
+
+    if Gb.internet_error:
+        post_alert( f"INTERNET CONNECTION ERROR > "
+                    f"Apple Acct unavailable:"
+                    f"{CRLF_DOT}{username_id(username)}")
+        return None
+
+    if AppleAcct is None:
+        post_alert( f"Apple Acct > Apple Acct unavailable"
+                    f"{CRLF_DOT}{username_id(username)}")
+        return None
+
+    return AppleAcct
+
+#....................................................................
 def create_AppleAcct(username, password, apple_server_location, locate_all_devices):
     try:
         AppleAcct = Gb.AppleAcct_by_username.get(username)

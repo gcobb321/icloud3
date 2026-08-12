@@ -12,7 +12,7 @@
 
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW,
+from ..const            import (HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, HHMMSS_ZERO,
                                 GPS, HOME_DISTANCE, ENTER_ZONE, EXIT_ZONE, ZONE, LATITUDE,
                                 EVLOG_ALERT, )
 
@@ -22,7 +22,7 @@ from ..utils.utils      import (instr, is_zone, is_statzone, isnot_statzone, isn
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_info_msg, log_exception,
                                 _evlog, _log, )
-from ..utils.time_util import (time_now_secs, secs_to_time,  secs_to, secs_since, mins_since, time_now,
+from ..utils.time_util import (time_now_secs, secs_to_hhmm, secs_to, secs_since, mins_since, time_now,
                                 datetime_now, secs_to_datetime, )
 from ..utils.dist_util  import (gps_distance_km, format_dist_km, format_dist_m,
                                 km_to_um, m_to_um, )
@@ -119,16 +119,20 @@ def update_current_zone(Device, display_zone_msg=True):
         # The zone changed, update the enter/exit zone times if the
         # Device does not use the Mobile App
         if zone_selected == NOT_HOME:
-            if (Device.is_mobapp_monitored is False
-                    or Device.mobapp_zone_exit_secs == 0):
-                Device.mobapp_zone_exit_secs = time_now_secs()
-                Device.mobapp_zone_exit_time = time_now()
+            if Device.zone_exit_secs == 0:
+                Device.zone_exit_secs = time_now_secs()
+                Device.zone_exit_time = time_now()
+            if Device.zone_enter_secs > 0:
+                Device.zone_enter_secs = 0
+                Device.zone_enter_time = HHMMSS_ZERO
 
         else:
-            if (Device.is_mobapp_monitored is False
-                    or Device.mobapp_zone_enter_secs == 0):
-                Device.mobapp_zone_enter_secs = time_now_secs()
-                Device.mobapp_zone_enter_time = time_now()
+            if Device.zone_enter_secs == 0:
+                Device.zone_enter_secs = time_now_secs()
+                Device.zone_enter_time = time_now()
+            if Device.zone_exit_secs > 0:
+                Device.zone_exit_secs = 0
+                Device.zone_exit_time = HHMMSS_ZERO
 
     if display_zone_msg:
         post_zone_selected_msg(Device, ZoneSelected, zone_selected,
@@ -197,11 +201,11 @@ def select_zone(Device, latitude=None, longitude=None):
         Device.StatZone = Gb.StatZones_by_zone[zone_selected]
 
     # In a zone and the mobapp enter zone info was not set, set it now
-    if (zone_selected != Device.mobapp_zone_enter_zone
-            and is_zone(zone_selected) and isnot_zone(Device.mobapp_zone_enter_zone)):
-        Device.mobapp_zone_enter_secs = Gb.this_update_secs
-        Device.mobapp_zone_enter_time = Gb.this_update_time
-        Device.mobapp_zone_enter_zone = zone_selected
+    if (zone_selected != Device.zone_enter_name
+            and is_zone(zone_selected) and isnot_zone(Device.zone_enter_name)):
+        Device.zone_enter_secs = Gb.this_update_secs
+        Device.zone_enter_time = Gb.this_update_time
+        Device.zone_enter_name = zone_selected
 
     # Build an item for each zone (dist-from-zone|zone_name|display_name-##km)
     zones_distance_list = \
@@ -393,8 +397,8 @@ def log_zone_enter_exit_activity(Device):
     # Start - Uncomment the following for testing
     # Also Uncomment icloud3_main UPDATE TRACKED DEVICES routine ~line 280 to run this
     # if Gb.this_update_time.endswith('0:00') or Gb.this_update_time.endswith('5:00'):
-    #     Device.mobapp_zone_exit_secs = time_now_secs()
-    #     Device.mobapp_zone_exit_time = time_now()
+    #     Device.zone_exit_secs = time_now_secs()
+    #     Device.zone_exit_time = time_now()
     #     Device.last_zone = HOME
     #     pass
     # elif 'none' in Device.log_zones:

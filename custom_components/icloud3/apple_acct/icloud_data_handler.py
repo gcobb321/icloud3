@@ -143,8 +143,6 @@ def request_icloud_data_update(Device):
 
     try:
         if Device.icloud_update_reason or Device.is_force_icloud_update:
-            Device.display_info_msg("Requesting iCloud Location Update")
-
             Device.is_icloud_devdata_useable = update_AADevData_data(Device)
 
             if Gb.internet_error:
@@ -158,7 +156,6 @@ def request_icloud_data_update(Device):
                 Device.is_icloud_devdata_useable = update_AADevData_data(Device)
 
             if Device.is_icloud_devdata_useable is False:
-                Device.display_info_msg("iCloud Location Not Available")
                 if Gb.icloud_acct_error_cnt > 5:
                     error_msg = (f"iCloud3 Error > No Location Returned for {devicename}. "
                                     "iCloud may be down or there is an Authentication issue. ")

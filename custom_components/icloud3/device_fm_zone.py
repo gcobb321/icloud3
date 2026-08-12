@@ -58,6 +58,10 @@ class iCloud3_DeviceFmZone():
         except Exception as err:
             log_exception(err)
 
+#....................................................................
+    def __repr__(self):
+        return self.devicename_zone
+
 #--------------------------------------------------------------------
     def initialize(self):
         try:
@@ -99,6 +103,11 @@ class iCloud3_DeviceFmZone():
         self.sensors_um = {}
         self.sensors    = {}
 
+        # Restore the sensors from restore file
+        if self.from_zone in Gb.restore_state_devices[self.devicename]['from_zone']:
+            self.sensors = Gb.restore_state_devices[self.devicename]['from_zone'][self.from_zone].copy()
+            return
+
         self.sensors[FROM_ZONE]            = self.from_zone
         self.sensors[INTERVAL]             = 0
         self.sensors[LAST_LOCATED_DATETIME] = DATETIME_ZERO
@@ -110,10 +119,10 @@ class iCloud3_DeviceFmZone():
         self.sensors[LAST_UPDATE_DATETIME] = DATETIME_ZERO
         self.sensors[LAST_UPDATE_TIME]     = HHMMSS_ZERO
         self.sensors[LAST_UPDATE]          = HHMMSS_ZERO
-        self.sensors[TRAVEL_TIME]          = 0
-        self.sensors[TRAVEL_TIME_MIN]      = 0
+        self.sensors[TRAVEL_TIME]          = '0 secs'
+        self.sensors[TRAVEL_TIME_MIN]      = '0 min'
         self.sensors[TRAVEL_TIME_HHMM]     = HHMM_ZERO
-        self.sensors[ARRIVAL_TIME]         = HHMMSS_ZERO
+        self.sensors[ARRIVAL_TIME]         = ''
         self.sensors[DISTANCE]             = 0
         self.sensors[MAX_DISTANCE]         = 0
         self.sensors[ZONE_DISTANCE]        = 0
@@ -132,10 +141,6 @@ class iCloud3_DeviceFmZone():
                                         if v.from_zone == self.from_zone}
         for sensor, Sensor in from_this_zone_sensors.items():
             Sensor.FromZone = self
-
-#--------------------------------------------------------------------
-    def __repr__(self):
-        return (f"<DeviceFmZone: {self.devicename_zone}>")
 
 #--------------------------------------------------------------------
     @property

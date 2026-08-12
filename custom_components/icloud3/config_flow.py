@@ -2,7 +2,7 @@
 
 from .global_variables      import GlobalVariables as Gb
 from .const                 import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DIR,
-                                    ICLOUD, MOBAPP, NO_MOBAPP,
+                                    ICLOUD, MOBAPP, NO_MOBAPP, RARROW,
                                     TRACK, MONITOR, INACTIVE,
                                     CONF_VERSION,
                                     CONF_EVLOG_BTNCONFIG_URL,
@@ -49,9 +49,10 @@ from .startup               import config_file
 from .support               import service_handler
 from .utils                 import file_io
 
-from .configure.screens     import form_config_flow as forms
-from .configure.screens     import form_apple_acct  as forms_aa
+from .configure.screens     import form_config_flow     as forms
+from .configure.screens     import form_apple_acct      as forms_aa
 from .configure.screens     import form_icloud3_device  as forms_ic3_dev
+from .configure.screens     import form_reauth          as forms_reauth
 from .configure             import utils_cf
 from .configure             import dashboard_builder as dbb
 
@@ -99,7 +100,8 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         self.data_source                    = ICLOUD
 
         # Items used in the REAUTH handler
-        self.return_to_step_id_1            = ''
+        self.is_reauth_initialized          = False  # The reauth step has been initialized by _initialize_config_flow_reauth
+
         self.ha_initial_setup               = True
         self.username                       = ''
         self.AppleAcct                      = None
@@ -228,7 +230,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         '''
 
         try:
-            self.return_to_step_id_1 = 'reauth'
+            self.is_reauth_initialized = True
             self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, ICLOUD)
             AppleAcct, reauth_username = self.get_username_needing_reauth()
             self.apple_acct_reauth_username = self.username = reauth_username
@@ -244,8 +246,8 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
     #.........................................................................................
     def _reauth_goto_previous(self, exit_by_x_click=False):
-        self.return_to_step_id_1 = ''
-        log_debug_msg(  f"⭐ CF REAUTH EXIT {self.step_id.upper()} ({self.return_to_step_id_1}) > "
+        self.is_reauth_initialized = False
+        log_debug_msg(  f"⭐ CF REAUTH EXIT {self.step_id.upper()} > "
                             f"XClick-{exit_by_x_click}, Errors-{self.errors}")
 
         if Gb.AppleAcct_needing_reauth_via_ha is None:
@@ -305,6 +307,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                                     OptionsFlow_iCloud3Device_Steps, OptionsFlow_Sensors_Steps,
                                     OptionsFlow_Tools_Steps, OptionsFlow_DashboardBuilder_Steps,
                                     OptionsFlow_Parameters_Steps):
+
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -367,29 +371,38 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         Gb.trace_prefix                     = 'CONFIG'
         self.is_initialize_options_required = False
 
-        self.errors                         = {}     # Errors en.json error key
-        self.multi_form_hdr                 = ''     # multi-form - text string displayed on the called form
-        self.multi_form_user_input          = {}     # multi-form - user_input to be restored when returning to calling form
-        self.errors_user_input              = {}     # user_input text for a value with an error
+        self.errors                         = {}    # Errors en.json error key
+        self.multi_form_hdr                 = ''    # multi-form - text string displayed on the called form
+        self.multi_form_user_input          = {}    # multi-form - user_input to be restored when returning to calling form
+        self.errors_user_input              = {}    # user_input text for a value with an error
         self.errors_entered_value           = {}
-        self.errors_info_msg                = None   # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
-        self.step_id                        = ''     # step_id for the window displayed
+        self.errors_info_msg                = None  # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
+        self.step_id                        = ''    # step_id for the window displayed
         self.menu_item_selected             = ['device_list', 'away_time_zone']
-        self.menu_page_no                   = 0      # Menu currently displayed
-        self.header_msg                     = None   # Message displayed on menu after update
-        self.return_to_step_id_1            = ''     # Form/Fct to return to when verifying the icloud auth code
-        self.return_to_step_id_2            = ''     # Form/Fct to return to when verifying the icloud auth code
+        self.menu_page_no                   = 0     # Menu currently displayed
+        self.header_msg                     = None  # Message displayed on menu after update
+        self.return_to_step_id              = []    # Stack of the step_ids to return to when a step is finished
+        self.return_to_step_id_forms        = {     # sets the forms object for return_to_step items
+            'menu':                 forms.form_menu,
+            'menu_0':               forms.form_menu,
+            'menu_1':               forms.form_menu,
+            'apple_accounts':       forms_aa.form_apple_accounts,
+            'update_apple_acct':    forms_aa.form_update_apple_acct,
+            'import_apple_devices': forms_aa.form_import_apple_devices,
+            'reauth':               forms_reauth.form_reauth,
+            'device_list':          forms_ic3_dev.form_device_list,
+        }
 
-        self.actions_list                   = []     # Actions list at the bottom of the screen
-        self.actions_list_default           = ''     # Default action_items to reassign on screen redisplay
-        self.config_parms_update_control    = []   # Stores the type of parameters that were updated, used to reinitialize parms
+        self.actions_list                   = []    # Actions list at the bottom of the screen
+        self.actions_list_default           = ''    # Default action_items to reassign on screen redisplay
+        self.config_parms_update_control    = []    # Stores the type of parameters that were updated, used to reinitialize parms
         self.code_to_schema_pass_value      = None
         self.confirm_action                 = {
-                'action_desc': 'Confirm Action',
-                'yes_func': None,
-                'yes_func_async': None,
-                'return_to_func_async': self.async_step_tools,
-                'return_to_next_yes_func_async': None}
+            'action_desc':          'Confirm Action',
+            'yes_func':             None,
+            'yes_func_async':       None,
+            'return_to_func_async': self.async_step_tools,
+            'return_to_next_yes_func_async': None}
 
         # Variables used for icloud_account update forms
         self.logging_into_icloud_flag      = False
@@ -529,6 +542,37 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         if isnot_empty(self.config_parms_update_control):
             Gb.hass.async_create_task(self.exit_configure_tasks(exit_by_x_click=True))
 
+#----------------------------------------------------------------------
+    def set_return_to_step_id(self, step_id=None):
+        '''
+        A step adds it's own step_id to the return_to_step_id list before branching to
+        another step. The other step removes the last one added (get_return_to_step_id)
+        when it is finished and redisplays it.
+        '''
+        if step_id is None: step_id = self.step_id
+        self.return_to_step_id.append(step_id)
+
+    #.....................................................
+    def get_return_to_step_id(self):
+        '''
+        Remove and return the last step_id added to the return_to_step_id list.
+        Return 'menu' if nothing was added.
+        '''
+        if is_empty(self.return_to_step_id):
+            return 'menu'
+
+        return  self.return_to_step_id.pop()
+
+    #.....................................................
+    def show_return_to_form(self, return_to_step_id):
+        log_debug_msg(  f"⭐ RETURNING > {self.step_id.upper()}{RARROW}{return_to_step_id.upper()}, "
+                        f"Errors-{self.errors}")
+
+        return self.async_show_form(step_id=return_to_step_id,
+                            data_schema=self.return_to_step_id_forms[return_to_step_id](self),
+                            errors=self.errors)
+
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            INIT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -600,15 +644,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.menu_page_no = 1
         self.step_id='menu'
         return await self.async_step_menu(user_input, errors)
-        # return await self.async_show_form(step_id='menu',
-        #                     data_schema=forms.form_menu(self),
-        #                     errors=self.errors,
-        #                     last_step=False)
 
 #...............................................................................
     async def async_step_menu(self, user_input=None, errors=None):
         self.step_id = f"menu_{self.menu_page_no}"
-        self.return_to_step_id_1 = self.return_to_step_id_2 = ''
+        self.return_to_step_id = []     # Discard any return_to steps left over from an 'X' close
         self.errors = errors or {}
         await self.async_write_icloud3_configuration_file()
 
@@ -642,13 +682,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         user_input, menu_item = utils_cf.menu_text_to_item(self, user_input, 'menu_items')
 
         if menu_item == 'menu':
-            if self.menu_page_no == 1:
-                self.menu_page_no = 0
-                self.step_id = 'menu_0'
+            if self.menu_page_no == 0:
+                return await self.async_step_menu_1()
 
             elif self.menu_page_no == 1:
-                self.menu_page_no = 1
-                self.step_id = 'menu_1'
+                return await self.async_step_menu_0()
 
         elif menu_item == 'exit':
             await self.exit_configure_tasks()
@@ -664,6 +702,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         elif menu_item == 'apple_accounts':
             return await self.async_step_apple_accounts()
         elif menu_item == 'auth_code':
+            self.set_return_to_step_id()
             return await self.async_step_reauth()
         elif menu_item == 'device_list':
             return await self.async_step_device_list()
@@ -780,7 +819,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                 return self.async_abort(reason="ha_restarting")
 
             elif action_item == 'review_inactive_devices':
-                self.return_to_step_id_1 = 'restart_icloud3'
+                self.set_return_to_step_id()
                 return await self.async_step_review_inactive_devices()
 
             if action_item == 'restart_ic3_now':
@@ -1122,23 +1161,23 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#                        FORM SCHEMA DEFINITIONS
+#                        RETURN_TO_STEP FORM SCHEMA DEFINITIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    def return_to_step_id_form(self, step_id):
-        '''
-        This is a general 'return to handler' other steps can call when returning to
-        another screen. This returns the form for the 'return_to' screen
-        '''
-        log_debug_msg(f"⭐ SHOW RETURN-TO FORM-{step_id}, Errors-{self.errors}")
+    # def return_to_step_id_form(self, step_id):
+    #     '''
+    #     This is a general 'return to handler' other steps can call when returning to
+    #     another screen. This returns the form for the 'return_to' screen
+    #     '''
+    #     log_debug_msg(f"⭐ SHOW RETURN-TO FORM-{step_id}, Errors-{self.errors}")
 
-        if step_id in ['menu', 'menu_0', 'menu_1']:
-            return forms.form_menu(self)
-        elif step_id == 'apple_accounts':
-            return forms_aa.form_apple_accounts(self)
-        elif step_id == 'update_apple_acct':
-            return forms_aa.form_update_apple_acct(self)
-        elif step_id == 'device_list':
-            return forms_ic3_dev.form_device_list(self)
-        else:
-            return forms.form_menu(self)
+    #     if step_id in ['menu', 'menu_0', 'menu_1']:
+    #         return forms.form_menu(self)
+    #     elif step_id == 'apple_accounts':
+    #         return forms_aa.form_apple_accounts(self)
+    #     elif step_id == 'update_apple_acct':
+    #         return forms_aa.form_update_apple_acct(self)
+    #     elif step_id == 'device_list':
+    #         return forms_ic3_dev.form_device_list(self)
+    #     else:
+    #         return forms.form_menu(self)

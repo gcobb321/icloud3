@@ -200,6 +200,7 @@ class AppleAcctManager(object):
                     cookie_directory=None,
                     session_directory=None,
                     validate_aa_upw=False,
+                    srp_validate_only=False,
                     config_flow_login=False):
 
         try:
@@ -302,6 +303,14 @@ class AppleAcctManager(object):
 
             self._setup_iCloudSession()
             self._initialize_variables()
+
+            # Lightweight Username/Password validation only. The session has been
+            # set up so a SRP signin/init+signin/complete can be sent to verify
+            # the credentials (see validate_upw_via_srp), but the full login,
+            # data refresh and global AppleAcct registration are skipped.
+            if srp_validate_only:
+                return
+
             self.authenticate_and_refresh_data()
 
             Gb.AppleAcctLoggingInto = self    # Identifies a partial login that might have failed
@@ -950,6 +959,74 @@ class AppleAcctManager(object):
             pass
         except Exception as err:
             log_exception(err)
+
+#............................................................................
+    def validate_upw_via_srp(self, username=None, password=None):
+        '''
+        Lightweight Username/Password validation using the SRP signin/init and
+        signin/complete exchange. This verifies the credentials with the Apple
+        server without completing a full login (no trust-token auth and no
+        device data refresh).
+
+        Apple deprecated the old Basic-auth 'setup/authenticate/{username}' url
+        (it now always returns 401 regardless of the credentials), so SRP is the
+        supported way to check that a username/password is valid.
+
+        Return:
+            True  - Response 200 (signed in) or 409 (valid, 2FA/HSA2 required)
+            False - Invalid Username/Password or other error
+        '''
+        username = username if username is not None else self.username
+        password = password if password is not None else self.password
+
+        log_info_msg(f"{self.username_base}, Validate Username/Password via SRP")
+
+        # Step 1: client generates private key a and public key A, sends A to
+        # the server via signin/init.
+        srp.rfc5054_enable()
+        srp.no_username_in_x()
+
+        try:
+            SrpPW   = SrpPassword(password)
+            SrpUser = srp.User(username, SrpPW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
+            _, A    = SrpUser.start_authentication()
+
+            data = self._srp_icloud_io_signin_init(username, {'a': base64.b64encode(A).decode()})
+
+        except Exception as err:
+            log_exception(err)
+            return False
+
+        if (self.response_code == 401
+                or Gb.internet_error
+                or is_empty(data)
+                or 'salt' not in data):
+            return False
+
+        # Step 2/3: server returns salt/b/c; client computes the M1/M2 proof and
+        # sends it via signin/complete. The server validates the proof - the
+        # password itself is never transmitted.
+        try:
+            salt = base64.b64decode(data['salt'])
+            b    = base64.b64decode(data['b'])
+            SrpPW.set_encrypt_info(salt, data['iteration'], 32, data['protocol'])
+
+            if (SrpPW.salt is None
+                    or SrpPW.error_reason is not None):
+                return False
+
+            m1 = base64.b64encode(SrpUser.process_challenge(salt, b)).decode()
+            m2 = base64.b64encode(SrpUser.H_AMK).decode()
+
+            self._srp_icloud_io_signin_complete(username, {"c": data['c'], "m1": m1, "m2": m2})
+
+        except Exception as err:
+            log_exception(err)
+            return False
+
+        # 200 = valid & signed in, 409 = valid but 2FA/HSA2 verification required
+        self.response_code_pw = self.response_code
+        return self.response_code in [200, 409]
 
 #----------------------------------------------------------------------------
     @property

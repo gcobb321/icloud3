@@ -77,9 +77,9 @@ class iCloud3_Zone(object):
             Gb.HomeZone = self
 
     def __repr__(self):
-        return (f"<Zone: {self.zone}>")
+        return self.zone
 
-    #---------------------------------------------------------------------
+#---------------------------------------------------------------------
     def update_zone_config(self, force_update=False):
         '''
         Check to see if the zone configuration was changed on the Settings >
@@ -306,6 +306,10 @@ class iCloud3_StationaryZone(iCloud3_Zone):
         self.write_ha_zone_state(self.passive_attrs)
 
         self.name = self.title = self.dname
+
+#....................................................................
+    def __repr__(self):
+        return self.zone
 
 #--------------------------------------------------------------------
     def initialize_statzone_name(self):

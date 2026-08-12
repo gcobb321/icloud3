@@ -163,32 +163,15 @@ def secs_to_hhmm(secs_utc):
             return time_local(secs_utc+30)[:-3]
 
         hhmmss = time_to_12hrtime(time_local(secs_utc+30))
-        hhmm   = hhmmss[:-4] + hhmmss[-1:]
-        hhmm  += secs_to_days(secs_utc, '-d')
+        days, days_str = secs_to_days(secs_utc)
 
-        return hhmm
+        if days < -3:
+            return days_str
 
-    except:
-        return '00:00'
+        return f"{hhmmss[:-4]}{hhmmss[-1:]}{days_str}"
 
-#--------------------------------------------------------------------
-# This is not used anywhere
-def secs_to_ddmm_hhmm(secs_utc):
-    ''' secs --> dd/mm hh:mm or dd/mm hh:mma or hh:mmp '''
-
-    try:
-        if isnot_valid(secs_utc): return '00/00 00:00'
-
-        if Gb.time_format_24_hour:
-            return time_local(secs_utc+30)[:-3]
-
-        hhmmss = time_to_12hrtime(time_local(secs_utc+30))
-        hhmm   = hhmmss[:-4] + hhmmss[-1:]
-        hhmm  += secs_to_days(secs_utc, '-d')
-
-        return hhmm
-
-    except:
+    except Exception as err:
+        log_exception(err)
         return '00:00'
 
 #--------------------------------------------------------------------
@@ -209,19 +192,26 @@ def secs_to(secs):
 def mins_to(secs):
     return round(secs_since(secs)/60)
 
-
 #--------------------------------------------------------------------
-def secs_to_days(secs, days_text):
-    ''' Return the number of days old as a text field '''
+def secs_to_days(secs):
+    """
+    Returns calendar days relative to today:
+    Today = 0, Yesterday = -1, Day before = -2, Tomorrow = 1, etc.
+    """
+    event_date = datetime.fromtimestamp(secs).date()
+    today = datetime.now().date()
+    days = (event_date - today).days
 
-    days = secs_since(secs)/86400
-    if days < 1:
-        return ''
-
-    if days_text.startswith('-'):
-        return f"-{days:.0f}{days_text[1:]}"
+    if days >= 0:
+        days_str = ''
+    elif days < -7:
+        days_str = f"{days/7:.0f}w{(days % 7):.0f}d"
+    elif days < -3:
+        days_str = f"{days} days"
     else:
-        return f"{days:.0f}{days_text}"
+        days_str = f"{days}d"
+
+    return days, days_str
 
 #--------------------------------------------------------------------
 def next_min_mark_secs(mark_mins, plus_mins=0):
@@ -319,12 +309,16 @@ def format_timer(secs):
         if secs < 1:
             return '0 secs'
 
+        secs = int(secs)
+
         if secs >= 86400:
             time_str = f"{secs/86400:.1f} days"
         elif secs < 60:
             time_str = f"{secs:.0f} secs"
+            if time_str == '60 secs': time_str = '1 min'
         elif secs < 3600:
             time_str = f"{secs/60:.0f} mins"
+            if time_str == '60 mins': time_str = '1 hr'
         elif secs == 3600:
             time_str = "1 hr"
         else:
@@ -393,7 +387,7 @@ def format_age_hrs(secs, xago=None):
     return f"{format_timer_hrs(secs_since(secs))}{ago}"
 
 #--------------------------------------------------------------------
-def format_time_age(secs, xago=None):
+def format_time_age(secs, xago=None, hhmm=False):
     ''' secs --> 10:23:45 or h:mm:ssa/p (4.5 sec/mins/hrs ago) '''
 
     if isnot_valid(secs): return 'Unknown'
@@ -406,7 +400,9 @@ def format_time_age(secs, xago=None):
             return f"{age_secs/86400:.1f} days ago"
 
     ago = ' ago' if xago is None else ''
-    return (f"{secs_to_time(secs)} "
+
+    ftime = secs_to_hhmm(secs) if hhmm is True else secs_to_time(secs)
+    return (f"{ftime} "
             f"({format_timer(age_secs)}{ago})")
 
 #--------------------------------------------------------------------
@@ -460,7 +456,8 @@ def format_date(secs, fmt_code=None):
     if fmt_code == 'ddmm': #14Sep
         return datetime.fromtimestamp(secs).strftime('%-d%')
 
-    return f"{date}, {secs_to_hhmm(secs)}"
+    #14Sep2026
+    return datetime.fromtimestamp(secs).strftime('%-d%Y%')
 
 #--------------------------------------------------------------------
 def format_age_hrs(secs, xago=None):

@@ -124,14 +124,12 @@ class ValidateAppleAcctUPW():
 #----------------------------------------------------------------------------
     async def async_validate_username_password(self, username, password):
         '''
-        Verify the username and password are valid using the apple auth-url via an httpx request
-        This is used in config_flow to validate the Username-Password
+        Verify the username and password are valid using a lightweight SRP signin.
+        This is used in config_flow to validate the Username-Password.
+
+        The SRP session I/O uses the blocking `requests` library, so it is run in
+        an executor to keep the event loop free.
         '''
-        valid_upw = await self.async_validate_upw_via_auth_url_httpx(username, password)
-
-        if valid_upw:
-            return valid_upw
-
         valid_upw = await Gb.hass.async_add_executor_job(
                                         self.validate_username_password,
                                         username, password)
@@ -141,35 +139,144 @@ class ValidateAppleAcctUPW():
 #----------------------------------------------------------------------------
     def validate_username_password(self, username, password):
         '''
-        Check if the username and password are still valid. Check using the following methods:
-            - URL (Response-409 is valid, 401- is invalid)
-            - AppleAcct Authenticate
+        Check if the username and password are still valid. Three methods are
+        tried in order, from cheapest to most complete:
+            0. TokenPW  - compare the password to the one saved in the username's
+                          token-pw (.tpw) file by the last successful login. A
+                          match means the credentials were already validated by
+                          Apple, so they are assumed valid with NO request sent.
+            1. AuthSRP  - a lightweight SRP signin (signin/init + signin/complete)
+                          that verifies the credentials without a full login or
+                          data refresh.
+            2. Login    - a complete login & authentication (can succeed via a
+                          saved trust-token, bypassing a throttled SRP signin).
+
+        Note: Apple deprecated the old Basic-auth 'setup/authenticate/{username}'
+        url (it now always returns 401 regardless of the credentials).
+
+        Return:
+            True/False
         '''
         self.username = username
         self.password = password
         self.username_id = self.username_base = username_id(self.username)
 
-        # Validate the Username-Password using the 'auth_url/usernameurl endpoint
-        self.method = 'AuthURL'
-        valid_upw = self.validate_upw_via_auth_url(username, password)
+        # A fully authenticated AppleAcct already exists for this username, so
+        # the credentials are known to be valid - no need to re-validate.
+        AppleAcct = Gb.AppleAcct_by_username.get(username)
+        if AppleAcct and AppleAcct.login_successful:
+            self.AppleAcct = AppleAcct
+            self.method    = 'Login/Authenticate'
+            log_debug_msg(f"{self.username_base}, Method-{self.method}, Results-True")
+            return True
 
-        #TESTCODE
-        # valid_upw = False
+        # Set up a lightweight, validate-only AppleAcct/session. No request is
+        # sent to Apple - it just reads the local cookie/session/token-pw files
+        # (via read_token_pw_file). It is shared by Method-0 and Method-1.
+        self.method = ''
+        try:
+            self.AppleAcct = aas.create_AppleAcct_validate_upw(username, password)
+
+            if self.AppleAcct is None:
+                # create_AppleAcct_validate_upw posts its own alert (internet
+                # error, could not create the AppleAcct object, etc.)
+                self.method = 'Apple Acct Unavailable'
+                return False
+
+            self.iCloudSession = self.AppleAcct.iCloudSession
+
+        except Exception as err:
+            log_exception(err)
+            log_error_msg(f"iCloud3 Error > Error setting up Apple Account I/O handler, "
+                            f"Password could not be validated, Error-{err}")
+            return False
+
+        # Method-0 > TokenPW file password match (NO request sent to Apple)
+        if self._validate_upw_via_tokenpw():
+            return True
+
+        # Method-1 > Lightweight SRP credential validation
+        if self._validate_upw_via_srp():
+            return True
+
+        # Method-2 > Fall back to a complete login & authentication. The SRP
+        # validation can fail for reasons other than an invalid password (most
+        # commonly Apple throttling the signin/init with a 503), and a full
+        # login may still succeed - e.g. via a saved trust-token.
+        return self._validate_upw_via_full_login(username, password)
+
+#............................................................................
+    def _validate_upw_via_tokenpw(self):
+        '''
+        Method-0 > Validate the Username-Password against the password saved in
+        the username's token-pw (.tpw) file. That password was stored by the last
+        successful login and read/decoded into the AppleAcct's token_pw_data when
+        the validate-only session was set up (read_token_pw_file). If the current
+        password matches it, the credentials were already validated by Apple and
+        are assumed valid - no request is sent to Apple.
+
+        Return:
+            True  - current password matches the saved (previously validated) one
+            False - no match, no .tpw file, or the file has no saved password
+        '''
+        self.method = 'TokenFilePW'
+
+        try:
+            # token_pw_data holds the decoded-on-read .tpw contents. The saved
+            # 'password' item is only present when a .tpw file existed for the
+            # username, so its absence means there is nothing to match against.
+            token_pw_data = self.AppleAcct.token_pw_data
+            if is_empty(token_pw_data) or CONF_PASSWORD not in token_pw_data:
+                return False
+
+            saved_password = decode_password(token_pw_data[CONF_PASSWORD])
+            valid_upw = (isnot_empty(saved_password)
+                            and saved_password == self.AppleAcct.password)
+
+        except Exception as err:
+            log_exception(err)
+            return False
 
         log_debug_msg(f"{self.username_base}, Method-{self.method}, Results-{valid_upw}")
-        if valid_upw:
-            return valid_upw
 
-        # Validate the Username-Password by setting up the AppleAcct manager & session
-        # for the Username-Password and doing a full authentication and data refresh
+        return valid_upw
+
+#............................................................................
+    def _validate_upw_via_srp(self):
+        '''
+        Method-1 > Validate the Username-Password using the validate-only
+        AppleAcct/session by running only the SRP signin/init+complete exchange
+        (no full login, no device data refresh).
+        '''
+        self.method = 'AuthSRP'
+
+        # The AppleAcct already holds the decoded password, so no args are passed.
+        valid_upw = self.AppleAcct.validate_upw_via_srp()
+
+        log_debug_msg(  f"{self.username_base}, Method-{self.method}, "
+                        f"Results-{valid_upw} (Response-{self.AppleAcct.response_code})")
+
+        return valid_upw
+
+#............................................................................
+    def _validate_upw_via_full_login(self, username, password):
+        '''
+        Method-2 > Validate the Username-Password by setting up the AppleAcct
+        manager & session and doing a complete login/authentication and data
+        refresh. This can authenticate via a saved trust-token, bypassing the
+        SRP signin endpoint when it is being throttled (503).
+        '''
+        self.method = 'Login/Authenticate'
         try:
             self.AppleAcct = Gb.AppleAcct_by_username.get(username)
             if self.AppleAcct is None:
-
                 self.AppleAcct = aas.create_AppleAcct(  username, password,
                                                         apple_server_location='usa',
                                                         locate_all_devices=True)
-
+                if self.AppleAcct is None:
+                    # create_AppleAcct posts its own alert (internet error, etc.)
+                    self.method = 'Apple Acct Unavailable'
+                    return False
 
                 self.iCloudSession = self.AppleAcct.iCloudSession
 
@@ -182,97 +289,17 @@ class ValidateAppleAcctUPW():
                             f"Password could not be validated, Error-{err}")
             return False
 
-        log_debug_msg(f"{self.username_base}, Validate Username-Password")
-
-        self.method = 'Login/Authenticate'
         log_debug_msg(  f"{self.username_base}, Method-{self.method}, "
                         f"Results-{self.AppleAcct.login_successful}")
+
         if self.AppleAcct.login_successful:
             return True
 
-        # Authentication failed, do some cleanup
+        # Both the SRP check and the full login failed - Username-Password invalid
         self.method = 'Invalid Username-Password'
         self.AppleAcct.setup_error(401)
 
         return False
-
-#............................................................................
-    def _validate_via_authenticate(self, username, password):
-
-        valid_upw = self.AppleAcct.authenticate()
-
-        return valid_upw
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#   VALIDATE Username-Password WITH SINGLE URL CALL
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    def validate_upw_via_auth_url(self, username, password):
-        '''
-        Verify the username and password are valid using the apple auth-url
-
-        Return:
-            True/False
-        '''
-        url, headers = self._validate_upw_setup_url_headers(username, password)
-
-        log_request_data('Request', 'Get', url, headers, username_id(username))
-
-        data = icloud_io.request(url, headers=headers, no_log=True)
-
-        valid_upw = self._validate_upw_check_results(data, username)
-
-        log_request_data('Response', 'Get', url, data, username_id(username))
-
-        return valid_upw
-
-#............................................................................
-    async def async_validate_upw_via_auth_url_httpx(self, username, password):
-        '''
-        Verify the username and password are valid using the apple auth-url via an httpx request
-
-        Return:
-            True/False
-        '''
-        url, headers = self._validate_upw_setup_url_headers(username, password, 'HTTPX')
-
-        log_request_data('Request HTTPX', 'Get', url, headers, username_id(username))
-
-        data = await icloud_io.async_httpx_request(url, headers=headers)
-
-        log_request_data('Response HTTPX', 'Get', url, data, username_id(username))
-
-        valid_upw = self._validate_upw_check_results(data, username, 'HTTPX')
-
-        return valid_upw
-
-#............................................................................
-    def _validate_upw_setup_url_headers(self, username, password, httpx_msg=''):
-        '''
-        Prepare the url and headers for the request_io or https_io call to validate the
-        username and password
-        '''
-        username_password_b64 = self.b64encode_username_passsword(username, password)
-        url     = f"{APPLE_SERVER_ENDPOINT['auth_url']}/{username}"
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Apple-iCloud/9.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/605.1.15 (KHTML, like Gecko)',
-            'Authorization': f"Basic {username_password_b64}"}
-
-        return url, headers
-
-#............................................................................
-    def _validate_upw_check_results(self, data, username, httpx_msg=''):
-        '''
-        Check to see if ups is valid or not vbalid
-        '''
-        Gb.internet_error = data.get('error', '').startswith('InternetError')
-
-        valid_upw = True if data['code'] == 409 else False
-
-        return valid_upw
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -283,15 +310,3 @@ class ValidateAppleAcctUPW():
     @staticmethod
     def _log_pw(password):
         return f"{password[:4]}{DOTS}{password[4:]}"
-
-#............................................................................
-    def b64encode_username_passsword(self, username, password):
-        '''
-        Return the b64 encoded the password used for url password validation
-        '''
-        username_password = f"{username}:{password}"
-        upw = username_password.encode('ascii')
-        username_password_b64 = base64.b64encode(upw)
-        username_password_b64 = username_password_b64.decode('ascii')
-
-        return username_password_b64

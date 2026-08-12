@@ -128,7 +128,8 @@ class OptionsFlow_iCloud3Device_Steps:
 
         if (action_item == 'import_apple_devices'
                 or user_input.get('devices', '').startswith('➤ IMPORT')):
-            return await self.async_step_import_apple_devices(return_to_step_id='device_list')
+            self.set_return_to_step_id()
+            return await self.async_step_import_apple_devices()
 
         if action_item == 'change_device_order':
             self.cdo_devicenames = [self._format_device_text_hdr(conf_device)
@@ -277,105 +278,6 @@ class OptionsFlow_iCloud3Device_Steps:
 
         except Exception as err:
             log_exception(err)
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#             IMPORT APPLE ACCOUNT DEVICES
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_import_apple_devices(self, user_input=None, errors=None,
-                                                    return_to_step_id=None):
-
-        self.step_id = 'import_apple_devices'
-        self.errors = errors or {}
-        self.errors_user_input = {}
-        self.errors_info_msg = None
-        self.return_to_step_id_1 = return_to_step_id or self.return_to_step_id_1 or 'menu_0'
-
-        user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-
-        utils_cf.log_step_info(self, user_input, action_item)
-
-        if Gb.internet_error:
-            self.errors['base'] = 'internet_error_no_change'
-
-        if len(Gb.conf_apple_accounts) == 0:
-            self.header_msg = 'apple_acct_not_set_up'
-
-        if (user_input is None or self.errors):
-            forms_schema = forms.form_import_apple_devices(self)
-            if is_empty(self.imported_aa_ic3_conf_devices):
-                self.errors['action_items'] = 'import_aa_no_devices_avail'
-
-            return self.async_show_form(step_id='import_apple_devices',
-                        data_schema=forms_schema,
-                        errors=self.errors)
-
-        #.......................................................................
-        if action_item == 'add_imported_apple_devices':
-            await self._add_imported_devices(user_input)
-
-            self.errors['base'] = 'conf_updated'
-
-            added_cnt = len(user_input.get('imported_aadevices_track', [])) + \
-                        len(user_input.get('imported_aadevices_monitor', [])) + \
-                        len(user_input.get('imported_aadevices_inactive', []))
-
-            if len(self.imported_aadevices_sel_list) == added_cnt:
-                action_item = 'goto_previous'
-
-        #.......................................................................
-        if action_item == 'goto_previous':
-            return_to_step_id = self.return_to_step_id_1
-            self.return_to_step_id_1 = ''
-            return self.async_show_form(step_id=return_to_step_id,
-                                    data_schema=self.return_to_step_id_form(return_to_step_id),
-                                    errors=self.errors)
-
-        utils_cf.log_step_info(self, user_input, action_item)
-
-        forms_schema = forms.form_import_apple_devices(self)
-        if is_empty(self.imported_aa_ic3_conf_devices):
-                self.errors['action_items'] = 'import_aa_no_devices_avail'
-
-        return self.async_show_form(step_id='import_apple_devices',
-                            data_schema=forms_schema,
-                            errors=self.errors)
-
-#--------------------------------------------------------------------
-    async def _add_imported_devices(self, user_input):
-
-        imported_aadevices_keys =  (
-                            user_input.get('imported_aadevices_track', []) +
-                            user_input.get('imported_aadevices_monitor', []) +
-                            user_input.get('imported_aadevices_inactive', []))
-
-        for imported_aadevices_key in imported_aadevices_keys:
-            self.conf_device = DEFAULT_DEVICE_CONF.copy()
-
-            ic3_conf_device = self.imported_aa_ic3_conf_devices[imported_aadevices_key]
-
-            ic3_devicename  = ic3_conf_device[CONF_IC3_DEVICENAME]
-            self.update_device_ha_sensor_entity['add_device'] = True
-            self.update_device_ha_sensor_entity['new_ic3_devicename'] = ic3_devicename
-
-            self._add_new_device_to_conf_devices(ic3_conf_device)
-            await self._update_gb_dicts_and_config_file(self.conf_device)
-
-            list_add(self.config_parms_update_control, ['devices', ic3_devicename])
-
-            log_debug_msg(f'Add Imported Apple Device-({imported_aadevices_key}), '
-                            f'Device-{ic3_conf_device[CONF_FNAME]=}, '
-                            f'/{ic3_conf_device[CONF_IC3_DEVICENAME]=}')
-
-#--------------------------------------------------------------------
-    def _unpack_ui_import_apple_devices(self, user_input):
-        if user_input is None: return None
-
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                                    'account_selected',
-                                                    self.apple_acct_items_by_username)
-
-        return user_input
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1229,7 +1131,7 @@ class OptionsFlow_iCloud3Device_Steps:
             action_item = 'goto_previous'
 
         if action_item == 'goto_previous':
-            if self.return_to_step_id_1 == 'restart_icloud3':
+            if self.get_return_to_step_id() == 'restart_icloud3':
                 return await self.async_step_restart_icloud3()
 
         return await self.async_step_menu()

@@ -306,6 +306,7 @@ class GlobalVariables(object):
     ic3_timer_events_are_setup      = False     # Indicates the 5-sec polling loop is set up
     is_icloud3_initial_startup      = True
     is_icloud3_startup_inprocess    = True
+    is_initial_locate_complete      = False
     was_icloud3_restart_requested   = False     # iC3 needs to be restarted
     was_icloud3_reloaded            = False     # Set to True in __init__ if reloading iCloud3
     icloud3_reload_requested        = False

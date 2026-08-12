@@ -119,7 +119,7 @@ def process_update_service_request(call):
     if action is None: return
 
     action       = action.lower()
-    action_fname = call.data.get('action_fname')
+    action_fname = call.data.get('action_fname').replace('• ', '')
     devicename   = call.data.get(CONF_DEVICENAME)
 
     action, devicename = resolve_action_devicename_values(action, devicename)
@@ -137,7 +137,7 @@ def process_find_iphone_alert_service_request(call):
     """Call the find_iphone_alert to play a sound on the phone"""
 
     devicename = call.data.get(CONF_DEVICENAME)
-    action, devicename = resolve_action_devicename_values("", devicename)
+    action, devicename = resolve_action_devicename_values("find_iphone_alert", devicename)
 
     find_iphone_alert_service_handler(devicename)
 
@@ -148,7 +148,7 @@ def process_lost_device_alert_service_request(call):
     devicename = call.data.get(CONF_DEVICENAME)
     number     = call.data.get('number')
     message    = call.data.get('message')
-    action, devicename = resolve_action_devicename_values("", devicename)
+    action, devicename = resolve_action_devicename_values("lost_device_alert_service", devicename)
 
     try:
         Device = Gb.Devices_by_devicename.get(devicename)
@@ -190,7 +190,7 @@ def process_display_message_alert_service_request(call):
     devicename = call.data.get(CONF_DEVICENAME)
     message    = call.data.get('message')
     sounds     = call.data.get('sounds')
-    action, devicename = resolve_action_devicename_values("", devicename)
+    action, devicename = resolve_action_devicename_values("display_message_alert", devicename)
 
     display_message_alert_service_handler(devicename, message, sounds)
 
@@ -210,11 +210,16 @@ def resolve_action_devicename_values(action, devicename):
         action = ACTION_FNAME_TO_ACTION[action]
     if devicename == 'startup_log':
         return action, devicename
+    log_info_msg(f"Service Call > Action-{action}, Device-{devicename}")
 
-    if devicename in Gb.Devices_by_ha_device_id:
-        devicename = Gb.Devices_by_ha_device_id[devicename].devicename
-    if devicename not in Gb.Devices_by_devicename:
+    if devicename in Gb.Devices_by_devicename:
+        pass
+    elif devicename in Gb.Devices_by_ha_device_id:
+        devicename = Gb.devicename_by_ha_device_id[devicename]
+    else:
         devicename = None
+
+    log_info_msg(f"Service Call > Action-{action}, Device-{devicename}")
 
     return action, devicename
 
@@ -315,7 +320,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
     devicename_msg = devicename if devicename in Gb.Devices_by_devicename else None
     action_msg     = action_fname if action_fname else f"{action.title()}"
 
-    event_msg = f"Service Action > Action-{action_msg}"
+    event_msg = f"Service Action > {action_msg}"
     if action_option: event_msg += f", Options-{action_option}"
     if devicename:    event_msg += f", Device-{devicename}"
 
@@ -510,8 +515,6 @@ def _handle_action_device_location_mobapp(Device):
     if Device.is_data_source_MOBAPP is False:
         return _handle_action_device_locate(Device, 'mobapp')
 
-    Device.display_info_msg('Updating Location')
-
     if Device.is_mobapp_monitored:
         Device.mobapp_data_change_reason = f"Location Requested@{time_now()}"
         mobapp_interface.request_location(Device, force_request=True)
@@ -584,12 +587,14 @@ def issue_ha_notification():
 #--------------------------------------------------------------------
 def find_iphone_alert_service_handler(devicename):
     """
-    Call the lost iPhone function if using th e iCloud tracking method.
+    Call the lost iPhone function if using the iCloud tracking method.
     Otherwise, send a notification to the Mobile App
     """
+
     Device = Gb.Devices_by_devicename[devicename]
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
+
         if device_id and Device.AppleAcct and Device.AppleAcct.AADevices:
             Device.AppleAcct.AADevices.play_sound(device_id, subject="Find My iPhone Alert")
 

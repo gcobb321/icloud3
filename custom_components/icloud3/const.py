@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.7.1'
+VERSION                         = '3.7.2'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -786,6 +786,8 @@ ZONE_DNAME         = "zone_dname"
 ZONE_FNAME         = "zone_fname"
 ZONE_NAME          = "zone_name"
 ZONE_DATETIME      = "zone_changed"
+ZONE_ENTER_SECS    = "zone_enter_secs"
+ZONE_EXIT_SECS     = "zone_exit_secs"
 LAST_ZONE          = "last_zone"
 LAST_ZONE_DNAME    = "last_zone_dname"
 LAST_ZONE_FNAME    = "last_zone_fname"

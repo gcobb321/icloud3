@@ -42,19 +42,15 @@ from os                 import path
 #          APPLE ACCOUNT ICLOUD SUPPORT ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_log_into_apple_account(self, user_input, return_to_step_id=None):
+async def async_log_into_apple_account(self, user_input):
     '''
     Log into the icloud account and check to see if a Authentication code is needed.
-    If so, show the Authentication form, get the code from the user, verify it and
-    return to the 'return_to_step_id' (icloud_account).
+    If so, the calling step displays the Authentication form and gets the code from the user.
 
     Input:
         user_input  = A dictionary with the username and password, or
                         {username: icloudAccountUsername, password: icloudAccountPassword}
                     = {} to use the username/password in the tracking configuration parameters
-        return_to_step_id
-                    = The step logging into the iCloud account. This step will be returned
-                        to when the login is complete.
 
     Exception:
         The self.AppleAcct.requres_2fa must be checked after a login to see if the account
@@ -70,7 +66,6 @@ async def async_log_into_apple_account(self, user_input, return_to_step_id=None)
     '''
     try:
         self.errors = {}
-        return_to_step_id = return_to_step_id or 'update_apple_acct'
 
         # The username may be changed to assign a new account, if so, log into the new one
         if CONF_USERNAME not in user_input or CONF_PASSWORD not in user_input:
@@ -87,7 +82,7 @@ async def async_log_into_apple_account(self, user_input, return_to_step_id=None)
 
         log_info_msg(   f"Apple Acct > {username}, Logging in, "
                         f"UserInput-{user_input}, Errors-{self.errors}, "
-                        f"Step-{self.step_id}, CalledFrom-{return_to_step_id}")
+                        f"Step-{self.step_id}")
 
         # Already logged in and no changes
         AppleAcct = Gb.AppleAcct_by_username.get(username)
@@ -151,7 +146,7 @@ async def async_log_into_apple_account(self, user_input, return_to_step_id=None)
 
         start_ic3.dump_startup_lists_to_log()
 
-        if AppleAcct.is_auth_code_needed or return_to_step_id is None:
+        if AppleAcct.is_auth_code_needed:
             log_info_msg(f"Apple Acct > {username}, 2fa Authentication Needed, {self.AppleAcct}")
             alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_auth_code_needed_secs)})"
             update_alert_sensor(AppleAcct.username_id, alert_msg)
