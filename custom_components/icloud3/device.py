@@ -131,7 +131,6 @@ class iCloud3_Device(TrackerEntity):
         self.Sensors_from_zone = Gb.Sensors_by_devicename_from_zone[devicename]
 
         self.initialize()
-        self.initialize_on_initial_load()
         self.initialize_sensors()
 
         self.configure_device(conf_device)
@@ -260,6 +259,42 @@ class iCloud3_Device(TrackerEntity):
 
         self.time_waze_calls         = 0.0
 
+    #   # MobApp state variables
+        self.update_mobapp_data_monitor_msg= ''
+        self.mobapp_data_state             = NOT_SET
+        self.mobapp_data_latitude          = 0.0
+        self.mobapp_data_longitude         = 0.0
+        self.mobapp_data_source_type       = ''
+        self.mobapp_data_state_secs        = 0
+        self.mobapp_data_state_time        = HHMMSS_ZERO
+        self.mobapp_data_trigger_secs      = 0
+        self.mobapp_data_trigger_time      = HHMMSS_ZERO
+        self.mobapp_data_secs              = 0
+        self.mobapp_data_time              = HHMMSS_ZERO
+        self.mobapp_data_trigger           = NOT_SET
+
+        self.mobapp_data_battery_level     = 0
+        self.mobapp_data_battery_status    = UNKNOWN
+        self.mobapp_data_battery_update_secs = 0
+
+        self._restore_state_reset_mobapp_items()
+
+        self.zone_change_datetime         = DATETIME_ZERO
+        self.zone_change_secs             = 0
+
+        self.dev_data_battery_source      = ''
+        self.dev_data_battery_level       = 0
+        self.dev_data_battery_status      = UNKNOWN
+        self.dev_data_battery_update_secs = 0
+        self.dev_data_battery_level_last  = 0
+        self.dev_data_battery_status_last = UNKNOWN
+        self.last_battery_msg             = ''
+        self.last_battery_msg_secs        = 0
+
+        self.battery_info                 = {ICLOUD: '', MOBAPP: ''}
+
+        self.initialize_mobapp_device_tracker_entity_name()
+
         # Device MobApp message fields
         self.mobapp_request_loc_first_secs = 0    # Used for checking if alive and user request
         self.mobapp_request_loc_last_secs  = 0    # Used for checking if alive and user request
@@ -346,65 +381,6 @@ class iCloud3_Device(TrackerEntity):
         self.debug_save_dict              = {}
 
 #------------------------------------------------------------------------------
-    def initialize_on_initial_load(self):
-        # Initialize these variables only when starting up
-        # Do not initialize them on a restart
-
-        # If self.sensors exists, this device has been initialized during the initial
-        # load or when iC3 is restarted and it is not a new device.
-        try:
-            see_if_exists = self.sensors[BATTERY]
-            if self.sensors != {}:
-                return
-        except:
-            pass
-
-        self.initialize_mobapp_device_tracker_entity_name()
-
-        # MobApp state variables
-        self.update_mobapp_data_monitor_msg= ''
-        self.mobapp_data_state             = NOT_SET
-        self.mobapp_data_latitude          = 0.0
-        self.mobapp_data_longitude         = 0.0
-        self.mobapp_data_source_type       = ''
-        self.mobapp_data_state_secs        = 0
-        self.mobapp_data_state_time        = HHMMSS_ZERO
-        self.mobapp_data_trigger_secs      = 0
-        self.mobapp_data_trigger_time      = HHMMSS_ZERO
-        self.mobapp_data_secs              = 0
-        self.mobapp_data_time              = HHMMSS_ZERO
-        self.mobapp_data_trigger           = NOT_SET
-
-        self.mobapp_data_battery_level     = 0
-        self.mobapp_data_battery_status    = UNKNOWN
-        self.mobapp_data_battery_update_secs = 0
-
-        self._restore_state_reset_mobapp_items()
-
-        self.zone_change_datetime         = DATETIME_ZERO
-        self.zone_change_secs             = 0
-
-        self.dev_data_battery_source      = ''
-        self.dev_data_battery_level       = 0
-        self.dev_data_battery_status      = UNKNOWN
-        self.dev_data_battery_update_secs = 0
-        self.dev_data_battery_level_last  = 0
-        self.dev_data_battery_status_last = UNKNOWN
-        self.last_battery_msg             = ''
-        self.last_battery_msg_secs        = 0
-
-        # rc9 Added battery_info sensors to display last battery data for icloud
-        # & mobapp sensor.battery attributes
-        self.battery_info                 = {ICLOUD: '', MOBAPP: ''}
-
-    def initialize_mobapp_device_tracker_entity_name(self):
-        self.mobapp = { DEVICE_TRACKER: '',
-                        TRIGGER: '',
-                        BATTERY_LEVEL: '',
-                        BATTERY_STATUS: '',
-                        NOTIFY: ''}
-
-#------------------------------------------------------------------------------
     def initialize_sensors(self):
         # device_tracker.[devicename] attributes for the Device
 
@@ -413,20 +389,6 @@ class iCloud3_Device(TrackerEntity):
         self.sensors            = {}
         self.sensors_icon       = {}
         self.sensor_badge_attrs = {}
-
-        # Restore the sensors from restore file
-        if self.devicename in Gb.restore_state_devices:
-            self.sensors = Gb.restore_state_devices[self.devicename]['sensors'].copy()
-            self.restore_state_reset_other_items()
-
-            self.zone_enter_secs = self.sensors[ZONE_ENTER_SECS]
-            self.zone_exit_secs  = self.sensors[ZONE_EXIT_SECS]
-            self.last_zone       = self.sensors[LAST_ZONE_NAME]
-
-            self.sensors[DISTANCE_TO_OTHER_DEVICES] = {}
-            self.sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
-            self.sensors[ALERT] = ''
-            return
 
         # Device related sensors
         self.sensors[DEVICE_TRACKER_STATE] = None
@@ -526,6 +488,27 @@ class iCloud3_Device(TrackerEntity):
         self.sensors[DISTANCE_TO_OTHER_DEVICES] = {}
         self.sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
         self.sensors[ALERT] = ''
+
+        # Restore the sensors from restore file
+        if self.devicename in Gb.restore_state_devices:
+            self.sensors.update(Gb.restore_state_devices[self.devicename]['sensors'])
+            self.restore_state_reset_other_items()
+
+            self.zone_enter_secs = self.sensors[ZONE_ENTER_SECS]
+            self.zone_exit_secs  = self.sensors[ZONE_EXIT_SECS]
+            self.last_zone       = self.sensors[LAST_ZONE_NAME]
+
+            self.sensors[DISTANCE_TO_OTHER_DEVICES] = {}
+            self.sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
+            self.sensors[ALERT] = ''
+
+#------------------------------------------------------------------------------
+    def initialize_mobapp_device_tracker_entity_name(self):
+        self.mobapp = { DEVICE_TRACKER: '',
+                        TRIGGER: '',
+                        BATTERY_LEVEL: '',
+                        BATTERY_STATUS: '',
+                        NOTIFY: ''}
 
 #------------------------------------------------------------------------------
     def _link_device_entities_sensor_device_tracker(self):
