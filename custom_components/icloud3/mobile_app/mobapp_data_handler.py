@@ -455,7 +455,7 @@ def check_if_mobapp_is_alive(Device):
                 and secs_since(Device.mobapp_data_secs) > 21600):
             event_msg =(f"Last Mobile App update from {Device.mobapp_device_trkr_entity_id_fname}"
                         f"—{format_time_age(Device.mobapp_data_secs)}")
-            posst_event(Device, event_msg)
+            post_event(Device, event_msg)
 
     except Exception as err:
         log_exception(err)
