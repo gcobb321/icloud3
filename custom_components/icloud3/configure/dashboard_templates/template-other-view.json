@@ -1,0 +1,66 @@
+[
+  {
+    "type": "vertical-stack",
+    "cards": [
+      {
+        "type": "glance",
+        "entities": [
+          {
+            "entity": "device_tracker.^devicename",
+            "name": "^fname"
+          },
+          {
+            "entity": "sensor.^devicename_arrival_time",
+            "name": "Arrive"
+          },
+          {
+            "entity": "sensor.^devicename_home_distance",
+            "name": "Distance"
+          },
+          {
+            "entity": "sensor.^devicename_travel_time",
+            "name": "TravTime"
+          },
+          {
+            "entity": "sensor.^devicename_next_update",
+            "name": "NextUpdt"
+          }
+        ],
+        "state_color": false
+      },
+      {
+        "type": "glance",
+        "entities": [
+          {
+            "entity": "sensor.^devicename_battery",
+            "name": "Battery"
+          },
+          {
+            "entity": "sensor.^devicename_interval",
+            "name": "Interval"
+          },
+          {
+            "entity": "sensor.^devicename_moved_distance",
+            "name": "Moved"
+          },
+          {
+            "entity": "sensor.^devicename_last_located",
+            "name": "Located"
+          },
+          {
+            "entity": "sensor.^devicename_last_update",
+            "name": "LastUpdt"
+          }
+        ]
+      },
+      {
+        "type": "entities",
+        "entities": [
+          {
+            "entity": "sensor.^devicename_info"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,106 @@
+# yamllint disable rule:document-start
+# yamllint disable rule:line-length
+
+action:
+  name: "Action"
+  description: "This service will send operational commands to iCloud3"
+  fields:
+    command:
+      name: "Command"
+      description: "(Required) The action to be performed"
+      required: true
+      example: "pause"
+      selector:
+        select:
+          options:
+            - "Restart iCloud3"
+            - "Pause Tracking"
+            - "Resume Tracking"
+            - "Locate Device(s) using iCloud"
+            - "Send Locate Request to Mobile App"
+    device_name:
+      name: "Device Name"
+      description: "(Optional) Apply all devices or only apply to the selected device"
+      example: "Gary (gary_iphone)"
+      selector:
+        device:
+          filter:
+            integration: icloud3
+
+update:
+  name: "Update"
+  description: "The Update service has been replaced by the Action service"
+
+restart:
+  name: "Restart"
+  description: "This service will restart iCloud3"
+
+lost_device_alert:
+  name: "Send Lost Device Message"
+  description: "This service will send a Message and Phone number to the lost iPhone"
+  fields:
+    device_name:
+      name: "Device Name"
+      description: "Device the Find iPhone Alert and Message should be sent to"
+      required: true
+      example: "Gary (gary_iphone)"
+      selector:
+        device:
+          filter:
+            integration: icloud3
+    number:
+      name: "Phone Number"
+      description: "The phone number to send the message to"
+      example: "123-456-7890"
+      required: true
+      selector:
+        text:
+    message:
+      name: "Message"
+      description: "The message to be sent"
+      example: "This Phone has been lost. Please call this number to report it found."
+      required: true
+      selector:
+        text:
+
+find_iphone_alert:
+  name: "Find iPhone Alert Tone"
+  description: "This service will send an alert tone to the device that you want to find"
+  fields:
+    device_name:
+      name: "Device Name"
+      description: "Device the alert should be sent to"
+      required: true
+      example: "Gary (gary_iphone)"
+      selector:
+        device:
+          filter:
+            integration: icloud3
+
+display_message_alert:
+  name: "Display Message Alert"
+  description: "This service will display a message on the device and can also play an alert tone"
+  fields:
+    device_name:
+      name: "Device Name"
+      description: "Device the message should be displayed on"
+      required: true
+      example: "Duncan (duncan_iphone)"
+      selector:
+        device:
+          filter:
+            integration: icloud3
+    message:
+      name: "Message"
+      description: "The message to be sent"
+      example: "Back door is unlocked"
+      required: true
+      selector:
+        text:
+    sounds:
+      name: "Sounds"
+      description: "If a sound is to be played along with message"
+      example: "True"
+      required: true
+      selector:
+        text:

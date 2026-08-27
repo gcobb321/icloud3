@@ -1,0 +1,6 @@
+{
+    "device-group-content":  "<h3>Device Information (Tracking Results & Status, Device Info Msg)</h3>This screen shows Device Information sensors that can be copied and pasted to other dashboards as a combined group or as group sections.",
+    "summary-content": "<h3>Device Information - Tracking Results</h3>This screen shows the Tracking Results group for all devices.",
+    "badge-battery-content": "<h3>Device Badge and Battery Sensors</h3>This screen shows t,he Device’s Badge and Battery sensors in several formats that can be copied and pasted to other dashboards",
+    "battery-content": "<h3>Device Battery Sensors</h3>This screen shows the Device’s Battery sensors in several formats that can be copied and pasted to other dashboards"
+}

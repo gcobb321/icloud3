@@ -1,0 +1,48 @@
+[
+  {
+    "type": "horizontal-stack",
+    "cards": [
+      {
+        "type": "glance",
+        "entities": [
+          {
+            "entity": "sensor.^devicename_badge",
+            "name": "^fname"
+          },
+          {
+            "entity": "sensor.^devicename_battery",
+            "name": "^fname"
+          }
+        ]
+      }
+    ],
+    "grid_options": {
+      "columns": 6,
+      "rows": "auto"
+    }
+  },
+  {
+    "type": "vertical-stack",
+    "cards": [
+      {
+        "type": "tile",
+        "entity": "sensor.^devicename_badge",
+        "name": "^fname",
+        "features_position": "bottom",
+        "vertical": false,
+        "show_entity_picture": true
+      },
+      {
+        "type": "tile",
+        "entity": "sensor.^devicename_battery",
+        "name": "^fname",
+        "features_position": "bottom",
+        "vertical": false
+      }
+    ],
+    "grid_options": {
+      "columns": 6,
+      "rows": "auto"
+    }
+  }
+]
