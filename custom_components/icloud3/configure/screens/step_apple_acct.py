@@ -64,13 +64,13 @@ class OptionsFlow_AppleAccount_Steps:
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 
+        # No Apple Accts, default to Add, this will transfer to update_apple-acct below
         if self._is_apple_acct_setup() is False:
-            self.errors['apple_accts'] = 'apple_acct_not_set_up'
-
+            # self.errors['apple_accts'] = 'apple_acct_not_set_up'
             user_input = {'apple_accts': '➤ ADD'}
 
         elif isnot_empty(Gb.conf_apple_accounts):
-            self._verify_data_source_ICLOUD()
+            self._enable_data_source_ICLOUD()
 
         if user_input is None:
             self.actions_list_default = 'update_apple_acct'
@@ -78,7 +78,7 @@ class OptionsFlow_AppleAccount_Steps:
                                         data_schema=forms.form_apple_accounts(self),
                                         errors=self.errors)
 
-        self._verify_data_source_ICLOUD()
+        self._enable_data_source_ICLOUD()
         utils_cf.log_step_info(self, user_input, action_item)
 
         #.......................................................................
@@ -88,11 +88,6 @@ class OptionsFlow_AppleAccount_Steps:
                 return await self.async_step_menu()
 
             case 'authenticate_apple_acct':
-                # if self.AppleAcct.is_reauth_needed:
-                # self.aa_reauth_username = self.username
-                # else:
-                #     self.aa_reauth_username = ''
-
                 return await self.async_step_reauth(reauth_username=self.username)
 
             case 'import_apple_devices':
@@ -157,9 +152,6 @@ class OptionsFlow_AppleAccount_Steps:
             self.aa_page_item[self.aa_page_no] = self.conf_apple_acct[CONF_USERNAME]
             return await self.async_step_update_apple_acct()
 
-        # if user_input[CONF_DATA_SOURCE] == '':
-        #     self.errors['base'] = 'apple_acct_no_data_source'
-
         if self.errors == {}:
             if action_item == 'add_change_apple_acct':
                 return await self.async_step_menu()
@@ -170,12 +162,24 @@ class OptionsFlow_AppleAccount_Steps:
                             errors=self.errors)
 
 #...........................................................
-    def _verify_data_source_ICLOUD(self):
+    def _enable_data_source_ICLOUD(self, disable=False):
 
-        if instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD):
+        enable = not disable
+
+        if enable and instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD):
             return
 
-        Gb.conf_tracking[CONF_DATA_SOURCE] = f"{ICLOUD},{Gb.conf_tracking[CONF_DATA_SOURCE]}"
+        if enable:
+            Gb.primary_data_source = ICLOUD
+            Gb.conf_tracking[CONF_DATA_SOURCE] = f"{ICLOUD},{Gb.conf_tracking[CONF_DATA_SOURCE]}"
+        else:
+            Gb.primary_data_source = MOBAPP
+            Gb.conf_tracking[CONF_DATA_SOURCE] = MOBAPP
+
+        Gb.conf_data_source_ICLOUD = enable
+        Gb.used_data_source_ICLOUD = enable
+        Gb.use_data_source_ICLOUD  = enable
+        self.data_source = Gb.conf_tracking[CONF_DATA_SOURCE]
 
         return
 
@@ -206,8 +210,15 @@ class OptionsFlow_AppleAccount_Steps:
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 
+        utils_cf.log_step_info(self, user_input, action_item)
+
         #.......................................................................
         match action_item:
+            case 'menu':
+                self._enable_data_source_ICLOUD(disable=True)
+                await self.async_write_icloud3_configuration_file(force_write=True)
+                return await self.async_step_menu()
+
             case 'cancel_goto_previous' | 'rtn_apple_accounts':
                 self.username = self.conf_apple_acct[CONF_USERNAME]
                 self.password = decode_password(self.conf_apple_acct[CONF_PASSWORD])
@@ -495,7 +506,7 @@ class OptionsFlow_AppleAccount_Steps:
         is deleted if it is not the primary account (1st entry).
 
         '''
-        self._verify_data_source_ICLOUD()
+        self._enable_data_source_ICLOUD()
 
         # Updating the account
         if remove_acct_flag is False:
@@ -711,8 +722,8 @@ class OptionsFlow_AppleAccount_Steps:
         if Gb.internet_error:
             self.errors['base'] = 'internet_error_no_change'
 
-        if len(Gb.conf_apple_accounts) == 0:
-            self.header_msg = 'apple_acct_not_set_up'
+        # if is_empty(Gb.conf_apple_accounts):
+        #     self.header_msg = 'apple_acct_not_set_up'
 
         if (user_input is None or self.errors):
             forms_schema = forms.form_import_apple_devices(self)
@@ -772,7 +783,7 @@ class OptionsFlow_AppleAccount_Steps:
             self.update_config_file_tracking(force_config_update=True)
             self.create_device_tracker_sensor_enities_on_exit = True
             self.rebuild_ic3db_dashboards = True
-            log_debug_msg(f'Add Imported Apple Device-({imported_aadevices_key}), '
+            log_info_msg(f'Add Imported Apple Device-({imported_aadevices_key}), '
                             f'Device-{conf_device[CONF_FNAME]=}, '
                             f'/{conf_device[CONF_IC3_DEVICENAME]=}')
 

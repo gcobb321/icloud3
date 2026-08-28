@@ -17,7 +17,7 @@ v3.7.2 lines of code = 46,514, 49,028 including comments
 
 
 -----
-## 🍎 iCloud3 v3.7.3 (8/12/26/2026)
+## 🍎 iCloud3 v3.7.3 (8/28/2026)
 ### 🐞 Bug Fixes
 1. Fixed a problem logging into an existing iCloud Apple Account with the wrong password.
 2. Fixed a spelling error when posting a Mobile App status message.
@@ -27,8 +27,8 @@ v3.7.2 lines of code = 46,514, 49,028 including comments
 
 ### 📢 Other Updates
 1. Discarding duplicate MobApp 'signaled' and 'periodic' triggers when the Device is in a zone.
-2. Visal changes to the Configure menus and screens for clarity and improved navigation.
-3. The Arrival sensor now shows the time-daysago (@4:34-1d, 2w4d) and retains the value across restarts.
+2. Visual changes to the Configure menus and screens for clarity and improved navigation.
+3. The Arrival sensor now shows the time-days ago (@4:34-1d, 2w4d) and retains the value across restarts.
 4. The distance sensors now show the actual value when in a zone (0.001 mi/0.002 km) instead of (0 mi/0 km).
 5. The Dashboard Builder screen now shows the HA Sidebar icon assigned to each iCloud3 dashboard.
 6. Updated the Configure Settings Exit process display page.
@@ -37,8 +37,8 @@ v3.7.2 lines of code = 46,514, 49,028 including comments
 
 ### 📢 Major Improvements
 1. Update Apple Account, Authenticate Apple Account & Import Apple Devices - The general process of adding an Apple Account, Authenticating the account and adding the devices to iCloud3 has been pretty much automated.
-- You add the Apple Account - The account is verified and you are loggid into it.
-- The Authenticate Apple Account Signin screen is displayed - The authentication code is automatically requested and displayed on your iPhone. You enter the code and send it to Apple.
+- You add the Apple Account - The account is verified and you are logged into it.
+- The Authenticate Apple Account Sign-in screen is displayed - The authentication code is automatically requested and displayed on your iPhone. You enter the code and send it to Apple.
 - The Import Apple Devices screen is displayed - The devices in the new Apple Account are analyzed and iCloud3 devices that will be created are listed. Data from the Apple Account is used to build the iCloud3 devices. Save the new devices and they are added to iCloud3.
 - The iCloud3 Dashboards are created or updated - When you close the iCloud Configure Session, the dashboards with the new devices, and the Event Log, are updated and added to toe HA Sidebar as a new Dashboard.
 - To to the iCloud3 Dashboard - iCloud3 will have restrted and the tracking information is displayed.

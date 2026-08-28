@@ -374,7 +374,6 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
 
     This creates the list of devices used on the update devices screen
     '''
-    # self.icloud_list_text_by_fname2 = NONE_FAMSHR_DICT_KEY_TEXT.copy()
     self.icloud_list_text_by_fname2 = {}
     all_devices_available = {}
     all_devices_not_available = {}
@@ -458,7 +457,6 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
 
             if devices_available == {}:
                 devices_available ={f"nodev": "All Apple account devices are assigned"}
-                # devices_available ={f"{aa_idx_dots}nodev": "All Apple account devices are assigned"}
 
             all_devices_available.update(username_hdr_available)
             all_devices_available.update(devices_available)
@@ -469,7 +467,6 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
     if isnot_empty(all_devices_this_device):
         self.icloud_list_text_by_fname2.update(all_devices_this_device)
         self.icloud_list_text_by_fname2.update({'.dashes': '_'*76 + final_line_fixed})
-        # self.icloud_list_text_by_fname2.update({'.dashes': '═'*51})
 
     self.icloud_list_text_by_fname2.update(NONE_FAMSHR_DICT_KEY_TEXT)
 

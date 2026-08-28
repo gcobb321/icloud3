@@ -1,7 +1,7 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (RARROW, ICLOUD, MOBAPP,
+from ...const               import (CONF_VERSION, RARROW, ICLOUD, MOBAPP,
                                     CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
                                     CONF_DATA_SOURCE, CONF_AUTH_CODE,
                                     CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
@@ -35,7 +35,7 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#              DATA SOURCE
+#              APPLE ACCOUNTS LIST
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_apple_accounts(self):
     lists.build_apple_accounts_list(self)
@@ -144,11 +144,21 @@ def form_update_apple_acct(self):
 
     retry_login_AA = [AA    for AA in Gb.AppleAcct_error_by_username.values()
                             if AA.error_next_retry_secs > 0]
+
+    self.actions_list = []
     if isnot_empty(retry_login_AA):
-        self.actions_list = [ACTION_LIST_OPTIONS['stop_login_retry']]
-    else:
-        self.actions_list = []
+        self.actions_list.append(ACTION_LIST_OPTIONS['stop_login_retry'])
+
     self.actions_list.extend(APPLE_ACCOUNT_UPDATE_ACTIONS)
+
+    # If the configuration file is at it's initial condition, this screen (update_apple_acct)
+    # is displayed instead of the devices & sensors menu. Change the rtn_apple_acct list
+    # action item to the main menu. If the menu is selected without entering a username/password,
+    # disable the iCloud data source until one is entered.
+    # if Gb.conf_profile[CONF_VERSION] == 0:
+    if is_empty(Gb.conf_apple_accounts):
+        self.actions_list.remove(ACTION_LIST_OPTIONS['rtn_apple_accounts'])
+        self.actions_list.append(ACTION_LIST_OPTIONS['menu'])
 
     if Gb.internet_error:
         default_action = 'cancel_goto_previous'

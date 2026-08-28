@@ -142,7 +142,7 @@ ACTION_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in ACTION_LIST_OPTIONS.
 ACTION_LIST_ITEM_KEYS         = list(ACTION_LIST_OPTIONS.keys())
 
 NONE_DICT_KEY_TEXT          = {'None': 'None'}
-NONE_FAMSHR_DICT_KEY_TEXT   = {'None': 'None - Not using the Apple Acct iCloud Location Service'}
+NONE_FAMSHR_DICT_KEY_TEXT   = {'None': 'Apple iCloud Location Service is not used'}
 UNKNOWN_DEVICE_TEXT         = ' → UNKNOWN/NOT FOUND → NEEDS REVIEW'
 SERVICE_NOT_AVAILABLE       = ' → This Data Source/Web Location Service is not available'
 SERVICE_NOT_STARTED_YET     = ' → This Data Source/Web Location Svc has not finished starting. Exit and Retry.'
@@ -331,8 +331,8 @@ AWAY_FROM_ZONE_OPTIONS = {
         'all': 'All are Away and in the same Time Zone'}
 DATA_SOURCE_OPTIONS = {
         'iCloud,MobApp': 'ICLOUD & MOBILE APP → Request data from iCloud and the Mobile App',
-        'iCloud':        'ICLOUD → Request data from iCloud Location Services',
-        'MobApp': 'MOBILE APP → Request data from the  Mobile App Integration'
+        'iCloud':        'ICLOUD ONLY → Mobile App is not used',
+        'MobApp':        'MOBILE APP ONLY → iCloud Location Services is not used'
 }
 TRACKING_MODE_OPTIONS = {
         'track':    'Track - Request Location and track the device',

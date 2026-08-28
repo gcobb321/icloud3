@@ -517,12 +517,14 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                 and is_empty(self.master_dashboard)):
             await start_ic3.update_lovelace_resource_event_log_js_entry(silent=True)
 
-        # Display update_apple_acct screen for username/password if no accts have
-        # been set up
-        if is_empty(Gb.conf_apple_accounts):
-            self.add_apple_acct_flag = True
-            self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
-            return await self.async_step_update_apple_acct()
+            # Display update_apple_acct screen for username/password if no accts have
+            # been set up
+            #if Gb.conf_data_source_ICLOUD:
+            if is_empty(Gb.conf_apple_accounts):
+                self.add_apple_acct_flag = True
+                self.menu_item = 'apple_accounts'
+                self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
+                return await self.async_step_update_apple_acct()
 
         return await self.async_step_menu()
 
@@ -574,8 +576,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             self.header_msg = 'internet_error'
 
         elif Gb.conf_data_source_ICLOUD:
-            if len(Gb.conf_apple_accounts) == 0:
-                self.header_msg = 'apple_acct_not_set_up'
+            if is_empty(Gb.conf_apple_accounts):
+                # self.header_msg = 'apple_acct_not_set_up'
+                pass
             elif self.is_reauth_needed:
                 self.header_msg ='auth_code_needed'
 
@@ -687,7 +690,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.step_id = 'Exit Configure Settings'
         Gb.is_config_flow_open = False
         self.is_initialize_options_required = False
-        utils_cf.log_step_info(self, f'UpdateParms-{Gb.config_parms_update_control}', 'start')
+        utils_cf.log_step_info(self, f'Xclick-{exit_by_x_click}, UpdateParms-{Gb.config_parms_update_control}', 'start')
 
         # If the initial config file was just installed, set it to 'has been reviewed'
         if Gb.conf_profile[CONF_VERSION] <= 0:
@@ -736,7 +739,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             Gb.config_parms_update_control = []
             service_handler.reload_icloud3()
 
-        utils_cf.log_step_info(self, f'UpdateParms-{Gb.config_parms_update_control}', 'end')
+        utils_cf.log_step_info(self, '', 'end')
 
         # data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
 

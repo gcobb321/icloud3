@@ -550,7 +550,7 @@ def initialize_data_source_variables():
         Gb.conf_tracking[CONF_DATA_SOURCE] = Gb.conf_tracking[CONF_DATA_SOURCE].replace('mobapp', MOBAPP)
 
     Gb.conf_data_source_ICLOUD    = instr(Gb.conf_tracking[CONF_DATA_SOURCE], ICLOUD)
-    Gb.conf_data_source_ICLOUD    = Gb.conf_data_source_ICLOUD
+    # Gb.conf_data_source_ICLOUD    = Gb.conf_data_source_ICLOUD
     Gb.conf_data_source_MOBAPP    = instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP)
 
     Gb.use_data_source_ICLOUD     = (Gb.conf_data_source_ICLOUD and Gb.username != '' and Gb.password != '')
@@ -2818,15 +2818,16 @@ def display_all_devices_config_info(selected_devicenames=None):
             evlog_msg += (f"{CRLF_HDOT}Away Time Zone: HomeZone {plus_minus}{Device.away_time_zone_offset} hours")
 
         try:
-            if Device.AADevData_icloud is None:
-                evlog_msg += (f"{CRLF_RED_ALERT}DEVICE IS NOT CONFIGURED")
-            else:
-                device_status = Device.AADevData_icloud.device_data[ICLOUD_DEVICE_STATUS]
-                timestamp     = Device.AADevData_icloud.device_data[LOCATION][TIMESTAMP]
-                if device_status == '201' and mins_since(timestamp) > 5:
-                    evlog_msg += (f"{CRLF_RED_ALERT}DEVICE IS OFFLINE > "
-                                f"Since-{format_time_age(timestamp)}")
-                    Device.offline_secs = timestamp
+            if Gb.use_data_source_ICLOUD:
+                if Device.AADevData_icloud is None:
+                    evlog_msg += (f"{CRLF_RED_ALERT}DEVICE IS NOT CONFIGURED")
+                else:
+                    device_status = Device.AADevData_icloud.device_data[ICLOUD_DEVICE_STATUS]
+                    timestamp     = Device.AADevData_icloud.device_data[LOCATION][TIMESTAMP]
+                    if device_status == '201' and mins_since(timestamp) > 5:
+                        evlog_msg += (f"{CRLF_RED_ALERT}DEVICE IS OFFLINE > "
+                                    f"Since-{format_time_age(timestamp)}")
+                        Device.offline_secs = timestamp
 
         except Exception as err:
             log_exception(err)

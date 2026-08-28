@@ -1139,7 +1139,8 @@ class OptionsFlow_iCloud3Device_Steps:
             self.header_msg = 'apple_acct_not_set_up'
 
         elif device_cnt == 0:
-            self.header_msg = 'inactive_no_devices'
+            if self.step_id not in ['device_list', 'update_device']:
+                self.header_msg = 'inactive_no_devices'
 
         elif device_cnt == inactive_device_cnt:
             self.header_msg = f'inactive_all_devices'

@@ -119,7 +119,7 @@ def determine_interval(Device, FromZone):
     if FromZone.from_zone == Device.loc_data_zone:
         Device.FromZone_LastIn = FromZone
 
-    if Device.offline_secs > 0 and Device.is_online:
+    if Device.offline_secs > 0 and Device.is_online and secs_since(Device.offline_secs) > 5:
         post_event(devicename,
                     f"{EVLOG_ALERT}Device back Online > "
                     f"WentOfflineAt-{format_time_age(Device.offline_secs)}, "

@@ -74,7 +74,8 @@ def form_device_list(self):
         _build_device_items_displayed_over_6(self)
 
     if device_cnt == 0:
-        list_add(self.device_items_displayed, '➤ IMPORT APPLE ACCOUNT DEVICES')
+        if Gb.use_data_source_ICLOUD:
+            list_add(self.device_items_displayed, '➤ IMPORT APPLE ACCOUNT DEVICES')
     list_add(self.device_items_displayed, '➤ ADD A NEW DEVICE')
 
     default_key  = self.dev_page_last_selected_devicename[self.dev_page_no]

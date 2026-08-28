@@ -187,10 +187,6 @@ class iCloud3:
     def start_icloud3_stage_4_5_6_load_aa_device_to_locate(self):
         try:
             # Terminate startup process if internet is down
-            # Gb.InternetError.is_internet_available()
-            # event_msg = f"Internet Connection Test > Connected-{yes_no(not Gb.internet_error)}"
-            # log_data(event_msg, Gb.InternetError.data)
-            # post_alert(event_msg)
             if Gb.internet_error:
                 start_ic3_control.stage_6_initialization_complete()
                 Gb.InternetError.start_internet_error_handler()
@@ -204,9 +200,12 @@ class iCloud3:
 
                 if Gb.was_icloud3_reloaded:
                     post_event( f"{ICLOUD3_ATTENTION_MSG} > Restart Complete")
-                    # log_info_msg(f"{'🔶'*5} ICLOUD3 WAS RELOADED {'🔶'*5}")
                 else:
-                    post_event( f"{ICLOUD3_ATTENTION_MSG} > Initial Start-up Complete")
+                    post_event( f"{ICLOUD3_ATTENTION_MSG} > Initial Start-up is Complete. "
+                                    "Set up Apple Accounts and Devices on the iCloud3 "
+                                    "Configure Settings screens. Click the `Gear` "
+                                    "Icon (⚙️) above the Actions item.")
+
 
                 start_ic3_control.stage_7_initial_locate()
 
@@ -326,7 +325,7 @@ class iCloud3:
 
             if Gb.is_all_tracking_paused:
                 post_greenbar_msg(f"All Devices > Tracking Paused at "
-                                        f"{format_time_age(Gb.all_tracking_paused_secs)}")
+                                    f"{format_time_age(Gb.all_tracking_paused_secs)}")
                 return
 
             #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>

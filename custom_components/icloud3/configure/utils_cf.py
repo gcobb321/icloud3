@@ -9,7 +9,7 @@ from ..const             import (DEVICE_TYPE_DN, CONF_FAMSHR_DEVICENAME, CONF_MO
 from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
                                 encode_password, decode_password, )
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
-                                _log, _evlog, )
+                                _log, _evlog, log_stack, )
 
 from .const_form_lists   import (MENU_KEY_TEXT_PAGE_0, MENU_KEY_TEXT_PAGE_1,
                                 ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
@@ -479,5 +479,24 @@ def discard_changes(user_input):
 #--------------------------------------------------------------------
 def log_step_info(self, user_input, action_item=None, subtitle=''):
 
-    log_info_msg(  f"⭐ {self.step_id.upper()} {subtitle.upper()} ({action_item}/{self.menu_item}) > "
-                    f"UserInput-{user_input}, Errors-{self.errors}")
+    if Gb.is_log_level_debug:
+        # log_stack_data=configure/screens/step_icloud3_device.py, 98, async_step_device_list'
+        log_stack_data = log_stack(return_cnt=1)
+        log_stack_data = log_stack_data.replace(' ', '')
+        filename, line_no, fct = log_stack_data.split(',')
+        filename = filename.split('/')[-1][:-3]
+        filename = filename.replace('step', 's')
+        filename = filename.replace('form', 'f')
+        fct      = fct.replace('async_step_', '')
+        log_stack_msg = f"[{filename[:12]}:{fct[:12]}:{line_no}] "
+    else:
+        log_stack_msg = ''
+
+    info_msg =( f"⭐ {self.step_id.upper()} {subtitle.upper()} "
+                f"({action_item}/{self.menu_item}) {log_stack_msg}> "
+                f"UserInput-{user_input}, Errors-{self.errors}")
+
+    if Gb.is_log_level_debug:
+        log_debug_msg(info_msg)
+    else:
+        log_info_msg(info_msg)

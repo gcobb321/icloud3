@@ -726,13 +726,14 @@ def log_stack(hdr_msg=None, return_function=False, return_cnt=0):
         filename = filename.replace('/config/custom_components/icloud3', 'ic3')
 
         log_msg += (f"{NL4}{SP(5)}{DOT}{filename}, {frame_recd.lineno}, {frame_recd.function}, ")
+        current_frame = f"{filename[4:]}, {frame_recd.lineno}, {frame_recd.function}"
 
         if return_cnt == 0:
             if cnt > 0:
                 code = frame_recd.code_context[0].replace('\n', '').strip()
                 log_msg += f"{NL4}{SP(9)}{[code]}"
         elif return_cnt == cnt:
-            return log_msg
+            return current_frame
 
     log_msg = f"{NL4}🟩 LOG STACK: {hdr_msg}{log_msg}"
     log_info_msg(log_msg)
