@@ -199,13 +199,14 @@ class iCloud3:
                 start_ic3_control.stage_6_initialization_complete()
 
                 if Gb.was_icloud3_reloaded:
-                    post_event( f"{ICLOUD3_ATTENTION_MSG} > Restart Complete")
+                    event_msg = "Restart Complete"
                 else:
-                    post_event( f"{ICLOUD3_ATTENTION_MSG} > Initial Start-up is Complete. "
-                                    "Set up Apple Accounts and Devices on the iCloud3 "
-                                    "Configure Settings screens. Click the `Gear` "
-                                    "Icon (⚙️) above the Actions item.")
-
+                    event_msg = "Initial Start-up is Complete"
+                    if is_empty(Gb.conf_apple_accounts) and is_empty(Gb.conf_devices):
+                        event_msg +=(   ". Set up Apple Accounts and Devices on the iCloud3 "
+                                        "Configure Settings screens. Click the `Gear` "
+                                        "Icon (⚙️) above the Actions item.")
+                post_event(f"{ICLOUD3_ATTENTION_MSG} > {event_msg}")
 
                 start_ic3_control.stage_7_initial_locate()
 
