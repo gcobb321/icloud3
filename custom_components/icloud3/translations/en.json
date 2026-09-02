@@ -571,14 +571,25 @@
         "title": "Tools",
         "description": "Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
         "data": {
-          "log_level": "LOG LEVEL - The type of messages that are written to the iCloud3 Log file (icloud3.log}",
-          "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud Device Data to the log file for only these devices",
           "tools": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT TOOLS",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
         },
         "data_description": {
         }
       },
+
+      "log_level": {
+        "title": "Set Log Level",
+        "description": "The Log Level indicates the type of operational data that will be written to the `iCloud3.log' file",
+        "data": {
+          "log_level": "LOG LEVEL - The type of messages (Informational, Debug or RawData from the Apple Account)",
+          "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud Device Data to the log file for only these devices",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+        },
+        "data_description": {
+        }
+      },
+
       "cleanup_entity_registry": {
         "title": "Cleanup HA Entity Registry Devices & Sensors",
         "description": "This screen is used to delete unwanted iCloud3 device_tracker and sensor entities from the HA Device and Entity Registries. The entities are analyzed and displayed the following groups: active, inactive, orphaned, deleted devices, deleted sensors, disabled and HA duplicates (those with a `_2` suffix). ",

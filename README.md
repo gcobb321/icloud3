@@ -1,8 +1,26 @@
-# iCloud3 - Development/Prerelease
+# iCloud3 - Apple Device Tracker
 
-[![CurrentVersion](https://img.shields.io/badge/Current_Version-v3.7.3-orange.svg)](https://github.com/gcobb321/icloud3)   [![Released](https://img.shields.io/badge/Released-August,_2026-orange.svg)](https://github.com/gcobb321/icloud3) [![HACS](https://img.shields.io/badge/HACS-Standard_Installation-darkorange.svg)](https://github.com/gcobb321/icloud3)
 
- [![Type](https://img.shields.io/badge/Type-Custom_Component-forestgreen.svg)](https://github.com/gcobb321/icloud3)   [![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg)](https://github/gcobb321/icloud3) 
+-----
+![][release-shield] ![](https://img.shields.io/badge/Released-May,_2026....-orange.svg)  ![][release-downloads-shield] ![][total-downloads-shield] ![GitHub Stars][stars-shield]
+![][dev-release-shield] ![](https://img.shields.io/badge/Released-August,_2026-orange.svg)  ![][dev-release-downloads-shield] ![][dev-total-downloads-shield] ![GitHub Stars][dev-stars-shield] 
+
+![HACS](https://img.shields.io/badge/HACS-Standard_Installation-darkorange.svg) ![Type](https://img.shields.io/badge/Type-Custom_Component-forestgreen.svg)  ![ProjectStage](https://img.shields.io/badge/Project_Stage-General_Availability-forestgreen.svg) 
+
+
+
+
+[release-shield]: https://img.shields.io/github/v/release/gcobb321/icloud3.svg?label=Current_Version..&color=orange
+[release-downloads-shield]: https://img.shields.io/github/downloads/gcobb321/icloud3/latest/total.svg?label=Downloads
+[stars-shield]: https://img.shields.io/github/stars/gcobb321/icloud3?style=flat&label=Stars
+[stargazers]: https://github.com/gcobb321/icloud3/stargazers
+[total-downloads-shield]: https://img.shields.io/github/downloads/gcobb321/icloud3/total.svg?label=Total_Downloads
+
+[dev-release-shield]: https://img.shields.io/github/v/release/gcobb321/icloud3_v3.svg?label=BetaTest_Version&color=orange
+[dev-release-downloads-shield]: https://img.shields.io/github/downloads/gcobb321/icloud3_v3/latest/total.svg?label=Downloads
+[dev-stars-shield]: https://img.shields.io/github/stars/gcobb321/icloud3_v3?style=flat&label=Stars
+[dev-stargazers]: https://github.com/gcobb321/icloud3_v3/stargazers
+[dev-total-downloads-shield]: https://img.shields.io/github/downloads/gcobb321/icloud3_v3/total.svg?label=Total_Downloads
 
 
 
@@ -93,7 +111,7 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 
 The screens below are an example of how the many tracking sensors can be displayed. The screen on the left shows the current tracking formation for Gary while the Event Log on the right shows a history of important tracking events.
 
-![](https://gcobb321.github.io/icloud3_v3_docs/images/dashboard-allinfo-summary.png)
+![](https://gcobb321.github.io/icloud3_v3_docs/screens//dashboard-allinfo-summary.png)
 
 
 
@@ -113,7 +131,7 @@ The screens below are an example of how the many tracking sensors can be display
 
 
 -----
-*Gary Cobb, aka GeeksterGary*
+*Gary Cobb, aka GeeksterGary
 
 
 

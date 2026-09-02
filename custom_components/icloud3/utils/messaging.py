@@ -1047,7 +1047,10 @@ def _create_log_msg_from_data(rawdata, data=None):
                     idx += 1
                     if k == 'content':
                         ksd = v[idx].get('name', idx)
-                        log_items_data[f"{k}.{ksd}"] = _filter_rawdata_items(vsd)
+                        if _is_device_filtered(ksd):
+                            log_items_data[f"{k}.{ksd}"] = '...filtered'
+                        else:
+                            log_items_data[f"{k}.{ksd}"] = _filter_rawdata_items(vsd)
                     else:
                         log_items_data[f"{k}.{idx}"] = _filter_rawdata_items(vsd, shrink_only=True)
 
@@ -1084,6 +1087,11 @@ def _create_log_msg_from_data(rawdata, data=None):
             log_msg += f"{NL3_DATA}{data_text}{k}={v}"
 
     return log_msg
+
+#..........................................................................................
+def _is_device_filtered(icloud_dname):
+    devicename = Gb.devicenames_by_icloud_dname.get(icloud_dname, '')
+    return not (devicename in Gb.log_level_devices or 'all' in Gb.log_level_devices)
 
 #..........................................................................................
 def _filter_rawdata_items(item_value_dict, shrink_only=None):
