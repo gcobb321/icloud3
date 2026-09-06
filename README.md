@@ -1,7 +1,5 @@
 #  <img width="32" height="32" src="https://brands.home-assistant.io/icloud3/icon.png"> iCloud3 Apple Device Tracker
 
-***Beta/Prerelease Version** - This is an early release version of iCloud3 containing new and updated features. It is not the official release of iCloud3.  
-
 ​	
 
 ![][ha-installs-shield] ![](https://img.shields.io/badge/Lines_of_Code-46.8k-steelblue.svg) ![HACS](https://img.shields.io/badge/HACS-Custom_Installation-steelblue.svg) ![Type](https://img.shields.io/badge/Type-Custom_Component-steelblue.svg)  
