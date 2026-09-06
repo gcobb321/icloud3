@@ -6,7 +6,7 @@
 
 ![][ha-installs-shield] ![](https://img.shields.io/badge/Lines_of_Code-46.8k-steelblue.svg) ![HACS](https://img.shields.io/badge/HACS-Custom_Installation-steelblue.svg) ![Type](https://img.shields.io/badge/Type-Custom_Component-steelblue.svg)  
 
-![][release-shield] ![](https://img.shields.io/badge/Released-May,_2026-mediumseagreen.svg) ![][release-downloads-shield] ![GitHub Stars][stars-shield]<br>
+![][release-shield] ![](https://img.shields.io/badge/Released-September,_2026-mediumseagreen.svg) ![][release-downloads-shield] ![GitHub Stars][stars-shield]<br>
 ![][dev-release-shield] ![](https://img.shields.io/badge/Released-September,_2026-mediumseagreen.svg)  ![][dev-release-downloads-shield] ![GitHub Stars][dev-stars-shield] <br>
 
 
