@@ -589,6 +589,23 @@ def datetime_for_filename():
 
     return timestamp
 
+#--------------------------------------------------------------------
+def secs_to_yymmdd_hhmm(secs=None):
+    '''
+    Convert seconds (or now if no secs are specified) to a short date-time stamp
+    Return yymmdd-hhmm (260905-1432)
+    '''
+    secs = secs or time_now_secs()
+
+    try:
+        time_struct = time.localtime(secs)
+        timestamp   = time.strftime("%y%m%d-%H%M", time_struct)
+
+    except Exception as err:
+        timestamp = f"{secs}"
+
+    return timestamp
+
 #########################################################
 #
 #   TIME UTILITY ROUTINES

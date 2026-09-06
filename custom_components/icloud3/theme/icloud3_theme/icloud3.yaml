@@ -35,6 +35,10 @@ iCloud3 Theme:
       # Select item heading
       mdc-select-label-ink-color: rgb(9, 119, 170)
 
+      # Config-flow dialog window background
+      # ha-dialog-surface-background: rgb(40, 46, 54)
+      ha-dialog-border-radius: 8px
+
     dark:
       # Text field label, Select box label, hh.mm.ss label
       mdc-text-field-label-ink-color: rgb(135, 206, 250)
@@ -61,3 +65,4 @@ iCloud3 Theme:
 
       # Config-flow dialog window background
       ha-dialog-surface-background: rgb(40, 46, 54)
+      ha-dialog-border-radius: 8px

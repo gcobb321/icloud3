@@ -132,7 +132,14 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
         DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
         device_id = DeviceTracker.ha_device_id
         DeviceTracker.remove_device_tracker()
-        er_util.remove_from_active_and_deleted_device_registry(device_id)
+
+        # remove_device_tracker only removes the device_tracker's state, it's entity registry
+        # item is not touched. HA moves that item to the entity registry deleted items list
+        # when the device is removed below, where it is left as a deleted sensor that has to
+        # be cleaned up on another pass. Delete it now with the device's other sensors.
+        er_util.remove_from_active_and_deleted_entity_registry(DeviceTracker.ha_entity_id)
+
+        er_util.remove_device(device_id)
         er_util.clear_device_gb_dicts(device_id)
 
     er_util.update_ha_device_id_by_devicename()

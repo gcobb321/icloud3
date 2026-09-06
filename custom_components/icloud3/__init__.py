@@ -192,7 +192,9 @@ async def start_icloud3_on_init_load_only():
         Gb.EvLog.post_event('Seting up iCloud3 Actions/Services')
         Gb.hass.async_add_executor_job(register_icloud3_services)
 
-        # config_file.count_lines_of_code('custom_components/icloud3')
+        if Gb.count_lines_of_code:
+            config_file.count_lines_of_code('custom_components/icloud3')
+            Gb.count_lines_of_code = False
 
     except Exception as err:
         log_exception(err)

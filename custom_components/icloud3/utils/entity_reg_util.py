@@ -9,7 +9,7 @@ from .utils             import (instr, is_empty, isnot_empty, dict_del,
 from .messaging         import (log_info_msg, log_debug_msg, log_exception, log_debug_msg,
                                 log_error_msg, log_data,
                                 _evlog, _log, )
-from .time_util         import (secs_to_time, time_now_secs, )
+from .time_util         import (secs_to_time, time_now_secs, secs_to_yymmdd_hhmm, )
 
 from ..startup          import config_file
 
@@ -67,7 +67,7 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
 
         devicename = Device.devicename
 
-        log_debug_msg(  f'Device Registry Update ({device_id[:8]}) > Action-{action}, Device-{devicename}, '
+        log_debug_msg(  f'Device Registry Update > {devicename}, Action-{action}, '
                         f'Name-{device_data.name}, DisabledBy-{device_data.disabled_by}')
 
         if action == "update":
@@ -80,7 +80,7 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
 
             if device_data.disabled_by is not None:
                 if Device.DeviceTracker is None:
-                    remove_from_active_and_deleted_device_registry(device_id)
+                    remove_device(device_id)
                     clear_device_gb_dicts(device_id)
 
         elif action == "remove":
@@ -500,6 +500,44 @@ def is_entity_available(entity_id):
 #   DEVICE REGISTRY MAINTENANCE FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def device_reg_devices(device_reg):
+    '''
+    Return a list with all of the active device registry items (DeviceEntry items).
+
+    HA-2026.9 deprecated using `device_reg.devices` as a dictionary (.items(), .keys(),
+    .values(), [device_id] and `device_id in devices`) and it is removed in HA-2027.9. It is
+    now a view that returns the DeviceEntry items when it is iterated. HA versions before
+    2026.9 return a dictionary that returns the device_id keys when it is iterated.
+    '''
+    devices = list(device_reg.devices)
+
+    # Before HA-2026.9, iterating the dictionary returns the device_id keys
+    if devices and isinstance(devices[0], str):
+        devices = [device_reg.async_get(device_id) for device_id in devices]
+
+    return [device_data for device_data in devices if device_data]
+
+#............................................................................................
+def device_reg_deleted_devices(device_reg):
+    '''
+    Return the deleted device registry container (device_id --> DeletedDeviceEntry), or None
+    if HA no longer has one.
+
+    HA does not have a public interface for the deleted devices. HA-2026.9 deprecated the
+    `device_reg.deleted_devices` property (accessing it logs a message saying it is an
+    internal implementation detail) and it is removed in HA-2027.9. The internal
+    `_deleted_devices` container it returns is unchanged and is what HA itself uses. Use that
+    container when it is there so nothing is logged, fall back to the property for HA
+    versions before 2026.9 (where the container is named `deleted_devices` and logs nothing)
+    and return None if HA drops it completely.
+    '''
+    deleted_devices = getattr(device_reg, '_deleted_devices', None)
+    if deleted_devices is None:
+        deleted_devices = getattr(device_reg, 'deleted_devices', None)
+
+    return deleted_devices
+
+#............................................................................................
 def get_device(device_id):
     try:
         device_reg = dr.async_get(Gb.hass)
@@ -508,36 +546,76 @@ def get_device(device_id):
     except:
         return None
 
+#-------------------------------------------------------------------------------------------
+# def remove_from_active_and_deleted_device_registry(device_id):
+#     """ Remove entity/device from registry """
+
+#     remove_device(device_id)
+#     remove_deleted_device(device_id)
+
 #............................................................................................
 def remove_device(device_id):
+    '''
+    Remove the device from the device registry (HA moves it to the deleted devices list)
+    Then remove it from the deleted_device list
+
+    Change the identifiers before it is removed. HA copies the identifiers to the deleted
+    device item and matches on them (nothing else - not the name, model, area or device_id) to
+    decide if a device being added back is really this device. If they match, HA restores this
+    device instead of creating a new one. Changing them to a devicename iCloud3 will never
+    generate keeps the device from being reused if the same devicename is set up again.
+    '''
     try:
-        device_reg = dr.async_get(Gb.hass)
-        if device_id in device_reg.devices:
-            device_reg.async_remove_device(device_id)
+        device_reg  = dr.async_get(Gb.hass)
+        device_data = device_reg.async_get(device_id)
+        if device_data is None:
+            return
+
+        domain, devicename = _get_domain_devicename(device_data)
+        if domain == DOMAIN:
+            # Changing the identifiers is a nice-to-have, always remove the device even if
+            # HA rejects the change
+            try:
+                removed_devicename = f'{devicename}~removed~{secs_to_yymmdd_hhmm()}'
+                device_reg.async_update_device(device_id,
+                                        new_identifiers={(DOMAIN, removed_devicename)})
+
+                log_debug_msg(f'Device Registry Update > {devicename}, '
+                                f'Change Identifier to prevent reuse, '
+                                f'{removed_devicename}')
+
+            except Exception as err:
+                log_exception(err)
+
+        log_debug_msg(f'Device Registry Update > {devicename}, Remove from Active List')
+
+        device_reg.async_remove_device(device_id)
+
+        # Remove device from deleted list
+        remove_deleted_device(device_id, devicename)
 
     except Exception as err:
         log_exception(err)
 
 #................................................................................
-def remove_deleted_device(device_id):
+def remove_deleted_device(device_id, devicename=None):
     try:
-        device_reg = dr.async_get(Gb.hass)
-        if device_id in device_reg.deleted_devices:
-            deleted_entity = device_reg.deleted_devices.pop(device_id, None)
-            device_reg.async_schedule_save()
+        device_reg      = dr.async_get(Gb.hass)
+        deleted_devices = device_reg_deleted_devices(device_reg)
+
+        if deleted_devices is None or device_id not in deleted_devices:
+            return
+
+        devicename = devicename or device_id[:8]
+
+        log_debug_msg(f'Device Registry Update > {devicename}, Remove from Deleted List')
+
+        deleted_devices.pop(device_id, None)
+        device_reg.async_schedule_save()
 
     except Exception as err:
         log_exception(err)
         pass
-
-#-------------------------------------------------------------------------------------------
-def remove_from_active_and_deleted_device_registry(device_id):
-    """ Remove entity/device from registry """
-
-    log_debug_msg(f'Device Registry Update ({device_id[:8]}) > Remove from Active & Deleted List')
-
-    remove_device(device_id)
-    remove_deleted_device(device_id)
 
 #-------------------------------------------------------------------------------------------
 def clear_device_gb_dicts(device_id):
@@ -944,11 +1022,12 @@ def extract_icloud3_device_registry_items(scan_active_items):
 
         device_reg = dr.async_get(Gb.hass)
         if scan_active_items:
-            devices = device_reg.devices
+            devices = device_reg_devices(device_reg)
         else:
-            devices = device_reg.deleted_devices
+            deleted_devices = device_reg_deleted_devices(device_reg)
+            devices = list(deleted_devices.values()) if deleted_devices else []
 
-        for device_id, device_data in list(devices.items()):
+        for device_data in devices:
             if _is_icloud3_device_recd(device_data) is False:
                 continue
 

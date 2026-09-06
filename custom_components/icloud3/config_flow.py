@@ -706,7 +706,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             self.create_device_tracker_sensor_enities_on_exit = False
             await config_file.async_build_conf_device_sensors_from_conf_sensors()
             await ic3_device_tracker.async_create_Device_Tracker_objects()
+            self.exit_msg += f"* Devices have been added ({Gb.device_trackers_cnt})\n"
             await ic3_sensor.async_create_Sensor_objects()
+            self.exit_msg += f"* Sensors have been added ({Gb.sensors_cnt})\n"
             self.rebuild_ic3db_dashboards = True
             list_add(self.config_parms_update_control, 'restart')
 

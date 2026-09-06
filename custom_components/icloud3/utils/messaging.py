@@ -659,7 +659,7 @@ def log_exception(err):
     Gb.HALogger.exception(err)
 
 #--------------------------------------------------------------------
-def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
+def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None, log_stack_pgm=None):
 
     if Gb.is_log_level_debug is False or Gb.iC3Logger is None:
         return
@@ -670,7 +670,7 @@ def log_debug_msg(devicename_or_Device, log_msg='+', msg_prefix=None):
 
     if devicename: devicename = f"{devicename} > "
     log_msg = f"{devicename}{str(log_msg)}"
-    log_msg = format_msg_line(log_msg)
+    log_msg = format_msg_line(log_msg, log_stack_pgm=log_stack_pgm)
 
     write_ic3log_recd(log_msg)
 
@@ -745,23 +745,25 @@ def log_stack(hdr_msg=None, return_function=False, return_cnt=0):
 #   LOG MESSAGE SUPPORT ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def format_msg_line(log_msg):
+def format_msg_line(log_msg, log_stack_pgm=None):
     try:
         if type(log_msg) is str is False:
             return log_msg
 
-        msg_prefix= ' ' if log_msg.startswith('⡇') else \
+        msg_prefix= '' if log_msg.startswith('⡇') else \
                     ''  if log_msg.startswith(NL) else \
                     NL3U if instr(log_msg, 'REQUEST') else \
                     NL3D if instr(log_msg, 'RESPONSE') else \
                     NL3D if instr(log_msg, 'HDR') else \
                     NL3_DATA if instr(log_msg, 'DATA') else \
-                    ' ⡇ ' if Gb.trace_group else \
-                    ' '
+                    '⡇ ' if Gb.trace_group else \
+                    ''
 
         program_area = ''
 
-        if instr(msg_prefix, '\n'):
+        if log_stack_pgm is not None:
+            source = log_stack_pgm
+        elif instr(msg_prefix, '\n'):
             source = f"{_called_from_history()}"
         else:
             source  = f"{_called_from()}{program_area}"
@@ -841,7 +843,7 @@ def format_header_box(log_msg, indent=None, start_finish=None, evlog_export=Fals
     start_pos = log_msg.find('^')
     if start_pos == -1: start_pos = 0
 
-    indent = indent if indent is not None else 36 if Gb.is_log_level_debug else 16
+    indent = indent if indent is not None else 37 if Gb.is_log_level_debug else 16
 
     top_char = bot_char = DASH_50
     if start_finish == 'start':
@@ -1152,7 +1154,7 @@ def internal_error_msg(err_text, msg_text=''):
 
     stack    = inspect.stack()
     caller   = inspect.getframeinfo(stack()[1][0])
-    filename = os.path.basename(caller.filename).split('.')[0][:12]
+    filename = os.path.basename(caller.filename).split('.')[0][:14]
     try:
         parent = inspect.getframeinfo(stack()[2][0])
         parent_lineno = parent.lineno
@@ -1320,7 +1322,7 @@ def _called_from(show_fct_name=False, trace=False):
     py_filename = f"{py_filename}……………………"
     caller_lineno = caller.lineno
 
-    return f"[{py_filename[:12]}:{caller_lineno:04}] "
+    return f"[{py_filename[:14]}:{caller_lineno:04}] "
 
 #--------------------------------------------------------------------
 def _called_from_history(trace=False):

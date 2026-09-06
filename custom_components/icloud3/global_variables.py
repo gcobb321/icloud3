@@ -63,6 +63,7 @@ class GlobalVariables(object):
     '''
     disable_upw_filter = False # Disable filtering passwords in the icloud3.log file
     hwkey_authentication_enabled = True
+    count_lines_of_code = False
 
     # This variable provides a mechanism of testing Internet Connection Errors when iCloud3 is
     # starting without an actual error.

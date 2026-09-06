@@ -370,31 +370,6 @@ def remove_deleted_entity(entity_key):
         log_exception(err)
         pass
 
-#............................................................................................
-# def remove_device(device_id):
-#     try:
-#         device_reg = dr.async_get(Gb.hass)
-#         device_reg.async_remove_device(device_id)
-
-#     except Exception as err:
-#         log_exception(err)
-
-#................................................................................
-def remove_deleted_device(device_id):
-    try:
-        device_reg = dr.async_get(Gb.hass)
-        # deleted_devices_keys = list(device_reg.deleted_devices.keys())
-        # if device_id not in deleted_devices_keys:
-        if device_id not in device_reg.deleted_devices:
-            return
-
-        device_reg.deleted_devices.pop(device_id, None)
-        device_reg.async_schedule_save()
-
-    except Exception as err:
-        log_exception(err)
-        pass
-
 #....................................................................
 def get_assigned_sensor_entity(unique_id):
     try:

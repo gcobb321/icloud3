@@ -358,7 +358,7 @@ class OptionsFlow_Tools_Steps:
                         if device_id is not None:
                             if status.startswith('deleted_') is False:
                                 er_util.remove_device(device_id)
-                            er_util.remove_deleted_device(device_id)
+                            er_util.remove_deleted_device(device_id, devicename)
 
                     # Delete from entity_registry
                     if status.startswith('deleted_') is False:

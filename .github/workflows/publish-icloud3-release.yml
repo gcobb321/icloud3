@@ -1,0 +1,40 @@
+name: Publish New iCloud3 Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo at release tag
+        uses: actions/checkout@v4
+
+      - name: Zip icloud3 directory contents
+        run: |
+          cd custom_components/icloud3
+          zip -r ../icloud3.zip .
+
+      - name: Upload zip to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: custom_components/icloud3.zip
+
+      - name: Set release title and notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          BASE_VERSION=$(echo "$VERSION" | awk -F. '{print $1"."$2"."$3}')
+          NOTES_FILE="custom_components/icloud3/release_notes/release_notes_v${BASE_VERSION}.md"
+          TITLE_DATE=$(date +'%-m/%-d/%Y')
+
+          gh release edit "$TAG" \
+            --title "iCloud3 ${TAG} (${TITLE_DATE})" \
+            --notes-file "$NOTES_FILE" \
+            --repo ${{ github.repository }}

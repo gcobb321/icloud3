@@ -483,20 +483,27 @@ def log_step_info(self, user_input, action_item=None, subtitle=''):
         # log_stack_data=configure/screens/step_icloud3_device.py, 98, async_step_device_list'
         log_stack_data = log_stack(return_cnt=1)
         log_stack_data = log_stack_data.replace(' ', '')
+
         filename, line_no, fct = log_stack_data.split(',')
+        line_no = int(line_no)
         filename = filename.split('/')[-1][:-3]
-        filename = filename.replace('step', 's')
-        filename = filename.replace('form', 'f')
+        filename = filename.replace('step_', 'cf:')
+        filename = filename.replace('form_', 'cf:')
+        filename = filename.replace('icloud3', 'ic3')
+        # filename = filename.replace('apple_acct', 'aa')
+        if len(filename) < 14: filename += '…'*14
+        log_stack_pgm = f"[{filename[:14]}:{line_no:04d}] "
+
         fct      = fct.replace('async_step_', '')
-        log_stack_msg = f"[{filename[:12]}:{fct[:12]}:{line_no}] "
+        log_stack_fct = f"[{fct[:12]}:{line_no:04d}] "
     else:
         log_stack_msg = ''
 
     info_msg =( f"⭐ {self.step_id.upper()} {subtitle.upper()} "
-                f"({action_item}/{self.menu_item}) {log_stack_msg}> "
+                f"({action_item}/{self.menu_item}) {log_stack_fct}> "
                 f"UserInput-{user_input}, Errors-{self.errors}")
 
     if Gb.is_log_level_debug:
-        log_debug_msg(info_msg)
+        log_debug_msg(info_msg, log_stack_pgm=log_stack_pgm)
     else:
         log_info_msg(info_msg)
