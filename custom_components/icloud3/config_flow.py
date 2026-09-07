@@ -234,7 +234,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
     # def _reauth_goto_previous(self, exit_by_x_click=False):
     def ha_reconfigure_reauth_exit(self, exit_by_x_click=False):
         self.is_reauth_initialized = False
-        utils_cf.log_step_info(self, f'Xclick-{exit_by_x_click}', 'exit')
+        utils_cf.log_step_info(self, f'XClick-{exit_by_x_click}', 'exit')
 
         if Gb.AppleAcct_reauth_needed is None:
             return self.async_abort(reason="auth_code_accepted")
@@ -690,7 +690,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.step_id = 'Exit Configure Settings'
         Gb.is_config_flow_open = False
         self.is_initialize_options_required = False
-        utils_cf.log_step_info(self, f'Xclick-{exit_by_x_click}, UpdateParms-{Gb.config_parms_update_control}', 'start')
+        utils_cf.log_step_info(self, f'XClick-{exit_by_x_click}, UpdateParms-{Gb.config_parms_update_control}', 'start')
 
         # If the initial config file was just installed, set it to 'has been reviewed'
         if Gb.conf_profile[CONF_VERSION] <= 0:

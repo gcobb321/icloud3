@@ -479,25 +479,8 @@ def discard_changes(user_input):
 #--------------------------------------------------------------------
 def log_step_info(self, user_input, action_item=None, subtitle=''):
 
-    if Gb.is_log_level_debug:
-        # log_stack_data=configure/screens/step_icloud3_device.py, 98, async_step_device_list'
-        log_stack_data = log_stack(return_cnt=1)
-        log_stack_data = log_stack_data.replace(' ', '')
 
-        filename, line_no, fct = log_stack_data.split(',')
-        line_no = int(line_no)
-        filename = filename.split('/')[-1][:-3]
-        filename = filename.replace('step_', 'cf:')
-        filename = filename.replace('form_', 'cf:')
-        filename = filename.replace('icloud3', 'ic3')
-        # filename = filename.replace('apple_acct', 'aa')
-        if len(filename) < 14: filename += '…'*14
-        log_stack_pgm = f"[{filename[:14]}:{line_no:04d}] "
-
-        fct      = fct.replace('async_step_', '')
-        log_stack_fct = f"[{fct[:12]}:{line_no:04d}] "
-    else:
-        log_stack_msg = ''
+    log_stack_pgm, log_stack_fct = _get_log_stack_info()
 
     info_msg =( f"⭐ {self.step_id.upper()} {subtitle.upper()} "
                 f"({action_item}/{self.menu_item}) {log_stack_fct}> "
@@ -507,3 +490,31 @@ def log_step_info(self, user_input, action_item=None, subtitle=''):
         log_debug_msg(info_msg, log_stack_pgm=log_stack_pgm)
     else:
         log_info_msg(info_msg)
+
+#.................................................................................
+def _get_log_stack_info():
+    '''
+    Review the log_stack and return the calling program and function:line
+    '''
+
+    if Gb.is_log_level_debug is False:
+        return '', ''
+
+    # log_stack_data=configure/screens/step_icloud3_device.py, 98, async_step_device_list'
+    log_stack_data = log_stack(return_cnt=1)
+    log_stack_data = log_stack_data.replace(' ', '')
+
+    filename, line_no, fct = log_stack_data.split(',')
+    line_no = int(line_no)
+    filename = filename.split('/')[-1][:-3]
+    filename = filename.replace('step_', 'cf:')
+    filename = filename.replace('form_', 'cf:')
+    filename = filename.replace('icloud3', 'ic3')
+    # filename = filename.replace('apple_acct', 'aa')
+    if len(filename) < 14: filename += '…'*14
+    log_stack_pgm = f"[{filename[:14]}:{line_no:04d}] "
+
+    fct      = fct.replace('async_step_', '')
+    log_stack_fct = f"[{fct[:12]}:{line_no:04d}] "
+
+    return log_stack_pgm, log_stack_fct
