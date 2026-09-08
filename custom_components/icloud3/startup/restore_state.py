@@ -82,6 +82,7 @@ def build_initial_restore_state_file_structure():
     log_info_msg(f"Creating iCloud3 Restore State File - {Gb.icloud3_restore_state_filename}")
     Gb.restore_state_file_data = RESTORE_STATE_FILE.copy()
     Gb.restore_state_profile = Gb.restore_state_file_data['profile']
+    Gb.restore_state_apple_accts = Gb.restore_state_file_data.get('apple_accts', {})
     Gb.restore_state_devices = Gb.restore_state_file_data['devices']
 
 #-------------------------------------------------------------------------------------------
@@ -103,8 +104,9 @@ def read_icloud3_restore_state_file():
         if Gb.restore_state_file_data == {}:
             return False
 
-        Gb.restore_state_profile   = Gb.restore_state_file_data['profile']
-        Gb.restore_state_devices   = Gb.restore_state_file_data['devices']
+        Gb.restore_state_profile     = Gb.restore_state_file_data['profile']
+        Gb.restore_state_apple_accts = Gb.restore_state_file_data.get('apple_accts', {})
+        Gb.restore_state_devices     = Gb.restore_state_file_data['devices']
 
         # The sensors here are used in sensor.py to set the device's last sensor state values when
         # the sensors are being set up. They are not related to the Device.sensors{} and the
@@ -142,8 +144,10 @@ def write_icloud3_restore_state_file():
     callback function.
     '''
 
-    Gb.restore_state_profile['last_update'] = datetime_now()
+    update_restore_state_profile_data()
     Gb.restore_state_file_data['profile'] = Gb.restore_state_profile
+    update_restore_state_apple_accts_data()
+    Gb.restore_state_file_data['apple_accts'] = Gb.restore_state_apple_accts
     Gb.restore_state_file_data['devices'] = Gb.restore_state_devices
 
     Gb.restore_state_commit_cnt += 1
@@ -154,6 +158,23 @@ def write_icloud3_restore_state_file():
         track_point_in_time(Gb.hass,
                             _async_commit_icloud3_restore_state_file_changes,
                             datetime_plus(utcnow(), secs=10))
+
+#--------------------------------------------------------------------
+def update_restore_state_profile_data():
+    Gb.restore_state_profile['version']       = Gb.version
+    Gb.restore_state_profile['version_evlog'] = Gb.version_evlog
+    Gb.restore_state_profile['version_hacs']  = Gb.version_hacs
+    Gb.restore_state_profile['last_update']   = datetime_now()
+
+#--------------------------------------------------------------------
+def update_restore_state_apple_accts_data():
+    if 'apple_accts' not in Gb.restore_state_file_data:
+        Gb.restore_state_file_data['apple_accts'] = {}
+
+    Gb.restore_state_apple_accts = {}
+    for username, AppleAcct in Gb.AppleAcct_by_username.items():
+        Gb.restore_state_apple_accts[username] = {}
+        Gb.restore_state_apple_accts[username]['is_reauth_needed_secs'] = AppleAcct.is_reauth_needed_secs
 
 #--------------------------------------------------------------------
 @callback

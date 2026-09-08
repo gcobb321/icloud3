@@ -23,24 +23,27 @@ from .                      import selection_lists as lists
 
 #-------------------------------------------------------------------------------------------
 DASHBOARD_ICONS = [
-        'mdi:cloud-download-outline',
-        'mdi:cloud-upload-outline',
-        'mdi:cloud-check-variant-outline',
-        'mdi:cloud-refresh-variant-outline',
-        'mdi:cloud-alert-outline',
-        'mdi:cloud-percent-outline',
-        'mdi:cloud-question-outline',
-
-        'mdi:cloud-cog-outline',
-        'mdi:cloud-plus-outline',
-        'mdi:cloud-remove-outline',
-        'mdi:cloud-sync-outline',
-
+        'mdi:cloud',
+        'mdi:cloud-outline',
+        'mdi:cloud-arrow-up',
         'mdi:cloud-arrow-up-outline',
+        'mdi:cloud-arrow-down',
         'mdi:cloud-arrow-down-outline',
+        'mdi:cloud-arrow-left',
         'mdi:cloud-arrow-left-outline',
+        'mdi:cloud-arrow-right',
         'mdi:cloud-arrow-right-outline',
-]
+
+        'mdi:cloud-cog',
+        'mdi:cloud-cog-outline',
+        'mdi:cloud-plus',
+        'mdi:cloud-plus-outline',
+        'mdi:cloud-remove',
+        'mdi:cloud-remove-outline',
+        'mdi:cloud-sync',
+        'mdi:cloud-sync-outline',
+]        
+
 DASHBOARD_TEMPLATE_FILES = [
         'template',
         'master',
@@ -1027,11 +1030,11 @@ async def _add_dashboard_to_lovelace_dashboards(self, dbname):
 #............................................................................................
 def _icon(dbname):
     if dbname == 'ic3db-icloud3':
-        return "mdi:cloud-outline"
+        return "mdi:cloud"
 
     number_suffix = dbname.split('-')[-1]
     number_suffix = int(number_suffix) if is_number(number_suffix) else 0
-    number_suffix = number_suffix % 7
+    number_suffix = number_suffix % 18
 
     return DASHBOARD_ICONS[number_suffix]
 

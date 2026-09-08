@@ -46,7 +46,7 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 BADGE,
                                 )
 from ..const_more_info      import more_info_text
-from .utils                 import (obscure_field, instr, is_empty, isnot_empty, list_add, list_del, )
+from .utils                 import (obscure_field, instr, is_empty, isnot_empty, username_id, )
 
 
 import homeassistant.util.dt   as dt_util
@@ -843,7 +843,7 @@ def format_header_box(log_msg, indent=None, start_finish=None, evlog_export=Fals
     start_pos = log_msg.find('^')
     if start_pos == -1: start_pos = 0
 
-    indent = indent if indent is not None else 37 if Gb.is_log_level_debug else 16
+    indent = indent if indent is not None else 37 if Gb.is_log_level_debug else 15
 
     top_char = bot_char = DASH_50
     if start_finish == 'start':
@@ -1393,7 +1393,7 @@ def _extract_py_filename(caller):
 #   LOG FILE PASSWORD FILTER
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def add_log_file_filter(item, replacement_text=None):
+def add_log_file_filter(filtered_item, filtered_text=None):
     '''
     Set up  log file filter to replace the items value with *'s or prevent it
     from displaying in the log file. If item contains an '@' and it is being hidden,
@@ -1404,34 +1404,37 @@ def add_log_file_filter(item, replacement_text=None):
 
     Note
     '''
-    if (item is None
-            or item.strip() == ''
-            or len(item) < 6):
+    if (filtered_item is None
+            or filtered_item.strip() == ''
+            or len(filtered_item) < 6):
         return
     elif Gb.disable_upw_filter:
-        return item
+        return filtered_item
 
-    # username/email address - reformat useremailname@gmail.com --> use**#**me@ or use**1**@ (set in config_file)
-    if instr(item, '@'):
-        email_parts = item.split('@')
-        Gb.upw_filter_items[email_parts[1]] = ''
+    if instr(filtered_item, '@') is False:
+        if filtered_text is None:
+            filtered_text = '*'*8
+        Gb.upw_filter_items[filtered_item] = filtered_text
+        return
 
-        email_id = email_parts[0]
-        if replacement_text is None:
-            replacement_text = f"{email_id[:3]}****{email_id[-2:]}@"
-        else:
-            replacement_text = f"{email_id[:3]}{replacement_text}{email_id[-2:]}@"
+    # email address = geekstergary@domain - reformat to xx**#**xx@
+    email_id = username_id(filtered_item)        # Will be geekstergary@
+    email_parts = filtered_item.split('@')
 
-        Gb.upw_filter_items[f"{email_id}@"] = Gb.upw_filter_items[email_id] = replacement_text
-        Gb.upw_unfilter_items[replacement_text] = f"{email_id}@"
-        item = item.upper()
-        Gb.upw_filter_items[f"{email_id}@"] = Gb.upw_filter_items[email_id] = replacement_text
-
-    elif replacement_text is not None:
-        Gb.upw_filter_items[item] = replacement_text
-
+    if filtered_text is None:
+        filtered_text = f"{email_id[:3]}****{email_id[-3]}"
     else:
-        Gb.upw_filter_items[item] = '*'*8
+        filtered_text = f"{email_id[:3]}{filtered_text}{email_id[-3:]}"       # ge**2**ry@
+
+    Gb.upw_filter_items[filtered_item] = Gb.upw_filter_items[email_id] = filtered_text
+    Gb.upw_unfilter_items[filtered_text] = email_id
+
+    filtered_item = filtered_item.upper()
+    email_id      = email_id.upper()
+    filtered_text = filtered_text.upper()
+    Gb.upw_filter_items[filtered_item] = Gb.upw_filter_items[email_id] = filtered_text
+    Gb.upw_unfilter_items[filtered_text] = email_id
+
 
 #--------------------------------------------------------------------
 class LoggerFilter(logging.Filter):
@@ -1444,9 +1447,9 @@ class LoggerFilter(logging.Filter):
             return True
 
         message = record.msg
-        for filtered_item, replacement_text in Gb.upw_filter_items.items():
+        for filtered_item, filtered_text in Gb.upw_filter_items.items():
             if instr(message, filtered_item):
-                message = message.replace(filtered_item, replacement_text)
+                message = message.replace(filtered_item, filtered_text)
 
         record.msg  = message
         record.args = []

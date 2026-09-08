@@ -430,6 +430,7 @@ class OptionsFlow_Reauth_Steps:
         Gb.EvLog.clear_greenbar_msg()
         Gb.is_force_icloud_update = True
         AppleAcct.was_auth_code_requested = False
+        AppleAcct.is_reauth_needed_secs   = 0
         update_alert_sensor(AppleAcct.username_id, '')
 
         if self.is_another_auth_code_needed():

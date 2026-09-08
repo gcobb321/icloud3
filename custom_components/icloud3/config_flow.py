@@ -405,11 +405,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.inactive_devices_key_text      = {}
         self.log_level_devices_key_text     = {}
 
-        self.is_reauth_needed            = False
+        self.is_reauth_needed               = False
         self.is_reauth_initialized          = False     # This is only used by config_flow_reauth
 
         # Variables used for the display_text_as update
-        self.dta_selected_idx               = UNSELECTED # Current conf index being updated
+        self.dta_selected_idx               = UNSELECTED_IDX # Current conf index being updated
         self.dta_selected_idx_page          = [0, 5]    # Selected idx to display on each page
         self.dta_page_no                    = 0         # Current page being displayed
         self.dta_working_copy               = {0: '', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '',}

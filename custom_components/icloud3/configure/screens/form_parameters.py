@@ -287,7 +287,7 @@ def form_display_text_as(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_display_text_as_update(self):
     self.actions_list = [ACTION_LIST_OPTIONS['clear_text_as']]
-    self.actions_list.extend(ACTION_LIST_ITEMS_BASE)
+    self.actions_list.extend([ACTION_LIST_OPTIONS['update_text_as']])
 
     if instr(self.dta_working_copy[self.dta_selected_idx], '>'):
         text_from_to_parts = self.dta_working_copy[self.dta_selected_idx].split('>')
@@ -305,7 +305,7 @@ def form_display_text_as_update(self):
                     default=text_to):
                     selector.TextSelector(),
         vol.Required('action_items',
-                    default=utils_cf.default_action_text('save')):
+                    default=utils_cf.default_action_text('update_text_as')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })

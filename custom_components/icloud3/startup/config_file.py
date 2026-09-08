@@ -148,7 +148,8 @@ def write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
     _reconstruct_conf_file()
 
     try:
-        if filename_suffix is None: filename_suffix = ''
+        if filename_suffix is None:
+            filename_suffix = ''
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
 
         success = file_io.save_json_file(filename, Gb.conf_file_data)
@@ -767,7 +768,7 @@ def _config_file_check_new_ic3_version():
     '''
     new_icloud3_version_flag = False
     if Gb.conf_profile[CONF_IC3_VERSION] != f"{VERSION}{VERSION_BETA}":
-        write_icloud3_configuration_file(f'_v{Gb.conf_profile[CONF_IC3_VERSION]}')
+        _copy_config_file_on_new_version()
         Gb.conf_profile[CONF_IC3_VERSION] = f"{VERSION}{VERSION_BETA}"
         Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         new_icloud3_version_flag = True
@@ -780,6 +781,15 @@ def _config_file_check_new_ic3_version():
         _delete_old_log_files()
 
     return new_icloud3_version_flag
+
+#--------------------------------------------------------------------
+def _copy_config_file_on_new_version():
+    config_filenames = file_io.get_directory_files(Gb.ha_storage_icloud3)
+    for config_filename in config_filenames:
+        if config_filename.startswith('configuration_v'):
+            file_io.delete_file(f"{Gb.ha_storage_icloud3}/{config_filename}")
+
+    write_icloud3_configuration_file(f'_v{Gb.conf_profile[CONF_IC3_VERSION]}')
 
 #--------------------------------------------------------------------
 def _delete_old_log_files():

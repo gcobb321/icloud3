@@ -242,10 +242,13 @@ class AppleAcctManager(object):
             self.terms_of_use_update_needed = False
             self.terms_of_use_accepted      = False
 
-            self.response_code_pw     = 0
+            self.response_code_pw           = 0
             self.was_auth_code_requested = False
             self.is_reauth_needed = False        # This is set during the authentication function
-            self.is_reauth_needed_secs = 0       # Time the auth code needed first detectedfunction
+            self.is_reauth_needed_secs = \
+                        Gb.restore_state_apple_accts.get(self.username, {}).get('is_reauth_needed_secs', 0)
+
+            # Time the auth code needed first detectedfunction
             self.login_auth_method    = ""
             self.login_successful     = False
             self.login_successful_srp = None
@@ -618,9 +621,9 @@ class AppleAcctManager(object):
         # It may have been set on first authentication
         if refresh_session is False:
             self.is_reauth_needed = False
-            self.is_reauth_needed_secs = 0
 
-        self.is_reauth_needed = self._set_is_reauth_needed
+
+        # self.is_reauth_needed = self._set_is_reauth_needed
 
         # Validate token - Consider authenticated if token is valid (POST=validate)
         if (refresh_session is False
@@ -667,6 +670,7 @@ class AppleAcctManager(object):
         # request self.data holds the error response (no 'dsInfo'), so it reads
         # back as False and the reauth screens lose the fact that a code is
         # still needed.
+
         if login_successful:
             self.is_reauth_needed = self._set_is_reauth_needed
 
@@ -1728,7 +1732,9 @@ class AppleAcctManager(object):
             log_exception(err)
             return False
 
-        if _is_reauth_needed:
+        if _is_reauth_needed is False:
+            self.is_reauth_needed_secs = 0
+        else:
             if self.is_reauth_needed_secs == 0:
                 self.is_reauth_needed_secs = time_now_secs()
 

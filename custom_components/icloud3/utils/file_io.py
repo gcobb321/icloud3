@@ -405,11 +405,13 @@ async def async_get_directory_files(directory):
 
 #--------------------------------------------------------------------
 def get_directory_files(directory):
+    # get files in directory
     dir_names, files = get_directory(directory)
     return files
 
 #--------------------------------------------------------------------
 def get_directory(directory):
+    # get files in directory and sub-directories
     if directory_exists(directory) is False:
         return [], []
 
@@ -422,7 +424,7 @@ def get_directory(directory):
 
 
 #--------------------------------------------------------------------
-def get_directory_filename_list(start_dir=None,  file_extn_filter=[]):
+def get_directory_filename_list(start_dir=None, file_extn_filter=[]):
     return get_file_or_directory_list(  list_type=0,
                                         start_dir=start_dir,
                                         file_extn_filter=file_extn_filter)

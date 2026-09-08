@@ -49,8 +49,8 @@ class OptionsFlow_DashboardBuilder_Steps:
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
-        self.ui_selected_dbname = user_input.get('selected_dashboard', 'add')
-        if self.ui_selected_dbname == 'add':
+        self.ui_selected_dbname = user_input.get('selected_dashboard', ADD)
+        if self.ui_selected_dbname == ADD:
             action_item == 'create_dashboard'
 
         self.ui_main_view_style  = user_input['main_view_style']
@@ -64,7 +64,7 @@ class OptionsFlow_DashboardBuilder_Steps:
 
         user_input['action_item'] = action_item
 
-        if self.ui_selected_dbname == 'add':
+        if self.ui_selected_dbname == ADD:
             await dbb.create_dashboard(self)
         else:
             await dbb.update_dashboard(self)

@@ -76,6 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         er_util.scan_entity_reg_for_icloud3_items()
     disabled_devices = er_util.extract_item_from_device_reg_items(
                                 'disabled', 'device_id', PLATFORM_DEVICE_TRACKER)
+    _log(f'{disabled_devices=}')
 
     Gb.conf_devicenames = [conf_device[CONF_IC3_DEVICENAME]
                                 for conf_device in Gb.conf_devices
@@ -295,7 +296,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
 
             Gb.device_trackers_created_cnt += 1
 
-            # self.enable_disabled_device()
+            self.enable_disabled_device()
 
         except Exception as err:
             log_exception(err)
@@ -312,7 +313,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
         is set to Inactive and the device_id is disabled. If the user then changes the
         tracking mode, the device_id is still disabled in the device_registry. Reenable it now.
         '''
-        return
+        # return
         try:
             enabled = er_util.enable_disabled_device(self.ha_device_id)
 
@@ -702,6 +703,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
         self.ha_device_id   = self.registry_entry.device_id
         self.ha_entity_id   = self.registry_entry.entity_id
         self.ha_disabled_by = self.registry_entry.disabled_by
+        _log(f'{self.Device=} {self.ha_disabled_by=}')
 
         Gb.ha_device_id_by_devicename[self.devicename]   = self.ha_device_id
         Gb.devicename_by_ha_device_id[self.ha_device_id] = self.devicename
@@ -771,13 +773,16 @@ class iCloud3_DeviceTracker(TrackerEntity):
 
         # Being deleted by iCloud3 Config Flow. Config_flow will delete the device
         # from the iC3 configuration file.
-        if (Gb.OptionsFlowHandler and Gb.OptionsFlowHandler.is_deleting_device):
-            return
+        if Gb.OptionsFlowHandler:
+            if (Gb.OptionsFlowHandler.is_deleting_device
+                    or Gb.OptionsFlowHandler.step_id == 'cleanup_entity_registry'):
+                return
 
         # Being deleted by user. Set it's configuration to Inactive instead of deleting it.
         # The Integrations screen, dropdown list actually says 'Disable_device' but we are
         # treating it as a deletion. This removes the 'Reenable device' and keeps the HA
-        # registries and iC3 in sync. Then restart iC3.
+        # registries and iC3 in sync. Then restart iC3 and restore it on the restart before
+        # the device_tracker entity is created.
         self.Device.tracking_mode = INACTIVE
         self.Device.conf_device[CONF_TRACKING_MODE] = INACTIVE
         Gb.hass.async_add_executor_job(config_file.write_icloud3_configuration_file)

@@ -200,6 +200,7 @@ def enable_disabled_device(device_id):
     try:
         device_reg = dr.async_get(Gb.hass)
         device_data = device_reg.async_get(device_id)
+
         if device_data.disabled_by is not None:
             device_reg.async_update_device(device_id, disabled_by=None)
             return True

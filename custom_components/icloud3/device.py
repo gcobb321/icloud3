@@ -155,6 +155,7 @@ class iCloud3_Device(TrackerEntity):
         self.data_source                  = None
         self.tracking_status              = TRACKING_NORMAL
         self.tracking_mode                = TRACK      #normal, monitor, inactive
+        # self.tracking_mode_after_reg_cleanup_restore = None      #normal, monitor, inactive
         self.alert                        = ''
         self.last_data_update_secs        = time_now_secs()
         self.last_evlog_msg_secs          = time_now_secs()

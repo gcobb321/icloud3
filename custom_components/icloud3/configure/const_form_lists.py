@@ -119,7 +119,8 @@ ACTION_LIST_OPTIONS = {
         'create_dashboard':         'CREATE/UPDATE A DASHBOARD → Erase and recreate an existing Dashboard, Create a new Dashboard',
 
         'select_text_as':           'SELECT → Update selected `Display Text As‘ field',
-        'clear_text_as':            'CLEAR → Remove `Display Text As‘ entry',
+        'clear_text_as':            'CLEAR → Remove this `Display Text As‘ entry',
+        'update_text_as':           'UPDATE → Finished setting this `Display Text As‘ entry',
 
         'exclude_sensors':          'EXCLUDE SENSORS → Select specific Sensors that should not be created',
         'filter_sensors':           'FILTER SENSORS → Select Sensors that should be displayed',
@@ -149,7 +150,7 @@ SERVICE_NOT_STARTED_YET     = ' → This Data Source/Web Location Svc has not fi
 LOGGED_INTO_MSG_ACTION_LIST_IDX = 1     # Index number of the Action list item containing the username/password
 APPLE_ACCOUNT_USERNAME_ACTION_LIST_IDX = 0     # Index number of the Action list item containing the username/password
 APPLE_ACCOUNTS_MULTI_HDR = {'apple_acct_hdr': '═════════ Additional Apple Accounts ═════════'}
-ADD = UNSELECTED = -1
+UNSELECTED_IDX = -1
 
 # Action List Items for all screens
 ACTION_LIST_ITEMS_BASE = [

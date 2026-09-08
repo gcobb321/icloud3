@@ -452,11 +452,11 @@ class OptionsFlow_Parameters_Steps:
         user_input, action_item = self.initialize_step('display_text_as', user_input, errors)
 
         if user_input is None:
-            if (self.dta_selected_idx == UNSELECTED):
+            if (self.dta_selected_idx == UNSELECTED_IDX):
                 self.dta_selected_idx = 0
                 self.dta_selected_idx_page = [0, 5]
                 self.dta_page_no = 0
-                idx = UNSELECTED
+                idx = UNSELECTED_IDX
                 for dta_text in Gb.conf_general[CONF_DISPLAY_TEXT_AS]:
                     idx += 1
                     self.dta_working_copy[idx] = dta_text
@@ -479,11 +479,11 @@ class OptionsFlow_Parameters_Steps:
             return await self.async_step_display_text_as_update(user_input)
 
         elif action_item == 'menu':
-            self.dta_selected_idx = UNSELECTED
+            self.dta_selected_idx = UNSELECTED_IDX
             return await self.async_step_menu()
 
         if action_item == 'save' and utils_cf.no_errors(self):
-            idx = self.dta_selected_idx = UNSELECTED
+            idx = self.dta_selected_idx = UNSELECTED_IDX
             dta_working_copy_list = DEFAULT_GENERAL_CONF[CONF_DISPLAY_TEXT_AS].copy()
             for temp_dta_text in self.dta_working_copy.values():
                 if instr(temp_dta_text,'>'):
@@ -512,13 +512,10 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_tracking_parameters(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
-            return await self.async_step_display_text_as()
-
-        if action_item == 'save' and utils_cf.no_errors(self):
+        if action_item == 'update_text_as':
             text_from = user_input['text_from'].strip()
             text_to   = user_input['text_to'].strip()
-            if  text_from and text_to:
+            if text_from and text_to:
                 self.dta_working_copy[self.dta_selected_idx] = f"{text_from} > {text_to}"
             else:
                 self.dta_working_copy[self.dta_selected_idx] = f"#{self.dta_selected_idx + 1}"
