@@ -1,5 +1,10 @@
+***If you appreciate my work, could you get me a coffee?***
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
-<img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
+<img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="35"></a>
+***Thanks***,
+***Gary Cobb, aka geekstergary***
+
+
 
 
 -----
@@ -14,3 +19,175 @@
 2. **Display Text-as screen** - Changed the Action Options text for clarity.
 3. **Tools > Cleanup HA Registries** - When active devices (Tracked, Monitored) were deleted from the registry, their Tracking Mode was set to Inactive to prevent a conflict with the HA registry and iCloud3 where the HA registry showed disabled and iCloud3 did not. This has been changed so an iCloud3 device will only be set to Inactive if the device was disabled on the HA devices > disable device screen.
 4. **Startup** - The iCloud3 Configuration file was backed up when a new version was installed, leading to multiple version backups. Old backup files are now deleted and only the latest one is kept.
+
+
+
+
+-----
+
+## 🍎 iCloud3 v3.7.4 (9/6/2026)
+
+### 📢 Other Updates
+
+1. Fixed the problem HA 2026.9 introduced regarding the use of depreciated methods to access device_registry.devices and device_registry.deleted_devices items.
+2. Extensive review and updates to the iCloud3 documentation.
+
+
+-----
+
+## 🍎 iCloud3 v3.7.3 (8/29/2026)
+
+### 🐞 Bug Fixes
+
+1. Fixed a problem logging into an existing iCloud Apple Account with the wrong password.
+2. Fixed a spelling error when posting a Mobile App status message.
+3. Fixed a problem where the old Mobile App location would be used on a restart if the there was another error logging into the Apple Account.
+4. Fixed a problem where the current values of sensors were not restored properly across restarts.
+5. Fixed broken Configure screen Action Item Buttons that did not work.
+
+### 📢 Other Updates
+
+1. Discarding duplicate MobApp 'signaled' and 'periodic' triggers when the Device is in a zone.
+2. Visual changes to the Configure menus and screens for clarity and improved navigation.
+3. The Arrival sensor now shows the time-days ago (@4:34-1d, 2w4d) and retains the value across restarts.
+4. The distance sensors now show the actual value when in a zone (0.001 mi/0.002 km) instead of (0 mi/0 km).
+5. The Dashboard Builder screen now shows the HA Sidebar icon assigned to each iCloud3 dashboard.
+6. Updated the Configure Settings Exit process display page.
+7. Apple Account other parameters screen (China and other rarely used items) was moved to the Update Apple Account screen.
+8. The Data Source parameter (Apple Account & Mobile App) was moved from the Apple Accounts screen to the Tracking Parameters screen.
+
+### 📢 Major Improvements
+
+1. Update Apple Account, Authenticate Apple Account & Import Apple Devices - The general process of adding an Apple Account, Authenticating the account and adding the devices to iCloud3 has been pretty much automated.
+
+- You add the Apple Account - The account is verified and you are logged into it.
+- The Authenticate Apple Account Sign-in screen is displayed - The authentication code is automatically requested and displayed on your iPhone. You enter the code and send it to Apple.
+- The Import Apple Devices screen is displayed - The devices in the new Apple Account are analyzed and iCloud3 devices that will be created are listed. Data from the Apple Account is used to build the iCloud3 devices. Save the new devices and they are added to iCloud3.
+- The iCloud3 Dashboards are created or updated - When you close the iCloud Configure Session, the dashboards with the new devices, and the Event Log, are updated and added to toe HA Sidebar as a new Dashboard.
+- To to the iCloud3 Dashboard - iCloud3 will have restrted and the tracking information is displayed.
+
+2. Major under the cover improvements to the Authenticate Apple Account Signin handler to improve error reporting, code request/send control and Text message code handling.
+
+
+-----
+
+## 🍎 iCloud3 v3.7.2 (8/12/2026)
+
+### 🐞 Bug Fixes
+
+1. Fixed a problem displaying the Configure Parameters menu
+2. Fixed a problem on the _Tools > Cleanup Registry Errors_ screen dealing with deleted devices & sensors (@FlyRenxing).
+3. Changed the way the sensor.friendly_name attribute was being set to conform to HA methods. For example, the value ended up being _Gary (gary_iphone) Gary HomeDistance_ when it should be just _Gary HomeDistance_.
+4. If you are within 1km of a tracked zone (Home), the next update interval is 15-secs and the Waze Route Service is not used. If Apple sent back your previous location instead of your new location, the distance moved would be 0km and the last Waze travel time and distance was being used when it should not have been.
+5. Fixed an error restoring the device_tracker and sensors state values when HA and iCloud3 are restarted.
+
+### 📢 Other Updates
+
+1. Tweaked the Tracking Results Status header line (Blue header on the Event Log) to provide more information.
+2. Reformatted some of the _Event Log_ items for clarity, to provide more information and to remove duplication.
+3. Changed the way the _Arrival_ sensor keeps track of when the device entered a zone so it survives HA and iCloud3 restarts. Also, the number of days ago that the zone was entered is now displayed (@2:25-2d = 2:25, 2 days ago, -3w4d = 3 weeks, 4 days ago).
+4. The devices sensor.info was providing miscellaneous status information that was developed before the _Event Log_ a number of years ago. It now displays the last tracking result (blue bar item on the Event Log) and can be added to screens to show the devices status when the _Event Log_ is not displayed.
+5. When exporting the Event Log for a device, only the selected device is now exported instead of all devices. Also, the first 3-letters of the device's name was to the file name.
+
+
+-----
+
+## 🍎 iCloud3 v3.7.1 (7/26/2026)
+
+### 🐞 Bug Fixes and HA core changes:
+
+1. Fixed a problem updating the iCloud3 Dashboards after sensor changes.
+2. Fixed a problem redisplaying the correct Configure Menu after sensor changes.
+
+### 📢 Other Updates
+
+1. Changed the iCloud3 Theme item text description color from orange to blue.
+
+
+-----
+
+## 🍎 iCloud3 v3.7 (7/24/2026)
+
+### 📢 Major Improvements
+
+1. **New** - *Authenticating Apple Account Sign-in* with Security Keys (YubiKey)
+   - Added support for authenticating using Security Keys. See iCloud3 docs [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3_apple-acct-auth) for more information and instructions.
+   - Simplified the Authentication Method description when no code was sent.
+2. **New** - *Import Apple Devices* screen
+   - This screen lets you import all (or some) devices in your Apple Account(s) that have not yet been added to the iCloud3 Devices configuration with one click. This will then create the device_tracker and sensor entities for the devices. See docs [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3_devices?id=importing-apple-account-devices-to-create-the-icloud3-devices)
+   - This screen is displayed on the *iCloud3 Devices* and *Update Apple Account* screens
+   - This screen lists all Apple Devices that have not been added to iCloud3. They can be imported, creating iCloud3 device_tracker entities
+   - The iCloud3 device_tracker entity id is derived from the Apple device name
+   - The Apple device and MobApp devices are automatically assigned
+   - Other fields use default values base on the device type (iphone, Watch, iPad, etc)
+   - After importing, corrections and changes can be done on the *Update iCloud3 Device* screen
+
+### 📢 Other Updates
+
+1. **Event Log**:
+   - Updated the Event Log to improve the readability and reduce duplicate information displayed in the tracking results area
+   - Improved support of the 'dark mode' theme
+   - The device name selection buttons at the top of the screen are now displayed on 3-lines. A drop down list is used to select the devices that do not fit on these 3-lines. This is needed since there is no limit to the number of devices that can be tracked.
+   - Performance improvements
+   - Landscape and portrait orientation changes on iPhones and iPads is now supported
+   - Clarified the Location Data Source (WiFi, Cell, GPS) and the indicator that Zone Enter/Exit activity was logged to a .csv file on the Tracking Results Zone info line
+   - The buttons for Monitored devices at the top of the screen is improved
+   - Log Level 'RawData' was showing as 'Debug' in the *Event Log > Actions* drop-down window
+   - *Note: A browser refresh is needed on all devices to install these updated features. A message will be displayed on the Event Log screen with additional information*
+
+2. **Away Time Zone** screen
+   - Updated description/status selection text
+   - Away Time Zone will be automatically cleared when entering the Home zone
+
+3. **Other Changes**
+   - Added a default timeout value for requesting data from Apple (@timk75)
+   - Added the device's friendly name to the *Update Other Device Parameters* screen
+   - The MobApp reports the battery level to within 5% of the actual value when it's being 'Pushed' to the battery sensor. This is due to the way Apple provides the data, not a bug in the MobApp. The MobApp battery level is no longer being used unless the iCloud battery level is unavailable.
+
+4. **iCloud3 Theme**:
+   - Improved the handling of dark mode.
+   - The theme is copied to the HA Themes folder and the HA themes list is refreshed when iCloud3 starts
+
+### 🐞 Bug Fixes and HA core changes:
+
+1. Fixed a problem where the internal HA entity_id value for a device_tracker was incorrect after deleting it and then readding it.
+2. Changed how Stationary Zones are created and removed to prevent errors when calling HA zone routines (@AYapejian, @crissmil)
+3. Resolved the HA warning message generated by HA 2027.6 about device_tracker code that will be removed in the HA 2027.06 release.
+4. Resolved the HA warning messages generated by HA 2027.7+ related to how zone state values are handled by the new 'in_zone' property.
+
+
+## 🍎 iCloud3 v3.6.1 (7/7/2-26)
+
+### 📢 Improvements
+
+1. Clarified the Location Data Source (WiFi, Cell, GPS) and the indicator that the Zone Enter/Exit activity was logged to a .csv file on the Tracking Results Zone info line.
+2. Added the device's friendly name to the *Update Other Device Parameters* screen
+
+### 🐞 Bug Fixes
+
+1. Log Level 'RawData' was showing as 'Debug' in the *Event Log > Actions* drop-down window
+
+
+## 🍎 iCloud3 v3.6 (6/6/2026)
+
+### 📢 Improvements
+
+1. **Authenticating Apple Account Sign-in** with Security Keys (YubiKey)
+   - NEW - Added support for authenticating using Security Keys. See iCloud3 docs [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/3_apple-acct-auth) for more information and instructions.
+   - Simplified the Authentication Method description when no code was sent.
+
+2. **Event Log**:
+   - Updated the Event Log to improve the readability and reduce duplicate information displayed in the tracking results area.
+   - Improved support of the 'dark mode' theme.
+   - The device names are displayed at the top of the screen on 2-lines like they always have. Since the number of tracked devices has expanded, a drop down list is used to select those that do not fit on these 2-lines
+   - Performance improvements
+   - Changes to iPhone and iPad orientation is supported
+   - Note: A browser refresh will be needed on all devices to install this update
+
+3. **Away Time Zone**
+   - Updated description/status selection text
+   - Away Time Zone will be automatically cleared when entering the Home zone.
+
+4. **Other Changes**
+   - Resolved the HA warning message about device_tracker code that will be removed in the HA 2027.06 release.
+   - Added a default timeout value for requesting data from Apple (@timk75)
