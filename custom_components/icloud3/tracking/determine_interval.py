@@ -749,10 +749,10 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
         # has been cycled thru and started at the beginning again. Pause tracking
         # if cycled more than 8 times or 4 times and last location is over 2-days ago
         if Device.max_error_cycle_cnt > 8:
-            Device.pause_tracking
+            Device.pause_tracking()
         elif (Device.max_error_cycle_cnt > 4
                 and mins_since(Device.last_update_loc_secs) > 2880):
-            Device.pause_tracking
+            Device.pause_tracking()
         elif Device.max_error_cycle_cnt > 2:
             interval_secs = interval_secs * int(Device.max_error_cycle_cnt/2)
             if interval_secs > Gb.max_interval_secs:

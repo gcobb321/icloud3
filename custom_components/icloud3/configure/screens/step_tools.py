@@ -326,14 +326,14 @@ class OptionsFlow_Tools_Steps:
                 self.create_device_tracker_sensor_enities_on_exit = True
 
                 if Device := Gb.Devices_by_devicename.get(devicename):
-                    Device.pause_tracking
+                    Device.pause_tracking()
 
                 sensors_cf.remove_device_tracker_and_sensor_entities(
                                                         self, devicename,
                                                         rebuild_ic3db_dashboards=False)
 
                 if Device:
-                    Device.resume_tracking
+                    Device.resume_tracking()
 
         except Exception as err:
             log_exception(err)
