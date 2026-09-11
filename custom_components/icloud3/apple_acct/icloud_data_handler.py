@@ -147,7 +147,7 @@ def request_icloud_data_update(Device):
 
             if Gb.internet_error:
                 for Device in Gb.Devices:
-                    Device.pause_tracking
+                    Device.pause_tracking()
                 return False
 
             # Retry in an error occurs
