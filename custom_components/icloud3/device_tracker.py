@@ -344,6 +344,21 @@ class iCloud3_DeviceTracker(TrackerEntity):
         return self._attr_unique_id
 
     @property
+    def available(self):
+        """
+        Report unavailable once the last confirmed location fix (from
+        whichever data source most recently succeeded - iCloud or the
+        companion app) is older than iCloud3's own staleness threshold
+        (Device.is_location_good / is_location_old, ~120s), instead of
+        indefinitely repeating a frozen zone through an extended outage
+        (e.g. a pending Apple Terms-of-Use/2FA prompt, or a network
+        outage reaching Apple's servers).
+        """
+        if self.Device is None:
+            return True
+        return self.Device.is_location_good
+
+    @property
     def should_poll2(self):
         return False
 
