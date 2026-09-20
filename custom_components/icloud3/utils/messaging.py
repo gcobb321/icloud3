@@ -1422,7 +1422,7 @@ def add_log_file_filter(filtered_item, filtered_text=None):
     email_parts = filtered_item.split('@')
 
     if filtered_text is None:
-        filtered_text = f"{email_id[:3]}****{email_id[-3]}"
+        filtered_text = f"{email_id[:3]}****{email_id[-3:]}"
     else:
         filtered_text = f"{email_id[:3]}{filtered_text}{email_id[-3:]}"       # ge**2**ry@
 
