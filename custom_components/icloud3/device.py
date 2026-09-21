@@ -64,7 +64,7 @@ from .utils.utils       import (instr, is_zone, isnot_zone, is_statzone, list_ad
 from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 post_greenbar_msg, clear_greenbar_msg, log_info_msg,
                                 log_exception, log_debug_msg, log_error_msg, log_data,
-                                post_internal_error, _evlog, _log, )
+                                post_internal_error, update_alert_sensor, _evlog, _log, )
 from .utils.time_util   import (time_now_secs, secs_to_time, s2t, time_now, datetime_now,
                                 secs_since, mins_since, secs_to, mins_to, secs_to_hhmm,
                                 format_timer, format_secs_since, time_to_12hrtime,
@@ -369,6 +369,7 @@ class iCloud3_Device(TrackerEntity):
         self.loc_data_vert_accuracy  = 0
         self.loc_data_isold          = False
         self.loc_data_ispoorgps      = False
+        self.stale_data_alert_shown  = False
         self.loc_data_dist_moved_km  = 0.0
         self.loc_data_time_moved_from = DATETIME_ZERO
         self.loc_data_time_moved_to   = DATETIME_ZERO
@@ -1203,6 +1204,22 @@ class iCloud3_Device(TrackerEntity):
             self.loc_data_ispoorgps = (self.loc_data_gps_accuracy > Gb.gps_accuracy_threshold)
             self.is_icloud_devdata_useable = (self.loc_data_isold is False
                                                     and self.loc_data_ispoorgps is False)
+
+        # Display an OFFLINE indicator (same NEXT_UPDATE/alert-sensor
+        # mechanism pause_tracking() already uses for an internet outage)
+        # once the location data is stale, without touching device_tracker's
+        # own state/availability. loc_data_secs == 0 means this device has
+        # never had a fix at all yet - a different, pre-existing condition,
+        # not "went stale after working" - so it's excluded here.
+        if (self.loc_data_isold and self.loc_data_secs > 0
+                and self.stale_data_alert_shown is False and self.is_tracking_paused is False):
+            self.stale_data_alert_shown = True
+            self.write_ha_sensor_state(NEXT_UPDATE, f"{RED_ALERT}OFFLINE")
+            update_alert_sensor(self.fname, (
+                    f"No location update since {secs_to_time(self.loc_data_secs)}"))
+        elif self.loc_data_isold is False and self.stale_data_alert_shown:
+            self.stale_data_alert_shown = False
+            update_alert_sensor(self.fname, '')
 
     @property
     def is_mobapp_data_good(self):
