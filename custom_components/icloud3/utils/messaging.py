@@ -1121,6 +1121,10 @@ def shrink_item(v, k=None):
     if k in DO_NOT_SHRINK:
         return v
 
+    # Shrink each item of a list (e.g. trustTokens) so it is not logged in full
+    if type(v) is list:
+        return [shrink_item(x, k) for x in v]
+
     if (type(v) is str
             and len(v) > 20
             and v.startswith('http') is False):
