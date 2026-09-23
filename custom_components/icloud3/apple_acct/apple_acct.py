@@ -890,11 +890,11 @@ class AppleAcctManager(object):
 
         error_msg = ''
         if Gb.internet_error:
-            error_msg = HTTP_RESPONSE_CODES(-4)
+            error_msg = HTTP_RESPONSE_CODES.get(-4, 'Other Error')
         elif self.response_code in [403, 503]:
-            error_msg = HTTP_RESPONSE_CODES(self.response_code)
+            error_msg = HTTP_RESPONSE_CODES.get(self.response_code, 'Other Error')
         elif 'salt' not in data:
-            error_msg = HTTP_RESPONSE_CODES(-3)
+            error_msg = HTTP_RESPONSE_CODES.get(-3, 'Other Error')
 
         if error_msg:
             post_error_msg(f"{self.username_base}, Password SRP Error, {error_msg} ({self.response_code})")
