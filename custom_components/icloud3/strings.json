@@ -850,5 +850,15 @@
         }
       }
     }
+  },
+  "issues": {
+    "apple_acct_terms_of_use": {
+      "title": "iCloud3: Apple Account {account} needs Apple's new Terms of Use accepted",
+      "description": "Apple has updated its Terms of Use and will not return device locations for **{account}** until they are accepted, so iCloud3 has stopped getting iCloud locations for its devices (Mobile App locations still work).\n\nTo fix it, open **Settings > Devices & services > iCloud3 > Configure**, go to the account's Apple sign-in (Authentication Code entry) screen and choose **Accept `Terms of Use`** (iCloud3 sends 'I Agree' to Apple), or sign in at www.icloud.com and agree there.\n\nThis entry clears itself once the terms have been accepted."
+    },
+    "apple_acct_locked": {
+      "title": "iCloud3: Apple Account {account} is locked",
+      "description": "Apple reports that **{account}** is locked, so iCloud3 cannot get device locations from it.\n\nSign in at www.icloud.com (or iforgot.apple.com) to unlock the account, then restart iCloud3 from **Settings > Devices & services > iCloud3 > Configure**.\n\nThis entry clears itself once Apple reports the account as unlocked."
+    }
   }
 }
