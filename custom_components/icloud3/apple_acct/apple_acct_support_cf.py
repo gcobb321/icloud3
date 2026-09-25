@@ -1,6 +1,7 @@
 
 
 from ..global_variables import GlobalVariables as Gb
+from ..utils.repairs     import (clear_apple_acct_issue, ISSUE_TERMS_OF_USE, )
 from ..const            import (DOMAIN, DEVICE_TRACKER,
                                 CRLF_DOT, EVLOG_NOTICE, EVLOG_ERROR, EVLOG_ALERT,
                                 ICLOUD, CONF_DATA_SOURCE,
@@ -312,6 +313,7 @@ async def async_finish_authentication_and_data_refresh(caller_self):
 
     if AppleAcct.is_authenticated:
         AppleAcct.terms_of_use_update_needed = False
+        clear_apple_acct_issue(ISSUE_TERMS_OF_USE, AppleAcct)
         post_event( f"{AppleAcct.username_base} > "
                     f"Apple Acct > Terms of Service agreement approved")
         update_alert_sensor(AppleAcct.username_id, '')

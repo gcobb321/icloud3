@@ -17,6 +17,8 @@ by various people to include:
 '''
 
 from ..global_variables     import GlobalVariables as Gb
+from ..utils.repairs     import (raise_apple_acct_issue, clear_apple_acct_issue,
+                                ISSUE_TERMS_OF_USE, ISSUE_ACCT_LOCKED, )
 from ..const                import (EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK,
                                     DOTS, RED_X, NL3, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                     APPLE_SERVER_ENDPOINT, TRUST_COOKIE_NAME,
@@ -765,6 +767,10 @@ class AppleAcctManager(object):
                 if 'fullName' in self.data['dsInfo']:
                     self.account_name   = self.data['dsInfo']['fullName'].replace(' ', '')
                     self.account_locked = self.data['dsInfo']['locked']
+                    if self.account_locked:
+                        raise_apple_acct_issue(ISSUE_ACCT_LOCKED, self)
+                    else:
+                        clear_apple_acct_issue(ISSUE_ACCT_LOCKED, self)
 
             if 'webservices' in self.data:
                 try:
@@ -1325,12 +1331,14 @@ class AppleAcctManager(object):
 
         self.terms_of_use_update_needed = self.data.get('termsUpdateNeeded', False)
         if self.terms_of_use_update_needed is False:
+            clear_apple_acct_issue(ISSUE_TERMS_OF_USE, self)
             return
 
         if self.terms_of_use_accepted is False:
             post_alert(f"{self.username_base} > "
                         "Apple Acct > Accept `Terms of Use` is needed "
                         "(Auth Code entry screen)")
+            raise_apple_acct_issue(ISSUE_TERMS_OF_USE, self)
             return False
 
         url    = f"{self.SETUP_ENDPOINT}/getTerms"
@@ -1358,6 +1366,7 @@ class AppleAcctManager(object):
 
         if self.data:
             self.terms_of_use_update_needed = False
+            clear_apple_acct_issue(ISSUE_TERMS_OF_USE, self)
 
 #----------------------------------------------------------------------------
     def _handle_accept_terms_of_use_error(self, error_msg):
