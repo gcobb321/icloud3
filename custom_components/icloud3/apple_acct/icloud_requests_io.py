@@ -13,7 +13,7 @@ from os                     import path
 import requests
 from requests.exceptions    import ConnectionError
 
-from homeassistant.helpers.event import track_time_interval
+from homeassistant.helpers.event import call_later
 from homeassistant.helpers  import httpx_client
 from httpx                  import (ConnectTimeout, HTTPError, RequestError,
                                     HTTPStatusError, InvalidURL, )
@@ -216,11 +216,11 @@ def schedule_request_timeout_timer(url):
     Gb.icloud_io_request_secs = time_now_secs()
 
     try:
+        # One-shot: a repeating timer whose handle is lost keeps firing forever
         Gb.icloud_io_1_min_timer_fct = None
-        Gb.icloud_io_1_min_timer_fct = track_time_interval(Gb.hass,
-                                    request_timed_out,
+        Gb.icloud_io_1_min_timer_fct = call_later(Gb.hass,
                                     REQUEST_TIMEOUT_TIME,
-                                    cancel_on_shutdown=True)
+                                    request_timed_out)
 
     except Exception as err:
         # if instr(err, 'RunTimeError'):
