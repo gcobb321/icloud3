@@ -105,6 +105,16 @@ AUTHENTICATION_NEEDED_421_450_500 = [421, 450, 500]
 AUTHENTICATION_NEEDED_450 = 450
 CONNECTION_ERROR_503 = 503
 
+# After Apple answers a password sign-in with 403 (-20209, account locked) or
+# 503 (PwSRP refused), hold off on any further password sign-in for a while,
+# since every extra attempt keeps the account locked. The hold is persisted in
+# the .tpw file and only applies to the password that was refused: a new
+# password, or a reauth started from the Configure screens, clears it.
+PW_LOCKOUT_KEY      = 'pw_lockout_until_secs'
+PW_LOCKOUT_CODE_KEY = 'pw_lockout_code'
+PW_LOCKOUT_PW_KEY   = 'pw_lockout_pw_id'
+PW_LOCKOUT_SECS     = {403: 6*3600, 503: 1800}
+
 HTTP_RESPONSE_CODES = {
     -4:  'Internet Connection Error',
     -3:  'Apple PwSRP Initialization Failed',
@@ -391,6 +401,12 @@ class AppleAcctManager(object):
                             "clientMasteringNumber": "2021B29",
                             "ckjsBuildVersion": "17DProjectDev77",
                             "clientId": self.client_id[5:],  }
+
+        # Seed the dsid saved in the .tpw file so the
+        # first authenticate() after a restart can check the saved session
+        # (POST setup/ws/1/validate) before falling back to a password sign-in
+        if self.token_pw_data.get('dsid'):
+            self.params['dsid'] = self.dsid = str(self.token_pw_data['dsid'])
 
         self.was_ha_auth_code_alert_sent = False
         self.last_refresh_secs           = time_now_secs()
@@ -862,6 +878,9 @@ class AppleAcctManager(object):
         username = username if username is not None else self.username
         password = password if password is not None else self.password
 
+        if self._password_signin_on_hold(password):
+            return False
+
         log_info_msg(f"{self.username_base}, Authenticate with PasswordSRP")
         post_greenbar_msg(f"Apple Acct > {self.username_base}, Auth with PasswordSRP")
 
@@ -893,6 +912,7 @@ class AppleAcctManager(object):
             error_msg = HTTP_RESPONSE_CODES(-4)
         elif self.response_code in [403, 503]:
             error_msg = HTTP_RESPONSE_CODES(self.response_code)
+            self._set_password_signin_hold(password)
         elif 'salt' not in data:
             error_msg = HTTP_RESPONSE_CODES(-3)
 
@@ -936,6 +956,7 @@ class AppleAcctManager(object):
 
         # if valid_upw is False:
         if self.response_code not in [200, 409]:
+            self._set_password_signin_hold(password)
             self.setup_error(self.response_code)
             return False
 
@@ -1016,6 +1037,9 @@ class AppleAcctManager(object):
         username = username if username is not None else self.username
         password = password if password is not None else self.password
 
+        if self._password_signin_on_hold(password):
+            return False
+
         log_info_msg(f"{self.username_base}, Validate Username/Password via SRP")
 
         # Step 1: client generates private key a and public key A, sends A to
@@ -1067,6 +1091,7 @@ class AppleAcctManager(object):
         # 200 = valid & signed in, 409 = valid but 2FA/HSA2 verification required
         self.response_code_pw = self.response_code
         self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
+        self._set_password_signin_hold(password)
 
         return self.response_code in [200, 409]
 
@@ -1076,6 +1101,64 @@ class AppleAcctManager(object):
         self.login_successful_srp = False
         self.response_code_pw     = self.response_code
         self.auth_failed_503      = self.auth_failed_503 or (self.response_code==503)
+
+#----------------------------------------------------------------------------
+    def _set_password_signin_hold(self, password=None):
+        '''
+        Remember, in the .tpw file, that Apple refused
+        the password sign-in (403/-20209 locked, 503 PwSRP refused) so no other
+        password sign-in is sent until the hold expires. Any other response code
+        is ignored. A validate-only AppleAcct never writes the .tpw file.
+        '''
+        hold_secs = PW_LOCKOUT_SECS.get(self.response_code)
+        if hold_secs is None:
+            return
+
+        hold_until = time_now_secs() + hold_secs
+        self._update_token_pw(PW_LOCKOUT_KEY, hold_until)
+        self._update_token_pw(PW_LOCKOUT_CODE_KEY, self.response_code)
+        self._update_token_pw(PW_LOCKOUT_PW_KEY, self._password_id(password))
+
+        post_alert( f"Apple Acct > {self.username_base}, Apple refused the password "
+                    f"sign-in ({self.response_code}), no password sign-in will be "
+                    f"sent until {secs_to_hhmm(hold_until)}")
+
+    def _password_id(self, password=None):
+        '''
+        Short fingerprint of the current password, so a hold is tied to the
+        password Apple refused and the password itself is never stored here
+        '''
+        return hashlib.sha256(str(password if password is not None else self.password).encode()).hexdigest()[:12]
+
+    def _clear_password_signin_hold(self):
+        for key in (PW_LOCKOUT_KEY, PW_LOCKOUT_CODE_KEY, PW_LOCKOUT_PW_KEY):
+            if self.token_pw_data.get(key) is not None:
+                self._update_token_pw(key, None)
+
+    def _password_signin_on_hold(self, password=None):
+        '''
+        Return True (and say so in the log) if a password sign-in hold set by
+        _set_password_signin_hold is still running. Delete the
+        'pw_lockout_until_secs' key from the .tpw file to clear it by hand.
+        '''
+        try:
+            hold_until = int(self.token_pw_data.get(PW_LOCKOUT_KEY) or 0)
+        except (TypeError, ValueError):
+            hold_until = 0
+
+        if (hold_until <= time_now_secs()
+                or self.token_pw_data.get(PW_LOCKOUT_PW_KEY) != self._password_id(password)):
+            return False
+
+        code = self.token_pw_data.get(PW_LOCKOUT_CODE_KEY, '')
+        log_info_msg(   f"{self.username_base}, Password sign-in SKIPPED, Apple refused "
+                        f"the last one ({code}), hold until {secs_to_hhmm(hold_until)}")
+        post_alert( f"Apple Acct > {self.username_base}, Password sign-in skipped, "
+                    f"Apple refused the last one ({code}), "
+                    f"hold until {secs_to_hhmm(hold_until)}")
+        self.login_successful_srp = False
+        self.setup_error(code or 403, 'Password sign-in on hold')
+        return True
 
 #----------------------------------------------------------------------------
     def setup_error(self, code=None, reason=None):
@@ -1151,6 +1234,16 @@ class AppleAcctManager(object):
 
         try:
             self.data = icloud_io.post(self, url, data=data)
+
+            # A failed validate (421 etc) returns a
+            # body without dsInfo, which _set_is_reauth_needed reads as "no 2fa
+            # needed" and this function would report the token as valid
+            if (self.response_code != 200
+                    or not isinstance(self.data, dict)
+                    or 'dsInfo' not in self.data):
+                log_debug_msg(  f"{self.username_base}, "
+                                f"Session Token is not valid ({self.response_code})")
+                return False
 
             self.is_reauth_needed = self._set_is_reauth_needed
 
@@ -2146,6 +2239,10 @@ class AppleAcctManager(object):
         Initialize the session file and authenticate the apple account access. This
         will force Apple to display a new Authentication code
         '''
+
+        # A reauth started from the Configure screens is the user asking for a new
+        # password sign-in, so it is never held back
+        self._clear_password_signin_hold()
 
         self.session_data['session_token'] = ''
         self.session_data['trust_token']   = ''
