@@ -21,3 +21,8 @@ The live test contacts routing-livemap-il.waze.com using public Tel Aviv
 coordinates. It checks for a positive distance and duration. It must be run
 manually and is skipped in GitHub Actions, so CI cannot guarantee that the
 external Waze service is currently reachable.
+
+For the live test, you can also open **Actions > Waze Route Regression Tests**
+in the fork, select **Run workflow**, choose the
+`fix/waze-403-chrome-fallback-tests` branch, and enable **run_live_waze**.
+The `waze-live` job runs separately from the mocked tests.
