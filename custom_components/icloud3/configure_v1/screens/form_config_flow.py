@@ -55,7 +55,7 @@ def form_user_reinstall(self):
     return vol.Schema({
         vol.Required('action_items',
                 default=REINSTALL_ACTIONS[0]):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                     options=REINSTALL_ACTIONS, mode='list')),
         })
 
@@ -104,10 +104,10 @@ def form_menu(self):
     return vol.Schema({
         vol.Optional("menu_items",
                     default=default_menu_item):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=menu_items, mode='list')),
         vol.Optional("action_items"):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=action_items, mode='list')),
                         #options=dict_value_to_list(action_items), mode='list')),
         })
@@ -135,11 +135,11 @@ def form_confirm_action(self, action_items=None):
         return vol.Schema({
             vol.Required('action_desc',
                     default=action_desc):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=[action_desc], mode='list')),
             vol.Required('action_items',
                     default=actions_list[actions_list_default]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=actions_list, mode='list')),
             })
     except Exception as err:
@@ -169,6 +169,6 @@ def form_confirm_action(self, action_items=None):
 #     return vol.Schema({
 #         vol.Required('action_items',
 #                     default=utils_cf.default_action_text('exit')):
-#                     selector.SelectSelector(selector.SelectSelectorConfig(
+#                     selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
 #                         options=self.actions_list, mode='list')),
 #         })
