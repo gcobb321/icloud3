@@ -79,14 +79,14 @@ def form_apple_accounts(self):
                     cv.multi_select([APPLE_ACCT_USED_HEADER]),
         vol.Optional('apple_accts',
                     default=default_item):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.apple_acct_items_displayed, mode='list')),
         # vol.Optional('data_source_mobapp',
         #             default=mobile_app_used_default):
         #             cv.multi_select([MOBILE_APP_USED_HEADER]),
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -126,12 +126,12 @@ def form_other_apple_acct_parameters(self):
 
         vol.Optional(CONF_SERVER_LOCATION,
                 default=utils_cf.option_parm_to_text(self, CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                     options=dict_value_to_list(APPLE_SERVER_LOCATION_OPTIONS), mode='dropdown')),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -208,7 +208,7 @@ def form_update_apple_acct(self):
     schema = ({
         vol.Optional('account_selected',
                     default=acct_info):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=[acct_info], mode='list')),
         vol.Optional(CONF_USERNAME,
                     default=username):
@@ -222,7 +222,7 @@ def form_update_apple_acct(self):
         schema.update({
             vol.Optional(CONF_SERVER_LOCATION,
                     default=utils_cf.option_parm_to_text(self, CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(APPLE_SERVER_LOCATION_OPTIONS), mode='dropdown')),
         })
 
@@ -232,7 +232,7 @@ def form_update_apple_acct(self):
                     cv.boolean,
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -260,18 +260,18 @@ def form_delete_apple_acct(self):
     return vol.Schema({
         vol.Optional('account_selected',
                     default=acct_info):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=[acct_info], mode='list')),
         vol.Required('device_action',
                     default=DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS[default_device_action]):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(
+                        selector.SelectSelectorConfig(translation_key='config_options', 
                             options=dict_value_to_list(DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS),
                             mode='list')),
         vol.Required('action_items',
                     default=utils_cf.default_action_text('cancel_goto_previous')):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+                        selector.SelectSelectorConfig(translation_key='config_options', options=self.actions_list, mode='list')),
         })
 
 
@@ -318,28 +318,28 @@ def form_import_apple_devices(self, user_input=None, aa_username=None):
         schema.update({
             vol.Optional('imported_aadevices_track',
                     default=default_imported_aadevices_track):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=imported_aadevices_track,
                         multiple=True, mode='list')),})
     if isnot_empty(imported_aadevices_monitor):
         schema.update({
             vol.Optional('imported_aadevices_monitor',
                     default=default_imported_aadevices_monitor):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=imported_aadevices_monitor,
                         multiple=True, mode='list')),})
     if isnot_empty(imported_aadevices_inactive):
         schema.update({
             vol.Optional('imported_aadevices_inactive',
                     default=[]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=imported_aadevices_inactive,
                         multiple=True, mode='list')),})
 
     schema.update({
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),})
 
     return vol.Schema(schema)

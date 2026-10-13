@@ -74,13 +74,13 @@ def form_sensors(self, user_input=None):
                     cv.multi_select(CONF_SENSORS_TRACKING_OTHER_KEY_TEXT),
         vol.Optional(CONF_EXCLUDED_SENSORS,
                     default=self.excluded_sensors):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.excluded_sensors,
                         mode='list', multiple=True)),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -121,18 +121,18 @@ def form_exclude_sensors(self):
     return vol.Schema({
         vol.Optional(CONF_EXCLUDED_SENSORS,
                     default=self.excluded_sensors):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.excluded_sensors, mode='list', multiple=True)),
         vol.Optional('filter',
                     default=self.sensors_list_filter):
                     selector.TextSelector(),
         vol.Optional('filtered_sensors',
                     default=filtered_sensors_list_default):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=filtered_sensors_fname_list, mode='list', multiple=True)),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action_item)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })

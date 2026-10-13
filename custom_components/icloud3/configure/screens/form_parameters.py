@@ -67,7 +67,7 @@ def form_away_time_zone(self):
                     cv.multi_select(six_item_dict(self.away_time_zone_devices_key_text)),
         vol.Required(CONF_AWAY_TIME_ZONE_1_OFFSET,
                     default=self.away_time_zone_hours_key_text[Gb.conf_general[CONF_AWAY_TIME_ZONE_1_OFFSET]]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
 
         vol.Required(CONF_AWAY_TIME_ZONE_2_DEVICES,
@@ -75,12 +75,12 @@ def form_away_time_zone(self):
                     cv.multi_select(six_item_dict(self.away_time_zone_devices_key_text)),
         vol.Required(CONF_AWAY_TIME_ZONE_2_OFFSET,
                     default=self.away_time_zone_hours_key_text[Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET]]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -94,7 +94,7 @@ def form_tracking_parameters(self):
     return vol.Schema({
         vol.Optional('data_source',
                     default=utils_cf.option_parm_to_text(self, CONF_DATA_SOURCE, DATA_SOURCE_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(DATA_SOURCE_OPTIONS), mode='dropdown')),
         vol.Optional(CONF_DISTANCE_BETWEEN_DEVICES,
                     default=Gb.conf_general[CONF_DISTANCE_BETWEEN_DEVICES]):
@@ -136,12 +136,12 @@ def form_tracking_parameters(self):
                         min=1, max=100, unit_of_measurement='Km')),
         vol.Optional(CONF_TRAVEL_TIME_FACTOR,
                     default=utils_cf.option_parm_to_text(self, CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT), mode='dropdown')),
 
         vol.Optional('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -160,19 +160,19 @@ def form_format_settings(self):
     return vol.Schema({
         vol.Optional(CONF_DISPLAY_ZONE_FORMAT,
                     default=utils_cf.option_parm_to_text(self, CONF_DISPLAY_ZONE_FORMAT, display_zone_format_options)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(display_zone_format_options), mode='dropdown')),
         vol.Optional(CONF_DEVICE_TRACKER_STATE_SOURCE,
                     default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TRACKER_STATE_SOURCE, DEVICE_TRACKER_STATE_SOURCE_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(DEVICE_TRACKER_STATE_SOURCE_OPTIONS), mode='dropdown')),
         vol.Optional(CONF_UNIT_OF_MEASUREMENT,
                     default=utils_cf.option_parm_to_text(self, CONF_UNIT_OF_MEASUREMENT, UNIT_OF_MEASUREMENT_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list( UNIT_OF_MEASUREMENT_OPTIONS), mode='dropdown')),
         vol.Optional(CONF_TIME_FORMAT,
                     default=utils_cf.option_parm_to_text(self, CONF_TIME_FORMAT, TIME_FORMAT_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(TIME_FORMAT_OPTIONS), mode='dropdown')),
         vol.Optional(CONF_PICTURE_WWW_DIRS,
                     default=Gb.conf_profile[CONF_PICTURE_WWW_DIRS] or self.www_directory_list):
@@ -185,11 +185,11 @@ def form_format_settings(self):
         vol.Optional('evlog_header',
                     default=IC3_DIRECTORY_HEADER):
                     # cv.multi_select([IC3_DIRECTORY_HEADER]),
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=[IC3_DIRECTORY_HEADER], mode='list')),
         vol.Optional(CONF_EVLOG_CARD_DIRECTORY,
                     default=utils_cf.parm_or_error_msg(self, CONF_EVLOG_CARD_DIRECTORY, conf_group=CF_PROFILE)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(self.www_directory_list), mode='dropdown')),
         vol.Optional(CONF_EVLOG_BTNCONFIG_URL,
                     default=f"{utils_cf.parm_or_error_msg(self, CONF_EVLOG_BTNCONFIG_URL, conf_group=CF_PROFILE)} "):
@@ -197,7 +197,7 @@ def form_format_settings(self):
 
         vol.Optional('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -273,11 +273,11 @@ def form_display_text_as(self):
     return vol.Schema({
         vol.Required(CONF_DISPLAY_TEXT_AS,
                     default=self.dta_working_copy[self.dta_selected_idx]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dta_page_display_list)),
         vol.Required('action_items',
                     default=utils_cf.default_action_text('select_text_as')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -306,7 +306,7 @@ def form_display_text_as_update(self):
                     selector.TextSelector(),
         vol.Required('action_items',
                     default=utils_cf.default_action_text('update_text_as')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -344,7 +344,7 @@ def form_inzone_intervals(self):
 
         vol.Optional('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -362,7 +362,7 @@ def form_waze_main(self):
                     cv.multi_select([WAZE_USED_HEADER]),
         vol.Optional(CONF_WAZE_SERVER,
                     default=utils_cf.option_parm_to_text(self, CONF_WAZE_SERVER, WAZE_SERVER_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(WAZE_SERVER_OPTIONS), mode='dropdown')),
         vol.Optional(CONF_WAZE_MIN_DISTANCE,
                     default=Gb.conf_general[CONF_WAZE_MIN_DISTANCE]):
@@ -386,12 +386,12 @@ def form_waze_main(self):
         vol.Optional(CONF_WAZE_HISTORY_TRACK_DIRECTION,
                     default=utils_cf.option_parm_to_text(self, CONF_WAZE_HISTORY_TRACK_DIRECTION,
                                                         WAZE_HISTORY_TRACK_DIRECTION_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(WAZE_HISTORY_TRACK_DIRECTION_OPTIONS), mode='dropdown')),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
 
@@ -440,7 +440,7 @@ def form_special_zones(self):
                         cv.multi_select([TRK_FROM_HOME_ZONE_HEADER]),
             vol.Optional(CONF_TRACK_FROM_BASE_ZONE,
                         default=utils_cf.option_parm_to_text(self, CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
+                        selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                             options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
             vol.Optional(CONF_TRACK_FROM_HOME_ZONE,
                         default=Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
@@ -449,7 +449,7 @@ def form_special_zones(self):
 
             vol.Required('action_items',
                         default=utils_cf.default_action_text('save')):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
+                        selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                             options=self.actions_list, mode='list')),
             })
     except Exception as err:

@@ -47,11 +47,11 @@ def form_dashboard_builder(self):
     return vol.Schema({
         vol.Required('selected_dashboard',
                     default=default_dbname):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(self.dbf_dashboard_key_text), mode='list')),
         vol.Required('main_view_style',
                     default=default_main_view_style):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(DASHBOARD_MAIN_VIEW_STYLE_OPTIONS), mode='dropdown')),
         vol.Required('main_view_devices',
                     default=self.ui_main_view_dnames):
@@ -60,5 +60,5 @@ def form_dashboard_builder(self):
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+                        selector.SelectSelectorConfig(translation_key='config_options', options=self.actions_list, mode='list')),
         })
