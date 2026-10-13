@@ -22,10 +22,12 @@ coordinates. It checks for a positive distance and duration. It must be run
 manually and is skipped in GitHub Actions, so CI cannot guarantee that the
 external Waze service is currently reachable.
 
-For the live test, you can also open **Actions > Waze Route Regression Tests**
-in the fork, select **Run workflow**, choose the
-`fix/waze-403-chrome-fallback-tests` branch, and enable **run_live_waze**.
-The `waze-live` job runs separately from the mocked tests.
+Once the workflow exists on a repository's default branch, you can
+also use **Actions > Waze Route Regression Tests > Run workflow**, choose a
+branch, and enable **run_live_waze**. GitHub does not allow manual
+`workflow_dispatch` events when the workflow file exists only on a
+non-default branch. Until then, run the command above locally.
+The `waze-live` job is separate from the mocked CI tests.
 
 ## Verified test runs (2026-10-13)
 
