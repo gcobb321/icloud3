@@ -18,6 +18,7 @@ from ..utils.messaging      import (post_error_msg, post_alert,
 from ..utils                import file_io
 
 from .const_form_lists      import *
+from .dashboard_localization import dashboard_text, localize_template
 from .                      import utils_cf as utils
 from .                      import selection_lists as lists
 
@@ -208,7 +209,7 @@ async def _prepare_selected_from_master_dashboard(self, dbname, updated_db_layou
         # Backup the main view to main-backup view. Update it if it exists. Add it if it does not exist
         if isnot_empty(updated_db_main_view):
             updated_db_main_view = updated_db_main_view[0].copy()
-            updated_db_main_view[TITLE] = 'Main (Backup)'
+            updated_db_main_view[TITLE] = dashboard_text('Main (Backup)', Gb.hass.config.language)
             updated_db_main_view[PATH]  = 'main-backup'
             if updated_db_main_backup_idx < 0:
                 updated_db_views.append(updated_db_main_view)
@@ -664,6 +665,7 @@ async def _load_templates(self):
     for template_filename in template_filenames:
         filename      = f"{directory}/{template_filename}"
         template_json = await file_io.async_read_json_file(filename)
+        template_json = localize_template(template_json, Gb.hass.config.language)
 
         template_name = template_filename.split('.')[0]
 

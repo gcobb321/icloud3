@@ -23,7 +23,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
     constructor() {
         super()
-        this._version        = "3.7"
+        this._version        = "3.7.1"
         this._latestVersion  = ''
         this._buttonCount    = 0
         this._thisButtonId   = ''
@@ -1382,6 +1382,9 @@ class iCloud3EventLogCard extends HTMLElement {
         /* Hass will do this on a regular basis. If this is the first time
         through, set up the button names. otherwise, display the event table.
         */
+        const panelLanguage = hass.locale?.language || hass.language || ""
+        const panelLanguageChanged = this._panelLanguage !== panelLanguage
+        this._panelLanguage = panelLanguage
         this._hass           = hass
         const root           = this.shadowRoot
         const statusTime     = root.getElementById("statusTime")
@@ -1528,6 +1531,115 @@ class iCloud3EventLogCard extends HTMLElement {
                 alert(err)
             }
 
+        } finally {
+            if (panelLanguageChanged && hass.states?.["sensor.icloud3_event_log"]) {
+                this._logRecdCnt = -1
+                this._setupEventLogTable("language")
+            }
+            this._localizePanelControls()
+        }
+    }
+
+
+    // Presentation-only localization. Service values and stored log records stay unchanged.
+    _isSimplifiedChinese() {
+        const language = this._hass?.locale?.language || this._hass?.language || ""
+        return ["zh-Hans", "zh-CN", "zh", "zh-cn"].includes(language)
+    }
+
+    _panelText(text) {
+        if (!this._isSimplifiedChinese()) return text
+        const labels = {
+        "iCloud3 Event Log": "iCloud3 事件日志",
+        "Actions": "操作",
+        "🔄 Restart iCloud3": "🔄 重启 iCloud3",
+        "🛑 Pause Tracking": "🛑 暂停追踪",
+        "✅ Resume Tracking": "✅ 恢复追踪",
+        "______ ALL DEVICES ______": "______ 全部设备 ______",
+        "______ SELECTED DEVICE ______": "______ 所选设备 ______",
+        "______ EVENT LOG ______": "______ 事件日志 ______",
+        "______ OTHER ACTIONS ______": "______ 其他操作 ______",
+        "______ VERSION INFO ______": "______ 版本信息 ______",
+        "__ALL DEVICES__": "__全部设备__",
+        "_SELECTED DEV_": "_所选设备_",
+        "__EVENT LOG __": "__事件日志__",
+        "___ OTHER ___": "___其他操作___",
+        "___VERSION ___": "___版本信息___",
+        "• Update Location from iCloud": "• 从 iCloud 更新位置",
+        "• Update Location from Mobile App": "• 从手机 App 更新位置",
+        "• Pause Tracking": "• 暂停追踪",
+        "• Resume Tracking": "• 恢复追踪",
+        "• Send Find-My-iPhone Alert": "• 播放查找 iPhone 提示音",
+        "• Export Event Log": "• 导出事件日志",
+        "• Show Tracking Monitors": "• 显示追踪监控",
+        "• Hide Tracking Monitors": "• 隐藏追踪监控",
+        "• Show Startup Log, Errors and Alerts": "• 显示启动日志、错误与提醒",
+        "• Start Debug Logging": "• 开始调试日志",
+        "• Stop Debug Logging": "• 停止调试日志",
+        "• Start Rawdata Logging": "• 开始原始数据日志",
+        "• Stop Rawdata Logging": "• 停止原始数据日志",
+        "• WazeHist-Recalculate Route Time/Dist": "• Waze 历史：重算路线时间与距离",
+        "• WazeHist-Load Track Locations for Map": "• Waze 历史：加载地图轨迹",
+        "Debug Logging": "调试日志",
+        "Rawdata Logging": "原始数据日志",
+        "Refresh Event Log": "刷新事件日志",
+        "Refresh": "刷新",
+        "Help": "帮助",
+        "Configure": "配置",
+        "❗iCloud3…EvLog.js Error: File Not Found": "❗iCloud3…事件日志卡片错误：未找到文件",
+        "RawData Logging": "原始数据日志",
+        "Click the message or click Refresh to redisplay the device names": "点击消息或刷新按钮，重新显示设备名称"
+}
+        if (Object.prototype.hasOwnProperty.call(labels, text)) return labels[text]
+        if (/^\+ \d+ Devices$/.test(text)) return text.replace(" Devices", " 台设备")
+        return text
+    }
+
+    _localizePanelControls() {
+        if (!this.shadowRoot) return
+        this._panelOriginalText ||= new WeakMap()
+        const nodes = this.shadowRoot.querySelectorAll(
+            "#title, #btnAction option, #debugMsg, #btnNameMore option:first-child"
+        )
+        for (const node of nodes) {
+            const old = this._panelOriginalText.get(node)
+            const original = old && node.textContent === old.rendered ? old.original : node.textContent
+            const rendered = this._panelText(original)
+            node.textContent = rendered
+            this._panelOriginalText.set(node, { original, rendered })
+        }
+    }
+
+    _localizeLogTable() {
+        if (!this._isSimplifiedChinese()) return
+        const table = this.shadowRoot?.getElementById("tblEvlog")
+        if (!table) return
+        // Translate known system labels in text nodes, never serialized HTML,
+        // account/device names, URLs, coordinates, or the sensor's source logs.
+        const labels = {
+            "Battery": "电量", "Results": "定位结果", "Status": "状态", "Zone": "区域",
+            "Apple Account Configuration:": "Apple 账号配置：",
+            "Mobile App Configuration:": "手机 App 配置：",
+            "Other Parameters:": "其他参数：",
+            "Not used as a location data source": "未用作位置数据源",
+            "Requesting Initial Locate": "正在请求首次定位",
+            "Stage 5 > Device Configuration Summary": "阶段 5 > 设备配置摘要"
+        }
+        const walker = document.createTreeWalker(table, NodeFilter.SHOW_TEXT)
+        while (walker.nextNode()) {
+            const node = walker.currentNode
+            let text = node.nodeValue
+            const trimmed = text.trim()
+            if (Object.prototype.hasOwnProperty.call(labels, trimmed)) {
+                text = text.replace(trimmed, labels[trimmed])
+            }
+            text = text.replace(/^(\s*)(Battery|Results|Status|Zone)(\s*>)/,
+                (_, space, label, separator) => space + labels[label] + separator)
+            text = text.replace(/^(\s*)Acct Owner:/, "$1账号所有者：")
+                .replace(/^(\s*)Device Name:/, "$1设备名称：")
+                .replace(/^(\s*)inZone Interval:/, "$1区域内更新间隔：")
+                .replace(/(iCloud3 v[\w.]+ > )Initial Start-up is Complete/, "$1首次启动已完成")
+            node.nodeValue = text
         }
     }
 
@@ -2266,6 +2378,7 @@ class iCloud3EventLogCard extends HTMLElement {
         logTableHTML += ''
         logTableHTML += '</tbody></table></div>'
         tblEvlog.innerHTML = logTableHTML
+        this._localizeLogTable()
 
         this._set_evlog_body_height()
 
