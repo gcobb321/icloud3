@@ -47,8 +47,8 @@ class WazeRouteCalculator(object):
 
 
     HEADERS = {
-        "User-Agent": "Mozilla/5.0",
-        "referer": WAZE_URL_BASE,
+        "User-Agent": "pywaze",
+        "referer": "https://www.waze.com/",
     }
 
     # VEHICLE_TYPES = ('TAXI', 'MOTORCYCLE')
@@ -99,21 +99,34 @@ class WazeRouteCalculator(object):
             "options": ','.join('%s:t' % route_option for route_option in self.route_options),
         }
 
+        # Waze may respond HTTP 403 to normal HTTP clients. As in pywaze 1.2.4,
+        # retry that response with a fresh Chrome-impersonating curl_cffi session.
+        # A new session for every 403 prevents stale browser fingerprints.
+        response_json = None
         try:
-            response = requests.get(url, params=url_options, headers=self.HEADERS)
-            response.encoding = 'utf-8'
+            response = requests.get(
+                url, params=url_options, headers=self.HEADERS, timeout=60,
+            )
+            if response.status_code == 403:
+                from curl_cffi import requests as curl_requests
+
+                with curl_requests.Session(impersonate="chrome") as session:
+                    response = session.get(
+                        url, params=url_options, headers=self.HEADERS, timeout=60,
+                    )
+
             response_json = self._check_response(response)
 
         except Exception as err:
             log_exception(err)
 
-        if response_json:
-            if 'error' not in response_json:
-                response_obj = response_json['response']
-                if isinstance(response_obj, list):
-                    response_obj = response_obj[0]
+        if isinstance(response_json, dict) and 'error' not in response_json:
+            response_obj = response_json.get('response')
+            if isinstance(response_obj, list):
+                response_obj = response_obj[0] if response_obj else None
+            return response_obj
 
-                return response_obj
+        return None
 
 #--------------------------------------------------------------------
     @staticmethod
@@ -122,10 +135,10 @@ class WazeRouteCalculator(object):
         try:
             if response.ok:
                 return response.json()
-
+            log_warning_msg(f"Waze routing request failed (HTTP {response.status_code})")
         except Exception as err:
             log_exception(err)
-            return None
+        return None
 
 #--------------------------------------------------------------------
     def _add_up_route(self, results, stop_at_bounds=False):
@@ -159,7 +172,7 @@ class WazeRouteCalculator(object):
 
             route = self.get_route(from_lat, from_long, to_lat, to_long)
             if route:
-                route_time, route_distance = self._add_up_route(route['results'])
+                route_time, route_distance = self._add_up_route(route['results' if 'results' in route else 'result'])
 
                 if log_results_flag:
                     log_info_msg(f"Waze Results > GPS-({from_lat:0.5f}, {from_long:0.5f}) --> "
