@@ -4,6 +4,12 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_live_waze:
+        description: "Also test the live Waze Region-IL route endpoint (external network required)"
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   waze-regression:
@@ -17,3 +23,18 @@ jobs:
         run: python -m pip install pytest requests
       - name: Run mocked Waze tests (no live traffic)
         run: python -m pytest -q tests/test_waze_hotfix.py
+
+  waze-live:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_waze }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install live routing dependencies
+        run: python -m pip install pytest requests 'curl-cffi>=0.13.0'
+      - name: Probe real Waze routing (Israel, public city coordinates)
+        env:
+          ICLOUD3_WAZE_LIVE_TEST: "1"
+        run: python -m pytest -q tests/test_waze_hotfix.py -k live
