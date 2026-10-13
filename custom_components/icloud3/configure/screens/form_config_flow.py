@@ -86,7 +86,7 @@ def form_menu(self):
     return vol.Schema({
         vol.Required("menu_items",
                     default=menu_items[self.menu_item_selected[self.menu_page_no]]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=dict_value_to_list(menu_items), mode='list')),
         })
 
@@ -108,11 +108,11 @@ def form_confirm_action(self):
         return vol.Schema({
             vol.Required('action_desc',
                     default=action_desc):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=[action_desc], mode='list')),
             vol.Required('action_items',
                     default=utils_cf.default_action_text(actions_list_default)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=actions_list, mode='list')),
             })
     except Exception as err:
@@ -141,6 +141,6 @@ def form_exit_icloud3_configure_settings(self):
     return vol.Schema({
         vol.Required('action_items',
                     default=utils_cf.default_action_text('exit')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options', 
                         options=self.actions_list, mode='list')),
         })
