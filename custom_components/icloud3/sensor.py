@@ -592,48 +592,59 @@ def  _create_sensor_by_type(devicename, sensor, conf_device, from_zone=None):
         return None
 
 #--------------------------------------------------------------------
-def correct_sensor_entity_ids_with_2_extension(verify=None):
-    '''
-    Get the iCloud3 sensor entities and see if any end with _2. If so,
-    remove the non_2 sensor and rename the _2 sensor to it's correct value
+def _is_generated_numeric_sensor_suffix(entity_id, expected_base):
+    """Only match HA-generated _2, _3, ... after the FULL expected sensor ID.
 
-    This is called when the sensors are fist loded (here) and in config_flow (Tools)
-
-    Parameters:
-    verify - True --> Return True/False if there are any correctable sensors
-    '''
-    verify = False if verify is None else True
-
-    # Get all iCloud sensors in hass.states
-    entity_ids = entity_io.get_states_entity_ids()
-    if is_empty(entity_ids):
+    A real zone may end in _x or even _2; its suffix is part of its
+    unique_id and must not be stripped as an entity-name collision.
+    """
+    prefix = f"{expected_base}_"
+    if not entity_id.startswith(prefix):
         return False
 
-    # Keep sensors that have an '_x' extension (sensor.……_distance_2)
-    entity_ids = [entity_id for entity_id in entity_ids
-                            if entity_id[-2:-1] == '_']
+    suffix = entity_id[len(prefix):]
+    return bool(suffix) and len(suffix) < 10 and suffix.isascii() and suffix.isdecimal() and int(suffix) >= 2
 
-    if is_empty(entity_ids):
+
+#--------------------------------------------------------------------
+def correct_sensor_entity_ids_with_2_extension(verify=None):
+    """Repair numbered HA entity-name collisions, never genuine zone names.
+
+    Use the registered iCloud3 unique_id to find the intended entity_id.
+    Scanning all HA states for ANY trailing _<char> used to mistake a zone
+    named terminal_x for a duplicate of terminal and rename the sensors.
+    Never delete an existing entity to make a destination name available.
+    """
+    entity_reg = er.async_get(Gb.hass)
+    to_repair = []
+
+    for reg_entry in list(entity_reg.entities.values()):
+        if reg_entry.domain != PLATFORM_SENSOR or reg_entry.platform != DOMAIN:
+            continue
+
+        unique_id = reg_entry.unique_id or ''
+        if not unique_id.startswith(f"{DOMAIN}_"):
+            continue
+
+        entity_id_base = f"{PLATFORM_SENSOR}.{unique_id[len(DOMAIN) + 1:]}"
+        if not _is_generated_numeric_sensor_suffix(reg_entry.entity_id, entity_id_base):
+            continue
+
+        # Another registered entity owns this ID. Do not delete or overwrite it.
+        if entity_id_base in entity_reg.entities:
+            log_debug_msg(f"Sensor entity conflict, preserved: {reg_entry.entity_id} > {entity_id_base}")
+            continue
+
+        to_repair.append((reg_entry.entity_id, entity_id_base))
+
+    if not to_repair:
+        return False
+    if verify is not None:
         return True
 
-    log_debug_msg(  f"Sensor Entity Errors > Found {len(entity_ids)} Entities with '_2' Suffix. "
-                    f"Correct on `Configure > Tools > Cleanup Entity Registry`")
-    if verify:
-        return True
-
-    # remove sensor.……_distance and change name sensor.……_distance_2 to sensor.……_distance
-    for entity_id in entity_ids:
-        entity_id_base = entity_id[:-2]
-        extn = entity_id.replace(entity_id_base, '')
-
-        eid_base_is_avail = entity_io.is_entity_available(entity_id_base)
-        if eid_base_is_avail is False:
-            # Ex.: Remove sensor.gary_iphone_home_distance
-            er_util.remove_sensor(entity_id_base)
-
-        log_debug_msg(f"Sensor entity, Named:  {entity_id_base}, (×{extn})")
-        # Ex.: Change sensor.gary_iphone_home_distance_2 to sensor.gary_iphone_home_distance
-        entity_io.change_entity_id(entity_id, entity_id_base)
+    for current_id, base_id in to_repair:
+        log_debug_msg(f"Sensor entity numeric suffix repair: {current_id} > {base_id}")
+        entity_io.change_entity_id(current_id, base_id)
 
     return True
 
@@ -1076,14 +1087,20 @@ class DeviceSensor_Base():
         sensor.gary_iphone_home_distance_2 --> sensor.gary_iphone_home_distance
         '''
 
-        eid_base_is_avail = entity_io.is_entity_available(self.entity_id_base)
-        if eid_base_is_avail is False:
-            er_util.remove_sensor(self.entity_id_base)
+        if not _is_generated_numeric_sensor_suffix(self.entity_id, self.entity_id_base):
+            # Preserve intentional entity IDs (e.g. zone terminal_x) and user
+            # renames; only automatically generated numeric collisions qualify.
+            log_debug_msg(f"Sensor entity ID preserved: {self.entity_id}")
+            return
+
+        entity_reg = er.async_get(Gb.hass)
+        if self.entity_id_base in entity_reg.entities:
+            # Never remove a possibly valid existing entity to free its name.
+            log_debug_msg(f"Sensor entity conflict preserved: {self.entity_id_base}")
+            return
 
         entity_io.change_entity_id(self.entity_id, self.entity_id_base)
-
-        extn = self.entity_id.replace(self.entity_id_base, '')
-        log_debug_msg(f"Sensor entity, Named:  {self.entity_id_base}, (×{extn})")
+        log_debug_msg(f"Sensor entity numeric suffix repair: {self.entity_id} > {self.entity_id_base}")
 
 #-------------------------------------------------------------------------------------------
     async def async_will_remove_from_hass(self):
