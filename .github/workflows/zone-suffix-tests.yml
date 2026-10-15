@@ -1,0 +1,29 @@
+name: iCloud3 zone suffix safety
+
+on:
+  push:
+    branches:
+      - fix/preserve-valid-zone-x-suffix
+  pull_request:
+    paths:
+      - custom_components/icloud3/sensor.py
+      - tests/test_zone_suffix_regression.py
+      - .github/workflows/zone-suffix-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m compileall -q custom_components/icloud3/sensor.py
+      - run: python -m unittest discover -s tests -p test_zone_suffix_regression.py -v
