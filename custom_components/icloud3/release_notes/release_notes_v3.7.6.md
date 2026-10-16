@@ -1,4 +1,4 @@
-***Total downloads for v3.7.5 - 18,145 (as of 10/16/2026). Number of coffee buyers - 133 (thanks again). If you appreciate my work and find iCloud3 usefull, one cup would be appreciated.***
+***Total downloads for v3.7.5 - 18,145 (as of 10/16/2026). Number of coffee buyers - 133 (thanks again). If you appreciate my work and find iCloud3 useful, one cup would be appreciated.***
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
 <img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="35"></a>
 
@@ -6,11 +6,10 @@
 ***Gary Cobb, aka geekstergary***
 
 -----
-## 🍎 iCloud3 v3.7.6(10/16/2026)
 ### 🎉 New and Improved Items
-1. **iCloud3 Analytics**: (Menu #2 - Parametes)
+1. **iCloud3 Analytics**: (Menu #2 - Parameters)
     -  The iCloud3 Analytics collects version, location (country/region), usage and various counts from the 15,000+ iCloud3 users. It's purpose is to report summary information showing where users are located, what version is being used and various counts (Apple Account, tracked devices, comments, etc.). The data you will send is shown below. Summary reports can be selected on *Reports* screen. Hopefully, you will Enable *Send iCloud3 Analytics Data* on the Configure *iCloud3 Analytics* screen and participate in this project.
-    - No personal data is sent; data that is sent from your iCloud3 installation is displayedon the screen. An example is:
+    - No personal data is sent; data that is sent from your iCloud3 installation is displayed on the screen. An example is:
         - {'uuid': 'HA Installation ID', 'version': '3.7.6', 'version_date': '2026-09-17', 'country': 'US', 'region': 'FL', 'apple_accts': 2, 'mobapp_devices': 3, 'devices': 8, 'tracked': 3, 'monitored': 3, 'inactive': 2, 'comment': 'To open my garage door when I arrive Home'}
     - The Analytics is an opt-in and it defaults to disabled. A message is displayed on the Configure Menu screens until you either enable or disable participating.
     - The *Analytics Reports* screen lets you view Analytic data multiple ways (by country, by version, comments, usage, etc.). The reports are displayed on the screen and show the most current data.
@@ -23,7 +22,7 @@
         - The new device was set up as a new device and the device names can be associated with each other (old=Lillian-Watch, new=Lillian's Apple Watch). An HA Repair issue is created requesting you to confirm the newer device that was detected. The configuration is updated when you confirm (Submit) the device.
         - More than one device with the same type (one name may be similar) as a tracked device is detected and a choice can not be determined. An HA Repair issue is created requesting you to select the correct device on the *Update iCloud3 Devices* screen.
     - Notifications are displayed as HA Repair issues, in the Event Log and as an iCloud3 Alert (sensor.icloud3_alert).
-3. **Default inZone Intervals** - (Menu #2 - Parametes)
+3. **Default inZone Intervals** - (Menu #2 - Parameters)
     -   This screen is used to set the default inZone interval value assigned to a new device. The Device's value can be changed after it is added.
 4. **Waze** - The submission of Waze route requests now supports the changes Google recently made. Some of the changed include throttling request limits, http request submission requirements and url updates.
 
@@ -37,12 +36,12 @@
 
 ### 📢 Other Updates
 1. **Apple Terms of Use** - Improved the handling of Apple's Terms-of-Use Approval Needed request:
-    - A message is now listed at the top of the Event Log in the greenbar alert area
+    - A message is now listed at the top of the Event Log in the Greenbar Alert area
     - The iCloud3 Alert Sensor (*sensor.icloud3_alert*) is updated
     - The message appears once in the Event Log at restart instead of every 2-5 minutes
     - Improved notifications on the iCloud3 Configure Settings screens
 2. **Configuration Menus**:
-    - Added a separator line between the Mnu Items (screen you are selecting) and the Menu Actions (Menu #1/2, Exit) for clarity.
+    - Added a separator line between the Menu Items (screen you are selecting) and the Menu Actions (Menu #1/2, Exit) for clarity.
     - Moved the *Away Time Zone* to Menu #1 - Devices and Sensors
     - Added **Default inZone Intervals** and *iCloud3 Analytics** to Menu #2 - Parameters.
 3. **Event Log**:
