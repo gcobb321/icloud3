@@ -8,7 +8,7 @@ from ..const             import (PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR,
                                 HOME, NONE_FNAME, FROM_ZONE, ZONE, SENSORS,
                                 TRACK, MONITOR, INACTIVE,
                                 BATTERY, BATTERY_STATUS,
-                                CONF_IC3_DEVICENAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
+                                CONF_IC3_DEVICENAME, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
                                 )
 from ..const_sensor     import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
@@ -116,7 +116,8 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
     self.is_deleting_device = True
 
     # Inactive devices were not created so they are not in Gb.DeviceTrackers_by_devicename
-    er_util.update_ha_device_id_by_devicename()
+    # er_util.update_ha_device_id_x_devicename()
+    er_util.set_ha_device_id_x_devicename()
 
     if devicename in Gb.Sensors_by_devicename:
         for sensor, Sensor in Gb.Sensors_by_devicename[devicename].copy().items():
@@ -142,7 +143,8 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
         er_util.remove_device(device_id)
         er_util.clear_device_gb_dicts(device_id)
 
-    er_util.update_ha_device_id_by_devicename()
+    # er_util.update_ha_device_id_x_devicename()
+    er_util.set_ha_device_id_x_devicename()
     self.is_deleting_device = False
     ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 

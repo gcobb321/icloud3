@@ -86,15 +86,39 @@ class GlobalVariables(object):
     '''
 
     # Fixed variables set during iCloud3 loading that will not change
-    version                         = f"{VERSION}{VERSION_BETA}"
-    version_beta                    = VERSION_BETA
+    if VERSION_BETA:
+        version                     = f"{VERSION}-beta.{VERSION_BETA}"
+        version_beta                = f"-beta.{VERSION_BETA}"
+    else:
+        version                     = VERSION
+        version_beta                = ''
+
+    icloud3_version_msg             = f"v{version}"
+    icloud3_attention_msg           = f"^i^iCloud3 v{version}"
     version_evlog                   = ''
     version_hacs                    = ''
+
+    # GitHub release download counts from the Analytics Database's version_downloads table.
+    # Refreshed nightly by the Analytics Worker, retrieved when the Analytics screens are
+    # displayed (support/analytics.py > async_get_version_downloads)
+    github_version                  = ''    # Latest version released on GitHub
+    github_published_date           = ''    # Date that version was released
+    github_icloud3_downloads        = 0     # Downloads of that version, gcobb321/icloud3
+    github_beta_downloads           = 0     # Downloads of that version, gcobb321/icloud3_v3 (beta)
+    github_icloud3_total            = 0     # Downloads of all versions, gcobb321/icloud3
+    github_beta_total               = 0     # Downloads of all versions, gcobb321/icloud3_v3 (beta)
+    github_versions_cnt             = 0     # Number of versions with download counts
+    github_downloads_date           = ''    # Date the counts above were retrieved
+
+    # Installations reporting analytics when the download counts above were captured, so
+    # analytics_installs/downloads is the portion of the downloads that enabled analytics
+    analytics_installs              = 0
 
     hass                            = None      # hass: HomeAssistant set in __init__
     config                          = None      # has config parmaeter set in __init__ (platform)
     config_entry                    = None      # hass.config_entry set in __init__ (integration)
     config_entry_id                 = None      # Has entry_id for iCloud3
+    config_unique_id                = None
     local_ip                        = None      # from component/local_ip/async_get_source_ip in __init__
     network_url                     = None      # from helpers/network/get_url in __init__
     evlog_btnconfig_url             = ''
@@ -188,7 +212,7 @@ class GlobalVariables(object):
     username                     = ''
     username_base                = ''
     password                     = ''
-    is_password_encoded         = True
+    is_password_encoded          = True
     all_find_devices             = True
     entity_registry_file         = ''
     devices                      = ''
@@ -207,7 +231,6 @@ class GlobalVariables(object):
     Devices_by_devicename_monitored = {}  # All monitored Devices by devicename
     Devices_by_devicename_tracked   = {}  # All monitored Devices by devicename
     Devices_by_icloud_device_id     = {}  # Devices by the icloud device_id receive from Apple
-    Devices_by_ha_device_id         = {}  # Device by the device_id in the entity/device registry
     Devices_by_mobapp_dname         = {}  # All verified Devices by the  conf_mobapp_dname
     Devices_by_nearby_group         = {}  # Devvic by group within  50mm of each other
     inactive_fname_by_devicename    = {}  # Devices with tracking_mode=inactive
@@ -216,8 +239,8 @@ class GlobalVariables(object):
 
     # HA device_tracker and sensor entity info
     DeviceTrackers_by_devicename    = {}  # HA device_tracker.[devicename] entity objects
-    ha_device_id_by_devicename      = {}  # HA device_registry device_id
-    devicename_by_ha_device_id      = {}  # HA device_registry device_id
+    ha_device_id_x_devicename       = {}  # HA entity_registry device_id by devicename (both ways)
+    ha_disabled_by_by_devicename    = {}  # HA disabled_by value in the HA registry
     ha_area_id_by_devicename        = {}  # HA device_registry area_id
 
     # Sensor fields
@@ -227,7 +250,7 @@ class GlobalVariables(object):
     Sensors_by_devicename_sensor    = {}  # Sensor[devicename_sensor_name] objects
 
     sensors_added_by_devicename     = {}  # Updated when a sensor is added in sensor.added_to_hass
-    sensors_removed_by_devicename   = {}  # Updated when a sensor is removed in sensor.after_removal_cleanup
+    sensors_removed_by_devicename   = {}  # Updated when a sensor is removed in er_util.clear_sensor_gb_dicts
     sensors_base                    = []  # Base list of sensors that will be created for each device
     sensors_base_from_zone          = []
 
@@ -248,14 +271,14 @@ class GlobalVariables(object):
     # iCloud Device information - These is used verify the device, display on the EvLog and in the Config Flow
     # device selection list on the iCloud3 Devices screen
     devices_not_set_up              = []
-    device_id_by_icloud_dname       = {}  # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
-    icloud_dname_by_device_id       = {}  # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
-    device_info_by_icloud_dname     = {}  # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
-    device_model_info_by_fname      = {}  # {'Gary-iPhone': [raw_model,model,model_display_name]}
+    device_id_by_aadev_dname        = {}  # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+    aadev_dname_by_device_id        = {}  # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+    device_info_by_aadev_dname      = {}  # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
+    device_model_info_by_aadev_dname= {}  # {'Gary-iPhone': [raw_model,model,model_display_name]}
     dup_icloud_dname_cnt            = {}  # Used to create a suffix for duplicate devicenames
     devices_without_location_data   = []
-    devicenames_by_icloud_dname     = {}  # All ic3_devicenames by conf_find_devices
-    icloud_dnames_by_devicename     = {}  # All ic3_devicenames by conf_find_devices
+    devicenames_by_aadev_dname      = {}  # All ic3_devicenames by conf_find_devices
+    aadev_dnames_by_devicename      = {}  # All ic3_devicenames by conf_find_devices
     devicenames_by_mobapp_dname     = {}  # All ic3_devicenames by conf_mobapp_dname
     mobapp_dnames_by_devicename     = {}  # All ic3_devicenames by conf_mobapp_dname
 
@@ -384,6 +407,7 @@ class GlobalVariables(object):
     config_parm                     = {}        # Config parms from HA config.yaml and config_ic3.yaml
     config_parm_initial_load        = {}        # Config parms from HA config.yaml used to reset eveerything on restart
     ha_config_yaml_icloud3_platform = {}        # Config parms from HA config.yaml used during initial conversion to config_flow
+    analytics_enabled               = None
 
     # Configuration file layout
     conf_file_data          = {}
@@ -546,11 +570,7 @@ class GlobalVariables(object):
     config_track_devices_change_flag = True         # Set in config_handler when parms are loaded. Do Stave 1 only if no device changes
     device_tracker_entity_ic3      = {}
     trigger                        = {}
-    got_exit_trigger          = {}
-    # device_being_updated_flag      = {}
-    # device_being_updated_retry_cnt = {}
-    # mobapp_update_flag             = {}
-    attr_tracking_msg              = '' # tracking msg on attributes
+    got_exit_trigger               = {}
     is_all_tracking_paused         = False
     all_tracking_paused_secs       = 0
     dist_to_other_devices_update_sensor_list = set()    # Contains a list of devicenames that need their distance sensors updated

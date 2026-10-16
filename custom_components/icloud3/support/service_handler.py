@@ -7,7 +7,6 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOMAIN,
                                 RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT, EVLOG_ATTENTION,
-                                ICLOUD3_VERSION_MSG,
                                 CMD_RESET_PYICLOUD_SESSION,
                                 LOCATION, NEXT_UPDATE_TIME, NEXT_UPDATE, INTERVAL,
                                 CONF_DEVICENAME, CONF_ZONE, CONF_COMMAND, CONF_LOG_LEVEL,
@@ -91,8 +90,7 @@ ACTION_FNAME_TO_ACTION = {
                     'Resume Tracking': 'resume',
                     'Locate Device(s) using iCloud iCloud': 'locate',
                     'Send Locate Request to iOS App': 'locate iosapp',
-                    'Send Locate Request to Mobile App': 'locate mobapp',
-                    'Send Locate Request to Mobile App': 'locate mobileapp'
+                    'Send Locate Request to Mobile App': 'locate mobapp'
 }
 
 SERVICE_SCHEMA = vol.Schema({
@@ -117,13 +115,13 @@ def process_update_service_request(call):
 
     action = call.data.get('command') or call.data.get('action')
     if action is None: return
-    
+
     action_fname = call.data.get('action_fname', action)
     if action_fname.startswith('• '):
         action_fname = action_fname[1:]
 
     action       = action.lower()
-    devicename   = call.data.get(CONF_DEVICENAME)    
+    devicename   = call.data.get(CONF_DEVICENAME)
     action, devicename = resolve_action_devicename_values(action, devicename)
 
     update_service_handler(action, action_fname, devicename)
@@ -214,10 +212,12 @@ def resolve_action_devicename_values(action, devicename):
         return action, devicename
     log_info_msg(f"Service Call > Action-{action}, Device-{devicename}")
 
+    device_id = devicename
     if devicename in Gb.Devices_by_devicename:
         pass
-    elif devicename in Gb.Devices_by_ha_device_id:
-        devicename = Gb.devicename_by_ha_device_id[devicename]
+
+    elif device_id in Gb.ha_device_id_x_devicename:
+        devicename = Gb.ha_device_id_x_devicename[device_id]
     else:
         devicename = None
 
@@ -331,7 +331,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
         _post_device_event_msg(devicename_msg, event_msg)
 
     if action_msg == 'Restart iCloud3':
-        post_event(f"{EVLOG_ALERT}iCloud3 {ICLOUD3_VERSION_MSG} > Restart Requested")
+        post_event(f"{EVLOG_ALERT}iCloud3 {Gb.icloud3_version_msg} > Restart Requested")
 
     if action in GLOBAL_ACTIONS:
         _handle_global_action(action, action_option)
@@ -416,7 +416,7 @@ def _handle_global_action(global_action, action_option):
         Gb.was_icloud3_restart_requested   = True
         Gb.restart_requested_by           = 'user'
         Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
-        post_greenbar_msg(f"Restarting {ICLOUD3_VERSION_MSG}")
+        post_greenbar_msg(f"Restarting {Gb.icloud3_version_msg}")
         Gb.EvLog.display_user_message('iCloud3 is Restarting')
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
@@ -666,11 +666,10 @@ def reload_icloud3():
     '''
     Reload iCloud3 via HA reload integration request
     '''
-    # .write_config_file_to_ic3log()
-    config_file.write_icloud3_configuration_file()
+    if Gb.is_all_tracking_paused is False:
+        config_file.write_icloud3_configuration_file()
 
     Gb.icloud3_reload_requested = True
-    #Gb.icloud3_reload_requested_secs = time_now_secs() + 5
 
     Gb.hass.add_job(Gb.hass.config_entries.async_schedule_reload,
                     Gb.config_entry_id)

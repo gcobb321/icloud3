@@ -49,6 +49,7 @@ def form_reauth(self, user_input=None, reauth_username=''):
 
     if terms_of_use_update_needed:
         self.actions_list.append(ACTION_LIST_OPTIONS['accept_terms_of_use'])
+        self.errors['base'] = 'apple_acct_terms_of_use_update_needed'
     self.actions_list.extend(REAUTH_ACTIONS)
 
     if self.menu_item =='config_flow_reauth':
@@ -63,12 +64,12 @@ def form_reauth(self, user_input=None, reauth_username=''):
         self.actions_list.append(ACTION_LIST_OPTIONS['menu'])
         default_action = 'menu'
 
-    if (Gb.internet_error
+    if terms_of_use_update_needed:
+        default_action = 'accept_terms_of_use'
+    elif (Gb.internet_error
             or AppleAcct is None
             or is_reauth_needed is False):
         pass
-    elif terms_of_use_update_needed:
-        default_action = 'accept_terms_of_use'
     elif was_auth_code_requested:
         default_action = 'send_auth_code'
         AppleAcct.was_auth_code_requested = False

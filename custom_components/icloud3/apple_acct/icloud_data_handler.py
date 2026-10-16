@@ -146,8 +146,8 @@ def request_icloud_data_update(Device):
             Device.is_icloud_devdata_useable = update_AADevData_data(Device)
 
             if Gb.internet_error:
-                for Device in Gb.Devices:
-                    Device.pause_tracking
+                for _Device in Gb.Devices:
+                    _Device.pause_tracking()
                 return False
 
             # Retry in an error occurs

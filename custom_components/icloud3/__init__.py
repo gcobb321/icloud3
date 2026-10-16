@@ -1,9 +1,10 @@
 
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG, ICLOUD3_ATTENTION_MSG,
+from .const             import (ICLOUD3, DOMAIN,
                                 PLATFORMS, PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR,
-                                CRLF, RED_ALERT,
+                                CRLF, RED_ALERT, INACTIVE,
+                                CONF_FNAME, CONF_TRACKING_MODE,
                                 MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
                                 EVLOG_ATTENTION, EVLOG_ALERT, VERSION, VERSION_BETA,)
 
@@ -11,7 +12,7 @@ from .const             import (ICLOUD3, DOMAIN, ICLOUD3_VERSION_MSG, ICLOUD3_AT
 from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init,
                                 post_event, post_monitor_msg, post_greenbar_msg, post_alert,
                                 log_info_msg, log_debug_msg, log_error_msg, log_data_unfiltered,
-                                log_exception_HA, log_exception)
+                                log_exception_HA, log_exception, add_log_file_filter)
 from .utils.time_util   import (time_now_secs, time_now, secs_to, secs_since, secs_to_hhmm,
                                 calculate_time_zone_offset, format_day_date_time_now, )
 from .utils.file_io     import (read_json_file, save_json_file,
@@ -29,6 +30,7 @@ from .startup           import restore_state
 from .support.service_handler import register_icloud3_services
 from .support.event_log import EventLog
 from .support           import hacs_ic3
+from .support           import analytics
 
 
 #--------------------------------------------------------------------
@@ -38,8 +40,10 @@ from importlib import reload
 
 from homeassistant.config_entries       import ConfigEntry
 from homeassistant.const                import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core                 import HomeAssistant
+from homeassistant.core                 import HomeAssistant, CoreState
+from homeassistant.exceptions           import HomeAssistantError
 from homeassistant.helpers.event        import async_track_device_registry_updated_event
+from homeassistant.helpers.start        import async_at_started
 from homeassistant.helpers              import (entity_registry as er, device_registry as dr,
                                                 area_registry as ar, )
 from homeassistant.helpers.typing       import ConfigType
@@ -65,14 +69,44 @@ successful_startup = True
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """ Set up the iCloud3 integration from a ConfigEntry integration """
 
-    Gb.was_icloud3_reloaded = entry.unique_id in hass.data.get(DOMAIN, {})
+    # Is 'icloud3' already in hass.data
+    Gb.was_icloud3_reloaded = DOMAIN in hass.data.get(DOMAIN, {})
+
     if Gb.was_icloud3_reloaded:
+        # Reloading/restarting, reinitialization is not needed
+        if entry.entry_id != Gb.config_entry_id:
+            setup_hass_icloud3_domain(hass, entry)
         await async_start_icloud3(None)
     else:
+        # Initial load, initialize iCloud3 an wait for HA to finish starting up
+        setup_hass_icloud3_domain(hass, entry)
         await async_initialize_icloud3(hass, entry)
+        entry.async_on_unload(async_at_started(Gb.hass, async_start_icloud3))
 
     return True
 
+#................................................................................
+def setup_hass_icloud3_domain(hass, entry):
+    '''
+    Save the hass and entry variables in Gb. for future use
+    Set up the hass[DOMAIN] entry items
+    '''
+
+    Gb.hass            = hass
+    Gb.config_entry    = entry
+    Gb.config_entry_id = entry.entry_id
+
+    Gb.hass.data.setdefault(DOMAIN, {})
+
+    if entry.entry_id not in Gb.hass.data[DOMAIN]:
+        Gb.hass.data[DOMAIN][entry.entry_id] = {}
+    Gb.hass.data[DOMAIN][entry.unique_id] = DOMAIN
+    if entry.unique_id is None:
+        Gb.hass.config_entries.async_update_entry(entry, unique_id=DOMAIN)
+
+    # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
+    unsub_options_update_listener = entry.add_update_listener(options_update_listener)
+    Gb.hass.data[DOMAIN]["unsub_options_update_listener"] = unsub_options_update_listener
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -80,22 +114,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_initialize_icloud3(hass, entry):
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.unique_id] = DOMAIN
-    if entry.unique_id is None:
-        hass.config_entries.async_update_entry(entry, unique_id=DOMAIN)
-    hass_data = dict(entry.data)
-
-    # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
-    unsub_options_update_listener = entry.add_update_listener(options_update_listener)
-    hass_data["unsub_options_update_listener"] = unsub_options_update_listener
-    hass.data[DOMAIN][entry.entry_id] = hass_data
-
-    Gb.hass            = hass
-    Gb.config_entry    = entry
-    Gb.config_entry_id = entry.entry_id
     Gb.operating_mode  = MODE_INTEGRATION
-
     start_ic3.initialize_directory_filenames()
 
     await async_open_ic3log_file_init()
@@ -105,18 +124,27 @@ async def async_initialize_icloud3(hass, entry):
     Gb.iCloud3              = iCloud3()
     Gb.InternetError        = InternetConnection_ErrorHandler()
     Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-    post_event( f"{ICLOUD3_ATTENTION_MSG} > Initial Start-up")
+    post_event( f"{Gb.icloud3_attention_msg} > Initial Start-up")
 
     await async_create_device_tracker_sensor_platforms()
     Gb.is_icloud3_initial_startup = True
     await start_icloud3_on_init_load_only()
     await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
 
-    Gb.EvLog.display_user_message("Waiting for HA Startup to Finish Loading")
-    post_greenbar_msg("Waiting for HA Startup to Finish Loading")
-
-    Gb.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, async_start_icloud3)
     Gb.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, start_ic3.ha_stopping)
+
+    if Gb.hass.state is CoreState.running:
+        # iCloud3 was added on the Integrations screen, or the config entry was reloaded,
+        # while HA was already running. EVENT_HOMEASSISTANT_STARTED has already been
+        # fired and will not be fired again. `async_at_started` runs async_start_icloud3
+        # right now instead of waiting for an event that will never come. Waiting for it
+        # left stages 4-6 unrun and Gb.is_icloud3_startup_inprocess set until HA restarted.
+        log_info_msg('HA is already running, starting iCloud3 now')
+    else:
+        Gb.EvLog.display_user_message("Waiting for HA Startup to Finish Loading")
+        post_greenbar_msg("Waiting for HA Startup to Finish Loading")
+
+    # entry.async_on_unload(async_at_started(Gb.hass, async_start_icloud3))
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -143,12 +171,11 @@ async def async_start_icloud3(dummy_parameter):
         post_greenbar_msg(  f"Setting up Devices ({len(Gb.conf_devices)}) "
                             f"& Sensors ({ic3_sensor.total_sensors_cnt()})")
 
-    Gb.icloud3_reload_requested      = False
-    Gb.icloud3_reload_requested_secs = 0
+    Gb.icloud3_reload_requested = False
 
     try:
-        Gb.HALogger.info(f"Setting up {ICLOUD3_VERSION_MSG}, {starting_msg}")
-        log_info_msg(f"Setting up {ICLOUD3_VERSION_MSG}, {starting_msg}")
+        Gb.HALogger.info(f"Setting up {Gb.icloud3_version_msg}, {starting_msg}")
+        log_info_msg(f"Setting up {Gb.icloud3_version_msg}, {starting_msg}")
 
         await async_create_devices_tracker_and_sensor_entities()
 
@@ -162,11 +189,14 @@ async def async_start_icloud3(dummy_parameter):
                                             Gb.iCloud3.start_icloud3_stage_4_5_6_load_aa_device_to_locate)
 
         if icloud3_started:
-            log_info_msg(f"{ICLOUD3_VERSION_MSG} Start up Complete")
-            Gb.HALogger.info(f"Setting up {ICLOUD3_VERSION_MSG}, Complete")
+            log_info_msg(f"{Gb.icloud3_version_msg} Start up Complete")
+            Gb.HALogger.info(f"Setting up {Gb.icloud3_version_msg}, Complete")
+
+            if analytics.is_analytics_send_due():
+                Gb.hass.async_create_task(analytics.async_send_analytics_data())
         else:
-            log_error_msg(f"{ICLOUD3_VERSION_MSG} Initialization Failed")
-            Gb.HALogger.info(f"Setting up {ICLOUD3_VERSION_MSG}, Failed")
+            log_error_msg(f"{Gb.icloud3_version_msg} Initialization Failed")
+            Gb.HALogger.info(f"Setting up {Gb.icloud3_version_msg}, Failed")
 
     except Exception as err:
         log_exception(err)
@@ -229,22 +259,24 @@ async def async_get_ha_location_info(hass):
 #   LISTENER, DEVICE & SENSOR SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
 def setup_event_listeners():
-    if Gb.was_icloud3_reloaded:
-        return
 
     # Device Registry Event
-    cancel_listener_func = Gb.hass.bus.async_listen(
-                                    dr.EVENT_DEVICE_REGISTRY_UPDATED,
-                                    er_util.async_handle_update_device_registry)
+    if "update_device_registry" not in Gb.hass.data[DOMAIN]:
+        cancel_listener_func = Gb.hass.bus.async_listen(
+                                        dr.EVENT_DEVICE_REGISTRY_UPDATED,
+                                        er_util.async_handle_update_device_registry)
 
-    Gb.hass.data[DOMAIN][Gb.config_entry_id]["update_device_registry"] = cancel_listener_func
+        log_debug_msg(f"Add Listener > (update_device_registry)")
+        Gb.hass.data[DOMAIN][Gb.config_entry_id]["update_device_registry"] = cancel_listener_func
 
     # Entity (Sensor) Registry Event
-    cancel_listener_func = Gb.hass.bus.async_listen(
-                                    er.EVENT_ENTITY_REGISTRY_UPDATED,
-                                    er_util.async_handle_update_entity_registry)
+    if "update_entity_registry" not in Gb.hass.data[DOMAIN]:
+        cancel_listener_func = Gb.hass.bus.async_listen(
+                                        er.EVENT_ENTITY_REGISTRY_UPDATED,
+                                        er_util.async_handle_update_entity_registry)
 
-    Gb.hass.data[DOMAIN][Gb.config_entry_id]["update_entity_registry"] = cancel_listener_func
+        log_debug_msg(f"Add Listener > (update_entity_registry)")
+        Gb.hass.data[DOMAIN][Gb.config_entry_id]["update_entity_registry"] = cancel_listener_func
 
 
 #-------------------------------------------------------------------------------------------
@@ -276,6 +308,7 @@ async def async_create_devices_tracker_and_sensor_entities():
 #-------------------------------------------------------------------------------------------
 async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
     '''Handle options update.'''
+
     await hass.config_entries.async_reload(config_entry.entry_id)
 
 #-------------------------------------------------------------------------------------------
@@ -300,6 +333,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
             ))
 
     # Remove options_update_listener.
+    log_debug_msg(f"Remove Listener > unsub_options_update_listener")
+    log_debug_msg(f"Remove Listener > update_device_registry")
+    log_debug_msg(f"Remove Listener > update_entity_registry")
+
     hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
     hass.data[DOMAIN][entry.entry_id]["update_device_registry"]()
     hass.data[DOMAIN][entry.entry_id]["update_entity_registry"]()
@@ -309,6 +346,88 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+#-------------------------------------------------------------------------------------------
+async def async_remove_config_entry_device(hass: HomeAssistant,
+# Swap these two statements to turn this off. HA looks the function up by name, so the
+# 'x_' name makes it invisible and HA no longer offers Delete on the Integrations screen.
+# Requires an HA restart - `supports_remove_device` is cached and a reload will not reset it.
+# async def x_async_remove_config_entry_device(hass: HomeAssistant,
+                                            config_entry: ConfigEntry,
+                                            device_entry: dr.DeviceEntry) -> bool:
+    '''
+    HA calls this when the user clicks Delete on a device on the Integrations screen.
+
+    This is the only unambiguous 'the user deleted this device' signal HA provides.
+    iCloud3's own device registry removals (config_flow device deletion, the entity
+    registry cleanup tools) call dr.async_remove_device directly and do not come through
+    here, so nothing has to be suppressed or flagged.
+
+    Note: Simply defining this function is what makes HA offer the Delete option on the
+    Integrations screen (config_entries.support_remove_from_device).
+
+    A device iCloud3 is still tracking is not deleted here. Deleting it would leave the
+    iCloud3 configuration file and the HA registries out of sync, so the request is
+    rejected and the user is directed to the iCloud3 configuration screen, which deletes
+    the device, all of it's sensors and both registry entries together.
+
+    Raising HomeAssistantError displays it's message on the Integrations screen.
+    Returning False displays HA's generic 'rejected by integration' message instead.
+
+    A device iCloud3 does not know about is an orphaned registry entry. Return True so
+    HA can delete it.
+
+    The test is whether the devicename is in the iCloud3 configuration file, NOT whether
+    there is a Device object for it. A device that is disabled on the Integrations screen,
+    or whose Tracking Mode is Inactive, has no Device object but is still configured in
+    iCloud3. Testing Gb.Devices_by_devicename let those two be deleted here without any
+    message, which is what leaves the configuration file and the registries out of sync.
+
+    Note: Disabling the device on the Integrations screen does not come through here at
+    all - HA provides no way to reject that. It is handled in
+    er_util.async_handle_update_device_registry, which restarts iCloud3. The restart
+    rereads the device registry and does not recreate the disabled device. The iCloud3
+    configuration is not changed, so enabling the device brings it back as it was.
+    '''
+    try:
+        # identifiers={('icloud3', 'gary_iphone')}
+        devicename = next((identifier[1]
+                            for identifier in device_entry.identifiers
+                            if identifier[0] == DOMAIN), None)
+
+        conf_device = config_file.get_conf_device(devicename)
+
+        if conf_device is None:
+            log_info_msg(   f'Device Registry Update > {devicename}, Delete Device, '
+                            f'Not an iCloud3 Device, Deleted')
+            return True
+
+        device_fname = conf_device.get(CONF_FNAME) or devicename
+
+        # The message text is in translations/en.json under `exceptions`. Passing no
+        # message to HomeAssistantError makes HA build it from the translation_key.
+        if devicename in Gb.ha_disabled_by_by_devicename:
+            translation_key = 'device_delete_not_allowed_disabled'
+        elif conf_device.get(CONF_TRACKING_MODE) == INACTIVE:
+            translation_key = 'device_delete_not_allowed_inactive'
+        else:
+            translation_key = 'device_delete_not_allowed'
+
+        log_info_msg(   f'Device Registry Update > {devicename}, Delete Device, '
+                        f'Rejected, Use the iCloud3 Configuration screen')
+
+        raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key=translation_key,
+                translation_placeholders={'device_fname': device_fname})
+
+    except HomeAssistantError:
+        raise
+
+    except Exception as err:
+        log_exception(err)
+
+    return True
 
 #-------------------------------------------------------------------------------------------
 def startup_test_code():
@@ -328,6 +447,7 @@ def startup_test_code():
         pass
         # from .utils             import entity_io
         # er_util.scan_entity_reg_for_icloud3_items()
+
 
     except Exception as err:
         log_exception(err)

@@ -16,16 +16,30 @@
 #   The original code can be found on Kovács Bálint's GitHub repo at
 #   https://github.com/kovacsbalu/WazeRouteCalculator.
 #
+#   Waze rejects requests (403) that do not have a browser's TLS fingerprint (Oct 2026,
+#   issue #656). The Python requests module is rejected no matter what headers are sent.
+#   The request is sent with curl_cffi impersonating Chrome. curl_cffi.requests.get
+#   creates a new session for each request. Waze also rejects curl sessions that have
+#   been idle for more than 1-minute (pywaze v1.2.4) so a session is not kept.
+#
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 import logging
 import requests
 import re
 
+try:
+    from curl_cffi import requests as curl_requests
+except ImportError:
+    curl_requests = None
+
 from ..utils.messaging  import (_log, log_exception, log_warning_msg, log_error_msg, log_info_msg, )
 
 WAZE_URL_BASE     = 'https://routing-livemap-'
 WAZE_URL_ENDPOINT = '.waze.com/RoutingManager/routingRequest'
+WAZE_REFERER      = 'https://www.waze.com/'
+REQUEST_TIMEOUT   = 15      # secs, connect & read
+CURL_IMPERSONATE  = 'chrome'
 ROUTING_SERVERS = {
     'us': 'am',
     'na': 'am',
@@ -48,7 +62,7 @@ class WazeRouteCalculator(object):
 
     HEADERS = {
         "User-Agent": "Mozilla/5.0",
-        "referer": WAZE_URL_BASE,
+        "referer": WAZE_REFERER,
     }
 
     # VEHICLE_TYPES = ('TAXI', 'MOTORCYCLE')
@@ -81,6 +95,17 @@ class WazeRouteCalculator(object):
         self.start_coords = ''
         self.end_coords = ''
 
+        # Error msg returned by Waze when it answered the request but could not calculate
+        # the route (e.g., 'Internal Error' when a location is not near a road). This is
+        # not a connection error. Reset on each calc_route_info request.
+        self.waze_error_msg = ''
+
+        # Waze rejected the request with HTTP 429 (Too Many Requests). Retrying makes it
+        # worse so waze.py pauses Waze. retry_after_secs is from the Retry-After header
+        # (0 if not sent). Reset on each calc_route_info request.
+        self.is_rate_limited  = False
+        self.retry_after_secs = 0
+
 #--------------------------------------------------------------------
     def get_route(self, from_lat, from_long, to_lat, to_long,):
         """Get route data from waze"""
@@ -99,33 +124,63 @@ class WazeRouteCalculator(object):
             "options": ','.join('%s:t' % route_option for route_option in self.route_options),
         }
 
+        response_json = None
         try:
-            response = requests.get(url, params=url_options, headers=self.HEADERS)
-            response.encoding = 'utf-8'
+            if curl_requests is not None:
+                response = curl_requests.get(url, params=url_options, headers=self.HEADERS,
+                                            impersonate=CURL_IMPERSONATE,
+                                            timeout=REQUEST_TIMEOUT)
+            else:
+                # curl_cffi was not installed. Waze will probably reject this request (403)
+                response = requests.get(url, params=url_options, headers=self.HEADERS,
+                                            timeout=REQUEST_TIMEOUT)
+
             response_json = self._check_response(response)
 
         except Exception as err:
-            log_exception(err)
+            log_error_msg(f"Waze Route Request Error > {err.__class__.__name__}, {err}")
 
-        if response_json:
+        if isinstance(response_json, dict):
             if 'error' not in response_json:
-                response_obj = response_json['response']
+                response_obj = response_json.get('response')
                 if isinstance(response_obj, list):
-                    response_obj = response_obj[0]
+                    response_obj = response_obj[0] if response_obj else None
 
                 return response_obj
 
+            # Waze answered but could not calculate the route. waze.py reports it once.
+            self.waze_error_msg = str(response_json['error'])
+
+        return None
+
 #--------------------------------------------------------------------
-    @staticmethod
-    def _check_response(response):
+    def _check_response(self, response):
         """Check waze server response."""
         try:
             if response.ok:
                 return response.json()
 
+            if response.status_code == 429:
+                self.is_rate_limited = True
+                try:
+                    self.retry_after_secs = int(response.headers.get('Retry-After', 0))
+                except (TypeError, ValueError):
+                    self.retry_after_secs = 0
+
+                retry_after_msg = (f", Retry-After-{self.retry_after_secs}s"
+                                        if self.retry_after_secs else '')
+                log_error_msg(f"Waze Route Request Error > "
+                                f"HTTP Status Code-429 (Too Many Requests){retry_after_msg}")
+                return None
+
+            curl_msg = '' if curl_requests else ', curl_cffi is not installed'
+            log_error_msg(f"Waze Route Request Error > "
+                            f"HTTP Status Code-{response.status_code}{curl_msg}")
+
         except Exception as err:
             log_exception(err)
-            return None
+
+        return None
 
 #--------------------------------------------------------------------
     def _add_up_route(self, results, stop_at_bounds=False):
@@ -151,6 +206,9 @@ class WazeRouteCalculator(object):
 #--------------------------------------------------------------------
     def calc_route_info(self, from_lat, from_long, to_lat, to_long, log_results_flag=True):
         """Calculate best route info."""
+        self.waze_error_msg   = ''
+        self.is_rate_limited  = False
+        self.retry_after_secs = 0
         try:
             from_lat  = float(from_lat)
             from_long = float(from_long)
@@ -159,7 +217,9 @@ class WazeRouteCalculator(object):
 
             route = self.get_route(from_lat, from_long, to_lat, to_long)
             if route:
-                route_time, route_distance = self._add_up_route(route['results'])
+                # Waze returns 'results' or 'result' (WazeRouteCalculator, pywaze)
+                route_time, route_distance = self._add_up_route(
+                                    route['results' if 'results' in route else 'result'])
 
                 if log_results_flag:
                     log_info_msg(f"Waze Results > GPS-({from_lat:0.5f}, {from_long:0.5f}) --> "

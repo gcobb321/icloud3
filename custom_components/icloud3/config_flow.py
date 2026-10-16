@@ -11,12 +11,13 @@ from .const                 import (DOMAIN, ICLOUD3, DATETIME_FORMAT, STORAGE_DI
                                     CONF_IC3_DEVICENAME, CONF_FNAME, CONF_TRACKING_MODE,
                                     CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
                                     CF_APPLE_ACCOUNTS, CF_DEVICES,  CF_TRACKING, CF_GENERAL,
-                                    DEFAULT_APPLE_ACCOUNT_CONF
+                                    DEFAULT_APPLE_ACCOUNT_CONF,
+                                    CONF_ANALYTICS_ENABLED,
                                     )
 
 from .utils.utils           import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     is_running_in_event_loop, is_between, list_del, list_add,
-                                    sort_dict_by_values, username_id,
+                                    dict_sort_values, username_id,
                                     encode_password, decode_password, )
 from .utils.messaging       import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                     _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
@@ -46,6 +47,7 @@ from .configure.screens.step_sensors          import OptionsFlow_Sensors_Steps
 from .configure.screens.step_tools            import OptionsFlow_Tools_Steps
 from .configure.screens.step_dashboard_builder import OptionsFlow_DashboardBuilder_Steps
 from .configure.screens.step_parameters       import OptionsFlow_Parameters_Steps
+from .configure.screens.step_analytics       import OptionsFlow_Analytics_Steps
 
 
 import logging
@@ -182,7 +184,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
         await file_io.async_make_directory(Gb.icloud_session_directory)
 
-        _CF_LOGGER.info(f"Config_Flow Added Integration-{Gb.ha_device_id_by_devicename=}")
+        _CF_LOGGER.info(f"Config_Flow Added Integration-{Gb.ha_device_id_x_devicename=}")
 
         if user_input is not None:
             _CF_LOGGER.info(f"Added iCloud3 Integration")
@@ -263,7 +265,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                                     OptionsFlow_AppleAccount_Steps, OptionsFlow_Reauth_Steps,
                                     OptionsFlow_iCloud3Device_Steps, OptionsFlow_Sensors_Steps,
                                     OptionsFlow_Tools_Steps, OptionsFlow_DashboardBuilder_Steps,
-                                    OptionsFlow_Parameters_Steps):
+                                    OptionsFlow_Parameters_Steps, OptionsFlow_Analytics_Steps):
 
 
 
@@ -338,7 +340,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         self.errors_info_msg                = None  # dict that maps to a en.json msg for a 'description_placeholders' in the show_form stmt
         self.step_id                        = ''    # step_id for the window displayed
         self.menu_item                      = ''
-        self.menu_item_selected             = ['device_list', 'away_time_zone']
+        self.menu_item_selected             = ['device_list', 'tracking_parameters']
         self.menu_page_no                   = 0     # Menu currently displayed
         self.header_msg                     = None  # Message displayed on menu after update
         self.exit_msg                       = ''    # Summary of what was updated, displayed on the Exit screen
@@ -462,6 +464,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         # away_time_zone_adjustment
         self.away_time_zone_hours_key_text       = {}
         self.away_time_zone_devices_key_text     = {}
+
+        self.analytic_reports_by_name            = {}   # {report name: report name} in list_no order
+        self.analytic_reports_sql_by_name        = {}   # {report name: sql statement} (reference only)
+        self.report_selected                     = ''
+        self.query_report_md                     = ''
 
         # Variables used for the system_settings update
         self.www_directory_list                 = []
@@ -588,34 +595,41 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                     self.header_msg ='apple_acct_terms_of_use_update_needed'
                     break
 
-        if user_input is None:
-            self.set_inactive_devices_header_msg()
-            utils_cf.set_header_msg(self)
+        self.set_inactive_devices_header_msg()
+        self.set_analytics_menu_msg()
+        utils_cf.set_header_msg(self)
 
+        if user_input is None:
             menu_form = f"menu_{self.menu_page_no}"
             return self.async_show_form(step_id=menu_form,
                                         data_schema=forms.form_menu(self),
                                         errors=self.errors,
                                         last_step=False)
 
-        user_input, self.menu_item = utils_cf.menu_text_to_item(self, user_input, 'menu_items')
+        menu_title     = user_input.get('menu_items', '').split(' →')[0]
+        self.menu_item = MENU_KEYS_BY_TITLE[menu_title]
+        action_title   = user_input.get('action_items', '').split(' →')[0]
+        action_item    = MENU_KEYS_BY_TITLE.get(action_title)
 
-        if self.menu_item == 'menu':
-            if self.menu_page_no == 0:
-                self.menu_page_no = 1
-
-            elif self.menu_page_no == 1:
+        match action_item:
+            case  '' | None:
+                action_item = None
+            case 'menu_0':
+                self.menu_item_selected[1] = self.menu_item
                 self.menu_page_no = 0
-
-        elif self.menu_item == 'exit':
-            return await self.exit_configure_tasks()
-
-        else:
-            self.menu_item_selected[self.menu_page_no] = self.menu_item
+            case 'menu_1':
+                self.menu_item_selected[0] = self.menu_item
+                self.menu_page_no = 1
+            case 'analytics':
+                return await self.async_step_analytics()
+            case 'exit':
+                return await self.exit_configure_tasks()
 
         utils_cf.log_step_info(self, '')
 
-        if self.menu_item == '':
+        if action_item is not None:
+            pass
+        elif self.menu_item == '':
             pass
         elif self.menu_item == 'apple_accounts':
             return await self.async_step_apple_accounts()
@@ -643,6 +657,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             return await self.async_step_waze_main()
         elif self.menu_item == 'special_zones':
             return await self.async_step_special_zones()
+        elif self.menu_item == 'analytics':
+            if Gb.analytics_enabled:
+                return await self.async_step_analytics_reports()
+            else:
+                return await self.async_step_analytics()
 
         self.set_inactive_devices_header_msg()
         utils_cf.set_header_msg(self)
@@ -654,6 +673,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                             last_step=False)
 
 #-------------------------------------------------------------------------------------------
+    def set_analytics_menu_msg(self):
+
+        if Gb.analytics_enabled is None:
+            self.errors['action_items'] = 'analytics_enable_needed'
+
+#-------------------------------------------------------------------------------------
     async def exit_configure_tasks(self, exit_by_x_click=False):
         '''
         Handle all Exit Configure cleanup and processing. This is the single entry point
@@ -1039,16 +1064,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                 force_config_update = True
 
         if force_config_update:
-            if Gb.conf_apple_accounts:
-                Gb.conf_tracking[CONF_USERNAME] = Gb.conf_apple_accounts[0][CONF_USERNAME]
-                Gb.conf_tracking[CONF_PASSWORD] = Gb.conf_apple_accounts[0][CONF_PASSWORD]
             Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = Gb.conf_apple_accounts
             Gb.conf_tracking[CONF_DEVICES]        = Gb.conf_devices
             list_add(self.config_parms_update_control, ['tracking', 'restart'])
             self.config_file_commit_updates = True
 
 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #                        SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def initialize_step(self, step_id, user_input=None, errors=None):

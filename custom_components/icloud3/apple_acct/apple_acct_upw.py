@@ -1,8 +1,9 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (AIRPODS_DN, NONE_FNAME,
-                                    EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS, CRLF_RED_ALERT, CRLF_RED_X,
-                                    HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
+                                    EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS, 
+                                    HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, 
+                                    CRLF_HDOT, CRLF_CIRCLE_X, CRLF_RED_ALERT, CRLF_RED_X,
                                     ICLOUD, NAME, ID,
                                     APPLE_SERVER_ENDPOINT,
                                     ICLOUD_HORIZONTAL_ACCURACY,
@@ -13,8 +14,8 @@ from ..const                import (AIRPODS_DN, NONE_FNAME,
                                     CONF_AUTH_METHODS, DEFAULT_AUTH_METHODS, TEXT_1,
                                     CONF_USERNAME, CONF_APPLE_ACCOUNT,
                                     CONF_PASSWORD, CONF_MODEL_DISPLAY_NAME, CONF_RAW_MODEL,
-                                    CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
-                                    CONF_FAMSHR_DEVICE_ID, CONF_LOG_LEVEL_DEVICES,
+                                    CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME,
+                                    CONF_AADEV_DEVICE_ID, CONF_LOG_LEVEL_DEVICES,
                                     )
 from ..utils.utils          import (instr, yes_no, is_empty, isnot_empty, list_add, list_del, dict_del,
                                     encode_password, decode_password, username_id, is_running_in_event_loop, )
@@ -24,7 +25,8 @@ from ..utils.time_util      import (time_now, time_now_secs, secs_to_time, s2t, 
 from ..utils.messaging      import (post_event, post_alert, post_monitor_msg, post_error_msg,
                                     _evlog, _log, more_info, add_log_file_filter,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                    log_request_data, log_exception, log_data_unfiltered, )
+                                    log_request_data, log_exception, log_data_unfiltered, 
+                                    update_alert_sensor, )
 from ..utils                import gps
 
 # from .icloud_session        import iCloudSession
@@ -106,6 +108,7 @@ class ValidateAppleAcctUPW():
 
             username     = conf_apple_acct[CONF_USERNAME]
             password     = Gb.AppleAcct_password_by_username[username]
+            _username_id = username_id(username)
 
             if is_empty(username) or is_empty(password):
                 continue
@@ -120,12 +123,16 @@ class ValidateAppleAcctUPW():
             if valid_upw:
                 crlf_symb = CRLF_CHK
             else:
-                crlf_symb = CRLF_RED_X
+                crlf_symb = CRLF_CIRCLE_X
                 alert_msg = EVLOG_ALERT
-            _username_id = username_id(username)
-            results_msg += f"{crlf_symb}{_username_id}, Validated-{yes_no(valid_upw)}, {self.method}"
 
-        self.results_msg = f"{alert_msg}Apple Acct > Verify Username/Password{results_msg}"
+                error_msg = f"Verification Failed, Invalid Username/Password"
+                post_alert( f"{_username_id} > {error_msg}")
+                update_alert_sensor(_username_id, error_msg)
+
+            results_msg += f"{crlf_symb}{_username_id}, Valid-{yes_no(valid_upw)}, {self.method}"
+
+        self.results_msg = f"Apple Acct > Verify Username/Password{results_msg}"
         post_event(self.results_msg)
 
         Gb.startup_lists['Gb.valid_upw_by_username'] = Gb.valid_upw_by_username
@@ -183,6 +190,10 @@ class ValidateAppleAcctUPW():
         # Method-1 > Lightweight SRP credential validation
         if self._validate_upw_via_srp():
             return True
+
+        # Invalid username, don't do full login
+        elif self.AppleAcct.response_code in [401.1, 503]:
+            return False
 
         # Method-2 > Fall back to a complete login & authentication. The SRP
         # validation can fail for reasons other than an invalid password (most
@@ -283,7 +294,9 @@ class ValidateAppleAcctUPW():
             # 'password' item is only present when a .tpw file existed for the
             # username, so its absence means there is nothing to match against.
             token_pw_data = self.AppleAcct.token_pw_data
-            if is_empty(token_pw_data) or CONF_PASSWORD not in token_pw_data:
+            if (is_empty(token_pw_data) 
+                    or 'dsid' not in token_pw_data
+                    or CONF_PASSWORD not in token_pw_data):
                 return False
 
             tpw_password = decode_password(token_pw_data[CONF_PASSWORD])
@@ -315,8 +328,14 @@ class ValidateAppleAcctUPW():
         # The AppleAcct already holds the decoded password, so no args are passed.
         valid_upw = self.AppleAcct.validate_upw_via_srp()
 
+        # A 503 error here  in on the srpp signin/init which means the username is invalid
+        # change to 401.1
+        error_msg = ''
+        if self.AppleAcct.response_code == 503:
+            self.AppleAcct.response_code = 401.1
+            error_msg = ', Invalid username'
         log_debug_msg(  f"PasswordSRP Results > {self.username_base}, Method-{self.method}, "
-                        f"Results-{valid_upw} (Response-{self.AppleAcct.response_code})")
+                        f"Valid-{valid_upw}{error_msg} (Response-{self.AppleAcct.response_code})")
 
         if valid_upw is False:
             return False

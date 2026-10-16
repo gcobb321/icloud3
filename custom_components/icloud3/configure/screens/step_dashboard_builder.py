@@ -51,7 +51,7 @@ class OptionsFlow_DashboardBuilder_Steps:
 
         self.ui_selected_dbname = user_input.get('selected_dashboard', ADD)
         if self.ui_selected_dbname == ADD:
-            action_item == 'create_dashboard'
+            action_item = 'create_dashboard'
 
         self.ui_main_view_style  = user_input['main_view_style']
         self.ui_main_view_dnames = [devicename

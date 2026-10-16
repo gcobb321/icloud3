@@ -4,8 +4,10 @@
     "abort": {
       "translation_file_by": "@gcobb321",
 
-      "option_msg_inenjson": "out_of_range: Value must be between {min} and {max}.",
-      "option_msg_inform":   "description_placeholders={'min': '1', 'max': '10'}",
+      "_comment.en.json": "out_of_range: Value must be between {min} and {max}.",
+      "_comment.form.1b": "data_schema=forms.form_dashboard_builder(self),",
+      "_comment.form.1c": "     description_placeholders={'min': '1', 'max': '10'},",
+      "_comment.form.1d": "     errors=self.errors)",
 
       "config_update_complete": "✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
@@ -27,7 +29,6 @@
     },
     "error": {
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
-
 
       "auth_code_needed": "An Apple Account needs to be Authenticated",
       "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
@@ -60,6 +61,8 @@
       "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later"
 
     },
+
+
     "step": {
       "user": {
         "data": {
@@ -74,6 +77,7 @@
         }
       },
 
+
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
         "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
@@ -86,6 +90,7 @@
         }
       },
 
+
       "reauth_change_auth_method": {
         "title": "Change Apple Account Authentication Method",
         "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
@@ -96,10 +101,12 @@
         }
       },
 
+
       "reauth_hwkey_progress": {
         "title": "Touch the Security Security Key",
         "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
       },
+
 
       "reauth_code_from_applecom_login": {
         "title": "Get an Authentication Code from Apple.com",
@@ -110,6 +117,7 @@
           }
       },
 
+
       "restart_ha": {
         "title": "Confirm Restarting Home Assistant",
         "description": "iCloud3 needs to restart Home Assistant to prevent device_tracker entity name conflicts",
@@ -117,6 +125,8 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
+
       "restart_ha_reload_icloud3": {
         "title": "Restart Home Assistant or iCloud3",
         "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
@@ -126,6 +136,8 @@
       }
     }
   },
+
+
   "options": {
     "abort": {
       "config_update_complete": "{exit_msg}",
@@ -174,7 +186,7 @@
       "mobile_app_error": "Error, The Mobile App Integration is not installed. The Mobile App will not be used as a data source; location data and zone enter/exit triggers will not be monitored",
       "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
       "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
-      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth AQpple Acct screen)",
+      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Authenticate Apple Account Sign-in)",
 
       "auth_code_needed": "An Apple Account needs to be Authenticated",
       "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
@@ -200,6 +212,7 @@
       "mobapp_search_error": "WARNING: Search Failure - No Mobile App device that starts with the iCloud3 or Apple Acct devicename was found. Select 'None' or the device to be used.",
 
       "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
+      "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED. TRACKING MODE CHANGES WILL ⛔ BE DISCARDED",
       "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
       "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
       "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
@@ -212,6 +225,10 @@
       "waze_server_error_us": "The correct server for your location is: United States, Canada",
       "waze_server_error_il": "The correct server for your location is: Israel",
       "waze_server_error_row": "The correct server for your location is: Rest of the World",
+
+      "analytics_sent": "The iCloud3 Analytics data was sent",
+      "analytics_not_sent": "The iCloud3 Analytics data could not be sent. See the iCloud3 log file for more information",
+      "analytics_enable_needed": "To remove this message, select `iCloud3 Analytics` below. Then Enable Send Analytics Data (or leave Disabled). The data that you will send is displayed.",
 
       "required_field": "This parameter must be specified",
       "review_filledin_fields": "Review the 'Filled in' fields",
@@ -263,6 +280,8 @@
       "dashboard_error": "An error occurred updating the Dashboard",
       "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code."
     },
+
+
     "step": {
       "menu": {
         "title": "Configure Devices & Sensors",
@@ -274,23 +293,26 @@
         }
       },
 
+
       "menu_0": {
         "title": "Configure Devices & Sensors",
         "xdescription": "This menu contains items related to Apple Accounts, Tracked Devices, Apple Authentication, Sensors, iCloud3 Dashboard and Maintenance Tools",
         "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ PRIMARY MENU SELECTIONS",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ "
         }
       },
+
 
       "menu_1": {
         "title": "Configure Parameters",
         "xdescription": "This menu contains items related to configuring how iCloud3 should track devices and how the results should be reported",
         "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ SECONDARY MENU SELECTIONS",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ "
         }
       },
+
 
       "xrestart_ha": {
         "title": "Restart Home Assistant",
@@ -300,6 +322,7 @@
         }
       },
 
+
       "xrestart_ha_ic3_load_error": {
         "title": "iCloud3 Load Error",
         "description": "iCloud3 did not load and initialize when HA started. Reload iCloud3 again or restart HA",
@@ -307,6 +330,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
         }
       },
+
 
       "xrestart_ha_reload_icloud3": {
         "title": "Reload iCloud3, Restart Home Assistant",
@@ -316,6 +340,7 @@
         }
       },
 
+
       "confirm_action": {
         "title": "Confirm Selected Action",
         "data": {
@@ -323,6 +348,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
 
       "apple_accounts": {
         "title": "Apple Accounts",
@@ -338,6 +364,7 @@
         "data_description": {
         }
       },
+
 
       "update_apple_acct": {
         "title": "Update Apple Account Username/Password",
@@ -355,6 +382,7 @@
         }
       },
 
+
       "other_apple_acct_parameters": {
         "title": "Other Apple Account Parameters",
         "data": {
@@ -367,6 +395,7 @@
         }
       },
 
+
       "delete_apple_acct": {
         "title": "Remove an Apple Account",
         "data": {
@@ -375,6 +404,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ CONFIRM DELETING THE APPLE ACCOUNT"
         }
       },
+
 
       "reauth": {
         "title": "Authenticate Apple Account Sign-In",
@@ -388,6 +418,7 @@
         }
       },
 
+
       "reauth_change_auth_method": {
         "title": "Change Apple Account Authentication Method",
         "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
@@ -398,10 +429,12 @@
         }
       },
 
+
       "reauth_hwkey_progress": {
         "title": "Touch the Security Security Key",
         "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
       },
+
 
       "reauth_code_from_applecom_login": {
         "title": "Get an Authentication Code from Apple.com",
@@ -412,6 +445,7 @@
           }
       },
 
+
       "device_list": {
         "title": "iCloud3 Devices",
         "description": "This screen is used to select a device that needs to be updated, add a new device or delete a device that should no longer be tracked or monitored. Apple Devices can also be imported into iCloud3 and the order of devices on the Event Log can be changed.",
@@ -420,6 +454,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
 
       "add_device": {
         "title": "Add iCloud3 Device",
@@ -440,6 +475,7 @@
         }
       },
 
+
       "import_apple_devices": {
         "title": "Import Apple Devices into iCloud3",
         "description": "Import the devices from all Apple Accounts that have not been configured. Then create an iCloud3 device for those that are selected. The devices can be customized on the `Update Devices` screen.",
@@ -450,6 +486,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
 
       "update_device": {
         "title": "Update iCloud3 Device",
@@ -473,6 +510,7 @@
         }
       },
 
+
       "update_other_device_parameters": {
         "title": "Update Other Device Parameters",
         "description": "This screen updates device parameters that are rearely updated",
@@ -495,6 +533,7 @@
         }
       },
 
+
       "delete_device": {
         "title": "Delete iCloud3 Device",
         "data": {
@@ -502,6 +541,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DELETE OPTIONS"
         }
       },
+
 
       "review_inactive_devices": {
         "title": "Review Untracked (Inactive) Devices",
@@ -515,6 +555,7 @@
         }
       },
 
+
       "change_device_order": {
         "title": "Event Log Device Display Sequence",
         "description": "The devices are displayed in the Event Log heading area and in various Event Log messages in the sequence below.\n\nThis screen lets you change the order of the devices.",
@@ -523,6 +564,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
 
       "picture_dir_filter": {
         "title": "Set up Picture Directory Filter",
@@ -537,21 +579,6 @@
         }
       },
 
-      "away_time_zone": {
-        "title": "Display Location Time Zone when Away",
-        "description": "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location.\n\nThis screen lets you display time events using your current location's time zone.",
-        "data": {
-          "away_time_zone_1_devices": "Devices in Away Time Zone #1",
-          "away_time_zone_1_offset": "Time & Time Zone Adjustment at Current Location #1",
-          "away_time_zone_2_devices": "Devices in Away Time Zone #2",
-          "away_time_zone_2_offset": "Time & Time Zone Adjustment at Current Location #2",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        },
-        "data_description": {
-          "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
-          "time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
-        }
-      },
 
       "dashboard_builder": {
         "title": "iCloud3 Dashboard Builder",
@@ -567,6 +594,7 @@
         }
       },
 
+
       "tools": {
         "title": "Tools",
         "description": "Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
@@ -577,6 +605,7 @@
         "data_description": {
         }
       },
+
 
       "log_level": {
         "title": "Set Log Level",
@@ -589,6 +618,7 @@
         "data_description": {
         }
       },
+
 
       "cleanup_entity_registry": {
         "title": "Cleanup HA Entity Registry Devices & Sensors",
@@ -606,6 +636,55 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
+
+      "sensors": {
+        "title": "Sensors",
+        "description": "Many sensors are used to display tracking results and other information for a device.\n\n This screen is used to select the sensors that should be created.",
+        "data": {
+          "monitored_devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MONITORED DEVICE SENSORS - Select the type of sensors to create for a Monitored Device",
+          "device": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DEVICE SENSORS - Device status and information",
+          "tracking_update": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ LOCATION UPDATE SENSORS - Device location update times",
+          "tracking_time": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TIME SENSORS - Device tracking timers",
+          "tracking_distance": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DISTANCE SENSORS - Device tracking distances",
+          "track_from_zones": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TRACK FROM MULTIPLE ZONE SENSORS - Used when tracking from more than one zone (not needed for tracking only from the Home zone)",
+          "tracking_other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER TRACKING SENSORS - Not normally used but available",
+          "zone": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ZONE SENSORS - Device zone status and information",
+          "other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER SENSORS - Sensors not in the above areas",
+          "excluded_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        }
+      },
+
+
+      "exclude_sensors": {
+        "title": "Exclude Sensors",
+        "description": "Many sensors are created for the devices but there may be times when you want to not create a sensor for a specific device. For example, you may want to create a bettery sensor for all devices except one.\n\nThis screen lets you specify the sensor entity name that should not be created.",
+        "data": {
+          "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
+          "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
+          "filtered_sensors": "ICLOUD3 SENSORS - A list of Sensors that are created when iCloud3 starts",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        }
+      },
+
+
+      "away_time_zone": {
+        "title": "Display Location Time Zone when Away",
+        "description": "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location.\n\nThis screen lets you display time events using your current location's time zone.",
+        "data": {
+          "away_time_zone_1_devices": "Devices in Away Time Zone #1",
+          "away_time_zone_1_offset": "Time & Time Zone Adjustment at Current Location #1",
+          "away_time_zone_2_devices": "Devices in Away Time Zone #2",
+          "away_time_zone_2_offset": "Time & Time Zone Adjustment at Current Location #2",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
+          "time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
+        }
+      },
+
 
       "tracking_parameters": {
         "title": "Tracking Parameters",
@@ -641,6 +720,7 @@
         }
       },
 
+
       "format_settings": {
         "title": "DISPLAY SETTINGS & OTHER PARAMETERS",
         "description": "This screen specifies how tracking results and other information is displayed in the Event Log, sensors and device_tracker entities",
@@ -664,6 +744,7 @@
         }
       },
 
+
       "display_text_as": {
         "title": "Event Log 'Display Text As'",
         "description": "There may be some text fields, such as email addresses or phone numbers, that are displayed on the Event Log screen that are private and should not be displayed. For example, you can replace 'geekstergary@apple.com' with 'gary@email.com'.\n\nThis screen is used to specify the original text and the text that should be displayed.",
@@ -672,6 +753,7 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
+
 
       "display_text_as_update": {
         "title": "Update Event Log 'Display Text As' Value",
@@ -684,24 +766,26 @@
         }
       },
 
+
       "inzone_intervals": {
         "title": "inZone Parameters and Default Intervals",
-        "description": "An inZone interval is the time between location requests when the Device is in a zone.\n\n This screen is used to set the default values for different types of devices. This value is assigned to a device when it is added.\n\nNote: The inZone Interval can be set to a different value on the Update Device screen for each device.",
+        "description": "An inZone interval is the time between location requests when the Device is in a zone.\n\n This screen is used to set the default values for different types of devices. This value is assigned to a device when it is added.\n\nNote: The inZone Interval can be set to a different value on the Update Device screen for each device.\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
         "data": {
-          "iphone": "IPHONE & IPOD",
-          "ipad": "IPAD",
-          "watch": "APPLE WATCH",
-          "airpods": "AIRPODS",
-          "no_mobapp": "MOBILE APP IS NOT INSTALLED",
-          "other": "OTHER DEVICE TYPE",
-          "distance_between_devices": "Determine the distance between devices. Use a near by device's tracking results",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "iphone": "iPhones (default=120 min)",
+          "watch": "Apple Watches (default=15 min)",
+          "watch_wifi": "Apple Watches with WiFi (default=15 min)",
+          "ipad": " iPads (default=120 min)",
+          "ipad_cell": "iPads with Cell Service (default=120 min)",
+          "mac": "Apple Macs (default=120 min)",
+          "airpods": "AirPods (AirPods are not tracked)(default=120 min)",
+          "no_mobapp": "Mobile App is not installed on the tracked device (default=15 min)",
+          "other": "Any other type of device being tracked (default=120 min)",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯w⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-          "no_mobapp": "Default interval if the Mobile App is not used for location monitoring and zone enter/exit triggers",
-          "other": "Unspecified device type inzone interval"
         }
       },
+
 
       "waze_main": {
         "title": "Waze - Route Service Travel Time/Distance",
@@ -722,6 +806,7 @@
           "waze_history_max_distance": "Do not save the Waze travel time & distance to the Waze History Database if the distance is greater than this value"
         }
       },
+
 
       "special_zones": {
         "title": "Special Zones",
@@ -746,36 +831,84 @@
         }
       },
 
-      "sensors": {
-        "title": "Sensors",
-        "description": "Many sensors are used to display tracking results and other information for a device.\n\n This screen is used to select the sensors that should be created.",
+
+      "analytics": {
+        "title": "iCloud3 Analytics",
+        "description": "The iCloud3 Analytics collects version, location (country/region), usage and various counts from the 15,000+ iCloud3 users. It's purpose is to report summary information showing where users are located, what version is being used and various counts (Apple Account, tracked devices, comments, etc.). The data you will send is shown below. Summary reports can be selected on *Reports* screen\n \nHopefully, you will Enable *Send iCloud3 Analytics Data* below and participate in this project.\n \n*CURENT STATUS:* {downloads}",
         "data": {
-          "monitored_devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MONITORED DEVICE SENSORS - Select the type of sensors to create for a Monitored Device",
-          "device": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DEVICE SENSORS - Device status and information",
-          "tracking_update": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ LOCATION UPDATE SENSORS - Device location update times",
-          "tracking_time": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TIME SENSORS - Device tracking timers",
-          "tracking_distance": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DISTANCE SENSORS - Device tracking distances",
-          "track_from_zones": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TRACK FROM MULTIPLE ZONE SENSORS - Used when tracking from more than one zone (not needed for tracking only from the Home zone)",
-          "tracking_other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER TRACKING SENSORS - Not normally used but available",
-          "zone": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ZONE SENSORS - Device zone status and information",
-          "other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER SENSORS - Sensors not in the above areas",
-          "excluded_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
+          "analytics_enabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
+          "analytics_comment": "COMMENT - How are you using iCloud3 to track your devices?",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "analytics_enabled": "Default interval if the Mobile App is not used for location monitoring and zone enter/exit triggers",
+          "analytics_comment": "Enter any special use cases or how you find iCloud3 tracking and device information useful \n \n **WHAT IS SENT:**\n- {json_payload}"
         }
       },
 
-      "exclude_sensors": {
-        "title": "Exclude Sensors",
-        "description": "Many sensors are created for the devices but there may be times when you want to not create a sensor for a specific device. For example, you may want to create a bettery sensor for all devices except one.\n\nThis screen lets you specify the sensor entity name that should not be created.",
+
+      "analytics_reports": {
+        "title": "iCloud3 Analytics Reports",
+        "description": "Summary Reports of the Analytics data are available and selected from the list below. The report will be displayed on this screen.\n \n*CURENT STATUS:* {downloads}",
         "data": {
-          "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
-          "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
-          "filtered_sensors": "ICLOUD3 SENSORS - A list of Sensors that are created when iCloud3 starts",
+          "analytics_enabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
+          "report_selected": "REPORT - Generate this report from the iCloud3 Analytics Data",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "report_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ {report}"
+        }
+      }
+
+
+    }
+  },
+
+
+  "exceptions": {
+    "device_delete_not_allowed": {
+      "message": "iCloud3 can not delete {device_fname} from this screen. Deleting it here would leave the iCloud3 configuration and the Home Assistant registries out of sync. To delete it: (1) Go to iCloud3 Configure Settings (HA Settings > Devices & settings > iCloud3 > Configure Gear Icon). (2) Then go to iCloud3 Devices, select {device_fname} and then select Actions > Delete. To stop tracking it without deleting it, set it's Tracking Mode to Inactive, or use Disable on this screen."
+    },
+    "device_delete_not_allowed_disabled": {
+      "message": "iCloud3 can not delete {device_fname} from this screen. It is disabled but it is still set up in iCloud3. Deleting it here would leave the iCloud3 configuration and the Home Assistant registries out of sync. To delete it: (1) Go to iCloud3 Configure Settings (HA Settings > Devices & settings > iCloud3 > Configure Gear Icon). (2) Then go to iCloud3 Devices, select {device_fname} and then select Actions > Delete. To keep it but not track it, leave it disabled, or enable it here and set it's Tracking Mode to Inactive."
+    },
+    "device_delete_not_allowed_inactive": {
+      "message": "iCloud3 can not delete {device_fname} from this screen. It's Tracking Mode is Inactive but it is still set up in iCloud3. Deleting it here would leave the iCloud3 configuration and the Home Assistant registries out of sync. To delete it: (1) Go to iCloud3 Configure Settings (HA Settings > Devices & settings > iCloud3 > Configure Gear Icon). (2) Then go to iCloud3 Devices, select {device_fname} and then select Actions > Delete."
+    }
+  },
+
+
+  "issues": {
+    "icloud3_alert": {
+      "title": "iCloud3 > {title}",
+      "description": "{message}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "iCloud3 > {title}",
+            "description": "{message}"
+          }
+        },
+        "abort": {
+          "fix_action_not_available": "iCloud3 can not make this change right now. It may still be starting. Try again after iCloud3 has finished starting.",
+          "fix_action_failed": "iCloud3 could not make this change. See the iCloud3 Event Log for more information."
+        }
+      }
+    },
+    "icloud3_notice": {
+      "title": "iCloud3 > {title}",
+      "description": "{message}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "iCloud3 > {title}",
+            "description": "{message}"
+          }
         }
       }
     }
   },
+
 
   "services": {
     "action": {

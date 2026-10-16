@@ -10,9 +10,9 @@ def dd_to_dms(lat, lon):
     '''
 
     lon_ew  = "E" if lon >= 0 else "W"
-    lon_dms = dd_to_dms(lon)
+    lon_dms = decimal_to_dms(lon)
     lat_ns   = "N" if lat >= 0 else "S"
-    lat_dms  = dd_to_dms(lat)
+    lat_dms  = decimal_to_dms(lat)
 
     return f"{lat_dms} {lat_ns}, {lon_dms} {lon_ew}"
 

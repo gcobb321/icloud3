@@ -1,7 +1,7 @@
 
 
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (DEVICE_TYPE_DN, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
+from ..const             import (DEVICE_TYPE_DN, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
                                 CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
                                 CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                 )
@@ -11,7 +11,7 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, log_stack, )
 
-from .const_form_lists   import (MENU_KEY_TEXT_PAGE_0, MENU_KEY_TEXT_PAGE_1,
+from .const_form_lists   import (MENU_0_ITEMS, MENU_1_ITEMS,
                                 ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 
@@ -62,11 +62,7 @@ def menu_text_to_item(self, user_input, selection_list):
             user_input['menu_items'] = 'menu'
             return user_input, 'menu'
 
-        if self.menu_page_no == 0:
-            menu_items = MENU_KEY_TEXT_PAGE_0
-        else:
-            menu_items = MENU_KEY_TEXT_PAGE_1
-
+        menu_items = MENU_0_ITEMS if self.menu_page_no == 0 else MENU_1_ITEMS
         menu_item = [k  for k, v in menu_items.items()
                         if v.startswith(selected_text[:selected_text_len])][0]
 
@@ -315,7 +311,7 @@ def option_parm_to_text(self, pname, option_list_key_text, conf_device=False):
         log_exception(err)
         # If the parameter value is already the key to the items dict, it is ok.
         if pvalue_key not in option_list_key_text:
-            if pname == CONF_FAMSHR_DEVICENAME:
+            if pname == CONF_AADEV_NAME:
                 self.errors[pname] = 'unknown_icloud'
             elif pname == CONF_MOBILE_APP_DEVICE:
                 self.errors[pname] = 'unknown_mobapp'
@@ -349,13 +345,13 @@ def option_text_to_parm(user_input, pname, option_list_key_text):
 
         # if pvalue_text in ['', '.']:
         #     self.errors[pname] = 'required_field'
-
         pvalue_key = [k for  k, v in option_list_key_text.items() if v == pvalue_text]
         pvalue_key = pvalue_key[0] if pvalue_key else pvalue_text
 
         user_input[pname] = pvalue_key
 
-    except:
+    except Exception as err:
+        log_exception(err)
         pass
         # If the parameter value is already the key to the items dict, it is ok.
         # if pvalue_text not in option_list_key_text:

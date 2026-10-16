@@ -7,15 +7,16 @@ from ..const            import (
                                 CONF_PARAMETER_TIME_STR,
                                 CONF_PICTURE_WWW_DIRS, CONF_SENSORS_HASH,
                                 CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
-                                CONF_IC3_VERSION, VERSION, VERSION_BETA,
+                                CONF_INZONE_INTERVALS, DEVICE_TYPE_INZONE_INTERVALS, IPAD_CELL, WATCH_WIFI,
+                                CONF_IC3_VERSION, CONF_ANALYTICS_ENABLED,
                                 CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
-                                CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE,
+                                CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE, CONF_FIRST_SEEN,
                                 CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
                                 CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                 CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_FNAME,
                                 CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
                                 CONF_DATA_SOURCE, CONF_LOG_ZONES,
-                                CONF_APPLE_ACCOUNT, CONF_FAMSHR_DEVICENAME,
+                                CONF_APPLE_ACCOUNT, CONF_AADEV_NAME,
                                 CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
                                 CONF_TRACKING_MODE, CONF_PASSWORD_SRP_ENABLED, CONF_EXCLUDED_SENSORS,
                                 CONF_PICTURE, CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES,
@@ -47,7 +48,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dic
                                 username_id, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
-from ..utils.time_util  import (datetime_now, )
+from ..utils.time_util  import (datetime_now, today, )
 
 from ..utils            import entity_reg_util as er_util
 from ..utils            import file_io
@@ -201,10 +202,6 @@ def _reconstruct_conf_file():
     Move the Gb.conf_xxx variables back to the file's actual Gb.conf_file_data/
     Gb.conf_xxx[xxx] dictionary items.
 
-    The Gb.conf_tracking[CONF_PASSWORD] field contains the real password
-    while iCloud3 is running. This makes it easier logging into AppleAcct
-    and in config_flow. Save it, then put the encoded password in the file
-    update the file and then restore the real password
     '''
     Gb.conf_profile[CONF_UPDATE_DATE] = datetime_now()
 
@@ -258,23 +255,27 @@ def _add_parms_and_check_config_file():
         #Add new parameters, check  parameter settings
         update_config_file_flag = False
         update_config_file_flag = _config_file_check_new_ic3_version() or update_config_file_flag
-        update_config_file_flag = _delete_obsolete_parameters()        or update_config_file_flag
+
         update_config_file_flag = _update_profile()                    or update_config_file_flag
-        update_config_file_flag = _update_sensors()                    or update_config_file_flag
         update_config_file_flag = _update_tracking_parameters()        or update_config_file_flag
+        update_config_file_flag = _update_general_parameters()         or update_config_file_flag
+        update_config_file_flag = _update_sensors()                    or update_config_file_flag
+
         update_config_file_flag = _update_apple_acct_parameters()      or update_config_file_flag
         update_config_file_flag = _update_device_parameters()          or update_config_file_flag
-        update_config_file_flag = _update_general_parameters()         or update_config_file_flag
 
         update_config_file_flag = _verify_general_parameter_values()   or update_config_file_flag
         update_config_file_flag = _verify_tracking_parameters_values() or update_config_file_flag
         update_config_file_flag = _verify_apple_acct_parameters_values() or update_config_file_flag
         update_config_file_flag = _verify_device_parameters_values()   or update_config_file_flag
 
+        if Gb.conf_profile.get(CONF_FIRST_SEEN) == '':
+            Gb.conf_profile[CONF_FIRST_SEEN] = datetime_now()
+            update_config_file_flag = True
+
         if update_config_file_flag:
             Gb.conf_profile[CONF_SENSORS_HASH] = ''
             write_icloud3_configuration_file()
-            write_icloud3_configuration_file(f'_v{Gb.conf_profile[CONF_IC3_VERSION]}')
 
         decode_all_passwords()
         build_log_file_filters()
@@ -752,7 +753,7 @@ def _count_device_tracking_methods_configured():
             if conf_device[CONF_TRACKING_MODE] == INACTIVE:
                 continue
 
-            if conf_device[CONF_FAMSHR_DEVICENAME].startswith(NONE_FNAME) is False:
+            if conf_device[CONF_AADEV_NAME].startswith(NONE_FNAME) is False:
                 Gb.conf_icloud_device_cnt += 1
 
             if conf_device[CONF_MOBILE_APP_DEVICE].startswith(NONE_FNAME) is False:
@@ -767,9 +768,12 @@ def _config_file_check_new_ic3_version():
     Check to see if this is a new iCloud3 version
     '''
     new_icloud3_version_flag = False
-    if Gb.conf_profile[CONF_IC3_VERSION] != f"{VERSION}{VERSION_BETA}":
-        _copy_config_file_on_new_version()
-        Gb.conf_profile[CONF_IC3_VERSION] = f"{VERSION}{VERSION_BETA}"
+
+    if Gb.conf_profile[CONF_IC3_VERSION] != Gb.version:
+        config_filename = f'_v{Gb.conf_profile[CONF_IC3_VERSION]}_{today()}'
+        write_icloud3_configuration_file(config_filename)
+
+        Gb.conf_profile[CONF_IC3_VERSION] = Gb.version
         Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         new_icloud3_version_flag = True
 
@@ -777,28 +781,11 @@ def _config_file_check_new_ic3_version():
         Gb.conf_profile[CONF_VERSION_INSTALL_DATE] = datetime_now()
         new_icloud3_version_flag = True
 
-    if new_icloud3_version_flag and VERSION.startswith('3.1.4'):
-        _delete_old_log_files()
+    if (CONF_FIRST_SEEN in Gb.conf_profile
+                and Gb.conf_profile[CONF_FIRST_SEEN] == ''):
+        Gb.conf_profile[CONF_FIRST_SEEN] = datetime_now()
 
     return new_icloud3_version_flag
-
-#--------------------------------------------------------------------
-def _copy_config_file_on_new_version():
-    config_filenames = file_io.get_directory_files(Gb.ha_storage_icloud3)
-    for config_filename in config_filenames:
-        if config_filename.startswith('configuration_v'):
-            file_io.delete_file(f"{Gb.ha_storage_icloud3}/{config_filename}")
-
-    write_icloud3_configuration_file(f'_v{Gb.conf_profile[CONF_IC3_VERSION]}')
-
-#--------------------------------------------------------------------
-def _delete_old_log_files():
-    log_file_0 = Gb.hass.config.path(IC3LOG_FILENAME).replace('.', '-0.')
-    log_file_1 = Gb.hass.config.path(IC3LOG_FILENAME).replace('.', '-1.')
-    log_file_2 = Gb.hass.config.path(IC3LOG_FILENAME).replace('.', '-2.')
-    file_io.delete_file(log_file_0)
-    file_io.delete_file(log_file_1)
-    file_io.delete_file(log_file_2)
 
 #--------------------------------------------------------------------
 def _verify_general_parameter_values():
@@ -930,103 +917,35 @@ def _hhmmss_to_minutes(hhmmss):
 #
 #   Add parameters to the configuration file
 #
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def _delete_obsolete_parameters():
-    update_config_file_flag = False
-    if 'external_ip_address' in Gb.conf_profile:
-        Gb.conf_profile.pop('external_ip_address')
-        update_config_file_flag = update_config_file_flag or True
-
-    return update_config_file_flag
-
-#--------------------------------------------------------------------
-def _new_items_in_conf_dict(conf_item, default_conf_item):
-    '''
-    Cycle through the configuration dictionary and identify items that were
-    added
-
-    Return:
-        item - Items that were added
-        were_items_added - True/False
-    '''
-    new_items = [item   for item in default_conf_item
-                        if item not in conf_item]
-
-    return new_items, isnot_empty(new_items)
-
-
-#--------------------------------------------------------------------
-def _delete_items_from_conf_dict(conf_item, default_conf_item):
-    '''
-    Cycle through the configuration dictionary and identify items that are
-    no longer being used.
-
-    Return:
-        conf_item - An updated conf_item
-        were_items_deleted - True/False
-    '''
-
-    del_items = [item   for item in conf_item
-                        if item not in default_conf_item]
-
-    if is_empty(del_items):
-        return conf_item, False
-
-    for item in del_items:
-        dict_del(conf_item, item)
-
-    return conf_item, True
-
-#--------------------------------------------------------------------
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def _update_profile():
     '''
     Update Gb.conf_profile with new fields
     '''
 
-    Gb.conf_profile, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
-    new_items, were_items_added         = _new_items_in_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
+    Gb.conf_profile, del_items = _delete_items_from_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
+    Gb.conf_profile, new_items = _insert_items_into_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
 
-    if were_items_deleted is False and were_items_added is False:
-        return False
+    if new_items or del_items:
+        log_info_msg(   f"Updated Configuration File items (Profile), "
+                        f"Added-{new_items}, Deleted-{del_items})")
+        return True
 
-    log_info_msg(f"Updated Configuration File items (Profile)")
-
-    for item in new_items:
-        before_item = _place_item_before(item, DEFAULT_PROFILE_CONF, CONF_PICTURE_WWW_DIRS)
-
-        Gb.conf_file_data[CF_PROFILE][item] = DEFAULT_PROFILE_CONF[item]
-        Gb.conf_profile = _insert_into_conf_dict_parameter(
-                                            Gb.conf_profile, item,
-                                            DEFAULT_PROFILE_CONF[item],
-                                            before= before_item)
-
-    return True
 #--------------------------------------------------------------------
 def _update_sensors():
     '''
     Update Gb.conf_sensors with new fields
     '''
 
-    Gb.conf_sensors, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
-    new_items, were_items_added         = _new_items_in_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
+    Gb.conf_sensors, del_items = _delete_items_from_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
+    Gb.conf_sensors, new_items = _insert_items_into_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
 
-    if were_items_deleted is False and were_items_added is False:
-        return False
+    if new_items or del_items:
+        log_info_msg(   f"Updated Configuration File items (Sensors), "
+                        f"Added-{new_items}, Deleted-{del_items})")
+        return True
 
-    log_info_msg(f"Updated Configuration File items (Sensors)")
-
-    for item in new_items:
-        before_item = _place_item_before(item, DEFAULT_SENSORS_CONF, CONF_EXCLUDED_SENSORS)
-
-        Gb.conf_file_data[CF_SENSORS][item] = DEFAULT_SENSORS_CONF[item]
-        Gb.conf_sensors = _insert_into_conf_dict_parameter(
-                                            Gb.conf_sensors, item,
-                                            DEFAULT_SENSORS_CONF[item],
-                                            before= before_item)
-
-    return True
-
-#--------------------------------------------------------------------
+#-----------------------------------------------------------
 def _update_device_sensors():
     '''
     Update Gb.conf_device_sensors with new fields
@@ -1044,28 +963,14 @@ def _update_tracking_parameters():
     '''
     Update Gb.conf_tracking with new fields
     '''
-    Gb.conf_tracking, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
-    new_items, were_items_added          = _new_items_in_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
+    Gb.conf_tracking, del_items = _delete_items_from_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
+    Gb.conf_tracking, new_items = _insert_items_into_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
 
-    if were_items_deleted is False and were_items_added is False:
-        return False
+    if new_items or del_items:
+        log_info_msg(   f"Updated Configuration File items (Tracking), "
+                        f"Added-{new_items}, Deleted-{del_items})")
 
-    log_info_msg(f"Updated Configuration File items (Tracking)")
-
-    for item in new_items:
-        Gb.conf_tracking = _insert_into_conf_dict_parameter(
-                                    Gb.conf_tracking,
-                                    item, DEFAULT_TRACKING_CONF[item],
-                                    before=CONF_DEVICES)
-
-    if (CONF_APPLE_ACCOUNTS in new_items
-            and Gb.conf_tracking[CONF_USERNAME] != ''):
-        conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
-        conf_apple_acct[CONF_USERNAME] = Gb.conf_tracking[CONF_USERNAME]
-        conf_apple_acct[CONF_PASSWORD] = Gb.conf_tracking[CONF_PASSWORD]
-        Gb.conf_tracking[CONF_APPLE_ACCOUNTS] = Gb.conf_apple_accounts = [conf_apple_acct]
-
-    return True
+        return True
 
 #--------------------------------------------------------------------
 def _update_apple_acct_parameters():
@@ -1073,7 +978,7 @@ def _update_apple_acct_parameters():
     Update Gb.conf_apple_account with new fields
     '''
 
-    update_recd = False
+    update_flag = False
     cd_idx = -1
     conf_apple_accts = Gb.conf_apple_accounts.copy()
     for conf_apple_acct in conf_apple_accts:
@@ -1094,31 +999,23 @@ def _update_apple_acct_parameters():
 
             if HWKEY not in conf_auth_methods:
                 conf_auth_methods[HWKEY] = ''
-            update_recd = True
+            update_flag = True
 
         except Exception as err:
             log_exception(err)
             #continue
 
-        conf_apple_acct, were_items_deleted = _delete_items_from_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
-        new_items, were_items_added         = _new_items_in_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
+        conf_apple_acct, del_items = _delete_items_from_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
+        conf_apple_acct, new_items = _insert_items_into_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
 
-        if were_items_deleted or were_items_added:
-            update_recd = True
-
-            for item in new_items:
-                conf_apple_acct = _insert_into_conf_dict_parameter(
-                                        conf_apple_acct, item,
-                                        DEFAULT_APPLE_ACCOUNT_CONF[item],
-                                        before=CONF_DATA_SOURCE)
-
-        if update_recd:
-            log_info_msg(   f"Updated Configuration File items "
-                            f"({username_id(conf_apple_acct[CONF_USERNAME])})")
+        if new_items or del_items:
+            log_info_msg(   f"Updated Configuration File items (Apple Acct), "
+                            f"{username_id(conf_apple_acct[CONF_USERNAME])}, "
+                            f"Added-{new_items}, Deleted-{del_items})")
 
             Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
 
-    return update_recd
+    return update_flag
 
 #--------------------------------------------------------------------
 def _update_device_parameters():
@@ -1126,138 +1023,94 @@ def _update_device_parameters():
     Update Gb.conf_device with new fields
     '''
     cd_idx = -1
+    update_flag = False
     conf_devices = Gb.conf_devices.copy()
     for conf_device in conf_devices:
         cd_idx += 1
 
-        conf_device, were_items_deleted = _delete_items_from_conf_dict(conf_device, DEFAULT_DEVICE_CONF)
-        new_items, were_items_added     = _new_items_in_conf_dict(conf_device, DEFAULT_DEVICE_CONF)
+        conf_device, del_items = _delete_items_from_conf_dict(conf_device, DEFAULT_DEVICE_CONF)
+        conf_device, new_items = _insert_items_into_conf_dict(conf_device, DEFAULT_DEVICE_CONF)
 
-        if were_items_deleted is False and were_items_added is False:
-            continue
-
-        log_info_msg(f"Updated Configuration File items ({conf_device[CONF_IC3_DEVICENAME]})")
-
-        for item in new_items:
-            # v3.1.0 'apple_account' and other fields
-            if item == CONF_APPLE_ACCOUNT:
-                conf_device = _v310_device_parameter_updates(conf_device)
-
-            else:
-                conf_device = _insert_into_conf_dict_parameter(
-                                            conf_device, item,
-                                            DEFAULT_DEVICE_CONF[item],
-                                            before=CONF_TRACK_FROM_BASE_ZONE)
+        if new_items or del_items:
+            update_flag = True
+            log_info_msg(   f"Updated Configuration File items (Device), "
+                            f"{conf_device[CONF_IC3_DEVICENAME]}, "
+                            f"Added-{new_items}, Deleted-{del_items})")
 
         Gb.conf_devices[cd_idx] = conf_device
 
-    return True
-
-#.....................................................................
-def _v310_device_parameter_updates(conf_device):
-    # v3.1 - Add Apple account parameter
-    if CONF_APPLE_ACCOUNT not in conf_device:
-        conf_device = _insert_into_conf_dict_parameter(
-                                conf_device, CONF_APPLE_ACCOUNT,
-                                Gb.conf_tracking[CONF_USERNAME],
-                                before=CONF_FAMSHR_DEVICENAME)
-
-
-    # v3.1 - Change Search: to ScanFor: in Mobile App parameter
-    if conf_device[CONF_MOBILE_APP_DEVICE].startswith('Search:'):
-        conf_device[CONF_MOBILE_APP_DEVICE] = \
-                conf_device[CONF_MOBILE_APP_DEVICE].replace('Search:', 'ScanFor:')
-
-    # v3.1 Remove unused parameters
-    if 'evlog_display_order' in conf_device:
-        conf_device.pop('evlog_display_order')
-        conf_device.pop('unique_id')
-    if 'old_devicename' in conf_device:
-        conf_device.pop('old_devicename')
-
-    return conf_device
+    return update_flag
 
 #-------------------------------------------------------------------
 def _update_general_parameters():
     '''
     Update Gb.conf_general with new fields
     '''
+    Gb.conf_general, del_items = _delete_items_from_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
+    Gb.conf_general, new_items = _insert_items_into_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
 
-    Gb.conf_general, were_items_deleted = _delete_items_from_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
-    new_items, were_items_added         = _new_items_in_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
+    inzone_intervals = {device_type: interval for device_type, interval in DEVICE_TYPE_INZONE_INTERVALS.items()
+                                        if device_type not in Gb.conf_general[CONF_INZONE_INTERVALS]}
+    if isnot_empty(inzone_intervals):
+        new_items = True
+        for device_type, interval in inzone_intervals.items():
+            Gb.conf_general[CONF_INZONE_INTERVALS][device_type] = interval
 
-    if were_items_deleted is False and were_items_added is False:
-        return False
+        # if IPAD_CELL not in Gb.conf_general[CONF_INZONE_INTERVALS]:
+        # Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL] = DEVICE_TYPE_INZONE_INTERVALS[IPAD_CELL]
+        # Gb.conf_general[CONF_INZONE_INTERVALS][WATCH_WIFI] = DEVICE_TYPE_INZONE_INTERVALS[WATCH_WIFI]
+        # Gb.conf_general[CONF_INZONE_INTERVALS][MAC] = DEVICE_TYPE_INZONE_INTERVALS[MAC]
 
-    log_info_msg(f"Updated Configuration File items (General)")
-
-    for item in new_items:
-        before_item = _place_item_before(item, DEFAULT_GENERAL_CONF, CONF_DISPLAY_TEXT_AS)
-
-        Gb.conf_data[CF_GENERAL][item] = DEFAULT_GENERAL_CONF[item]
-        Gb.conf_general = _insert_into_conf_dict_parameter(
-                                            Gb.conf_general, item,
-                                            DEFAULT_GENERAL_CONF[item],
-                                            before= before_item)
-
-    return True
-
-#--------------------------------------------------------------------
-def _place_item_before(item, conf_dict, default_item):
-    # Cycle thru conf\dict (ex: DEFAULT_GENERAL_CONF) items and get the name of the next
-    # item to place the new one in the same position
-
-    before_item = default_item
-    _item_found = False
-
-    for _item in conf_dict:
-        if _item_found:
-            return _item
-
-        if _item == item:
-            _item_found = True
-
-    return default_item
-
+    if new_items or del_items:
+        log_info_msg(   f"Updated Configuration File items (General), "
+                        f"Added-{new_items}, Deleted-{del_items})")
+        return True
 
 #--------------------------------------------------------------------
-def _insert_into_conf_dict_parameter(dict_parameter,
-                                        new_item=None,
-                                        initial_value=None, before=None, after=None):
+def _insert_items_into_conf_dict(dest_dict, source_dict):
+    dest_dict_items = list(dest_dict.items())
+    src_keys = list(source_dict.keys())
+    new_items = []
+
+    for i, key in enumerate(src_keys):
+        if key in dest_dict:
+            continue  # already present, nothing to do
+
+        # find the next key (in source order) that already exists in dest_dict
+        new_items.append(key)
+        insert_before_key = next(
+            (k for k in src_keys[i + 1:] if k in dest_dict), None)
+
+        if insert_before_key is not None:
+            pos = next(idx  for idx, (k, _) in enumerate(dest_dict_items)
+                            if k == insert_before_key)
+            dest_dict_items.insert(pos, (key, source_dict[key]))
+        else:
+            dest_dict_items.append((key, source_dict[key]))  # no anchor found, append at end
+
+    return dict(dest_dict_items), new_items
+
+#--------------------------------------------------------------------
+def _delete_items_from_conf_dict(conf_item, default_conf_item):
     '''
-    Add items to the configuration file dictionary parameters
+    Cycle through the configuration dictionary and identify items that are
+    no longer being used.
 
-    Input:
-        dict_parameter - Dictionary item to be updated
-        new_item - Field to be added
-        initial_value - Initial value
-        before - Insert it before this argument
-        after - Insert it after this argument
+    Return:
+        conf_item - An updated conf_item
+        were_items_deleted - True/False
     '''
-    log_info_msg(f" - Parameter-{new_item}, Initial Value-{initial_value}")
 
-    if isinstance(dict_parameter, dict) is False or not new_item:
-        return dict_parameter
-    if initial_value is None: initial_value = ''
+    del_items = [item   for item in conf_item
+                        if item not in default_conf_item]
 
-    if before is None and after is None:
-        dict_parameter[new_item] = initial_value
-        return dict_parameter
+    if is_empty(del_items):
+        return conf_item, []
 
-    try:
-        if before:
-            pos = list(dict_parameter.keys()).index(before)
-        elif after:
-            pos = list(dict_parameter.keys()).index(after) + 1
-        items = list(dict_parameter.items())
-        items.insert(pos, (new_item, initial_value))
-        return dict(items)
+    for item in del_items:
+        dict_del(conf_item, item)
 
-    except Exception as err:
-        # _LOGGER.exception(err)
-        dict_parameter[new_item] = initial_value
-        return dict_parameter
-
+    return conf_item, del_items
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1267,8 +1120,6 @@ def _insert_into_conf_dict_parameter(dict_parameter,
 def encode_all_passwords():
 
     try:
-        Gb.conf_tracking[CONF_PASSWORD] = encode_password(Gb.conf_tracking[CONF_PASSWORD])
-
         for apple_acct in Gb.conf_apple_accounts:
             apple_acct[CONF_PASSWORD] = encode_password(apple_acct[CONF_PASSWORD])
     except:
@@ -1299,6 +1150,7 @@ def encode_password(password):
                 or password.startswith('««')
                 or password.endswith('»»')):
             return password
+
         elif password is None:
             return ''
 

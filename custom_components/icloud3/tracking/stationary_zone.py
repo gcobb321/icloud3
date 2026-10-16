@@ -45,7 +45,7 @@ def move_into_statzone_if_timer_reached(Device):
         return False
 
     if Device.is_statzone_move_limit_exceeded:
-        Device.statzone_reset_timer
+        Device.statzone_reset_timer()
 
     # Monitored devices can move into a tracked zone but can not create on for itself
     elif Device.is_monitored: #beta 4/13b16

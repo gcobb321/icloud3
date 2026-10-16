@@ -177,7 +177,7 @@ def determine_interval(Device, FromZone):
     # exit distance check. Also reset Stat Zone timer and dist moved.
     if isin_zone:
         Device.got_exit_trigger = False
-        Device.statzone_clear_timer
+        Device.statzone_clear_timer()
 
     waze_time_msg = 'NotUsed'
     calc_interval_secs = round(km_to_mi(dist_from_zone_km) * Gb.travel_time_factor) * 60
@@ -749,10 +749,10 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
         # has been cycled thru and started at the beginning again. Pause tracking
         # if cycled more than 8 times or 4 times and last location is over 2-days ago
         if Device.max_error_cycle_cnt > 8:
-            Device.pause_tracking
+            Device.pause_tracking()
         elif (Device.max_error_cycle_cnt > 4
                 and mins_since(Device.last_update_loc_secs) > 2880):
-            Device.pause_tracking
+            Device.pause_tracking()
         elif Device.max_error_cycle_cnt > 2:
             interval_secs = interval_secs * int(Device.max_error_cycle_cnt/2)
             if interval_secs > Gb.max_interval_secs:
@@ -1002,35 +1002,14 @@ def _get_waze_time_dist(Device, FromZone,
         Gb.Waze.waze_status = WAZE_OUT_OF_RANGE
         return (0, 0, calc_dist_from_zone_km, dist_moved_km, Gb.Waze.waze_status_fname)
 
-    # WazeHist used but > Hist max distance
-    if Gb.WazeHist.is_historydb_USED:
-        if calc_dist_from_zone_km > Gb.WazeHist.max_distance:
-            Gb.Waze.waze_status = WAZE_OUT_OF_RANGE
-            return (0, 0, calc_dist_from_zone_km, dist_moved_km, Gb.Waze.waze_status_fname)
-
-    (waze_status, waze_time_from_zone, waze_dist_from_zone_km, dist_moved_km,
-        hist_db_location_id, waze_results_msg) = \
-                Gb.Waze.get_history_time_distance(Device, FromZone, check_hist_db=True)
-
-    if hist_db_location_id > 0:
-        post_event(Device, (f"Waze Hist > {FromZone.from_zone_dname[:8]}, "
-                            f"TravTime-{format_timer(waze_time_from_zone * 60)}, "
-                            f"Dist-{km_to_um(waze_dist_from_zone_km)}, "
-                            f"{waze_results_msg}"))
-
-        return (waze_time_from_zone, waze_dist_from_zone_km, waze_dist_from_zone_km, dist_moved_km, 'WazeHist')
-
-    # Not in history db or history db is not used
-    waze_dist_from_zone_km = calc_dist_from_zone_km
-    waze_time_from_zone    = 0
-
+    # Call Waze and get the time/dist from the HistoryDB or from Waze
     waze_status, waze_time_from_zone, waze_dist_from_zone_km, waze_dist_moved_km = \
-            Gb.Waze.get_route_time_distance(Device, FromZone, check_hist_db=False)
+            Gb.Waze.get_route_time_distance(Device, FromZone)
 
     Gb.Waze.waze_status = waze_status
 
     if Gb.Waze.is_status_USED:
-        post_event(Device, (f"Waze Info > {FromZone.from_zone_dname[:8]}, "
+        post_event(Device, (f"{Gb.Waze.method} > {FromZone.from_zone_dname[:8]}, "
                             f"TravTime-{format_timer(waze_time_from_zone * 60)}, "
                             f"Dist-{km_to_um(waze_dist_from_zone_km)}, "
                             f"{waze_results_msg}"))
@@ -1069,7 +1048,7 @@ def _get_distance_data(Device, FromZone):
         dir_of_travel = INZONE_HOME if Device.loc_data_zone == HOME else \
                         INZONE_STATZONE if Device.isin_statzone else \
                         INZONE
-        Device.statzone_reset_timer
+        Device.statzone_reset_timer()
         Gb.Waze.waze_status = WAZE_PAUSED
         Gb.Waze.is_waze_paused_close_to_zone = True
         distance_data = [VALID_DATA,
@@ -1146,7 +1125,7 @@ def _get_distance_data(Device, FromZone):
             pass
 
         elif Device.statzone_timer == 0:
-            Device.statzone_reset_timer
+            Device.statzone_reset_timer()
 
         # If moved more than stationary zone limit (~.06km(200ft)),
         # reset StatZone still timer
@@ -1154,7 +1133,7 @@ def _get_distance_data(Device, FromZone):
         elif (calc_dist_from_zone_km > Gb.statzone_min_dist_from_zone_km
                 and Device.loc_data_dist_moved_km > Gb.statzone_dist_move_limit_km
                 and Device.is_tracked):
-            Device.statzone_reset_timer
+            Device.statzone_reset_timer()
 
             post_event(Device,
                         f"StatZone Timer Reset > "

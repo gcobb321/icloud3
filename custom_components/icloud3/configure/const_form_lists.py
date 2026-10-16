@@ -24,26 +24,45 @@ DATA_ENTRY_ALERT_CHAR = '⛔'
 DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 #----------------------------------------------------------------------------------------
-MENU_KEY_TEXT_PAGE_0 = {
+MENU_0 = {
         'apple_accounts':       'APPLE ACCOUNTS → Add, Change Delete and List Apple Accounts, Import Apple Devices into iCloud3',
         'reauth':               'AUTHENTICATE APPLE ACCT SIGN-IN → Authenticate Apple Account access, Request a new Auth Code, Change Authentication Method',
         'device_list':          'ICLOUD3 DEVICES → Add, Change, Delete and List Tracked and Monitored Devices, Import Apple Devices into iCloud3',
         'sensors':              'SENSORS → Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors',
         'dashboard_builder':    'DASHBOARD BUILDER → Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates',
+        'away_time_zone':       'AWAY TIME ZONE → Change the time displayed in the Event Log to the local time when away from Home',
         'tools':                'TOOLS → Log Level, Cleanup HA Registry Files, Cleanup/Reset iCloud3 Device Parameters, Apple Acct Cookies & iCloud3 Config File',
-        'menu':                 '➤ MENU #2 (PARAMETERS) → Tracking, Sensor Display Parameters, Display Text As, Waze Route Service, Special Zones',
+}
+MENU_0_ACTIONS = {
+        'menu_1':               '➤ MENU #2 (PARAMETERS) → Tracking, Display Settings, Display Text As, Waze Route Service, Special Zones, iCloud3 Analytics',
         'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
 }
-MENU_KEY_TEXT_PAGE_1 = {
-        'away_time_zone':       'AWAY TIME ZONE → Change the time displayed in the Event Log to the local time when away from Home',
+
+MENU_1 = {
         'tracking_parameters':  'TRACKING PARAMETERS →  Enable/disable the Mobile App data source, Configure how device location data is verified and displayed',
         'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS → Specify how tracking results are displayed in the Event Log, sensors and device_tracker entities',
         'display_text_as':      'DISPLAY TEXT AS → Event Log Text Replacement',
         'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY → Specify how the Waze Route Server is used and enable the Waze Tracking History Database',
         'special_zones':        'SPECIAL ZONES → Configure special zone handling - Delay zone enter triggers, Set up Stationary Zones for non-moving devices, Override the Home zone',
-        'menu':                 '➤ MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
+        'inzone_intervals':     'INZONE INTERVALS → Change the Default inZone Intervals for various device types used when adding a new device',
+        'analytics':            'ICLOUD3 ANALYTICS → Enable Sending Analytics Data to the iCloud3 Analytics Database',
+}
+MENU_1_ACTIONS = {
+        'menu_0':               '➤ MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
         'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
 }
+
+# Set up menu lists now so they do not have to be created every time a menu is displayed
+MENU_0_ITEMS = list(MENU_0.values())
+MENU_1_ITEMS = list(MENU_1.values())
+MENU_0_ACTION_ITEMS = list(MENU_0_ACTIONS.values())
+MENU_1_ACTION_ITEMS = list(MENU_1_ACTIONS.values())
+
+MENU_KEYS_BY_TITLE =      {item_value.split(' →')[0]: item_key for item_key, item_value in MENU_0.items()}
+MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_0_ACTIONS.items()})
+MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1.items()})
+MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1_ACTIONS.items()})
+
 MENU_EXIT_ITEMS = {
         'exit':                       '➤ EXIT → End the iCloud3 Configure Session',
         'exit_update_dashboards':     '➤ EXIT → End the iCloud3 Configure Session. Update the Dashboards and Restart',
@@ -129,6 +148,11 @@ ACTION_LIST_OPTIONS = {
         'move_up':                  'MOVE UP → Move the Device up in the list',
         'move_down':                'MOVE DOWN → Move the Device down in the list',
 
+        'send_analytics_data':      'SEND ANALYTICS DATA NOW → Send the Analytics data to the iCloud3 Analytics Database Now',
+        'analytics':                'ICLOUD3 ANALYTICS → Enable Sending Analytics Data to the iCloud3 Analytics Database',
+        'analytics_reports':        'REPORTS → Run a Report using data in Analytics Database',
+        'run_report':               'RUN REPORT → Run the selected Report and Display the Results',
+
         'confirm_action_yes':       'YES → Complete the requested action',
         'confirm_action_no':        'NO  → Cancel the request',
         'confirm_save':             '➤ SAVE THE CONFIGURATION CHANGES → Save any changes, Return to the Main Menu',
@@ -153,7 +177,7 @@ APPLE_ACCOUNTS_MULTI_HDR = {'apple_acct_hdr': '═════════ Addit
 UNSELECTED_IDX = -1
 
 # Action List Items for all screens
-ACTION_LIST_ITEMS_BASE = [
+ACTION_LIST_ITEMS_SAVE_MENU = [
         ACTION_LIST_OPTIONS['save'],
         ACTION_LIST_OPTIONS['menu']]
 
@@ -239,9 +263,20 @@ EXIT_ICLOUD3_CONFIGURE_SETTINGS = [
 CONFIRM_ACTIONS = [
         ACTION_LIST_OPTIONS['confirm_action_yes'],
         ACTION_LIST_OPTIONS['confirm_action_no']]
+
 DASHBOARD_BUILDER_ACTIONS = [
         ACTION_LIST_OPTIONS['create_dashboard'],
         ACTION_LIST_OPTIONS['cancel_goto_menu']]
+
+ANALYTICS_ACTIONS = [
+        ACTION_LIST_OPTIONS['send_analytics_data'],
+        ACTION_LIST_OPTIONS['analytics_reports']]
+
+ANALYTICS_REPORTS_ACTIONS = [
+        ACTION_LIST_OPTIONS['run_report'],
+        ACTION_LIST_OPTIONS['analytics'],
+        ACTION_LIST_OPTIONS['menu']]
+
 CLEANUP_ENTITY_REGISTRY = [
         # ACTION_LIST_OPTIONS['check_all'],
         # ACTION_LIST_OPTIONS['check_none'],
@@ -250,6 +285,7 @@ CLEANUP_ENTITY_REGISTRY = [
         ACTION_LIST_OPTIONS['delete_device_sensors'],
         ACTION_LIST_OPTIONS['goto_previous']]
 
+#------------------------–--------------------------------------------------------------
 TOOL_LIST = {
         'log_level':                 ' CHANGE THE LOG LEVEL → Change the current log level (info, debug, rawdata)',
         'cleanup_entity_registry':   'CLEANUP HA ENTITY REGISTRY → Extract and Delete iCloud3  Entity Registry Devices and Sensors',
@@ -278,7 +314,7 @@ LOG_LEVEL = [
 ]
 TOOL_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in TOOL_LIST.items()}
 
-
+#------------------------–--------------------------------------------------------------
 #   Parameter List Selections Items
 DATA_SOURCE_OPTIONS = {
         'iCloud':   'APPLE ACCOUNT - Location data is provided for devices in the Family Sharing List',
@@ -329,7 +365,8 @@ LOG_ZONES_KEY_TEXT = {
         }
 AWAY_FROM_ZONE_OPTIONS = {
         'none': 'Not used',
-        'all': 'All are Away and in the same Time Zone'}
+        'all': 'All are Away and in the same Time Zone',
+}
 DATA_SOURCE_OPTIONS = {
         'iCloud,MobApp': 'ICLOUD & MOBILE APP → Request data from iCloud and the Mobile App',
         'iCloud':        'ICLOUD ONLY → Mobile App is not used',
@@ -533,5 +570,7 @@ DATA_SOURCE_ICLOUD_HDR = (
         "APPLE ACCOUNT → Location data is provided by devices in the Family Sharing list")
 DATA_SOURCE_MOBAPP_HDR = (
         "HA MOBILE APP → Location data and zone Enter/Exit triggers are provided by the Mobile App")
+ANALYTICS_ENABLED_HDR = (
+        "SEND ICLOUD3 ANALYTICS DATA > Send iCloud3 Usage, Location and Analytics Data to the iCloud3 Analytics Database on a regular basis. `What is Sent` below shows the actual data you will be sending")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→

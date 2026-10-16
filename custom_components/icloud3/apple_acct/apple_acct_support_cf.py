@@ -7,7 +7,7 @@ from ..const            import (DOMAIN, DEVICE_TRACKER,
                                 CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
                                 CONF_SERVER_LOCATION,
                                 CONF_IC3_DEVICENAME, CONF_FNAME, CONF_DEVICE_TYPE,
-                                CONF_APPLE_ACCOUNT, CONF_FAMSHR_DEVICENAME, CONF_FAMSHR_DEVICE_ID,
+                                CONF_APPLE_ACCOUNT, CONF_AADEV_NAME, CONF_AADEV_DEVICE_ID,
                                 CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME,
                                 CONF_TRACKING_MODE, CONF_MOBILE_APP_DEVICE,
                                 CONF_PICTURE, CONF_ICON,
@@ -17,7 +17,7 @@ from ..const            import (DOMAIN, DEVICE_TRACKER,
                                 )
 
 from ..utils.utils      import (instr, isnot_empty,
-                                list_add, list_del, dict_del, sort_dict_by_keys,
+                                list_add, list_del, dict_del, dict_sort,
                                 encode_password, decode_password, username_id,
                                 is_running_in_event_loop, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_error_msg,
@@ -28,6 +28,7 @@ from ..utils.time_util  import (time_now_secs, secs_to_hhmm, )
 
 
 from ..apple_acct.apple_acct import (AppleAcctManager, AppleAcctFailedLoginException, HTTP_RESPONSE_CODES)
+from .device_name_parser     import make_ic3_fname_from_aadevice_dname
 from ..startup          import start_ic3
 from ..utils            import file_io
 from ..utils            import entity_io
@@ -286,7 +287,7 @@ def clear_AppleAcct_auth_alerts():
 async def async_finish_authentication_and_data_refresh(caller_self):
     '''
     Refresh the device list if the apple acct is being setup for the first time
-    If AppleAcct.device_id_by_icloud_dname is empty, a Authentication code was needed
+    If AppleAcct.device_id_by_aadev_dname is empty, a Authentication code was needed
     when first logged in and the apple acct data was not authenticated and it's
     device data was never loaded/initialized by refreshed_icloud_data. This
     prevents the device's list tables to never be initialized and location data
@@ -305,18 +306,27 @@ async def async_finish_authentication_and_data_refresh(caller_self):
         return
 
     locate_all_devices = True
+
+    # refresh_icloud_data is treated as a startup refresh so all of the devices are
+    # initialized, not just the tracked ones. Save and restore the flag instead of
+    # clearing it - iCloud3 may really be starting up, and a failure in the executor job
+    # would leave the flag set and stop the 5-sec polling loop.
+    was_startup_inprocess = Gb.is_icloud3_startup_inprocess
     Gb.is_icloud3_startup_inprocess = True
-    await Gb.hass.async_add_executor_job(
-                            AppleAcct.refresh_icloud_data,
-                            locate_all_devices)
 
-    if AppleAcct.is_authenticated:
-        AppleAcct.terms_of_use_update_needed = False
-        post_event( f"{AppleAcct.username_base} > "
-                    f"Apple Acct > Terms of Service agreement approved")
-        update_alert_sensor(AppleAcct.username_id, '')
+    try:
+        await Gb.hass.async_add_executor_job(
+                                AppleAcct.refresh_icloud_data,
+                                locate_all_devices)
 
-    Gb.is_icloud3_startup_inprocess = False
+        if AppleAcct.is_authenticated:
+            AppleAcct.terms_of_use_update_needed = False
+            post_event( f"{AppleAcct.username_base} > "
+                        f"Apple Acct > Terms of Service agreement approved")
+            update_alert_sensor(AppleAcct.username_id, '')
+
+    finally:
+        Gb.is_icloud3_startup_inprocess = was_startup_inprocess
 
 #--------------------------------------------------------------------
 def any_conf_devices_for_apple_acct(ui_username):
@@ -474,7 +484,7 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
     iPhone de Jorge E.': 'iphone_oso'}
 
     '''
-    device_id_filter = [conf_device[CONF_FAMSHR_DEVICE_ID]
+    device_id_filter = [conf_device[CONF_AADEV_DEVICE_ID]
                             for conf_device in Gb.conf_devices
                             if conf_device[CONF_APPLE_ACCOUNT] == AppleAcct.username]
 
@@ -488,15 +498,18 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         list_add(existing_fnames, ic3_conf_device[CONF_FNAME])
 
     aa_devices_to_add = {}
-    for aadevice_dname, device_id in AppleAcct.device_id_by_icloud_dname.items():
+    for aadevice_dname, device_id in AppleAcct.device_id_by_aadev_dname.items():
         # Filter devices that already been added to the config file
         if (device_id in device_id_filter):
             continue
 
         raw_model, model, model_display_name = \
-                    AppleAcct.device_model_info_by_fname[aadevice_dname]
+                    AppleAcct.device_model_info_by_aadev_dname[aadevice_dname]
 
-        ic3_fname      = _make_ic3_fname_from_aadevice_dname(aadevice_dname, model)
+        AADevData  = AppleAcct.AADevData_by_device_id.get(device_id)
+        first_name = AADevData.owner_first_name if AADevData else None
+        aadev_name = AADevData.name if AADevData else aadevice_dname
+        ic3_fname  = make_ic3_fname_from_aadevice_dname(aadev_name, model, first_name)
 
         ic3_devicename = slugify(ic3_fname)
         ic3_fname      = ic3_fname.replace('-iPhone', '')
@@ -518,8 +531,10 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         ic3_conf_device[CONF_IC3_DEVICENAME]     = ic3_devicename
         ic3_conf_device[CONF_FNAME]              = ic3_fname
         ic3_conf_device[CONF_APPLE_ACCOUNT]      = AppleAcct.username
-        ic3_conf_device[CONF_FAMSHR_DEVICENAME]  = aadevice_dname
-        ic3_conf_device[CONF_FAMSHR_DEVICE_ID]   = device_id
+        ic3_conf_device[CONF_AADEV_NAME]  = aadevice_dname
+        # ic3_conf_device.update(aadevice_conf( aadevice_dname, device_id,
+        #                     model, raw_model, model_display_name))
+        ic3_conf_device[CONF_AADEV_DEVICE_ID]   = device_id
         ic3_conf_device[CONF_DEVICE_TYPE]        = model.lower() if model in DEVICE_TYPES else 'iphone'
         ic3_conf_device[CONF_RAW_MODEL]          = raw_model
         ic3_conf_device[CONF_MODEL]              = model
@@ -556,10 +571,23 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
 
         aa_devices_to_add[sort_key] = ic3_conf_device
 
-    sorted_aa_devices_to_add = sort_dict_by_keys(aa_devices_to_add)
+    sorted_aa_devices_to_add = dict_sort(aa_devices_to_add)
 
     return sorted_aa_devices_to_add
 
+# ---------------------------------------------------------------------------
+def aadevice_conf( aadevice_dname, device_id,
+                            model, raw_model, model_display_name):
+
+    aadev_info = {}
+    aadev_info[CONF_AADEV_NAME]  = aadevice_dname
+    aadev_info[CONF_AADEV_DEVICE_ID]   = device_id
+    aadev_info[CONF_DEVICE_TYPE]        = model.lower() if model in DEVICE_TYPES else 'iphone'
+    aadev_info[CONF_RAW_MODEL]          = raw_model
+    aadev_info[CONF_MODEL]              = model
+    aadev_info[CONF_MODEL_DISPLAY_NAME] = model_display_name
+
+    return aadev_info
 # ---------------------------------------------------------------------------
 def _make_unique_ic3_devicename(existing_devicenames, ic3_devicename):
     '''
@@ -597,317 +625,3 @@ def _make_unique_ic3_fname(existing_fnames, ic3_fname):
         ic3_fname = f"{ic3_fname}_{cnt}"
 
     return ic3_fname
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            CONVERT APPLE DEVICE NAME INTO A SUGGESTED IC3 FNAME
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-import re
-import unicodedata
-
-# ---------------------------------------------------------------------------
-# The only device types iCloud3 tracks.
-# Order matters: "Apple Watch" before any shorter token that might appear
-# in the same string.
-# ---------------------------------------------------------------------------
-TRACKED_DEVICES = ["iPhone", "iPad", "Apple Watch", "xWatch", "Mac", "AirPods"]
-
-# Output name overrides (where the keyword differs from the desired output)
-DEVICE_OUTPUT = {
-    "Apple Watch": "Watch",
-}
-
-# ---------------------------------------------------------------------------
-# Prepositions / particles — device-first languages
-# e.g. "iPhone de Philippe",  "iPad van Jan"
-# ---------------------------------------------------------------------------
-DEVICE_FIRST_PARTICLES = [
-    "d'en ", "d'", "de ", "do ", "da ",   # French / Spanish / Portuguese / Catalan
-    "di ",                                  # Italian
-    "van ",                                 # Dutch
-    "til ",                                 # Norwegian/Danish
-    "lui ",                                 # Romanian
-    "של ",                                  # Hebrew
-    "لـ", "ل",                             # Arabic
-    "ของ ",                                 # Thai
-    "của ",                                 # Vietnamese
-    "του ", "της ",                         # Greek
-    "का ", "की ", "के ",                   # Hindi
-]
-
-# Possessive suffixes appended to the NAME in name-first languages
-NAME_SUFFIX_PARTICLES = [
-    "'nin", "'nın", "'nün", "'nün",         # Turkish
-    "'un",  "'ün",  "'in",  "'ın",
-]
-
-# Regex to match and discard model suffixes immediately after a device keyword
-# Handles: Pro, Max, Air, Mini, SE, Ultra, Plus, Studio, numbers, combos
-_SUFFIX_RE = re.compile(
-    r"""^
-        (?:
-            [\s\-]+
-            (?:
-                \d[\d\s]*           # digit(s): 15, 16, M2
-              | [A-Z][a-z]+         # CamelCase word: Pro, Air, Ultra, Mini …
-              | [A-Z]{2,}           # acronym: SE
-            )
-        )+
-    """,
-    re.VERBOSE,
-)
-
-# ---------------------------------------------------------------------------
-# device_type is passed in pre-resolved as one of these exact keywords.
-# Output renames only "Apple Watch" → "Watch" ("Watch" passed in maps to itself).
-# ---------------------------------------------------------------------------
-DEVICE_TYPE_OUTPUT = {
-    "iPhone":      "iPhone",
-    "iPad":        "iPad",
-    "Apple Watch": "Watch",
-    "Watch":       "Watch",
-    "Mac":         "Mac",
-    "AirPods":     "AirPods",
-}
-
-# ---------------------------------------------------------------------------
-# Prepositions / particles — device-first languages
-# e.g. "iPhone de Philippe",  "iPad van Jan"
-# ---------------------------------------------------------------------------
-DEVICE_FIRST_PARTICLES = [
-    "d'en ", "d'", "de ", "do ", "da ",   # French / Spanish / Portuguese / Catalan
-    "di ",                                  # Italian
-    "van ",                                 # Dutch
-    "til ",                                 # Norwegian/Danish
-    "lui ",                                 # Romanian
-    "של ",                                  # Hebrew
-    "لـ", "ل",                             # Arabic
-    "ของ ",                                 # Thai
-    "của ",                                 # Vietnamese
-    "του ", "της ",                         # Greek
-    "का ", "की ", "के ",                   # Hindi
-]
-
-# Possessive suffixes appended to the NAME in name-first languages
-NAME_SUFFIX_PARTICLES = [
-    "'nin", "'nın", "'nün", "'nün",         # Turkish
-    "'un",  "'ün",  "'in",  "'ın",
-]
-
-# Regex to discard a model suffix that follows the device keyword WITHIN
-# raw_name itself (e.g. raw_name="Gary's iPad Pro" even though
-# device_type="iPad"). This only ever operates on raw_name, never device_type.
-_SUFFIX_RE = re.compile(
-    r"""^
-        (?:
-            [\s\-]+
-            (?:
-                \d[\d\s]*           # digit(s): 15, 16, M2
-              | [A-Z][a-z]+         # CamelCase word: Pro, Air, Ultra, Mini …
-              | [A-Z]{2,}           # acronym: SE
-            )
-        )+
-    """,
-    re.VERBOSE,
-)
-def _make_ic3_fname_from_aadevice_dname(raw_name, device_type):
-    """
-    Parse an Apple-style localised device name and return "Name-DeviceType".
-
-    Parameters
-    ----------
-    raw_name : str
-        The full localized device name, e.g. "Gary's iPhone",
-        "iPhone de Philippe", "Garyn iPhone", "Gary iPhone-ja".
-    device_type : str
-        Exact keyword already resolved by the caller — one of:
-        "iPhone", "iPad", "Apple Watch", "Watch", "Mac", "AirPods".
-        No model info is present in this value.
-
-    Returns
-    -------
-    str
-        "Name-DeviceType" on success.
-        The original raw_name, unchanged, if device_type isn't a recognized
-        keyword, the keyword isn't found in raw_name, or no name could be
-        extracted.
-    """
-
-    output_name = DEVICE_TYPE_OUTPUT.get(device_type)
-    if output_name is None:
-        return raw_name  # not a recognized/tracked device type
-
-    raw = _normalise(raw_name)
-
-    # Romanian: "iPhone-ul" → "iPhone"
-    if f"{device_type}-ul" in raw:
-        raw = raw.replace(f"{device_type}-ul", device_type, 1)
-
-    # Turkish device-word suffix: "iPhone'u" → "iPhone"
-    for sfx in ("'u", "'ü", "'ı", "'i", "\u2019u", "\u2019ü", "\u2019ı", "\u2019i"):
-        if f"{device_type}{sfx}" in raw:
-            raw = raw.replace(f"{device_type}{sfx}", device_type, 1)
-            break
-
-    # Chinese 的 / Hindi possession markers
-    for particle in ("的", "का", "की", "के"):
-        raw = raw.replace(particle, " ").strip()
-
-    found = _find_device_in_raw(raw, device_type)
-    if found is None:
-        return raw_name  # keyword wasn't actually present in raw_name
-
-    remainder, device_was_first = found
-
-    # Hungarian check on original (pre-cleaning) raw string
-    hungarian_name = _try_hungarian(_normalise(raw_name), device_type)
-    if hungarian_name:
-        return f"{hungarian_name}-{output_name}"
-
-    name = (_strip_device_first_particles(remainder)
-            if device_was_first
-            else _strip_name_first_particles(remainder))
-
-    name = name.strip(" -–—'\u2019")
-    return f"{name}-{output_name}" if name else raw_name
-
-
-
-def _normalise(text: str) -> str:
-    return unicodedata.normalize("NFC", text.strip())
-
-
-def _strip_model_suffix(after: str) -> str:
-    """Discard any model/generation suffix following the keyword in raw_name."""
-    m = _SUFFIX_RE.match(after)
-    return after[m.end():] if m else after
-
-
-def _find_device_in_raw(raw: str, keyword: str):
-    """
-    Locate *keyword* inside *raw* (the full localized device name string)
-    and return (remainder, device_was_first), or None if not found.
-    """
-    idx = raw.find(keyword)
-    if idx == -1:
-        return None
-
-    before = raw[:idx].strip()
-    after  = _strip_model_suffix(raw[idx + len(keyword):])
-
-    return (after.strip(), True) if idx == 0 else (before, False)
-
-
-def _strip_device_first_particles(remainder: str) -> str:
-    """Remove preposition between device and name: 'de Philippe' → 'Philippe'."""
-    for p in DEVICE_FIRST_PARTICLES:
-        if remainder.startswith(p):
-            return remainder[len(p):].strip()
-    return remainder.strip()
-
-
-def _strip_name_first_particles(remainder: str) -> str:
-    """Remove possessive marker after name: 'Gary's' → 'Gary'."""
-    s = remainder
-
-    for ch in ("の", "의"):                # Japanese / Korean
-        if s.endswith(ch):
-            return s[:-1].strip()
-
-    for apos in ("'s", "\u2019s"):         # English
-        if s.endswith(apos):
-            return s[:-2].strip()
-
-    for sfx in NAME_SUFFIX_PARTICLES:      # Turkish
-        if sfx in s:
-            return s[:s.rfind(sfx)].strip()
-
-    if s.endswith("n") and len(s) > 2 and s[-2] != "n":    # Finnish -n
-        return s[:-1].strip()
-
-    if s.endswith("s") and len(s) > 1 and s[-2].isalpha(): # Germanic bare -s
-        return s[:-1].strip()
-
-    return s.strip()
-
-
-def _try_hungarian(raw: str, keyword: str) -> str | None:
-    """Hungarian appends suffix to device word: 'Gary iPhone-ja' → 'Gary'."""
-    for sfx in ("-ja", "-je", "-a", "-e"):
-        candidate = keyword + sfx
-        if candidate in raw:
-            before = raw[:raw.find(candidate)].strip()
-            if before:
-                return before
-    return None
-
-
-
-# ---------------------------------------------------------------------------
-# Self-test
-# ---------------------------------------------------------------------------
-# if __name__ == "__main__":
-#     tests = [
-#         # (raw_name, device_type, expected)
-#         # ── iPhone ───────────────────────────────────────────────────────────
-#         ("Gary's iPhone",                  "iPhone", "Gary-iPhone"),
-#         ("Gary\u2019s iPhone",             "iPhone", "Gary-iPhone"),
-#         ("iPhone de Philippe",             "iPhone", "Philippe-iPhone"),
-#         ("iPhone de María",                "iPhone", "María-iPhone"),
-#         ("iPhone de João",                 "iPhone", "João-iPhone"),
-#         ("iPhone di Marco",                "iPhone", "Marco-iPhone"),
-#         ("iPhone van Jan",                 "iPhone", "Jan-iPhone"),
-#         ("Garys iPhone",                   "iPhone", "Gary-iPhone"),
-#         ("Garyn iPhone",                   "iPhone", "Gary-iPhone"),
-#         ("iPhone Гарри",                   "iPhone", "Гарри-iPhone"),
-#         ("iPhone Jana",                    "iPhone", "Jana-iPhone"),
-#         ("Gary iPhone-ja",                 "iPhone", "Gary-iPhone"),
-#         ("iPhone-ul lui Gary",             "iPhone", "Gary-iPhone"),
-#         ("Gary'nin iPhone'u",              "iPhone", "Gary-iPhone"),
-#         ("Gary\u306eiPhone",               "iPhone", "Gary-iPhone"),
-#         ("Gary\u7684iPhone",               "iPhone", "Gary-iPhone"),
-#         ("Gary\uc758 iPhone",              "iPhone", "Gary-iPhone"),
-#         ("iPhone \u0644\u0640 Gary",       "iPhone", "Gary-iPhone"),
-#         ("iPhone \u05e9\u05dc Gary",       "iPhone", "Gary-iPhone"),
-#         ("iPhone \u0e02\u0e2d\u0e07 Gary", "iPhone", "Gary-iPhone"),
-#         ("iPhone c\u1ee7a Gary",           "iPhone", "Gary-iPhone"),
-#         ("iPhone Gary",                    "iPhone", "Gary-iPhone"),
-#         ("iPhone d'en Gary",               "iPhone", "Gary-iPhone"),
-#         # ── iPad (raw_name may include model, device_type never does) ────────
-#         ("Gary\u2019s iPad",               "iPad", "Gary-iPad"),
-#         ("Gary\u2019s iPad Air",           "iPad", "Gary-iPad"),
-#         ("Gary\u2019s iPad Air M2",        "iPad", "Gary-iPad"),
-#         ("Gary\u2019s iPad Pro",           "iPad", "Gary-iPad"),
-#         ("Gary\u2019s iPad mini",          "iPad", "Gary-iPad"),
-#         ("iPad de Sophie",                 "iPad", "Sophie-iPad"),
-#         # ── Watch ────────────────────────────────────────────────────────────
-#         ("Gary\u2019s Apple Watch",         "Apple Watch", "Gary-Watch"),
-#         ("Gary\u2019s Apple Watch SE",      "Apple Watch", "Gary-Watch"),
-#         ("Gary\u2019s Apple Watch Ultra 2", "Apple Watch", "Gary-Watch"),
-#         ("Apple Watch de Pierre",           "Apple Watch", "Pierre-Watch"),
-#         ("Gary\u2019s Watch",                "Watch",      "Gary-Watch"),
-#         # ── Mac ──────────────────────────────────────────────────────────────
-#         ("Gary\u2019s Mac",                "Mac", "Gary-Mac"),
-#         ("Gary\u2019s MacBook Pro",        "Mac", "Gary-Mac"),
-#         ("Gary\u2019s Mac mini",           "Mac", "Gary-Mac"),
-#         ("Garys Mac",                      "Mac", "Gary-Mac"),
-#         # ── AirPods ──────────────────────────────────────────────────────────
-#         ("Gary\u2019s AirPods",            "AirPods", "Gary-AirPods"),
-#         ("Gary\u2019s AirPods Pro",        "AirPods", "Gary-AirPods"),
-#         ("AirPods de Sophie",              "AirPods", "Sophie-AirPods"),
-#         # ── Unrecognized device_type → original raw_name returned ───────────
-#         ("Gary\u2019s HomePod mini",       "HomePod", "Gary\u2019s HomePod mini"),
-#         # ── Keyword not actually present in raw_name → original returned ────
-#         ("Some weird unparseable string",  "iPhone",  "Some weird unparseable string"),
-#     ]
-
-#     print(f"{'raw_name':<32} {'device_type':<14} {'Expected':<28} {'Got':<28} OK?")
-#     print("-" * 110)
-#     all_pass = True
-#     for raw, dtype, expected in tests:
-#         got = parse_apple_device_name(raw, dtype)
-#         ok  = "✓" if got == expected else "✗"
-#         if got != expected:
-#             all_pass = False
-#         print(f"{raw:<32} {dtype:<14} {expected:<28} {got:<28} {ok}")
-#     print()
-#     print("All tests passed!" if all_pass else "Some tests FAILED.")

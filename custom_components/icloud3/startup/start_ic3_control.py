@@ -1,5 +1,5 @@
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
+from ..const            import (ICLOUD3, DOMAIN,
                                 NOT_SET, IC3LOG_FILENAME,
                                 CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CRLF_RED_ALERT,
                                 NL, NL_DOT, LINK, YELLOW_ALERT, RED_ALERT, CRLF_CHK,
@@ -16,7 +16,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, yes_no, list_to_st
                                 username_id, is_running_in_event_loop, get_string_hash, )
 from ..utils.messaging  import (broadcast_info_msg,
                                 post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor,
-                                post_monitor_msg, post_internal_error, post_greenbar_msg,
+                                post_monitor_msg, post_internal_error, post_greenbar_msg, post_dotted_line,
                                 write_ic3log_recd,
                                 log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_data,
                                 _evlog, _log, more_info, format_filename,
@@ -211,6 +211,7 @@ def stage_4_setup_data_sources():
     data_sources = f"Apple Account-{yes_no(Gb.conf_data_source_ICLOUD)}, "
     data_sources += f"Mobile App-{yes_no(Gb.conf_data_source_MOBAPP)}"
     post_event(f"Data Sources > {data_sources}")
+    post_dotted_line()
 
     # UPW was validated in Stage 3, Redisplay results
     post_event(Gb.ValidateAppleAcctUPW.valid_upw_results_msg)
@@ -229,7 +230,7 @@ def stage_4_setup_data_sources():
                             f"{Gb.ValidateAppleAcctUPW.valid_upw_results_msg}")
 
             start_ic3.log_into_apple_accounts()
-            start_ic3.setup_data_source_ICLOUD()
+            # start_ic3.setup_data_source_ICLOUD()
 
             for AppleAcct in Gb.AppleAcct_by_username.values():
                 if AppleAcct.account_locked:
@@ -334,9 +335,9 @@ def stage_6_initialization_complete():
             for source, msg in Gb.alerts_sensor_attrs.items():
                 alert_msg += f"{CRLF_DOT}{source} > {msg}"
 
-            Gb.EvLog.alert_message = 'Problems occured during startup up that should be reviewed'
-            post_alert( f"The following issues were detected when starting iCloud3. "
-                        f"Scroll through the Startup Log for more information: "
+            Gb.EvLog.alert_message = 'Startup Alerts and Notifications are available for review'
+            post_alert( f"STARTUP ALERTS AND NOTIFICATIONS > "
+                        f"Scroll through the Event Log Startup section for more information: "
                         f"{alert_msg}")
 
     except Exception as err:

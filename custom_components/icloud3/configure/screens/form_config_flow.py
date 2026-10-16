@@ -63,8 +63,20 @@ def form_config_option_user(self):
 #             MENU
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_menu(self):
-    menu_items =    MENU_KEY_TEXT_PAGE_0.copy() if self.menu_page_no == 0 else \
-                    MENU_KEY_TEXT_PAGE_1.copy()
+    if self.menu_page_no == 0:
+        menu_items        = MENU_0_ITEMS.copy()
+        default_menu_item = MENU_0[self.menu_item_selected[0]]
+    else:
+        menu_items        = MENU_1_ITEMS.copy()
+        default_menu_item = MENU_1[self.menu_item_selected[1]]
+
+    if self.menu_page_no == 0:
+        action_items = MENU_0_ACTION_ITEMS.copy()
+    else:
+        action_items = MENU_1_ACTION_ITEMS.copy()
+
+    if Gb.analytics_enabled is None:
+        action_items.insert(0, MENU_1['analytics'])
 
     if self.create_device_tracker_sensor_enities_on_exit:
         menu_items['exit'] = MENU_EXIT_ITEMS['exit_add_dev_trkrs_sensors']
@@ -84,10 +96,14 @@ def form_menu(self):
             self.menu_item_selected[0] = 'device_list'
 
     return vol.Schema({
-        vol.Required("menu_items",
-                    default=menu_items[self.menu_item_selected[self.menu_page_no]]):
+        vol.Optional("menu_items",
+                    default=default_menu_item):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(menu_items), mode='list')),
+                        options=menu_items, mode='list')),
+        vol.Optional("action_items"):
+                    selector.SelectSelector(selector.SelectSelectorConfig(
+                        options=action_items, mode='list')),
+                        #options=dict_value_to_list(action_items), mode='list')),
         })
 
 

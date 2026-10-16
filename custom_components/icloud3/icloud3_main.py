@@ -19,15 +19,14 @@ Thanks to all
 #--------------------------------------------------------------------
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (VERSION, VERSION_BETA, ICLOUD3_VERSION_MSG,
-                                HOME, NOT_HOME, HOME_FNAME,
+from .const             import (HOME, NOT_HOME, HOME_FNAME,
                                 NOT_SET, HIGH_INTEGER, RARROW, LT, NBSP3, CLOCK_FACE, LINK,
                                 CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_LBDOT, CRLF_LHDOT, CRLF_HDOT2, CRLF_LX,
                                 CRLF_LRED_ALERT, CRLF_LDIAMOND, CRLF_LASTERISK, NBSP,
-                                EVLOG_IC3_STAGE_HDR, RED_ALERT,
+                                EVLOG_IC3_STAGE_HDR, RED_ALERT, GB_ALERT, GB_ITEM,
                                 EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
-                                EVLOG_ATTENTION, ICLOUD3_ATTENTION_MSG,
+                                EVLOG_ATTENTION,
                                 ICLOUD, TRACKING_NORMAL, FNAME,
                                 CONF_USERNAME, CONF_PASSWORD,
                                 IPHONE, IPAD, WATCH, AIRPODS, IPOD, ALERT, UNKNOWN,
@@ -52,6 +51,7 @@ from .startup           import restore_state
 from .startup           import start_ic3
 from .startup           import start_ic3_control
 from .support           import service_handler
+from .support           import analytics
 from .tracking          import stationary_zone as statzone
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
@@ -91,8 +91,6 @@ class iCloud3:
 
         Gb.started_secs                    = time_now_secs()
         Gb.hass_configurator_request_id    = {}
-        Gb.version                         = f"{VERSION}{VERSION_BETA}"
-        Gb.version_beta                    = VERSION_BETA
 
         Gb.polling_5_sec_loop_running      = False
         self.pyicloud_refresh_time         = {}     # Last time Pyicloud was refreshed for the trk method
@@ -106,7 +104,7 @@ class iCloud3:
         Gb.is_evlog_trk_monitors_displayed = False
         Gb.any_device_was_updated_reason   = ''
         Gb.is_icloud3_startup_inprocess    = False
-        Gb.was_icloud3_restart_requested    = False
+        Gb.was_icloud3_restart_requested   = False
         Gb.restart_requested_by            = ''
 
         # Gb.InternetError        = InternetConnection_ErrorHandler()
@@ -177,11 +175,21 @@ class iCloud3:
         Gb.was_icloud3_restart_requested = False
 
         if Gb.was_icloud3_reloaded:
-            post_event( f"{ICLOUD3_ATTENTION_MSG} > Restarting")
+            post_event( f"{Gb.icloud3_attention_msg} > Restarting")
 
-        start_ic3_control.stage_1_setup_variables()
-        start_ic3_control.stage_2_prepare_configuration()
-        start_ic3_control.stage_3_setup_configured_devices()
+        # On a cold start, stages 4-6 are not run until HA has finished starting, so
+        # nothing else will clear is_icloud3_startup_inprocess if a stage fails here.
+        try:
+            start_ic3_control.stage_1_setup_variables()
+            start_ic3_control.stage_2_prepare_configuration()
+            start_ic3_control.stage_3_setup_configured_devices()
+
+        except Exception as err:
+            log_exception(err)
+            Gb.is_icloud3_startup_inprocess = False
+            return False
+
+        return True
 
 #--------------------------------------------------------------------
     def start_icloud3_stage_4_5_6_load_aa_device_to_locate(self):
@@ -206,7 +214,7 @@ class iCloud3:
                         event_msg +=(   ". Set up Apple Accounts and Devices on the iCloud3 "
                                         "Configure Settings screens. Click the `Gear` "
                                         "Icon (⚙️) above the Actions item.")
-                post_event(f"{ICLOUD3_ATTENTION_MSG} > {event_msg}")
+                post_event(f"{Gb.icloud3_attention_msg} > {event_msg}")
 
                 start_ic3_control.stage_7_initial_locate()
 
@@ -214,8 +222,6 @@ class iCloud3:
             Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
 
             Gb.EvLog.startup_event_save_recd_flag = False
-            Gb.is_icloud3_initial_startup = False
-            Gb.is_icloud3_startup_inprocess = False
             Gb.startup_stage_status_controls = []
             Gb.broadcast_info_msg = None
 
@@ -232,6 +238,14 @@ class iCloud3:
 
         except Exception as err:
             log_exception(err)
+
+        finally:
+            # Always clear the startup flags, even if a stage failed. The 5-sec polling
+            # loop, the device registry handler and several other functions do nothing
+            # while is_icloud3_startup_inprocess is set, so leaving it set on an error
+            # stopped iCloud3 until HA was restarted.
+            Gb.is_icloud3_initial_startup   = False
+            Gb.is_icloud3_startup_inprocess = False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1139,9 +1153,9 @@ class iCloud3:
         tf_zone_name     = Device.FromZone_TrackFrom.from_zone_dname[:8]
         tf_zone_dist_str = Device.FromZone_TrackFrom.zone_distance_str
         dir_of_travel    = Device.FromZone_TrackFrom.dir_of_travel
-        update_at_str    = f"NextUpdt-{secs_to_hhmm(next_update_secs)}"
-        update_in_str    = f"NextUpdt-{format_timer(secs_to(next_update_secs))}"
-        update_at_in_str = (f"NextUpdt-{secs_to_hhmm(next_update_secs)} "
+        update_at_str    = f"Update-{secs_to_hhmm(next_update_secs)}"
+        update_in_str    = f"Update-{format_timer(secs_to(next_update_secs))}"
+        update_at_in_str = (f"Update-{secs_to_hhmm(next_update_secs)} "
                             f"({format_timer(secs_to(next_update_secs))})")
         arrival_time     = Device.sensors[ARRIVAL_TIME]
         in_zone_time     = f"{secs_to_hhmm(Device.zone_enter_secs)}"
@@ -1348,14 +1362,14 @@ class iCloud3:
             return
 
         if Gb.version_hacs:
-            general_alert_msg += (  f"{CRLF_LHDOT}iCloud3 {Gb.version_hacs} is available on HACS, "
+            general_alert_msg += (  f"{GB_ALERT}iCloud3 {Gb.version_hacs} is on HACS, "
                                     f"you are running v{Gb.version}")
         if Gb.disable_upw_filter:
             general_alert_msg += f"{RED_ALERT}PASSWORD LOG FILTER DISABLED (Gb.disable_upw_filter)"
 
         if Gb.alerts_sensor_attrs:
             for source, msg in Gb.alerts_sensor_attrs.items():
-                general_alert_msg += f"{CRLF_LDIAMOND}{source} > {msg}"
+                general_alert_msg += f"{GB_ALERT}{source} > {msg}"
 
         verified_msg = poor_location_msg = offline_msg =''
         paused_msg = mobapp_unavailable_msg = ''
@@ -1383,22 +1397,22 @@ class iCloud3:
                 device_alert_msg = f"{Device.fname} > Low Battery ({Device.dev_data_battery_level}%)"
 
             if device_alert_msg:
-                general_alert_msg += f"{CRLF_LBDOT}{device_alert_msg}"
+                general_alert_msg += f"{GB_ITEM}{device_alert_msg}"
 
             if device_alert_msg != Device.alert:
                 Device.alert = Device.sensors[ALERT] = device_alert_msg
                 Device.write_ha_device_tracker_state()
 
         if paused_msg:
-            general_alert_msg += f"{CRLF_LBDOT}Paused-{paused_msg[:-2]}"
+            general_alert_msg += f"{GB_ITEM}Paused-{paused_msg[:-2]}"
         if verified_msg:
-            general_alert_msg += f"{CRLF_LBDOT}Not Tracked-{verified_msg[:-2]}"
+            general_alert_msg += f"{GB_ITEM}Not Tracked-{verified_msg[:-2]}"
         if poor_location_msg:
-            general_alert_msg += f"{CRLF_LBDOT}Poor Location-{poor_location_msg[:-2]}"
+            general_alert_msg += f"{GB_ITEM}Poor Location-{poor_location_msg[:-2]}"
         if offline_msg:
-            general_alert_msg += f"{CRLF_LBDOT}Offline-{offline_msg[:-2]}"
+            general_alert_msg += f"{GB_ITEM}Offline-{offline_msg[:-2]}"
         if mobapp_unavailable_msg:
-            general_alert_msg += f"{CRLF_LBDOT}MobApp Device Unavailable-{mobapp_unavailable_msg[:-2]}"
+            general_alert_msg += f"{GB_ITEM}MobApp Device Unavailable-{mobapp_unavailable_msg[:-2]}"
 
         if (Gb.test_internet_error
                 or Gb.test_internet_error_after_startup):
@@ -1520,6 +1534,8 @@ class iCloud3:
                 and Gb.WazeHist.is_historydb_USED
                 and Gb.internet_error is False):
             Gb.WazeHist.end_of_day_maintenance()
+
+        analytics.schedule_send_analytics_data()
 
         log_start_finish_update_banner('finish', 'End-of-Day Maintenance', 'Complete', '')
         post_event( f"{EVLOG_IC3_STAGE_HDR}End-of-Day Maintenance > "

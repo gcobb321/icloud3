@@ -27,7 +27,7 @@ from ...const               import (MONITOR, INACTIVE,
 
 from ...utils.utils         import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     is_running_in_event_loop, is_between, list_del, list_add,
-                                    sort_dict_by_values, username_id,
+                                    dict_sort_values, username_id,
                                     encode_password, decode_password, )
 from ...utils.messaging     import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                     _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
@@ -186,7 +186,7 @@ class OptionsFlow_Parameters_Steps:
 
 #-------------------------------------------------------------------------------------------
     def _unpack_ui_tracking_parameters(self, user_input):
-        if user_input is None: return
+        if user_input is None: return None
 
         user_input = utils_cf.option_text_to_parm( user_input,
                                                 CONF_TRAVEL_TIME_FACTOR,

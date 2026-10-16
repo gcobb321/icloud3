@@ -57,12 +57,15 @@ def datetime_plus(datetime, secs=None, mins=None, hrs=None, days=None):
 
 #--------------------------------------------------------------------
 def datetime_now(datetime_struct=False):
-    ''' now --> epoch/unix yyy-mm-dd 10:23:45 '''
+    ''' now --> epoch/unix yyyy-mm-dd 10:23:45 '''
     if datetime_struct:
         return datetime.fromtimestamp(int(time.time()))
     else:
         return str(datetime.fromtimestamp(int(time.time())))
 
+#--------------------------------------------------------------------
+def today():
+    return dt_util.now().strftime('%Y-%m-%d')
 
 #--------------------------------------------------------------------
 def smh_time(time):
@@ -458,16 +461,6 @@ def format_date(secs, fmt_code=None):
 
     #14Sep2026
     return datetime.fromtimestamp(secs).strftime('%-d%Y%')
-
-#--------------------------------------------------------------------
-def format_age_hrs(secs, xago=None):
-    ''' secs --> 4.5 hrs ago '''
-
-    if isnot_valid(secs): return 'Never'
-    if secs < 1577854800: return 'Unknown'
-    ago = ' ago' if xago is None else ''
-
-    return f"{format_timer_hrs(secs_since(secs))}{ago}"
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

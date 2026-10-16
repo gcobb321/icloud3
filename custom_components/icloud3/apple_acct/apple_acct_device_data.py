@@ -1,6 +1,6 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (AIRPODS_DN, NONE_FNAME,
+from ..const            import (AIRPODS, AIRPODS_DN, NONE_FNAME,
                                 EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS,
                                 HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
                                 ICLOUD, NAME, ID,
@@ -12,31 +12,37 @@ from ..const            import (AIRPODS_DN, NONE_FNAME,
                                 ICLOUD_DEVICE_STATUS, DEVICE_STATUS_CODES,
                                 CONF_USERNAME, CONF_APPLE_ACCOUNT,
                                 CONF_PASSWORD, CONF_MODEL_DISPLAY_NAME, CONF_RAW_MODEL,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
-                                CONF_FAMSHR_DEVICE_ID, CONF_LOG_LEVEL_DEVICES,
+                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME,
+                                CONF_AADEV_DEVICE_ID, CONF_LOG_LEVEL_DEVICES,
                                 DEVICE_DISPLAY_NAMES_FILTERS
                                 )
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del,
                                 encode_password, decode_password, username_id, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                 secs_since, format_secs_since, format_age, format_time_age )
-from ..utils.messaging  import (log_exception, )
+from ..utils.messaging  import (_log, log_exception, )
 from ..utils            import gps
+from .device_name_parser import owner_device_name_key
 
+import re
 import logging
 LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
 
 DEVICE_DATA_FILTER_OUT = [
-    'features', 'scd',
+    'features', 'scd', 'activationLocked',
     'rm2State', 'pendingRemoveUntilTS', 'repairReadyExpireTS', 'repairReady', 'lostModeCapable', 'wipedTimestamp',
     'encodedDeviceId', 'scdPh', 'locationCapable', 'trackingInfo', 'nwd', 'remoteWipe', 'canWipeAfterLock', 'baUUID',
-    'snd', 'continueButtonTitle', 'alertText', 'cancelButtonTitle', 'createTimestamp',  'alertTitle',
-    'lockedTimestamp', 'locFoundEnabled', 'lostDevice', 'pendingRemove', 'maxMsgChar', 'darkWake', 'wipeInProgress',
-    'repairDeviceReason', 'deviceColor', 'deviceDiscoveryId', 'activationLocked', 'passcodeLength',
-    ]
-    # 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
-    # 'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
-    # 'LCK', 'REM', 'MCS', 'REP', 'KEY', 'KPD', 'WIP',
+    'continueButtonTitle', 'alertText', 'cancelButtonTitle', 'createTimestamp',  'alertTitle',
+    'lockedTimestamp', 'locFoundEnabled', 'pendingRemove', 'maxMsgChar', 'darkWake', 'wipeInProgress',
+    'repairDeviceReason', 'deviceColor', 'deviceDiscoveryId', 'passcodeLength',
+    'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
+    'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
+    'LCK', 'REM', 'MCS', 'REP', 'KEY', 'KPD', 'WIP',
+]
+
+# A tracked device that is offline this long can be replaced by a newer device
+# with the same Apple default name
+REPLACED_DEVICE_OFFLINE_SECS = 3600
 
 
 
@@ -72,42 +78,34 @@ class iCloud_AppleAcctDeviceData():
                         params,
                         data_source,
                         timestamp_field,
-                        AADevices,
-                        device_data_name,):
+                        AADevices):
 
-        self.setup_time    = time_now()
-        self.AppleAcct     = AADevices.AppleAcct # AppleAcct object (Apple Acct) with the device data
-        self.iCloudSession = iCloudSession
-
-        # __init__ is run several times during to initialize the AADevData fields
-        # Initialize the identity fields on the initial create
-        if device_id not in self.AppleAcct.AADevData_by_device_id:
-            self.device_id       = device_id
-            self.params          = params
-            self.data_source     = data_source
-            self.timestamp_field = timestamp_field
-            self.AADevices       = AADevices           # iCloud object creating this AADevData object
-
-        try:
-            # Only update the device name fields when the AADevData object is created
-            # or when it was changed on the device and iCloud3 was restarted. Setting
-            # it up again if the AADevData is just being reinstalled creates errors
-            # detecting duplicate names.
-            name_update_flag = (self.name != device_data_name)
-        except:
-            name_update_flag = True
-
-        if name_update_flag:
-            self.name            = device_data_name
-            self.fname_original  = ''                               # Original dname after cleanup
-            self.fname_dup_suffix= ''                               # Suffix added to fname if duplicates
-            self.fname           = self.device_data_fname_dup_check # Clean up fname and check for duplicates
-
-        self.evlog_alert_char= ''
-        self.ic3_devicename  = Gb.devicenames_by_icloud_dname.get(self.fname, '')
-        self.Device          = Gb.Devices_by_devicename.get(self.ic3_devicename)
-
+        self.setup_time      = time_now()
+        self.AppleAcct       = AADevices.AppleAcct # AppleAcct object (Apple Acct) with the device data
+        self.iCloudSession   = iCloudSession
         self.device_data     = device_data
+
+        self.device_id       = device_id
+        self.params          = params
+        self.data_source     = data_source
+        self.timestamp_field = timestamp_field
+        self.AADevices       = AADevices           # iCloud object creating this AADevData object
+
+        self.name            = device_data[NAME] = self._remove_special_chars(device_data[NAME])
+
+        self.model_display_name = self.filtered_model_display_name()
+
+        self.raw_model       = device_data['rawDeviceModel'].replace('_', ',')        # "iPhone17,2"
+        if self.raw_model.startswith(AIRPODS_DN):
+            self.model       = AIRPODS_DN
+            self.device_type = AIRPODS
+        elif self.raw_model.startswith('AirTags'):
+            self.model       = 'AirTags'
+            self.device_type = 'airtags'
+        else:
+            self.model       = device_data['deviceClass']
+            self.device_type = device_data['deviceClass'].lower()
+        self.model_no        = self.raw_model_no
         self.status_code     = 0
 
         self.update_secs     = time_now_secs()
@@ -121,21 +119,55 @@ class iCloud_AppleAcctDeviceData():
 
         self.battery_level = 0
 
-        if self.device_data['modelDisplayName'] == 'Accessory':
-            if self.device_data['rawDeviceModel'].startswith(AIRPODS_DN):
-                self.device_data['modelDisplayName'] = AIRPODS_DN
-            elif self.device_data['rawDeviceModel'].startswith('AirTags'):
-                self.device_data['modelDisplayName'] = 'AirTags'
-        if self.device_data['rawDeviceModel'].startswith('Watch'):
-            self.device_data['modelDisplayName'] = 'Watch'
-
-        self.set_located_time_battery_info()
+        self.save_device_retired_fields(device_data)
         self.device_data[DATA_SOURCE] = self.data_source
+
+        Gb.model_display_name_by_raw_model[self.raw_model] = self.model_display_name
+
+        self.initialize_resettable_fields()
+        self._add_ic3_items_to_device_data()
+
+#----------------------------------------------------------------------
+    def initialize_resettable_fields(self):
+
+        self.dname                = self.name
+        self.device_data['dname'] = self.dname
+        self.is_duplicate_dname   = False
+        self.Device               = None
+        self.ic3_devicename       = ''
         self.device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
 
-        self.raw_model = self.device_data.get('rawDeviceModel', self.device_class).replace('_', '')
+        self.active               = False
+        self.evlog_alert_char     = ''
+        self.startup_msg          = ''
 
-        Gb.model_display_name_by_raw_model[self.raw_model] = self.aa_device_display_name
+#----------------------------------------------------------------------
+    def filtered_model_display_name(self):
+        display_name = self.device_data['deviceDisplayName']
+        for from_str, to_str in DEVICE_DISPLAY_NAMES_FILTERS.items():
+            display_name = display_name.replace(from_str, to_str)
+
+        idx = display_name.find('-inch')
+        if idx > 0:
+            display_name = display_name[:idx-3] + display_name[idx+5:]
+
+        return display_name
+
+#----------------------------------------------------------------------
+    @property
+    def raw_model_no(self):
+        model_no = 0
+        try:
+            # Strip the leading letters, keep the first number
+            # (iPhone16,4 --> 16, MacBookPro6,3 --> 6, AirPods,8212 --> 8212)
+            match = re.match(r'[A-Za-z]+[_,]?(\d+)', self.raw_model)
+            if match:
+                model_no = int(match.group(1))
+        except Exception as err:
+            log_exception(err)
+            pass
+
+        return model_no
 
 #----------------------------------------------------------------------
     @property
@@ -144,8 +176,8 @@ class iCloud_AppleAcctDeviceData():
 
 #----------------------------------------------------------------------
     @property
-    def fname_device_id(self):
-        return f"{self.fname} ({self.device_id8})"
+    def dname_device_id(self):
+        return f"{self.dname} ({self.device_id8})"
 
 #----------------------------------------------------------------------
     @property
@@ -153,7 +185,7 @@ class iCloud_AppleAcctDeviceData():
         if Device := Gb.Devices_by_icloud_device_id.get(self.device_id):
             return Device.devicename
         elif self.is_data_source_ICLOUD:
-            return self.fname
+            return self.dname
         else:
             return self.device_id[:8]
 
@@ -162,76 +194,102 @@ class iCloud_AppleAcctDeviceData():
     def family_share_device(self):
         return self.device_data['fmlyShare']
 
-#----------------------------------------------------------------------
-    @property
-    def device_data_fname_dup_check(self):
-        '''
-        Determine if the iCloud device being set up is the same name as one that has already
-        been set up. Is so, add periods('.') to the end of the fname to make it unique.
-        Also set the fname suffix value.
-        '''
-        # Remove non-breakable space and right quote mark
-        dname = self.fname_original = self._remove_special_chars(self.name)
-
-        # This is a tracked and configured device if the device_id is already used
-        conf_devicename = self._find_conf_device_devicename(CONF_FAMSHR_DEVICE_ID, self.device_id)
-        if conf_devicename:
-            return dname
-
-        # It is ok if dname has not been seen
-        if dname not in self.AppleAcct.device_id_by_icloud_dname:
-            return dname
-
-        # This is not a tracked and configured device if the dname is not used
-        # but maybe a dupe because the dname is found with a different device_id
-        conf_devicename = self._find_conf_device_devicename(CONF_FAMSHR_DEVICENAME, dname)
-        if conf_devicename == '':
-            found_before = (dname in self.AppleAcct.device_id_by_icloud_dname)
-            if found_before is False:
-                return dname
-
-        # Dupe dname, it has not been seen and dname has been used
-        # Add a period to dname to make it unique
-        _dname = f"{dname}."
-        while _dname in self.AppleAcct.device_id_by_icloud_dname:
-            _dname += '.'
-        self.fname_dup_suffix = _dname.replace(dname, '')
-
-        return _dname
-
 #......................................................................
     def _find_conf_device_devicename(self, field, field_value):
         '''
         Cycle through the conf_devices and return the ic3_devicename that matches
         the requested field/field_value
         '''
-        conf_devicename = [conf_device[CONF_IC3_DEVICENAME]
-                                for conf_device in Gb.conf_devices
-                                if (conf_device[CONF_APPLE_ACCOUNT] == self.AppleAcct.username
-                                    and conf_device[field] == field_value)]
 
-        if conf_devicename:
-            return conf_devicename[0]
-        else:
-            return ''
+        idx = -1
+        for conf_device in Gb.conf_devices:
+            idx += 1
+            if (conf_device[CONF_APPLE_ACCOUNT] == self.AppleAcct.username
+                    and conf_device[field] == field_value):
+                return conf_device[CONF_IC3_DEVICENAME], idx
+
+        return '', -1
 
 #----------------------------------------------------------------------
     @staticmethod
     def _remove_special_chars(name):
         name = name.replace("’", "'")
         name = name.replace(u'\xa0', ' ')
-        name = name.replace(u'\2019', "'")
         return name
+
+#----------------------------------------------------------------------
+    def save_device_retired_fields(self, device_data):
+        '''
+        Save the fields that indicate the device was retired (unpaired, erased or
+        being removed from the Apple acct). They are removed from device_data by
+        DEVICE_DATA_FILTER_OUT when it is updated.
+        '''
+        self.activation_locked = device_data.get('activationLocked')
+        self.pending_remove    = device_data.get('pendingRemove') is True
+        self.wiped_timestamp   = device_data.get('wipedTimestamp')
+
+#----------------------------------------------------------------------
+    @property
+    def is_retired(self):
+        '''
+        The device was unpaired or erased (Activation Lock turned off), or is being
+        removed from the Apple acct. Activation Lock is always on for an iPhone,
+        iPad or Watch with Find My enabled.
+        '''
+        return (self.pending_remove
+                or self.wiped_timestamp not in [None, 0, '']
+                or (self.activation_locked is False
+                    and self.device_class in ['iPhone', 'iPad', 'Watch']))
+
+#----------------------------------------------------------------------
+    @property
+    def is_offline_stale(self):
+        '''
+        The device is not online and has not been located for more than an hour.
+        Apple does not return a location for a device that has been offline for a
+        while (location_secs=0, secs_since(0) is 0).
+        '''
+        return (self.device_status_code != 200
+                and (self.location_secs == 0
+                    or secs_since(self.location_secs) > REPLACED_DEVICE_OFFLINE_SECS))
+
+#----------------------------------------------------------------------
+    @property
+    def prs_id(self):
+        '''
+        Apple person id of the device's owner. None is the Apple acct owner,
+        otherwise it is the Family Sharing member (key of userInfo.membersInfo)
+        '''
+        return self.device_data.get('prsId')
+
+#----------------------------------------------------------------------
+    @property
+    def owner_first_name(self):
+        return self.AppleAcct.first_name_by_prs_id.get(self.prs_id, '')
+
+#----------------------------------------------------------------------
+    @property
+    def owner_device_key(self):
+        '''
+        Owner, device type and the name without the model or possessive. A newer
+        device with Apple's default name has the same key as the device it replaced:
+            ('NDM0NTU2NzE3', 'Watch', 'lillian-watch') for "Lillian-Watch" and
+            "Lillian's Apple Watch"
+        '''
+        return (self.prs_id,
+                self.device_class,
+                owner_device_name_key(self.name, self.device_class, self.owner_first_name))
 
 #----------------------------------------------------------------------
     @property
     def aa_device_info(self):
-        return f"{self.fname} ({self.device_identifier})"
+        return f"{self.dname} ({self.device_identifier})"
 
 #----------------------------------------------------------------------
     @property
     def device_status_code(self):
         return int(self.device_data.get(ICLOUD_DEVICE_STATUS, '0'))
+
 #----------------------------------------------------------------------
     @property
     def device_status_msg(self):
@@ -255,7 +313,7 @@ class iCloud_AppleAcctDeviceData():
             else:
                 device_class = self.device_data.get('deviceClass', '')
 
-            return (f"{self.aa_device_display_name}; {self.raw_model}").replace("’", "'")
+            return (f"{self.model_display_name}; {self.raw_model}").replace("’", "'")
 
         else:
             return self.name.replace("’", "'")
@@ -270,24 +328,10 @@ class iCloud_AppleAcctDeviceData():
 
 #----------------------------------------------------------------------
     @property
-    def aa_device_display_name(self):
-        display_name = self.device_data['deviceDisplayName']
-        for from_str, to_str in DEVICE_DISPLAY_NAMES_FILTERS.items():
-            display_name = display_name.replace(from_str, to_str)
-
-        idx = display_name.find('-inch')
-        if idx > 0:
-            display_name = display_name[:idx-3] + display_name[idx+5:]
-
-        #v3.3 - Remove spaces from display name
-        return display_name.replace(' ', '')
-
-#----------------------------------------------------------------------
-    @property
     def aadevice_model_info(self):
         return [self.device_data['rawDeviceModel'].replace("_", ""),    # iPhone15,2
                 self.device_data['modelDisplayName'],                   # iPhone
-                self.aa_device_display_name]                        # iPhone 14 Pro
+                self.model_display_name]                        # iPhone 14 Pro
 
 #----------------------------------------------------------------------
     @property
@@ -324,30 +368,29 @@ class iCloud_AppleAcctDeviceData():
         return round(self.gps_accuracy)
 
 #----------------------------------------------------------------------------
-    def save_new_device_data(self, device_data):
+    def save_new_device_data(self, new_device_data):
         '''Update the device data.'''
+        new_device_data[CONF_IC3_DEVICENAME] = self.Device.devicename
+        new_device_data['Device']            = self.Device
+        new_device_data['dname']             = self.dname
+
+        self.status_code = 0  #device_data.get('snd', []).get('status_code', 0)
+        new_device_data[DATA_SOURCE]         = self.data_source
         if self.AppleAcct.china_gps_coordinates != '':
-            device_data = self.convert_GCJ02_BD09_to_WGS84(device_data)
+            new_device_data = self.convert_GCJ02_BD09_to_WGS84(new_device_data)
 
         try:
-            self.last_loc_time     = self.location_time
-            self.last_loc_time_gps = f"{self.location_time}/±{self.gps_accuracy}m"
-        except:
-            self.last_loc_time_gps = ''
-
-        try:
-            self.status_code = device_data['snd']['status_code']
-        except:
-            pass
-
-        filtered_device_data = {k: v    for k, v in device_data.items()
+            self.save_device_retired_fields(new_device_data)
+            new_device_data = {k: v for k, v in new_device_data.items()
                                         if k not in DEVICE_DATA_FILTER_OUT}
 
-        # self.device_data.clear()
-        self.device_data.update(filtered_device_data)
-        self.set_located_time_battery_info()
+            self.device_data = new_device_data
 
-        self.device_data[DATA_SOURCE] = self.data_source
+            self._add_ic3_items_to_device_data()
+
+        except Exception as err:
+            log_exception(err)
+
         return
 
 #----------------------------------------------------------------------------
@@ -392,11 +435,30 @@ class iCloud_AppleAcctDeviceData():
         return device_data
 
 #----------------------------------------------------------------------------
-    def set_located_time_battery_info(self):
+    def _add_ic3_items_to_device_data(self):
+        '''
+        Add location, battery and status items that are used by iCloud3 to the
+        device data so the device data fields do not have to be reformatted later.
+
+        The following fields are created:
+            [ICLOUD_DEVICE_STATUS]
+            [LOCATION][TIMESTAMP]
+            [LOCATION][LOCATION_TIME]
+            [BATTERY_LEVEL]
+            [BATTERY_STATUS]
+
+        '''
 
         try:
-            self.device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
+            self.last_loc_time     = self.location_time
+            self.last_loc_time_gps = f"{self.location_time}/±{self.gps_accuracy}m"
+        except:
+            self.last_loc_time_gps = ''
 
+            self.status_code = self.device_data[ICLOUD_DEVICE_STATUS] = \
+                int(self.device_data.get('deviceStatus', '0'))
+
+        try:
             if self.is_location_data_available:
                 self.device_data[LOCATION][TIMESTAMP] = int(self.device_data[LOCATION][self.timestamp_field] / 1000)
                 self.device_data[LOCATION][LOCATION_TIME] = secs_to_time(self.device_data[LOCATION][TIMESTAMP])
@@ -444,6 +506,7 @@ class iCloud_AppleAcctDeviceData():
 
             self.device_data[BATTERY_LEVEL]  = self.battery_level
             self.device_data[BATTERY_STATUS] = self.battery_status
+
         except:
             pass
 
@@ -460,6 +523,6 @@ class iCloud_AppleAcctDeviceData():
 
     def __repr__(self):
         try:
-            return f"<AADevData: {self.setup_time}-{self.AppleAcct.username_base}-{self.name}-{self.device_id[:8]}"
+            return f"{self.name} ({self.model_display_name})"
         except:
             return f"<AADevData: Undefined>"

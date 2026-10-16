@@ -307,10 +307,6 @@ class iCloud3_StationaryZone(iCloud3_Zone):
 
         self.name = self.title = self.dname
 
-#....................................................................
-    def __repr__(self):
-        return self.zone
-
 #--------------------------------------------------------------------
     def initialize_statzone_name(self):
         if Gb.statzone_fname == '': Gb.statzone_fname = 'StatZon#'

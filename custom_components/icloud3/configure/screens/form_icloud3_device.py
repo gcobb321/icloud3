@@ -8,7 +8,7 @@ from ...const               import (RED_ALERT, LINK, RARROW, HOME, NONE, INACTIV
                                     CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
                                     CONF_TRACK_FROM_BASE_ZONE,
                                     CONF_PICTURE, CONF_ICON, CONF_DEVICE_TYPE,
-                                    CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME, CONF_MOBILE_APP_DEVICE,
+                                    CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
                                     CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL,
                                     )
 
@@ -164,7 +164,7 @@ def form_update_device(self):
 
     # iCloud Devices list default item
     apple_acct    = utils_cf.parm_or_device(self, CONF_APPLE_ACCOUNT)
-    icloud_dname  = utils_cf.parm_or_device(self, CONF_FAMSHR_DEVICENAME)
+    icloud_dname  = utils_cf.parm_or_device(self, CONF_AADEV_NAME)
     if icloud_dname == 'None' or devicename == '':
         device_list_item_key = 'None'
     else:
@@ -208,14 +208,18 @@ def form_update_device(self):
     elif self.errors != {}:
         self.errors['base'] = 'unknown_value'
 
-    if utils_cf.parm_or_device(self, CONF_TRACKING_MODE) == INACTIVE:
+    if devicename in Gb.ha_disabled_by_by_devicename:
+        self.errors['base'] = 'disabled_in_ha'
+        self.errors[CONF_TRACKING_MODE] = 'disabled_in_ha'
+
+    elif utils_cf.parm_or_device(self, CONF_TRACKING_MODE) == INACTIVE:
         self.errors[CONF_TRACKING_MODE] = 'inactive_device'
 
-    log_zones_key_text = {'none': 'None'}
-    zone_name_key_text = {k: v  for k, v in self.zone_name_key_text.items()
-                                if k.startswith('.') is False}
-    log_zones_key_text.update(zone_name_key_text)
-    log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
+    # log_zones_key_text = {'none': 'None'}
+    # zone_name_key_text = {k: v  for k, v in self.zone_name_key_text.items()
+    #                             if k.startswith('.') is False}
+    # log_zones_key_text.update(zone_name_key_text)
+    # log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
 
     schema = {
         vol.Optional(CONF_IC3_DEVICENAME,
@@ -224,7 +228,7 @@ def form_update_device(self):
         vol.Optional(CONF_FNAME,
                     default=utils_cf.parm_or_device(self, CONF_FNAME)):
                     selector.TextSelector(),
-        vol.Optional(CONF_FAMSHR_DEVICENAME,
+        vol.Optional(CONF_AADEV_NAME,
                     default=device_list_item_text):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.icloud_list_text_by_fname), mode='dropdown')),

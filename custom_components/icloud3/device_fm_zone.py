@@ -132,8 +132,9 @@ class iCloud3_DeviceFmZone():
         self.sensors[ZONE_INFO]            = ''
 
         # Restore the sensors from restore file
-        if self.from_zone in Gb.restore_state_devices[self.devicename]['from_zone']:
-            self.sensors.update(Gb.restore_state_devices[self.devicename]['from_zone'][self.from_zone])
+        if self.devicename in Gb.restore_state_devices:
+            if self.from_zone in Gb.restore_state_devices[self.devicename]['from_zone']:
+                self.sensors.update(Gb.restore_state_devices[self.devicename]['from_zone'][self.from_zone])
 
         Sensors_from_zone      = Gb.Sensors_by_devicename_from_zone.get(self.devicename, {})
         from_this_zone_sensors = {k:v   for k, v in Sensors_from_zone.items()

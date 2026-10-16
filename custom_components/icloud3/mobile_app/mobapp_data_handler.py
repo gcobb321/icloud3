@@ -554,35 +554,6 @@ def get_and_verify_device_trkr_data(Device, entity_id):
 
             return None
 
-        # Display an 'unavailable' device msg every 2-hrs
-        # elif device_trkr_attrs[DEVICE_TRACKER] == NOT_SET:
-        #     if Device.mobapp_data_invalid_error_cnt > 5:    #50:
-        #         Device.mobapp_data_invalid_error_cnt += 1
-        #         if (Device.mobapp_data_invalid_error_cnt % 5) == 0:
-        #             post_event(Device, (
-        #                         f"{EVLOG_ALERT}Mobile App Error (#{Device.mobapp_data_invalid_error_cnt}) > "
-        #                         f"{Device.conf_mobapp_fname}/{entity_id} "
-        #                         f"AssignedTo-{Device.fname_devicename}, "
-        #                         f"Returned a `not available` status"))
-        #                         # f"{more_info('mobapp_device_unavailable')}")
-        #             log_error_msg(f"iCloud3 Error ({Device.fname}) > Mobile App status is `unavailable`")
-        #         return None
-
-            # More than 50 errors, shut down Mobile App monitoring for this device
-            Device.is_mobapp_monitored            = False
-            Device.is_mobapp_device_unavailable = True
-
-            post_event(Device,
-                        f"{EVLOG_ALERT}The Mobile App has not reported the gps "
-                        f"location after 4 requests. It may be asleep, offline "
-                        f"or not available and should be reviewed."
-                        f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}"
-                        f"{more_info('mobapp_device_no_location')}")
-            log_error_msg(f"iCloud3 Alert ({Device.fname_devtype}) > "
-                f"The Mobile App has not reported the gps location after 4 requests. "
-                f"It may be asleep, offline or not available.")
-            return None
-
         # Entity is available, get the attributes
         device_trkr_attrs.update(entity_io.get_attributes(entity_id))
 
@@ -592,7 +563,6 @@ def get_and_verify_device_trkr_data(Device, entity_id):
                 post_alert( f"MOBILE APP ERROR (#{Device.mobapp_data_invalid_error_cnt}) > "
                             f"No gps location reported. It may be asleep, offline or not available"
                             f"{CRLF_DOT}{Device.fname_devicename}{RARROW}{entity_id}")
-                            # f"{more_info('mobapp_device_no_location')}")
                 log_error_msg(f"iCloud3 Alert ({Device.fname}) > "
                             f"Mobile App gps location not reported")
             return None

@@ -2,7 +2,7 @@ from ...global_variables    import GlobalVariables as Gb
 from ...const               import (ICLOUD, MOBAPP, NO_MOBAPP,
                                     INACTIVE, PUSH, TEXT, TEXT_1, TEXT_2, HWKEY,
                                     CONF_APPLE_ACCOUNT, CONF_IC3_DEVICENAME, CONF_FNAME,
-                                    CONF_USERNAME, CONF_PASSWORD, CONF_FAMSHR_DEVICENAME,
+                                    CONF_USERNAME, CONF_PASSWORD, CONF_AADEV_NAME,
                                     CONF_DATA_SOURCE, CONF_LOCATE_ALL,
                                     CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                     CONF_TRACKING_MODE,  DEFAULT_APPLE_ACCOUNT_CONF, DEFAULT_DEVICE_CONF,
@@ -518,9 +518,6 @@ class OptionsFlow_AppleAccount_Steps:
         # Delete an existing account
         if remove_acct_flag:
             Gb.conf_apple_accounts.pop(aa_idx)
-            if Gb.conf_tracking[CONF_USERNAME] == self.conf_apple_acct[CONF_USERNAME]:
-                Gb.conf_tracking[CONF_USERNAME] = ''
-                Gb.conf_tracking[CONF_PASSWORD] = ''
             self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
             self.aa_idx = aa_idx - 1
             if self.aa_idx < 0: self.aa_idx = 0
@@ -622,15 +619,15 @@ class OptionsFlow_AppleAccount_Steps:
 
             elif device_action == 'set_devices_inactive':
                 conf_device[CONF_APPLE_ACCOUNT] = ''
-                conf_device[CONF_FAMSHR_DEVICENAME] ='None'
+                conf_device[CONF_AADEV_NAME] ='None'
                 conf_device[CONF_TRACKING_MODE] = INACTIVE
                 updated_conf_devices.append(conf_device)
 
             elif device_action == 'reassign_devices':
-                icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
+                icloud_dname = conf_device[CONF_AADEV_NAME]
                 other_apple_acct = [AppleAcct.username
                                         for username, AppleAcct in Gb.AppleAcct_by_username.items()
-                                        if icloud_dname in AppleAcct.device_id_by_icloud_dname]
+                                        if icloud_dname in AppleAcct.device_id_by_aadev_dname]
                 if other_apple_acct == []:
                     conf_device[CONF_APPLE_ACCOUNT] = ''
                     conf_device[CONF_TRACKING_MODE] = INACTIVE

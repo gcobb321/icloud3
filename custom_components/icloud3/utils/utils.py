@@ -79,6 +79,10 @@ def list_keys(list_value):
     return list(list_value.keys())
 
 #--------------------------------------------------------------------
+def list_sort(list_value):
+    return list_value.sort()
+
+#--------------------------------------------------------------------
 def str_to_list(str_value):
     '''
     Create a list of a comma separated strings
@@ -106,7 +110,11 @@ def delete_from_list(list_value, item):
     return list_value
 
 #--------------------------------------------------------------------
-def sort_dict_by_keys(dict_items):
+def dict_reverse_sort(dict_items):
+    return dict_sort(dict_items, reverse=True)
+
+#--------------------------------------------------------------------
+def dict_sort(dict_items, reverse=False):
     '''
     Return a dictionary sorted by the item keys/values
     '''
@@ -114,12 +122,16 @@ def sort_dict_by_keys(dict_items):
             or dict_items == {}):
         return {}
 
-    sorted_dict = dict(sorted(dict_items.items()))
+    sorted_dict = dict(sorted(dict_items.items(), reverse=reverse))
 
     return sorted_dict
 
 #--------------------------------------------------------------------
-def sort_dict_by_values(dict_value):
+def dict_reverse_sort_values(dict_items):
+    return dict_sort_values(dict_items, reverse=True)
+
+#--------------------------------------------------------------------
+def dict_sort_values(dict_value, reverse=False):
     '''
     Return a dictionary sorted by the item values
     '''
@@ -128,7 +140,7 @@ def sort_dict_by_values(dict_value):
         return {}
 
     dict_value_lower        = {k: v.lower() for k, v in dict_value.items()}
-    sorted_dict_value_lower = sorted(dict_value_lower.items(), key=lambda x:x[1])
+    sorted_dict_value_lower = sorted(dict_value_lower.items(), reverse=reverse, key=lambda x:x[1])
     keys_sorted_dict_value_lower = dict(sorted_dict_value_lower).keys()
     sorted_dict_value       = {k: dict_value[k] for k in keys_sorted_dict_value_lower}
 
@@ -471,8 +483,6 @@ def decode_password(password):
                 and (password.startswith('««') is False
                     or password.endswith('»»') is False)):
             password = password.replace('«', '').replace('»', '')
-            Gb.conf_tracking[CONF_PASSWORD] = password
-            #write_icloud3_configuration_file()
 
         # Decode password if it is encoded and has the '««password»»' format
         if (password.startswith('««') or password.endswith('»»')):

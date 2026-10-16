@@ -4,7 +4,7 @@ import asyncio
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (CONF_AUTH_CODE, CONF_AUTH_METHODS, CURRENT, PUSH, HWKEY,
                                     EVLOG_NOTICE, )
-from ...utils.utils         import (instr, is_number, is_empty, isnot_empty, dict_del, )
+from ...utils.utils         import (instr, is_number, is_empty, isnot_empty, dict_del, list_add, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -414,12 +414,12 @@ class OptionsFlow_Reauth_Steps:
             return False
 
         # Refresh the device list if the apple acct is being setup for the first time
-        # If AppleAcct.device_id_by_icloud_dname is empty, a Authentication code was needed
+        # If AppleAcct.device_id_by_aadev_dname is empty, a Authentication code was needed
         # when first logged in and the apple acct data was not authenticated and it's
         # device data was never loaded/initialized by refreshed_icloud_data. This
         # prevents the device's list tables to ever be initialized and location data
         # is not available. Do this now.
-        if (is_empty(AppleAcct.device_id_by_icloud_dname)
+        if (is_empty(AppleAcct.device_id_by_aadev_dname)
                 or (AppleAcct.terms_of_use_update_needed and AppleAcct.terms_of_use_accepted)):
             await aascf.async_finish_authentication_and_data_refresh(self)
 
@@ -448,7 +448,7 @@ class OptionsFlow_Reauth_Steps:
         '''
         AppleAcct.was_auth_code_requested     = False
         AppleAcct.was_ha_auth_code_alert_sent = False
-        if (is_empty(AppleAcct.device_id_by_icloud_dname)
+        if (is_empty(AppleAcct.device_id_by_aadev_dname)
                 or (AppleAcct.terms_of_use_update_needed and AppleAcct.terms_of_use_accepted)):
             await aascf.async_finish_authentication_and_data_refresh(self)
 
@@ -523,7 +523,8 @@ class OptionsFlow_Reauth_Steps:
             return Gb.AppleAcct_reauth_needed, Gb.AppleAcct_reauth_needed.username
 
         for username, _AppleAcct in Gb.AppleAcct_by_username.items():
-            if _AppleAcct.is_reauth_needed:
+            if (_AppleAcct.is_reauth_needed
+                    or _AppleAcct.terms_of_use_update_needed):
                 Gb.AppleAcct_reauth_needed = _AppleAcct
                 return _AppleAcct, _AppleAcct.username
 
@@ -587,6 +588,8 @@ class OptionsFlow_Reauth_Steps:
                 and AppleAcct.terms_of_use_update_needed
                 and user_input['terms_of_use']):
             AppleAcct.terms_of_use_accepted = True
+            list_add(self.config_parms_update_control, 'restart')
+            self.errors[CONF_AUTH_CODE] = 'apple_acct_terms_update_accepted'
 
         if (action_item == 'accept_terms_of_use'
                 and user_input['terms_of_use']

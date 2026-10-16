@@ -107,7 +107,6 @@ async def update_ic3db_dashboards_new_deleted_devices(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def create_dashboard(self):
 
-    self.ui_selected_dbname == ADD
     dbname = self.dbname = self.ui_selected_dbname = _get_next_dashboard_name(self)
 
     updated_db_layout_json = await _build_db_layout_json_from_templates(self, dbname)

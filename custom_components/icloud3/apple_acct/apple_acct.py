@@ -76,6 +76,7 @@ SRP_SIGNIN_TOKEN_INFO_MAX_AGE_SECS = 60
 # an over-estimate only costs one rejected verify/phone, which falls back
 # to the full password sign-in.
 SRP_2FA_CHALLENGE_MAX_AGE_SECS = 600
+APPLE_ACCT_ALERT_MSG_REAUTH_DAYS = [-5, 10, 20, 88, 89, 86, 87]
 
 HEADERS_SRP = {
     "Accept": "application/json, text/javascript",
@@ -114,7 +115,8 @@ HTTP_RESPONSE_CODES = {
     204: 'Authentication Code Accepted',
     302: 'Server can not be accessed',
     400: 'Invalid Authentication Code',
-    401: 'Invalid Username-Password',
+    401: 'Invalid Username/Password',
+    401.1: 'Invalid Username',
     403: 'Access Denied, Acct maybe Locked',
     404: 'URL/Web Page not Found',
     409: 'Valid Username/Password',
@@ -212,10 +214,10 @@ class AppleAcctManager(object):
             if validate_aa_upw is False:
                 pass
             elif is_empty(username):
-                msg = "Apple Account username is not specified/558"
+                msg = "Apple Account username is not specified"
                 raise AppleAcctFailedLoginException(msg)
             elif is_empty(password):
-                msg = "Apple Account password is not specified/562"
+                msg = f"Apple Account password is not specified , {username}"
                 raise AppleAcctFailedLoginException(msg)
 
 
@@ -366,14 +368,15 @@ class AppleAcctManager(object):
 
             log_banner('finish', self.username_id)
             return True
-
+        upw_msg = 'Invalid Username/Password, ' if self.response_code == 401 else ''
         self.setup_error(self.response_code)
-        post_alert( f"Apple Acct > {self.username_base}, Login or Auth Failed, "
-                    f"Probably Invalid Username/Password, "
-                    f"ErrMsg-{self.error_reason}, "
-                    f"AppleServerLocation-{self.apple_server_location}, "
+
+        if self.validate_aa_upw is False:
+            post_alert( f"Login or Authentication Failed, "
+                    f"{upw_msg}{self.error_reason}, "
+                    f"Server-{self.apple_server_location}, "
                     "Location data not refreshed")
-        update_alert_sensor(self.username_id, "Login Failed, Check Username/Password")
+            update_alert_sensor(self.username_id, f"Login Failed, {upw_msg}{self.error_reason}")
 
         log_banner('finish', self.username_id)
         return False
@@ -417,13 +420,23 @@ class AppleAcctManager(object):
 
         # iCloud Device information - These is used verify the device, display on the EvLog and in the Config Flow
         # device selection list on the iCloud3 Devices screen
-        self.device_id_by_icloud_dname   = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
-        self.icloud_dname_by_device_id   = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
-        self.device_info_by_icloud_dname = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro; iPhone15,2)'}
-        self.device_model_name_by_icloud_dname= {}       # Example: {'Gary-iPhone': 'iPhone 14 Pro'}
-        self.device_model_info_by_fname  = {}       # {'Gary-iPhone': [raw_model, model, model_display_name]}
-        self.dup_icloud_dname_cnt        = {}       # Used to create a suffix for duplicate devicenames
+        self.device_id_by_aadev_dname         = {}  # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+        self.aadev_dname_by_device_id         = {}  # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+        self.device_info_by_aadev_dname       = {}  # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro; iPhone15,2)'}
+        self.device_model_name_by_aadev_dname = {}  # Example: {'Gary-iPhone': 'iPhone 14 Pro'}
+        self.device_model_info_by_aadev_dname = {}  # {'Gary-iPhone': [raw_model, model, model_display_name]}
+        self.dup_icloud_dname_cnt             = {}  # Used to create a suffix for duplicate devicenames
                                                     # {'Gary-iPhone': ['iPhone15,2', 'iPhone', 'iPhone 14 Pro']}
+        self.first_name_by_prs_id             = {}  # Device owner's first name from the Apple device data
+                                                    # {None: 'Gary', 'NDM0NTU2NzE3': 'Lillian'} (None=acct owner)
+
+        # self.AppleAcct.AADevData_items                  = []
+        # self.AppleAcct.aadev_dname_by_device_id         = {}
+        # self.AppleAcct.device_id_by_aadev_dname         = {}
+        # self.AppleAcct.device_info_by_aadev_dname       = {}
+        # self.AppleAcct.device_model_info_by_aadev_dname = {}
+        # self.AppleAcct.device_model_name_by_aadev_dname = {}
+
 
 #------------------------------------------------------------------------------
     def _setup_apple_server_url(self):
@@ -458,10 +471,21 @@ class AppleAcctManager(object):
         return self.iCloudSession.response_ok
 
 #---------------------------------------------------------------------------
+    # @property
+    # def response_code_desc(self, code=None):
+    #     if code is None:
+    #         code = self.response_code
+    #     return (f"{HTTP_RESPONSE_CODES.get(code, 'Other Error')}-"
+    #             f"{self.response_code}")
+
+#---------------------------------------------------------------------------
     @property
     def response_code_desc(self):
-        return (f"{HTTP_RESPONSE_CODES.get(self.response_code, 'Other Error')}-"
-                f"{self.response_code}")
+        return self.code_description(self.response_code)
+
+#----------------------------------------------------------------------------
+    def code_description(self, code):
+        return f"{HTTP_RESPONSE_CODES.get(code, 'Other Error')} ({code})"
 
 #---------------------------------------------------------------------------
     @property
@@ -888,16 +912,23 @@ class AppleAcctManager(object):
             self._set_srp_return_error_code()
             return False
 
+        # error_msg = ''
+        # if Gb.internet_error:
+        #     error_msg = HTTP_RESPONSE_CODES(-4)
+        # elif self.response_code in [403, 503]:
+        #     error_msg = HTTP_RESPONSE_CODES[self.response_code]
+        # elif 'salt' not in data:
+        #     error_msg = HTTP_RESPONSE_CODES(-3)
         error_msg = ''
         if Gb.internet_error:
-            error_msg = HTTP_RESPONSE_CODES(-4)
+            error_msg = self.code_description(-4)
         elif self.response_code in [403, 503]:
-            error_msg = HTTP_RESPONSE_CODES(self.response_code)
+            error_msg = self.code_description(self.response_code)
         elif 'salt' not in data:
-            error_msg = HTTP_RESPONSE_CODES(-3)
+            error_msg = self.code_description(-3)
 
         if error_msg:
-            post_error_msg(f"{self.username_base}, Password SRP Error, {error_msg} ({self.response_code})")
+            post_error_msg(f"Password SRP Error, {error_msg} ({self.response_code})")
             return False
 
 #..........................................................................
@@ -956,11 +987,10 @@ class AppleAcctManager(object):
 
         data.update({'protocols': ['s2k', 's2k_fo']})
 
-        return self._srp_icloud_io('init', username, data)
-
         self.response_code_pw = self.response_code
         self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
 
+        return self._srp_icloud_io('init', username, data)
 #............................................................................
     def _srp_icloud_io_signin_complete(self, username, data):
         '''
@@ -1035,7 +1065,7 @@ class AppleAcctManager(object):
             self._set_srp_return_error_code()
             return False
 
-        if (self.response_code == 401
+        if (self.response_code in [401, 401.1]
                 or Gb.internet_error
                 or is_empty(data)
                 or 'salt' not in data):
@@ -1089,8 +1119,9 @@ class AppleAcctManager(object):
             self.error_retry_cnt = 0
             return
 
-        if reason is None:
-            reason = HTTP_RESPONSE_CODES.get(code, 'Other Error')
+        # if reason is None:
+            # reason = HTTP_RESPONSE_CODES.get(code, 'Other Error')
+        reason = self.code_description(code) if reason is None else f"{reason} ({code})"
 
         if self.username not in Gb.AppleAcct_error_by_username:
             # v7.3-Commented out so logging into apple accts with 503 errors will not be retried
@@ -1330,7 +1361,7 @@ class AppleAcctManager(object):
         if self.terms_of_use_accepted is False:
             post_alert(f"{self.username_base} > "
                         "Apple Acct > Accept `Terms of Use` is needed "
-                        "(Auth Code entry screen)")
+                        "(Authenticate Apple Account Sign-in)")
             return False
 
         url    = f"{self.SETUP_ENDPOINT}/getTerms"
@@ -1760,7 +1791,7 @@ class AppleAcctManager(object):
     @property
     def aadevice_dnames(self):
         aadevice_dnames = [aadevice_dname
-                    for aadevice_dname in self.device_id_by_icloud_dname.keys()]
+                    for aadevice_dname in self.device_id_by_aadev_dname.keys()]
         aadevice_dnames.sort()
 
         return aadevice_dnames
@@ -1786,6 +1817,22 @@ class AppleAcctManager(object):
         self._update_token_pw('valid_reauth_method', self.current_auth_method)
         self._update_token_pw('valid_reauth_secs', time_now_secs())
 
+#--------------------------------------------------------------------
+    def issue_reauth_in_days_alert_msg(self, evlog_msg=False):
+        '''
+        Check to see if an Apple acct is approaching  it's
+        reauthentication date. if it is,  issue an alert warning message
+        '''
+        reauth_in_days, reauth_msg = \
+                self.get_next_reauth_in_days_info_msg(APPLE_ACCT_ALERT_MSG_REAUTH_DAYS)
+        if (self.is_reauth_needed is False
+                and reauth_in_days <= 10
+                and reauth_msg is not None):
+            alert_msg = (f"AppleAcct {reauth_msg}")
+            update_alert_sensor(self.username_id, alert_msg)
+
+            # if evlog_msg:
+            return reauth_msg
 #----------------------------------------------------------------------------
     def get_next_reauth_in_days_info_msg(self, in_days_filter=None):
         '''

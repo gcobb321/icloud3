@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-VERSION                         = '3.7.5'
+VERSION                         = '3.7.6'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
@@ -22,8 +22,6 @@ PLATFORM_SENSOR                 = 'sensor'
 
 ICLOUD3                         = 'iCloud3'
 ICLOUD3LC                       = 'icloud3'
-ICLOUD3_VERSION_MSG             = f"v{VERSION}{VERSION_BETA}"
-ICLOUD3_ATTENTION_MSG           = F"^i^iCloud3 v{VERSION}{VERSION_BETA}"
 STORAGE_KEY                     = DOMAIN
 STORAGE_VERSION                 = 1
 MODE_PLATFORM                   = -1
@@ -215,7 +213,7 @@ DEVICE_TYPE_INZONE_INTERVALS = {
         WATCH: 15,
         WATCH_WIFI: 15,
         MAC: 120,
-        AIRPODS: 15,
+        AIRPODS: 120,
         NO_MOBAPP: 15,
         OTHER: 120,
 }
@@ -223,7 +221,9 @@ DEVICE_DISPLAY_NAMES_FILTERS = {
         'generation': 'gen',
         'nd gen': '',
         'th gen': '',
-        'Series ': '',
+        'Series ': 'S',
+        'Pro Max': 'ProMax',
+        'Apple ': '',
         'mini': 'Mini',
         '(': '',
         ')': '',
@@ -407,11 +407,11 @@ INTEGRATIONS_IC3_CONFIG_MSG = '`iCloud3 > Configuration`'
 
 CIRCLE_LETTERS_DARK =  {'a':'🅐', 'b':'🅑', 'c':'🅒', 'd':'🅓', 'e':'🅔', 'f':'🅕', 'g':'🅖',
                         'h':'🅗', 'i':'🅘', 'j':'🅙', 'k':'🅚', 'l':'🅛', 'm':'🅜', 'n':'🅝',
-                        'q':'🅞', 'p':'🅟', 'q':'🅠', 'r':'🅡', 's':'🅢', 't':'🅣', 'u':'🅤',
+                        'o':'🅞', 'p':'🅟', 'q':'🅠', 'r':'🅡', 's':'🅢', 't':'🅣', 'u':'🅤',
                         'v':'🅥', 'w':'🅦', 'x':'🅧', 'y':'🅨', 'z':'🅩', 'other': '✪'}
 CIRCLE_LETTERS_LITE =  {'a':'Ⓐ', 'b':'Ⓑ', 'c':'Ⓒ', 'd':'Ⓓ', 'e':'Ⓔ', 'f':'Ⓕ', 'g':'Ⓖ',
                         'h':'Ⓗ', 'i':'Ⓘ', 'j':'Ⓙ', 'k':'Ⓚ', 'l':'Ⓛ', 'm':'Ⓜ', 'n':'Ⓝ',
-                        'q':'Ⓞ', 'p':'Ⓟ', 'q':'Ⓠ', 'r':'Ⓡ', 's':'Ⓢ', 't':'Ⓣ', 'u':'Ⓤ',
+                        'o':'Ⓞ', 'p':'Ⓟ', 'q':'Ⓠ', 'r':'Ⓡ', 's':'Ⓢ', 't':'Ⓣ', 'u':'Ⓤ',
                         'v':'Ⓥ', 'w':'Ⓦ', 'x':'Ⓧ', 'y':'Ⓨ', 'z':'Ⓩ', 'other': '✪'}
 '''
 lite_circled_letters = "Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ"
@@ -421,9 +421,11 @@ dark_circled_letters = "🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 �
 Symbols = ±▪•●▬⮾ ⊗⊗ ⊘✓×ø¦ ▶◀ ►◄▲▼ ∙▪ »« oPhone=►▶→⟾➤➟➜➔➤🡆🡪🡺⟹🡆➔ᐅ◈🝱☒☢⦻⛒⊘Ɵ⊗ⓧⓍ⛒z🜔
 〔 〕《》᚛-᚜ ｟ ｠ 〈 〉 ◹◿ ◢◥ ⩓⩔ v^△▽▿▴▾ ↘⇗ ⩠⩢
 Important =✔️❗❌✨➰⚠️☢❓⚽⛔🛑⚡⭐◌\⭕🔶🔸ⓘ• ⍰ ‶″“”‘’‶″ 🕓 🔻🔺✔☁️🍎🔻⮽➕⚙️
-🔵🔴🟠🟡🟢🟣🟤
-🟦🟥🟧🟨🟩🟪🟫
-🔶🔷🔸🔹🔺🔻
+🔴🔵🟢🟡🟠🟣🟤⚫⚪🔘
+🟥🟦🟩🟨🟧🟪🟫⬛⬜🔲🔳
+🔶🔷🔸🔹🔺🔻🔸
+🔸🔹🔶🔷🔺🔻💠
+⚠️🚫🛑✅❌❤️🧡💛💚💙💜🤎🖤🤍
 ✅❎☑️🅰️🍏⛅☁🌤
 🔁🔄➡️🔃⬇️🔗▶️⏩⏪⏫⏬⏭⏮⏯⏰⏱⏸⏹⏺
 ☖☗⌂
@@ -469,8 +471,12 @@ CIRCLE_BIG_X      = 'ⓧ'
 CIRCLE_SLASH      = '⊘'
 CIRCLE_X          = 'ⓧ'
 MONITOR_SYMB      = 'Ⓜ'
-INACTIVE_SYMB     = 'ⓧ'
-INACTIVE_SYMB     = '🔺'
+# INACTIVE_SYMB     = 'ⓧ'
+# INACTIVE_SYMB     = '🔺'
+INACTIVE_SYMB     = '🔸'
+# INACTIVE_SYMB     = '❗'
+SMALL_DOT         = '﹒'
+SMALL_DOT2         = '․'
 DOT               = '• '
 PDOT              = '•'
 SQUARE_DOT        = '▪'
@@ -492,6 +498,7 @@ NL_DOT            = f'{NL} • '
 CRLF_X            = f'{CRLF}{NBSP2}×{NBSP}'
 CRLF_XD           = f'{CRLF}{NBSP}×{NBSP2}'
 CRLF_CIRCLE_X     = f'{CRLF}{NBSP2}⊗{NBSP}'
+CRLF_CIRCLE_X2     = f'{CRLF}{NBSP2}ⓧ{NBSP}'
 
 LDOT2             = f'•{NBSP2}'
 CRLF_LDOT         = f'{CRLF}•{NBSP}'
@@ -505,6 +512,7 @@ CRLF_LDIAMOND     = f'{CRLF}✦{NBSP}'
 
 CRLF_RED_X        = f'{CRLF}❌{NBSP}'
 CRLF_RED_ALERT    = f'{CRLF}⛔{NBSP2}'
+CRLF_RED_ALERT2   = f'{CRLF}🔸{NBSP2}'
 CRLF_LRED_ALERT   = f'{CRLF}⛔{NBSP}'
 CRLF_CHK          = f'{CRLF}{NBSP2}✓{NBSP}'
 CRLF_STAR         = f'{CRLF}{NBSP}✪{NBSP}'
@@ -522,6 +530,10 @@ CRLF_SP3_STAR     = f'{CRLF}{NBSP3}✪{NBSP}'
 CRLF_TAB          = f'{CRLF}{NBSP4}{NBSP4}{NBSP4}'
 CRLF_INDENT       = f'{CRLF}{NBSP6}{NBSP6}'
 CRLF_DASH_75      = f'{CRLF}{"-"*75}'
+
+# Greenbar message items
+GB_ALERT          = f'{CRLF}⚙️{NBSP}'
+GB_ITEM           = f'{CRLF}💠{NBSP}'
 
 NEAR_DEVICE_USEABLE_SYM = '✓'
 BLANK_SENSOR_FIELD = '———'
@@ -836,6 +848,7 @@ CONF_EVLOG_VERSION              = 'event_log_version'
 CONF_EVLOG_VERSION_RUNNING      = 'event_log_version_running'
 CONF_PICTURE_WWW_DIRS           = 'picture_www_dirs'
 CONF_SENSORS_HASH               = 'sensors_hash'
+CONF_FIRST_SEEN                 = 'first_seen'
 
 CONF_EXTERNAL_IP_ADDRESS        = 'external_ip_address'
 
@@ -844,6 +857,7 @@ DEFAULT_PROFILE_CONF = {
         CONF_IC3_VERSION: VERSION,
         CONF_VERSION_INSTALL_DATE: DATETIME_ZERO,
         CONF_UPDATE_DATE: DATETIME_ZERO,
+        CONF_FIRST_SEEN: '',
         CONF_EVLOG_VERSION: '',
         CONF_EVLOG_VERSION_RUNNING: '',
         CONF_EVLOG_CARD_DIRECTORY: EVLOG_CARD_WWW_DIRECTORY,
@@ -871,8 +885,6 @@ CONF_DEVICES                    = 'devices'
 CONF_DEVICENAME                 = 'device_name'
 
 DEFAULT_TRACKING_CONF = {
-        CONF_USERNAME: '',
-        CONF_PASSWORD: '',
         CONF_ENCODE_PASSWORD: True,
         CONF_ICLOUD_SERVER_ENDPOINT_SUFFIX: '',
         CONF_SERVER_LOCATION_NEEDED: False,
@@ -933,8 +945,8 @@ CONF_APPLE_ACCOUNT              = 'apple_account'
 CONF_APPLE_ACCT                 = 'apple_account'
 CONF_ICLOUD_DEVICENAME          = 'famshr_devicename'
 CONF_ICLOUD_DEVICE_ID           = 'famshr_device_id'
-CONF_FAMSHR_DEVICENAME          = 'famshr_devicename'
-CONF_FAMSHR_DEVICE_ID           = 'famshr_device_id'
+CONF_AADEV_NAME          = 'famshr_devicename'
+CONF_AADEV_DEVICE_ID           = 'famshr_device_id'
 CONF_RAW_MODEL                  = 'raw_model'
 CONF_MODEL                      = 'model'
 CONF_MODEL_DISPLAY_NAME         = 'model_display_name'
@@ -972,8 +984,8 @@ DEFAULT_DEVICE_CONF = {
         CONF_FIXED_INTERVAL: 0,
         CONF_TRACKING_MODE: TRACK,
         CONF_APPLE_ACCOUNT: '',
-        CONF_FAMSHR_DEVICENAME: 'None',
-        CONF_FAMSHR_DEVICE_ID: '',
+        CONF_AADEV_NAME: 'None',
+        CONF_AADEV_DEVICE_ID: '',
         CONF_RAW_MODEL : '',
         CONF_MODEL: '',
         CONF_MODEL_DISPLAY_NAME: '',
@@ -985,8 +997,8 @@ DEFAULT_DEVICE_CONF = {
 # Used in conf_flow to reinialize the Configuration Devices
 DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE = {
         CONF_APPLE_ACCOUNT: '',
-        CONF_FAMSHR_DEVICENAME: 'None',
-        CONF_FAMSHR_DEVICE_ID: '',
+        CONF_AADEV_NAME: 'None',
+        CONF_AADEV_DEVICE_ID: '',
         CONF_RAW_MODEL : '',
         CONF_MODEL: '',
         CONF_MODEL_DISPLAY_NAME: '',
@@ -1055,10 +1067,13 @@ CONF_AWAY_TIME_ZONE_1_DEVICES   = 'away_time_zone_1_devices'
 CONF_AWAY_TIME_ZONE_2_OFFSET    = 'away_time_zone_2_offset'
 CONF_AWAY_TIME_ZONE_2_DEVICES   = 'away_time_zone_2_devices'
 
-
-
 # Display Text As Parameter
 CONF_DISPLAY_TEXT_AS            = 'display_text_as'
+
+# Analytics
+CONF_ANALYTICS_ENABLED          = 'analytics_enabled'
+CONF_ANALYTICS_SENT_DATE        = 'analytics_sent_date'
+CONF_ANALYTICS_COMMENT          = 'analytics_comment'
 
 DEFAULT_GENERAL_CONF = {
         CONF_LOG_LEVEL: 'debug-auto-reset',
@@ -1107,12 +1122,19 @@ DEFAULT_GENERAL_CONF = {
         CONF_STAT_ZONE_BASE_LATITUDE: 1,
         CONF_STAT_ZONE_BASE_LONGITUDE: 0,
 
+        # Analytics
+        CONF_ANALYTICS_ENABLED: None,
+        CONF_ANALYTICS_SENT_DATE: '',
+        CONF_ANALYTICS_COMMENT: '',
+
+        # DisplayText_as and AwayTimeZone lists
         CONF_DISPLAY_TEXT_AS: ['#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#10'],
 
         CONF_AWAY_TIME_ZONE_1_OFFSET: 0,
         CONF_AWAY_TIME_ZONE_1_DEVICES: ['none'],
         CONF_AWAY_TIME_ZONE_2_OFFSET: 0,
         CONF_AWAY_TIME_ZONE_2_DEVICES: ['none'],
+
 }
 
 RANGE_GENERAL_CONF = {

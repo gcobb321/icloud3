@@ -24,7 +24,7 @@ iCloud3 Theme:
       mdc-theme-text-primary-on-background: rgb(0, 0, 0)
 
       # Description text color
-      mdc-dialog-content-ink-color: rgb(10, 136, 194)
+      #mdc-dialog-content-ink-color: rgb(10, 136, 194)
 
       # Text entry heading, Dropdown box label, Description text
       mdc-dialog-content-heading-ink-color: rgb(9, 119, 170)

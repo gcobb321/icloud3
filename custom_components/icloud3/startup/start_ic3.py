@@ -1,7 +1,7 @@
 
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION, DOMAIN, ICLOUD3_VERSION_MSG,
+from ..const            import (ICLOUD3, DOMAIN,
                                 STORAGE_DIR, STORAGE_KEY_ENTITY_REGISTRY,
                                 DEVICE_TRACKER, DEVICE_TRACKER_DOT, NOTIFY,
                                 HOME, ERROR, NONE_FNAME,
@@ -13,12 +13,12 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 ALERTS_SENSOR_ATTRS,
                                 CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, HDOT, CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK, CRLF_CIRCLE_X, CIRCLE_X,
                                 CRLF_SP3_HDOT, CRLF_INDENT, CRLF_X, CRLF_TAB, DOT, CRLF_SP8_HDOT, CRLF_SP8_DOT,
-                                CRLF_RED_X, RED_X, CRLF_RED_ALERT, RED_ALERT, CRLF_RED_MARK, CRLF_STAR,
+                                CRLF_RED_X, RED_X, CRLF_RED_ALERT, CRLF_RED_ALERT2, RED_ALERT, CRLF_RED_MARK, CRLF_STAR,
                                 CRLF_RED_ALERT, RED_ALERT, YELLOW_ALERT, UNKNOWN, INACTIVE_SYMB,
                                 RARROW, NBSP2, NBSP4, NBSP6, CIRCLE_STAR, INFO_SEPARATOR, DASH_20, CHECK_MARK,
                                 ICLOUD, FAMSHR,
                                 DEVICE_TYPE_DN, DEVICE_TYPE_DNS,
-                                IPHONE, IPAD, IPOD, WATCH, AIRPODS, MAC,
+                                IPHONE, IPAD, IPOD, WATCH, AIRPODS, MAC, IPAD_CELL, WATCH_WIFI, OTHER,
                                 IPHONE_DN, IPAD_DN, IPOD_DN, WATCH_DN, AIRPODS_DN, MAC_DN,
                                 MOBAPP, NO_MOBAPP, ICLOUD_DEVICE_STATUS, TIMESTAMP,
                                 TRACK, MONITOR, INACTIVE, TRACKING_MODE_DN,
@@ -52,23 +52,25 @@ from ..const            import (VERSION, VERSION_BETA, ICLOUD3, ICLOUD3_VERSION,
                                 CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
                                 CONF_STAT_ZONE_BASE_LATITUDE,
                                 CONF_STAT_ZONE_BASE_LONGITUDE, CONF_DISPLAY_TEXT_AS,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_FAMSHR_DEVICENAME,
-                                CONF_FAMSHR_DEVICE_ID,
+                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME,
+                                CONF_AADEV_DEVICE_ID,
                                 CONF_MOBILE_APP_DEVICE,
                                 CONF_TRACKING_MODE, CONF_DEVICE_TYPE, CONF_INZONE_INTERVAL,
                                 CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                 CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
-                                CONF_ZONE, CONF_NAME,
+                                CONF_ZONE, CONF_NAME, CONF_ANALYTICS_ENABLED,
                                 DEFAULT_GENERAL_CONF, DEFAULT_TRACKING_CONF,
                                 )
 
 from ..utils                import entity_io
 from ..utils.utils          import (instr, is_empty, isnot_empty, yes_no, circle_letter, zone_dname,
-                                    is_statzone, isnot_statzone, list_to_str, list_add, list_del, list_keys,
-                                    username_id, )
-from ..utils.messaging      import (broadcast_info_msg,
-                                    post_event, post_alert, post_greenbar_msg,
+                                    is_statzone, isnot_statzone, username_id,
+                                    list_to_str, list_add, list_del, list_keys, list_sort,
+                                    dict_del, dict_sort, dict_reverse_sort, )
+from ..utils.messaging      import (broadcast_info_msg, add_log_file_filter,
+                                    post_event, post_alert, post_greenbar_msg, post_dotted_line,
                                     post_error_msg, post_monitor_msg, update_alert_sensor,
+                                    post_repair_issue, clear_repair_issues, register_repair_fix_handler,
                                     post_internal_error,
                                     log_info_msg, log_debug_msg, log_error_msg, log_warning_msg,
                                     log_data, log_exception, format_filename, log_stack,
@@ -77,6 +79,7 @@ from ..utils.messaging      import (broadcast_info_msg,
 from ..utils.dist_util      import (format_dist_km, m_to_um, )
 from ..utils.time_util      import (time_now_secs, mins_since, format_timer, format_time_age,
                                     secs_to_hhmm, secs_to_time, )
+from ..utils                import entity_reg_util as er_util
 from ..utils.file_io        import (directory_exists, make_directory,  copy_file,
                                     get_filename_list, get_directory_filename_list,)
 
@@ -91,6 +94,7 @@ from ..support              import service_handler
 from ..tracking             import zone_handler
 from ..tracking.waze        import Waze
 from ..tracking.waze_history import WazeRouteHistory as WazeHist
+
 from ..zone                 import iCloud3_Zone
 
 #--------------------------------------------------------------------
@@ -150,9 +154,9 @@ def handle_config_parms_update():
                 f"Type-{list_to_str(config_parms_update_control).title()}")
 
     if 'restart' in config_parms_update_control:
-        post_greenbar_msg(f"Restarting iCloud3 {ICLOUD3_VERSION_MSG}")
+        post_greenbar_msg(f"Restarting iCloud3 {Gb.icloud3_version_msg}")
         Gb.EvLog.display_user_message('iCloud3 is Restarting')
-        post_event(f"{EVLOG_ATTENTION}iCloud3 Restart Requested ({ICLOUD3_VERSION_MSG})")
+        post_event(f"{EVLOG_ATTENTION}iCloud3 Restart Requested ({Gb.icloud3_version_msg})")
         initialize_data_source_variables()
         Gb.was_icloud3_restart_requested = True
         return
@@ -274,7 +278,7 @@ async def update_lovelace_resource_event_log_js_entry(new_evlog_dir=None, silent
 
             title       = 'Action Required - Clear Browser Cache'
             message     = (f'The Event Log Custom Card was added to the Lovelace Resource list.'
-                        f'<br>File-*{evlog_url}*'
+                        f'<br>Fil{evlog_url}*'
                         f'<br><br>Clear the browser cache before adding the Event Log Card'
                         f'<br>1. Press Ctrl+Shift+Del'
                         f'<br>2. On the Settings tab, check Clear Images and Files'
@@ -326,7 +330,7 @@ def initialize_global_variables():
 
     # Configuration parameters
     Gb.device_tracker_state_source  = DEFAULT_GENERAL_CONF[CONF_DEVICE_TRACKER_STATE_SOURCE]
-    Gb.is_loc_centered_in_zone          = DEFAULT_GENERAL_CONF[CONF_CENTER_IN_ZONE]
+    Gb.is_loc_centered_in_zone      = DEFAULT_GENERAL_CONF[CONF_CENTER_IN_ZONE]
     Gb.display_zone_format          = DEFAULT_GENERAL_CONF[CONF_DISPLAY_ZONE_FORMAT]
     Gb.is_gps_lat_long_displayed    = DEFAULT_GENERAL_CONF[CONF_DISPLAY_GPS_LAT_LONG]
     Gb.max_interval_secs            = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
@@ -364,7 +368,6 @@ def initialize_global_variables():
 
     Gb.alerts_sensor        = 'none'
     Gb.alerts_sensor_attrs  = {}
-    Gb.icloud3_reload_requested_secs = 0
     Gb.icloud3_reload_requested      = False
 
     initialize_on_initial_load()
@@ -446,6 +449,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.away_time_zone_2_offset        = Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET]
         Gb.away_time_zone_2_devices       = Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES].copy()
 
+        Gb.analytics_enabled              = Gb.conf_general[CONF_ANALYTICS_ENABLED]
         Gb.log_level                      = Gb.conf_general[CONF_LOG_LEVEL]
         Gb.log_level_devices              = Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
 
@@ -454,11 +458,14 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.inzone_interval_secs = {}
         Gb.inzone_interval_secs[IPHONE]     = inzone_intervals[IPHONE] * 60
         Gb.inzone_interval_secs[IPAD]       = inzone_intervals[IPAD] * 60
+        Gb.inzone_interval_secs[IPAD_CELL]  = inzone_intervals[IPAD_CELL] * 60
         Gb.inzone_interval_secs[WATCH]      = inzone_intervals[WATCH] * 60
-        Gb.inzone_interval_secs[IPOD]       = inzone_intervals[IPHONE] * 60
+        Gb.inzone_interval_secs[WATCH_WIFI] = inzone_intervals[WATCH_WIFI] * 60
+        Gb.inzone_interval_secs[MAC]        = inzone_intervals[MAC] * 60
         Gb.inzone_interval_secs[AIRPODS]    = inzone_intervals[AIRPODS] * 60
         Gb.inzone_interval_secs[NO_MOBAPP]  = inzone_intervals[NO_MOBAPP] * 60
-        Gb.inzone_interval_secs[CONF_INZONE_INTERVAL] = inzone_intervals['other'] * 60
+        Gb.inzone_interval_secs[OTHER]      = inzone_intervals[OTHER] * 60
+        Gb.inzone_interval_secs[CONF_INZONE_INTERVAL] = inzone_intervals[OTHER] * 60
 
         Gb.EvLog.display_text_as = {}
         for display_text_as in Gb.conf_general[CONF_DISPLAY_TEXT_AS]:
@@ -477,6 +484,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         set_log_level(Gb.log_level)
 
         config_evlog_msg += f"{CRLF_DOT}Initialize Debug Control ({Gb.log_level})"
+
 
         set_um_formats()
         config_evlog_msg += f"{CRLF_DOT}Set Unit of Measure Formats ({Gb.um})"
@@ -579,7 +587,7 @@ def set_primary_data_source(data_source):
             alert_msg += "Device tracking will be done using Mobile App location data. "
         else:
             data_source = ''
-            post_greenbar_msg('568 No data sources have been set up')
+            post_greenbar_msg('No data sources have been set up')
             alert_msg += "No data sources have been set up, tracking will not be done."
             error_msg = ("iCloud3 Error > Devices will not be tracked. Location data "
                         "has not been set up")
@@ -1165,69 +1173,77 @@ def setup_validate_apple_accts_upw():
 def create_Devices_object():
 
     try:
-        device_tracker_entities, device_tracker_entity_data = \
-                entity_io.get_entity_registry_data(platform='icloud3', domain=DEVICE_TRACKER)
+        # _set_ha_device_id_x_devicename()
+        er_util.set_ha_device_id_x_devicename()
 
-        old_Devices_by_devicename  = Gb.Devices_by_devicename.copy()
-        Gb.Devices                 = []
-        Gb.Devices_by_devicename   = {}
-        Gb.Devices_by_username     = {}
-        Gb.conf_devicenames        = []
-        Gb.conf_icloud_dnames      = []
-        Gb.devicenames_by_icloud_dname = {}
-        Gb.icloud_dnames_by_devicename = {}
-        Gb.startup_alerts_by_source = {}
+        old_Devices_by_devicename      = Gb.Devices_by_devicename.copy()
+        Gb.Devices                     = []
+        Gb.Devices_by_devicename       = {}
+        Gb.Devices_by_username         = {}
+        Gb.conf_devicenames            = []
+        Gb.conf_icloud_dnames          = []
+        Gb.devicenames_by_aadev_dname = {}
+        Gb.aadev_dnames_by_devicename= {}
+        Gb.startup_alerts_by_source    = {}
+
+        # Update the ha_device_id_x_devicename dict and correct any
+        # disabled device conflicts between iCloud3 and the ha_device_reg
 
         for conf_device in Gb.conf_devices:
             devicename   = conf_device[CONF_IC3_DEVICENAME]
             device_fname = conf_device[CONF_FNAME]
-            icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
+            aadev_name = conf_device[CONF_AADEV_NAME]
             username     = conf_device[CONF_APPLE_ACCOUNT]
             apple_acct   = username_id(username)
 
-            # Device's Apple Acct was not found in the Apple Accts list. It is invalid or
-            # the password has not been verified yet
-            if (Gb.use_data_source_ICLOUD
-                    and username != ''
-                    and icloud_dname != 'None'
-                    and username not in Gb.valid_upw_by_username):
-                conf_apple_acct, _idx = config_file.conf_apple_acct(username)
-                if _idx < 0:
-                    error_msg = f"Unknown Apple Acct ({apple_acct})"
-                    post_alert( f"{device_fname} > {error_msg}")
-                    update_alert_sensor(device_fname, error_msg)
+            # # Device's Apple Acct was not found in the Apple Accts list. It is invalid or
+            # # the password has not been verified yet
+            # if (Gb.use_data_source_ICLOUD
+            #         and username != ''
+            #         and aadev_name != 'None'
+            #         and username not in Gb.valid_upw_by_username):
+            #     conf_apple_acct, _idx = config_file.conf_apple_acct(username)
+            #     if _idx < 0:
+            #         error_msg = f"Unknown Apple Acct ({apple_acct})"
+            #         post_alert( f"{device_fname} > {error_msg}")
+            #         update_alert_sensor(device_fname, error_msg)
 
-                else:
-                    # Open Apple Acct, Create Apple Acct Objects and login
-                    password = conf_apple_acct[CONF_PASSWORD]
-                    valid_upw = Gb.ValidateAppleAcctUPW.validate_username_password(username, password)
+            #     else:
+            #         # Open Apple Acct, Create Apple Acct Objects and login
+            #         password = conf_apple_acct[CONF_PASSWORD]
+            #         valid_upw = Gb.ValidateAppleAcctUPW.validate_username_password(username, password)
 
-                    Gb.valid_upw_by_username[username] = valid_upw
+            #         Gb.valid_upw_by_username[username] = valid_upw
 
             if devicename == '':
-                post_greenbar_msg(f"HA device_tracker entity id not configured for {icloud_dname}")
+                post_greenbar_msg(f"HA device_tracker entity id not configured for {aadev_name}")
                 post_alert( f"CONFIGURATION ALERT > The device_tracker entity id (devicename) "
-                            f"has not been configured for {icloud_dname}/"
+                            f"has not been configured for {aadev_name}/"
                             f"{DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}")
                 continue
 
-            Gb.conf_icloud_dnames.append(icloud_dname)
+            Gb.conf_icloud_dnames.append(aadev_name)
             broadcast_info_msg(f"Setting up Device > {devicename}")
 
-            # Do not set up inactive device
-            if conf_device[CONF_TRACKING_MODE] ==  INACTIVE:
-                # post_event( f"{CIRCLE_STAR} {conf_device[CONF_FNAME]} ({devicename}) > "
-                post_event( f"{INACTIVE_SYMB} {conf_device[CONF_FNAME]} ({devicename}) > "
-                            f"{DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}, INACTIVE, "
-                            f"{CRLF_DOT}Apple Device-{icloud_dname}"
-                            f"{CRLF_DOT}MobApp Entity-{conf_device[CONF_MOBILE_APP_DEVICE]}")
+            # Do not set up inactive device or one disabled in HA
+            if devicename in Gb.ha_disabled_by_by_devicename:
+                do_not_track_reason = f'{INACTIVE_SYMB}HA.DISABLED'
+            elif conf_device[CONF_TRACKING_MODE] == INACTIVE:
+                do_not_track_reason = f'{INACTIVE_SYMB}INACTIVE'
+            else:
+                do_not_track_reason = ''
+            if do_not_track_reason:
+                post_event( f"{INACTIVE_SYMB}{conf_device[CONF_FNAME]} ({devicename}) > "
+                            f"{DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}, "
+                            f"{do_not_track_reason}"
+                            f"{CRLF_SP5_DOT}Apple Device-{aadev_name} ({conf_device[CONF_MODEL_DISPLAY_NAME]})"
+                            f"{CRLF_SP5_DOT}MobApp Entity-{conf_device[CONF_MOBILE_APP_DEVICE]}")
                 continue
 
             # This list is based on the configuration, it will be rebuilt when the devices are verified
             # after the iCloud data has been read. It is also rebuild in config_flow when a device is updated
-            devicename  = conf_device.get(CONF_IC3_DEVICENAME)
-            Gb.devicenames_by_icloud_dname[icloud_dname] = devicename
-            Gb.icloud_dnames_by_devicename[devicename]   = icloud_dname
+            Gb.devicenames_by_aadev_dname[aadev_name] = devicename
+            Gb.aadev_dnames_by_devicename[devicename] = aadev_name
 
             # Reinitialize or add device, preserve the Sensor object if reinitializing
             if devicename in old_Devices_by_devicename:
@@ -1242,6 +1258,9 @@ def create_Devices_object():
             Gb.Devices.append(Device)
             Gb.conf_devicenames.append(devicename)
             Gb.Devices_by_devicename[devicename] = Device
+
+            if conf_device[CONF_TRACKING_MODE] ==  INACTIVE:
+                continue
 
             # If Apple acct specified, make sure it is configured and this device is available
             if Device.conf_apple_acct_username in ['', 'None']:
@@ -1259,9 +1278,12 @@ def create_Devices_object():
             else:
                 apple_acct_msg = Device.conf_apple_acct_username_id
 
-            #  Build the device's configuration evlog  message
-            apple_acct_msg = f"{CRLF_SP5_DOT}Apple Account: {apple_acct_msg}"
-            icloud_dev_msg = Device.conf_icloud_dname if Device.conf_icloud_dname else '✪ NONE'
+            #  Build the device's configuration evlog message
+            # apple_acct_msg = f"{CRLF_SP5_DOT}Apple Account: {apple_acct_msg}"
+            if Device.conf_icloud_dname:
+                icloud_dev_msg = f"{Device.conf_icloud_dname} ({Device.model_display_name})"
+            else:
+                icloud_dev_msg = '✪ NONE'
             mobapp_dev_msg = Device.mobapp[DEVICE_TRACKER] \
                                     if Device.mobapp[DEVICE_TRACKER] else '✪ NONE'
             if ((apple_acct_msg == '✪ NONE' or icloud_dev_msg == '✪ NONE')
@@ -1273,7 +1295,7 @@ def create_Devices_object():
                 monitored_msg = 'Tracked'
 
             evlog_msg = (   f"{CHECK_MARK}{Device.fname_devicename} > {Device.devtype_fname}, {monitored_msg}"
-                            f"{apple_acct_msg}"
+                            f"{CRLF_SP5_DOT}Apple Account: {apple_acct_msg}"
                             f"{CRLF_SP5_DOT}Apple Device: {icloud_dev_msg}"
                             f"{CRLF_SP5_DOT}MobApp Entity: {mobapp_dev_msg}")
 
@@ -1283,29 +1305,14 @@ def create_Devices_object():
                 evlog_msg += f"{CRLF_SP5_DOT}Track from Zones: {list_to_str(Device.track_from_zones)}"
             post_event(evlog_msg)
 
-            try:
-                # Added the try/except to not generate an error if the device was not in the registry
-                # Get the ha device_registry device_id
-                Device.ha_device_id = device_tracker_entity_data[f"{DEVICE_TRACKER_DOT}{devicename}"]['device_id']
-                Gb.Devices_by_ha_device_id[Device.ha_device_id] = Device
-
-                # Initialize device_tracker entity to display before AppleAcct starts up
-                Device.write_ha_device_tracker_state()
-            except:
-                pass
+            # Initialize device_tracker entity to display before AppleAcct starts up
+            Device.write_ha_device_tracker_state()
 
     except Exception as err:
         log_exception(err)
 
     _verify_away_time_zone_devicenames()
-
-    Gb.startup_lists['Gb.Devices']                     = Gb.Devices
-    Gb.startup_lists['Gb.DeviceTrackers_by_devicename']= Gb.DeviceTrackers_by_devicename
-    Gb.startup_lists['Gb.Devices_by_devicename']       = Gb.Devices_by_devicename
-    Gb.startup_lists['Gb.conf_devicenames']            = Gb.conf_devicenames
-    Gb.startup_lists['Gb.conf_icloud_dnames']          = Gb.conf_icloud_dnames
-    Gb.startup_lists['Gb.devicenames_by_icloud_dname'] = Gb.devicenames_by_icloud_dname
-    Gb.startup_lists['Gb.icloud_dname_by_devicenames'] = Gb.icloud_dnames_by_devicename
+    _log_device_dictionaries()
 
     return
 
@@ -1315,6 +1322,18 @@ def update_devices_non_tracked_fields():
         devicename = conf_device[CONF_IC3_DEVICENAME]
         if Device := Gb.Devices_by_devicename.get(devicename):
             Device.initialize_non_tracking_config_fields(conf_device)
+
+#--------------------------------------------------------------------
+def _log_device_dictionaries():
+
+    Gb.startup_lists['Gb.Devices']                     = Gb.Devices
+    Gb.startup_lists['Gb.DeviceTrackers_by_devicename']= Gb.DeviceTrackers_by_devicename
+    Gb.startup_lists['Gb.Devices_by_devicename']       = Gb.Devices_by_devicename
+    Gb.startup_lists['Gb.ha_device_id_x_devicename']  = Gb.ha_device_id_x_devicename
+    Gb.startup_lists['Gb.conf_devicenames']            = Gb.conf_devicenames
+    Gb.startup_lists['Gb.conf_icloud_dnames']          = Gb.conf_icloud_dnames
+    Gb.startup_lists['Gb.devicenames_by_aadev_dname'] = Gb.devicenames_by_aadev_dname
+    Gb.startup_lists['Gb.icloud_dname_by_devicenames'] = Gb.aadev_dnames_by_devicename
 
 #--------------------------------------------------------------------
 def _verify_away_time_zone_devicenames():
@@ -1354,7 +1373,7 @@ def _verify_away_time_zone_devicenames():
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   ICLOUD3 STARTUP MODULES -- STAGE 4
+#   SET UP ICLOUD3 ACCOUNTS/DEVICES -- STAGE 4
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def log_into_apple_accounts():
@@ -1374,9 +1393,12 @@ def log_into_apple_accounts():
     alert_msg      = ''
     for username in Gb.conf_usernames:
         conf_apple_acct, _idx = config_file.conf_apple_acct(username)
-        password = Gb.AppleAcct_password_by_username[username]
+        password              = Gb.AppleAcct_password_by_username[username]
         apple_server_location = conf_apple_acct[CONF_SERVER_LOCATION]
         locate_all_devices    = conf_apple_acct[CONF_LOCATE_ALL]
+
+        post_dotted_line()
+        post_event( f"Setting up Apple Account > {username_id(username)}")
 
         AppleAcct = Gb.AppleAcct_by_username.get(username)
 
@@ -1402,22 +1424,9 @@ def log_into_apple_accounts():
                 and AppleAcct.login_successful is True
                 and AppleAcct.auth_failed_503 is False)
 
-        # Force new AppleAcct login
-        # if Gb.was_icloud3_reloaded:
-        #     can_reuse_AppleAcct= False
-        #     _log('TEST CODE')
-
         if Gb.valid_upw_by_username.get(username) is False:
-            results_msg += f"{CRLF_RED_X}{username_id(username)}, Not Logged in, Invalid Username-Password"
-            alert_msg = EVLOG_ALERT
+            post_alert(f"Logged Failed, Invalid Username/Password")
 
-
-        # elif (AppleAcct is None
-        #         or AppleAcct.AADevData_by_device_id == {}
-        #         or username != AppleAcct.username
-        #         or password != AppleAcct.password
-        #         or apple_server_location != AppleAcct.apple_server_location
-        #         or locate_all_devices != AppleAcct.locate_all_devices):
         elif can_reuse_AppleAcct is False:
             AppleAcct = aas.log_into_apple_account(
                                         username,
@@ -1426,21 +1435,28 @@ def log_into_apple_accounts():
                                         locate_all_devices)
 
             if AppleAcct:
-                if AppleAcct.is_authenticated:
-                    reauth_in_days, reauth_msg = AppleAcct.get_next_reauth_in_days_info_msg()
-                    results_msg += (f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, "
-                                    f"Login Successful, {AppleAcct.login_auth_method}"
-                                    f"{CRLF_HDOT}{reauth_msg}")
+                apple_login_msg = 'Login Successful'
+
             else:
-                results_msg += (f"{CRLF_RED_X}{username_id(username)}, Login Failed, "
-                                f"Server Loc-{apple_server_location}")
+                post_event( f"{CRLF_RED_X} Login Failed, "
+                            f"Server Loc-{apple_server_location}")
                 alert_msg = EVLOG_ALERT
                 update_alert_sensor(username_id(username), "Apple Acct Login Failed")
 
         else:
-            results_msg += f"{CRLF_CHK}{AppleAcct.username_account_owner_short}, Already logged in"
+            apple_login_msg = 'Already logged in'
 
-    post_event(f"{alert_msg}Apple Acct > Log in and Authenticate{results_msg}")
+        if AppleAcct and AppleAcct.login_successful:
+            if AppleAcct.is_authenticated:
+                reauth_in_days, reauth_msg = AppleAcct.get_next_reauth_in_days_info_msg()
+                AppleAcct.issue_reauth_in_days_alert_msg()
+                post_event( f"{apple_login_msg}"
+                            f"{CRLF_DOT}Authentication Method-{AppleAcct.login_auth_method}"
+                            f"{CRLF_DOT}{reauth_msg}")
+
+            setup_tracked_devices_for_icloud(AppleAcct)
+
+        post_event( f"Setting up Apple Account > {username_id(AppleAcct.username_id)}, Complete")
 
     Gb.startup_lists['Gb.AppleAcct_error_by_username'] = Gb.AppleAcct_error_by_username
 
@@ -1453,15 +1469,10 @@ def log_into_apple_accounts():
             or is_empty(AppleAcct.AADevData_by_device_id)):
         pass
 
-    elif is_empty(Gb.devices_without_location_data):
-        post_event(f"Apple Acct > All Tracked Devices Located")
-
-    else:
+    elif isnot_empty(Gb.devices_without_location_data):
         post_event( f"Apple Acct > Location data is not available for:"
                     f"{CRLF}{NBSP6}{DOT}{list_to_str(Gb.devices_without_location_data)}")
-
-    # Check to see if any Apple acts need an authentication warning msg
-    aas.issue_reauth_in_days_alert_msg()
+        post_dotted_line()
 
     return True
 
@@ -1509,56 +1520,6 @@ def are_all_devices_verified(retry=False):
 
     return False
 
-#------------------------------------------------------------------
-def setup_data_source_ICLOUD(retry=False):
-    '''
-    Cycle through all the apple accounts and match their devices to the iCloud3 Device.
-    Then set the device source for each Device.
-    Now that all of the devices are set up (natched and unmatched), cycle back througn
-    the apple accounts and display the info for all accounts and all devices. This is done
-    so an earlier account that has the same device that is tracked by a later account has
-    the account info to display.
-    '''
-
-    Gb.Devices_by_icloud_device_id = {}
-    for username, AppleAcct in Gb.AppleAcct_by_username.items():
-        if AppleAcct.login_failed:
-            if username in Gb.AppleAcct_error_by_username:
-                reason = f"{AppleAcct.error_reason}"
-                # if AppleAcct.error_next_retry_secs > 0:
-                #     reason += f", Retry at {secs_to_hhmm(AppleAcct.error_next_retry_secs)}"
-            else:
-                reason =  'Devices not Available'
-            # if reason.startswith(',') is False: reason = f", {reason}"
-            post_alert( f"Apple Acct > {username_id(username)}, "
-                        f"Login Failed, {reason}")
-            update_alert_sensor(username_id(username), (
-                                f"Apple Acct Login Failed, {reason}"))
-            continue
-
-        if is_empty(AppleAcct.AADevData_by_device_id):
-            AppleAcct.refresh_icloud_data()
-
-        if AppleAcct and Gb.valid_upw_by_username.get(username):
-            setup_tracked_devices_for_icloud(AppleAcct)
-            set_device_data_source(AppleAcct)
-
-    # Now that all devices are set up, cycle through them again and display the
-    # final results in the EvLog
-    for username, AppleAcct in Gb.AppleAcct_by_username.items():
-        if AppleAcct.login_failed:
-            continue
-
-        if AppleAcct and Gb.valid_upw_by_username.get(username):
-            _post_evlog_apple_acct_tracked_devices_info(AppleAcct)
-
-    _set_any_Device_alerts()
-
-    if retry:
-        for username in Gb.usernames_setup_error_retry_list:
-            if AppleAcct := Gb.AppleAcct_by_username.get(username):
-                _post_evlog_apple_acct_tracked_devices_info(AppleAcct)
-
 #--------------------------------------------------------------------
 def setup_tracked_devices_for_icloud(AppleAcct):
     '''
@@ -1571,10 +1532,6 @@ def setup_tracked_devices_for_icloud(AppleAcct):
         AppleAcct: Object containing data to be processed. This might be from Gb.AppleAcct (normal/default)
                     or the one created in config_flow if the username was changed.
     '''
-    broadcast_info_msg(f"Stage 4 > Set up Apple & MobApp Data Sources")
-
-    if (AppleAcct is None):
-        return
 
     if Gb.conf_data_source_ICLOUD is False:
         post_event("Apple Account > Not used as a data source")
@@ -1583,216 +1540,525 @@ def setup_tracked_devices_for_icloud(AppleAcct):
     if Gb.conf_icloud_device_cnt == 0:
         return
 
-    Gb.apple_accounts_flag = (len(Gb.conf_apple_accounts) > 1)
+    try:
+        missing_aadev_devices = _get_conf_devices_apple_did_not_locate(AppleAcct)
+        if isnot_empty(missing_aadev_devices):
+            _refresh_icloud_data_retry(AppleAcct, missing_aadev_devices)
 
-    _check_renamed_find_devices(AppleAcct)
-    _match_AppleAcct_devices_to_Device(AppleAcct)
-    _check_duplicate_device_names(AppleAcct)
-    _check_for_missing_find_devices(AppleAcct)
+        _set_device_data_source(AppleAcct)
+        _verify_conf_apple_device_parameters(AppleAcct)
+        _match_AppleAcct_devices_to_Device(AppleAcct)
+
+        _post_evlog_apple_acct_devices_info(AppleAcct)
+
+    except Exception as err:
+        log_exception(err)
 
     owner = AppleAcct.username_base
-    Gb.startup_lists[f"{owner}.AppleAcct.device_id_by_icloud_dname"] = \
-                        {k: v[:10] for k, v in AppleAcct.device_id_by_icloud_dname.items()}
-    Gb.startup_lists[f"{owner}.AppleAcct.icloud_dname_by_device_id"] = \
-                        {k[:10]: v for k, v in AppleAcct.icloud_dname_by_device_id.items()}
+    Gb.startup_lists[f"{owner}.AppleAcct.device_id_by_aadev_dname"] = \
+                        {k: v[:10] for k, v in AppleAcct.device_id_by_aadev_dname.items()}
+    Gb.startup_lists[f"{owner}.AppleAcct.aadev_dname_by_device_id"] = \
+                        {k[:10]: v for k, v in AppleAcct.aadev_dname_by_device_id.items()}
     Gb.startup_lists[f"Gb.Devices_by_icloud_device_id"]     = \
                         {k[:10]: v for k, v in Gb.Devices_by_icloud_device_id.items()}
 
 #----------------------------------------------------------------------------
-def _check_renamed_find_devices(AppleAcct):
-    '''
-    Return with a list of Apple devices in the conf_devices that are not in
-    _AADevData
-    '''
-    renamed_devices = \
-            [(  f"{conf_device[CONF_IC3_DEVICENAME]} > "
-                f"Renamed: {conf_device[CONF_FAMSHR_DEVICENAME]} "
-                f"{RARROW}{AppleAcct.icloud_dname_by_device_id[conf_device[CONF_FAMSHR_DEVICE_ID]]}")
-                    for conf_device in Gb.conf_devices
-                    if (conf_device[CONF_FAMSHR_DEVICE_ID] in AppleAcct.icloud_dname_by_device_id)
-                        and conf_device[CONF_APPLE_ACCOUNT] == AppleAcct.username
-                        and conf_device[CONF_FAMSHR_DEVICENAME] != \
-                                AppleAcct.icloud_dname_by_device_id[conf_device[CONF_FAMSHR_DEVICE_ID]]]
+def _get_conf_devices_apple_did_not_locate(AppleAcct):
+    aadev_names = [_AADevData.name for _AADevData in AppleAcct.AADevData_items]
+    missing_aadev_devices = {}
+    for conf_device in Gb.conf_devices:
+        if conf_device[CONF_APPLE_ACCOUNT] != AppleAcct.username:
+            continue
 
+        devicename = conf_device[CONF_IC3_DEVICENAME]
+        device_id  = conf_device[CONF_AADEV_DEVICE_ID]
+        aadev_name = conf_device[CONF_AADEV_NAME]
 
-    if renamed_devices == []:
+        if (aadev_name not in aadev_names
+                and device_id not in AppleAcct.AADevData_by_device_id):
+            missing_aadev_devices[devicename] = aadev_name
+
+    return missing_aadev_devices
+
+#----------------------------------------------------------------------------
+def _verify_conf_apple_device_parameters(AppleAcct):
+    '''
+    Check the apple acct devices name and device_id. Update the conf if the name
+    was changed or if the name was assigned to another device. Then see if a newer
+    device replaced the tracked device (_check_for_replacement_device).
+    '''
+    # Test Code - Do not update a newer device when starting up. This will test
+    # detected a newer device when the device data is refreshed
+    # if Gb.is_icloud3_initial_startup:
+    #     return
+
+    for conf_device in Gb.conf_devices:
+        if conf_device[CONF_APPLE_ACCOUNT] != AppleAcct.username:
+            continue
+
+        try:
+            conf_device_id  = conf_device[CONF_AADEV_DEVICE_ID]
+            conf_aadev_name = conf_device[CONF_AADEV_NAME]
+            broadcast_info_msg(f"Verifying Apple Device > {conf_aadev_name}")
+
+            # Get Device specified in config file using the device_id
+            AADevData = AppleAcct.AADevData_by_device_id.get(conf_device_id)
+
+            # The config AA device was found using the device_id but this device is now a
+            # duplicate. This means a newer device with the same name and owner has
+            # been added to the Apple Acct (current config=iPhone16, AA data=iPhone18).
+            # Change the ic3_devicename to now use the newer device .
+            if AADevData and AADevData.is_duplicate_dname:
+                NewerAADevData = _find_newer_same_name_device(AppleAcct, AADevData)
+                if NewerAADevData:
+                    _change_config_to_new_device(AppleAcct, NewerAADevData, conf_device)
+                continue
+
+            # The config AA device with this device_id is no longer in the Apple Acct
+            # device list (it was removed), get the AA device that now has the config
+            # name (Gary-iPhone) if it exists
+            if AADevData is None:
+                device_id  = AppleAcct.device_id_by_aadev_dname.get(conf_aadev_name)
+                AADevData  = AppleAcct.AADevData_by_device_id.get(device_id)
+
+                # An AA device was found with the same name, change config to it
+                if AADevData:
+                    _change_config_to_new_device(AppleAcct, AADevData, conf_device)
+
+                # The AA device with the config name (Gary-iPhone) is no longer in
+                # the Apple Acct devices list. Make sure the login was successful and
+                # all devices were returned instead of Apple returning a partial device list
+                elif AppleAcct.login_successful is False:
+                    post_alert( f"{conf_device[CONF_FNAME]} > "
+                                f"Device was not found"
+                                f"{CRLF_DOT}{conf_aadev_name}, "
+                                f"{conf_device[CONF_MODEL_DISPLAY_NAME]}")
+                continue
+
+            # The config file device_id was found, see if it was renamed. The dname has
+            # the owner's name if another family member has a device with the same name.
+            if conf_aadev_name != AADevData.dname:
+                _change_config_to_new_device_name(AppleAcct, conf_device, AADevData.dname)
+                continue
+
+            # if conf_device[CONF_TRACKING_MODE] != INACTIVE:
+            # The AA device was not found using the config name or replaced with a device
+            # with the same name. Review the devices available and see if there is a
+            # device with another name that matches the parameters of the one being checked
+            _check_for_replacement_device(AppleAcct, conf_device, AADevData)
+
+        except Exception as err:
+            log_exception(err)
+            post_alert( f"{conf_device[CONF_FNAME]} > "
+                        f"Error verifying Apple Acct Device"
+                        f"{CRLF_DOT}{conf_aadev_name}, "
+                        f"{conf_device[CONF_MODEL_DISPLAY_NAME]}")
+
+#............................................................................
+def _find_newer_same_name_device(AppleAcct, AADevData):
+    '''
+    Return the device with the same name and owner that is not a duplicate. It is
+    the newest device with that name (_resolve_duplicate_dnames).
+    '''
+    for _AADevData in AppleAcct.AADevData_by_device_id.values():
+        if (_AADevData
+                and _AADevData.active
+                and _AADevData.is_duplicate_dname is False
+                and _AADevData.name == AADevData.name
+                and _AADevData.prs_id == AADevData.prs_id):
+            return _AADevData
+
+    return None
+
+#............................................................................
+def _check_for_replacement_device(AppleAcct, conf_device, AADevData):
+    '''
+    See if a newer device that is not tracked replaced the tracked device. We are
+    chedking for a device that was not restored from a backup when the device was
+    being set up. The 'configure as new' gets Apple's default name ("Lillian's Apple Watch").
+
+    Candidates: Same owner and device type (not AirPods or accessories), a higher
+        model number, not tracked by an iCloud3 device.
+    Name match: The candidate's name is the tracked device's name without the model
+        or possessive ('s) (device_name_parser.owner_device_name_key).
+    Retired: The tracked device was unpaired, erased or is being removed.
+    Offline: The tracked device has been offline for more than an hour.
+
+        Name match, retired or offline  - Track the newer device
+        Name match, both are online     - Repairs issue, Submit tracks the newer device
+        No name match, retired, 1 found - Repairs issue, Submit tracks the newer device
+        More than 1 found               - Repairs notice listing them
+
+    An HA Repair Issue is created notifying the user of the config change if there
+    is no clear winner.
+
+    Issues that no longer apply are removed. Issues posted again keep their HA
+    'Ignore' state.
+    '''
+    devicename = conf_device[CONF_IC3_DEVICENAME]
+    dev_fname      = conf_device[CONF_FNAME]
+    issue_id_prefix = f"device_replaced_{devicename}"
+
+    # The same rules are used by AADevices._request_restart_if_tracked_device_replaced
+    # during a refresh so a restart it requests reassigns the device here
+    candidates, name_matches = AppleAcct.AADevices.find_replacement_devices(AADevData)
+    if candidates is None:
+        clear_repair_issues(issue_id_prefix)
         return
 
-    renamed_devices_str = list_to_str(renamed_devices, CRLF_DOT)
+    old_device_msg = f"{AADevData.name} ({AADevData.model_display_name})"
+    old_device_status_msg = (
+                'unpaired or erased' if AADevData.is_retired else
+                'offline for more than 1 hour' if AADevData.is_offline_stale else
+                'online and available')
 
-    post_alert( f"APPLE DEVICE NAME CHANGED > The Apple device name returned "
-                f"from your Apple account Family Sharing List has a new name. "
-                f"The iCloud3 configuration file will be updated."
-                f"{renamed_devices_str}")
+    issue_id = None
 
+    # If there is only 1 match, and the config device is retired or offline,
+    # change the config to the new device
+    if len(name_matches) == 1:
+        NewAADevData = name_matches[0]
+        if AADevData.is_retired or AADevData.is_offline_stale:
+            _change_config_to_new_device(AppleAcct, NewAADevData, conf_device)
+        else:
+            issue_id = _post_repair_issue_aa_device_assignment(
+                                                AppleAcct, conf_device, AADevData,
+                                                NewAADevData, old_device_status_msg)
+
+    # If there are no matches but there is 1 candidate device that may work, the config
+    # is not changed but a Repair Issue is created. Submitting the Repair Issue will
+    # accept the new device as the replacement and update the config
+    elif len(name_matches) == 0 and len(candidates) == 1 and AADevData.is_retired:
+        issue_id = _post_repair_issue_aa_device_assignment(
+                                                AppleAcct, conf_device, AADevData,
+                                                candidates[0], old_device_status_msg)
+
+    elif len(name_matches) > 1 or (len(candidates) > 1 and AADevData.is_retired):
+        found_AADevData_items = name_matches or candidates
+        found_devices_msg     = CRLF_DOT.join([f"{_AADevData.name} ({_AADevData.model_display_name})"
+                                                for _AADevData in found_AADevData_items])
+        issue_id = _post_repair_issue_no_aa_device_assignment(
+                                                issue_id_prefix, devicename, dev_fname,
+                                                old_device_msg, old_device_status_msg,
+                                                found_devices_msg)
+
+    clear_repair_issues(issue_id_prefix, keep_issue_ids=[issue_id])
+
+#............................................................................
+def _post_repair_issue_aa_device_assignment(AppleAcct, conf_device, AADevData, NewAADevData,
+                                            old_device_status_msg):
+    '''
+    Post the Repairs issue asking to track the newer device. Submit runs
+    _fix_repair_issue_aa_device_assignment.
+    '''
+    devicename = conf_device[CONF_IC3_DEVICENAME]
+    dev_fname  = conf_device[CONF_FNAME]
+    name_model = f"{NewAADevData.name} ({NewAADevData.model_display_name})"
+
+    issue_id = post_repair_issue(
+                issue_id   = f"device_replaced_{devicename}_{NewAADevData.device_id8}",
+                alert_key  = devicename,
+                title      = f"{dev_fname}, Newer Apple Device detected",
+                alert_msg  = (  f"A newer version of one of your Apple Devices is available. "
+                                f"The iCloud3 Configuration needs to be updated to use "
+                                f"the newer device."
+                                f"{CRLF}{CRLF}Change Apple Device for *{dev_fname}*:"
+                                f"{CRLF_DOT}{AADevData.name} ({AADevData.model_display_name}){RARROW}"
+                                f"{NewAADevData.name} ({NewAADevData.model_display_name})"
+                                f"{CRLF}{CRLF}Click Submit to confirm this selection and "
+                                f"update the configuration for *{dev_fname}*"),
+                fix_action = 'reassign_apple_device',
+                fix_data   = {  'username': AppleAcct.username,
+                                'device_id': NewAADevData.device_id,
+                                'name_model': name_model})
+
+    post_alert(f"{dev_fname} > "
+                f"Newer Apple Device detected, HA Repair issue created"
+                f"{CRLF_DOT}{AADevData.name} ({AADevData.model_display_name}){RARROW}"
+                f"{NewAADevData.name} ({NewAADevData.model_display_name})")
+
+    return issue_id
+
+#............................................................................
+def _fix_repair_issue_aa_device_assignment(fix_data):
+    '''
+    Repairs Submit handler for _post_repair_issue_aa_device_assignment. Track the newer
+    device and restart iCloud3. Runs in an executor thread.
+    '''
+    devicename  = fix_data.get('devicename')
+    name_model  = fix_data.get('name_model')
+    AppleAcct   = Gb.AppleAcct_by_username.get(fix_data.get('username'))
+    AADevData   = AppleAcct.AADevData_by_device_id.get(fix_data.get('device_id')) if AppleAcct else None
+    conf_device = [_conf_device for _conf_device in Gb.conf_devices
+                            if _conf_device[CONF_IC3_DEVICENAME] == devicename]
+
+    if AADevData is None or conf_device == []:
+        post_alert(devicename,  f"HA Repairs > Newer Apple Device is no longer available, "
+                                f"{CRLF_DOT}{name_model}")
+        return False
+
+    _change_config_to_new_device(AppleAcct, AADevData, conf_device[0], post_notice=False)
+
+    post_event(devicename,
+                f"HA Repairs > Newer Apple Device will now be tracked, "
+                f"{AADevData.name} ({AADevData.model_display_name}), Restarting iCloud3")
+    Gb.was_icloud3_restart_requested = True
+
+    return True
+
+register_repair_fix_handler('reassign_apple_device', _fix_repair_issue_aa_device_assignment)
+
+#............................................................................
+def  _post_repair_issue_no_aa_device_assignment(
+                                        issue_id_prefix, devicename, dev_fname,
+                                        old_device_msg, old_device_status_msg,
+                                        found_devices_msg):
+
+    issue_id = post_repair_issue(
+                    issue_id   = f"{issue_id_prefix}_multiple",
+                    alert_key  = devicename,
+                    title      = f"{dev_fname}, Newer Apple Devices detected",
+                    alert_msg  = (  f"A newer version of one of your Apple Devices is available. "
+                                    f"Several candidates have been identifiedd and the "
+                                    f"correct one could not be selected."
+                                    f"{CRLF}{CRLF}Configured Apple Device for *{dev_fname}*:"
+                                    f"{CRLF_DOT}{old_device_msg} ({old_device_status_msg})"
+                                    f"{CRLF}{CRLF}Available Devices:"
+                                    f"{CRLF_DOT}{found_devices_msg}"
+                                    f"{CRLF}{CRLF}Select the correct Apple Device on the *iCloud3 "
+                                    f"Update Device* Configuration screen for *{dev_fname}*."))
+
+    post_alert(f"{dev_fname} > "
+                f"Newer Apple Device detected, HA Repair issue created"
+                f"{CRLF}Current device:"
+                f"{CRLF_DOT}{old_device_msg} ({old_device_status_msg})"
+                f"{CRLF}Candidates:"
+                f"{CRLF_DOT}{found_devices_msg}")
+
+    # Returned so _check_for_replacement_device keeps this issue instead of removing it
+    return issue_id
+
+#............................................................................
+def _change_config_to_new_device(AppleAcct, AADevData, conf_device, post_notice=True):
+    '''
+    Track the newer device. Update the iCloud3 configuration with the new device's
+    device_id, name and model.
+
+    post_notice:
+        True - Post the 'Newer Apple Device detected' notice in HA Repairs, the
+            alerts sensor and the Event Log. Submit acknowledges and removes it.
+        False - The change was requested in HA Repairs
+    '''
     try:
-        # Update the iCloud3 configuration file with the new Apple devicename
-        renamed_devices_by_devicename = {}
-        for renamed_device in renamed_devices:
-            # gary_ipad > Renamed: Gary-iPad → Gary's iPad
-            icloud3_icloud_devicename = renamed_device.split(RARROW)
-            new_icloud_devicename = icloud3_icloud_devicename[1]
-            icloud3_devicename = icloud3_icloud_devicename[0].split(' ')[0]
-            renamed_devices_by_devicename[icloud3_devicename] = new_icloud_devicename
+        devicename     = conf_device[CONF_IC3_DEVICENAME]
+        dev_fname      = conf_device[CONF_FNAME]
+        old_aadev_name = conf_device[CONF_AADEV_NAME]
+        old_model_display_name = conf_device[CONF_MODEL_DISPLAY_NAME]
 
-        # Set new icloud name in config and internal table, remove the old one
-        for devicename, new_icloud_devicename in renamed_devices_by_devicename.items():
-            conf_device = config_file.get_conf_device(devicename)
+        conf_device[CONF_AADEV_DEVICE_ID]    = AADevData.device_id
+        conf_device[CONF_DEVICE_TYPE]        = AADevData.device_type.lower()
+        conf_device[CONF_RAW_MODEL]          = AADevData.raw_model
+        conf_device[CONF_MODEL]              = AADevData.model
+        conf_device[CONF_MODEL_DISPLAY_NAME] = AADevData.model_display_name
+        _update_Device_model_fields(conf_device)
 
-            old_icloud_devicename = conf_device[CONF_FAMSHR_DEVICENAME]
-            if old_icloud_devicename in Gb.conf_icloud_dnames:
-                Gb.conf_icloud_dnames.remove(old_icloud_devicename)
-            Gb.conf_icloud_dnames.append(new_icloud_devicename)
-
-            conf_device[CONF_FAMSHR_DEVICENAME] = \
-                AppleAcct.device_id_by_icloud_dname[conf_device[CONF_FAMSHR_DEVICENAME]] = \
-                    new_icloud_devicename
-
-            AppleAcct.device_id_by_icloud_dname[new_icloud_devicename] = conf_device[CONF_FAMSHR_DEVICE_ID]
-            AppleAcct.device_id_by_icloud_dname.pop(old_icloud_devicename, None)
+        if old_aadev_name != AADevData.dname:
+            _change_config_to_new_device_name(AppleAcct, conf_device, AADevData.dname,
+                                                write_config_file=False, post_msg=False)
 
         config_file.write_icloud3_configuration_file()
 
+        AADevData.startup_msg = 'UPGRADED'
+
+        if post_notice:
+            post_repair_issue(
+                        issue_id   = f"device_reassigned_{devicename}_{AADevData.device_id8}",
+                        alert_key  = devicename,
+                        title      = f"{dev_fname}, Newer Apple Device detected",
+                        alert_msg  = (  f"A newer version of one of your Apple Devices is available. "
+                                        f"The iCloud3 configuration was updated to use "
+                                        f"the newer device."
+                                        f"{CRLF}{CRLF}Updated Apple Device for *{dev_fname}*:"
+                                        f"{CRLF_DOT}{old_aadev_name} ({old_model_display_name}){RARROW}"
+                                        f"{AADevData.name} ({AADevData.model_display_name})"
+                                        f"{CRLF}{CRLF}If this is wrong, change the name of the device "
+                                        f"in the *Settings App* to another name. Then select it on the "
+                                        f"*iCloud3 Update Device* Configuration screen for *{dev_fname}*"))
+
+            post_alert(f"{dev_fname} > "
+                f"Newer Apple Device detected, HA Repair issue created"
+                f"{CRLF}Configuration updated, New device will be tracked:"
+                f"{CRLF_DOT}{old_aadev_name} ({old_model_display_name}){RARROW}"
+                f"{AADevData.name} ({AADevData.model_display_name})")
+
     except Exception as err:
         log_exception(err)
-        pass
 
+#............................................................................
+def _update_Device_model_fields(conf_device):
+    '''
+    The Device and its device_tracker entity are set up from the configuration in
+    Stage 2, before the Apple acct devices are verified and the newer device is
+    assigned. Update their model fields and the HA device registry model from the
+    updated configuration.
+    '''
+    devicename = conf_device[CONF_IC3_DEVICENAME]
+
+    for _Device in [Gb.Devices_by_devicename.get(devicename),
+                    Gb.DeviceTrackers_by_devicename.get(devicename)]:
+        if _Device is None:
+            continue
+        _Device.device_type        = conf_device[CONF_DEVICE_TYPE]
+        _Device.raw_model          = conf_device[CONF_RAW_MODEL]
+        _Device.model              = conf_device[CONF_MODEL]
+        _Device.model_display_name = conf_device[CONF_MODEL_DISPLAY_NAME]
+
+    er_util.update_device_model(devicename, conf_device[CONF_RAW_MODEL])
+
+#............................................................................
+def _change_config_to_new_device_name(AppleAcct, conf_device, new_icloud_dname,
+                                        write_config_file=True, post_msg=True):
+    try:
+        # Update the iCloud3 configuration file with the new Apple devicename
+        # Set new icloud name in config and internal table, remove the old one:
+        old_icloud_dname = conf_device[CONF_AADEV_NAME]
+        devicename = conf_device[CONF_IC3_DEVICENAME]
+        if Device := Gb.Devices_by_devicename.get(devicename):
+            Device.conf_icloud_dname = new_icloud_dname
+
+        dict_del(Gb.devicenames_by_aadev_dname, old_icloud_dname)
+        list_del(Gb.conf_icloud_dnames, old_icloud_dname)
+        list_add(Gb.conf_icloud_dnames, new_icloud_dname)
+        Gb.aadev_dnames_by_devicename[devicename] = new_icloud_dname
+        Gb.devicenames_by_aadev_dname[new_icloud_dname] = devicename
+
+        conf_device[CONF_AADEV_NAME] = new_icloud_dname
+
+        if write_config_file:
+            config_file.write_icloud3_configuration_file()
+
+        if post_msg:
+            post_alert( f"{conf_device[CONF_FNAME]} > "
+                        f"Updating Apple Acct Device Name"
+                        f"{CRLF_DOT}{old_icloud_dname}{RARROW}{new_icloud_dname}")
+
+    except Exception as err:
+        log_exception(err)
 
 #--------------------------------------------------------------------
-def _match_AppleAcct_devices_to_Device(AppleAcct, retry_match_devices=None):
+def _match_AppleAcct_devices_to_Device(AppleAcct, retry_match_devicenames=None):
     '''
     Cycle through the AppleAcct raw data and match that item with the
     conf_devices iCloud entry. Then set the data fields to tie it to
     the Device object.
     '''
     evlog_msg = ''
-    _AppleDev = AppleAcct.AADevices
-    if _AppleDev is None:
+    missing_aadev_devicenames = []
+    AADevice = AppleAcct.AADevices
+    if AADevice is None:
         return
 
-    setup_devices = retry_match_devices or AppleAcct.device_id_by_icloud_dname
-    owner_device_ids = []
-    for pyicloud_dname, device_id in setup_devices.items():
-        _AADevData = AppleAcct.AADevData_by_device_id.get(device_id, None)
-
-        broadcast_info_msg(f"Set up Apple Device > {pyicloud_dname}")
-
-        conf_device = _find_icloud_conf_device(AppleAcct, pyicloud_dname, device_id)
-
-        # Apple device was not found in configuration, not being used by this AppleAcct username
-        if conf_device == {}:
+    for conf_device in Gb.conf_devices:
+        if conf_device[CONF_APPLE_ACCOUNT] != AppleAcct.username:
             continue
 
-        # Update the conf_devices for this device if any of the icloud fields have changed
-        _update_config_with_icloud_device_fields(conf_device, _AADevData)
+        devicename      = conf_device[CONF_IC3_DEVICENAME]
+        device_id       = conf_device[CONF_AADEV_DEVICE_ID]
+        conf_aadev_name = conf_device[CONF_AADEV_NAME]
+        Device          = Gb.Devices_by_devicename.get(devicename)
 
-        devicename = conf_device[CONF_IC3_DEVICENAME]
-
-        if (devicename not in Gb.Devices_by_devicename
-                or conf_device[CONF_TRACKING_MODE] == INACTIVE):
+        if Device is None or Device.is_inactive:
             continue
 
-        Device = Gb.Devices_by_devicename[devicename]
-        if conf_device[CONF_APPLE_ACCOUNT] == '':
-            pass
-        elif conf_device[CONF_APPLE_ACCOUNT] != AppleAcct.username:
+        if retry_match_devicenames and devicename not in retry_match_devicenames:
             continue
 
-        icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
-        Gb.devicenames_by_icloud_dname[icloud_dname] = devicename
-        Gb.icloud_dnames_by_devicename[devicename]   = icloud_dname
+        broadcast_info_msg(f"Matching Apple Device > {conf_aadev_name}")
 
+        AADevData = AppleAcct.AADevData_by_device_id.get(device_id)
 
-        _AADevData.Device          = Device
-        _AADevData.ic3_devicename  = devicename
+        # The device_id is not in the Apple Acct Devices list
+        if AADevData is None:
+            device_id  = AppleAcct.device_id_by_aadev_dname.get(conf_aadev_name)
+            AADevData  = AppleAcct.AADevData_by_device_id.get(device_id)
+
+        # The same aadev_name is there, the device name now belongs to another device
+        if AADevData is None:
+            list_add(missing_aadev_devicenames, conf_aadev_name)
+            post_alert( f"{conf_device[CONF_FNAME]} > "
+                        f"Error Matching Apple Acct Device"
+                        f"{CRLF_DOT}{conf_aadev_name}, "
+                        f"{conf_device[CONF_MODEL_DISPLAY_NAME]}")
+            continue
+
+        Gb.devicenames_by_aadev_dname[conf_aadev_name] = devicename
+        Gb.aadev_dnames_by_devicename[devicename]      = conf_aadev_name
+
+        AADevData.Device           = Device
+        AADevData.ic3_devicename   = devicename
         Device.AppleAcct           = AppleAcct
         Device.icloud_device_id    = device_id
-        Device.icloud_person_id    = _AADevData.device_data['prsId']
-        Device.family_share_device = _AADevData.device_data['fmlyShare']
+
+        Device.icloud_person_id    = AADevData.device_data['prsId']
+        Device.family_share_device = AADevData.device_data['fmlyShare']
+        AADevData.device_data[CONF_IC3_DEVICENAME] = devicename
+        AADevData.device_data['dname'] = AADevData.dname
+
+        Gb.Devices_by_icloud_device_id[device_id] = Device
+        Gb.AppleAcct_by_devicename[devicename]    = AppleAcct
 
         if Device.family_share_device is False:
             owner_device_ids = Gb.owner_device_ids_by_username.get(AppleAcct.username, [])
             list_add(owner_device_ids, device_id)
             Gb.owner_device_ids_by_username[AppleAcct.username] = owner_device_ids
 
-        Gb.Devices_by_icloud_device_id[device_id] = Device
-        Gb.AppleAcct_by_devicename[devicename] = AppleAcct
-
         # Set verify status to a valid device_id exists instead of always True
         # This will pick up devices in the configuration file that no longer exist
         Device.verified_ICLOUD = device_id in AppleAcct.AADevData_by_device_id
         Gb.icloud_device_verified_cnt += 1
 
-    # Gb.owner_device_ids_by_username[AppleAcct.username] = owner_device_ids
+    return missing_aadev_devicenames
 
 #----------------------------------------------------------------------------
-def _check_for_missing_find_devices(AppleAcct):
+def _refresh_icloud_data_retry(AppleAcct, missing_aadev_devices=None):
     '''
     Get all the devices that have the Apple device configured that are not
     in the AppleAcct devices list. This  indicates we have a device that
     is tracked via Apple but that device is not in the Apple Account.
     '''
-    devices_conf_this_apple_acct = [devicename
-                    for devicename, Device in Gb.Devices_by_devicename.items()
-                    if Device.conf_apple_acct_username == AppleAcct.username]
-    devices_tracked_apple_acct = [devicename
-                    for devicename, Device in Gb.Devices_by_devicename.items()
-                    if Device.AppleAcct == AppleAcct]
-    devices_not_tracked_apple_acct = [devicename
-                    for devicename, Device in Gb.Devices_by_devicename.items()
-                    if (Device.conf_apple_acct_username == AppleAcct.username
-                            and Device.AppleAcct is None)]
 
-    Gb.startup_lists[f'{AppleAcct.account_owner}.devices_conf_this_apple_acct']   = \
-                    devices_conf_this_apple_acct
-    Gb.startup_lists[f'{AppleAcct.account_owner}.devices_tracked_apple_acct']     = \
-                    devices_tracked_apple_acct
-    Gb.startup_lists[f'{AppleAcct.account_owner}.devices_not_tracked_apple_acct'] = \
-                    devices_not_tracked_apple_acct
-
-    if devices_not_tracked_apple_acct == []:
-        return
-
-    retry_cnt = 0 if AppleAcct.AADevices else 10
-    while retry_cnt < 5:
-        retry_cnt += 1
-        post_greenbar_msg(f"Apple Acct > {AppleAcct.username_id}, Refreshing data (#{retry_cnt})")
-        post_alert(f"Apple Acct > Refreshing data to locate missing devices (#{retry_cnt})")
-        AppleAcct.refresh_icloud_data()
-
-        # See in the untracked devices are now available
-        retry_match_devices = {}
-        for devicename in devices_not_tracked_apple_acct:
-            aadevice_dname = Gb.icloud_dnames_by_devicename[devicename]
-            if aadevice_dname in AppleAcct.device_id_by_icloud_dname:
-                retry_match_devices[aadevice_dname] = AppleAcct.device_id_by_icloud_dname[aadevice_dname]
-
-        if isnot_empty(retry_match_devices):
-            _match_AppleAcct_devices_to_Device(AppleAcct, retry_match_devices=retry_match_devices)
-
-        # Cycle thru the Devices. If there is no Device.AppleAcct, it was not returned from iCloud
-        devices_not_tracked_apple_acct = [devicename
-                        for devicename, Device in Gb.Devices_by_devicename.items()
-                        if (Device.conf_apple_acct_username == AppleAcct.username
-                                and Device.AppleAcct is None)]
-
-        if devices_not_tracked_apple_acct == []:
-            return
-
-    # Some devices were not set up.
-    list_add(Gb.usernames_setup_error_retry_list, AppleAcct.username)
-
-    evlog_msg =(f"Apple Acct > {AppleAcct.username_account_owner}, "
-                f"Unsuccessful")
-    for devicename in devices_not_tracked_apple_acct:
-        Device = Gb.Devices_by_devicename[devicename]
-        list_add(Gb.usernames_setup_error_retry_list, AppleAcct.username)
+    event_msg =(f"Devices not Found in Apple Data")
+    for _devicename, aadev_name in missing_aadev_devices.items():
+        devicename = _devicename
 
         Device = Gb.Devices_by_devicename[devicename]
-        evlog_msg+=(f"{CRLF_DOT}{Device.fname_devicename} > "
-                    f"Device-{Device.conf_icloud_dname}")
-    post_alert(evlog_msg)
-    return
+        event_msg += f"{CRLF_RED_ALERT2}{Device.fname}{RARROW}{Device.conf_icloud_dname}"
+    post_event(event_msg)
+
+    try:
+        retry_cnt = 0 if AppleAcct.AADevices else 10
+        while retry_cnt < 5:
+            retry_cnt += 1
+
+            event_msg = f"Refreshing Location Data (#{retry_cnt})"
+            post_greenbar_msg(event_msg)
+            post_event(f"{event_msg}")
+
+            AppleAcct.refresh_icloud_data()
+
+            missing_aadev_devices = _get_conf_devices_apple_did_not_locate(AppleAcct)
+            if is_empty(missing_aadev_devices):
+                post_event("All Devices Found, Continuing with Setup")
+                return
+
+    except Exception as err:
+        log_exception(err)
+
+    event_msg =(f"Devices still not Found, Continuing with Setup")
+    for devicename, aadev_name in missing_aadev_devices.items():
+        Device = Gb.Devices_by_devicename[devicename]
+        event_msg += f"{CRLF_RED_ALERT2}{Device.fname}{RARROW}{Device.conf_icloud_dname}"
+    post_event(event_msg)
 
 #--------------------------------------------------------------------
 def _set_any_Device_alerts():
@@ -1817,13 +2083,14 @@ def _set_any_Device_alerts():
             apple_acct_not_found_msg += (
                     f"{CRLF_DOT}Apple Acct-{Device.conf_apple_acct_username_id} > "
                     f"{Device.fname_devicename}")
+
             update_alert_sensor(Device.fname, (
                     f"{Device.conf_icloud_dname} "
                     f"Apple Acct Login Problem ({Device.conf_apple_acct_username_id})"))
 
         # Device's Apple acct ok but device not in Apple acct
         elif (Device.AppleAcct
-                and Device.AppleAcct.device_id_by_icloud_dname.get(Device.conf_icloud_dname) is None):
+                and Device.AppleAcct.device_id_by_aadev_dname.get(Device.conf_icloud_dname) is None):
             Device.set_fname_alert(YELLOW_ALERT)
             error_msg = (
                     f"{Device.conf_icloud_dname} "
@@ -1847,7 +2114,7 @@ def _set_any_Device_alerts():
                     f"{apple_acct_not_found_msg}")
 
 #--------------------------------------------------------------------
-def _post_evlog_apple_acct_tracked_devices_info(AppleAcct):
+def _post_evlog_apple_acct_devices_info(AppleAcct):
     '''
     Cycle through the AppleAcct raw data and display the Event Log message for
     the device indicating if it is:
@@ -1855,370 +2122,128 @@ def _post_evlog_apple_acct_tracked_devices_info(AppleAcct):
         - tracked by another username ( show the other username)
         - not tracked
     '''
-    try:
-        # Cycle thru the devices from those found in the iCloud data. We are not cycling
-        # through the AADevData so we get devices without location info
-        _AppleDev = AppleAcct.AADevices
-        devices_cnt = _AppleDev.devices_cnt if _AppleDev else 0
-        devices_assigned_cnt = 0
-        owner_icloud_dnames = list_to_str(
-                                [_AADevData.fname
-                                    for device_id, _AADevData in AppleAcct.AADevData_by_device_id.items()
-                                    if _AADevData.family_share_device is False])
-        famshr_dnames_msg = list_to_str(
-                                [_AADevData.fname
-                                    for device_id, _AADevData in AppleAcct.AADevData_by_device_id.items()
-                                    if _AADevData.family_share_device])
+    _post_family_share_info(AppleAcct)
+    _post_not_assigned_info(AppleAcct)
+    _post_tracked_devices_info(AppleAcct)
 
-        devices_assigned_msg = devices_not_assigned_msg = devices_assigned_to_msg= reauth_needed_msg = ''
+#--------------------------------------------------------------------
+def _post_tracked_devices_info(AppleAcct):
+    devices_assigned_msg = reauth_needed_msg = aadev_startup_msg= ''
+    devices_assigned_cnt = 0
 
-        if AppleAcct.terms_of_use_update_needed:
-            reauth_needed_msg += f"{CRLF}{NBSP2}{RED_ALERT}Accept Terms of Service Needed"
-        if AppleAcct.is_reauth_needed:
-            reauth_needed_msg += f"{CRLF}{NBSP2}{RED_ALERT}Authentication Needed"
+    if AppleAcct.terms_of_use_update_needed:
+        reauth_needed_msg += f"{CRLF}{NBSP2}{RED_ALERT}Accept Terms of Service Needed"
+    if AppleAcct.is_reauth_needed:
+        reauth_needed_msg += f"{CRLF}{NBSP2}{RED_ALERT}Authentication Needed"
 
-        sorted_device_id_by_icloud_dname = OrderedDict(sorted(AppleAcct.device_id_by_icloud_dname.items()))
+    device_cnt = len(AppleAcct.AADevData_by_device_id)
+    AADevData_tracked =  {AADevData.dname: AADevData
+                            for _, AADevData in AppleAcct.AADevData_by_device_id.items()
+                            if AADevData.Device}
 
-        for aadevice_dname, device_id in sorted_device_id_by_icloud_dname.items():
-            exception_msg = ''
-            _AADevData = AppleAcct.AADevData_by_device_id.get(device_id)
-            if _AADevData is None:
-                continue
+    dict_sort(AADevData_tracked)
 
-            offline_msg = ''
-            if _AADevData.device_status_code != 200:
-                offline_msg += f"DeviceStatus-{_AADevData.device_status_msg}, "
-            if _AADevData.location_secs == 0:
-                offline_msg += f"No Location Found, "
-            if offline_msg != '':
-                offline_msg = f"{CRLF_HDOT}{offline_msg[:-2]}"
+    for aadev_dname, AADevData in AADevData_tracked.items():
+        try:
+            aadev_startup_msg = ''
+            aadev_startup_msg= f", {RED_ALERT}{AADevData.startup_msg}" if AADevData.startup_msg else ''
 
             # If the Device is None, this AppleAcct is not tracked or assigned to another username
             # aadevice_dname ending with '.' indicates this is a duplicate device
-            devicename = Gb.devicenames_by_icloud_dname.get(aadevice_dname)
-            Device     = Gb.Devices_by_devicename.get(devicename)
-
-            # Device belongs to another Apple account
-            if Device is None or Device.conf_apple_acct_username != AppleAcct.username:
-                # If the Device is already assigned to a AppleAcct device from another username,
-                # get that username's account owner and display it
-                _AppleAcct = Gb.AppleAcct_by_devicename.get(devicename)
-                if _AppleAcct:
-                    devices_assigned_to_msg +=(f"{CRLF_HDOT}{aadevice_dname}{RARROW}"
-                                                f"Tracked By-{_AppleAcct.username_account_owner_short}")
-                else:
-                    if aadevice_dname.endswith('.'):
-                        exception_msg = f", {RED_ALERT}DUPLICATE DEVICE"
-                    devices_not_assigned_msg +=(f"{CRLF_HDOT}{aadevice_dname} "
-                                                f"({_AADevData.aa_device_display_name})"
-                                                f"{exception_msg}")
-                continue
-
-            devicename = Device.devicename
-            exception_msg = ''
-
-            if Device.tracking_mode == INACTIVE:
-                exception_msg += ', INACTIVE '
-
-            aadevice_dname = aadevice_dname.replace('*', '')
-
-            if exception_msg:
-                devices_assigned_msg += (f"{msg_symb}"
-                                f"{aadevice_dname}{RARROW}"
-                                f"{Device.fname}"
-                                f"{exception_msg} "
-                                f"({_AADevData.aa_device_display_name}"
-                                f"{offline_msg}")
-
-                continue
-
-            # If no location info in pyiCloud data but tracked device is matched, refresh the
-            # data and see if it is locatable now. If so, all is OK. If not, set to verified but
-            # display no location exception msg in EvLog
-            exception_msg = ''
-
-            if _AADevData and Gb.is_log_level_rawdata:
-                log_title = (   f"AADevice Data {AppleAcct.account_name}{LINK}"
-                                f"{devicename}/{aadevice_dname} "
-                                f"({_AADevData.device_identifier})")
-                # log_data(log_title, {'filter': _AADevData.device_data})
-
-            devices_assigned_cnt += 1
-            msg_symb = f"{CRLF}{NBSP2}{RED_ALERT}" \
-                            if aadevice_dname.endswith('.') else CRLF_CHK
-            device_msg=(f"{msg_symb}"
-                        f"{aadevice_dname}{RARROW}"
-                        f"{Device.fname}/{devicename} ")
-            letter_cnt = len(device_msg) - device_msg.count('i') - device_msg.count('l')
-            if letter_cnt > 35: device_msg += CRLF_TAB
-            device_msg += ( f"({_AADevData.aa_device_display_name})"
-                            f"{exception_msg}"
-                            f"{offline_msg}")
-
-            devices_assigned_msg += device_msg
-
-        evlog_msg =(f"Apple Acct > {AppleAcct.username_account_owner}, "
-                    f"{devices_assigned_cnt} of {devices_cnt} tracked"
-                    f"{reauth_needed_msg}"
-                    f"{devices_assigned_msg}")
-        if devices_assigned_to_msg != '':
-            evlog_msg+=(f"{CRLF_DOT}Family Devices tracked by another Apple Acct:"
-                        f"{devices_assigned_to_msg}")
-        if devices_not_assigned_msg != '':
-            evlog_msg+=(f"{CRLF_X}Not assigned to an iCloud3 Device:"
-                        f"{devices_not_assigned_msg}")
-
-        famshr_crlf = CRLF_DOT if AppleAcct.locate_all_devices else CRLF_STAR
-        if owner_icloud_dnames:
-            evlog_msg += f"{CRLF_DOT} myDevices-{owner_icloud_dnames}"
-        if famshr_dnames_msg:
-            evlog_msg += f"{famshr_crlf} Family Devices-{famshr_dnames_msg}"
-            if AppleAcct.locate_all_devices is False:
-                evlog_msg += f"{CRLF_STAR} Family Devices are not located"
-
-        post_event(evlog_msg)
-
-    except Exception as err:
-        log_exception(err)
-
-        evlog_msg =(f"iCloud3 Error from iCloud Loc Svcs > "
-            "Error Authenticating account or no data was returned from "
-            "iCloud Location Services. iCloud access may be down or the "
-            "Username-Password may be invalid.")
-        post_error_msg(evlog_msg)
-
-    return
-
-#--------------------------------------------------------------------
-def _find_icloud_conf_device(AppleAcct, pyicloud_dname, device_id):
-    '''
-    Get the icloud3 device's configuration item. Then see if the raw_model, model
-    or model_display_name has changed. If so, update it in the configuration file.
-
-    Return:
-        conf_device configuration item or {} if it is not being tracked
-    '''
-    # Cycle through the config tracked devices and find the matching device.
-    update_conf_file_flag = False
-    old_icloud_dname = '?'
-    try:
-        conf_device = [conf_device
-                        for conf_device in Gb.conf_devices
-                        if (conf_device[CONF_FAMSHR_DEVICENAME] == pyicloud_dname
-                            and conf_device[CONF_APPLE_ACCOUNT] == AppleAcct.username)]
-
-        if isnot_empty(conf_device):
-            conf_device = conf_device[0]
-            conf_device = _check_changed_apple_device_info(AppleAcct, pyicloud_dname, device_id, conf_device)
-            return conf_device
-
-        # See if AppleAcct device_id is the same as the conf_famshr_device_id
-        update_config_flag = False
-        conf_device = [conf_device
-                    for conf_device in Gb.conf_devices
-                    if conf_device[CONF_FAMSHR_DEVICE_ID] == device_id]
-
-        if isnot_empty(conf_device):
-            conf_device = conf_device[0]
-            icloud_dname = AppleAcct.icloud_dname_by_device_id[device_id]
-            old_icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
-            conf_device[CONF_FAMSHR_DEVICENAME] = icloud_dname
-            update_config_flag = True
-
-        # See if the FamShr_Devicename is the same as the iC3_devicename
-        # and the iC3_Fname is the same as the pyicloud_dname because ofa data error/device info
-        # change that was saved in conf_flow. If so, set the FamShr_Devicename to the iC3_Fname
-        if update_config_flag is False:
-            conf_device = [conf_device
-                        for conf_device in Gb.conf_devices
-                        if (conf_device[CONF_IC3_DEVICENAME] == conf_device[CONF_FAMSHR_DEVICENAME]
-                            and conf_device[CONF_FNAME] == pyicloud_dname
-                            and conf_device[CONF_APPLE_ACCOUNT] == AppleAcct.username)]
-
-            if isnot_empty(conf_device):
-                conf_device = conf_device[0]
-                old_icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
-                conf_device[CONF_FAMSHR_DEVICENAME] = conf_device[CONF_FNAME]
-                update_config_flag = True
-
-        # See if the FamShr_Devicename is the same as the iC3_devicename
-        # and thepyicloud_dname starts with the iC3_Fname, it is a match if only one item
-        # change that was saved in conf_flow. If so, set the FamShr_Devicename to the iC3_Fname
-        if update_config_flag is False:
-            conf_device = [conf_device
-                        for conf_device in Gb.conf_devices
-                        if (conf_device[CONF_IC3_DEVICENAME] == conf_device[CONF_FAMSHR_DEVICENAME]
-                            and conf_device[CONF_APPLE_ACCOUNT] == AppleAcct.username
-                            and (conf_device[CONF_FNAME].startswith(pyicloud_dname)
-                                or conf_device[CONF_IC3_DEVICENAME] == slugify(pyicloud_dname)))]
-
-            if isnot_empty(conf_device):
-                if len(conf_device) == 1:
-                    conf_device = conf_device[0]
-                    old_icloud_dname = conf_device[CONF_FAMSHR_DEVICENAME]
-                    conf_device[CONF_FAMSHR_DEVICENAME] = pyicloud_dname
-                    update_config_flag = True
-
-        if update_config_flag:
-            conf_device = _check_changed_apple_device_info(AppleAcct, pyicloud_dname, device_id, conf_device)
-            config_file.write_icloud3_configuration_file()
-            post_alert( f"APPLE DEVICE NAME CHANGED > "
-                        f"The configured name was not found in any Apple Accounts. A candidate was found"
-                        f"{CRLF_DOT}{conf_device[CONF_IC3_DEVICENAME]} > "
-                        f"Renamed: {old_icloud_dname}{RARROW}"
-                        f"{conf_device[CONF_FAMSHR_DEVICENAME]}")
-            return conf_device
-
-    except Exception as err:
-        log_exception(err)
-
-    return {}
-
-#--------------------------------------------------------------------
-def _check_changed_apple_device_info(AppleAcct, pyicloud_dname, device_id, conf_device):
-    # Get the model info from AppleAcct data and update it if necessary
-    raw_model, model, model_display_name = \
-                    AppleAcct.device_model_info_by_fname[pyicloud_dname]
-
-    if (conf_device[CONF_FAMSHR_DEVICE_ID] != device_id
-            or conf_device[CONF_RAW_MODEL] != raw_model
-            or conf_device[CONF_MODEL] != model
-            or conf_device[CONF_MODEL_DISPLAY_NAME] != model_display_name):
-        conf_device[CONF_FAMSHR_DEVICE_ID] = device_id
-        conf_device[CONF_RAW_MODEL] = raw_model
-        conf_device[CONF_MODEL] = model
-        conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
-
-        config_file.write_icloud3_configuration_file()
-
-    return conf_device
-
-#--------------------------------------------------------------------
-def _check_duplicate_device_names(AppleAcct):
-    '''
-    See if this fname is already used by another device in the iCloud list. If so,
-    consider it a duplicate device that would refer to the same iC3 devicename.
-    Add a suffix to the fname to be able to keep track of it. Leave the actual
-    devicename the original value.
-
-    The device is selected in iC3 config_flow by the device's fname and the fname
-    is stored in the configuration file. iCloud3 The fname needs a suffix to keep
-    track of all devices in the iCloud account. Otherwise, a duplicate would
-    overwrite the original device and the model and other info would be lost.
-
-    This is checked when verifying devices in start_ic3
-    '''
-    if 'stage4_dup_check_done' in Gb.startup_stage_status_controls: return
-
-
-    # Cycle thru the duplicates, create an evlog msg
-    try:
-        _dup_AADevData_by_icloud_dname = {AADevData.fname: AADevData
-                                    for AADevData in AppleAcct.AADevData_items
-                                    if AADevData.Device and AADevData.fname.endswith('.')}
-
-        if is_empty(_dup_AADevData_by_icloud_dname):
-            return
-
-        Gb.startup_lists['_._dup_AADevData_by_icloud_dnames'] = _dup_AADevData_by_icloud_dname.keys()
-
-        dup_devices_msg  = ""
-        dup_devices_list = ""
-
-        for icloud_dname, AADevData in _dup_AADevData_by_icloud_dname.items():
             try:
-                # Get the AADevData item for the original tracked device (without the dots) to
-                # be able to display that device's info
-                _AADevData_original = [_AADevData
-                                    for _AADevData in AppleAcct.AADevData_items
-                                    if _AADevData.fname == AADevData.fname_original][0]
+                devicename = AADevData.ic3_devicename
+                Device     = AADevData.Device
+                if Device is None:
+                    continue
 
-                # Get the tracked device that was duplicated
-                _Device = _AADevData_original.Device
-                _Device.set_fname_alert(RED_ALERT)
+                if Device.tracking_mode == INACTIVE:
+                    aadev_startup_msg += f', {INACTIVE_SYMB}INACTIVE'
 
-                dup_devices_list += f"{_Device.fname_devicename} > Apple Device-{AADevData.fname_original}, "
-                dup_devices_msg += (f"{CRLF_DOT}{_Device.fname_devicename} > "
-                                    f"Apple Device-{AADevData.fname_original}, "
-                                    f"{CRLF_HDOT}{AADevData.aa_device_display_name}, Other Device with same name"
-                                    f"{CRLF_HDOT}{_AADevData_original.aa_device_display_name}, Assigned Device being tracked")
+                devices_assigned_msg += (
+                            f"{CRLF_CHK}{AADevData.name}{RARROW}"
+                            f"{Device.fname} "
+                            f"({AADevData.model_display_name})"
+                            f"{aadev_startup_msg}")
+
+                if AADevData and Gb.is_log_level_rawdata:
+                    log_title =(f"AADevice Data {AppleAcct.account_name}{LINK}"
+                                f"{devicename}/{aadev_dname} "
+                                f"({AADevData.device_identifier})")
 
             except Exception as err:
                 log_exception(err)
+            devices_assigned_cnt += 1
 
-        post_alert( f"DUPLICATE APPLE ACCOUNT DEVICES > "
-                f"Two Apple Account Devices have the same name that is assigned to an "
-                f"iCloud3 tracked device. Review the Configure > Update Devices screen and "
-                f"verify the correct Apple Device is assigned."
-                f"{dup_devices_msg}"
-                f"{CRLF}Rename one of the devices (Settings App > General > About) to remove this notification")
-        alert_msg =(f"{_Device.fname} > Two Apple Acct devices with same name "
-                f"({AADevData.fname_original}), "
-                f"{AADevData.aa_device_display_name} & "
-                f"{_Device.model_display_name}")
-        post_greenbar_msg(alert_msg)
-        log_warning_msg(f"iCloud3 Alert > {alert_msg}")
+        except Exception as err:
+            log_exception(err)
+            post_error_msg( f"{EVLOG_ALERT}Apple Acct {AppleAcct.username_id} > "
+                            f"{CRLF_DOT}{aadev_dname} Error Listing Device Info")
 
-        Gb.startup_stage_status_controls.append('stage4_dup_check_done')
-    except Exception as err:
-        log_exception(err)
+    evlog_msg =(f"Tracked Devices, "
+                f"{devices_assigned_cnt} of {device_cnt}"
+                f"{reauth_needed_msg}"
+                f"{devices_assigned_msg}")
+
+    post_event(evlog_msg)
 
 #--------------------------------------------------------------------
-def _update_config_with_icloud_device_fields(conf_device, _AADevData):
+def _post_family_share_info(AppleAcct):
+    owner_icloud_dnames =[_AADevData.dname
+                    for device_id, _AADevData in AppleAcct.AADevData_by_device_id.items()
+                    if _AADevData.family_share_device is False]
+    famshr_dnames_msg = [_AADevData.dname
+                    for device_id, _AADevData in AppleAcct.AADevData_by_device_id.items()
+                    if _AADevData.family_share_device]
+    devices_assigned_to_other_aa = [
+                    f"{conf_device[CONF_AADEV_NAME]} ({username_id(conf_device[CONF_APPLE_ACCOUNT])})"
+                    for conf_device in Gb.conf_devices
+                    if (conf_device[CONF_AADEV_NAME] in AppleAcct.device_id_by_aadev_dname.items()
+                        and conf_device[CONF_APPLE_ACCOUNT] != AppleAcct.username)]
 
-    # Get the model info from AppleAcct data and update it if necessary
-    raw_model, model, model_display_name = \
-                    _AADevData.AppleAcct.device_model_info_by_fname[_AADevData.fname]
+    list_sort(owner_icloud_dnames)
+    list_sort(famshr_dnames_msg)
+    list_sort(devices_assigned_to_other_aa)
 
-    if (conf_device[CONF_FAMSHR_DEVICE_ID] == _AADevData.device_id
-            and conf_device[CONF_RAW_MODEL] == raw_model
-            and conf_device[CONF_MODEL] == model
-            and conf_device[CONF_MODEL_DISPLAY_NAME] == model_display_name):
-        return
+    devices_assigned_to_msg = ''
+    if isnot_empty(devices_assigned_to_other_aa):
+        devices_assigned_to_msg = ( f"{CRLF_DOT}Family Devices tracked by another Apple Acct:"
+                                    f"{list_to_str(devices_assigned_to_other_aa)}")
 
-    conf_device[CONF_FAMSHR_DEVICE_ID] = _AADevData.device_id
-    conf_device[CONF_RAW_MODEL] = raw_model
-    conf_device[CONF_MODEL] = model
-    conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
+    family_not_located_msg = ''
+    if AppleAcct.locate_all_devices is False:
+        family_not_located_msg = f"{CRLF_STAR} Family Devices are not located"
 
-    config_file.write_icloud3_configuration_file()
-
-    post_event( f"{EVLOG_NOTICE}Device Config Updated > {conf_device[CONF_FNAME]} "
-                f"({conf_device[CONF_IC3_DEVICENAME]}), "
-                f"Apple Acct Info Updated-{model_display_name}")
-
-#--------------------------------------------------------------------
-def _fname_base(fname):
-    '''
-    Extract the base name from the fmashr_fname (Gary, Gary {iC3}, Lillian (2), Lillian (3))
-    '''
-    if instr(fname, '(') is False and instr(fname, ')') is False:
-        return fname
-
-    suffix = fname.split('(')[1].split(')')[0]
-    if suffix.isnumeric():
-        return fname.split('(')[0].strip()
-
-    return fname
-
-
-#----------------------------------------------------------------------
-def get_find_devices_pyicloud(AppleAcct):
-    '''
-    The device information tables are built when the devices are added the when
-    the AADevices object and AADevData objects are created when logging into
-    the iCloud account.
-    '''
-    if AppleAcct is None: AppleAcct = Gb.AppleAcct
-
-    _AppleDev = AppleAcct.AADevices
-    return [AppleAcct.device_id_by_icloud_dname,
-            AppleAcct.device_id_by_icloud_dname,
-            AppleAcct.device_info_by_icloud_dname,
-            AppleAcct.device_model_info_by_fname]
+    post_event( f"Family Sharing List Info"
+                f"{CRLF_DOT} myDevices-{list_to_str(owner_icloud_dnames)}"
+                f"{CRLF_DOT} Family Devices-{list_to_str(famshr_dnames_msg)}"
+                f"{family_not_located_msg}"
+                f"{devices_assigned_to_msg}")
 
 #--------------------------------------------------------------------
-def set_device_data_source(AppleAcct):
+def _post_not_assigned_info(AppleAcct):
+    devices_not_assigned     = {}
+    for aadev_dname, device_id in AppleAcct.device_id_by_aadev_dname.items():
+        AADevData = AppleAcct.AADevData_by_device_id.get(device_id)
+        # if AADevData is None or AADevData.Device:
+        #     continue
+        if AADevData and AADevData.Device is None:
+            devices_not_assigned[aadev_dname] = AADevData
+
+    dict_sort(devices_not_assigned)
+
+    devices_not_assigned_msg = ''
+    for aadev_dname, AADevData in devices_not_assigned.items():
+        aadev_msg = f", {RED_ALERT}{AADevData.startup_msg}" if AADevData.startup_msg else ''
+        devices_not_assigned_msg +=(f"{CRLF_DOT}{aadev_dname} "
+                                    f"({AADevData.model_display_name})"
+                                    f"{aadev_msg}")
+
+    if devices_not_assigned_msg != '':
+        post_event( f"Devices Not Tracked"
+                    f"{devices_not_assigned_msg}")
+
+#--------------------------------------------------------------------
+def _set_device_data_source(AppleAcct):
     '''
     Cycle through the devices and change the iCloud data source to MobApp
     if there is a problem with the iCloud setup and the MobApp is available
@@ -2239,7 +2264,7 @@ def set_device_data_source(AppleAcct):
                 if device_id in AppleAcct.AADevData_by_device_id:
                     data_source = ICLOUD
                     Gb.Devices_by_icloud_device_id[device_id] = Device
-                    _AADevData = AppleAcct.AADevData_by_device_id[device_id]
+                    AADevData = AppleAcct.AADevData_by_device_id[device_id]
 
             if (Device.is_mobapp_monitored and data_source is None):
                 data_source = MOBAPP
@@ -2247,14 +2272,15 @@ def set_device_data_source(AppleAcct):
             if data_source != MOBAPP:
                 info_msg = (f"Set AppleAcct Device Id > {Device.devicename}, "
                             f"DataSource-{data_source}, "
-                            f"{CRLF}iCloud-({Device.device_id8_icloud})")
+                            f"{CRLF}iCloud-({Device.device_id8_icloud}), "
+                            f"{Device.model_display_name}")
                 post_monitor_msg(info_msg)
 
             Device.primary_data_source = data_source
 
         info_msg = ''
-        for _device_id, _AADevData in AppleAcct.AADevData_by_device_id.items():
-            info_msg += (f"{_AADevData.name}/{_device_id[:8]}-{_AADevData.data_source}, ")
+        for _device_id, AADevData in AppleAcct.AADevData_by_device_id.items():
+            info_msg += (f"{AADevData.name}/{_device_id[:8]}-{AADevData.data_source}, ")
         if info_msg == '': info_msg = 'None'
         post_monitor_msg(f"AppleAcct Devices > {info_msg}")
 
@@ -2262,7 +2288,11 @@ def set_device_data_source(AppleAcct):
         log_exception(err)
 
 
-#--------------------------------------------------------------------
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   SETUP MOBAPP DEVICE -- STAGE 4
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def setup_tracked_devices_for_mobapp():
     '''
     Get the MobApp device_tracker entities from the entity registry. Then cycle through the
@@ -2279,6 +2309,7 @@ def setup_tracked_devices_for_mobapp():
     unmatched_mobapp_devices = Gb.mobapp_id_by_mobapp_dname.copy()
     verified_mobapp_fnames = []
 
+    post_dotted_line()
     tracked_msg = ( f"Mobile App Devices > "
                     f"{Gb.conf_mobapp_device_cnt} of "
                     f"{len(Gb.conf_devices)} used by iCloud3")
@@ -2454,11 +2485,14 @@ def setup_tracked_devices_for_mobapp():
         else:
             devices_not_assigned_msg += device_msg
 
+    if devices_not_assigned_msg != '':
+        f"{CRLF_X}Not assigned to an iCloud3 Device: "
+        f"{devices_not_assigned_msg}"
+
     evlog_msg =(f"Mobile App Devices > "
                 f"{devices_monitored_cnt} of {len(Gb.conf_devices)} monitored"
                 f"{devices_monitored_msg}"
                 f"{devices_not_monitored_msg}"
-                f"{CRLF_X}Not assigned to an iCloud3 Device: "
                 f"{devices_not_assigned_msg}")
     post_event(evlog_msg)
 
@@ -2588,10 +2622,10 @@ def log_debug_stage_4_results():
     #     log_debug_msg(f"{Gb.conf_devicenames=}")
     #     log_debug_msg(f"{Gb.conf_icloud_dnames=}")
     #     self.devices_not_set_up          = []
-    #     self.device_id_by_icloud_dname   = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
-    #     self.icloud_dname_by_device_id   = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
-    #     self.device_info_by_icloud_dname = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
-    #     self.device_model_info_by_fname  = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
+    #     self.device_id_by_aadev_dname   = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+    #     self.aadev_dname_by_device_id   = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+    #     self.device_info_by_aadev_dname = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
+    #     self.device_model_info_by_aadev_dname  = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
     #     self.dup_icloud_dname_cnt
     return
 
@@ -2627,7 +2661,7 @@ def identify_tracked_monitored_devices():
     for devicename, Device in Gb.Devices_by_devicename.items():
         if Device.is_tracked:
             Gb.Devices_by_devicename_tracked[devicename] = Device
-        else:
+        elif Device.is_monitored:
             Gb.Devices_by_devicename_monitored[devicename] = Device
 
     Gb.startup_lists['Gb.Devices_by_devicename_tracked']   = Gb.Devices_by_devicename_tracked
@@ -2676,9 +2710,9 @@ def setup_trackable_devices():
         # Get Apple acct owner from AppleAcct
         if username in Gb.AppleAcct_by_username:
             _AppleAcct = Gb.AppleAcct_by_username[username]
-            if _AppleAcct.login_failed:
-                pass
-            elif (icloud_dname not in _AppleAcct.device_id_by_icloud_dname
+
+            if (_AppleAcct.login_successful
+                    and icloud_dname not in _AppleAcct.device_id_by_aadev_dname
                     and Gb.internet_error is False):
                 Device.verified_ICLOUD = False
                 update_alert_sensor(Device.fname, (
@@ -2705,7 +2739,7 @@ def display_all_devices_config_info(selected_devicenames=None):
         - 'all' or None - Display all devices
     '''
 
-    for devicename, Device in Gb.Devices_by_devicename.items():
+    for devicename, Device in dict_reverse_sort(Gb.Devices_by_devicename).items():
         if (selected_devicenames is None
                 or 'all' in selected_devicenames
                 or devicename in selected_devicenames):
@@ -2728,7 +2762,7 @@ def display_all_devices_config_info(selected_devicenames=None):
         tracking_mode += 'Monitored' if Device.is_monitored else 'Tracked'
         if instr(tracking_mode, 'NOT'):
             tracking_mode = tracking_mode.upper()
-        evlog_msg =(f"{Device.fname_devicename} > {Device.devtype_fname}, {tracking_mode}")
+        evlog_msg =(f"{Device.fname_devicename} > {Device.model_display_name}, {tracking_mode}")
 
         # Device is not in configured Apple acct if it was not matched
         username     = Device.conf_apple_acct_username
@@ -2755,6 +2789,9 @@ def display_all_devices_config_info(selected_devicenames=None):
         # Apple acct is not found in AppleAcct
         elif Device.conf_apple_acct_username in Gb.AppleAcct_by_username:
             pass
+
+        elif Gb.use_data_source_ICLOUD is False:
+            apple_acct_err_msg = f", {INACTIVE_SYMB}ICLOUD DISABLED"
 
         else:
             apple_acct_err_msg = f", {RED_ALERT}APPLE ACCT ERROR"
@@ -2933,7 +2970,7 @@ def display_platform_operating_mode_msg():
 
 #------------------------------------------------------------------------------
 def post_restart_icloud3_complete_msg():
-    post_event(f"{EVLOG_ATTENTION}Initializing {ICLOUD3_VERSION_MSG} > Complete")
+    post_event(f"{EVLOG_ATTENTION}Initializing {Gb.icloud3_version_msg} > Complete")
 
     Gb.EvLog.update_event_log_display("")
 

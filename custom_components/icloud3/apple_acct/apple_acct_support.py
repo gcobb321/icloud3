@@ -145,7 +145,7 @@ def log_into_apple_account(username, password, apple_server_location, locate_all
     except AppleAcctFailedLoginException as err:
         AppleAcct = Gb.AppleAcctLoggingInto
         login_err = str(err)
-        login_err + ", Will retry logging into the Apple Account later"
+        login_err += ", Will retry logging into the Apple Account later"
 
     except Exception as err:
         AppleAcct = Gb.AppleAcctLoggingInto
@@ -259,14 +259,14 @@ def create_AppleAcct(username, password, apple_server_location, locate_all_devic
         if is_empty(AppleAcct.AADevData_by_device_id):
             AppleAcct.refresh_icloud_data(locate_all_devices=True)
 
-        aadevdata_items = [_AADevData.fname_device_id
+        aadevdata_items = [_AADevData.dname_device_id
                                 for _AADevData in AppleAcct.AADevData_by_device_id.values()]
 
         # Refresh devices if none returned
         if is_empty(aadevdata_items):
             AppleAcct.refresh_icloud_data(locate_all_devices=True)
 
-            aadevdata_items = [_AADevData.fname_device_id
+            aadevdata_items = [_AADevData.dname_device_id
                                     for _AADevData in AppleAcct.AADevData_by_device_id.values()]
 
     setup_status_msg(AppleAcct, "3, Create AppleAcct & Devices", username)
@@ -282,7 +282,7 @@ def setup_status_msg(AppleAcct, setup_method, username=None):
         return
 
     dev_data = list(AppleAcct.AADevData_by_device_id.values()) if AppleAcct.AADevices else []
-    aadevdata_items = [_AADevData.fname_device_id
+    aadevdata_items = [_AADevData.dname_device_id
                                     for _AADevData in AppleAcct.AADevData_by_device_id.values()]
     # post_event(f"Apple Acct > {AppleAcct.account_owner}, iCloud Data Handler Setup")
     log_debug_msg(  f"APPLE ACCT SETUP > {AppleAcct.username_id} ({AppleAcct.account_owner}), "
@@ -346,7 +346,7 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
             Gb.AppleAcct_reauth_needed = AppleAcct
 
     if AppleAcct.terms_of_use_update_needed:
-        alert_msg = "Apple Acct > Accept `Terms of Use` needed (Auth Code entry screen)"
+        alert_msg = "Apple Acct > Accept `Terms of Use` needed (Authenticate Apple Account Sign-in)"
         post_alert(f"{AppleAcct.username_id} > {alert_msg}")
         update_alert_sensor(AppleAcct.username_id, alert_msg)
         log_warning_msg(f"{AppleAcct.username_id} > {alert_msg}")

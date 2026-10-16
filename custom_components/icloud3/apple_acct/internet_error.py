@@ -16,14 +16,21 @@ from ..utils.messaging  import (_evlog, _log, more_info, add_log_file_filter,
                                 log_data, log_exception, log_data_unfiltered, log_request_data, )
 
 from ..utils            import file_io
-from .                  import icloud_requests_io  as icloud_io
 
 #----------------------------------------------------------------------------
+import aiohttp
+import asyncio
 import datetime as dt
 
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import (track_time_interval, )
 
 STATUS_MESSAGE_DOTS = '🟨🟨🟨🟨🟥'
+
+# The total timeout includes the DNS lookup. The executor thread waits a little longer
+# than the request can take so the request timeout is always reported first.
+INTERNET_TEST_TIMEOUT   = aiohttp.ClientTimeout(total=5, connect=3)
+INTERNET_TEST_WAIT_SECS = 8
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -114,8 +121,10 @@ class InternetConnection_ErrorHandler:
             - Resume tracking
         '''
 
-        # Initial internet check before first status msg
-        if self.status_check_cnt == 0:
+        # Initial internet check before first status msg. Only do it on the first 5-sec
+        # tick. status_check_cnt is still 0 on the next 3 ticks and each one ran another
+        # check, tying up an executor thread for each one when the internet was down.
+        if self.status_check_cnt == 0 and self.status_check_secs == 20:
             self.is_internet_available()
 
         self.status_check_secs -= 5
@@ -161,23 +170,40 @@ class InternetConnection_ErrorHandler:
             True  - Internet is available
             False - Internet is not available
 
-        Data returned from the file_io.https routine:
-            Internet available:
-                data={'url': 'https://setup.icloud.com/setup/authenticate/interneterrortestr',
-                'error': HTTPStatusError("Client error '401 Unauthorized' for url
-                'https://setup.icloud.com/setup/authenticate/interneterrortest'
-                \nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401"), 'status_code': -9}
+        This runs in an executor thread. The request is run on the HA event loop with HA's
+        aiohttp session (async_internet_available) and this thread waits for the result.
+        The aiohttp total timeout includes the DNS lookup. The requests module timeout
+        does not, so a DNS lookup with the internet down could wait well past it.
+
+        This must not be called from the event loop. Waiting there for a coroutine that
+        needs the event loop to run would deadlock it. The current status is returned.
+
+        Data returned:
+            Internet available (Apple returns 401 Unauthorized):
+                data={'url': 'https://setup.icloud.com/setup/authenticate/interneterrortest',
+                'code': 401, 'ok': True, 'error': ''}
 
             Internet not available:
                 data={'url': 'https://setup.icloud.com/setup/authenticate/interneterrortest',
-                'error': ConnectTimeout(''), 'status_code': -9}
+                'code': 104, 'ok': False, 'error': 'InternetError-ConnectTimeout'}
         '''
-
         url = 'https://setup.icloud.com/setup/authenticate/interneterrortest'
 
+        if is_running_in_event_loop():
+            log_error_msg("Internet Connection Test > Called from the Event Loop, Not Run")
+            return not Gb.internet_error
 
-        self.data = icloud_io.request(url)
+        future = None
+        try:
+            future = asyncio.run_coroutine_threadsafe(
+                                self.async_internet_available(url), Gb.hass.loop)
+            self.data = future.result(timeout=INTERNET_TEST_WAIT_SECS)
 
+        except Exception as err:
+            if future is not None:
+                future.cancel()
+            self.data = {'url': url, 'code': 104, 'ok': False,
+                         'error': f"InternetError-{err.__class__.__name__}"}
 
         Gb.internet_error = self.data['error'].startswith('InternetError')
         self.internet_error_code = self.data['code']
@@ -186,6 +212,36 @@ class InternetConnection_ErrorHandler:
             Gb.internet_error = True
 
         return not Gb.internet_error
+
+#............................................................................
+    async def async_internet_available(self, url):
+        '''
+        Send the internet connection test request using HA's shared aiohttp session.
+        Any response from Apple means the internet is available. The shared session
+        must not be closed.
+        '''
+        data = {'url': url, 'code': 104, 'ok': False, 'error': 'InternetError-'}
+
+        try:
+            session = async_get_clientsession(Gb.hass)
+            async with session.get(url, timeout=INTERNET_TEST_TIMEOUT,
+                                        allow_redirects=False) as response:
+                data['code']  = response.status
+                data['ok']    = True
+                data['error'] = ''
+
+        except TimeoutError:
+            data['error'] += 'ConnectTimeout'
+            data['code']   = 104
+        except aiohttp.ClientError as err:
+            data['error'] += f"ConnectionError ({err.__class__.__name__})"
+            data['code']   = 105
+        except Exception as err:
+            log_exception(err)
+            data['error'] += 'Other'
+            data['code']   = 500
+
+        return data
 
 #----------------------------------------------------------------------------
     def refresh_all_apple_accts(self):

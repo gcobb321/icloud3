@@ -87,18 +87,9 @@ async def _async_get_hacs_ic3_data(hacs_repository_file):
         - hacs_ic3_items={'icloud3': 'v3.1.4.1'}
         - hacs_ic3_items={}
     '''
-    # update_ic3_attrs    = entity_io.get_attributes(HACS_FNAME_ICLOUD3)
-    # update_ic3dev_attrs = entity_io.get_attributes(HACS_FNAME_ICLOUD3_DEV)
-
-    # if isnot_empty(update_ic3_attrs) or isnot_empty(update_ic3dev_attrs):
-    #     return {'icloud3': update_ic3_attrs.get('latest_version'),
-    #             'icloud3_v3': update_ic3dev_attrs.get('latest_version')}
 
     try:
         hacs_repository_file_data = await async_read_json_file(hacs_repository_file)
-        # hacs_repository_file_data = await Gb.hass.async_add_executor_job(
-        #                     read_json_file,
-        #                     hacs_repository_file)
 
         if hacs_repository_file_data != {}:
             hacs_ic3_items = {_component_name(hacs_item_data):
@@ -159,18 +150,24 @@ def _is_2nd_version_newer(version_1, version_2):
 def _get_version_value(version):
 
     version = version.replace('v', '')
-    if instr(version, 'b') is False: version += 'b0'
-    v_base, v_beta = version.split('b')
-    v_parts = (f"{v_base}.0.0.0").split('.')
-    v_value = 0
+    if instr(version, '-beta.') is False: version += '-beta.0'
+    v_base, v_beta = version.split('-beta.')
+    v_parts = (f"{v_base}.0.0.0.0").split('.')
+    b_parts = (f"{v_beta}.0.0.0.0").split('.')
+
+    r_version = 0
+    b_version = 0
 
     try:
-        v_beta   = int(v_beta)
-        v_value += int(v_parts[0])*100000
-        v_value += int(v_parts[1])*1000
-        v_value += int(v_parts[2])*10
-        v_value += int(v_parts[3])
+        b_version = int(b_parts[0])*100
+        b_version += int(b_parts[1])
+
+        r_version += int(v_parts[0])*1000000
+        r_version += int(v_parts[1])*10000
+        r_version += int(v_parts[2])*100
+        r_version += int(v_parts[3])*10
+        r_version += int(v_parts[4])
     except:
         pass
 
-    return v_value, v_beta
+    return r_version, v_beta
