@@ -63,29 +63,32 @@ def form_config_option_user(self):
 #             MENU
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_menu(self):
-    if self.menu_page_no == 0:
-        menu_items        = MENU_0_ITEMS.copy()
-        default_menu_item = MENU_0[self.menu_item_selected[0]]
-    else:
-        menu_items        = MENU_1_ITEMS.copy()
-        default_menu_item = MENU_1[self.menu_item_selected[1]]
-
-    if self.menu_page_no == 0:
-        action_items = MENU_0_ACTION_ITEMS.copy()
-    else:
-        action_items = MENU_1_ACTION_ITEMS.copy()
-
-    if Gb.analytics_enabled is None:
-        action_items.insert(0, MENU_1['analytics'])
-
+    exit_action = ''
     if self.create_device_tracker_sensor_enities_on_exit:
-        menu_items['exit'] = MENU_EXIT_ITEMS['exit_add_dev_trkrs_sensors']
+        exit_action = 'exit_add_dev_trkrs_sensors'
 
     if self.rebuild_ic3db_dashboards:
         dbb.load_ic3db_dashboards_from_ha_data(self)
 
         if isnot_empty(self.ic3db_Dashboards_by_dbname):
-            menu_items['exit'] = MENU_EXIT_ITEMS['exit_update_dashboards']
+            exit_action = 'exit_update_dashboards'
+
+    if self.menu_page_no == 0:
+        menu_items        = MENU_0_ITEMS.copy()
+        default_menu_item = MENU_0[self.menu_item_selected[0]]
+        actions           = MENU_0_ACTIONS.copy()
+    else:
+        menu_items        = MENU_1_ITEMS.copy()
+        default_menu_item = MENU_1[self.menu_item_selected[1]]
+        actions           = MENU_1_ACTIONS.copy()
+
+    if exit_action:
+        actions['exit'] = MENU_EXIT_ITEMS[exit_action]
+
+    action_items        = list(actions.values())
+
+    if Gb.analytics_enabled is None:
+        action_items.insert(0, MENU_1['analytics'])
 
     if self.menu_page_no == 0:
         device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()

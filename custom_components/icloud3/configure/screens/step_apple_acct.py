@@ -342,7 +342,7 @@ class OptionsFlow_AppleAccount_Steps:
                 return await self.async_step_update_apple_acct(user_input=user_input, errors=self.errors)
 
             case 'authenticate_apple_acct':
-                return await self.async_step_reauth(reauth_username=self.username)
+                return await self.async_step_reauth(reauth_username=ui_username)
 
             # Display the Confirm Actions form which will execute the remove_apple.. function
             case 'delete_apple_acct':

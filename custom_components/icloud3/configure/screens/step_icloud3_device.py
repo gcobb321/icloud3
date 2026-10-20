@@ -465,7 +465,7 @@ class OptionsFlow_iCloud3Device_Steps:
         device_type = ''
         model       = IPHONE
         if user_input[CONF_AADEV_NAME] != 'None':
-            aadev_dname = user_input[CONF_AADEV_NAME]
+            conf_aadev_dname = user_input[CONF_AADEV_NAME]
             username    = user_input.get(CONF_APPLE_ACCOUNT, '')
             if username in Gb.AppleAcct_by_username:
                 AppleAcct   = Gb.AppleAcct_by_username[username]
@@ -474,7 +474,7 @@ class OptionsFlow_iCloud3Device_Steps:
                 raw_model   = AADevData.raw_model
                 model       = AADevData.model
                 model_display_name = AADevData.model_display_name
-                device_type = AADevData.display_type
+                device_type = AADevData.device_type
                 # raw_model, model, model_display_name = \
                 #                 AppleAcct.device_model_info_by_aadev_dname[aadev_dname]
                 # model = model.lower()
