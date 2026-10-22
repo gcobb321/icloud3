@@ -85,6 +85,32 @@ def test_waze_history_creates_indexes_safely() -> None:
     assert "CREATE INDEX IF NOT EXISTS" in source
 
 
+def test_deleted_sensors_are_not_classified_as_disabled() -> None:
+    tree = ast.parse(source_of("utils/entity_reg_util.py"))
+    function = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_get_entity_status")
+
+    statements = [node for node in function.body
+                  if isinstance(node, (ast.If, ast.Return))]
+    kinds = []
+    for node in statements:
+        if isinstance(node, ast.If) and isinstance(node.test, ast.Compare):
+            text = ast.unparse(node.test)
+            if "scan_active_items" in text:
+                kinds.append("deleted")
+            elif "disabled_by" in text:
+                kinds.append("disabled")
+    assert kinds.index("deleted") < kinds.index("disabled")
+
+
+def test_deleted_sensor_entries_are_purged_before_recreate() -> None:
+    source = source_of("sensor.py")
+    assert "_remove_deleted_sensor_registry_item" in source
+    assert "remove_deleted_entity" in source
+
+
 def test_device_parameter_verification_returns_after_the_loop() -> None:
     tree = ast.parse(source_of("startup/config_file.py"))
     function = next(

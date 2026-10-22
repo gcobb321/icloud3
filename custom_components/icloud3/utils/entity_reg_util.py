@@ -1144,10 +1144,13 @@ def _get_entity_status(scan_active_items, RegData):
             and RegData.devicename  in Gb.entity_reg_items_by_status['disabled']
             and RegData.sensor_base in Gb.entity_reg_items_by_status['disabled'][RegData.devicename]):
         return 'disabled'
+    # A deleted entity is not a disabled one. Checking disabled_by first made
+    # every deleted sensor with disabled_by set look disabled, so startup
+    # skipped recreating it and the device silently lost its sensors.
+    if scan_active_items is False:
+        return 'deleted_sensors'
     if RegData.disabled_by is not None:
         return 'disabled'
-    if scan_active_items is False:
-        return  'deleted_sensors'
     if RegData.config_entry_id != Gb.config_entry_id:
         return 'orphaned'
     if (RegData.entity_id[-2:-1] == '_'

@@ -255,6 +255,7 @@ def create_device_Sensor_objects(devicename, conf_device, disabled_sensors):
                 continue
 
             check_disabled_but_not_excluded(devicename_sensor, sensor)
+            _remove_deleted_sensor_registry_item(devicename_sensor)
 
             Sensor = _create_sensor_by_type(devicename, sensor, conf_device)
 
@@ -277,6 +278,7 @@ def create_device_Sensor_objects(devicename, conf_device, disabled_sensors):
                     if sensor_from_zone in Device.Sensors_from_zone:
                         continue
 
+                _remove_deleted_sensor_registry_item(f"{devicename}_{sensor_from_zone}")
                 Sensor = _create_sensor_by_type(devicename, sensor, conf_device, from_zone)
 
                 if Sensor:
@@ -289,6 +291,20 @@ def create_device_Sensor_objects(devicename, conf_device, disabled_sensors):
     except Exception as err:
         log_exception(err)
         return []
+
+#................................................................................
+def _remove_deleted_sensor_registry_item(devicename_sensor):
+    '''
+    Purge a stale deleted_entities entry before recreating the sensor.
+
+    HA keeps deleted registry entries by unique_id. Without this, recreating a
+    sensor with the same unique_id either fails or comes back with a _2 suffix.
+    '''
+    try:
+        er_util.remove_deleted_entity(f"{PLATFORM_SENSOR}.{devicename_sensor}")
+
+    except Exception as err:
+        log_exception(err)
 
 #................................................................................
 def check_disabled_but_not_excluded(devicename, sensor):
