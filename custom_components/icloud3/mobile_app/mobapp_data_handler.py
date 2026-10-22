@@ -15,7 +15,8 @@ from ..const            import (DEVICE_TRACKER, NOTIFY,
 from ..utils.utils      import (instr, is_statzone, is_zone, zone_dname,
                                     list_add, list_to_str, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, more_info,
-                                    log_debug_msg, log_exception, log_error_msg, log_data, log_data_unfiltered,
+                                    log_debug_msg, log_exception, log_error_msg, log_info_msg,
+                                    log_warning_msg, log_data, log_data_unfiltered,
                                     _evlog, _log, )
 from ..utils.time_util  import (secs_to_time, secs_since, secs_to_hhmm, time_now, time_now_secs,
                                     format_time_age, format_age,  )
