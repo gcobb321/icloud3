@@ -301,7 +301,7 @@ def check_mobapp_state_trigger_change(Device):
         if (Device.mobapp_data_trigger == ENTER_ZONE
                 and is_statzone(Device.mobapp_data_state)
                 and Device.isin_statzone
-                and secs_since(Device.loc_data_secs <= 15)):
+                and secs_since(Device.loc_data_secs) <= 15):
             Device.mobapp_data_reject_reason = "Enter into StatZone just created"
 
         # Discard if already in the zone
@@ -331,7 +331,7 @@ def check_mobapp_state_trigger_change(Device):
         # No update needed if no location changes
         elif (Device.mobapp_data_state == Device.loc_data_zone      #Device.last_update_loc_zone
                 and f'{Device.mobapp_data_latitude:.5f}'  == f'{Device.loc_data_latitude:.5f}'
-                and f'{Device.mobapp_data_longitude:.5f}' == f'{Device.loc_data_longitude:.5f})'):
+                and f'{Device.mobapp_data_longitude:.5f}' == f'{Device.loc_data_longitude:.5f}'):
             Device.mobapp_data_reject_reason = "No Location Change"
 
         # MobApp location changed and State changed more than 5-secs after last locate
@@ -744,6 +744,8 @@ def verify_device_in_ha_mobile_app_config():
 
             if Device.conf_mobapp_fname in Gb.mobile_app_device_fnames:
                 Device.is_mobapp_monitored = True
+                Gb.device_mobapp_verify_retry_cnt = 0
+                Gb.device_mobapp_verify_next_retry_secs = 0
             else:
                 Gb.device_mobapp_verify_retry_needed = True
                 list_add(unverified_devices_list, Device.fname)
@@ -755,11 +757,14 @@ def verify_device_in_ha_mobile_app_config():
     return unverified_devices_list
 
 #--------------------------------------------------------------------
-def x_unverified_devices_mobapp_handler():
+def unverified_devices_mobapp_handler():
     '''
 
     Retry Device Mobile App verification
     '''
+    if getattr(Gb, 'device_mobapp_verify_next_retry_secs', 0) > time_now_secs():
+        return
+
     Gb.device_mobapp_verify_retry_cnt += 1
     build_mobapp_integration_device_tables()
     unverified_devices_list = verify_device_in_ha_mobile_app_config()
@@ -774,8 +779,9 @@ def x_unverified_devices_mobapp_handler():
         if Gb.device_mobapp_verify_retry_cnt < 5:
             event_msg += "Will retry in 5-mins"
         else:
-            Gb.device_mobapp_verify_retry_needed = False
-            event_msg += "Max retries have been done. Devices will not monitor the Mobile App devices"
+            Gb.device_mobapp_verify_retry_cnt = 0
+            Gb.device_mobapp_verify_next_retry_secs = time_now_secs() + 3600
+            event_msg += "Max retries have been done. Will retry in 1-hour"
         post_event(event_msg)
 
 #--------------------------------------------------------------------

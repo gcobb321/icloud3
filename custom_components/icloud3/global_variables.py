@@ -340,6 +340,7 @@ class GlobalVariables(object):
     was_icloud3_restart_requested   = False     # iC3 needs to be restarted
     was_icloud3_reloaded            = False     # Set to True in __init__ if reloading iCloud3
     reload_in_progress              = False     # A reload was requested by options/service/registry
+    reload_in_progress_secs         = 0         # When reload_in_progress was set (stale flag guard)
     icloud3_reload_requested        = False
     icloud3_reload_requested_secs   = 0         # Set to True when a reload is prpbable (enable sensor)
     mobapp_disabled_dnames          = set()     # Mobile App trackers disabled in HA
@@ -517,7 +518,8 @@ class GlobalVariables(object):
     device_not_monitoring_mobapp = True             # At least one device does not monitor the mobapp
     device_mobapp_verify_retry_cnt = 0
     device_mobapp_verify_retry_needed = False   # A device that monitors the mobapp has not been verfied as
-                                                    # being set up in tme mobapp integration (mobapp_data_handler)
+                                                # being set up in tme mobapp integration (mobapp_data_handler)
+    device_mobapp_verify_next_retry_secs = 0    # Earliest time (secs) the mobapp verify retry can run
 
     # Primary data source being used that can be turned off if errors
     use_data_source_ICLOUD     = False

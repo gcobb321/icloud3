@@ -1,7 +1,7 @@
 
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (NOT_HOME, STATIONARY,
+from ..const            import (NOT_HOME, NOT_SET, STATIONARY,
                                 CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
                                 UNKNOWN, CRLF_DOT, CRLF,
                                 CONF_USERNAME, CONF_PASSWORD, )
@@ -236,7 +236,7 @@ def is_between(number, min_value, max_value):
     Return True if the the number is between the other two numbers
     including the min_value and max_value number)
     '''
-    return (max_value+1 > number > min_value-1)
+    return (max_value >= number >= min_value)
 
 #--------------------------------------------------------------------
 def inlist(string, list_items):
@@ -268,7 +268,7 @@ def round_to_zero(number):
 
 #--------------------------------------------------------------------
 def is_zone(zone):
-    return (zone != NOT_HOME)
+    return (zone is not None and zone not in ('', NOT_SET, NOT_HOME))
 
 #--------------------------------------------------------------------
 def isnot_zone(zone):
@@ -463,8 +463,8 @@ def base64_encode(string):
 
     except Exception as err:
         #log_exception(err)
-        password = password.replace('«', '').replace('»', '')
-        return password
+        string = string.replace('«', '').replace('»', '')
+        return string
 
 
 #--------------------------------------------------------------------

@@ -119,8 +119,8 @@ def save_json_file(filename, data):
 #--------------------------------------------------------------------
 async def async_read_file(filename):
 
-    file_exists_= await async_file_exists(filename)
-    if file_exists is False:
+    file_exists = await async_file_exists(filename)
+    if not file_exists:
         return None
 
     # return await Gb.hass.async_add_executor_job(read_file, filename)
@@ -135,9 +135,9 @@ def read_file(filename):
     return file_data
 
 #--------------------------------------------------------------------
-def async_write_file(filename, data):
+async def async_write_file(filename, data):
 
-    success = Gb.hass.async_add_executor_job(write_file, filename, data)
+    success = await Gb.hass.async_add_executor_job(write_file, filename, data)
     return success
 
 #--------------------------------------------------------------------

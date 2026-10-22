@@ -310,6 +310,7 @@ TRUST_TOKEN_EXPIRE_WARNING_DAYS = 88    #   Start warning user trust cookie will
 CMD_RESET_PYICLOUD_SESSION   = 'reset_session'
 NEAR_DEVICE_DISTANCE         = 25       # Distance between nearby devices  (det_interval)
 PASS_THRU_ZONE_INTERVAL_SECS = 60       # Delay time before moving into a non-tracked zone to see if if just passing thru
+MOBAPP_STATZONE_LOC_REQUEST_SECS = 600  # Request a MobApp location when the MobApp state and StatZone are out of sync (10-mins)
 STATZONE_RADIUS_1M           = 1
 ICLOUD3_ERROR_MSG            = "ICLOUD3 ERROR-SEE EVENT LOG"
 

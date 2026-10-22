@@ -193,7 +193,7 @@ def secs_to(secs):
     return round(secs - time_now_secs())
 
 def mins_to(secs):
-    return round(secs_since(secs)/60)
+    return round(secs_to(secs)/60)
 
 #--------------------------------------------------------------------
 def secs_to_days(secs):
@@ -456,11 +456,11 @@ def format_date(secs, fmt_code=None):
         return datetime.fromtimestamp(secs).strftime('%-m/%-d')
     if fmt_code == 'ddmm':  #14/9
         return datetime.fromtimestamp(secs).strftime('%-d/%-m')
-    if fmt_code == 'ddmm': #14Sep
-        return datetime.fromtimestamp(secs).strftime('%-d%')
+    if fmt_code == 'ddmmm': #14Sep
+        return datetime.fromtimestamp(secs).strftime('%-d%b')
 
     #14Sep2026
-    return datetime.fromtimestamp(secs).strftime('%-d%Y%')
+    return datetime.fromtimestamp(secs).strftime('%-d%b%Y')
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -605,7 +605,7 @@ def secs_to_yymmdd_hhmm(secs=None):
 #
 #########################################################
 
-def calculate_time_zone_offset():
+def calculate_time_zone_offset(post_msg=True):
     '''
     Calculate time zone offset seconds
     '''
@@ -633,17 +633,15 @@ def calculate_time_zone_offset():
         if local_zone_offset.startswith("-"):
             local_zone_offset_secs = -1*local_zone_offset_secs
 
-        if local_zone_offset.startswith("-"):
-            local_zone_offset_secs = -1*local_zone_offset_secs
-
         Gb.time_zone_offset_str  = local_zone_offset
         Gb.time_zone_offset_secs = local_zone_offset_secs
 
-        post_event( f"Local Time Zone > "
-                    f"{local_zone_name}, "
-                    f"(UTC {Gb.time_zone_offset_str} hrs) "
-                    f"Country Code-{Gb.country_code.upper()}, "
-                    f"Apple Server Time-{apple_server_time()}")
+        if post_msg:
+            post_event( f"Local Time Zone > "
+                        f"{local_zone_name}, "
+                        f"(UTC {Gb.time_zone_offset_str} hrs) "
+                        f"Country Code-{Gb.country_code.upper()}, "
+                        f"Apple Server Time-{apple_server_time()}")
 
         return local_zone_offset_secs
 

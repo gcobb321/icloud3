@@ -1089,7 +1089,7 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def is_dev_data_source_ICLOUD(self):
-        return self.is_dev_data_source_ICLOUD
+        return self.dev_data_source in [ICLOUD]
 
     @property
     def is_dev_data_source_MOBAPP(self):
