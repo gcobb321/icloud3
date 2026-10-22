@@ -106,6 +106,19 @@ CREATE_LOCATIONS_TABLE = '''
         usage_cnt    INTEGER DEFAULT (1)
     );'''
 
+# Indexes used by the get_location_time_dist zone lookups and the daily maintenance
+CREATE_LOCATIONS_INDEXES = [
+    'CREATE INDEX IF NOT EXISTS idx_locations_lat_long_key ON locations(lat_long_key);',
+    'CREATE INDEX IF NOT EXISTS idx_locations_zone_id ON locations(zone_id);',
+    'CREATE INDEX IF NOT EXISTS idx_locations_time ON locations(time);',
+]
+
+# Number of loc_id values per DELETE statement (SQLite parameter limit is 999)
+SQL_PARAMETER_LIMIT = 900
+
+# SQL statements that read data and must not be committed
+SQL_READ_STATEMENTS = ('SELECT', 'PRAGMA')
+
 GET_LOCATIONS_TABLE_RECD_COUNT = '''
     SELECT count(*) FROM locations;
     '''
@@ -216,6 +229,8 @@ class WazeRouteHistory(object):
 
             self._sql(CREATE_ZONES_TABLE)
             self._sql(CREATE_LOCATIONS_TABLE)
+            for sql in CREATE_LOCATIONS_INDEXES:
+                self._sql(sql)
 
         except:
             post_internal_error(traceback.format_exc)
@@ -227,28 +242,43 @@ class WazeRouteHistory(object):
 #--------------------------------------------------------------------
     def close_waze_history_database(self):
         '''
-        Close the Waze History Database
+        Close the Waze History Database. Calling it again does nothing.
         '''
-        if self.connection is None: return
+        if self.connection is None:
+            self.cursor = None
+            return
+
+        connection      = self.connection
+        self.connection = None
+        self.cursor     = None
 
         try:
             with self.lock:
                 try:
-                    self.connection.commit()
+                    connection.commit()
                 finally:
-                    self.connection.close()
+                    connection.close()
 
         except Exception as err:
             log_exception(err)
 
-        self.connection = None
-        self.cursor = None
-
 #--------------------------------------------------------------------
     def _sql(self, sql, data=None, fetchone=False, fetchall=False, lastrowid=False):
-        records = None
+        '''
+        Execute a SQL statement. Read statements (SELECT/PRAGMA) are not committed and
+        return an empty list when the database is unavailable or the statement fails so
+        the callers can tell "no data" from a crash. Write statements keep returning
+        None (or the last row id).
+        '''
+        is_read = sql.lstrip()[:6].upper() in SQL_READ_STATEMENTS
+
+        if lastrowid or fetchone or is_read is False:
+            error_result = None
+        else:
+            error_result = []
+
         if self.lock is None or self.cursor is None:
-            return None
+            return error_result
 
         try:
             with self.lock:
@@ -256,7 +286,6 @@ class WazeRouteHistory(object):
                     self.cursor.execute(sql, data)
                 else:
                     self.cursor.execute(sql)
-                self.connection.commit()
 
                 if lastrowid:
                     records = self.cursor.lastrowid
@@ -264,13 +293,18 @@ class WazeRouteHistory(object):
                     records = self.cursor.fetchone()
                 elif fetchall:
                     records = self.cursor.fetchall()
+                else:
+                    records = None
+
+                if is_read is False:
+                    self.connection.commit()
 
             return records
 
         except Exception as err:
             log_exception(err)
 
-        return None
+        return error_result
 #--------------------------------------------------------------------
     def _execute(self, cursor, sql, fetchone=False, fetchall=False):
         if self.lock is None or cursor is None:
@@ -341,6 +375,17 @@ class WazeRouteHistory(object):
             sql += (f" WHERE {criteria}")
 
         self._sql(sql)
+
+#--------------------------------------------------------------------
+    def _delete_locations_by_id(self, loc_ids):
+        '''
+        Delete location records by their loc_id, SQL_PARAMETER_LIMIT ids per statement
+        '''
+        for start in range(0, len(loc_ids), SQL_PARAMETER_LIMIT):
+            batch        = loc_ids[start:start + SQL_PARAMETER_LIMIT]
+            placeholders = ','.join(['?'] * len(batch))
+
+            self._sql(f"DELETE FROM locations WHERE loc_id IN ({placeholders})", data=batch)
 
 #--------------------------------------------------------------------
     def _get_record(self, table, criteria=''):
@@ -423,7 +468,7 @@ class WazeRouteHistory(object):
                                     in the zones table and the zone time/dist values need to be
                                     recalculated. Get the info from Waze and do not update the db.
         '''
-        if self.connection is None: return
+        if self.connection is None: return (0, 0, 0)
 
         try:
             zone_id = Gb.wazehist_zone_id.get(from_zone, 0)
@@ -438,7 +483,7 @@ class WazeRouteHistory(object):
                 orderby      = 'zone_id, usage_cnt DESC'
                 self.last_location_recds = self._get_all_records('locations', criteria=criteria, orderby=orderby)
 
-            if self.last_location_recds == []:
+            if not self.last_location_recds:
                 self.last_lat_long_key = ''
                 return (0, 0, 0)
 
@@ -500,6 +545,9 @@ class WazeRouteHistory(object):
             # record = self.cursor.fetchone()
             # self.lock.release()
 
+            if record is None:
+                return
+
             cnt = record[LOC_USAGE_CNT] + 1
             usage_data = [datetime_now(), cnt, location_id]
 
@@ -510,6 +558,9 @@ class WazeRouteHistory(object):
             # self.cursor.execute(sql)
             # record = self.cursor.fetchone()
             # self.lock.release()
+
+            if record is None:
+                return
 
             if self.wazehist_recalculate_time_dist_running_flag is False:
                 post_monitor_msg(   Gb.devicename,
@@ -538,7 +589,7 @@ class WazeRouteHistory(object):
             # records = self._execute(cursor, DUPLICATE_LOCATION_RECDS_SELECT, fetchall=True)
             records = self._execute(vac_cursor, DUPLICATE_LOCATION_RECDS_SELECT, fetchall=True)
 
-            if records != []:
+            if records:
                 post_event(f"Waze History Database > Deleted Duplicate Recds, Count-{len(records)}")
 
                 self._execute(vac_cursor, DUPLICATE_LOCATION_RECDS_DELETE)
@@ -550,7 +601,8 @@ class WazeRouteHistory(object):
             log_exception(err)
 
         recd_cnts = self._execute(vac_cursor, GET_LOCATIONS_TABLE_RECD_COUNT, fetchone=True)
-        post_event(f"Waze History Database > Compressed, Record Count-{recd_cnts[0]}")
+        recd_cnt  = recd_cnts[0] if recd_cnts else 'Unknown'
+        post_event(f"Waze History Database > Compressed, Record Count-{recd_cnt}")
 
         vac_cursor.close()
         vac_conn.close()
@@ -781,6 +833,7 @@ class WazeRouteHistory(object):
         deleted_cnt = 0
         last_recd_lat_long_key = ''
         last_recd_loc_id       = 0
+        duplicate_loc_ids      = []
         start_time = time.perf_counter()
 
         for record in records:
@@ -794,8 +847,10 @@ class WazeRouteHistory(object):
                 # increase the usage count of the last recd and delete this recd
                 if record[LOC_LAT_LONG_KEY] == last_recd_lat_long_key:
                     self.update_usage_cnt(last_recd_loc_id)
-                    criteria = (f"loc_id={record[LOC_ID]};")
-                    self._delete_record('locations', criteria)
+                    duplicate_loc_ids.append(record[LOC_ID])
+                    if len(duplicate_loc_ids) >= SQL_PARAMETER_LIMIT:
+                        self._delete_locations_by_id(duplicate_loc_ids)
+                        duplicate_loc_ids = []
                     log_info_msg(   f"Waze History > updated, (#{recd_cnt}), "
                                     f"deleted duplicate record, "
                                     f"LocationKey-{record[LOC_LAT_LONG_KEY]}, "
@@ -848,12 +903,16 @@ class WazeRouteHistory(object):
             if self.wazehist_recalculate_time_dist_abort_flag:
                 break
 
-            try:
-                #** 5/15/2022 Delete all records with invalid times or distances
-                self._delete_record('locations', 'time < 0 or distance < 0')
+        # Delete the duplicate records in batches instead of one DELETE per record
+        try:
+            if duplicate_loc_ids:
+                self._delete_locations_by_id(duplicate_loc_ids)
 
-            except:
-                post_internal_error(traceback.format_exc)
+            #** 5/15/2022 Delete all records with invalid times or distances
+            self._delete_record('locations', 'time < 0 or distance < 0')
+
+        except:
+            post_internal_error(traceback.format_exc)
 
         running_time = time.perf_counter() - start_time
         post_event( f"{EVLOG_NOTICE}Waze History Completed > Recalculate Route Time/Dist > "

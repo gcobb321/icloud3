@@ -639,7 +639,10 @@ class EventLog(object):
 
 
         if instr(event_text, 'ICLOUD3 IS RELOADING'):
-            self.startup_event_recds = {}
+            if isinstance(self.startup_event_recds, list):
+                self.startup_event_recds.clear()
+            else:
+                self.startup_event_recds = []
 
         if Device:
             if event_text.startswith(EVLOG_UPDATE_END):
@@ -659,6 +662,8 @@ class EventLog(object):
                 event_recd = [event_recd[ELR_DEVICENAME], event_recd[ELR_TIME], event_text]
 
 
+        if not isinstance(self.startup_event_recds, list):
+            self.startup_event_recds = []
         self.startup_event_recds.insert(0, event_recd)
 
 #------------------------------------------------------
@@ -791,6 +796,8 @@ class EventLog(object):
         if Gb.is_evlog_startup_log_displayed:
             self.greenbar_alert_msg=(   f"Start up log, alerts and èrrors"
                                         f"{RARROW}Refresh to close")
+            if not isinstance(self.startup_event_recds, list):
+                self.startup_event_recds = []
             el_recds = [el_recd[1:3] for el_recd in self.startup_event_recds
                                         if (self.is_monitor_recd(el_recd) is False
                                             or Gb.is_evlog_trk_monitors_displayed)]
@@ -1005,7 +1012,9 @@ class EventLog(object):
             #                         if (len(el_recd) == 3
             #                             and el_recd[ELR_DEVICENAME] != devicename)]
 
-            export_recd += self._export_ic3_event_log_reformat_recds('startup', self.startup_event_recds)
+            export_recd += self._export_ic3_event_log_reformat_recds(
+                                    'startup', self.startup_event_recds
+                                    if isinstance(self.startup_event_recds, list) else [])
 
 
             #--------------------------------

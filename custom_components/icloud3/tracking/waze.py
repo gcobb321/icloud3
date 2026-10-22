@@ -30,6 +30,12 @@ WAZE_NO_ROUTE  = 'no_route'     # Waze answered but could not calculate the rout
 WAZE_RATE_LIMITED = 'rate_limited'  # Waze rejected the request, HTTP 429 (internal use)
 RATE_LIMIT_PAUSE_SECS = [600, 1200, 1800, 3600]   # Pause for each consecutive 429, last one repeats
 
+# Route calculation retries. The wait between attempts is kept short because the
+# 5-sec tracking loop waits for the route (the HTTP timeout is in waze_route_calc_ic3).
+WAZE_RETRY_ATTEMPTS         = 3
+WAZE_RETRY_WAIT_SECS        = 0.5   # Wait before the next attempt
+WAZE_RETRY_WAIT_TOTAL_SECS  = 1.0   # Total wait allowed for one route
+
 # Waze route cache shared by all devices (devices traveling together, distance moved
 # requested for each from zone). A cached route is used if the from & to gps are
 # within 0.0001° (≈11m, the 4th decimal place, same as the Waze History Database) of
@@ -383,7 +389,8 @@ class Waze(object):
                     self.no_route_msg_by_zone.pop(FromZone.from_zone, None)
                 return (WAZE_USED, route_time, route_dist_km)
 
-            for retry_cnt in range(1, 4):
+            retry_waited_secs = 0.0
+            for retry_cnt in range(1, WAZE_RETRY_ATTEMPTS + 1):
                 try:
                     route_time, route_dist_km = \
                             self.WazeRouteCalc.calc_route_info(from_lat, from_long, to_lat, to_long)
@@ -401,8 +408,7 @@ class Waze(object):
                         return (WAZE_NO_ROUTE, 0, 0)
 
                     if route_time < 0:
-                        if retry_cnt < 3:
-                            time.sleep(0.5)
+                        retry_waited_secs = self._wait_before_waze_retry(retry_cnt, retry_waited_secs)
                         continue
 
                     route_time    = round(route_time, 2)
@@ -417,8 +423,7 @@ class Waze(object):
                 except Exception as err:
                     log_info_msg(f"Waze Alert #{retry_cnt}, "
                                  f"Type-{err.__class__.__name__}, {err}")
-                    if retry_cnt < 3:
-                        time.sleep(1.0)
+                    retry_waited_secs = self._wait_before_waze_retry(retry_cnt, retry_waited_secs)
 
         except Exception as err:
             # log_exception(err)
@@ -427,6 +432,24 @@ class Waze(object):
         self._set_waze_not_available_error(f"No data returned")
 
         return (WAZE_NO_DATA, 0, 0)
+
+#--------------------------------------------------------------------
+    def _wait_before_waze_retry(self, retry_cnt, waited_secs):
+        '''
+        Wait before the next route attempt. There is no wait after the last attempt and
+        the total wait for one route never exceeds WAZE_RETRY_WAIT_TOTAL_SECS.
+
+        Return the total seconds waited so far
+        '''
+        if retry_cnt >= WAZE_RETRY_ATTEMPTS:
+            return waited_secs
+
+        wait_secs = min(WAZE_RETRY_WAIT_SECS, WAZE_RETRY_WAIT_TOTAL_SECS - waited_secs)
+        if wait_secs <= 0:
+            return waited_secs
+
+        time.sleep(wait_secs)
+        return waited_secs + wait_secs
 
 #--------------------------------------------------------------------
     def _get_waze_cache(self, route_gps):

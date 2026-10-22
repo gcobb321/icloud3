@@ -794,21 +794,18 @@ class iCloud_AppleAcctDevices():
 
         device_data[LOCATION]['timeStamp'] = 0
 
-        monitor_msg +=\
-            self._create_AADeviceData_object(device_id, device_data)
+        self._create_AADeviceData_object(device_id, device_data)
 
         device_data_test1[NAME] = f"TestDevice-1"
         device_data_test1[ID]   = f"XX1_{device_id}"
         device_data_test1[LOCATION]['timeStamp'] -= 3000000000
         device_data_test1['rawDeviceModel'] = 'iPad8,91'
 
-        monitor_msg +=\
-            self._create_AADeviceData_object(device_data_test1[ID], device_data_test1)
+        self._create_AADeviceData_object(device_data_test1[ID], device_data_test1)
         device_data_test2[NAME] = f"TestDevice-2"
         device_data_test2[ID]   = f"XX2_{device_id}"
         device_data_test2['rawDeviceModel'] = 'iPad8,92'
-        monitor_msg +=\
-            self._create_AADeviceData_object(device_data_test2[ID], device_data_test2)
+        self._create_AADeviceData_object(device_data_test2[ID], device_data_test2)
 
 #----------------------------------------------------------------------------
     def __repr__(self):

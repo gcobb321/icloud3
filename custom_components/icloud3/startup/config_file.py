@@ -46,7 +46,8 @@ from ..startup          import start_ic3
 from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dict, is_between,
                                 list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
                                 username_id, )
-from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
+from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, log_error_msg,
+                                add_log_file_filter,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, today, )
 
@@ -157,16 +158,21 @@ def write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
 
 #--------------------------------------------------------------------
 def _write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
-    _reconstruct_conf_file()
+    success = False
 
     try:
+        _reconstruct_conf_file()
+
         if filename_suffix is None:
             filename_suffix = ''
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
 
         success = file_io.save_json_file(filename, Gb.conf_file_data)
 
-        if new_file_flag is not None:
+        if success is False:
+            log_error_msg(f"iCloud3 Configuration File ({filename}) was not written")
+
+        elif new_file_flag is not None:
             file_io.set_write_permission(filename)
 
     except Exception as err:
@@ -177,7 +183,7 @@ def _write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
     if len(Gb.conf_devices) != len(Gb.conf_devices_idx_by_devicename):
         set_conf_devices_index_by_devicename()
 
-    return success
+    return success is True
 
 #--------------------------------------------------------------------
 async def async_write_icloud3_configuration_file(filename_suffix=None):
@@ -244,25 +250,55 @@ def initialize_icloud3_configuration_file():
     read_icloud3_configuration_file()
 
 #--------------------------------------------------------------------
+def _run_config_migration_step(step_name, step_func):
+    '''
+    Run one config file migration/verification step.
+
+    A failure in one step must not skip the steps that follow it. The step name
+    is included in the log so the failing step can be identified. The return value
+    keeps the original contract: True means the config file was changed.
+    '''
+    try:
+        return bool(step_func())
+
+    except Exception as err:
+        _LOGGER.error(f"iCloud3 Config Migration Error > {step_name}, Failed-{err}")
+        log_exception(err)
+
+    return False
+
+#--------------------------------------------------------------------
 def _add_parms_and_check_config_file():
+
+    update_config_file_flag = False
 
     try:
         #Add new parameters, check  parameter settings
-        update_config_file_flag = False
-        update_config_file_flag = _config_file_check_new_ic3_version() or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Check new iCloud3 version', _config_file_check_new_ic3_version) or update_config_file_flag
 
-        update_config_file_flag = _update_profile()                    or update_config_file_flag
-        update_config_file_flag = _update_tracking_parameters()        or update_config_file_flag
-        update_config_file_flag = _update_general_parameters()         or update_config_file_flag
-        update_config_file_flag = _update_sensors()                    or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update Profile', _update_profile)                        or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update Tracking Parameters', _update_tracking_parameters) or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update General Parameters', _update_general_parameters)  or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update Sensors', _update_sensors)                        or update_config_file_flag
 
-        update_config_file_flag = _update_apple_acct_parameters()      or update_config_file_flag
-        update_config_file_flag = _update_device_parameters()          or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update Apple Account Parameters', _update_apple_acct_parameters) or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update Device Parameters', _update_device_parameters)    or update_config_file_flag
 
-        update_config_file_flag = _verify_general_parameter_values()   or update_config_file_flag
-        update_config_file_flag = _verify_tracking_parameters_values() or update_config_file_flag
-        update_config_file_flag = _verify_apple_acct_parameters_values() or update_config_file_flag
-        update_config_file_flag = _verify_device_parameters_values()   or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Verify General Parameters', _verify_general_parameter_values)   or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Verify Tracking Parameters', _verify_tracking_parameters_values) or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Verify Apple Account Parameters', _verify_apple_acct_parameters_values) or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Verify Device Parameters', _verify_device_parameters_values)    or update_config_file_flag
 
         if Gb.conf_profile.get(CONF_FIRST_SEEN) == '':
             Gb.conf_profile[CONF_FIRST_SEEN] = datetime_now()
@@ -272,14 +308,14 @@ def _add_parms_and_check_config_file():
             Gb.conf_profile[CONF_SENSORS_HASH] = ''
             write_icloud3_configuration_file()
 
-        decode_all_passwords()
-        build_log_file_filters()
-        set_conf_devices_index_by_devicename()
-
     except Exception as err:
         _LOGGER.exception(err)
         _LOGGER.error(  "iCloud3 > An error occured verifying the iCloud3 "
                         "Configuration File. Will continue.")
+
+    _run_config_migration_step('Decode Passwords', decode_all_passwords)
+    _run_config_migration_step('Build Log File Filters', build_log_file_filters)
+    _run_config_migration_step('Build Devices Index', set_conf_devices_index_by_devicename)
 
 #--------------------------------------------------------------------
 def set_conf_devices_index_by_devicename():
@@ -885,11 +921,13 @@ def _verify_device_parameters_values():
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
             update_configuration_flag = True
-        if is_between(conf_device[CONF_FIXED_INTERVAL], 1, 2):
+        # The UI no longer offers an interval below 3 minutes. Keep the
+        # migration behaviour explicit so 2.5 (a legacy value) is also raised.
+        if conf_device[CONF_FIXED_INTERVAL] < 3:
             conf_device[CONF_FIXED_INTERVAL] = 3.0
             update_configuration_flag = True
 
-        return update_configuration_flag
+    return update_configuration_flag
 
 #--------------------------------------------------------------------
 def _convert_hhmmss_to_minutes(conf_group):
