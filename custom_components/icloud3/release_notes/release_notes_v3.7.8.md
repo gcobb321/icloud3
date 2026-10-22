@@ -10,6 +10,7 @@
 8. **Configuration** - All devices are verified, migration steps are isolated, and a partially migrated file is not written.
 9. **Waze** - Bounded retry waits, indexed history queries, write-only commits, batched deletes and an idempotent database close.
 10. **Services** - An unknown `device_name` is reported instead of silently applying the action to every device.
+11. **Device sensors** - Deleted entity-registry entries were classified as disabled, so device sensors were skipped at startup (only the device_tracker remained). Reload also kept stale sensor links. Both are fixed; a device now shows its full sensor set again.
 
 ### 🎉 New and Improved Items
 1. **Diagnostics** - `Download diagnostics` now produces a redacted report (counts and versions only; no account names, tokens or locations).

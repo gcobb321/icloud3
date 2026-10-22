@@ -353,27 +353,14 @@ async def stop_background_activity():
 #-------------------------------------------------------------------------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     '''
-    When disabled sensors are reenabled, HA will schedule an unload in 30s followed
-    by a reload. The er_util.async_handle_update_entity_registry function is called when
-    the sensor is enabled and sets the Gb.icloud3_reload_requested to True. This prevents
-    all of the DeviceTracker and Sensor objects from being unloaded and deleted here.
+    Unload the config entry.
 
-    The reload request is only trusted for 60-secs. A request that never turned into a
-    reload would otherwise be left behind and the next real unload would skip teardown.
+    Reloads (options, entity-registry changes, service reload) go through the
+    same full teardown as a removal. Keeping the old platforms loaded while the
+    new setup skipped creating them left every device sensor 'unavailable' in
+    the state machine after a reload; a full unload/recreate is the standard HA
+    lifecycle and the entity registry preserves the entity_ids and settings.
     '''
-    reload_requested_secs = getattr(Gb, 'reload_in_progress_secs', 0)
-    if (   (Gb.reload_in_progress or Gb.icloud3_reload_requested)
-            and time_now_secs() - reload_requested_secs < 60):
-        Gb.reload_in_progress = False
-        Gb.icloud3_reload_requested = False
-        Gb.was_icloud3_reloaded = True
-        # Keep the entities for the reload, but stop the old polling loop. The
-        # new config entry setup registers a fresh 5-sec timer; leaving the old
-        # one running made every reload add another loop.
-        if callable(getattr(Gb.iCloud3, 'shutdown', None)):
-            await Gb.iCloud3.shutdown()
-        return True
-
     Gb.reload_in_progress = False
     Gb.icloud3_reload_requested = False
     Gb.was_icloud3_reloaded = False
@@ -406,23 +393,37 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         domain_data.pop(entry.entry_id, None)
         Gb.was_icloud3_reloaded = False
         Gb.reload_in_progress = False
-        # Platform entities were unloaded above. Drop the internal sensor
-        # objects too, otherwise the next setup sees them as existing and never
-        # recreates icloud3_event_log/alerts/wazehist.
-        Gb.EvLogSensor = None
-        Gb.AlertsSensor = None
-        Gb.WazeHistTrackSensor = None
+        reset_runtime_entity_objects()
         if not any(isinstance(value, dict) for value in domain_data.values()):
             hass.data.pop(DOMAIN, None)
 
     return unload_ok
 
 #-------------------------------------------------------------------------------------------
+def reset_runtime_entity_objects():
+    '''
+    Drop the in-memory Sensor/device_tracker objects on a full unload.
+
+    The platforms unload their entities, so keeping these dicts made the next
+    setup think every sensor still exists, skip creating new ones, and leave all
+    device sensors 'unavailable' after a reload.
+    '''
+    Gb.Sensors_by_devicename.clear()
+    Gb.Sensors_by_devicename_from_zone.clear()
+    Gb.Sensors_by_devicename_sensor.clear()
+    Gb.sensors_added_by_devicename.clear()
+    Gb.sensors_cnt = 0
+    Gb.sensors_created_cnt = 0
+    Gb.EvLogSensor = None
+    Gb.AlertsSensor = None
+    Gb.WazeHistTrackSensor = None
+
+
+#-------------------------------------------------------------------------------------------
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
     '''
-    HA calls this after the user deletes the integration. The unload path keeps
-    entities alive during a reload, so make sure the entry data, listeners and
-    log handler do not survive an actual removal.
+    HA calls this after the user deletes the integration. Make sure the entry
+    data, listeners, entity objects and log handler do not survive removal.
     '''
     domain_data = hass.data.get(DOMAIN, {})
     entry_data = domain_data.pop(entry.entry_id, {})
@@ -439,6 +440,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
     Gb.was_icloud3_reloaded = False
     Gb.reload_in_progress = False
     Gb.icloud3_reload_requested = False
+    reset_runtime_entity_objects()
     await stop_background_activity()
     close_ic3log_file()
 
