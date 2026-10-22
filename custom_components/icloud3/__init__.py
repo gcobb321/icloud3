@@ -363,6 +363,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         domain_data.pop(entry.entry_id, None)
         Gb.was_icloud3_reloaded = False
         Gb.reload_in_progress = False
+        # Platform entities were unloaded above. Drop the internal sensor
+        # objects too, otherwise the next setup sees them as existing and never
+        # recreates icloud3_event_log/alerts/wazehist.
+        Gb.EvLogSensor = None
+        Gb.AlertsSensor = None
+        Gb.WazeHistTrackSensor = None
         if not any(isinstance(value, dict) for value in domain_data.values()):
             hass.data.pop(DOMAIN, None)
 
