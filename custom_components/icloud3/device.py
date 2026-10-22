@@ -1417,7 +1417,7 @@ class iCloud3_Device(TrackerEntity):
         self.statzone_timer = 0
 
 #--------------------------------------------------------------------
-    def update_distance_moved(self, distance):
+    def update_distance_moved(self):
         self.statzone_dist_moved_km = self.distance_km(self.statzone_latitude, self.statzone_longitude)
 
         if Gb.is_evlog_trk_monitors_displayed:

@@ -1048,7 +1048,7 @@ class EventLog(object):
 
             record_str = ''
             startup_recds_flag = False
-            el_recds.reverse()
+            el_recds = list(reversed(el_recds))
             last_tfz_zone = ''
             for record in el_recds:
                 devicename = record[ELR_DEVICENAME]

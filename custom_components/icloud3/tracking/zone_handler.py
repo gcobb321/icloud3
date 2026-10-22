@@ -155,10 +155,11 @@ def select_zone(Device, latitude=None, longitude=None):
         zones_distance_list - list of zone info [distance_m|zoneName-distance]
     '''
 
+    gps_accuracy_adj = int(Device.loc_data_gps_accuracy / 2)
+
     if latitude is None:
         latitude  = Device.loc_data_latitude
         longitude = Device.loc_data_longitude
-        gps_accuracy_adj = int(Device.loc_data_gps_accuracy / 2)
 
     # [distance from zone, Zone, zone_name, redius, display_as]
     zone_data_selected = [HIGH_INTEGER, None, '', HIGH_INTEGER, '', 1]

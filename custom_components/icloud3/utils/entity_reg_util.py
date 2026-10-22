@@ -621,8 +621,11 @@ def update_entity(entity_id, **kwargs):
 def is_entity_available(entity_id):
     try:
         entity_reg = er.async_get(Gb.hass)
-        entity_reg._entity_id_available(entity_id, None)
-    except:
+        return entity_reg.async_get(entity_id) is None
+    except Exception as err:
+        # Fail safe: an unreadable registry must not make the caller delete an
+        # existing entity. A genuinely taken id returns False above.
+        log_exception(err)
         return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

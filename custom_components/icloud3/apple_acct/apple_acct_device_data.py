@@ -462,12 +462,17 @@ class iCloud_AppleAcctDeviceData():
         except:
             self.last_loc_time_gps = ''
 
-            self.status_code = self.device_data[ICLOUD_DEVICE_STATUS] = \
-                int(self.device_data.get('deviceStatus', '0'))
+        self.status_code = self.device_data[ICLOUD_DEVICE_STATUS] = \
+            int(self.device_data.get('deviceStatus', '0'))
 
         try:
             if self.is_location_data_available:
-                self.device_data[LOCATION][TIMESTAMP] = int(self.device_data[LOCATION][self.timestamp_field] / 1000)
+                # The `timeStamp` field is in milliseconds; a payload that already
+                # carries seconds must not be divided again (it would land in 1970).
+                timestamp = int(self.device_data[LOCATION][self.timestamp_field])
+                if timestamp > 10**11:
+                    timestamp //= 1000
+                self.device_data[LOCATION][TIMESTAMP] = timestamp
                 self.device_data[LOCATION][LOCATION_TIME] = secs_to_time(self.device_data[LOCATION][TIMESTAMP])
                 self.location_secs = self.device_data[LOCATION][TIMESTAMP]
                 self.location_time = self.device_data[LOCATION][LOCATION_TIME]

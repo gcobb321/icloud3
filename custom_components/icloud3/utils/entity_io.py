@@ -12,6 +12,7 @@ from .utils             import (instr,  is_empty, isnot_empty,
                                 list_add, list_del, list_to_str, set_to_list, )
 from .messaging         import (log_info_msg, log_debug_msg, log_exception,
                                 log_error_msg, log_data,
+                                _run_in_event_loop,
                                 _evlog, _log, )
 from .time_util         import (secs_to_time)
 
@@ -399,8 +400,11 @@ def update_entity(entity_id, **kwargs):
 def is_entity_available(entity_id):
     try:
         entity_reg = er.async_get(Gb.hass)
-        entity_reg._entity_id_available(entity_id, None)
-    except:
+        return entity_reg.async_get(entity_id) is None
+    except Exception as err:
+        # Fail safe: an unreadable registry must not make the caller delete an
+        # existing entity. A genuinely taken id returns False above.
+        log_exception(err)
         return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -414,7 +418,7 @@ def set_state_attributes(entity_id, state_value, attrs_value):
     """
 
     try:
-        Gb.hass.states.set(entity_id, state_value, attrs_value, force_update=True)
+        _run_in_event_loop(Gb.hass.states.async_set, entity_id, state_value, attrs_value, force_update=True)
 
     except Exception as err:
         log_msg =   (f"Error updating entity > <{entity_id} >, StateValue-{state_value}, "

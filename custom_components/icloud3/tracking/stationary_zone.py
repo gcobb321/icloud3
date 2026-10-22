@@ -9,7 +9,7 @@
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (HIGH_INTEGER, NOT_SET, RARROW, HHMMSS_ZERO,
-                                ZONE, LATITUDE, LONGITUDE, GPS, RADIUS,
+                                ZONE, LATITUDE, LONGITUDE, RADIUS,
                                 STATZONE_RADIUS_1M,
                                 ENTER_ZONE, EXIT_ZONE, NEXT_UPDATE, INTERVAL, )
 
@@ -18,7 +18,7 @@ from ..utils.utils      import (is_between, is_statzone, format_gps, zone_dname,
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 log_debug_msg, log_exception, log_data, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, time_now, datetime_now, )
-from ..utils.dist_util  import (format_dist_m, gps_distance_km, )
+from ..utils.dist_util  import (format_dist_m, )
 
 from ..mobile_app       import mobapp_interface
 from ..tracking         import determine_interval as det_interval
@@ -35,8 +35,7 @@ def move_into_statzone_if_timer_reached(Device):
     if Gb.is_statzone_used is False:
         return False
 
-    calc_dist_last_poll_moved_km = gps_distance_km(Device.sensors[GPS], Device.loc_data_gps)
-    Device.update_distance_moved(calc_dist_last_poll_moved_km)
+    Device.update_distance_moved()
 
     # See if moved less than the stationary zone movement limit
     # If updating via the Mobile App and the current state is stationary,
@@ -298,8 +297,8 @@ def ha_statzones():
     Return a list of StatZones in the yaml zone collection updated when
     iCloud3 Add our remove a StatZone
     '''
-    Gb.hass.services.call(ZONE, "reload")
-    return [zone.replace('zone.', '')   for zone in Gb.hass.data['zone_entity_ids']
+    Gb.hass.add_job(Gb.hass.services.async_call, ZONE, "reload")
+    return [zone.replace('zone.', '')   for zone in Gb.hass.data.get('zone_entity_ids', [])
                                         if zone.startswith('zone.ic3_stationary_')]
 
 #--------------------------------------------------------------------
