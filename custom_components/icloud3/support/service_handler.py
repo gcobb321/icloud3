@@ -670,6 +670,7 @@ def reload_icloud3():
         config_file.write_icloud3_configuration_file()
 
     Gb.icloud3_reload_requested = True
+    Gb.reload_in_progress       = True
 
     Gb.hass.add_job(Gb.hass.config_entries.async_schedule_reload,
                     Gb.config_entry_id)

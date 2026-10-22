@@ -655,7 +655,17 @@ def open_ic3log_file(new_log_file=False):
             Gb.iC3Logger = logging.getLogger(DOMAIN)
             Gb.iC3Logger.setLevel(logging.INFO)
 
+            # Reopening the file must replace the previous handler. Adding a
+            # second FileHandler writes every line twice and leaks a file
+            # descriptor until HA restarts. Only remove the handler this module
+            # created; a user-configured handler on the same logger stays.
+            for old_handler in list(Gb.iC3Logger.handlers):
+                if getattr(old_handler, 'ic3_log_handler', False):
+                    Gb.iC3Logger.removeHandler(old_handler)
+                    old_handler.close()
+
             handler   = logging.FileHandler(ic3logger_file, mode=filemode, encoding='utf-8')
+            handler.ic3_log_handler = True
             formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='%m-%d %H:%M:%S')
             handler.setFormatter(formatter)
             handler.addFilter(LoggerFilter)
@@ -678,8 +688,11 @@ def close_ic3log_file():
 
     if Gb.iC3Logger:
         write_ic3log_recd(f"Close iCloud3 Log File  ({IC3LOG_FILENAME})")
-        Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
-        # Gb.iC3Logger.flush()
+        for handler in list(Gb.iC3Logger.handlers):
+            if getattr(handler, 'ic3_log_handler', False):
+                Gb.iC3Logger.removeHandler(handler)
+                handler.close()
+        Gb.iC3Logger = None
 
 #--------------------------------------------------------------------
 def write_ic3log_recd(log_msg):
@@ -719,7 +732,6 @@ def check_ic3log_file_exists(ic3logger_file):
             open_ic3log_file(new_log_file=True)
 
         elif Gb.iC3Logger and os.path.isfile(ic3logger_file) is False:
-            Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
             open_ic3log_file(new_log_file=True)
 
             log_msg = f"{EVLOG_ALERT}Recreated iCloud3 Log File: {ic3logger_file}"
@@ -757,7 +769,7 @@ def archive_ic3log_file():
         if os.path.isfile(log_file_1): os.rename(log_file_1, log_file_2)
 
         if os.path.isfile(log_file_0):
-            Gb.iC3Logger.removeHandler(Gb.iC3Logger.handlers[0])
+            close_ic3log_file()
             os.rename(log_file_0, log_file_1)
 
         open_ic3log_file(new_log_file=True)

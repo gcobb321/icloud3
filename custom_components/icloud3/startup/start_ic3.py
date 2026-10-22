@@ -74,7 +74,7 @@ from ..utils.messaging      import (broadcast_info_msg, add_log_file_filter,
                                     post_internal_error,
                                     log_info_msg, log_debug_msg, log_error_msg, log_warning_msg,
                                     log_data, log_exception, format_filename, log_stack,
-                                    internal_error_msg2,
+                                    internal_error_msg2, close_ic3log_file,
                                     _evlog, _log, more_info, format_header_box,)
 from ..utils.dist_util      import (format_dist_km, m_to_um, )
 from ..utils.time_util      import (time_now_secs, mins_since, format_timer, format_time_age,
@@ -90,6 +90,8 @@ from ..device               import iCloud3_Device
 from ..mobile_app           import mobapp_interface
 from ..mobile_app           import mobapp_data_handler
 from ..startup              import config_file
+from .mobapp_resolver       import (AMBIGUOUS, DISABLED, RENAMED, RESERVED,
+                                    resolve_mobapp_dname, )
 from ..support              import service_handler
 from ..tracking             import zone_handler
 from ..tracking.waze        import Waze
@@ -171,7 +173,10 @@ def handle_config_parms_update():
     if 'evlog' in config_parms_update_control:
         post_event('Processing Event Log Settings Update')
         Gb.evlog_btnconfig_url = Gb.conf_profile[CONF_EVLOG_BTNCONFIG_URL].strip()
-        Gb.hass.loop.create_task(update_lovelace_resource_event_log_js_entry())
+        # This runs in the 5-second executor thread. loop.create_task() is not
+        # thread-safe and raises RuntimeError there, which also skipped the
+        # remaining configuration branches below.
+        Gb.hass.add_job(update_lovelace_resource_event_log_js_entry)
         # Gb.hass.async_add_executor_job(update_lovelace_resource_event_log_js_entry)
         check_ic3_event_log_file_version()
         Gb.EvLog.setup_event_log_trackable_device_info()
@@ -523,6 +528,7 @@ def ha_startup_completed(dummy_parameter):
 def ha_stopping(dummy_parameter):
     post_event("HA Shutting Down")
     Gb.EvLog.display_user_message("HA Shutting Down")
+    close_ic3log_file()
 
 #------------------------------------------------------------------------------
 def ha_restart(dummp_parameter):
@@ -2314,7 +2320,17 @@ def setup_tracked_devices_for_mobapp():
                     f"{Gb.conf_mobapp_device_cnt} of "
                     f"{len(Gb.conf_devices)} used by iCloud3")
 
+    # An explicit Mobile App tracker can only belong to one iCloud3 device. Names
+    # selected by another device are reserved so a rename repair can never steal
+    # them. ScanFor entries are not concrete names and are not reserved.
+    reserved_mobapp_dnames = {
+        conf_device.get(CONF_MOBILE_APP_DEVICE, '')
+        for conf_device in Gb.conf_devices
+        if conf_device.get(CONF_MOBILE_APP_DEVICE, '') not in ('', 'None')
+        and not conf_device.get(CONF_MOBILE_APP_DEVICE, '').startswith('ScanFor: ')}
+
     Gb.devicenames_x_mobapp_dnames = {}
+    assigned_mobapp_dnames = set()
     for devicename, Device in Gb.Devices_by_devicename.items():
         broadcast_info_msg(f"Set up Mobile App Devices > {devicename}")
 
@@ -2327,19 +2343,88 @@ def setup_tracked_devices_for_mobapp():
 
         # Check if the specified mobapp device tracker is valid and in the entity registry
         if conf_mobapp_dname.startswith('ScanFor: ') is False:
-            if conf_mobapp_dname in Gb.mobapp_id_by_mobapp_dname:
-                mobapp_dname = conf_mobapp_dname
-                Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
-                Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
+            mobapp_dname, status = resolve_mobapp_dname(
+                    conf_mobapp_dname,
+                    Gb.mobapp_id_by_mobapp_dname.keys(),
+                    reserved_dnames=reserved_mobapp_dnames - {conf_mobapp_dname},
+                    disabled_dnames=Gb.mobapp_disabled_dnames)
 
-            else:
-                update_alert_sensor(Device.fname, f"Unknown MobApp Device ({conf_mobapp_dname})")
+            if status == RENAMED and mobapp_dname:
+                if mobapp_dname in assigned_mobapp_dnames:
+                    update_alert_sensor(Device.fname,
+                                        f"MobApp Device Already Assigned ({mobapp_dname})")
+                    mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_dname} > "
+                                                    f"Assigned to {Device.fname_devicename} "
+                                                    f"(rename candidate already used)")
+                    continue
+
+                # HA renames an entity id when it collides with another entity
+                # (foo -> foo_2). A name match alone cannot prove that the new
+                # entity belongs to this device, so never rewrite the user's
+                # configuration automatically. Report the likely rename and
+                # leave tracking disabled until the user confirms it in the
+                # iCloud3 configuration.
+                update_alert_sensor(Device.fname,
+                                    f"Mobile App Device renamed? ({conf_mobapp_dname}{RARROW}{mobapp_dname})")
+                Device.set_fname_alert(RED_ALERT)
+                post_event(f"{EVLOG_ALERT}Mobile App Device Tracker Not Found > "
+                           f"{conf_mobapp_dname} is not in the entity registry. "
+                           f"The similarly named {mobapp_dname} was found. "
+                           f"Update the Mobile App Device for {Device.fname_devicename} "
+                           f"in the iCloud3 configuration.")
+                log_warning_msg(f"iCloud3 > Mobile App Device Tracker not found > "
+                                f"{conf_mobapp_dname}, possible rename to {mobapp_dname}, "
+                                f"Assigned to {Device.fname_devicename}. "
+                                f"Update the Mobile App Device in the iCloud3 configuration.")
+                continue
+
+            if mobapp_dname is None:
+                if status == DISABLED:
+                    update_alert_sensor(Device.fname,
+                                        f"MobApp Device Disabled ({conf_mobapp_dname})")
+                    Device.set_fname_alert(RED_ALERT)
+                    Device.is_mobapp_device_unavailable = True
+                    mobapp_error_disabled_msg += ( f"{CRLF_DOT}{conf_mobapp_dname} > "
+                                                    f"Assigned to-{Device.fname_devicename}")
+                elif status == AMBIGUOUS:
+                    update_alert_sensor(Device.fname,
+                                        f"Multiple MobApp Device candidates ({conf_mobapp_dname})")
+                    Device.set_fname_alert(RED_ALERT)
+                    mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_dname} > "
+                                                    f"Assigned to {Device.fname_devicename} "
+                                                    f"(several renamed candidates)")
+                elif status == RESERVED:
+                    update_alert_sensor(Device.fname,
+                                        f"MobApp Device assigned to another device ({conf_mobapp_dname})")
+                    Device.set_fname_alert(RED_ALERT)
+                    mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_dname} > "
+                                                    f"Assigned to {Device.fname_devicename} "
+                                                    f"(already used by another device)")
+                else:
+                    update_alert_sensor(Device.fname, f"Unknown MobApp Device ({conf_mobapp_dname})")
+                    Device.set_fname_alert(RED_ALERT)
+                    mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_dname} > "
+                                                    f"Assigned to {Device.fname_devicename}")
+                continue
+
+            if mobapp_dname in assigned_mobapp_dnames:
+                update_alert_sensor(Device.fname,
+                                    f"MobApp Device Already Assigned ({mobapp_dname})")
                 Device.set_fname_alert(RED_ALERT)
                 mobapp_error_not_found_msg += ( f"{CRLF_X}{conf_mobapp_dname} > "
-                                                f"Assigned to {Device.fname_devicename}")
+                                                f"Assigned to {Device.fname_devicename} "
+                                                f"(already used by another device)")
+                continue
+
+            assigned_mobapp_dnames.add(mobapp_dname)
+            Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
+            Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
         else:
             mobapp_dname = _scan_for_for_mobapp_device( devicename, Device, conf_mobapp_dname)
+            if mobapp_dname and mobapp_dname in assigned_mobapp_dnames:
+                mobapp_dname = None
             if mobapp_dname:
+                assigned_mobapp_dnames.add(mobapp_dname)
                 Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
             else:

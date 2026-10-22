@@ -125,6 +125,7 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
         # DeviceTracker and Sensor objects when that reload runs.
         if disabled_by is None:
             Gb.icloud3_reload_requested      = True
+            Gb.reload_in_progress            = True
             Gb.was_icloud3_restart_requested = True
 
         # The user disabled the device on the Integrations screen. This is the only
@@ -191,6 +192,7 @@ def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData
             # If disabled_by is now None, it was just enabled and HA will schedule a restart
             if disabled_by is None:
                 Gb.icloud3_reload_requested = True
+                Gb.reload_in_progress       = True
                 _remove_disabled_entity_from_excluded_sensor_list(entity_data)
                 return
 

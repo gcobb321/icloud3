@@ -9,7 +9,7 @@ from .const             import (ICLOUD3, DOMAIN,
                                 EVLOG_ATTENTION, EVLOG_ALERT, VERSION, VERSION_BETA,)
 
 
-from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init,
+from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init, close_ic3log_file,
                                 post_event, post_monitor_msg, post_greenbar_msg, post_alert,
                                 log_info_msg, log_debug_msg, log_error_msg, log_data_unfiltered,
                                 log_exception_HA, log_exception, add_log_file_filter)
@@ -70,7 +70,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """ Set up the iCloud3 integration from a ConfigEntry integration """
 
     # Is 'icloud3' already in hass.data
-    Gb.was_icloud3_reloaded = DOMAIN in hass.data.get(DOMAIN, {})
+    # A reload request can only skip teardown when the entry was LOADED and
+    # async_unload_entry ran. Consume a stale request here so a failed setup
+    # retry cannot be mistaken for a reload.
+    Gb.reload_in_progress = False
+    Gb.was_icloud3_reloaded = (Gb.was_icloud3_reloaded
+                               and Gb.iCloud3 is not None
+                               and Gb.EvLog is not None)
 
     if Gb.was_icloud3_reloaded:
         # Reloading/restarting, reinitialization is not needed
@@ -107,6 +113,8 @@ def setup_hass_icloud3_domain(hass, entry):
     # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
     unsub_options_update_listener = entry.add_update_listener(options_update_listener)
     Gb.hass.data[DOMAIN]["unsub_options_update_listener"] = unsub_options_update_listener
+    Gb.hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"] = \
+            unsub_options_update_listener
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -260,23 +268,25 @@ async def async_get_ha_location_info(hass):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
 def setup_event_listeners():
 
+    entry_data = Gb.hass.data[DOMAIN].setdefault(Gb.config_entry_id, {})
+
     # Device Registry Event
-    if "update_device_registry" not in Gb.hass.data[DOMAIN]:
+    if "update_device_registry" not in entry_data:
         cancel_listener_func = Gb.hass.bus.async_listen(
                                         dr.EVENT_DEVICE_REGISTRY_UPDATED,
                                         er_util.async_handle_update_device_registry)
 
         log_debug_msg(f"Add Listener > (update_device_registry)")
-        Gb.hass.data[DOMAIN][Gb.config_entry_id]["update_device_registry"] = cancel_listener_func
+        entry_data["update_device_registry"] = cancel_listener_func
 
     # Entity (Sensor) Registry Event
-    if "update_entity_registry" not in Gb.hass.data[DOMAIN]:
+    if "update_entity_registry" not in entry_data:
         cancel_listener_func = Gb.hass.bus.async_listen(
                                         er.EVENT_ENTITY_REGISTRY_UPDATED,
                                         er_util.async_handle_update_entity_registry)
 
         log_debug_msg(f"Add Listener > (update_entity_registry)")
-        Gb.hass.data[DOMAIN][Gb.config_entry_id]["update_entity_registry"] = cancel_listener_func
+        entry_data["update_entity_registry"] = cancel_listener_func
 
 
 #-------------------------------------------------------------------------------------------
@@ -309,6 +319,7 @@ async def async_create_devices_tracker_and_sensor_entities():
 async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
     '''Handle options update.'''
 
+    Gb.reload_in_progress = True
     await hass.config_entries.async_reload(config_entry.entry_id)
 
 #-------------------------------------------------------------------------------------------
@@ -319,11 +330,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     the sensor is enabled and sets the Gb.icloud3_reload_requested to True. This prevents
     all of the DeviceTracker and Sensor objects from being unloaded and deleted here.
     '''
-    if Gb.was_icloud3_reloaded:
-        return True
-
-    if Gb.icloud3_reload_requested:
+    if Gb.reload_in_progress or Gb.icloud3_reload_requested:
+        Gb.reload_in_progress = False
         Gb.icloud3_reload_requested = False
+        Gb.was_icloud3_reloaded = True
         return True
 
     """Unload a config entry."""
@@ -337,15 +347,50 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     log_debug_msg(f"Remove Listener > update_device_registry")
     log_debug_msg(f"Remove Listener > update_entity_registry")
 
-    hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
-    hass.data[DOMAIN][entry.entry_id]["update_device_registry"]()
-    hass.data[DOMAIN][entry.entry_id]["update_entity_registry"]()
+    domain_data = hass.data.get(DOMAIN, {})
+    entry_data = domain_data.get(entry.entry_id, {})
+    for key in ("unsub_options_update_listener",
+                "update_device_registry",
+                "update_entity_registry"):
+        unsubscribe = entry_data.pop(key, None)
+        if unsubscribe is None:
+            unsubscribe = domain_data.pop(key, None)
+        if callable(unsubscribe):
+            unsubscribe()
 
     # Remove config entry from domain.
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        domain_data.pop(entry.entry_id, None)
+        Gb.was_icloud3_reloaded = False
+        Gb.reload_in_progress = False
+        if not any(isinstance(value, dict) for value in domain_data.values()):
+            hass.data.pop(DOMAIN, None)
 
     return unload_ok
+
+#-------------------------------------------------------------------------------------------
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
+    '''
+    HA calls this after the user deletes the integration. The unload path keeps
+    entities alive during a reload, so make sure the entry data, listeners and
+    log handler do not survive an actual removal.
+    '''
+    domain_data = hass.data.get(DOMAIN, {})
+    entry_data = domain_data.pop(entry.entry_id, {})
+    for key in ("unsub_options_update_listener",
+                "update_device_registry",
+                "update_entity_registry"):
+        unsubscribe = entry_data.pop(key, None)
+        if unsubscribe is None:
+            unsubscribe = domain_data.pop(key, None)
+        if callable(unsubscribe):
+            unsubscribe()
+
+    hass.data.pop(DOMAIN, None)
+    Gb.was_icloud3_reloaded = False
+    Gb.reload_in_progress = False
+    Gb.icloud3_reload_requested = False
+    close_ic3log_file()
 
 #-------------------------------------------------------------------------------------------
 async def async_remove_config_entry_device(hass: HomeAssistant,

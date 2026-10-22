@@ -5,7 +5,6 @@ from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE, DEVICE_TY
                                     CRLF_DOT, CRLF, NBSP6, NL3D, RED_X, YELLOW_ALERT, RARROW,
                                     CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE)
 from ..utils.utils          import (instr, is_empty, list_add, list_to_str, )
-from ..utils                import  file_io
 from ..utils.messaging      import (post_event, post_alert, post_error_msg, post_greenbar_msg,
                                     log_info_msg, log_exception, log_data, log_debug_msg,
                                     log_data_unfiltered, _evlog, _log, )
@@ -13,6 +12,7 @@ from ..utils.time_util      import (secs_to_time, secs_since, mins_since, secs_t
                                     format_timer, time_now_secs)
 from homeassistant.helpers  import  entity_registry as er, device_registry as dr
 
+import asyncio
 import json
 # from homeassistant.components import ios
 # from homeassistant.components.ios import notify
@@ -33,6 +33,44 @@ PUSH_URL = "https://ios-push.home-assistant.io/push"
 #   setting up the Device object
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+async def _async_get_mobile_app_registry_snapshot():
+    '''
+    Take an immutable snapshot of the mobile_app entities and their device
+    entries on the event loop. Registry objects are not thread-safe and Stage 4
+    runs in an executor thread.
+    '''
+    entity_registry = er.async_get(Gb.hass)
+    device_registry = dr.async_get(Gb.hass)
+
+    mobile_app_entities = [entity for entity in entity_registry.entities.values()
+                                if entity.platform == 'mobile_app']
+    device_entries = {}
+    for entity in mobile_app_entities:
+        if entity.device_id and entity.device_id not in device_entries:
+            device_entries[entity.device_id] = device_registry.async_get(entity.device_id)
+
+    return mobile_app_entities, device_entries
+
+#-----------------------------------------------------------------------------------------------------
+def _get_mobile_app_registry_snapshot():
+    '''
+    Run _async_get_mobile_app_registry_snapshot on the HA event loop and wait
+    for the result. This function is called from the Stage 4 executor thread.
+    '''
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    else:
+        # Calling .result() from the loop would deadlock. Callers must use the
+        # async variant instead.
+        raise RuntimeError("Mobile App registry snapshot requested from the event loop")
+
+    future = asyncio.run_coroutine_threadsafe(
+                _async_get_mobile_app_registry_snapshot(), Gb.hass.loop)
+    return future.result(timeout=30)
+
+#-----------------------------------------------------------------------------------------------------
 def get_entity_registry_mobile_app_devices():
     Gb.mobapp_id_by_mobapp_dname      = {}
     Gb.mobapp_dname_by_mobapp_id      = {}
@@ -40,37 +78,43 @@ def get_entity_registry_mobile_app_devices():
                                             # ['Gary-iPhone (MobApp), iPhone15,2', 'iPhone', 'iPhone 14 Pro']
     Gb.last_updt_trig_by_mobapp_dname = {}
     Gb.mobile_app_notify_devicename   = []
+    Gb.mobapp_disabled_dnames         = set()
     Gb.battery_level_sensors_by_mobapp_dname = {}
     Gb.battery_state_sensors_by_mobapp_dname = {}
 
-    device_registry = dr.async_get(Gb.hass)
-
     try:
-        entity_reg_data = file_io.read_json_file(Gb.entity_registry_file)
-        mobile_app_entities = [x for x in entity_reg_data['data']['entities']
-                                    if x['platform'] == 'mobile_app']
-        dev_trkr_entities = [x for x in mobile_app_entities
-                                if x['entity_id'].startswith('device_tracker')]
+        # This function runs in the Stage 4 executor thread. The registries are
+        # not thread-safe, so take an immutable snapshot on the event loop
+        # first. Iterating the live registry here could raise "dictionary
+        # changed size during iteration" while HA adds or removes an entity.
+        mobile_app_entities, device_entries = _get_mobile_app_registry_snapshot()
+        if not mobile_app_entities:
+            log_info_msg("Mobile App Entity Registry > No mobile_app entities found")
+
+        dev_trkr_entities = [entity for entity in mobile_app_entities
+                                if entity.entity_id.startswith('device_tracker')]
 
         for dev_trkr_entity in dev_trkr_entities:
-            if 'device_id' not in dev_trkr_entity: continue
+            if dev_trkr_entity.device_id is None: continue
 
-            mobapp_dname = dev_trkr_entity['entity_id'].replace('device_tracker.', '')
+            mobapp_dname = dev_trkr_entity.entity_id.replace('device_tracker.', '')
+            if dev_trkr_entity.disabled_by:
+                Gb.mobapp_disabled_dnames.add(mobapp_dname)
             dup_cnt = 1
             while mobapp_dname in Gb.mobapp_id_by_mobapp_dname:
                 dup_cnt += 1
                 mobapp_dname = f"{mobapp_dname} ({dup_cnt})"
             if dup_cnt > 1:
                 alert_msg = (f"Duplicate Mobile App devices in Entity Registry for "
-                            f"{dev_trkr_entity['entity_id']}")
+                            f"{dev_trkr_entity.entity_id}")
                 post_greenbar_msg(alert_msg)
 
 
             raw_model = 'Unknown'
-            device_id = dev_trkr_entity['device_id']
+            device_id = dev_trkr_entity.device_id
             try:
-                # Get raw_model from HA device_registry
-                device_reg_data = device_registry.async_get(device_id)
+                # Get raw_model from the device registry snapshot
+                device_reg_data = device_entries.get(device_id)
 
                 log_title = (f"{NL3D}MobApp device_registry entry - <{mobapp_dname}>)")
                 log_data_unfiltered(log_title, str(device_reg_data)) #, is_log_level_rawdata=True)
@@ -82,21 +126,22 @@ def get_entity_registry_mobile_app_devices():
                 pass
 
             model_display_name = Gb.model_display_name_by_raw_model.get(raw_model, raw_model)
-            Gb.mobapp_id_by_mobapp_dname[mobapp_dname] = dev_trkr_entity['device_id']
-            Gb.mobapp_dname_by_mobapp_id[dev_trkr_entity['device_id']] = mobapp_dname
+            Gb.mobapp_id_by_mobapp_dname[mobapp_dname] = device_id
+            Gb.mobapp_dname_by_mobapp_id[device_id] = mobapp_dname
 
+            original_name = dev_trkr_entity.original_name or ''
+            mobapp_fname  = dev_trkr_entity.name or original_name or mobapp_dname
             _device_types = [_device_type for _device_type in DEVICE_TYPES
                                         if (instr(raw_model, _device_type)
-                                                or instr(dev_trkr_entity['name'], _device_type)
-                                                or instr(dev_trkr_entity['original_name'], _device_type))]
+                                                or instr(mobapp_fname, _device_type)
+                                                or instr(original_name, _device_type))]
             device_type = _device_types[0] if _device_types else raw_model
 
-            mobapp_fname = dev_trkr_entity['name'] or dev_trkr_entity['original_name']
             Gb.device_info_by_mobapp_dname[mobapp_dname] = \
                     [mobapp_fname, raw_model, device_type, model_display_name]    # Gary-iPhone, iPhone15,2; iPhone; iPhone 14 Pro
 
             log_title = (f"MobApp entity_registry entry - <{mobapp_dname}>)")
-            log_data(log_title, dev_trkr_entity, is_log_level_rawdata=True)
+            log_data(log_title, str(dev_trkr_entity), is_log_level_rawdata=True)
 
         last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities, '_last_update_trigger')
         battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_level')
@@ -126,8 +171,8 @@ def _extract_mobile_app_entities(mobile_app_entities, entity_name):
 
     Return - A list of the mobile_app entities
     '''
-    return [x   for x in mobile_app_entities
-                if instr(x['unique_id'], entity_name)]
+    return [entity   for entity in mobile_app_entities
+                if instr(entity.unique_id or '', entity_name)]
 
 #-----------------------------------------------------------------------------------------------------
 def _extract_sensor_entities(sensor_entities):
@@ -140,9 +185,9 @@ def _extract_sensor_entities(sensor_entities):
 
     Return - A dictionary of the sensor entity for the specific mobapp device
     '''
-    return  {Gb.mobapp_dname_by_mobapp_id[sensor['device_id']]: _entity_name_disabled_by(sensor)
+    return  {Gb.mobapp_dname_by_mobapp_id[sensor.device_id]: _entity_name_disabled_by(sensor)
                                 for sensor in sensor_entities
-                                if sensor['device_id'] in Gb.mobapp_dname_by_mobapp_id}
+                                if sensor.device_id in Gb.mobapp_dname_by_mobapp_id}
 
 #-----------------------------------------------------------------------------------------------------
 def _entity_name(entity_id):
@@ -155,10 +200,10 @@ def x_entity_name_disabled_by(sensor):
     return f"{disabled_prefix}{sensor['entity_id'].replace('sensor.', '')}"
 
 def _entity_name_disabled_by(sensor):
-    if sensor['disabled_by']:
-        list_add(Gb.mobapp_fnames_disabled, sensor['device_id'])
+    if sensor.disabled_by:
+        list_add(Gb.mobapp_fnames_disabled, sensor.device_id)
 
-    return sensor['entity_id'].replace('sensor.', '')
+    return sensor.entity_id.replace('sensor.', '')
 
 #-----------------------------------------------------------------------------------------------------
 def _get_mobile_app_notify_devices():

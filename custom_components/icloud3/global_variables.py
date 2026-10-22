@@ -339,8 +339,10 @@ class GlobalVariables(object):
     is_initial_locate_complete      = False
     was_icloud3_restart_requested   = False     # iC3 needs to be restarted
     was_icloud3_reloaded            = False     # Set to True in __init__ if reloading iCloud3
+    reload_in_progress              = False     # A reload was requested by options/service/registry
     icloud3_reload_requested        = False
     icloud3_reload_requested_secs   = 0         # Set to True when a reload is prpbable (enable sensor)
+    mobapp_disabled_dnames          = set()     # Mobile App trackers disabled in HA
     is_ha_restart_needed            = False     # HA needs to be restarted
     restart_requested_by            = ''        # Requested by 'service_handler', 'config_flow'
     any_device_was_updated_reason   = ''
