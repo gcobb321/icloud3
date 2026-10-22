@@ -306,7 +306,6 @@ class iCloud3_DeviceTracker(TrackerEntity):
             self._data              = data          # Used by .see to issue change triggers
             self._attr_force_update = True
             self._unsub_dispatcher  = None
-            self._last_written_signature = None
 
             # Note: `after_removal_cleanup` is registered in `async_added_to_hass` with
             # `self.async_on_remove()`. It can not be registered here - HA drains the
@@ -721,11 +720,6 @@ class iCloud3_DeviceTracker(TrackerEntity):
         self.ha_entity_id   = self.registry_entry.entity_id
         self.ha_disabled_by = self.registry_entry.disabled_by
 
-        # HA re-adds this same object after a re-add cycle (entity_id rename), so
-        # the first write after the add must not be suppressed by a signature
-        # captured before the entity left the state machine.
-        self._last_written_signature = None
-
         Gb.ha_device_id_x_devicename[self.devicename]   = self.ha_device_id
         Gb.ha_device_id_x_devicename[self.ha_device_id]   = self.devicename
 
@@ -835,40 +829,10 @@ class iCloud3_DeviceTracker(TrackerEntity):
             if self.hass is None: self.hass = Gb.hass
             if self.enabled is False:
                 return
-
-            # Without gps data there is nothing to compare against, so the write
-            # runs as before (signature stays None and is never matched).
-            signature = None
-            if self._data is not None:
-                signature = self._get_write_signature()
-
-            if (signature is not None
-                    and signature == getattr(self, '_last_written_signature', None)):
-                return
-
             self.schedule_update_ha_state(force_refresh=True)
 
-            self._last_written_signature = signature
-
         except Exception as err:
             log_exception(err)
-
-#-------------------------------------------------------------------------------------------
-    def _get_write_signature(self):
-        """
-        Return the (state, gps data) pair that the next write would publish.
-
-        Returns None when either value can not be read, so the caller writes
-        instead of skipping on an unreadable signature.
-        """
-        try:
-            state = self.state
-
-            return (state, repr(self._data))
-
-        except Exception as err:
-            log_exception(err)
-            return None
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
