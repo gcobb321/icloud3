@@ -12,6 +12,7 @@ import logging
 import os
 import requests
 import shutil
+import threading
 
 from homeassistant.util     import json as json_util
 from homeassistant.helpers  import json as json_helpers
@@ -21,6 +22,18 @@ from httpx                  import (ConnectTimeout, HTTPError, RequestError,
 
 _LOGGER = logging.getLogger(__name__)
 #_LOGGER = logging.getLogger(f"icloud3")
+
+# The configuration file is written from the event loop (registry callbacks),
+# the 5-second executor thread and the service handler. Serialize writes and
+# use Home Assistant's atomic writer so a crash cannot leave half a JSON file
+# behind. A corrupt file makes iCloud3 restore an older backup and silently
+# lose recent changes.
+_JSON_WRITE_LOCK = threading.Lock()
+
+
+def _save_json_atomic(filename, data):
+    with _JSON_WRITE_LOCK:
+        json_helpers.save_json(filename, data, atomic_writes=True)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -80,7 +93,7 @@ async def async_save_json_file(filename, data):
 
     try:
         await Gb.hass.async_add_executor_job(
-                            json_helpers.save_json,
+                            _save_json_atomic,
                             filename,
                             data)
         return True
@@ -94,7 +107,7 @@ async def async_save_json_file(filename, data):
 #--------------------------------------------------------------------
 def save_json_file(filename, data):
     try:
-        json_helpers.save_json(filename, data)
+        _save_json_atomic(filename, data)
         return True
 
     except Exception as err:

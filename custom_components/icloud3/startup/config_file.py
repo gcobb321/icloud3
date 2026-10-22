@@ -57,6 +57,12 @@ from ..utils            import file_io
 import os
 import json
 import base64
+import threading
+
+# The configuration file is written from the event loop, the 5-second
+# executor thread and service handlers. Serialize the snapshot rebuild and the
+# write together, otherwise an older snapshot can overwrite a newer change.
+_CONFIG_WRITE_LOCK = threading.RLock()
 
 import logging
 # _LOGGER = logging.getLogger(__name__)
@@ -146,6 +152,11 @@ def write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
         filename_suffix: A suffix added to the filename that allows saving multiple copies o
                             the configuration file
     '''
+    with _CONFIG_WRITE_LOCK:
+        return _write_icloud3_configuration_file(filename_suffix, new_file_flag)
+
+#--------------------------------------------------------------------
+def _write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
     _reconstruct_conf_file()
 
     try:
@@ -177,24 +188,8 @@ async def async_write_icloud3_configuration_file(filename_suffix=None):
         filename_suffix: A suffix added to the filename that allows saving multiple
                             copies of the configuration file
     '''
-    _reconstruct_conf_file()
-
-    try:
-        if filename_suffix is None: filename_suffix = ''
-        filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
-
-        success = await file_io.async_save_json_file(filename, Gb.conf_file_data)
-        log_debug_msg(f"Configuration File > Update Successful-{success}")
-
-    except Exception as err:
-        _LOGGER.exception(err)
-        return False
-
-    # Update conf_devices devicename index dictionary
-    if len(Gb.conf_devices) != len(Gb.conf_devices_idx_by_devicename):
-        set_conf_devices_index_by_devicename()
-
-    return success
+    return await Gb.hass.async_add_executor_job(
+                    write_icloud3_configuration_file, filename_suffix, None)
 
 #--------------------------------------------------------------------
 def _reconstruct_conf_file():
