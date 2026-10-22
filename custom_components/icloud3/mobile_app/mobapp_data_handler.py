@@ -536,21 +536,28 @@ def get_and_verify_device_trkr_data(Device, entity_id):
         device_trkr_attrs = {}
         device_trkr_attrs[DEVICE_TRACKER] = entity_io.get_state(entity_id)
 
-        # Display an 'unknown' device msg every 2-hrs
+        # Display an 'unknown' device msg every 2-hrs. Do not report an ERROR
+        # the first time a tracker is seen as unknown/unavailable: an iPad that
+        # is asleep reports `unknown` at every HA start-up.
         if device_trkr_attrs[DEVICE_TRACKER] in ['unavailable', 'unknown', NOT_SET]:
-            if (Device.mobapp_data_invalid_error_cnt % 1440) == 0:
-                Device.mobapp_data_invalid_error_cnt += 1
+            Device.mobapp_data_invalid_error_cnt += 1
+            if Device.mobapp_data_invalid_error_cnt == 1:
+                log_info_msg(f"iCloud3 > {Device.fname} > "
+                             f"MobApp device_tracker is `{device_trkr_attrs[DEVICE_TRACKER]}`, "
+                             f"waiting for data")
+            elif (Device.mobapp_data_invalid_error_cnt % 1440) == 0:
                 post_alert( f"MOBILE APP DEVICE ERROR > DEVICE UNAVAILABLE, "
                             f"{CRLF}{Device.conf_mobapp_fname} ({entity_id}), "
                             f"AssignedTo-{Device.fname_devicename}, "
                             f"{CRLF}Disabled in MobApp Integration or Unknown Name in MobApp on device")
-                log_error_msg(f"iCloud3 Error ({Device.fname}) > MobApp status is `unknown`")
+                log_warning_msg(f"iCloud3 Warning ({Device.fname}) > "
+                                f"MobApp status is `{device_trkr_attrs[DEVICE_TRACKER]}`")
 
-                if Device.mobapp_data_state != 'Unavailable':
-                    Device.mobapp_data_state = 'Unavailable'
-                    Device.mobapp_data_state_secs = time_now_secs()
-                    Device.mobapp_data_state_time = time_now()
-                    Device.mobapp_data_trigger = f"Unavailable@{time_now()}"
+            if Device.mobapp_data_state != 'Unavailable':
+                Device.mobapp_data_state = 'Unavailable'
+                Device.mobapp_data_state_secs = time_now_secs()
+                Device.mobapp_data_state_time = time_now()
+                Device.mobapp_data_trigger = f"Unavailable@{time_now()}"
 
             return None
 
