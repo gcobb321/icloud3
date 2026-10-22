@@ -55,6 +55,7 @@ from ..utils            import entity_reg_util as er_util
 from ..utils            import file_io
 
 #--------------------------------------------------------------------
+import copy
 import os
 import json
 import base64
@@ -250,13 +251,14 @@ def initialize_icloud3_configuration_file():
     read_icloud3_configuration_file()
 
 #--------------------------------------------------------------------
-def _run_config_migration_step(step_name, step_func):
+def _run_config_migration_step(step_name, step_func, failed_steps=None):
     '''
     Run one config file migration/verification step.
 
-    A failure in one step must not skip the steps that follow it. The step name
-    is included in the log so the failing step can be identified. The return value
-    keeps the original contract: True means the config file was changed.
+    A failure in one step must not skip the steps that follow it, but the
+    caller must not write a half-migrated configuration file either. Failed
+    step names are collected in failed_steps. The return value keeps the
+    original contract: True means the config file was changed.
     '''
     try:
         return bool(step_func())
@@ -264,6 +266,8 @@ def _run_config_migration_step(step_name, step_func):
     except Exception as err:
         _LOGGER.error(f"iCloud3 Config Migration Error > {step_name}, Failed-{err}")
         log_exception(err)
+        if failed_steps is not None:
+            failed_steps.append(step_name)
 
     return False
 
@@ -271,42 +275,46 @@ def _run_config_migration_step(step_name, step_func):
 def _add_parms_and_check_config_file():
 
     update_config_file_flag = False
+    failed_steps = []
 
     try:
         #Add new parameters, check  parameter settings
         update_config_file_flag = _run_config_migration_step(
-            'Check new iCloud3 version', _config_file_check_new_ic3_version) or update_config_file_flag
+            'Check new iCloud3 version', _config_file_check_new_ic3_version, failed_steps) or update_config_file_flag
 
         update_config_file_flag = _run_config_migration_step(
-            'Update Profile', _update_profile)                        or update_config_file_flag
+            'Update Profile', _update_profile, failed_steps)          or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Update Tracking Parameters', _update_tracking_parameters) or update_config_file_flag
+            'Update Tracking Parameters', _update_tracking_parameters, failed_steps) or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Update General Parameters', _update_general_parameters)  or update_config_file_flag
+            'Update General Parameters', _update_general_parameters, failed_steps)  or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Update Sensors', _update_sensors)                        or update_config_file_flag
+            'Update Sensors', _update_sensors, failed_steps)          or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Update Device Sensors', _update_device_sensors)          or update_config_file_flag
+            'Update Device Sensors', _update_device_sensors, failed_steps) or update_config_file_flag
 
         update_config_file_flag = _run_config_migration_step(
-            'Update Apple Account Parameters', _update_apple_acct_parameters) or update_config_file_flag
+            'Update Apple Account Parameters', _update_apple_acct_parameters, failed_steps) or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Update Device Parameters', _update_device_parameters)    or update_config_file_flag
+            'Update Device Parameters', _update_device_parameters, failed_steps) or update_config_file_flag
 
         update_config_file_flag = _run_config_migration_step(
-            'Verify General Parameters', _verify_general_parameter_values)   or update_config_file_flag
+            'Verify General Parameters', _verify_general_parameter_values, failed_steps)   or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Verify Tracking Parameters', _verify_tracking_parameters_values) or update_config_file_flag
+            'Verify Tracking Parameters', _verify_tracking_parameters_values, failed_steps) or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Verify Apple Account Parameters', _verify_apple_acct_parameters_values) or update_config_file_flag
+            'Verify Apple Account Parameters', _verify_apple_acct_parameters_values, failed_steps) or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
-            'Verify Device Parameters', _verify_device_parameters_values)    or update_config_file_flag
+            'Verify Device Parameters', _verify_device_parameters_values, failed_steps)    or update_config_file_flag
 
         if Gb.conf_profile.get(CONF_FIRST_SEEN) == '':
             Gb.conf_profile[CONF_FIRST_SEEN] = datetime_now()
             update_config_file_flag = True
 
-        if update_config_file_flag:
+        if failed_steps:
+            _LOGGER.error(  "iCloud3 > Configuration file was not written because "
+                            f"these migration steps failed: {failed_steps}")
+        elif update_config_file_flag:
             Gb.conf_profile[CONF_SENSORS_HASH] = ''
             write_icloud3_configuration_file()
 
@@ -315,9 +323,9 @@ def _add_parms_and_check_config_file():
         _LOGGER.error(  "iCloud3 > An error occured verifying the iCloud3 "
                         "Configuration File. Will continue.")
 
-    _run_config_migration_step('Decode Passwords', decode_all_passwords)
-    _run_config_migration_step('Build Log File Filters', build_log_file_filters)
-    _run_config_migration_step('Build Devices Index', set_conf_devices_index_by_devicename)
+    _run_config_migration_step('Decode Passwords', decode_all_passwords, failed_steps)
+    _run_config_migration_step('Build Log File Filters', build_log_file_filters, failed_steps)
+    _run_config_migration_step('Build Devices Index', set_conf_devices_index_by_devicename, failed_steps)
 
 #--------------------------------------------------------------------
 def set_conf_devices_index_by_devicename():
@@ -923,9 +931,9 @@ def _verify_device_parameters_values():
         if conf_device[CONF_TRACK_FROM_ZONES] == []:
             conf_device[CONF_TRACK_FROM_ZONES] = [HOME]
             update_configuration_flag = True
-        # The UI no longer offers an interval below 3 minutes. Keep the
-        # migration behaviour explicit so 2.5 (a legacy value) is also raised.
-        if conf_device[CONF_FIXED_INTERVAL] < 3:
+        # 0 means "no fixed interval"; only a value that was actually set but
+        # is below the minimum (including the legacy 2.5) is raised to 3.0.
+        if 0 < conf_device[CONF_FIXED_INTERVAL] < 3:
             conf_device[CONF_FIXED_INTERVAL] = 3.0
             update_configuration_flag = True
 
@@ -972,9 +980,16 @@ def _update_device_sensors():
     Update Gb.conf_device_sensors with new fields
     '''
     if (CF_DEVICE_SENSORS not in Gb.conf_data
-            or is_empty(Gb.conf_device_sensors)
-            or CONF_EXCLUDED_SENSORS not in Gb.conf_device_sensors):
-        Gb.conf_device_sensors = DEFAULT_DEVICE_SENSORS_CONF.copy()
+            or is_empty(Gb.conf_device_sensors)):
+        # deepcopy: the default holds lists, and a shallow copy would let the
+        # form code mutate the module-level default for the rest of the process.
+        Gb.conf_device_sensors = copy.deepcopy(DEFAULT_DEVICE_SENSORS_CONF)
+        return True
+
+    if CONF_EXCLUDED_SENSORS not in Gb.conf_device_sensors:
+        # Keep every user setting; only add the missing key.
+        Gb.conf_device_sensors[CONF_EXCLUDED_SENSORS] = \
+            copy.deepcopy(DEFAULT_DEVICE_SENSORS_CONF[CONF_EXCLUDED_SENSORS])
         return True
 
     return False
