@@ -133,13 +133,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
     def flow_closed(self) -> None:
         """Called when the user dismisses the config flow with 'X'."""
-        # The OptionsFlowHandler is a singleton that is reused by the next Configure
-        # session. Clear it even if the exit processing fails so a new session does
-        # not continue with this stale handler.
-        try:
-            return self.ha_reconfigure_reauth_exit(exit_by_x_click=True)
-        finally:
-            Gb.OptionsFlowHandler = None
+        return self.ha_reconfigure_reauth_exit(exit_by_x_click=True)
 
 
 
@@ -522,7 +516,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
             if isnot_empty(self.config_parms_update_control):
                 Gb.hass.async_create_task(self.exit_configure_tasks(exit_by_x_click=True))
         finally:
-            Gb.OptionsFlowHandler = None
+            # Only the handler that is currently installed may clear the
+            # singleton; a reauth flow closing must not drop an open Configure
+            # session.
+            if Gb.OptionsFlowHandler is self:
+                Gb.OptionsFlowHandler = None
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

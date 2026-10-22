@@ -244,16 +244,14 @@ class WazeRouteHistory(object):
         '''
         Close the Waze History Database. Calling it again does nothing.
         '''
-        if self.connection is None:
-            self.cursor = None
-            return
-
-        connection      = self.connection
-        self.connection = None
-        self.cursor     = None
-
         try:
             with self.lock:
+                connection      = self.connection
+                self.connection = None
+                self.cursor     = None
+                if connection is None:
+                    return
+
                 try:
                     connection.commit()
                 finally:
@@ -265,10 +263,10 @@ class WazeRouteHistory(object):
 #--------------------------------------------------------------------
     def _sql(self, sql, data=None, fetchone=False, fetchall=False, lastrowid=False):
         '''
-        Execute a SQL statement. Read statements (SELECT/PRAGMA) are not committed and
-        return an empty list when the database is unavailable or the statement fails so
-        the callers can tell "no data" from a crash. Write statements keep returning
-        None (or the last row id).
+        Execute a SQL statement. Read statements (SELECT/PRAGMA) are not committed.
+        When the database is unavailable or the statement fails, SELECT returns an
+        empty list and write statements return None; callers must not treat an empty
+        result as proof that the database is healthy.
         '''
         is_read = sql.lstrip()[:6].upper() in SQL_READ_STATEMENTS
 
@@ -282,17 +280,21 @@ class WazeRouteHistory(object):
 
         try:
             with self.lock:
+                cursor = self.cursor
+                if cursor is None or self.connection is None:
+                    return error_result
+
                 if data:
-                    self.cursor.execute(sql, data)
+                    cursor.execute(sql, data)
                 else:
-                    self.cursor.execute(sql)
+                    cursor.execute(sql)
 
                 if lastrowid:
-                    records = self.cursor.lastrowid
+                    records = cursor.lastrowid
                 elif fetchone:
-                    records = self.cursor.fetchone()
+                    records = cursor.fetchone()
                 elif fetchall:
-                    records = self.cursor.fetchall()
+                    records = cursor.fetchall()
                 else:
                     records = None
 

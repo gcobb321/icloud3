@@ -18,7 +18,8 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
 
-# Keys are matched case-insensitively by async_redact_data at every level.
+# Redaction is done below with a case-insensitive walk. Do not rely on the HA
+# helper alone: config keys written by older versions are not consistently cased.
 TO_REDACT = [
     'username',
     'password',
@@ -53,21 +54,32 @@ async def async_get_config_entry_diagnostics(
         hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     '''Return the iCloud3 diagnostics for a config entry.'''
 
-    # Imported here so importing this module (HA scans it for the diagnostics
-    # platform) does not pull in the diagnostics component.
-    from homeassistant.components.diagnostics import async_redact_data
-
     return {
         'icloud3_version':     VERSION,
         'ha_version':          _ha_version(hass),
         'config_entry': {
-            'data':    async_redact_data(dict(entry.data or {}), TO_REDACT),
-            'options': async_redact_data(dict(getattr(entry, 'options', None) or {}),
-                                            TO_REDACT),
+            'data':    _redact(dict(entry.data or {})),
+            'options': _redact(dict(getattr(entry, 'options', None) or {})),
         },
         'counts':              _counts(),
-        'conf_profile':        async_redact_data(_conf_profile(), TO_REDACT),
+        'conf_profile':        _redact(_conf_profile()),
     }
+
+#--------------------------------------------------------------------
+def _redact(data: Any) -> Any:
+    '''Recursively redact secrets. Keys are compared case-insensitively.'''
+
+    if isinstance(data, dict):
+        return {
+            key: ('**REDACTED**' if str(key).lower() in _TO_REDACT_LOWER
+                    else _redact(value))
+            for key, value in data.items()
+        }
+    if isinstance(data, list):
+        return [_redact(value) for value in data]
+    return data
+
+_TO_REDACT_LOWER = {key.lower() for key in TO_REDACT}
 
 #--------------------------------------------------------------------
 def _counts() -> dict[str, int]:

@@ -33,7 +33,12 @@ _JSON_WRITE_LOCK = threading.Lock()
 
 def _save_json_atomic(filename, data):
     with _JSON_WRITE_LOCK:
-        json_helpers.save_json(filename, data, atomic_writes=True)
+        try:
+            json_helpers.save_json(filename, data, atomic_writes=True)
+        except TypeError:
+            # Older HA releases do not accept atomic_writes. Keep saving rather
+            # than losing every configuration change.
+            json_helpers.save_json(filename, data)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

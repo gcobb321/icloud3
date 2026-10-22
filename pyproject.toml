@@ -13,7 +13,11 @@ addopts = "-q"
 
 [tool.mypy]
 strict = true
-files = ["custom_components/icloud3/utils/pure.py"]
+files = [
+    "custom_components/icloud3/utils/pure.py",
+    "custom_components/icloud3/utils/backoff.py",
+    "custom_components/icloud3/startup/mobapp_resolver.py",
+]
 ignore_missing_imports = true
 
 [tool.coverage.run]

@@ -7,7 +7,7 @@ from ..const            import (PLATFORMS, PLATFORM_DEVICE_TRACKER, PLATFORM_SEN
 from ..const_sensor     import (ICLOUD3_INTERNAL_SENSORS_ID, SENSOR_DEFINITION, )
 from .utils             import (instr, is_empty, isnot_empty, dict_del,
                                 list_add, list_del, list_to_str, set_to_list, )
-from .messaging         import (log_info_msg, log_debug_msg, log_exception,
+from .messaging         import (log_info_msg, log_debug_msg, log_exception, log_warning_msg,
                                 log_error_msg,
                                 _run_in_event_loop,
                                 _evlog, _log, )
@@ -498,6 +498,14 @@ def remove_sensor(entity_id):
     # See if the entity is a deleted entity that has no Sensor
     entity_reg = er.async_get(Gb.hass)
     if entity_id not in entity_reg.entities:
+        return
+
+    # Never delete an entity that belongs to another integration. The caller
+    # uses this to make room for an iCloud3 entity_id, not to clean up HA.
+    entity_entry = entity_reg.async_get(entity_id)
+    if entity_entry is not None and entity_entry.platform not in (None, DOMAIN):
+        log_warning_msg(f"Sensor Entity > Not removing {entity_id}, "
+                        f"it belongs to {entity_entry.platform}")
         return
 
     devicename_sensor = entity_id_base(entity_id)

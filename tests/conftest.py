@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+from collections.abc import Iterator
 from types import ModuleType
 
 import pytest
@@ -53,8 +54,8 @@ def pure() -> ModuleType:
     )
 
 
-@pytest.fixture(scope="session")
-def diagnostics_module() -> ModuleType:
+@pytest.fixture()
+def diagnostics_module() -> Iterator[ModuleType]:
     """Load diagnostics.py with a minimal package shim.
 
     diagnostics.py uses relative imports for const/global_variables, but the
@@ -62,6 +63,17 @@ def diagnostics_module() -> ModuleType:
     lets the submodules load without executing the integration __init__.
     """
     import types
+
+    keys = (
+        "custom_components",
+        "custom_components.icloud3",
+        "custom_components.icloud3.const",
+        "custom_components.icloud3.global_variables",
+        "custom_components.icloud3.diagnostics",
+        "homeassistant",
+        "homeassistant.const",
+    )
+    saved = {key: sys.modules.get(key) for key in keys}
 
     for name, path in (
         ("custom_components", ROOT / "custom_components"),
@@ -91,7 +103,15 @@ def diagnostics_module() -> ModuleType:
         "custom_components.icloud3.global_variables",
         "custom_components/icloud3/global_variables.py",
     )
-    return load_module(
+    module = load_module(
         "custom_components.icloud3.diagnostics",
         "custom_components/icloud3/diagnostics.py",
     )
+
+    yield module
+
+    for key, value in saved.items():
+        if value is None:
+            sys.modules.pop(key, None)
+        else:
+            sys.modules[key] = value

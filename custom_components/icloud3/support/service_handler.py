@@ -229,8 +229,8 @@ def resolve_action_devicename_values(action, devicename):
         return action, devicename, True
     log_info_msg(f"Service Call > Action-{action}, Device-{devicename}")
 
-    if devicename is None:
-        return action, devicename, True
+    if devicename is None or devicename == '':
+        return action, None, True
 
     if devicename in Gb.Devices_by_devicename:
         pass

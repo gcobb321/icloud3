@@ -23,6 +23,18 @@ def test_icloud3_main_has_no_dev_force_flag() -> None:
     assert "is_dev_data_source_iCloud" not in source
 
 
+def test_device_icloud_source_property_does_not_recurse() -> None:
+    source = source_of("device.py")
+    assert "return self.is_dev_data_source_ICLOUD" not in source
+    assert "return self.dev_data_source in [ICLOUD]" in source
+
+
+def test_fixed_interval_zero_stays_disabled() -> None:
+    source = source_of("startup/config_file.py")
+    # 0 means "no fixed interval"; a bare "< 3" would enable it for everyone.
+    assert "0 < conf_device[CONF_FIXED_INTERVAL] < 3" in source
+
+
 def test_icloud3_main_uses_the_zone_result_list() -> None:
     source = source_of("icloud3_main.py")
     assert "selected_zone_result =" not in source
