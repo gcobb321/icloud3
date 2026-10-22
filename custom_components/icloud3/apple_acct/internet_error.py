@@ -116,7 +116,12 @@ class InternetConnection_ErrorHandler:
         or removed so the timer does not keep running outside iCloud3.
         '''
         if self.cancel_status_check_timer_fct:
-            self.cancel_status_check_timer_fct()
+            # Same HA constraint as the restore-state timer: the sync unsubscribe
+            # raises when called from the event loop (unload runs there).
+            if is_running_in_event_loop() and Gb.hass is not None:
+                Gb.hass.async_add_executor_job(self.cancel_status_check_timer_fct)
+            else:
+                self.cancel_status_check_timer_fct()
 
         self.cancel_status_check_timer_fct = None
 

@@ -50,6 +50,16 @@ def test_mobapp_handler_rejects_stale_device_data() -> None:
     assert "x_unverified_devices_mobapp_handler" not in source
 
 
+def test_timer_teardown_does_not_run_on_the_event_loop() -> None:
+    for relative_path in (
+        "startup/restore_state.py",
+        "apple_acct/internet_error.py",
+    ):
+        source = source_of(relative_path)
+        assert "is_running_in_event_loop" in source
+        assert "async_add_executor_job" in source
+
+
 def test_stale_mobapp_mapping_has_a_repair_path() -> None:
     handler = source_of("mobile_app/mobapp_data_handler.py")
     setup = source_of("startup/start_ic3.py")

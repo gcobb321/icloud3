@@ -324,7 +324,7 @@ async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry
     await hass.config_entries.async_reload(config_entry.entry_id)
 
 #-------------------------------------------------------------------------------------------
-def stop_background_activity():
+async def stop_background_activity():
     '''
     Stop the polling loop, the status check timer, the restore state timer and the
     Waze history database connection. They are not owned by a platform or a listener,
@@ -332,23 +332,23 @@ def stop_background_activity():
     '''
     if Gb.iCloud3 is not None and callable(getattr(Gb.iCloud3, 'shutdown', None)):
         try:
-            Gb.iCloud3.shutdown()
+            await Gb.iCloud3.shutdown()
         except Exception as err:
             log_exception(err)
 
     if Gb.WazeHist is not None:
         try:
-            Gb.WazeHist.close_waze_history_database()
+            await Gb.hass.async_add_executor_job(Gb.WazeHist.close_waze_history_database)
         except Exception as err:
             log_exception(err)
 
     if Gb.InternetError is not None and callable(getattr(Gb.InternetError, 'stop', None)):
         try:
-            Gb.InternetError.stop()
+            await Gb.hass.async_add_executor_job(Gb.InternetError.stop)
         except Exception as err:
             log_exception(err)
 
-    restore_state.cancel_restore_state_timer()
+    await Gb.hass.async_add_executor_job(restore_state.cancel_restore_state_timer)
 
 #-------------------------------------------------------------------------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -371,7 +371,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         # new config entry setup registers a fresh 5-sec timer; leaving the old
         # one running made every reload add another loop.
         if callable(getattr(Gb.iCloud3, 'shutdown', None)):
-            Gb.iCloud3.shutdown()
+            await Gb.iCloud3.shutdown()
         return True
 
     Gb.reload_in_progress = False
@@ -402,7 +402,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # Remove config entry from domain.
     if unload_ok:
-        stop_background_activity()
+        await stop_background_activity()
         domain_data.pop(entry.entry_id, None)
         Gb.was_icloud3_reloaded = False
         Gb.reload_in_progress = False
@@ -439,7 +439,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
     Gb.was_icloud3_reloaded = False
     Gb.reload_in_progress = False
     Gb.icloud3_reload_requested = False
-    stop_background_activity()
+    await stop_background_activity()
     close_ic3log_file()
 
 #-------------------------------------------------------------------------------------------

@@ -8,7 +8,7 @@ from ..const                import (RESTORE_STATE_FILE,
                                     LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
                                     DIR_OF_TRAVEL, )
 
-from ..utils.utils        import (instr, )
+from ..utils.utils        import (instr, is_running_in_event_loop, )
 from ..utils.file_io      import (file_exists, read_json_file, save_json_file, async_save_json_file, )
 from ..utils.messaging    import (log_info_msg, log_debug_msg, log_exception, _evlog, _log, )
 from ..utils.time_util    import (datetime_now, time_now_secs, utcnow, s2t, datetime_plus, )
@@ -174,7 +174,12 @@ def cancel_restore_state_timer():
 
     if _restore_state_unsub is not None:
         try:
-            _restore_state_unsub()
+            # HA's sync unsubscribe uses run_callback_threadsafe().result(),
+            # which raises when called from the event loop (unload does).
+            if is_running_in_event_loop() and Gb.hass is not None:
+                Gb.hass.async_add_executor_job(_restore_state_unsub)
+            else:
+                _restore_state_unsub()
 
         except Exception as err:
             log_exception(err)
