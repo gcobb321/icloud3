@@ -386,7 +386,11 @@ def stage_7_initial_locate():
             error_msg = (f"iCloud3 > {Device.fname_devicename} > "
                         "No GPS data was returned from iCloud Location "
                         "Service on the initial locate")
-            log_warning_msg(error_msg)
+            # AirPods have no GPS. This is expected, not an actionable warning.
+            if instr(Device.model, 'AirPods') or instr(Device.device_type, 'Accessory'):
+                log_info_msg(error_msg)
+            else:
+                log_warning_msg(error_msg)
 
         # Restore other items enter the first locate
         Device.restore_state_reset_other_items()
