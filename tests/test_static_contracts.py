@@ -50,6 +50,14 @@ def test_mobapp_handler_rejects_stale_device_data() -> None:
     assert "x_unverified_devices_mobapp_handler" not in source
 
 
+def test_stale_mobapp_mapping_has_a_repair_path() -> None:
+    handler = source_of("mobile_app/mobapp_data_handler.py")
+    setup = source_of("startup/start_ic3.py")
+    assert "clear_mobapp_mapping" in handler
+    assert "clear_mobapp_mapping" in setup
+    assert "register_repair_fix_handler('clear_mobapp_mapping'" in setup
+
+
 def test_waze_history_creates_indexes_safely() -> None:
     source = source_of("tracking/waze_history.py")
     assert "CREATE INDEX IF NOT EXISTS" in source

@@ -1819,6 +1819,32 @@ def _fix_repair_issue_aa_device_assignment(fix_data):
 register_repair_fix_handler('reassign_apple_device', _fix_repair_issue_aa_device_assignment)
 
 #............................................................................
+def _fix_repair_issue_clear_mobapp_mapping(fix_data):
+    '''
+    Repairs Submit handler for a mobile_app_device that is not in the HA Mobile
+    App integration. Clear the mapping so iCloud tracking is used, then restart.
+    Runs in an executor thread.
+    '''
+    devicename = fix_data.get('devicename')
+    conf_device = next((_conf_device for _conf_device in Gb.conf_devices
+                        if _conf_device[CONF_IC3_DEVICENAME] == devicename), None)
+    if conf_device is None:
+        return False
+
+    old_mobapp_dname = conf_device.get(CONF_MOBILE_APP_DEVICE, '')
+    conf_device[CONF_MOBILE_APP_DEVICE] = 'None'
+    config_file.write_icloud3_configuration_file()
+
+    post_event(devicename,
+                f"HA Repairs > Mobile App device cleared ({old_mobapp_dname}), "
+                f"Restarting iCloud3")
+    Gb.was_icloud3_restart_requested = True
+
+    return True
+
+register_repair_fix_handler('clear_mobapp_mapping', _fix_repair_issue_clear_mobapp_mapping)
+
+#............................................................................
 def  _post_repair_issue_no_aa_device_assignment(
                                         issue_id_prefix, devicename, dev_fname,
                                         old_device_msg, old_device_status_msg,

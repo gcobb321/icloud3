@@ -15,6 +15,7 @@ from ..const            import (DEVICE_TRACKER, NOTIFY,
 from ..utils.utils      import (instr, is_statzone, is_zone, zone_dname,
                                     list_add, list_to_str, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, more_info,
+                                    post_repair_issue, clear_repair_issue,
                                     log_debug_msg, log_exception, log_error_msg, log_info_msg,
                                     log_warning_msg, log_data, log_data_unfiltered,
                                     _evlog, _log, )
@@ -25,6 +26,10 @@ from ..utils.dist_util    import (format_dist_km, format_dist_m, )
 from ..mobile_app           import mobapp_interface
 from ..tracking             import stationary_zone as statzone
 from ..utils                import entity_io
+
+# Devices that already have a 'Mobile App device not found' Repairs issue.
+# Kept module-local so a 5-minute verification retry does not re-post it.
+_mobapp_mapping_repair_devicenames = set()
 
 
 
@@ -728,6 +733,9 @@ def verify_device_in_ha_mobile_app_config():
     Update the Device's is_mobapp_monitored to True if it is found.
     Do not change it if it is not found.
 
+    A device that stays unverified is also posted to Settings > Repairs with a
+    fix action that clears its stale mobile_app_device mapping.
+
     Return:
         unverified_devices_list - list of devices that are not verified (Device.fname)
     '''
@@ -737,24 +745,67 @@ def verify_device_in_ha_mobile_app_config():
         Gb.device_mobapp_verify_retry_needed = False
         unverified_devices_list = []
         for conf_device in Gb.conf_devices:
-            Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
-            if (Device.is_mobapp_monitored
-                    or conf_device[CONF_MOBILE_APP_DEVICE] == 'None'):
+            devicename = conf_device[CONF_IC3_DEVICENAME]
+            Device = Gb.Devices_by_devicename[devicename]
+            if conf_device[CONF_MOBILE_APP_DEVICE] == 'None':
+                _clear_mobapp_mapping_repair(devicename)
+                continue
+
+            if Device.is_mobapp_monitored:
+                _clear_mobapp_mapping_repair(devicename)
                 continue
 
             if Device.conf_mobapp_fname in Gb.mobile_app_device_fnames:
                 Device.is_mobapp_monitored = True
                 Gb.device_mobapp_verify_retry_cnt = 0
                 Gb.device_mobapp_verify_next_retry_secs = 0
+                _clear_mobapp_mapping_repair(devicename)
             else:
                 Gb.device_mobapp_verify_retry_needed = True
                 list_add(unverified_devices_list, Device.fname)
+                _post_mobapp_mapping_repair(Device, conf_device)
 
     except Exception as err:
         #log_exception(err)
         return []
 
     return unverified_devices_list
+
+#--------------------------------------------------------------------
+def _post_mobapp_mapping_repair(Device, conf_device):
+    '''
+    Ask the user to clear a mobile_app_device mapping that does not exist in
+    the HA Mobile App integration. Posted once per session; the fix handler is
+    registered in start_ic3.
+    '''
+    devicename = Device.devicename
+    issue_id = f"mobapp_mapping_{devicename}"
+    if devicename in _mobapp_mapping_repair_devicenames:
+        return
+
+    _mobapp_mapping_repair_devicenames.add(devicename)
+    post_repair_issue(
+                issue_id   = issue_id,
+                alert_key  = devicename,
+                title      = f"{Device.fname}, Mobile App device not found",
+                alert_msg  = (f"The Mobile App device configured for *{Device.fname}* "
+                              f"is not in the HA Mobile App integration:"
+                              f"{CRLF_DOT}{conf_device[CONF_MOBILE_APP_DEVICE]}"
+                              f"{CRLF}{CRLF}Click Submit to clear this mapping. iCloud3 will "
+                              f"then use iCloud tracking for this device until you select "
+                              f"a Mobile App device again."),
+                fix_action = 'clear_mobapp_mapping',
+                fix_data   = {'devicename': devicename},
+                severity   = 'warning')
+
+#--------------------------------------------------------------------
+def _clear_mobapp_mapping_repair(devicename):
+    '''Remove the mapping repair issue after the device is verified or cleared.'''
+    if devicename not in _mobapp_mapping_repair_devicenames:
+        return
+
+    _mobapp_mapping_repair_devicenames.discard(devicename)
+    clear_repair_issue(f"mobapp_mapping_{devicename}")
 
 #--------------------------------------------------------------------
 def unverified_devices_mobapp_handler():
