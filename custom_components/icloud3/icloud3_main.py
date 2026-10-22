@@ -73,6 +73,7 @@ from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mi
 from .utils.dist_util   import (km_to_um, m_to_um_ft, )
 
 #--------------------------------------------------------------------
+import threading
 import traceback
 from re import match
 import homeassistant.util.dt        as dt_util
@@ -121,13 +122,29 @@ class iCloud3:
 
     def shutdown(self):
         '''
-        Cancel the 5-sec polling loop when iCloud3 is unloaded or removed
-        '''
-        if self._unsub_5sec is not None:
-            self._unsub_5sec()
-            self._unsub_5sec = None
+        Cancel the 5-sec polling loop when iCloud3 is unloaded or removed.
 
+        HA's sync track_utc_time_change() unsubscribe calls
+        run_callback_threadsafe(...).result(), which raises when it is invoked
+        from the event loop. Unload runs on the event loop, so hand the
+        unsubscribe to an executor thread in that case.
+        '''
+        unsub = self._unsub_5sec
+        self._unsub_5sec = None
         Gb.polling_5_sec_loop_running = False
+
+        if unsub is None:
+            return
+
+        try:
+            if (Gb.hass is not None
+                    and threading.get_ident() == Gb.hass.loop_thread_id):
+                Gb.hass.async_add_executor_job(unsub)
+            else:
+                unsub()
+
+        except Exception as err:
+            log_exception(err)
 
     @property
     def loop_ctrl_device_update_in_process(self):

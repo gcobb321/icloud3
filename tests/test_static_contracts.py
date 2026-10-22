@@ -33,6 +33,9 @@ def test_icloud3_main_unsubscribes_and_shuts_down() -> None:
     source = source_of("icloud3_main.py")
     assert "self._unsub_5sec" in source
     assert "def shutdown" in source
+    # HA's sync track_utc_time_change unsubscribe raises when called from the
+    # event loop, so shutdown must hand it to an executor thread.
+    assert "async_add_executor_job(unsub)" in source
 
 
 def test_event_log_starts_with_a_list() -> None:
