@@ -319,8 +319,36 @@ async def async_create_devices_tracker_and_sensor_entities():
 async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
     '''Handle options update.'''
 
-    Gb.reload_in_progress = True
+    Gb.reload_in_progress      = True
+    Gb.reload_in_progress_secs = time_now_secs()
     await hass.config_entries.async_reload(config_entry.entry_id)
+
+#-------------------------------------------------------------------------------------------
+def stop_background_activity():
+    '''
+    Stop the polling loop, the status check timer, the restore state timer and the
+    Waze history database connection. They are not owned by a platform or a listener,
+    so nothing else stops them when the config entry goes away.
+    '''
+    if Gb.iCloud3 is not None and callable(getattr(Gb.iCloud3, 'shutdown', None)):
+        try:
+            Gb.iCloud3.shutdown()
+        except Exception as err:
+            log_exception(err)
+
+    if Gb.WazeHist is not None:
+        try:
+            Gb.WazeHist.close_waze_history_database()
+        except Exception as err:
+            log_exception(err)
+
+    if Gb.InternetError is not None and callable(getattr(Gb.InternetError, 'stop', None)):
+        try:
+            Gb.InternetError.stop()
+        except Exception as err:
+            log_exception(err)
+
+    restore_state.cancel_restore_state_timer()
 
 #-------------------------------------------------------------------------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -329,12 +357,26 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     by a reload. The er_util.async_handle_update_entity_registry function is called when
     the sensor is enabled and sets the Gb.icloud3_reload_requested to True. This prevents
     all of the DeviceTracker and Sensor objects from being unloaded and deleted here.
+
+    The reload request is only trusted for 60-secs. A request that never turned into a
+    reload would otherwise be left behind and the next real unload would skip teardown.
     '''
-    if Gb.reload_in_progress or Gb.icloud3_reload_requested:
+    reload_requested_secs = getattr(Gb, 'reload_in_progress_secs', 0)
+    if (   (Gb.reload_in_progress or Gb.icloud3_reload_requested)
+            and time_now_secs() - reload_requested_secs < 60):
         Gb.reload_in_progress = False
         Gb.icloud3_reload_requested = False
         Gb.was_icloud3_reloaded = True
+        # Keep the entities for the reload, but stop the old polling loop. The
+        # new config entry setup registers a fresh 5-sec timer; leaving the old
+        # one running made every reload add another loop.
+        if callable(getattr(Gb.iCloud3, 'shutdown', None)):
+            Gb.iCloud3.shutdown()
         return True
+
+    Gb.reload_in_progress = False
+    Gb.icloud3_reload_requested = False
+    Gb.was_icloud3_reloaded = False
 
     """Unload a config entry."""
     unload_ok = all(await asyncio.gather(
@@ -360,6 +402,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # Remove config entry from domain.
     if unload_ok:
+        stop_background_activity()
         domain_data.pop(entry.entry_id, None)
         Gb.was_icloud3_reloaded = False
         Gb.reload_in_progress = False
@@ -396,6 +439,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
     Gb.was_icloud3_reloaded = False
     Gb.reload_in_progress = False
     Gb.icloud3_reload_requested = False
+    stop_background_activity()
     close_ic3log_file()
 
 #-------------------------------------------------------------------------------------------

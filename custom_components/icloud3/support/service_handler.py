@@ -671,6 +671,7 @@ def reload_icloud3():
 
     Gb.icloud3_reload_requested = True
     Gb.reload_in_progress       = True
+    Gb.reload_in_progress_secs  = time_now_secs()
 
     Gb.hass.add_job(Gb.hass.config_entries.async_schedule_reload,
                     Gb.config_entry_id)

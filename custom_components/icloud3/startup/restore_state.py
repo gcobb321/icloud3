@@ -24,6 +24,8 @@ from homeassistant.helpers.event    import (track_point_in_time, )
 # _LOGGER = logging.getLogger(__name__)
 _LOGGER = logging.getLogger(f"icloud3")
 
+_restore_state_unsub = None
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   .STORAGE/ICLOUD3.RESTORE_STATE FILE ROUTINES
@@ -143,6 +145,7 @@ def write_icloud3_restore_state_file():
     The changes are committed based on the 10-sec timer event being fired in a
     callback function.
     '''
+    global _restore_state_unsub
 
     update_restore_state_profile_data()
     Gb.restore_state_file_data['profile'] = Gb.restore_state_profile
@@ -155,9 +158,28 @@ def write_icloud3_restore_state_file():
         Gb.restore_state_commit_time = time_now_secs() + 10
         Gb.restore_state_commit_cnt  = 0
 
-        track_point_in_time(Gb.hass,
+        cancel_restore_state_timer()
+        _restore_state_unsub = track_point_in_time(
+                            Gb.hass,
                             _async_commit_icloud3_restore_state_file_changes,
                             datetime_plus(utcnow(), secs=10))
+
+#--------------------------------------------------------------------
+def cancel_restore_state_timer():
+    '''
+    Cancel the pending restore state file commit timer. Called when the config
+    entry is unloaded or removed so the timer does not outlive iCloud3.
+    '''
+    global _restore_state_unsub
+
+    if _restore_state_unsub is not None:
+        try:
+            _restore_state_unsub()
+
+        except Exception as err:
+            log_exception(err)
+
+    _restore_state_unsub = None
 
 #--------------------------------------------------------------------
 def update_restore_state_profile_data():
@@ -179,7 +201,10 @@ def update_restore_state_apple_accts_data():
 #--------------------------------------------------------------------
 @callback
 async def _async_commit_icloud3_restore_state_file_changes(callback_datetime_struct):
+    global _restore_state_unsub
+
     try:
+        _restore_state_unsub = None
         Gb.restore_state_profile['last_commit'] = datetime_now()
         Gb.restore_state_profile['recds_changed']  = Gb.restore_state_commit_cnt
 

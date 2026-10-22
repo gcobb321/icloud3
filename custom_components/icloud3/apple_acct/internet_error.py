@@ -110,6 +110,17 @@ class InternetConnection_ErrorHandler:
                                     cancel_on_shutdown=True)
 
 #----------------------------------------------------------------------------
+    def stop(self):
+        '''
+        Cancel the status check timer. Called when the config entry is unloaded
+        or removed so the timer does not keep running outside iCloud3.
+        '''
+        if self.cancel_status_check_timer_fct:
+            self.cancel_status_check_timer_fct()
+
+        self.cancel_status_check_timer_fct = None
+
+#----------------------------------------------------------------------------
     def check_internet_connection(self, check_time=None):
         '''
         See if the intenet is back up.

@@ -708,7 +708,7 @@ def set_waze_conf_parameters():
 
     if Gb.WazeHist:
         if Gb.waze_history_database_used and Gb.WazeHist.connection is None:
-            Gb.WazeHist.open_waze_history_database(Gb.wazehist_database_filename)
+            Gb.WazeHist.open_waze_history_database()
         if Gb.waze_history_database_used is False and Gb.WazeHist.connection:
             Gb.WazeHist.close_waze_history_database()
 
@@ -1125,6 +1125,10 @@ def create_Waze_object():
                                 Gb.waze_max_distance,
                                 Gb.waze_realtime,
                                 Gb.waze_region)
+            # Re-initialising the object drops its old SQLite connection. Close it
+            # first so the -wal/-shm locks do not survive a config reload.
+            if Gb.WazeHist.connection is not None:
+                Gb.WazeHist.close_waze_history_database()
             Gb.WazeHist.__init__(
                                 Gb.waze_history_database_used,
                                 Gb.waze_history_max_distance,

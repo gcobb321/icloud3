@@ -126,6 +126,7 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
         if disabled_by is None:
             Gb.icloud3_reload_requested      = True
             Gb.reload_in_progress            = True
+            Gb.reload_in_progress_secs       = time_now_secs()
             Gb.was_icloud3_restart_requested = True
 
         # The user disabled the device on the Integrations screen. This is the only
@@ -144,8 +145,7 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
         log_exception(err)
 
 #-------------------------------------------------------------------------------------------
-@callback
-def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData):
+async def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData):
     '''
     Handle entity registry updates. This is called by HA after the sensor is deleted and
     the sensor.[sensor].after_removal_cleanup function has been done.
@@ -193,7 +193,8 @@ def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData
             if disabled_by is None:
                 Gb.icloud3_reload_requested = True
                 Gb.reload_in_progress       = True
-                _remove_disabled_entity_from_excluded_sensor_list(entity_data)
+                Gb.reload_in_progress_secs  = time_now_secs()
+                await _remove_disabled_entity_from_excluded_sensor_list(entity_data)
                 return
 
             # Only a USER disabling this one sensor on it's entity settings screen means
@@ -205,7 +206,7 @@ def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData
             log_info_msg(f'Device Entity Registry ({entity_id}), '
                                 f'Disabled by {disabled_by}')
             if disabled_by == er.RegistryEntryDisabler.USER:
-                _add_disabled_entity_to_excluded_sensor_list(entity_data)
+                await _add_disabled_entity_to_excluded_sensor_list(entity_data)
 
             remove_from_active_and_deleted_entity_registry(entity_id)
             clear_sensor_gb_dicts(entity_id)
@@ -222,7 +223,7 @@ def get_devices_reg_devices():
 
     return
 #................................................................................
-def _add_disabled_entity_to_excluded_sensor_list(entity_data):
+async def _add_disabled_entity_to_excluded_sensor_list(entity_data):
 
     entity_id = entity_data.entity_id
     devicename_sensor = entity_id_base(entity_id)
@@ -231,10 +232,10 @@ def _add_disabled_entity_to_excluded_sensor_list(entity_data):
     excluded_list_changed = config_file.rebuild_excluded_sensors_fname_sensors_list()
 
     if excluded_list_changed:
-        config_file.write_icloud3_configuration_file()
+        await config_file.async_write_icloud3_configuration_file()
 
 #................................................................................
-def _remove_disabled_entity_from_excluded_sensor_list(entity_data):
+async def _remove_disabled_entity_from_excluded_sensor_list(entity_data):
 
     entity_id = entity_data.entity_id
     devicename_sensor = entity_id_base(entity_id)
@@ -253,7 +254,7 @@ def _remove_disabled_entity_from_excluded_sensor_list(entity_data):
 
     if excluded_list_changed:
         config_file.rebuild_excluded_sensors_fname_sensors_list()
-        config_file.write_icloud3_configuration_file()
+        await config_file.async_write_icloud3_configuration_file()
 
 #-------------------------------------------------------------------------------------------
 def enable_disabled_device(device_id):
@@ -511,7 +512,7 @@ def remove_sensor(entity_id):
 
     try:
         if Gb.hass.states.async_available(entity_id) is False:
-            Gb.hass.async_add_executor_job(Gb.hass.states.remove, entity_id)
+            _run_in_event_loop(Gb.hass.states.async_remove, entity_id)
 
     except Exception as err:
         log_exception(err)
