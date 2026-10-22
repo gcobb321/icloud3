@@ -34,3 +34,17 @@ def test_config_writes_are_serialized() -> None:
         encoding="utf-8")
     assert "_CONFIG_WRITE_LOCK" in source
     assert "with _CONFIG_WRITE_LOCK:" in source
+
+
+def test_unload_resets_internal_sensor_objects() -> None:
+    source = INIT.read_text(encoding="utf-8")
+    assert "Gb.EvLogSensor = None" in source
+    assert "Gb.AlertsSensor = None" in source
+    assert "Gb.WazeHistTrackSensor = None" in source
+
+
+def test_apple_device_data_tolerates_unassigned_device() -> None:
+    source = (ROOT / "custom_components/icloud3/apple_acct/apple_acct_device_data.py").read_text(
+        encoding="utf-8")
+    assert "if self.Device is not None:" in source
+    assert "new_device_data['Device']            = None" in source
