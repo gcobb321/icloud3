@@ -98,12 +98,12 @@ def get_entity_registry_mobile_app_devices():
             if dev_trkr_entity.device_id is None: continue
 
             mobapp_dname = dev_trkr_entity.entity_id.replace('device_tracker.', '')
-            if dev_trkr_entity.disabled_by:
-                Gb.mobapp_disabled_dnames.add(mobapp_dname)
             dup_cnt = 1
             while mobapp_dname in Gb.mobapp_id_by_mobapp_dname:
                 dup_cnt += 1
                 mobapp_dname = f"{mobapp_dname} ({dup_cnt})"
+            if dev_trkr_entity.disabled_by:
+                Gb.mobapp_disabled_dnames.add(mobapp_dname)
             if dup_cnt > 1:
                 alert_msg = (f"Duplicate Mobile App devices in Entity Registry for "
                             f"{dev_trkr_entity.entity_id}")

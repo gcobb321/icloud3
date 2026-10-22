@@ -544,26 +544,28 @@ def get_and_verify_device_trkr_data(Device, entity_id):
 
         # Display an 'unknown' device msg every 2-hrs. Do not report an ERROR
         # the first time a tracker is seen as unknown/unavailable: an iPad that
-        # is asleep reports `unknown` at every HA start-up.
+        # is asleep reports `unknown` at every HA start-up. This state is
+        # normal, so it must not feed mobapp_data_invalid_error_cnt (the
+        # >50 counter disables MobApp monitoring for the whole session).
         if device_trkr_attrs[DEVICE_TRACKER] in ['unavailable', 'unknown', NOT_SET]:
-            Device.mobapp_data_invalid_error_cnt += 1
-            if Device.mobapp_data_invalid_error_cnt == 1:
+            if Device.mobapp_data_state != 'Unavailable':
+                Device.mobapp_data_state = 'Unavailable'
+                Device.mobapp_data_state_secs = time_now_secs()
+                Device.mobapp_data_state_time = time_now()
+                Device.mobapp_data_trigger = f"Unavailable@{time_now()}"
                 log_info_msg(f"iCloud3 > {Device.fname} > "
                              f"MobApp device_tracker is `{device_trkr_attrs[DEVICE_TRACKER]}`, "
                              f"waiting for data")
-            elif (Device.mobapp_data_invalid_error_cnt % 1440) == 0:
+
+            unavailable_secs = secs_since(Device.mobapp_data_state_secs)
+            if (unavailable_secs >= 7200
+                    and unavailable_secs % 7200 < 5):
                 post_alert( f"MOBILE APP DEVICE ERROR > DEVICE UNAVAILABLE, "
                             f"{CRLF}{Device.conf_mobapp_fname} ({entity_id}), "
                             f"AssignedTo-{Device.fname_devicename}, "
                             f"{CRLF}Disabled in MobApp Integration or Unknown Name in MobApp on device")
                 log_warning_msg(f"iCloud3 Warning ({Device.fname}) > "
                                 f"MobApp status is `{device_trkr_attrs[DEVICE_TRACKER]}`")
-
-            if Device.mobapp_data_state != 'Unavailable':
-                Device.mobapp_data_state = 'Unavailable'
-                Device.mobapp_data_state_secs = time_now_secs()
-                Device.mobapp_data_state_time = time_now()
-                Device.mobapp_data_trigger = f"Unavailable@{time_now()}"
 
             return None
 
@@ -740,10 +742,10 @@ def verify_device_in_ha_mobile_app_config():
         unverified_devices_list - list of devices that are not verified (Device.fname)
     '''
 
+    unverified_devices_list = []
     try:
         # Cycle thru conf_devices, see if Device's Mobile app entity is found
         Gb.device_mobapp_verify_retry_needed = False
-        unverified_devices_list = []
         for conf_device in Gb.conf_devices:
             devicename = conf_device[CONF_IC3_DEVICENAME]
             Device = Gb.Devices_by_devicename[devicename]
@@ -766,8 +768,8 @@ def verify_device_in_ha_mobile_app_config():
                 _post_mobapp_mapping_repair(Device, conf_device)
 
     except Exception as err:
-        #log_exception(err)
-        return []
+        log_exception(err)
+        return unverified_devices_list
 
     return unverified_devices_list
 
@@ -783,7 +785,6 @@ def _post_mobapp_mapping_repair(Device, conf_device):
     if devicename in _mobapp_mapping_repair_devicenames:
         return
 
-    _mobapp_mapping_repair_devicenames.add(devicename)
     post_repair_issue(
                 issue_id   = issue_id,
                 alert_key  = devicename,
@@ -797,6 +798,8 @@ def _post_mobapp_mapping_repair(Device, conf_device):
                 fix_action = 'clear_mobapp_mapping',
                 fix_data   = {'devicename': devicename},
                 severity   = 'warning')
+
+    _mobapp_mapping_repair_devicenames.add(devicename)
 
 #--------------------------------------------------------------------
 def _clear_mobapp_mapping_repair(devicename):
