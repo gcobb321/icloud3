@@ -669,6 +669,7 @@ class DeviceSensor_Base():
 
             self._attr_force_update = True
             self._unsub_dispatcher  = None
+            self._last_written_signature = None
 
             # Note: `after_removal_cleanup` is registered in `async_added_to_hass` with
             # `self.async_on_remove()`. It can not be registered here - HA drains the
@@ -1059,6 +1060,11 @@ class DeviceSensor_Base():
         self.ha_entity_id   = self.registry_entry.entity_id
         self.ha_disabled_by = self.registry_entry.disabled_by
 
+        # HA re-adds this same object after a re-add cycle (entity_id rename), so
+        # the first write after the add must not be suppressed by a signature
+        # captured before the entity left the state machine.
+        self._last_written_signature = None
+
         # HA drains the `_on_remove` list on every removal and calls this function again
         # on every add, so registering here re-arms the callback without duplicating it.
         self.async_on_remove(self.after_removal_cleanup)
@@ -1136,17 +1142,44 @@ class DeviceSensor_Base():
 
 #-------------------------------------------------------------------------------------------
     def write_ha_sensor_state(self):
-        """Update the entity's state if the state value has changed."""
+        """Update the entity's state if the state value or the attributes have changed."""
 
         try:
             if self.hass is None: self.hass = Gb.hass
             if self.enabled is False:
                 return
 
+            signature = self._get_write_signature()
+
+            if (signature is not None
+                    and signature == getattr(self, '_last_written_signature', None)):
+                return
+
             self.schedule_update_ha_state(force_refresh=True)
+
+            self._last_written_signature = signature
 
         except Exception as err:
             log_exception(err)
+
+#-------------------------------------------------------------------------------------------
+    def _get_write_signature(self):
+        """
+        Return the (state, attributes) pair that the next write would publish.
+
+        Returns None when either value can not be read. A None signature is never
+        compared against the last one, so such a sensor is written on every pass
+        instead of being dropped.
+        """
+        try:
+            state = self.state
+            attrs = self.extra_state_attributes
+
+            return (state, repr(attrs))
+
+        except Exception as err:
+            log_exception(err)
+            return None
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
