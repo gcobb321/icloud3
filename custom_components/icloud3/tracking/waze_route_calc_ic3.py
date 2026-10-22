@@ -34,6 +34,7 @@ except ImportError:
     curl_requests = None
 
 from ..utils.messaging  import (_log, log_exception, log_warning_msg, log_error_msg, log_info_msg, )
+from ..utils.backoff    import parse_retry_after
 
 WAZE_URL_BASE     = 'https://routing-livemap-'
 WAZE_URL_ENDPOINT = '.waze.com/RoutingManager/routingRequest'
@@ -162,10 +163,8 @@ class WazeRouteCalculator(object):
 
             if response.status_code == 429:
                 self.is_rate_limited = True
-                try:
-                    self.retry_after_secs = int(response.headers.get('Retry-After', 0))
-                except (TypeError, ValueError):
-                    self.retry_after_secs = 0
+                self.retry_after_secs = parse_retry_after(
+                        response.headers.get('Retry-After', 0))
 
                 retry_after_msg = (f", Retry-After-{self.retry_after_secs}s"
                                         if self.retry_after_secs else '')

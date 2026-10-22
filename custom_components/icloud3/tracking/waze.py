@@ -14,6 +14,7 @@ from ..utils.utils      import (instr, format_gps, )
 from ..utils.messaging  import (post_event, post_alert, post_internal_error, log_info_msg, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer,  )
 from ..utils.dist_util  import (km_to_um, )
+from ..utils.backoff    import waze_pause_secs
 
 from ..tracking.waze_history        import WazeRouteHistory as WazeHist
 from ..tracking.waze_route_calc_ic3 import WazeRouteCalculator, WRCError
@@ -382,14 +383,10 @@ class Waze(object):
                     self.no_route_msg_by_zone.pop(FromZone.from_zone, None)
                 return (WAZE_USED, route_time, route_dist_km)
 
-            retry_cnt = 0
-            while retry_cnt < 3:
+            for retry_cnt in range(1, 4):
                 try:
-                    retry_msg = '' if retry_cnt == 0 else (f" (#{retry_cnt})")
-
                     route_time, route_dist_km = \
                             self.WazeRouteCalc.calc_route_info(from_lat, from_long, to_lat, to_long)
-                    retry_cnt += 1
 
                     # Waze is limiting requests (HTTP 429). Retrying only extends the
                     # block so pause Waze now instead of after 10 failed updates.
@@ -404,6 +401,8 @@ class Waze(object):
                         return (WAZE_NO_ROUTE, 0, 0)
 
                     if route_time < 0:
+                        if retry_cnt < 3:
+                            time.sleep(0.5)
                         continue
 
                     route_time    = round(route_time, 2)
@@ -416,9 +415,10 @@ class Waze(object):
                     return (WAZE_USED, route_time, route_dist_km)
 
                 except Exception as err:
-                    if retry_cnt > 3:
-                        log_msg = (f"Waze Alert #{retry_cnt}, Retrying, Type-{err}")
-                        log_info_msg(log_msg)
+                    log_info_msg(f"Waze Alert #{retry_cnt}, "
+                                 f"Type-{err.__class__.__name__}, {err}")
+                    if retry_cnt < 3:
+                        time.sleep(1.0)
 
         except Exception as err:
             # log_exception(err)
@@ -461,6 +461,7 @@ class Waze(object):
         '''
         pause_secs = RATE_LIMIT_PAUSE_SECS[min(self.rate_limited_cnt, len(RATE_LIMIT_PAUSE_SECS)-1)]
         pause_secs = max(pause_secs, self.WazeRouteCalc.retry_after_secs)
+        pause_secs = min(pause_secs, 6 * 60 * 60)
         self.rate_limited_cnt += 1
 
         self.error_server_unavailable_secs = time_now_secs() + pause_secs
@@ -501,7 +502,7 @@ class Waze(object):
 #--------------------------------------------------------------------
     def _determine_next_waze_retry(self):
         self.error_server_unavailable_cnt += 1
-        retry_interval = {10: 600, 20: 1800, 30: 3600}.get(self.error_server_unavailable_cnt, 0)
+        retry_interval = waze_pause_secs(self.error_server_unavailable_cnt)
         if retry_interval > 0:
             self.error_server_unavailable_secs = time_now_secs() + retry_interval
             post_event( f"{EVLOG_RED}Waze Alert #{self.error_server_unavailable_cnt} > "
@@ -511,7 +512,7 @@ class Waze(object):
 
         if self.error_server_unavailable_cnt > 40:
             self.error_server_unavailable_cnt = 0
-            self.error_server_unavailable_secs = 0
+            self.error_server_unavailable_secs = time_now_secs() + 3600
             self.waze_status = WAZE_PAUSED
             post_event( f"Waze Alert > "
                         f"Waze has been paused after excessive errors")

@@ -210,10 +210,9 @@ class WazeRouteHistory(object):
 
         try:
             self.lock       = threading.Lock()
-            self.lock.acquire(True)
-            self.connection = sqlite3.connect(self.wazehist_database, check_same_thread=False)
-            self.cursor     = self.connection.cursor()
-            self.lock.release()
+            with self.lock:
+                self.connection = sqlite3.connect(self.wazehist_database, check_same_thread=False)
+                self.cursor     = self.connection.cursor()
 
             self._sql(CREATE_ZONES_TABLE)
             self._sql(CREATE_LOCATIONS_TABLE)
@@ -233,58 +232,63 @@ class WazeRouteHistory(object):
         if self.connection is None: return
 
         try:
-            self.lock.acquire(True)
-            self.connection.commit()
-            self.connection.close()
-            self.lock.release()
+            with self.lock:
+                try:
+                    self.connection.commit()
+                finally:
+                    self.connection.close()
 
-        except:
-            pass
+        except Exception as err:
+            log_exception(err)
 
         self.connection = None
         self.cursor = None
 
 #--------------------------------------------------------------------
-    def _sql(self, sql, data=None, fetchone=False, fetchall=False):
+    def _sql(self, sql, data=None, fetchone=False, fetchall=False, lastrowid=False):
         records = None
+        if self.lock is None or self.cursor is None:
+            return None
+
         try:
-            self.lock.acquire(True)
+            with self.lock:
+                if data:
+                    self.cursor.execute(sql, data)
+                else:
+                    self.cursor.execute(sql)
+                self.connection.commit()
 
-            if data:
-                self.cursor.execute(sql, data)
-            else:
-                self.cursor.execute(sql)
-            self.connection.commit()
-
-            if fetchone:
-                records = self.cursor.fetchone()
-            elif fetchall:
-                records = self.cursor.fetchall()
-
-            self.lock.release()
+                if lastrowid:
+                    records = self.cursor.lastrowid
+                elif fetchone:
+                    records = self.cursor.fetchone()
+                elif fetchall:
+                    records = self.cursor.fetchall()
 
             return records
 
         except Exception as err:
             log_exception(err)
+
+        return None
 #--------------------------------------------------------------------
     def _execute(self, cursor, sql, fetchone=False, fetchall=False):
+        if self.lock is None or cursor is None:
+            return None
+
         try:
             records = None
-            self.lock.acquire(True)
-            cursor.execute(sql)
+            with self.lock:
+                cursor.execute(sql)
 
-            if fetchone:
-                records = cursor.fetchone()
-            elif fetchall:
-                records = cursor.fetchall()
-
-            self.lock.release()
+                if fetchone:
+                    records = cursor.fetchone()
+                elif fetchall:
+                    records = cursor.fetchall()
 
             return records
 
         except Exception as err:
-            self.lock.release()
             log_exception(err)
 
         return None
@@ -298,13 +302,7 @@ class WazeRouteHistory(object):
         :return     rowid   - id of the added row
         '''
         try:
-            self._sql(sql, data=data)
-            # self.lock.acquire(True)
-            # self.cursor.execute(sql, data)
-            # self.connection.commit()
-            # self.lock.release()
-
-            return self.cursor.lastrowid
+            return self._sql(sql, data=data, lastrowid=True)
 
         except Exception as err:
             log_exception(err)
