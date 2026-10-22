@@ -1,0 +1,67 @@
+"""Source-level contracts for regressions that were fixed by hand.
+
+The integration imports Home Assistant, so these checks read the source instead
+of importing it. Each assertion corresponds to a bug that was already reported
+once; the point is that it cannot come back silently.
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+COMPONENT = ROOT / "custom_components/icloud3"
+
+
+def source_of(relative_path: str) -> str:
+    return (COMPONENT / relative_path).read_text(encoding="utf-8")
+
+
+def test_icloud3_main_has_no_dev_force_flag() -> None:
+    source = source_of("icloud3_main.py")
+    assert "is_dev_data_source_iCloud" not in source
+
+
+def test_icloud3_main_uses_the_zone_result_list() -> None:
+    source = source_of("icloud3_main.py")
+    assert "selected_zone_result =" not in source
+    assert "selected_zone_results" in source
+
+
+def test_icloud3_main_unsubscribes_and_shuts_down() -> None:
+    source = source_of("icloud3_main.py")
+    assert "self._unsub_5sec" in source
+    assert "def shutdown" in source
+
+
+def test_event_log_starts_with_a_list() -> None:
+    source = source_of("support/event_log.py")
+    assert "startup_event_recds = {}" not in source
+    assert "startup_event_recds" in source
+
+
+def test_mobapp_handler_rejects_stale_device_data() -> None:
+    source = source_of("mobile_app/mobapp_data_handler.py")
+    assert "secs_since(Device.loc_data_secs) <= 15" in source
+    assert "x_unverified_devices_mobapp_handler" not in source
+
+
+def test_waze_history_creates_indexes_safely() -> None:
+    source = source_of("tracking/waze_history.py")
+    assert "CREATE INDEX IF NOT EXISTS" in source
+
+
+def test_device_parameter_verification_returns_after_the_loop() -> None:
+    tree = ast.parse(source_of("startup/config_file.py"))
+    function = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_verify_device_parameters_values")
+
+    assert any(isinstance(node, ast.Return) for node in function.body)
+
+    for node in function.body:
+        if isinstance(node, ast.For):
+            assert not any(
+                isinstance(child, ast.Return) for child in ast.walk(node))

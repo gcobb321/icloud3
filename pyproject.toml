@@ -1,0 +1,25 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# Deliberately narrow: only real breakage. Style is handled by the project
+# convention, not by CI, so existing code is not churned.
+select = ["E9", "F63", "F7", "F82", "F821"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+strict = true
+files = ["custom_components/icloud3/utils/pure.py"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+# pure.py is loaded by path from the tests, so coverage cannot resolve it as a
+# module name; measure the directory and report only pure.py.
+source = ["custom_components/icloud3/utils"]
+
+[tool.coverage.report]
+include = ["custom_components/icloud3/utils/pure.py"]

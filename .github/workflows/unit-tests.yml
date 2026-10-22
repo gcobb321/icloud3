@@ -8,10 +8,21 @@ on:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: pip install pytest
-      - run: pytest -q tests
+          python-version: ${{ matrix.python-version }}
+      - run: pip install pytest pytest-cov ruff mypy
+      - name: Lint
+        run: ruff check custom_components/icloud3
+      - name: Type check
+        run: mypy
+      - name: Test with coverage
+        # pure.py is loaded by path, so coverage measures the directory and
+        # pyproject's [tool.coverage.report] narrows the report to pure.py.
+        run: pytest -q tests --cov=custom_components/icloud3/utils --cov-fail-under=90

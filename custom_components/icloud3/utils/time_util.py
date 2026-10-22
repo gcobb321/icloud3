@@ -5,6 +5,8 @@ from ..const                    import (HIGH_INTEGER, HHMMSS_ZERO, HHMM_ZERO, DA
 
 from .messaging                 import (_evlog, _log, post_event, post_alert, log_exception, internal_error_msg, )
 from .utils                     import instr
+from .pure                      import (format_date as _format_date_pure,
+                                        utc_offset_secs, )
 
 import homeassistant.util.dt    as dt_util
 import time
@@ -450,17 +452,7 @@ def format_date(secs, fmt_code=None):
         mmmdd = Sep 14
     '''
 
-    if fmt_code is None:    #Sep 14
-        return datetime.fromtimestamp(secs).strftime('%b %-d')
-    if fmt_code == 'mmdd':  #9/14
-        return datetime.fromtimestamp(secs).strftime('%-m/%-d')
-    if fmt_code == 'ddmm':  #14/9
-        return datetime.fromtimestamp(secs).strftime('%-d/%-m')
-    if fmt_code == 'ddmmm': #14Sep
-        return datetime.fromtimestamp(secs).strftime('%-d%b')
-
-    #14Sep2026
-    return datetime.fromtimestamp(secs).strftime('%-d%b%Y')
+    return _format_date_pure(secs, fmt_code)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -616,8 +608,6 @@ def calculate_time_zone_offset(post_msg=True):
         if local_zone_name is not None:
             # Extract offset (+08:00 part of 2025-05-28 06:12:01.718366+08:00)
             local_zone_offset = str(datetime.now(ZoneInfo(local_zone_name)))[-6:]
-            local_zone_offset_secs = (int(local_zone_offset[1:3])*3600 +
-                                        int(local_zone_offset[4:])*60)
     except Exception as err:
         local_zone_name = None
 
@@ -626,12 +616,9 @@ def calculate_time_zone_offset(post_msg=True):
     if local_zone_name is None:
         local_zone_name        = dt_util.now().strftime('%Z')
         local_zone_offset      = dt_util.now().strftime('%z')
-        local_zone_offset_secs = int(local_zone_offset[1:3])*3600 + \
-                                        int(local_zone_offset[3:])*60
 
     try:
-        if local_zone_offset.startswith("-"):
-            local_zone_offset_secs = -1*local_zone_offset_secs
+        local_zone_offset_secs = utc_offset_secs(local_zone_offset)
 
         Gb.time_zone_offset_str  = local_zone_offset
         Gb.time_zone_offset_secs = local_zone_offset_secs

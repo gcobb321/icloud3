@@ -5,6 +5,9 @@ from ..const            import (NOT_HOME, NOT_SET, STATIONARY,
                                 CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
                                 UNKNOWN, CRLF_DOT, CRLF,
                                 CONF_USERNAME, CONF_PASSWORD, )
+from .pure              import (encode_base64_ascii,
+                                is_between as _pure_is_between,
+                                is_zone as _pure_is_zone, )
 from collections        import OrderedDict
 # from homeassistant.util import json as json_util
 # from homeassistant.helpers import json as json_helpers
@@ -236,7 +239,7 @@ def is_between(number, min_value, max_value):
     Return True if the the number is between the other two numbers
     including the min_value and max_value number)
     '''
-    return (max_value >= number >= min_value)
+    return _pure_is_between(number, min_value, max_value)
 
 #--------------------------------------------------------------------
 def inlist(string, list_items):
@@ -268,7 +271,7 @@ def round_to_zero(number):
 
 #--------------------------------------------------------------------
 def is_zone(zone):
-    return (zone is not None and zone not in ('', NOT_SET, NOT_HOME))
+    return _pure_is_zone(zone, NOT_HOME, NOT_SET)
 
 #--------------------------------------------------------------------
 def isnot_zone(zone):
@@ -457,11 +460,9 @@ def base64_encode(string):
     # return encoded.rstrip("=")
 
     try:
-        string_bytes = string.encode('ascii')
-        base64_bytes = base64.b64encode(string_bytes)
-        return base64_bytes.decode('ascii')
+        return encode_base64_ascii(string)
 
-    except Exception as err:
+    except UnicodeEncodeError as err:
         #log_exception(err)
         string = string.replace('«', '').replace('»', '')
         return string
