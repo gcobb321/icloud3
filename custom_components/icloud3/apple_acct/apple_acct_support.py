@@ -20,6 +20,7 @@ from .apple_acct        import (AppleAcctManager,
 # from ..startup          import start_ic3_control
 from ..utils.messaging  import (post_event, post_alert, post_alert, post_error_msg, post_monitor_msg,
                                 post_greenbar_msg, update_alert_sensor, log_banner,
+                                post_repair_issue, clear_repair_issue,
                                 log_debug_msg, log_info_msg, log_exception, log_error_msg, log_warning_msg,
                                 internal_error_msg2, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_age, secs_to_hhmm,
@@ -35,6 +36,13 @@ import traceback
 from re import match
 
 APPLE_ACCT_ALERT_MSG_REAUTH_DAYS = [-5, 10, 20, 88, 89, 86, 87]
+
+APPLE_REAUTH_REPAIR_TITLE = 'Apple Authentication needed'
+
+# username_ids that have a Repairs issue posted. Keeps a 5-second tick from
+# deleting an issue that was never created.
+_apple_reauth_repair_username_ids = set()
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   APPLE ACCT INTERFACE FUNCTIONS
@@ -326,7 +334,11 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
     '''
     if AppleAcct is None:
         return False
-    elif AppleAcct.is_reauth_needed:
+
+    if AppleAcct.is_reauth_needed is False:
+        _clear_apple_reauth_repair_issue(AppleAcct)
+
+    if AppleAcct.is_reauth_needed:
         pass
     elif Gb.conf_data_source_MOBAPP is False:
         return False
@@ -340,6 +352,7 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
             and AppleAcct.was_ha_auth_code_alert_sent is False):
         alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)})"
         post_alert(f"{AppleAcct.username_id_short} > {alert_msg}")
+        _post_apple_reauth_repair_issue(AppleAcct, alert_msg)
         update_alert_sensor(AppleAcct.username_id, alert_msg)
 
         if Gb.AppleAcct_reauth_needed is None:
@@ -350,6 +363,42 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
         post_alert(f"{AppleAcct.username_id} > {alert_msg}")
         update_alert_sensor(AppleAcct.username_id, alert_msg)
         log_warning_msg(f"{AppleAcct.username_id} > {alert_msg}")
+
+#--------------------------------------------------------------------
+def _post_apple_reauth_repair_issue(AppleAcct, alert_msg):
+    '''
+    Add the Apple reauthentication request to Settings > Repairs so the user
+    sees it without opening the iCloud3 Event Log. Informational (fix_action
+    is None), it can only be ignored or removed when authentication succeeds.
+    '''
+    post_repair_issue(
+                    issue_id=f"apple_reauth_{AppleAcct.username_id}",
+                    alert_key=AppleAcct.username_id,
+                    title=APPLE_REAUTH_REPAIR_TITLE,
+                    alert_msg=alert_msg,
+                    fix_action=None,
+                    severity='warning')
+
+    _apple_reauth_repair_username_ids.add(AppleAcct.username_id)
+
+    log_debug_msg(f"Apple Acct > Repair issue created, "
+                    f"apple_reauth_{AppleAcct.username_id}")
+
+#--------------------------------------------------------------------
+def _clear_apple_reauth_repair_issue(AppleAcct):
+    '''
+    Remove the Repairs issue posted by _post_apple_reauth_repair_issue when the
+    account is authenticated again. Called on every check, so the username_id
+    list keeps it from deleting an issue that was never posted.
+    '''
+    if AppleAcct.username_id not in _apple_reauth_repair_username_ids:
+        return
+
+    _apple_reauth_repair_username_ids.discard(AppleAcct.username_id)
+    clear_repair_issue(f"apple_reauth_{AppleAcct.username_id}")
+
+    log_debug_msg(f"Apple Acct > Repair issue removed, "
+                    f"apple_reauth_{AppleAcct.username_id}")
 
 #--------------------------------------------------------------------
 def check_all_devices_online_status():

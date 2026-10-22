@@ -133,8 +133,13 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
     def flow_closed(self) -> None:
         """Called when the user dismisses the config flow with 'X'."""
-        # return self._reauth_goto_previous(exit_by_x_click=True)
-        return self.ha_reconfigure_reauth_exit(exit_by_x_click=True)
+        # The OptionsFlowHandler is a singleton that is reused by the next Configure
+        # session. Clear it even if the exit processing fails so a new session does
+        # not continue with this stale handler.
+        try:
+            return self.ha_reconfigure_reauth_exit(exit_by_x_click=True)
+        finally:
+            Gb.OptionsFlowHandler = None
 
 
 
@@ -148,6 +153,9 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         self.handler = 'icloud3' from domain name in manifest.json
         '''
         _OptFlow = Gb.OptionsFlowHandler
+        if _OptFlow is None:
+            _OptFlow = Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+
         disabled_by = added_datetime = None
 
         try:
@@ -248,6 +256,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 #                        SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def initialize_step(self, step_id, user_input=None, errors=None):
+        # The reauth screens are mixed into the options handler, but they use the
+        # Gb.OptionsFlowHandler singleton. Recreate it if it was cleared when a
+        # Configure session closed.
+        if Gb.OptionsFlowHandler is None:
+            Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+
         user_input, action_item = Gb.OptionsFlowHandler.initialize_step(step_id, user_input, errors)
 
         return user_input, action_item
@@ -501,8 +515,14 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
     def flow_closed(self) -> None:
         """Called when the user dismisses the options flow with 'X'."""
 
-        if isnot_empty(self.config_parms_update_control):
-            Gb.hass.async_create_task(self.exit_configure_tasks(exit_by_x_click=True))
+        # The handler is a singleton (Gb.OptionsFlowHandler) so the next Configure
+        # session reuses it. Clear it here, even if the exit processing fails, so a
+        # new session does not run on this closed handler.
+        try:
+            if isnot_empty(self.config_parms_update_control):
+                Gb.hass.async_create_task(self.exit_configure_tasks(exit_by_x_click=True))
+        finally:
+            Gb.OptionsFlowHandler = None
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

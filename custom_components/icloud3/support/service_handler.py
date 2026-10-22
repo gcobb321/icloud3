@@ -122,7 +122,9 @@ def process_update_service_request(call):
 
     action       = action.lower()
     devicename   = call.data.get(CONF_DEVICENAME)
-    action, devicename = resolve_action_devicename_values(action, devicename)
+    action, devicename, is_valid = resolve_action_devicename_values(action, devicename)
+    if is_valid is False:
+        return
 
     update_service_handler(action, action_fname, devicename)
 
@@ -137,7 +139,9 @@ def process_find_iphone_alert_service_request(call):
     """Call the find_iphone_alert to play a sound on the phone"""
 
     devicename = call.data.get(CONF_DEVICENAME)
-    action, devicename = resolve_action_devicename_values("find_iphone_alert", devicename)
+    action, devicename, is_valid = resolve_action_devicename_values("find_iphone_alert", devicename)
+    if is_valid is False:
+        return
 
     find_iphone_alert_service_handler(devicename)
 
@@ -148,7 +152,14 @@ def process_lost_device_alert_service_request(call):
     devicename = call.data.get(CONF_DEVICENAME)
     number     = call.data.get('number')
     message    = call.data.get('message')
-    action, devicename = resolve_action_devicename_values("lost_device_alert_service", devicename)
+    action, devicename, is_valid = resolve_action_devicename_values("lost_device_alert_service", devicename)
+    if is_valid is False:
+        return
+
+    if devicename is None:
+        post_error_msg(f"Lost Device Alert > Device name not specified, "
+                        f"it can not be sent to all devices")
+        return
 
     try:
         Device = Gb.Devices_by_devicename.get(devicename)
@@ -190,7 +201,9 @@ def process_display_message_alert_service_request(call):
     devicename = call.data.get(CONF_DEVICENAME)
     message    = call.data.get('message')
     sounds     = call.data.get('sounds')
-    action, devicename = resolve_action_devicename_values("display_message_alert", devicename)
+    action, devicename, is_valid = resolve_action_devicename_values("display_message_alert", devicename)
+    if is_valid is False:
+        return
 
     display_message_alert_service_handler(devicename, message, sounds)
 
@@ -202,28 +215,35 @@ def resolve_action_devicename_values(action, devicename):
         - action text dexcription --> action parameter
         - ha_device_id --> devicename parameter
 
-    Return the action and devicename values
+    Return the action, devicename and is_valid values
+
+    devicename=None means the parameter was not passed and the action applies to
+    all devices. A devicename that is not in the iCloud3 device tables was passed
+    by the user, so it is reported and the action is not run on any device.
     '''
     # Convert action and devicename to the real values if the service call
     # is coming in from the Developer Tools/Services screen
     if action in ACTION_FNAME_TO_ACTION:
         action = ACTION_FNAME_TO_ACTION[action]
     if devicename == 'startup_log':
-        return action, devicename
+        return action, devicename, True
     log_info_msg(f"Service Call > Action-{action}, Device-{devicename}")
 
-    device_id = devicename
+    if devicename is None:
+        return action, devicename, True
+
     if devicename in Gb.Devices_by_devicename:
         pass
 
-    elif device_id in Gb.ha_device_id_x_devicename:
-        devicename = Gb.ha_device_id_x_devicename[device_id]
+    elif devicename in Gb.ha_device_id_x_devicename:
+        devicename = Gb.ha_device_id_x_devicename[devicename]
     else:
-        devicename = None
+        post_error_msg(f"Device not found: {devicename}")
+        return action, None, False
 
     log_info_msg(f"Service Call > Action-{action}, Device-{devicename}")
 
-    return action, devicename
+    return action, devicename, True
 
 #--------------------------------------------------------------------
 def _post_device_event_msg(devicename, msg):
@@ -593,8 +613,16 @@ def find_iphone_alert_service_handler(devicename):
     Call the lost iPhone function if using the iCloud tracking method.
     Otherwise, send a notification to the Mobile App
     """
+    if devicename is None:
+        post_error_msg(f"Find My iPhone Alert > Device name not specified, "
+                        f"it can not be sent to all devices")
+        return
 
-    Device = Gb.Devices_by_devicename[devicename]
+    Device = Gb.Devices_by_devicename.get(devicename)
+    if Device is None:
+        post_error_msg(f"Find My iPhone Alert > Device not found: {devicename}")
+        return
+
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
 
@@ -649,10 +677,19 @@ def display_message_alert_service_handler(devicename, message, sounds=False):
     '''
     Call the display message function of pyicloud.
     '''
+    if devicename is None:
+        post_error_msg(f"Display Message Alert > Device name not specified, "
+                        f"it can not be sent to all devices")
+        return
+
     if message is None:
         message = 'Please review latest Home Assitant notifications for critical alerts'
 
-    Device = Gb.Devices_by_devicename[devicename]
+    Device = Gb.Devices_by_devicename.get(devicename)
+    if Device is None:
+        post_error_msg(f"Display Message Alert > Device not found: {devicename}")
+        return
+
     if Device.is_data_source_ICLOUD:
         device_id = Device.icloud_device_id
         if device_id and Device.AppleAcct and Device.AppleAcct.AADevices:
