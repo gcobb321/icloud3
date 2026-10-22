@@ -285,6 +285,8 @@ def _add_parms_and_check_config_file():
             'Update General Parameters', _update_general_parameters)  or update_config_file_flag
         update_config_file_flag = _run_config_migration_step(
             'Update Sensors', _update_sensors)                        or update_config_file_flag
+        update_config_file_flag = _run_config_migration_step(
+            'Update Device Sensors', _update_device_sensors)          or update_config_file_flag
 
         update_config_file_flag = _run_config_migration_step(
             'Update Apple Account Parameters', _update_apple_acct_parameters) or update_config_file_flag
@@ -955,28 +957,14 @@ def _update_profile():
     '''
     Update Gb.conf_profile with new fields
     '''
-
-    Gb.conf_profile, del_items = _delete_items_from_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
-    Gb.conf_profile, new_items = _insert_items_into_conf_dict(Gb.conf_profile, DEFAULT_PROFILE_CONF)
-
-    if new_items or del_items:
-        log_info_msg(   f"Updated Configuration File items (Profile), "
-                        f"Added-{new_items}, Deleted-{del_items})")
-        return True
+    return _update_conf_group('conf_profile', DEFAULT_PROFILE_CONF, 'Profile')
 
 #--------------------------------------------------------------------
 def _update_sensors():
     '''
     Update Gb.conf_sensors with new fields
     '''
-
-    Gb.conf_sensors, del_items = _delete_items_from_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
-    Gb.conf_sensors, new_items = _insert_items_into_conf_dict(Gb.conf_sensors, DEFAULT_SENSORS_CONF)
-
-    if new_items or del_items:
-        log_info_msg(   f"Updated Configuration File items (Sensors), "
-                        f"Added-{new_items}, Deleted-{del_items})")
-        return True
+    return _update_conf_group('conf_sensors', DEFAULT_SENSORS_CONF, 'Sensors')
 
 #-----------------------------------------------------------
 def _update_device_sensors():
@@ -996,14 +984,7 @@ def _update_tracking_parameters():
     '''
     Update Gb.conf_tracking with new fields
     '''
-    Gb.conf_tracking, del_items = _delete_items_from_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
-    Gb.conf_tracking, new_items = _insert_items_into_conf_dict(Gb.conf_tracking, DEFAULT_TRACKING_CONF)
-
-    if new_items or del_items:
-        log_info_msg(   f"Updated Configuration File items (Tracking), "
-                        f"Added-{new_items}, Deleted-{del_items})")
-
-        return True
+    return _update_conf_group('conf_tracking', DEFAULT_TRACKING_CONF, 'Tracking')
 
 #--------------------------------------------------------------------
 def _update_apple_acct_parameters():
@@ -1018,37 +999,38 @@ def _update_apple_acct_parameters():
         cd_idx += 1
 
         # v3.6-Change hwkey from list to str, delete hwkey_1 & hwkey_2
-        conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
-
         try:
-            if (HWKEY in conf_auth_methods and type(conf_auth_methods[HWKEY]) != str):
-                dict_del(conf_auth_methods, HWKEY)
-            dict_del(conf_auth_methods, 'hwkey_1')
-            dict_del(conf_auth_methods, 'hwkey_2')
-
-            if 'current' not in conf_auth_methods:
-                conf_auth_methods[CURRENT] = conf_auth_methods.get('last_method', PUSH)
-                dict_del(conf_auth_methods, 'last_method')
-
-            if HWKEY not in conf_auth_methods:
-                conf_auth_methods[HWKEY] = ''
+            _update_apple_acct_auth_methods(conf_apple_acct[CONF_AUTH_METHODS])
             update_flag = True
 
         except Exception as err:
             log_exception(err)
             #continue
 
-        conf_apple_acct, del_items = _delete_items_from_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
-        conf_apple_acct, new_items = _insert_items_into_conf_dict(conf_apple_acct, DEFAULT_APPLE_ACCOUNT_CONF)
-
-        if new_items or del_items:
-            log_info_msg(   f"Updated Configuration File items (Apple Acct), "
-                            f"{username_id(conf_apple_acct[CONF_USERNAME])}, "
-                            f"Added-{new_items}, Deleted-{del_items})")
-
+        conf_apple_acct, changed = _update_conf_dict_group(
+                                        conf_apple_acct,
+                                        DEFAULT_APPLE_ACCOUNT_CONF,
+                                        'Apple Acct',
+                                        detail=username_id(conf_apple_acct[CONF_USERNAME]))
+        if changed:
             Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
 
     return update_flag
+
+#--------------------------------------------------------------------
+def _update_apple_acct_auth_methods(conf_auth_methods):
+
+    if (HWKEY in conf_auth_methods and type(conf_auth_methods[HWKEY]) != str):
+        dict_del(conf_auth_methods, HWKEY)
+    dict_del(conf_auth_methods, 'hwkey_1')
+    dict_del(conf_auth_methods, 'hwkey_2')
+
+    if 'current' not in conf_auth_methods:
+        conf_auth_methods[CURRENT] = conf_auth_methods.get('last_method', PUSH)
+        dict_del(conf_auth_methods, 'last_method')
+
+    if HWKEY not in conf_auth_methods:
+        conf_auth_methods[HWKEY] = ''
 
 #--------------------------------------------------------------------
 def _update_device_parameters():
@@ -1079,25 +1061,56 @@ def _update_general_parameters():
     '''
     Update Gb.conf_general with new fields
     '''
-    Gb.conf_general, del_items = _delete_items_from_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
-    Gb.conf_general, new_items = _insert_items_into_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
+    return _update_conf_group('conf_general', DEFAULT_GENERAL_CONF, 'General',
+                              adjust_conf=_add_missing_inzone_intervals)
+
+#-------------------------------------------------------------------
+def _add_missing_inzone_intervals(conf_general):
 
     inzone_intervals = {device_type: interval for device_type, interval in DEVICE_TYPE_INZONE_INTERVALS.items()
-                                        if device_type not in Gb.conf_general[CONF_INZONE_INTERVALS]}
-    if isnot_empty(inzone_intervals):
+                                        if device_type not in conf_general[CONF_INZONE_INTERVALS]}
+    if is_empty(inzone_intervals):
+        return False
+
+    for device_type, interval in inzone_intervals.items():
+        conf_general[CONF_INZONE_INTERVALS][device_type] = interval
+
+    return True
+
+#--------------------------------------------------------------------
+def _update_conf_group(conf_attr_name, default_conf, label, adjust_conf=None):
+    '''
+    Update a Gb configuration group, log the change and report whether it changed.
+
+    adjust_conf is an optional callable(conf_group) returning True when it changed
+    the group and that change must be logged as an added item.
+    '''
+    conf_group, changed = _update_conf_dict_group(getattr(Gb, conf_attr_name),
+                                                  default_conf, label,
+                                                  adjust_conf=adjust_conf)
+    setattr(Gb, conf_attr_name, conf_group)
+
+    return changed
+
+#--------------------------------------------------------------------
+def _update_conf_dict_group(conf_group, default_conf, label, detail='', adjust_conf=None):
+    '''
+    Update a configuration dict, log the change and report whether it changed.
+    '''
+    conf_group, del_items = _delete_items_from_conf_dict(conf_group, default_conf)
+    conf_group, new_items = _insert_items_into_conf_dict(conf_group, default_conf)
+
+    if adjust_conf is not None and adjust_conf(conf_group):
         new_items = True
-        for device_type, interval in inzone_intervals.items():
-            Gb.conf_general[CONF_INZONE_INTERVALS][device_type] = interval
 
-        # if IPAD_CELL not in Gb.conf_general[CONF_INZONE_INTERVALS]:
-        # Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL] = DEVICE_TYPE_INZONE_INTERVALS[IPAD_CELL]
-        # Gb.conf_general[CONF_INZONE_INTERVALS][WATCH_WIFI] = DEVICE_TYPE_INZONE_INTERVALS[WATCH_WIFI]
-        # Gb.conf_general[CONF_INZONE_INTERVALS][MAC] = DEVICE_TYPE_INZONE_INTERVALS[MAC]
+    if not (new_items or del_items):
+        return conf_group, False
 
-    if new_items or del_items:
-        log_info_msg(   f"Updated Configuration File items (General), "
-                        f"Added-{new_items}, Deleted-{del_items})")
-        return True
+    detail_text = f"{detail}, " if detail else ''
+    log_info_msg(f"Updated Configuration File items ({label}), "
+                 f"{detail_text}Added-{new_items}, Deleted-{del_items})")
+
+    return conf_group, True
 
 #--------------------------------------------------------------------
 def _insert_items_into_conf_dict(dest_dict, source_dict):

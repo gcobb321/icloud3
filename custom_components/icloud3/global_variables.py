@@ -6,21 +6,6 @@
 #   multiple classes. The variable to be referenced is defined in the __init__
 #   function with it's default value.
 #
-#   Usage:
-#       The following code is added to the module.py file containing another class
-#       that needs access to the shared global variables.
-#
-#       Add the following code before the class statement:
-#           from .globals import GlobalVariables as GbObj
-#
-#       Add the following code in the __init__ function:
-#           def __init(self, var1, var2, ...):
-#               global Gb
-#               Gb = GbObj.MasterGbObject
-#
-#       The shared variables can then be shared using the Gb object:
-#           Gb.time_format
-#           Gb.Zones_by_zone
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
@@ -134,7 +119,6 @@ class GlobalVariables(object):
     MobileApp_data                  = {}     # mobile_app Integration data dict from hass.data['mobile_app']
     MobileApp_devices               = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
 
-    config_entry_id                 = None
     ConfigFlowHandler               = None
     OptionsFlowHandler              = None  # OptionsFlowHandler (config_flow)
 
@@ -255,7 +239,6 @@ class GlobalVariables(object):
     sensors_base_from_zone          = []
 
     InternetPingIP                   = None    # Internet Connection Test Availabile Handler
-    InternetError                   = None    # Internet Connection Error Handler
     internet_error                  = False   # Internet Connection Error Flag (set in AppleAcct_Session)
     icloud_io_request_secs          = 0       # Last time a request was sent in PyIcloud, > 1-min ago = internet is down
     icloud_io_1_min_timer_fct       = None    # 1-min timer set when an icloud_io call is made
@@ -303,7 +286,6 @@ class GlobalVariables(object):
     devicenames_x_mobapp_dnames     = {}  # All ic3_devicenames by conf_mobapp_dname (both ways)
 
     # Mobile App Integration info from hass_data['mobile_app'], Updated in start_ic3.check_mobile_app_integration
-    MobileApp_data                  = {}  # data dict from hass.data['mobile_app']
     MobileApp_device_fnames         = []  # fname = name_by_user or name in mobile_app device entry
     MobileApp_fnames_x_mobapp_id    = {}  # All mobapp_fnames by mobapp_deviceid (both ways)
     MobileApp_fnames_disabled       = []
@@ -583,18 +565,6 @@ class GlobalVariables(object):
     # Miscellenous variables
     broadcast_msg        = ''
     broadcast_info_msg   = None
-
-    # Test variables
-    test_true_1         = True
-    test_true_2         = True
-    test_false_1        = False
-    test_false_2        = False
-    test_str_1          = ''
-    test_str_2          = ''
-    test_list_1         = []
-    test_list_2         = []
-    test_dict_1         = {}
-    test_dict_2         = {}
 
     #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 

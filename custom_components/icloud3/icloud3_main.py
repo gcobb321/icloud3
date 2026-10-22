@@ -73,7 +73,6 @@ from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mi
 from .utils.dist_util   import (km_to_um, m_to_um_ft, )
 
 #--------------------------------------------------------------------
-import time
 import traceback
 from re import match
 import homeassistant.util.dt        as dt_util
@@ -1470,18 +1469,6 @@ class iCloud3:
             return f"{Device.fname_devtype}"
         except:
             return ''
-
-#--------------------------------------------------------------------
-    def _wait_if_update_in_process(self, Device=None):
-        # An update is in process, must wait until done
-
-        wait_cnt = 0
-        while self.loop_ctrl_master_update_in_process_flag:
-            wait_cnt += 1
-            if Device:
-                Device.write_ha_sensor_state(INTERVAL, (f"WAIT-{wait_cnt}"))
-
-            time.sleep(2)
 
 #--------------------------------------------------------------------
     def _post_before_update_monitor_msg(self, Device):

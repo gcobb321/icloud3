@@ -3062,16 +3062,3 @@ def post_restart_icloud3_complete_msg():
     post_event(f"{EVLOG_ATTENTION}Initializing {Gb.icloud3_version_msg} > Complete")
 
     Gb.EvLog.update_event_log_display("")
-
-#------------------------------------------------------------------------------
-def dump_gb_dictionaries_to_icloud_log():
-    pass
-
-    Gb.startup_lists['Gb.Devices_by_devicename_tracked']   = Gb.Devices_by_devicename_tracked
-    Gb.startup_lists['Gb.Devices_by_devicename_monitored'] = Gb.Devices_by_devicename_monitored
-    Gb.startup_lists['Gb.devicenames_by_mobapp_dname']  = Gb.devicenames_by_mobapp_dname
-    Gb.startup_lists['Gb.mobile_app_device_fnames']  = Gb.mobile_app_device_fnames
-    Gb.startup_lists['Gb.mobapp_fnames_by_mobapp_id'] = Gb.mobapp_fnames_by_mobapp_id
-    Gb.startup_lists['Gb.mobapp_ids_by_mobapp_fname'] = Gb.mobapp_ids_by_mobapp_fname
-    Gb.startup_lists['Gb.mobapp_fnames_disabled']    = Gb.mobapp_fnames_disabled
-    Gb.startup_lists['Gb.model_display_name_by_raw_model']    = Gb.model_display_name_by_raw_model
