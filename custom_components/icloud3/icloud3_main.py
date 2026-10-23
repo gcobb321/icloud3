@@ -753,14 +753,11 @@ class iCloud3:
             return
 
         # Every hour:
+        #   - Refresh the time zone offset (daylight savings time change)
         #   - Check for iCloud3 update in HACS data
         #   - Clean up lingering Stat Zones
         self._timer_tasks_every_hour()
-
-        # At 1am:
-        #   - Check for daylight savings time change
-        if time_hh == 1:
-            calculate_time_zone_offset()
+        calculate_time_zone_offset(post_msg=(time_hh == 1))
 
         # Every 4-hours
         if time_hh % 4 == 0:
