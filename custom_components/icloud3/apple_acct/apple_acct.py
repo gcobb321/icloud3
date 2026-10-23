@@ -314,6 +314,11 @@ class AppleAcctManager(object):
             self.error_next_retry_secs = 0
             self.error_retry_cnt = 0
 
+            # When True, icloud_io re-raises AppleAcctException instead of
+            # returning an empty dict. Set only around a request whose caller
+            # has a dedicated error branch for it.
+            self.raise_api_errors = False
+
             add_log_file_filter(password)
 
             self._setup_iCloudSession()
@@ -850,6 +855,7 @@ class AppleAcctManager(object):
             login_data["trustTokens"] = [self.session_data.get("trust_token")]
 
         try:
+            self.raise_api_errors = True
             self.data = icloud_io.post(self, url, params=params, data=login_data,
                                                     headers=headers,)
 
@@ -874,6 +880,9 @@ class AppleAcctManager(object):
                             f"Other Error, {err}")
             log_exception(err)
             return False
+
+        finally:
+            self.raise_api_errors = False
 
         return False
 

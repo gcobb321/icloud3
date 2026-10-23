@@ -723,7 +723,7 @@ def build_mobapp_integration_device_tables():
         return True
 
     except Exception as err:
-        #log_exception(err)
+        log_exception(err)
         return False
 
 #--------------------------------------------------------------------

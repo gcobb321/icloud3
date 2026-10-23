@@ -2035,8 +2035,8 @@ def _match_AppleAcct_devices_to_Device(AppleAcct, retry_match_devicenames=None):
         Device.AppleAcct           = AppleAcct
         Device.icloud_device_id    = device_id
 
-        Device.icloud_person_id    = AADevData.device_data['prsId']
-        Device.family_share_device = AADevData.device_data['fmlyShare']
+        Device.icloud_person_id    = AADevData.device_data.get('prsId', '')
+        Device.family_share_device = AADevData.device_data.get('fmlyShare', False)
         AADevData.device_data[CONF_IC3_DEVICENAME] = devicename
         AADevData.device_data['dname'] = AADevData.dname
 

@@ -404,21 +404,41 @@ class iCloud_AppleAcctDevices():
         renamed_AADevData_items = []
 
         for device_data in devices_data:
-            device_id         = device_data[ID]
-            device_data[NAME] = device_data_name = self._remove_special_chars(device_data[NAME])
+            if not isinstance(device_data, dict):
+                log_warning_msg(f"Apple Acct > {self.AppleAcct.username_base}, "
+                                f"iCloud Data for {type(device_data).__name__} was skipped")
+                continue
 
-            AADevData = self.AppleAcct.AADevData_by_device_id.get(device_id)
-            if AADevData is None:
-                self._create_AADeviceData_object(device_id, device_data)
-                AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
-                AADevData.active = True
-                new_AADevData_items.append(AADevData)
+            try:
+                device_id = device_data.get(ID)
+                if is_empty(device_id):
+                    log_warning_msg(f"Apple Acct > {self.AppleAcct.username_base}, "
+                                    f"iCloud Data for a device without a device_id was skipped")
+                    continue
 
-            elif AADevData.name != device_data_name:
-                post_event( f"Apple Acct > {self.AppleAcct.username_base}, "
-                            f"Device Renamed > {AADevData.name}{RARROW}{device_data_name}")
-                AADevData.name = AADevData.device_data[NAME] = device_data_name
-                renamed_AADevData_items.append(AADevData)
+                device_data_name  = self._remove_special_chars(
+                                            device_data.get(NAME) or str(device_id)[:8])
+                device_data[NAME] = device_data_name
+
+                AADevData = self.AppleAcct.AADevData_by_device_id.get(device_id)
+                if AADevData is None:
+                    self._create_AADeviceData_object(device_id, device_data)
+                    AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
+                    AADevData.active = True
+                    new_AADevData_items.append(AADevData)
+
+                elif AADevData.name != device_data_name:
+                    post_event( f"Apple Acct > {self.AppleAcct.username_base}, "
+                                f"Device Renamed > {AADevData.name}{RARROW}{device_data_name}")
+                    AADevData.name = AADevData.device_data[NAME] = device_data_name
+                    renamed_AADevData_items.append(AADevData)
+
+            except Exception as err:
+                log_warning_msg(f"Apple Acct > {self.AppleAcct.username_base}, "
+                                f"iCloud Data for {device_data.get(NAME, '')}/"
+                                f"{str(device_data.get(ID, ''))[:8]} was skipped, {err}")
+                log_exception(err)
+                continue
 
         if is_empty(new_AADevData_items) and is_empty(renamed_AADevData_items):
             return

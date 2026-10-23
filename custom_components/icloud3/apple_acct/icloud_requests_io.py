@@ -6,6 +6,7 @@ from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, form
 from ..utils.utils          import (is_running_in_event_loop)
 from .icloud_session        import iCloudSession
 # from .icloud_session_auth_ipv4 import iCloudSession
+from .exceptions            import AppleAcctException
 
 import datetime as dt
 import http.cookiejar as cookielib
@@ -48,13 +49,22 @@ def post(AppleAcct, url, **kwargs):
     try:
         data = AppleAcct.iCloudSession.post(url, **kwargs)
         _record_apple_request(True)
+        return data
+
+    except AppleAcctException as err:
+        log_exception(err)
+        _record_apple_request(False)
+        if getattr(AppleAcct, "raise_api_errors", False):
+            raise
+        return {}
+
     except Exception as err:
         log_exception(err)
         _record_apple_request(False)
-        data = {}
+        return {}
 
-    cancel_request_timeout_timer()
-    return data
+    finally:
+        cancel_request_timeout_timer()
 
 #--------------------------------------------------------------------
 def get(AppleAcct, url, **kwargs):
@@ -62,13 +72,22 @@ def get(AppleAcct, url, **kwargs):
     try:
         data = AppleAcct.iCloudSession.get(url, **kwargs)
         _record_apple_request(True)
+        return data
+
+    except AppleAcctException as err:
+        log_exception(err)
+        _record_apple_request(False)
+        if getattr(AppleAcct, "raise_api_errors", False):
+            raise
+        return {}
+
     except Exception as err:
         log_exception(err)
         _record_apple_request(False)
-        data = {}
+        return {}
 
-    cancel_request_timeout_timer()
-    return data
+    finally:
+        cancel_request_timeout_timer()
 
 #--------------------------------------------------------------------
 def put(AppleAcct, url, **kwargs):
@@ -76,13 +95,22 @@ def put(AppleAcct, url, **kwargs):
     try:
         data = AppleAcct.iCloudSession.put(url, **kwargs)
         _record_apple_request(True)
+        return data
+
+    except AppleAcctException as err:
+        log_exception(err)
+        _record_apple_request(False)
+        if getattr(AppleAcct, "raise_api_errors", False):
+            raise
+        return {}
+
     except Exception as err:
         log_exception(err)
         _record_apple_request(False)
-        data = {}
+        return {}
 
-    cancel_request_timeout_timer()
-    return data
+    finally:
+        cancel_request_timeout_timer()
 
 #--------------------------------------------------------------------
 def update_headers(AppleAcct, **kwargs):

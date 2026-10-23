@@ -212,6 +212,89 @@ def test_device_status_conversion_is_tolerant() -> None:
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   icloud_requests_io - auth errors are visible, not swallowed
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def test_request_io_imports_the_shared_exception() -> None:
+    tree = tree_of("apple_acct/icloud_requests_io.py")
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == 'exceptions':
+            imported.update(alias.name for alias in node.names)
+
+    assert 'AppleAcctException' in imported
+
+
+def test_request_io_reraise_is_gated_by_raise_api_errors() -> None:
+    tree = tree_of("apple_acct/icloud_requests_io.py")
+
+    for name in ("post", "get", "put"):
+        function = function_named(tree, name)
+        handlers = [handler
+                    for node in ast.walk(function)
+                    if isinstance(node, ast.Try)
+                    for handler in node.handlers
+                    if ast.unparse(handler.type) == "AppleAcctException"]
+
+        assert handlers, f"{name}() does not catch AppleAcctException separately"
+        assert any(isinstance(node, ast.Raise) for node in ast.walk(handlers[0])), \
+            f"{name}() can never re-raise an AppleAcctException"
+        assert "raise_api_errors" in ast.unparse(handlers[0]), \
+            f"{name}() re-raises without checking AppleAcct.raise_api_errors"
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   authenticate_with_password - the API error branch is reachable
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def test_password_auth_sets_and_clears_raise_api_errors() -> None:
+    function = function_named(tree_of("apple_acct/apple_acct.py"),
+                              "authenticate_with_password")
+
+    guarded = next(node for node in ast.walk(function)
+                   if isinstance(node, ast.Try)
+                   and any(ast.unparse(handler.type) == "AppleAcctAPIResponseException"
+                           for handler in node.handlers))
+
+    body = ast.unparse(ast.Module(body=guarded.body, type_ignores=[]))
+    assert "self.raise_api_errors = True" in body
+    assert "icloud_io.post" in body
+
+    finalbody = ast.unparse(ast.Module(body=guarded.finalbody, type_ignores=[]))
+    assert "self.raise_api_errors = False" in finalbody
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   Device payload tolerance
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def test_create_AADeviceData_objects_isolates_each_device() -> None:
+    function = function_named(tree_of("apple_acct/apple_acct_devices.py"),
+                              "_create_AADeviceData_objects")
+
+    device_loop = next(
+        node for node in ast.walk(function)
+        if isinstance(node, ast.For)
+        and any(isinstance(child, ast.Name) and child.id == "devices_data"
+                for child in ast.walk(node.iter)))
+
+    assert any(isinstance(node, ast.Try) and node.handlers
+               for node in device_loop.body), \
+        "the per-device work is not isolated, one bad device stops the rest"
+
+
+def test_start_ic3_reads_fmlyShare_safely() -> None:
+    tree = tree_of("startup/start_ic3.py")
+
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Subscript)
+                and isinstance(node.slice, ast.Constant)
+                and node.slice.value == "fmlyShare"):
+            raise AssertionError(
+                "device_data['fmlyShare'] raises KeyError for a device that "
+                "omits the field")
+
+    assert ".get('fmlyShare'" in source_of("startup/start_ic3.py")
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #   Apple Acct reauth repair issue
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def test_reauth_repair_message_points_at_the_configure_screen() -> None:

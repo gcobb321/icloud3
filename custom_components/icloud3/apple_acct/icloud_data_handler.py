@@ -177,7 +177,7 @@ def request_icloud_data_update(Device):
         Device.is_icloud_acct_error      = True
         Device.is_icloud_devdata_useable = False
 
-        # log_exception(err)
+        log_exception(err)
 
     return False
 
@@ -621,7 +621,7 @@ def get_icloud_AADevData_to_use(_Device):
         return _AADevData
 
     except Exception as err:
-        # log_exception(err)
+        log_exception(err)
         post_error_msg("iCloud3 Error > Error extracting device info from Apple Acct data, "
                         f"Device-{_Device.fname_devicename}, "
                         f"AppleAcct-{_Device.conf_apple_acct_username}. "
