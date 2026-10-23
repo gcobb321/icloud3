@@ -24,6 +24,7 @@ SNAPSHOT_KEYS = {
     "loop_count",
     "error_count",
     "last_error_secs_ago",
+    "last_error_message",
     "uptime_secs",
     "loop_duration_ms",
     "config_write_failures",
@@ -56,6 +57,7 @@ def test_empty_snapshot_shape(perf: ModuleType) -> None:
     assert snapshot["loop_count"] == 0
     assert snapshot["error_count"] == 0
     assert snapshot["last_error_secs_ago"] is None
+    assert snapshot["last_error_message"] is None
     assert snapshot["config_write_failures"] == 0
     assert snapshot["apple_requests"] == 0
     assert snapshot["apple_failures"] == 0
@@ -115,6 +117,34 @@ def test_error_counter_and_last_error(perf: ModuleType) -> None:
     assert snapshot["error_count"] == 1
     assert isinstance(snapshot["last_error_secs_ago"], float)
     assert snapshot["last_error_secs_ago"] >= 0
+    assert snapshot["last_error_message"] is None
+
+
+def test_error_message_is_stored_and_truncated(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_loop(0.01, error=True, error_message="ValueError: boom")
+
+    snapshot = counters.snapshot()
+
+    assert snapshot["last_error_message"] == "ValueError: boom"
+
+    counters.record_loop(0.01, error=True, error_message="x" * 500)
+
+    snapshot = counters.snapshot()
+
+    assert snapshot["last_error_message"] == "x" * 200
+    assert len(snapshot["last_error_message"]) == perf.MAX_ERROR_MESSAGE_LEN
+
+
+def test_error_message_is_kept_after_a_clean_loop(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_loop(0.01, error=True, error_message="TimeoutError: slow")
+    counters.record_loop(0.02)
+
+    snapshot = counters.snapshot()
+
+    assert snapshot["error_count"] == 1
+    assert snapshot["last_error_message"] == "TimeoutError: slow"
 
 
 def test_request_and_config_failure_counters(perf: ModuleType) -> None:
@@ -136,7 +166,7 @@ def test_request_and_config_failure_counters(perf: ModuleType) -> None:
 
 def test_reset_clears_every_counter(perf: ModuleType) -> None:
     counters = perf.PerfCounters()
-    counters.record_loop(1.0, error=True)
+    counters.record_loop(1.0, error=True, error_message="RuntimeError: boom")
     counters.record_apple_request(False)
     counters.record_waze_request("error")
     counters.record_config_write_failure()
@@ -147,6 +177,7 @@ def test_reset_clears_every_counter(perf: ModuleType) -> None:
     assert snapshot["loop_count"] == 0
     assert snapshot["error_count"] == 0
     assert snapshot["last_error_secs_ago"] is None
+    assert snapshot["last_error_message"] is None
     assert snapshot["loop_duration_ms"]["samples"] == 0
     assert snapshot["apple_requests"] == 0
     assert snapshot["apple_failures"] == 0
@@ -180,7 +211,7 @@ def test_concurrent_recording_is_thread_safe(perf: ModuleType) -> None:
 def test_snapshot_is_json_serializable(perf: ModuleType) -> None:
     counters = perf.PerfCounters()
     counters.record_loop(0.012)
-    counters.record_loop(0.009, error=True)
+    counters.record_loop(0.009, error=True, error_message="KeyError: 'x'")
     counters.record_apple_request(True)
     counters.record_waze_request("ok")
 
@@ -189,3 +220,4 @@ def test_snapshot_is_json_serializable(perf: ModuleType) -> None:
 
     assert decoded["loop_count"] == 2
     assert decoded["error_count"] == 1
+    assert decoded["last_error_message"] == "KeyError: 'x'"

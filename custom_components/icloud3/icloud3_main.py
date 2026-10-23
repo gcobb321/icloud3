@@ -72,6 +72,7 @@ from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mi
                                 format_day_date, format_now, format_day_date_time_now, )
 from .utils.dist_util   import (km_to_um, m_to_um_ft, )
 from .utils.perf        import install_perf_counters
+from .utils.redact      import redact_text
 
 #--------------------------------------------------------------------
 import traceback
@@ -287,16 +288,18 @@ class iCloud3:
         import time
         start = time.perf_counter()
         error = False
+        error_message = ''
         try:
             return self._master_5sec_interval_handler(ha_timer_secs)
-        except Exception:
+        except Exception as err:
             error = True
+            error_message = redact_text(f"{type(err).__name__}: {err}")
             raise
         finally:
             perf = getattr(Gb, 'Perf', None)
             if perf is None:
                 perf = install_perf_counters()
-            perf.record_loop(time.perf_counter() - start, error)
+            perf.record_loop(time.perf_counter() - start, error, error_message)
 
             health_sensor = getattr(Gb, 'HealthSensor', None)
             if health_sensor is not None:

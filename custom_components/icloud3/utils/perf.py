@@ -14,6 +14,7 @@ from collections import deque
 from typing import Any
 
 LOOP_WINDOW = 288  # 24 minutes at one sample per 5 seconds
+MAX_ERROR_MESSAGE_LEN = 200
 
 
 class PerfCounters:
@@ -29,12 +30,14 @@ class PerfCounters:
         self._loop_count = 0
         self._error_count = 0
         self._last_error_at: float | None = None
+        self._last_error_message: str | None = None
         self._config_write_failures = 0
         self._apple_requests = 0
         self._apple_failures = 0
         self._waze_status_counts: dict[str, int] = {}
 
-    def record_loop(self, duration_secs: float, error: bool = False) -> None:
+    def record_loop(self, duration_secs: float, error: bool = False,
+                    error_message: str = '') -> None:
         """Record one completed 5-second loop."""
         with self._lock:
             self._loop_durations.append(max(float(duration_secs), 0.0))
@@ -42,6 +45,8 @@ class PerfCounters:
             if error:
                 self._error_count += 1
                 self._last_error_at = time.perf_counter()
+                message = str(error_message).strip()[:MAX_ERROR_MESSAGE_LEN]
+                self._last_error_message = message or None
 
     def record_config_write_failure(self) -> None:
         """Record a failed configuration write."""
@@ -74,6 +79,7 @@ class PerfCounters:
                     None if self._last_error_at is None
                     else round(now - self._last_error_at, 3)
                 ),
+                'last_error_message': self._last_error_message,
                 'uptime_secs': round(now - self._started_at, 3),
                 'loop_duration_ms': _duration_stats(durations),
                 'config_write_failures': self._config_write_failures,
@@ -90,6 +96,7 @@ class PerfCounters:
             self._loop_count = 0
             self._error_count = 0
             self._last_error_at = None
+            self._last_error_message = None
             self._config_write_failures = 0
             self._apple_requests = 0
             self._apple_failures = 0

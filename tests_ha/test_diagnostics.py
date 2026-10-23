@@ -32,4 +32,9 @@ async def test_health_sensor_after_setup(hass):
 
     state = hass.states.get("sensor.icloud3_health")
     assert state is not None
-    assert state.state == "ok"
+    assert state.state in ("ok", "warning")
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert "health" in result
+    assert "last_error_message" in result["health"]

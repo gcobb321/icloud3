@@ -1816,6 +1816,8 @@ class Sensor_Health(iCloud3Sensor_Base, SensorEntity):
 
     _ERROR_SECS = 60
     _WARNING_SECS = 300
+    _LOOP_WARNING_MS = 1500
+    _LOOP_ERROR_MS = 4000
 
     @property
     def icon(self):
@@ -1833,14 +1835,22 @@ class Sensor_Health(iCloud3Sensor_Base, SensorEntity):
 
     @property
     def native_value(self):
-        '''State value - ok / warning / error based on the last loop error.'''
-        last_error = self._snapshot().get('last_error_secs_ago')
-        if not isinstance(last_error, (int, float)):
-            return 'ok'
-        if last_error <= self._ERROR_SECS:
-            return 'error'
-        if last_error <= self._WARNING_SECS:
-            return 'warning'
+        '''State value - ok / warning / error based on errors and loop latency.'''
+        snapshot = self._snapshot()
+        last_error = snapshot.get('last_error_secs_ago')
+        if isinstance(last_error, (int, float)):
+            if last_error <= self._ERROR_SECS:
+                return 'error'
+            if last_error <= self._WARNING_SECS:
+                return 'warning'
+
+        durations = snapshot.get('loop_duration_ms') or {}
+        p95 = durations.get('p95')
+        if isinstance(p95, (int, float)):
+            if p95 > self._LOOP_ERROR_MS:
+                return 'error'
+            if p95 > self._LOOP_WARNING_MS:
+                return 'warning'
         return 'ok'
 
     @property
@@ -1853,7 +1863,18 @@ class Sensor_Health(iCloud3Sensor_Base, SensorEntity):
         extra_attrs.setdefault('apple_requests', 0)
         extra_attrs.setdefault('apple_failures', 0)
         extra_attrs.setdefault('waze_status_counts', {})
+        extra_attrs.setdefault('last_error_message', None)
         extra_attrs['last_error'] = snapshot.get('last_error_secs_ago')
+
+        durations = snapshot.get('loop_duration_ms') or {}
+        extra_attrs['loop_p95_ms'] = durations.get('p95')
+
+        requests = snapshot.get('apple_requests') or 0
+        failures = snapshot.get('apple_failures') or 0
+        extra_attrs['apple_failure_pct'] = (
+            round(failures / requests * 100, 1) if requests else 0
+        )
+
         extra_attrs['health'] = self.native_value
         return extra_attrs
 
