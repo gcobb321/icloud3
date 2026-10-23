@@ -399,8 +399,14 @@ def update_entity(entity_id, **kwargs):
 def is_entity_available(entity_id):
     try:
         entity_reg = er.async_get(Gb.hass)
-        entity_reg._entity_id_available(entity_id, None)
-    except:
+        # True when the entity_id is free and the caller may use it. The old
+        # private call returned a bool that was thrown away, so this function
+        # always returned None and the '_2' suffix repair never ran.
+        return entity_reg.async_get(entity_id) is None
+    except Exception as err:
+        # Fail safe: an unreadable registry must not make the caller delete an
+        # existing entity.
+        log_exception(err)
         return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
