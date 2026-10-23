@@ -675,8 +675,8 @@
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         },
         "data_description": {
-          "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
-          "time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
+          "away_time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
+          "away_time_zone_2_offset": "SECONDARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone"
         }
       },
 
