@@ -124,10 +124,20 @@ def _extract_mobile_app_entities(mobile_app_entities, entity_name):
     Extract mobile_app entities fields (dictionary) for the specific type
     of entity (_last_update_trigger, _battery_state
 
+    Some companion-app versions (e.g. macOS reporting its internal battery
+    as a labeled power source) generate a unique_id that embeds a serial
+    number instead of this suffix, even though the human-readable
+    entity_id still ends with it, for example:
+        entity_id:  sensor.mac_one_internal_battery_level
+        unique_id:  <hash>_<serial>_level
+    Fall back to entity_id so those still get discovered instead of
+    silently leaving self.mobapp[BATTERY_LEVEL] pointing at a
+    non-existent "sensor." entity_id.
+
     Return - A list of the mobile_app entities
     '''
     return [x   for x in mobile_app_entities
-                if instr(x['unique_id'], entity_name)]
+                if instr(x['unique_id'], entity_name) or instr(x['entity_id'], entity_name)]
 
 #-----------------------------------------------------------------------------------------------------
 def _extract_sensor_entities(sensor_entities):
