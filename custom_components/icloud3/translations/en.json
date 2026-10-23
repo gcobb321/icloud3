@@ -387,9 +387,6 @@
           "apple_server_location_needed": "APPLE SERVER LOCATION (CHINA) - Always display Apple Server Location Selection field on `Apple Acct Username/Password` screen (China, Hong Kong)",
           "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        },
-        "data_description": {
-          "password_srp_enabled": "This indicates how the password should be verified when logging into the Apple Account. The PasswordSRP protocol sends an encoded key over the internet to Apple instead of sending the password itself. \n • ENABLED - Use the Password SRP Protocol\n • DISABLED - Use the standard Password protocol\n • NOTES - There are times when Appple servers will refuse the password if too many login attempts have been made in a short period of time. This is done  to prevent fraudulent logins. An Error 503-Server Refuses Connection is returned."
         }
       },
 
