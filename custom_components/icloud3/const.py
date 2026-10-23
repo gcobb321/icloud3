@@ -810,6 +810,11 @@ DEVTRKR_ONLY_MONITOR = 'devtrkr_only_monitored_devices'
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1
 
+# Schema version of the .storage/icloud3/configuration file. Bump this when a
+# migration changes the meaning or the shape of an existing profile item.
+CONFIG_SCHEMA_VERSION     = 2
+CONFIG_SCHEMA_VERSION_KEY = 'schema_version'
+
 DISTANCE           = 'distance'
 CONF_SENSORS_ZONE  = 'zone'
 ZONE_INFO          = 'zone_info'
@@ -866,6 +871,7 @@ DEFAULT_PROFILE_CONF = {
         CONF_EVLOG_BTNCONFIG_URL: '',
         CONF_PICTURE_WWW_DIRS: [],
         CONF_SENSORS_HASH: '',
+        CONFIG_SCHEMA_VERSION_KEY: CONFIG_SCHEMA_VERSION,
 }
 
 #--------------------------------------------------------------------

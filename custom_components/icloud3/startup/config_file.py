@@ -33,6 +33,7 @@ from ..const            import (
                                 BASE, TRACKED, MONITORED, EXCLUDED, TRACK, MONITOR,
                                 NLSP4, ZONE,
                                 CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES,
+                                CONFIG_SCHEMA_VERSION, CONFIG_SCHEMA_VERSION_KEY,
 
                                 )
 from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
@@ -47,7 +48,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dic
                                 list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
                                 username_id, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, log_error_msg,
-                                add_log_file_filter,
+                                post_alert, add_log_file_filter,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, today, )
 
@@ -70,6 +71,33 @@ import logging
 # _LOGGER = logging.getLogger(__name__)
 _LOGGER = logging.getLogger(f"icloud3")
 
+# Number of rolled copies kept next to the live `_backup` configuration file.
+_CONFIG_BACKUP_ROTATION_COUNT = 5
+
+# A configuration file written by a newer iCloud3 is read-only for this
+# release. The flag is set after every read so no later write can downgrade it.
+_config_schema_supported = True
+
+
+def is_supported_schema(version):
+    '''
+    Return True when this release can read the given configuration file schema
+    version. Callers treat a missing version as 1.
+    '''
+    try:
+        version = int(version)
+    except (TypeError, ValueError):
+        return False
+
+    return 1 <= version <= CONFIG_SCHEMA_VERSION
+
+#--------------------------------------------------------------------
+def _config_schema_version():
+    try:
+        return max(int(Gb.conf_profile.get(CONFIG_SCHEMA_VERSION_KEY, 1)), 1)
+    except (TypeError, ValueError):
+        return 1
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -80,6 +108,9 @@ async def async_load_icloud3_configuration_file():
     return await Gb.hass.async_add_executor_job(load_icloud3_configuration_file)
 
 def load_icloud3_configuration_file():
+
+    global _config_schema_supported
+    _config_schema_supported = True
 
     # Make the .storage/icloud3 directory if it does not exist
     file_io.make_directory(Gb.ha_storage_icloud3)
@@ -93,10 +124,15 @@ def load_icloud3_configuration_file():
     success = read_icloud3_configuration_file()
     build_conf_device_sensors_from_conf_sensors()
 
-    if success:
-        write_icloud3_configuration_file('_backup')
-    else:
+    if success is False:
         _restore_config_file_from_backup()
+
+    elif _config_schema_supported:
+        write_icloud3_configuration_file('_backup')
+
+    else:
+        log_error_msg(  "Configuration file was written by a newer iCloud3 version. "
+                        "It will not be rewritten or backed up by this version.")
 
     _count_device_tracking_methods_configured()
 
@@ -115,6 +151,8 @@ def read_icloud3_configuration_file(filename_suffix=''):
         filename_suffix: A suffix added to the filename that allows saving multiple copies of
                             the configuration file
     '''
+
+    global _config_schema_supported
 
     try:
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
@@ -135,6 +173,13 @@ def read_icloud3_configuration_file(filename_suffix=''):
 
         Gb.log_level           = Gb.conf_general[CONF_LOG_LEVEL]
         start_ic3.set_log_level(Gb.log_level)
+
+        _config_schema_supported = _migrate_config_schema()
+        if _config_schema_supported is False:
+            _run_config_migration_step('Decode Passwords', decode_all_passwords)
+            _run_config_migration_step('Build Log File Filters', build_log_file_filters)
+            _run_config_migration_step('Build Devices Index', set_conf_devices_index_by_devicename)
+            return True
 
         _add_parms_and_check_config_file()
 
@@ -161,16 +206,28 @@ def write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
 def _write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
     success = False
 
+    if _config_schema_supported is False:
+        log_error_msg(  "Configuration file was not written because it was created by "
+                        "a newer iCloud3 version")
+        return False
+
     try:
         _reconstruct_conf_file()
+        Gb.conf_profile[CONFIG_SCHEMA_VERSION_KEY] = CONFIG_SCHEMA_VERSION
 
         if filename_suffix is None:
             filename_suffix = ''
         filename = f"{Gb.icloud3_config_filename}{filename_suffix}"
 
+        if filename_suffix == '_backup':
+            _rotate_config_backup_files()
+
         success = file_io.save_json_file(filename, Gb.conf_file_data)
 
         if success is False:
+            perf = getattr(Gb, 'Perf', None)
+            if perf is not None:
+                perf.record_config_write_failure()
             log_error_msg(f"iCloud3 Configuration File ({filename}) was not written")
 
         elif new_file_flag is not None:
@@ -185,6 +242,65 @@ def _write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
         set_conf_devices_index_by_devicename()
 
     return success is True
+
+#--------------------------------------------------------------------
+def _rotate_config_backup_files():
+    '''
+    Keep the previous `_backup` files as configuration_backup_1..N, newest
+    first. The live `_backup` path is preserved: it is moved to _backup_1 just
+    before a new `_backup` is written.
+    '''
+    try:
+        oldest = (f"{Gb.icloud3_config_filename}"
+                  f"_backup_{_CONFIG_BACKUP_ROTATION_COUNT}")
+        file_io.delete_file(oldest)
+
+        for index in range(_CONFIG_BACKUP_ROTATION_COUNT - 1, 0, -1):
+            file_io.rename_file(f"{Gb.icloud3_config_filename}_backup_{index}",
+                                f"{Gb.icloud3_config_filename}_backup_{index + 1}")
+
+        file_io.rename_file(f"{Gb.icloud3_config_filename}_backup",
+                            f"{Gb.icloud3_config_filename}_backup_1")
+
+    except Exception as err:
+        _LOGGER.warning(f"iCloud3 Configuration Backup Rotation Error > {err}")
+
+#--------------------------------------------------------------------
+def _migrate_config_schema():
+    '''
+    Bring the configuration file up to CONFIG_SCHEMA_VERSION.
+
+    A file from a newer iCloud3 is never rewritten: doing so would drop the
+    parameters that version added. Returns False when the file is newer than
+    this release so the caller can stop writing entirely.
+    '''
+    schema_version = _config_schema_version()
+
+    if is_supported_schema(schema_version) is False:
+        log_msg = ( f"iCloud3 Configuration File > Schema version {schema_version} was "
+                    f"created by a newer iCloud3 version (this version supports "
+                    f"{CONFIG_SCHEMA_VERSION}). The file will not be changed. "
+                    f"Update iCloud3 before making configuration changes.")
+        log_error_msg(log_msg)
+        try:
+            if Gb.EvLog is not None:
+                post_alert('', log_msg)
+        except Exception as err:
+            _LOGGER.exception(err)
+        return False
+
+    if schema_version == CONFIG_SCHEMA_VERSION:
+        return True
+
+    Gb.conf_profile[CONFIG_SCHEMA_VERSION_KEY] = CONFIG_SCHEMA_VERSION
+    log_info_msg(   f"Configuration File Migrated > Schema version {schema_version} to "
+                    f"{CONFIG_SCHEMA_VERSION}")
+
+    # Stamp only the version in memory. Do not write here: read_icloud3_configuration_file
+    # is also used while restoring a backup, and writing the live file from that
+    # path would overwrite the current configuration with the backup contents.
+    # The next regular configuration write persists the stamped version.
+    return True
 
 #--------------------------------------------------------------------
 async def async_write_icloud3_configuration_file(filename_suffix=None):
@@ -229,10 +345,26 @@ def _restore_config_file_from_backup():
                 f"Will restore from `configuration_backup` file")
     _LOGGER.warning(log_msg)
     file_io.rename_file(Gb.icloud3_config_filename, json_errors_filename)
-    success = read_icloud3_configuration_file('_backup')
 
-    if success:
-        log_msg = ("Restore from backup configuration file was successful")
+    restored_suffix = None
+    for filename_suffix in (['_backup']
+                            + [f'_backup_{index}'
+                               for index in range(1, _CONFIG_BACKUP_ROTATION_COUNT + 1)]):
+        if file_io.file_exists(f"{Gb.icloud3_config_filename}{filename_suffix}") is False:
+            continue
+
+        if read_icloud3_configuration_file(filename_suffix):
+            restored_suffix = filename_suffix
+            break
+
+    if restored_suffix is not None and _config_schema_supported is False:
+        log_msg = ( f"Configuration backup file ({restored_suffix}) was created by a newer "
+                    f"iCloud3 version. It was read but not written back to the live "
+                    f"configuration file")
+        _LOGGER.error(log_msg)
+
+    elif restored_suffix is not None:
+        log_msg = ( f"Restore from backup configuration file ({restored_suffix}) was successful")
         _LOGGER.warning(log_msg)
 
         write_icloud3_configuration_file()
@@ -245,6 +377,10 @@ def _restore_config_file_from_backup():
 
 #--------------------------------------------------------------------
 def initialize_icloud3_configuration_file():
+
+    global _config_schema_supported
+    _config_schema_supported = True
+
     build_initial_config_file_structure()
     Gb.conf_file_data = CF_DEFAULT_IC3_CONF_FILE.copy()
     write_icloud3_configuration_file(new_file_flag=True)
@@ -405,6 +541,7 @@ def build_initial_config_file_structure():
     '''
 
     Gb.conf_profile        = DEFAULT_PROFILE_CONF.copy()
+    Gb.conf_profile[CONFIG_SCHEMA_VERSION_KEY] = CONFIG_SCHEMA_VERSION
     Gb.conf_tracking       = DEFAULT_TRACKING_CONF.copy()
     Gb.conf_apple_accounts = []
     Gb.conf_devices        = []

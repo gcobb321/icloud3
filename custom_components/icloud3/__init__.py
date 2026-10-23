@@ -66,6 +66,41 @@ successful_startup = True
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
 
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    '''
+    Validate the stored config entry against this release.
+
+    iCloud3 keeps its settings in the configuration file, not in the entry data,
+    so there is nothing to rewrite here. The entry version is bumped together
+    with the configuration file schema. An entry created by a newer release, or
+    one carrying an unknown minor version, must not be loaded: returning False
+    leaves the entry untouched and lets HA report that the integration is newer.
+    '''
+    from .config_flow import iCloud3_ConfigFlow
+
+    supported_version = iCloud3_ConfigFlow.VERSION
+    supported_minor_version = getattr(iCloud3_ConfigFlow, 'MINOR_VERSION', 1)
+
+    if entry.version > supported_version:
+        log_error_msg(f"Config entry version {entry.version} is newer than the "
+                      f"supported version {supported_version}. Update iCloud3.")
+        return False
+
+    if entry.minor_version > supported_minor_version:
+        log_error_msg(f"Config entry minor version {entry.minor_version} is newer than "
+                      f"the supported version {supported_minor_version}. Update iCloud3.")
+        return False
+
+    if entry.version < supported_version:
+        # The entry data only carries a creation timestamp; the settings live in
+        # the configuration file and are migrated on load. Nothing to rewrite
+        # here, so the entry is left untouched.
+        log_info_msg(f"Config entry version {entry.version} needs no entry-data "
+                     f"migration, using the configuration file migration")
+
+    return True
+
+#--------------------------------------------------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """ Set up the iCloud3 integration from a ConfigEntry integration """
 
@@ -416,6 +451,7 @@ def reset_runtime_entity_objects():
     Gb.sensors_created_cnt = 0
     Gb.EvLogSensor = None
     Gb.AlertsSensor = None
+    Gb.HealthSensor = None
     Gb.WazeHistTrackSensor = None
 
 
