@@ -7,7 +7,8 @@ Two things must not regress silently:
 
 * A device renamed in HA must be reported, not acted on. iCloud3 does not rewrite
   the configuration on its own; renaming the entities would break the user's
-  automations that reference them by entity_id.
+  automations that reference them by entity_id. Submit on the issue is the only
+  path that copies the HA name into the configuration.
 * The notice must be posted once per device, not on every registry update.
 """
 
@@ -22,10 +23,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 COMPONENT = ROOT / "custom_components/icloud3"
 RENAME_MODULE = COMPONENT / "utils" / "entity_reg_util.py"
+APPLE_MODULE = COMPONENT / "startup" / "start_ic3_apple.py"
 HANDLER_NAME = "async_handle_update_device_registry"
 RENAME_FUNCTION_NAME = "_report_device_rename"
 RENAME_SET_NAME = "_rename_repair_devicenames"
 CONFIG_WRITE_NAME = "write_icloud3_configuration_file"
+FIX_ACTION_NAME = "update_ic3_device_name"
+APPLY_FIX_NAME = "_fix_repair_issue_update_ic3_device_name"
 
 
 def source_of(path: Path) -> str:
@@ -37,11 +41,35 @@ def rename_tree() -> ast.Module:
     return ast.parse(source_of(RENAME_MODULE))
 
 
+@pytest.fixture(scope="module")
+def apple_tree() -> ast.Module:
+    return ast.parse(source_of(APPLE_MODULE))
+
+
+def registered_fix_actions(tree: ast.Module) -> dict[str, str]:
+    actions: dict[str, str] = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Expr) or not isinstance(node.value, ast.Call):
+            continue
+        call = node.value
+        if not (isinstance(call.func, ast.Name)
+                and call.func.id == "register_repair_fix_handler"):
+            continue
+        action, handler = call.args
+        actions[ast.literal_eval(action)] = handler.id
+    return actions
+
+
+@pytest.fixture(scope="module")
+def fix_actions(apple_tree: ast.Module) -> dict[str, str]:
+    return registered_fix_actions(apple_tree)
+
+
 def function_node(tree: ast.Module, name: str) -> ast.FunctionDef:
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name:
             return node
-    raise AssertionError(f"{name} not found in {RENAME_MODULE}")
+    raise AssertionError(f"{name} not found")
 
 
 def called_names(node: ast.AST) -> set[str]:
@@ -74,7 +102,27 @@ def test_rename_is_reported_through_repairs(rename_tree: ast.Module) -> None:
     source = ast.unparse(node)
     assert "device_renamed_{devicename}" in source
     assert "severity='warning'" in source
-    assert "fix_action=None" in source
+    assert "fix_action='update_ic3_device_name'" in source
+    assert "'devicename': devicename" in source
+    assert "'new_name': new_name" in source
+
+
+def test_rename_issue_is_fixed_by_submit(apple_tree: ast.Module, rename_tree: ast.Module,
+                                         fix_actions: dict[str, str]) -> None:
+    assert fix_actions[FIX_ACTION_NAME] == APPLY_FIX_NAME
+
+    handler = ast.unparse(function_node(apple_tree, APPLY_FIX_NAME))
+    assert "(fix_data.get('new_name') or '').strip()" in handler
+    assert "conf_device[CONF_FNAME] = new_name" in handler
+    assert "config_file.write_icloud3_configuration_file()" in handler
+    assert "Gb.was_icloud3_restart_requested = True" in handler
+    assert "return False" in handler
+    assert "return True" in handler
+
+    # The rename path only reports; the configuration is written by the handler
+    # after Submit.
+    rename_source = ast.unparse(function_node(rename_tree, RENAME_FUNCTION_NAME))
+    assert "write_icloud3_configuration_file" not in rename_source
 
 
 def test_rename_issue_is_posted_once_per_device(rename_tree: ast.Module) -> None:

@@ -741,6 +741,32 @@ def _fix_repair_issue_clear_mobapp_mapping(fix_data):
 register_repair_fix_handler('clear_mobapp_mapping', _fix_repair_issue_clear_mobapp_mapping)
 
 #............................................................................
+def _fix_repair_issue_update_ic3_device_name(fix_data):
+    '''
+    Repairs Submit handler for a device renamed in HA. Copy the HA device name into
+    the iCloud3 configuration as the display name, then restart. Runs in an
+    executor thread.
+    '''
+    from ..startup import config_file
+
+    devicename  = fix_data.get('devicename')
+    new_name    = (fix_data.get('new_name') or '').strip()
+    conf_device = next((_conf_device for _conf_device in Gb.conf_devices
+                        if _conf_device[CONF_IC3_DEVICENAME] == devicename), None)
+    if conf_device is None or new_name == '':
+        return False
+
+    conf_device[CONF_FNAME] = new_name
+    config_file.write_icloud3_configuration_file()
+
+    post_event(devicename, f"HA Repairs > iCloud3 display name updated to {new_name}")
+    Gb.was_icloud3_restart_requested = True
+
+    return True
+
+register_repair_fix_handler('update_ic3_device_name', _fix_repair_issue_update_ic3_device_name)
+
+#............................................................................
 def  _post_repair_issue_no_aa_device_assignment(
                                         issue_id_prefix, devicename, dev_fname,
                                         old_device_msg, old_device_status_msg,

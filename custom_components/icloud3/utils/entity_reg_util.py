@@ -161,9 +161,8 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
 def _report_device_rename(Device, devicename, device_data, changes):
     '''
     Report a device renamed on the Integrations screen without touching the iCloud3
-    configuration. The entities keep their names; the Repairs notice tells the user
-    to run Configure > Update iCloud3 Device, which is the place a name change is
-    expected to also rename the entities and their automations.
+    configuration. Submit copies the HA name into the iCloud3 configuration and
+    restarts; the configuration is not changed until the user asks for it.
 
     The issue is posted once per device. Reposting it on every registry update
     would replace it continuously and also re-add it to the alerts sensor.
@@ -199,11 +198,13 @@ def _report_device_rename(Device, devicename, device_data, changes):
             issue_id = issue_id,
             alert_key = devicename,
             title = f"{Device.fname}, HA device renamed",
-            alert_msg = ('HA\'daki cihaz adı değişti. iCloud3 entity adlarını '
-                         'güncellemek için Configure > Update iCloud3 Device '
-                         'ekranını kullanın.'),
+            alert_msg = ('HA device name changed. Select Submit to copy the HA '
+                         'name into iCloud3 and restart it. Use Configure > '
+                         'Update iCloud3 Device to also rename its entities and '
+                         'update your automations.'),
             severity = 'warning',
-            fix_action = None)
+            fix_action = 'update_ic3_device_name',
+            fix_data = {'devicename': devicename, 'new_name': new_name})
 
     _rename_repair_devicenames.add(devicename)
 

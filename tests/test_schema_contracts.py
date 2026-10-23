@@ -186,6 +186,62 @@ def test_restore_tries_the_rotated_backups() -> None:
     assert "read_icloud3_configuration_file(filename_suffix)" in function
 
 
+def test_config_repair_issue_ids_are_stable() -> None:
+    tree = ast.parse(_source(CONFIG_FILE))
+    values = {
+        target.id: node.value
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+        if isinstance(target, ast.Name)
+    }
+    assert ast.literal_eval(values["CONFIG_WRITE_FAILED_ISSUE_ID"]) == "config_write_failed"
+    assert ast.literal_eval(values["CONFIG_SCHEMA_NEWER_ISSUE_ID"]) == "config_schema_newer"
+    assert ast.literal_eval(values["CONFIG_REPAIR_ALERT_KEY"]) == "config"
+
+
+def test_config_repair_issues_are_guarded_and_informational() -> None:
+    function = _function_source(CONFIG_FILE, "_post_config_repair_issue")
+    assert "if Gb.hass is None:" in function
+    assert "post_repair_issue(" in function
+    assert "alert_key" in function and "CONFIG_REPAIR_ALERT_KEY" in function
+    # A configuration problem can only be acknowledged; Submit must not hide it.
+    assert "fix_action = None" in function
+    assert "_LOGGER.exception(err)" in function
+
+
+def test_write_failure_posts_an_error_issue() -> None:
+    function = _function_source(CONFIG_FILE, "_post_config_write_failed_issue")
+    assert "CONFIG_WRITE_FAILED_ISSUE_ID" in function
+    assert "'iCloud3 configuration could not be saved'" in function
+    assert "'error'" in function
+
+
+def test_schema_newer_posts_a_warning_issue() -> None:
+    function = _function_source(CONFIG_FILE, "_post_config_schema_newer_issue")
+    assert "CONFIG_SCHEMA_NEWER_ISSUE_ID" in function
+    assert "'iCloud3 configuration is newer than this version'" in function
+    assert "'warning'" in function
+
+
+def test_write_posts_on_failure_and_clears_on_success() -> None:
+    function = _function_source(CONFIG_FILE, "_write_icloud3_configuration_file")
+    assert "_post_config_write_failed_issue(" in function
+    assert "_clear_config_write_failed_issue()" in function
+    assert function.index("_post_config_write_failed_issue(") > function.index(
+        "file_io.save_json_file")
+    assert function.index("_clear_config_write_failed_issue()") > function.index(
+        "if success is False:")
+
+
+def test_migrate_posts_and_clears_the_newer_schema_issue() -> None:
+    function = _function_source(CONFIG_FILE, "_migrate_config_schema")
+    assert "_post_config_schema_newer_issue(log_msg)" in function
+    assert "_clear_config_schema_newer_issue()" in function
+    assert function.index("_post_config_schema_newer_issue(log_msg)") < function.index(
+        "_clear_config_schema_newer_issue()")
+
+
 def test_init_defines_async_migrate_entry() -> None:
     source = _source("__init__.py")
     assert "async def async_migrate_entry" in source

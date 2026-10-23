@@ -49,6 +49,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dic
                                 username_id, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, log_error_msg,
                                 post_alert, add_log_file_filter,
+                                post_repair_issue, clear_repair_issue, clear_repair_issue_alert_msg,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, today, )
 
@@ -74,6 +75,12 @@ _LOGGER = logging.getLogger(f"icloud3")
 # Number of rolled copies kept next to the live `_backup` configuration file.
 _CONFIG_BACKUP_ROTATION_COUNT = 5
 
+# Repairs issues posted for the configuration file itself. The alert_key is the
+# same for both so a configuration problem shows up once on the alerts sensor.
+CONFIG_WRITE_FAILED_ISSUE_ID = 'config_write_failed'
+CONFIG_SCHEMA_NEWER_ISSUE_ID = 'config_schema_newer'
+CONFIG_REPAIR_ALERT_KEY      = 'config'
+
 # A configuration file written by a newer iCloud3 is read-only for this
 # release. The flag is set after every read so no later write can downgrade it.
 _config_schema_supported = True
@@ -97,6 +104,69 @@ def _config_schema_version():
         return max(int(Gb.conf_profile.get(CONFIG_SCHEMA_VERSION_KEY, 1)), 1)
     except (TypeError, ValueError):
         return 1
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   configuration file Repairs issues
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _post_config_repair_issue(issue_id, title, alert_msg, severity):
+    '''
+    Post a configuration file Repairs issue. Skipped when Home Assistant is not
+    available yet (for example while the configuration is read in a test).
+    '''
+    if Gb.hass is None:
+        return
+
+    try:
+        post_repair_issue(
+                issue_id   = issue_id,
+                alert_key  = CONFIG_REPAIR_ALERT_KEY,
+                title      = title,
+                alert_msg  = alert_msg,
+                severity   = severity,
+                fix_action = None)
+    except Exception as err:
+        _LOGGER.exception(err)
+
+#--------------------------------------------------------------------
+def _clear_config_repair_issue(issue_id):
+    '''
+    Remove a configuration file Repairs issue and its alerts sensor entry.
+    Skipped when Home Assistant is not available.
+    '''
+    if Gb.hass is None:
+        return
+
+    try:
+        clear_repair_issue(issue_id)
+        clear_repair_issue_alert_msg(CONFIG_REPAIR_ALERT_KEY)
+    except Exception as err:
+        _LOGGER.exception(err)
+
+#--------------------------------------------------------------------
+def _post_config_write_failed_issue(alert_msg):
+    _post_config_repair_issue(
+            CONFIG_WRITE_FAILED_ISSUE_ID,
+            'iCloud3 configuration could not be saved',
+            alert_msg,
+            'error')
+
+#--------------------------------------------------------------------
+def _clear_config_write_failed_issue():
+    _clear_config_repair_issue(CONFIG_WRITE_FAILED_ISSUE_ID)
+
+#--------------------------------------------------------------------
+def _post_config_schema_newer_issue(alert_msg):
+    _post_config_repair_issue(
+            CONFIG_SCHEMA_NEWER_ISSUE_ID,
+            'iCloud3 configuration is newer than this version',
+            alert_msg,
+            'warning')
+
+#--------------------------------------------------------------------
+def _clear_config_schema_newer_issue():
+    _clear_config_repair_issue(CONFIG_SCHEMA_NEWER_ISSUE_ID)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -229,12 +299,23 @@ def _write_icloud3_configuration_file(filename_suffix=None, new_file_flag=None):
             if perf is not None:
                 perf.record_config_write_failure()
             log_error_msg(f"iCloud3 Configuration File ({filename}) was not written")
+            _post_config_write_failed_issue(
+                    f"The iCloud3 configuration file ({filename}) was not written. "
+                    f"Check that the Home Assistant configuration directory is "
+                    f"writable and that the disk is not full, then make the change "
+                    f"again.")
 
-        elif new_file_flag is not None:
-            file_io.set_write_permission(filename)
+        else:
+            _clear_config_write_failed_issue()
+            if new_file_flag is not None:
+                file_io.set_write_permission(filename)
 
     except Exception as err:
         _LOGGER.exception(err)
+        _post_config_write_failed_issue(
+                f"The iCloud3 configuration file could not be written ({err}). "
+                f"Check the Home Assistant log for the reason, then make the "
+                f"change again.")
         return False
 
     # Update conf_devices devicename index dictionary
@@ -287,7 +368,10 @@ def _migrate_config_schema():
                 post_alert('', log_msg)
         except Exception as err:
             _LOGGER.exception(err)
+        _post_config_schema_newer_issue(log_msg)
         return False
+
+    _clear_config_schema_newer_issue()
 
     if schema_version == CONFIG_SCHEMA_VERSION:
         return True
