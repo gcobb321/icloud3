@@ -53,19 +53,19 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
 from .const_sensor      import (SENSOR_LIST_ZONE_NAME, SENSOR_ICONS, )
 from .                  import device_fm_zone
 from .tracking          import determine_interval as det_interval
-from .startup           import restore_state
+from .device_restore    import DeviceRestoreMixin
 from .startup           import config_file
 from .utils             import entity_io
 from .utils             import entity_reg_util as er_util
 
 from .utils.utils       import (instr, is_zone, isnot_zone, is_statzone, list_add, list_del,
-                                is_empty, isnot_empty, is_running_in_event_loop, is_between,
+                                is_empty, isnot_empty, is_between,
                                 circle_letter, format_gps, zone_dname, username_id, )
 from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
                                 post_greenbar_msg, clear_greenbar_msg, log_info_msg,
                                 log_exception, log_debug_msg, log_error_msg, log_data,
                                 post_internal_error, _evlog, _log, )
-from .utils.time_util   import (time_now_secs, secs_to_time, s2t, time_now, datetime_now,
+from .utils.time_util   import (time_now_secs, secs_to_time, s2t, time_now,
                                 secs_since, mins_since, secs_to, mins_to, secs_to_hhmm,
                                 format_timer, format_secs_since, time_to_12hrtime,
                                 secs_to_datetime,
@@ -80,10 +80,9 @@ from homeassistant.components.device_tracker import TrackerEntity
 from homeassistant.util import slugify
 from collections        import OrderedDict
 import traceback
-import copy
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-class iCloud3_Device(TrackerEntity):
+class iCloud3_Device(DeviceRestoreMixin, TrackerEntity):
 
     def __init__(self, devicename, conf_device):
         self.setup_time            = time_now()
@@ -1793,115 +1792,6 @@ class iCloud3_Device(TrackerEntity):
 
         # rc9 Added update restore state
         self._update_restore_state_values()
-
-#--------------------------------------------------------------------
-    def _update_restore_state_values(self):
-        """ Save the Device's updated sensors in the icloud3.restore_state file """
-
-        if (self.can_update_sensors is False
-                or is_running_in_event_loop()):
-            return
-
-        Gb.restore_state_devices[self.devicename] = {}
-        Gb.restore_state_devices[self.devicename]['last_update'] = datetime_now()
-        Gb.restore_state_devices[self.devicename]['sensors']     = copy.deepcopy(self.sensors)
-        Gb.restore_state_devices[self.devicename]['mobapp']      = self._restore_state_save_mobapp_items()
-        Gb.restore_state_devices[self.devicename]['other']       = self._restore_state_save_other_items()
-
-        Gb.restore_state_devices[self.devicename]['from_zone'] = {}
-        for from_zone, FromZone in self.FromZones_by_zone.items():
-            Gb.restore_state_devices[self.devicename]['from_zone'][from_zone] = copy.deepcopy(FromZone.sensors)
-
-        restore_state.write_icloud3_restore_state_file()
-
-#--------------------------------------------------------------------
-    def _restore_state_save_mobapp_items(self):
-        '''
-        Build dictionary of Mobile App items to be saved in restore_state file
-        '''
-        mobapp_items = {}
-        mobapp_items['state']          = self.mobapp_data_state
-        mobapp_items['latitude']       = self.mobapp_data_latitude
-        mobapp_items['longitude']      = self.mobapp_data_longitude
-        mobapp_items['source_type']    = self.mobapp_data_source_type
-        mobapp_items['state_secs']     = self.mobapp_data_state_secs
-        mobapp_items['state_time']     = self.mobapp_data_state_time
-        mobapp_items['trigger_secs']   = self.mobapp_data_trigger_secs
-        mobapp_items['trigger_time']   = self.mobapp_data_trigger_time
-        mobapp_items['secs']           = self.mobapp_data_secs
-        mobapp_items['time']           = self.mobapp_data_time
-        mobapp_items['trigger']        = self.mobapp_data_trigger
-        mobapp_items['battery_level']  = self.mobapp_data_battery_level
-        mobapp_items['battery_status'] = self.mobapp_data_battery_status
-        mobapp_items['battery_update_secs'] = self.mobapp_data_battery_update_secs
-        return mobapp_items
-
-
-#--------------------------------------------------------------------
-    def _restore_state_reset_mobapp_items(self):
-
-        try:
-            mobapp_items = Gb.restore_state_devices[self.devicename]['mobapp']
-
-            self.mobapp_data_state          = mobapp_items['state']
-            self.mobapp_data_latitude       = mobapp_items['latitude']
-            self.mobapp_data_longitude      = mobapp_items['longitude']
-            self.mobapp_data_source_type    = mobapp_items['source_type']
-            self.mobapp_data_state_secs     = mobapp_items['state_secs']
-            self.mobapp_data_state_time     = mobapp_items['state_time']
-            self.mobapp_data_trigger_secs   = mobapp_items['trigger_secs']
-            self.mobapp_data_trigger_time   = mobapp_items['trigger_time']
-            self.mobapp_data_secs           = mobapp_items['secs']
-            self.mobapp_data_time           = mobapp_items['time']
-            self.mobapp_data_trigger        = mobapp_items['trigger']
-            self.mobapp_data_battery_level  = mobapp_items['battery_level']
-            self.mobapp_data_battery_status = mobapp_items['battery_status']
-            self.mobapp_data_battery_update_secs =  mobapp_items['battery_update_secs']
-
-        except Exception as err:
-            #log_exception(err)
-            pass
-
-#--------------------------------------------------------------------
-    def _restore_state_save_other_items(self):
-        '''
-        Build dictionary of Otheritems to be saved in restore_state file
-        '''
-        other_items = {
-            'zone': self.loc_data_zone,
-            'zone_change_secs': self.zone_change_secs,
-            'zone_change_datetime': self.zone_change_datetime
-        }
-
-        return other_items
-
-#--------------------------------------------------------------------
-    def restore_state_reset_other_items(self):
-
-        try:
-
-            device_items = Gb.restore_state_devices[self.devicename]
-            if 'other' in device_items:
-                other_items = device_items['other']
-                if other_items.get('zone', '') == self.loc_data_zone:
-                    self.zone_change_secs     = other_items['zone_change_secs']
-                    self.zone_change_datetime = other_items['zone_change_datetime']
-
-            self.zone_enter_secs = self.sensors[ZONE_ENTER_SECS]
-            self.zone_exit_secs  = self.sensors[ZONE_EXIT_SECS]
-            self.last_zone       = self.sensors[LAST_ZONE_NAME]
-            self.dev_data_battery_level  = self.sensors[BATTERY]
-            self.dev_data_battery_status = self.sensors[BATTERY_STATUS]
-            self.dev_data_battery_source = self.sensors[BATTERY_SOURCE]
-
-            self.sensors[DISTANCE_TO_OTHER_DEVICES] = {}
-            self.sensors[DISTANCE_TO_OTHER_DEVICES_DATETIME] = HHMMSS_ZERO
-            self.sensors[ALERT] = ''
-
-
-        except Exception as err:
-            log_exception(err)
-            pass
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
