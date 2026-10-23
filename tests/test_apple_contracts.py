@@ -246,7 +246,7 @@ def test_request_io_reraise_is_gated_by_raise_api_errors() -> None:
 #   authenticate_with_password - the API error branch is reachable
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def test_password_auth_sets_and_clears_raise_api_errors() -> None:
-    function = function_named(tree_of("apple_acct/apple_acct.py"),
+    function = function_named(tree_of("apple_acct/apple_acct_auth.py"),
                               "authenticate_with_password")
 
     guarded = next(node for node in ast.walk(function)
@@ -311,3 +311,134 @@ def test_repair_issue_id_is_dropped_even_if_clearing_fails() -> None:
 
     assert 'clear_repair_issue' in ast.unparse(guarded)
     assert 'discard' in ast.unparse(guarded.finalbody)
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   Auth and session mixins - the manager is split, not copied
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+MOVED_TO_AUTH = (
+    'authenticate',
+    '_authenticate_with_token',
+    'log_into_account',
+    'authenticate_with_password',
+    'authenticate_with_password_srp',
+    '_srp_icloud_io_signin_init',
+    '_srp_icloud_io_signin_complete',
+    '_srp_icloud_io',
+    'validate_upw_via_srp',
+    '_set_srp_return_error_code',
+    'setup_error',
+    '_handle_accept_terms_of_use',
+    '_handle_accept_terms_of_use_error',
+    '_use_srp_signin_token_info',
+)
+
+MOVED_TO_SESSION = (
+    'trust_token_expire_date_time',
+    'set_trust_token_expire_in_days',
+    '_validate_token',
+    'is_session_trusted_auth_check',
+    'is_session_still_trusted',
+    'is_2fa_challenge_session_live',
+    'get_auth_headers',
+    'get_trusted_devices',
+    '_read_session_data',
+    '_setup_iCloudSession',
+    'load_cookies',
+    'list_cookies',
+    'delete_cookie_and_session_files',
+    'delete_trust_cookie',
+    'read_token_pw_file',
+    '_update_token_pw_session_data',
+    '_update_token_pw',
+    '_write_token_pw_file',
+    'cookie_username_base',
+    'cookies_filename',
+    'cookies_filename_short',
+    'session_filename',
+    'session_filename_short',
+)
+
+
+def class_named(tree: ast.Module, name: str) -> ast.ClassDef:
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and node.name == name:
+            return node
+
+    raise AssertionError(f"class {name} not found")
+
+
+def method_names(class_node: ast.ClassDef) -> list[str]:
+    return [node.name for node in class_node.body
+            if isinstance(node, ast.FunctionDef)]
+
+
+def test_the_mixins_are_plain_classes() -> None:
+    auth_class = class_named(tree_of("apple_acct/apple_acct_auth.py"),
+                             "AppleAcctAuthMixin")
+    session_class = class_named(tree_of("apple_acct/apple_acct_session.py"),
+                                "AppleAcctSessionMixin")
+
+    # A mixin that inherits something of its own would reorder the manager's MRO.
+    assert auth_class.bases == []
+    assert session_class.bases == []
+
+
+def test_the_manager_mixes_in_both_mixins() -> None:
+    manager = class_named(tree_of("apple_acct/apple_acct.py"), "AppleAcctManager")
+
+    # Order matters: auth methods are looked up before the session ones.
+    assert [ast.unparse(base) for base in manager.bases] == [
+        'AppleAcctAuthMixin', 'AppleAcctSessionMixin']
+
+    imported = {(node.module, alias.name)
+                for node in ast.walk(tree_of("apple_acct/apple_acct.py"))
+                if isinstance(node, ast.ImportFrom)
+                for alias in node.names}
+
+    assert ('apple_acct_auth', 'AppleAcctAuthMixin') in imported
+    assert ('apple_acct_session', 'AppleAcctSessionMixin') in imported
+
+
+def test_moved_methods_are_defined_in_the_mixins_only() -> None:
+    auth_methods = method_names(class_named(tree_of("apple_acct/apple_acct_auth.py"),
+                                            "AppleAcctAuthMixin"))
+    session_methods = method_names(class_named(tree_of("apple_acct/apple_acct_session.py"),
+                                               "AppleAcctSessionMixin"))
+    manager_methods = method_names(class_named(tree_of("apple_acct/apple_acct.py"),
+                                               "AppleAcctManager"))
+
+    for name in MOVED_TO_AUTH:
+        assert name in auth_methods, f"{name}() is missing from AppleAcctAuthMixin"
+        assert name not in manager_methods, f"{name}() is still defined in AppleAcctManager"
+
+    for name in MOVED_TO_SESSION:
+        assert name in session_methods, f"{name}() is missing from AppleAcctSessionMixin"
+        assert name not in manager_methods, f"{name}() is still defined in AppleAcctManager"
+
+
+def test_no_moved_method_is_defined_twice() -> None:
+    defined: list[str] = []
+    for relative_path in ("apple_acct/apple_acct.py",
+                          "apple_acct/apple_acct_auth.py",
+                          "apple_acct/apple_acct_session.py"):
+        defined += [node.name for node in ast.walk(tree_of(relative_path))
+                    if isinstance(node, ast.FunctionDef)]
+
+    duplicated = sorted(name for name in MOVED_TO_AUTH + MOVED_TO_SESSION
+                        if defined.count(name) != 1)
+
+    assert duplicated == [], f"defined more than once: {duplicated}"
+
+
+def test_new_mixins_do_not_import_the_manager_module() -> None:
+    for relative_path in ("apple_acct/apple_acct_auth.py",
+                          "apple_acct/apple_acct_session.py"):
+        for node in ast.walk(tree_of(relative_path)):
+            if isinstance(node, ast.ImportFrom):
+                assert node.module != 'apple_acct', relative_path
+                assert all(alias.name != 'AppleAcctManager' for alias in node.names), \
+                    relative_path
+            if isinstance(node, ast.Import):
+                assert all('apple_acct' not in alias.name for alias in node.names), \
+                    relative_path
