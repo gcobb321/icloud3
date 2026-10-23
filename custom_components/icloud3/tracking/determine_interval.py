@@ -102,8 +102,8 @@ def determine_interval(Device, FromZone):
     The last location:      Device.sensors[LATITUDE]/[LONGITUDE]
     '''
 
-    battery10_flag  = (0 > Device.dev_data_battery_level >= 10)
-    battery5_flag   = (0 > Device.dev_data_battery_level >= 5)
+    battery10_flag  = (0 < Device.dev_data_battery_level <= 10)
+    battery5_flag   = (0 < Device.dev_data_battery_level <= 5)
 
     isin_zone       = (Device.loc_data_zone not in NOT_HOME_ZONES)
     isnotin_zone    = (Device.loc_data_zone in NOT_HOME_ZONES)
@@ -361,7 +361,7 @@ def determine_interval(Device, FromZone):
     try:
         #Real close, final check to make sure interval_secs is not adjusted
         if (interval_secs <= 60
-                or ((0 > Device.dev_data_battery_level >= 33) and interval_secs >= 120)):
+                or ((0 < Device.dev_data_battery_level <= 33) and interval_secs >= 120)):
             interval_multiplier = 1
 
         interval_secs     = interval_secs * interval_multiplier

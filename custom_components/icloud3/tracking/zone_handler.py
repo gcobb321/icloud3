@@ -45,6 +45,9 @@ ZD_RADIUS = 3
 ZD_DNAME  = 4
 ZD_CNT    = 5
 
+# A poor GPS fix (e.g. +/-3000m) must not turn into a 1.5km zone tolerance.
+GPS_ACCURACY_MAX_ADJ_M = 100
+
 
 
 #------------------------------------------------------------------------------
@@ -155,7 +158,7 @@ def select_zone(Device, latitude=None, longitude=None):
         zones_distance_list - list of zone info [distance_m|zoneName-distance]
     '''
 
-    gps_accuracy_adj = int(Device.loc_data_gps_accuracy / 2)
+    gps_accuracy_adj = min(int(Device.loc_data_gps_accuracy / 2), GPS_ACCURACY_MAX_ADJ_M)
 
     if latitude is None:
         latitude  = Device.loc_data_latitude
@@ -244,7 +247,7 @@ def post_zone_selected_msg(Device, ZoneSelected, zone_selected,
     gps_accuracy_msg = ''
     if zone_selected_dist_m > ZoneSelected.radius_m:
         gps_accuracy_msg = (f"AccuracyAdjustment-"
-                            f"{int(Device.loc_data_gps_accuracy / 2)}m, ")
+                            f"{min(int(Device.loc_data_gps_accuracy / 2), GPS_ACCURACY_MAX_ADJ_M)}m, ")
 
     # Format distance and count msg
     zones_cnt_msg = ''
