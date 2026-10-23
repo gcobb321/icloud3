@@ -32,7 +32,7 @@ from .const             import (HOME, NOT_SET,
                                 NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
                                 )
 from .utils.dist_util import (gps_distance_km, km_to_um,)
-from .utils.messaging import (log_exception, post_internal_error, _evlog, _log, )
+from .utils.messaging import (log_exception, log_debug_msg, post_internal_error, _evlog, _log, )
 
 import homeassistant.util.dt as dt_util
 import traceback
@@ -95,7 +95,7 @@ class iCloud3_DeviceFmZone():
             self.sensor_prefix_zone  = '' if self.from_zone== HOME else (f"{self.from_zone}_")
             self.info_status_msg     = (f"From-({self.from_zone})")
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
 
 #--------------------------------------------------------------------
@@ -188,7 +188,8 @@ class iCloud3_DeviceFmZone():
                 try:
                     cnt = int(self.dir_of_travel_history[-2:]) + 1
                     if cnt > 99: cnt = 99
-                except:
+                except Exception as err:
+                    log_debug_msg(f"dir_of_travel_history > {type(err).__name__}")
                     cnt = 1
                 self.dir_of_travel_history = self.dir_of_travel_history[:-2] + f"{cnt:0>2}"
             else:

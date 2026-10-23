@@ -195,8 +195,9 @@ class AppleAcctAuthMixin:
                     if self.is_AADevices_setup_complete is False:
                         self.findme_url_root = self.data['webservices']['findme']['url']
                         self._update_token_pw('findme_url', self.findme_url_root)
-                except:
-                    pass
+                except Exception as err:
+                    log_debug_msg(  f"Authenticate with Token > "
+                                    f"webservices.findme unavailable-{type(err).__name__}")
 
             elif (self.data.get('success', False) is False
                     or self.data.get('error', 1) == 1):

@@ -921,7 +921,8 @@ class iCloud3_Device(DeviceRestoreMixin, DeviceBatteryMixin, DeviceSensorWriterM
     def conf_apple_acct_username_id(self):
         try:
             return username_id(self.conf_apple_acct_username)
-        except:
+        except Exception as err:
+            log_debug_msg(f"conf_apple_acct_username_id > {type(err).__name__}")
             return ''
 
     @property
@@ -1734,8 +1735,8 @@ class iCloud3_Device(DeviceRestoreMixin, DeviceBatteryMixin, DeviceSensorWriterM
 
         try:
             self.write_ha_sensor_state(INFO, info_msg)
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(f"info_msg > Unable to write the info sensor-{err}")
 
         return info_msg
 

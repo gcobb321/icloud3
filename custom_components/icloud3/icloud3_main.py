@@ -422,8 +422,8 @@ class iCloud3:
                 for StatZone in Gb.StatZones_to_delete:
                     try:
                         StatZone.remove_ha_zone()
-                    except:
-                        pass
+                    except Exception as err:
+                        log_debug_msg(f"StatZone removal > {type(err).__name__}")
                 Gb.StatZones_to_delete = []
 
             #<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
@@ -1502,7 +1502,8 @@ class iCloud3:
     def _format_fname_devtype(self, Device):
         try:
             return f"{Device.fname_devtype}"
-        except:
+        except Exception as err:
+            log_debug_msg(f"_format_fname_devtype > {type(err).__name__}")
             return ''
 
 #--------------------------------------------------------------------

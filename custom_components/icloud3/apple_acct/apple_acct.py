@@ -443,7 +443,8 @@ class AppleAcctManager(AppleAcctAuthMixin, AppleAcctSessionMixin):
     def response_code(self):
         try:
             return self.iCloudSession.response_code
-        except:
+        except Exception as err:
+            log_debug_msg(f"response_code > {type(err).__name__}")
             return 404
 
 #---------------------------------------------------------------------------
@@ -642,7 +643,8 @@ class AppleAcctManager(AppleAcctAuthMixin, AppleAcctSessionMixin):
 
         except AttributeError:
             return False
-        except:
+        except Exception as err:
+            log_debug_msg(f"_check_2sa_needed > {type(err).__name__}")
             return False
 
     @property
@@ -706,7 +708,8 @@ class AppleAcctManager(AppleAcctAuthMixin, AppleAcctSessionMixin):
                 return None
 
             return self.webservices[ws_key]["url"]
-        except:
+        except Exception as err:
+            log_debug_msg(f"_get_webservice_url > {type(err).__name__}")
             return None
 
 #----------------------------------------------------------------------------
@@ -1338,7 +1341,8 @@ class AppleAcctManager(AppleAcctAuthMixin, AppleAcctSessionMixin):
     def __repr__(self):
         try:
             return self.username_account_owner
-        except:
+        except Exception as err:
+            LOGGER.debug(f"AppleAcct.__repr__ > {type(err).__name__}")
             return "<NotSetUp>"
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

@@ -991,8 +991,8 @@ def create_Zones_object():
             event.async_track_state_removed_domain(Gb.hass, 'zone', zone_handler.ha_removed_zone_entity_id)
         if Gb.is_icloud3_initial_startup is False:
             Gb.hass.services.call(ZONE, "reload")
-    except:
-        pass
+    except Exception as err:
+        log_warning_msg(f"create_Zones_object > Unable to reload the zones-{type(err).__name__}")
 
     Gb.state_to_zone = STATE_TO_ZONE_BASE.copy()
     OldZones_by_zone = Gb.Zones_by_zone.copy()

@@ -73,6 +73,11 @@ from .log_file import (  # noqa: E402,F401
 )
 
 
+# The stdlib logger is used inside messaging.py itself: calling the module's
+# own log helpers from a handler here would route back through format_msg_line
+# and can recurse.
+_LOGGER = logging.getLogger(__name__)
+
 DO_NOT_SHRINK     = ['url', 'accountName', ]
 FILTER_DATA_DICTS = ['items', 'userInfo', 'dsid', 'dsInfo', 'webservices', 'locations','location',
                     'params', 'headers', 'kwargs', 'clientContext', 'identifiers', 'labels',
@@ -216,9 +221,8 @@ def post_event(devicename_or_Device, event_msg='+'):
     try:
         if event_msg.endswith(', '): event_msg = event_msg[:-2]
         event_msg = event_msg.replace(', , ', ', ')
-    except:
-        # Gb.HALogger.info(event_msg)
-        pass
+    except Exception as err:
+        _LOGGER.debug(f"post_event > Unable to clean the event msg-{type(err).__name__}")
 
     Gb.EvLog.post_event(devicename, event_msg)
 
@@ -520,7 +524,8 @@ def log_exception(err):
 
     try:
         write_ic3log_recd(f"{Gb.icloud3_version_msg}\n{traceback.format_exc()}")
-    except:
+    except Exception as log_err:
+        _LOGGER.debug(f"log_exception > Unable to write the traceback-{type(log_err).__name__}")
         write_ic3log_recd(err)
 
     _install_halogger_redact_filter()
@@ -639,8 +644,8 @@ def format_msg_line(log_msg, log_stack_pgm=None):
         log_msg = format_startup_header_box(log_msg)
         log_msg = f"{source}{msg_prefix}{log_msg}"
 
-    except:
-        pass
+    except Exception as err:
+        _LOGGER.debug(f"format_msg_line > {type(err).__name__}")
 
     return log_msg
 
@@ -741,8 +746,8 @@ def _resolve_module_name_log_msg(module_name, log_msg):
     if log_msg == "+":
         try:
             return (module_name.replace(NBSP, ''))
-        except:
-            pass
+        except Exception as err:
+            _LOGGER.debug(f"_resolve_module_name_log_msg > {type(err).__name__}")
 
     return (f"{module_name} {log_msg.replace(NBSP, '')}")
 
@@ -830,7 +835,8 @@ def log_request_data(request_response_text, method, url, kwargs, AppleAcct=None,
                 else:
                     try:
                         data = response.json()
-                    except:
+                    except Exception as err:
+                        _LOGGER.debug(f"log_request_data > Response is not JSON-{type(err).__name__}")
                         data = {}
                     _data = {'code': response.status_code, 'ok': response.ok, 'data': data}
                     if Gb.is_log_level_rawdata_unfiltered:
@@ -958,8 +964,8 @@ def _create_log_msg_from_data(rawdata, data=None):
                         vsd_data = v.pop(ksd)
                         shrink_only = ksd in ['membersInfo']
                         log_items_data[f"{k}.{ksd}"] = _filter_rawdata_items(vsd_data, shrink_only)
-            except:
-                pass
+            except Exception as err:
+                _LOGGER.debug(f"_create_log_msg_from_data > {type(err).__name__}")
 
             log_items_data[f"{k}"] = _filter_rawdata_items(v)
 
@@ -1026,8 +1032,8 @@ def _set_validpw_invalidpw_text(rawdata):
             elif rawdata_items['code'] == 401:
                 rawdata_items['ok'] = 'InvalidPW'
 
-    except:
-        pass
+    except Exception as err:
+        _LOGGER.debug(f"_set_validpw_invalidpw_text > {type(err).__name__}")
 
     return rawdata
 
@@ -1044,7 +1050,8 @@ def internal_error_msg(err_text, msg_text=''):
     try:
         parent = inspect.getframeinfo(stack()[2][0])
         parent_lineno = parent.lineno
-    except:
+    except Exception as err:
+        _LOGGER.debug(f"internal_error_msg > Caller frame unavailable-{type(err).__name__}")
         parent_lineno = ''
 
     if msg_text:
@@ -1116,6 +1123,7 @@ def post_internal_error(err_text, traceback_format_exec_obj='+'):
                     f"{CRLF_DOT}Error. > {err_error_msg}")
 
     except Exception as err:
+        _LOGGER.debug(f"internal_error_msg > Unable to assemble the error msg-{type(err).__name__}")
         err_msg = f"{CRLF_DOT}Unknown Error, Review HA Logs"
 
     post_event(f"{EVLOG_ERROR}INTERNAL ERROR > {err_text}{err_msg}")
@@ -1261,7 +1269,8 @@ def _called_from_history(trace=False):
                     break
             if py_filename == '__init__':
                 break
-        except:
+        except Exception as err:
+            _LOGGER.debug(f"_called_from_history > Stack walk stopped-{type(err).__name__}")
             break
 
     return f"[{actual_caller}] [{py_filenames_list[2:]}] "
@@ -1341,7 +1350,8 @@ class LoggerFilter(logging.Filter):
             record.msg  = redact_text(message)
             record.args = []
 
-        except Exception:
+        except Exception as err:
+            _LOGGER.debug(f"upw filter > {type(err).__name__}")
             return True
 
         return True
@@ -1364,7 +1374,8 @@ class HALoggerRedactFilter(logging.Filter):
             record.msg  = redact_text(message)
             record.args = ()
 
-        except Exception:
+        except Exception as err:
+            _LOGGER.debug(f"HALoggerRedactFilter > {type(err).__name__}")
             return True
 
         return True

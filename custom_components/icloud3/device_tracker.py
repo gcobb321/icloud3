@@ -296,7 +296,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
             try:
                 self.default_value = Gb.restore_state_devices[devicename]['sensors']['device_tracker_state']
             except Exception as err:
-                # log_exception(err)
+                log_debug_msg(f"default_value > {type(err).__name__}")
                 self.default_value = BLANK_SENSOR_FIELD
 
             self.triggers           = None
@@ -433,7 +433,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             # Unknown/undefined zone -> fall back to HA GPS-based derivation
             return None
 
-        except Exception:
+        except Exception as err:
+            log_debug_msg(f"zone derivation > {type(err).__name__}")
             return None
 
     def _location_name_value(self):
@@ -441,7 +442,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
         support the `in_zones` property."""
         try:
             return self.Device.sensors.get(DEVICE_TRACKER_STATE, None)
-        except:
+        except Exception as err:
+            log_debug_msg(f"_location_name_value > {type(err).__name__}")
             return None
 
     @property
@@ -613,7 +615,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
         '''
         try:
             sensor_value = Gb.restore_state_devices[self.devicename]['sensors'][sensor]
-        except:
+        except Exception as err:
+            log_debug_msg(f"_get_restore_or_default_value > {sensor}-{type(err).__name__}")
             sensor_value = not_set_value
 
         return sensor_value
@@ -632,7 +635,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
             if attr_value is None or attr_value.strip() == '' or attr_value == NOT_SET:
                 attr_value = 0
 
-        except:
+        except Exception as err:
+            log_debug_msg(f"_get_attribute_value > {attribute}-{type(err).__name__}")
             attr_value = 0
 
         return attr_value

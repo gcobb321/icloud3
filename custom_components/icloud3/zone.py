@@ -26,7 +26,7 @@ from .utils             import entity_io
 from .utils.utils       import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
 from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
-                                log_exception, log_data,_evlog, _log, )
+                                log_exception, log_debug_msg, log_data,_evlog, _log, )
 from .utils.time_util   import (time_now_secs, )
 from .utils.dist_util   import (gps_distance_m, gps_distance_km, )
 
@@ -112,7 +112,8 @@ class iCloud3_Zone(object):
     def ha_fname(self):
         try:
             return Gb.hass.states.get(self.zone_entity_id).attributes[FRIENDLY_NAME]
-        except:
+        except Exception as err:
+            log_debug_msg(f"ha_fname > Unable to read the HA zone name-{type(err).__name__}")
             return self.zone.title()
 
     #---------------------------------------------------------------------
@@ -127,7 +128,8 @@ class iCloud3_Zone(object):
                 return Gb.hass.states.get(self.zone_entity_id).attributes[LATITUDE]
             else:
                 return self.zone_data.get(LATITUDE, 0)
-        except:
+        except Exception as err:
+            log_debug_msg(f"latitude > Unable to read the zone latitude-{type(err).__name__}")
             return 0
 
     #---------------------------------------------------------------------
@@ -138,7 +140,8 @@ class iCloud3_Zone(object):
                 return Gb.hass.states.get(self.zone_entity_id).attributes[LONGITUDE]
             else:
                 return self.zone_data.get(LONGITUDE, 0)
-        except:
+        except Exception as err:
+            log_debug_msg(f"longitude > Unable to read the zone longitude-{type(err).__name__}")
             return 0
 
     #---------------------------------------------------------------------
@@ -149,7 +152,8 @@ class iCloud3_Zone(object):
                 return int(Gb.hass.states.get(self.zone_entity_id).attributes[RADIUS])
             else:
                 return self.zone_data.get(RADIUS, 0)
-        except:
+        except Exception as err:
+            log_debug_msg(f"radius_m > Unable to read the zone radius-{type(err).__name__}")
             return 0
 
     #---------------------------------------------------------------------
@@ -160,7 +164,8 @@ class iCloud3_Zone(object):
                 return Gb.hass.states.get(self.zone_entity_id).attributes[PASSIVE]
             else:
                 return self.zone_data.get(PASSIVE, True)
-        except:
+        except Exception as err:
+            log_debug_msg(f"passive > Unable to read the zone passive flag-{type(err).__name__}")
             return True
 
     #---------------------------------------------------------------------

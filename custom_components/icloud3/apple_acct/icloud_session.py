@@ -323,6 +323,7 @@ class iCloudSession(Session):
                 self.response = response
 
             except Exception as err:
+                log_debug_msg(f"Response > Invalid JSON-{type(err).__name__}")
                 self.data = data = {}
 
         #++++++++++++++++ REQUEST ICLOUD DATA +++++++++++++++
@@ -417,8 +418,8 @@ class iCloudSession(Session):
             try:
                 self.AppleAcct.findme_url_root = data["webservices"]['findme']["url"]
                 self.AppleAcct._update_token_pw_file('findme_url', self.AppleAcct.findme_url_root)
-            except:
-                pass
+            except Exception as err:
+                log_debug_msg(f"Response > webservices.findme unavailable-{type(err).__name__}")
 
         try:
 
@@ -565,8 +566,8 @@ class iCloudSession(Session):
         ''' Display debug data fields '''
         try:
             log_debug_msg(f"{title} – {display_data}")
-        except:
-            log_debug_msg(f"{title} – None")
+        except Exception as err:
+            log_debug_msg(f"{title} – None ({type(err).__name__})")
 
     #--------------------------------------------------------------------
     def _shrink_items(self, prefiltered_dict):
@@ -599,7 +600,7 @@ class iCloudSession(Session):
             return filtered_dict
 
         except Exception as err:
-            pass
+            log_warning_msg(f"_shrink_items > Unable to redact the account data-{type(err).__name__}")
 
         return prefiltered_dict
 

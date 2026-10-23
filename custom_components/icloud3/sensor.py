@@ -358,8 +358,8 @@ def total_sensors_cnt():
                     sensors_cnt += tfz_cnt * len(conf_device[CONF_TRACK_FROM_ZONES])
         sensors_cnt -= exclude_cnt
 
-    except:
-        pass
+    except Exception as err:
+        log_debug_msg(f"total_sensors_cnt > Unable to count the sensors-{err}")
 
     return sensors_cnt
 
@@ -815,8 +815,8 @@ class DeviceSensor_Base():
                 _sensor_value = set_precision(_sensor_value)
                 if _sensor_attr_name == CALC_DISTANCE and _sensor_value < 1:
                     _sensor_value = f"{_sensor_value:.4f}"
-            except:
-                pass
+            except Exception as err:
+                log_debug_msg(f"_get_extra_attributes > {_sensor_attr_name}-{err}")
 
             if _sensor_attr_name == WAZE_DISTANCE:
                 _sensor_attr_name = WAZE_DISTANCE_ATTR
@@ -848,7 +848,8 @@ class DeviceSensor_Base():
             sensor = sensor.replace(f"_{self.from_zone}", '')
             return SENSOR_DEFINITION[sensor][field]
 
-        except:
+        except Exception as err:
+            log_debug_msg(f"_get_sensor_definition > {field}-{err}")
             if field == SENSOR_ATTRS:
                 return []
             else:
@@ -925,7 +926,8 @@ class DeviceSensor_Base():
                 sensor_value = Gb.restore_state_devices[self.devicename][CONF_TRACK_FROM_ZONES][self.from_zone][sensor]
             else:
                 sensor_value = Gb.restore_state_devices[self.devicename]['sensors'][sensor]
-        except:
+        except Exception as err:
+            log_debug_msg(f"_get_restore_or_default_value > {sensor}-{err}")
             sensor_value = self._get_sensor_definition(sensor, SENSOR_DEFAULT)
 
         return sensor_value
@@ -1026,8 +1028,7 @@ class DeviceSensor_Base():
         try:
             entity_io.update_entity(self.entity_id, **kwargs)
         except Exception as err:
-            # log_exception(err)
-            pass
+            log_debug_msg(f"Sensor Entity update > {type(err).__name__}")
 
         """
             Typically used:
@@ -1315,8 +1316,8 @@ class Sensor_Timestamp(DeviceSensor_Base, SensorEntity):
             # Drop the 'a' or 'p' so the field will fit on an iPhone
             if int(sensor_value.split(':')[0]) >= 10:
                 sensor_value = time_remove_am_pm(sensor_value)
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(f"Sensor_Timestamp > {err}")
 
         return sensor_value
 
@@ -1373,7 +1374,7 @@ class Sensor_Timer(DeviceSensor_Base, SensorEntity):
                 if sensor_value == int(sensor_value):
                     sensor_value = int(sensor_value)
         except Exception as err:
-            pass
+            log_debug_msg(f"sensor value > int conversion-{type(err).__name__}")
 
         return sensor_value
 
@@ -1468,8 +1469,7 @@ class Sensor_Distance(DeviceSensor_Base, SensorEntity):
             sorted_zone_dist.update(dict(sorted(zone_dist.items())))
 
         except Exception as err:
-            # log_exception(err)
-            pass
+            log_debug_msg(f"zone distance attributes > {type(err).__name__}")
 
         return sorted_zone_dist
 
@@ -1498,8 +1498,7 @@ class Sensor_Distance(DeviceSensor_Base, SensorEntity):
             sorted_fname_dist.update(dict(sorted(fname_dist.items())))
 
         except Exception as err:
-            # log_exception(err)
-            pass
+            log_debug_msg(f"device distance attributes > {type(err).__name__}")
 
         return sorted_fname_dist
 

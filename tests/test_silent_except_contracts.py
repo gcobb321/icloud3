@@ -12,6 +12,13 @@ Allowed handlers:
       re-raise);
     * a narrow handler (``except WRCError``, ``except RuntimeError``, ...) is
       out of scope: it expresses an expected condition, not a blind catch.
+
+The bare-except rule is checked against ``ALL_SOURCES``, which is every module
+of the integration (``rglob``), so a new file cannot slip past it. The
+"must log or re-raise" rule is checked against ``SOURCES``: the modules that
+have been converted to named handlers. The remaining modules still carry silent
+broad handlers; converting them is a separate change, and hiding them behind a
+module-level exemption would weaken the contract for every handler in them.
 """
 
 from __future__ import annotations
@@ -87,6 +94,32 @@ SOURCES = (
     "configure/screens/step_reauth.py",
     "configure/screens/step_sensors.py",
     "configure/screens/step_tools.py",
+    # The modules converted from bare handlers: every handler here names its
+    # exception and reports it, so the "must log or re-raise" rule applies.
+    "sensor.py",
+    "device.py",
+    "zone.py",
+    "icloud3_main.py",
+    "device_fm_zone.py",
+    "device_tracker.py",
+    "utils/messaging.py",
+    "startup/start_ic3.py",
+    "apple_acct/apple_acct.py",
+    "apple_acct/apple_acct_auth.py",
+    "apple_acct/apple_acct_session.py",
+    "apple_acct/apple_acct_upw.py",
+    "apple_acct/icloud_session.py",
+    "apple_acct/icloud_requests_io.py",
+)
+
+# Every module in the integration. The bare-except rule is repo-wide: a new
+# file must not be able to reintroduce a catch-all that also swallows
+# KeyboardInterrupt and SystemExit.
+ALL_SOURCES = tuple(
+    sorted(
+        path.relative_to(COMPONENT).as_posix()
+        for path in COMPONENT.rglob("*.py")
+    )
 )
 
 # Handlers that stay silent on purpose. Each entry is "module::function" and
@@ -157,8 +190,8 @@ def exempt_key(relative_path: str, function_name: str) -> str:
     return f"{relative_path}::{function_name}"
 
 
-def test_no_bare_except_in_data_and_network_paths() -> None:
-    for relative_path in SOURCES:
+def test_no_bare_except_in_the_integration() -> None:
+    for relative_path in ALL_SOURCES:
         bare = [
             handler.lineno
             for handler in handlers(relative_path)
@@ -196,7 +229,7 @@ def test_exempt_handlers_still_name_their_exception() -> None:
 def test_exempt_handlers_exist() -> None:
     for key in EXEMPT_HANDLERS:
         relative_path, function_name = key.split("::")
-        assert relative_path in SOURCES, f"{key}: exempt module is not scanned"
+        assert relative_path in ALL_SOURCES, f"{key}: exempt module is not scanned"
         names = {
             node.name
             for node in ast.walk(tree_of(relative_path))
@@ -205,6 +238,15 @@ def test_exempt_handlers_exist() -> None:
         assert function_name in names, f"{key}: exempt function does not exist"
 
 
+def test_all_sources_are_discovered() -> None:
+    assert len(ALL_SOURCES) > 50, ALL_SOURCES
+    assert "sensor.py" in ALL_SOURCES
+    assert "apple_acct/apple_acct.py" in ALL_SOURCES
+    handlers_found = sum(len(handlers(relative_path)) for relative_path in ALL_SOURCES)
+    assert handlers_found > 100, handlers_found
+
+
 def test_every_source_file_is_covered() -> None:
     for relative_path in SOURCES:
+        assert relative_path in ALL_SOURCES, relative_path
         assert (COMPONENT / relative_path).is_file(), relative_path

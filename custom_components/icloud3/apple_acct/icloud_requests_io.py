@@ -195,7 +195,7 @@ def request_get_post(url, **kwargs):
             try:
                 data = response.json()
             except Exception as err:
-                pass
+                log_debug_msg(f"Request response > Invalid JSON-{type(err).__name__}")
 
             code = response.status_code
             ok   = True
@@ -338,7 +338,7 @@ async def async_httpx_request(url, **kwargs): #headers=None):
             try:
                 data = response.json()
             except Exception as err:
-                pass
+                log_debug_msg(f"Request response > Invalid JSON-{type(err).__name__}")
 
             log_request_data('Response HTTPX', 'get', url, kwargs, '')
 
@@ -407,7 +407,7 @@ def httpx_request(url, headers=None, **kwargs):
             try:
                 data = response.json()
             except Exception as err:
-                pass
+                log_debug_msg(f"Request response > Invalid JSON-{type(err).__name__}")
 
             code = response.status_code
             ok   = True

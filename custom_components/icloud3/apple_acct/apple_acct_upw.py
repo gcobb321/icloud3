@@ -77,7 +77,8 @@ class ValidateAppleAcctUPW():
     def __repr__(self):
         try:
             return self.AppleAcct.username_account_owner
-        except:
+        except Exception as err:
+            LOGGER.debug(f"AppleAcct_upw.__repr__ > {type(err).__name__}")
             return "<NotSetUp>"
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

@@ -387,8 +387,8 @@ class AppleAcctSessionMixin:
 
         try:
             self.iCloudSession.cookies.list(selected_cookie)
-        except:
-            (f"\n⠂  ❗ _.Cookie.file-{self.cookies_filename}, None")
+        except Exception as err:
+            log_debug_msg(f"list_cookies > Unable to list the cookies-{type(err).__name__}")
 
 #----------------------------------------------------------------------------
     def delete_cookie_and_session_files(self):
@@ -438,7 +438,8 @@ class AppleAcctSessionMixin:
 
             self.token_password = decode_password(self.token_pw_data[CONF_PASSWORD])
 
-        except:
+        except Exception as err:
+            log_debug_msg(f"read_token_pw_file > Unable to load the token/pw data-{type(err).__name__}")
             self.token_password = self.password
 
         return self.token_pw_data
