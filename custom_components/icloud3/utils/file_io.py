@@ -12,6 +12,7 @@ import logging
 import os
 import requests
 import shutil
+import threading
 
 from homeassistant.util     import json as json_util
 from homeassistant.helpers  import json as json_helpers
@@ -21,6 +22,38 @@ from httpx                  import (ConnectTimeout, HTTPError, RequestError,
 
 _LOGGER = logging.getLogger(__name__)
 #_LOGGER = logging.getLogger(f"icloud3")
+
+# The config file is written from the event loop, the 5-sec executor thread and
+# the service handlers. Serialize the writes and use Home Assistant's atomic
+# writer so a crash cannot leave a half-written JSON file behind.
+_JSON_WRITE_LOCK = threading.Lock()
+
+
+def _save_json_atomic(filename, data):
+    with _JSON_WRITE_LOCK:
+        try:
+            json_helpers.save_json(filename, data, atomic_writes=True, private=True)
+        except TypeError:
+            # Older HA releases do not accept private/atomic_writes.
+            try:
+                json_helpers.save_json(filename, data, atomic_writes=True)
+            except TypeError:
+                json_helpers.save_json(filename, data)
+
+        _set_private_permissions(filename)
+
+
+def _set_private_permissions(filename):
+    '''
+    Restrict a written file to the owning user (0600). Failure is not fatal:
+    the data is already on disk, only the permission change is reported.
+    '''
+    try:
+        os.chmod(filename, 0o600)
+    except FileNotFoundError:
+        pass
+    except OSError as err:
+        _LOGGER.warning(f"Could not restrict permissions on {filename}: {err}")
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -80,7 +113,7 @@ async def async_save_json_file(filename, data):
 
     try:
         await Gb.hass.async_add_executor_job(
-                            json_helpers.save_json,
+                            _save_json_atomic,
                             filename,
                             data)
         return True
@@ -94,7 +127,7 @@ async def async_save_json_file(filename, data):
 #--------------------------------------------------------------------
 def save_json_file(filename, data):
     try:
-        json_helpers.save_json(filename, data)
+        _save_json_atomic(filename, data)
         return True
 
     except Exception as err:
@@ -218,7 +251,9 @@ def set_write_permission(filename):
     '''
     try:
         if os.access(filename, os.W_OK):
-            os.chmod(filename, 0o777)
+            # These files hold account names, cookies and tokens. Only the HA
+            # user needs to read them; 0777 let every local account read them.
+            os.chmod(filename, 0o600)
 
         return True
     except FileNotFoundError:
