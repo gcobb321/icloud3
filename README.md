@@ -64,7 +64,7 @@ This Beta/Prelease version can be installed from HACS after it has been set up a
 1. Search for and select the **iCloud3 Apple Device Tracker - Beta/Prerelease Version** item on the main HACS screen.
 2. Select **+Download** and follow the normal steps for installing an integration using HACS.
 
-iCloud3 is available on HACS. Installation instructions are in the Users Guide  [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/1_installing)
+iCloud3 is available on HACS. Installation instructions for both HACS and a manual install are in the [installation chapter](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/1_installing) of the User Guide.
 
 
 
@@ -86,7 +86,39 @@ The steps needed to get going have been automated to make it as simple as possib
 
 ![](https://gcobb321.github.io/icloud3_v3_docs/screens/dashboard-allinfo-summary.png)
 
-> Go [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/1_installing?id=configure-icloud3-for-the-first-time) for a deep dive into this process in the iCloud3 documentation.
+> The configure-first-time walkthrough in the same User Guide chapter explains each screen in more detail.
+
+-----
+### Diagnostics & Repairs
+
+iCloud3 ships two built-in ways to tell you what is wrong without reading the source.
+
+**Download diagnostics** - Open *Settings > Devices & Services > iCloud3*, select the three-dot menu on the integration entry and choose **Download diagnostics**. The file lists the iCloud3 and Home Assistant versions, entity and device counts, and non-identifying profile settings. Account names, passwords, tokens and coordinates are removed before the file is written. The report is meant to be attached to a GitHub issue; open it once before sharing to make sure it contains nothing you consider private.
+
+**Repairs** - *Settings > Repairs* shows the issues iCloud3 needs you to act on:
+
+- **Apple Account reauthentication** - Apple rejected the session or asked for the account to be signed in again. This notice is informational: it disappears on its own once the account authenticates successfully from the iCloud3 *Configure* screens.
+- **Mobile App device not found** - The Mobile App device assigned to an iCloud3 device is no longer present in the Home Assistant Mobile App integration (removed, renamed or disabled). Select **Submit** to clear the assignment; iCloud3 then tracks that device with iCloud only until you assign a Mobile App device again.
+
+-----
+### Troubleshooting
+
+Start with the **Event Log** dashboard. It records startup, location requests, rejected locations, zone changes and errors per device, and it is usually enough to see where tracking stopped.
+
+- **A device has no new location** - Check the Event Log entry for that device first. A sleeping iPad or a watch can report `unknown` or `unavailable` for a while and still be healthy. If the device is awake and iCloud requests fail for every device, reauthenticate the Apple Account from *Configure*.
+- **A device stopped updating after being renamed** - Open *Settings > Repairs*. A renamed or re-paired Mobile App device shows up as a stale mapping; clear it and assign the correct Mobile App device from *Configure > iCloud3 Devices*.
+- **A service call reports an unknown device** - The device name must match the name shown on the *iCloud3 Devices* screen exactly. An unknown name is reported instead of being applied to every device.
+- **Values look frozen after a reload** - Reload the integration once from *Settings > Devices & Services*. Repeated reloads no longer create extra polling loops, and each reload cancels the previous timers.
+- **Timestamps are off by hours** - Set the correct time zone on the Home Assistant server. iCloud3 uses the Home Assistant time zone for event times and the local device time zone only for the optional local-time display.
+
+When you open an issue, include the iCloud3 version, the Home Assistant version, the steps that led to the problem, and the downloaded diagnostics. Do not paste account credentials, tokens or location data.
+
+-----
+### Upgrade / rollback
+
+**Upgrade** - Update iCloud3 from HACS (or copy the new `custom_components/icloud3` folder over the old one), then restart Home Assistant. Configuration is migrated automatically on startup; the previous configuration file is kept as a backup next to the live one in `config/.storage/icloud3/`. No YAML changes are required between v3 releases.
+
+**Rollback** - In HACS, open iCloud3, select the three-dot menu, choose **Redownload** and pick the previous version, then restart Home Assistant. If the newer version migrated the configuration in a way the older version cannot read, stop Home Assistant and restore `config/.storage/icloud3/configuration_backup` over `config/.storage/icloud3/configuration` before starting it again. Entity IDs are registered with Home Assistant, so keep the same entity names when you roll back to avoid breaking dashboards and automations.
 
 -----
 ### iCloud3 Highlights
@@ -143,6 +175,10 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 ### Important Links
 
 - **iCloud3 User Guide** -The User Guide is quite extensive and can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
+
+- **Changelog** - User-facing changes per release are listed in [CHANGELOG.md](CHANGELOG.md), with detailed notes in `custom_components/icloud3/release_notes/`.
+
+- **Legacy v2 documentation (archived)** - The documentation for the retired v2 release is kept in [v2_docs](v2_docs/) for migration reference only. It is not maintained and does not describe the current integration.
 
 - **iCloud3 GitHub Repository** - The primary GitHub Repository is [here](https://github.com/gcobb321/icloud3)
 

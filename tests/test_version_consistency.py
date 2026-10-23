@@ -20,3 +20,13 @@ def test_version_is_consistent() -> None:
     version = match.group(1)
     assert manifest["version"] == version
     assert (COMPONENT / "release_notes" / f"release_notes_v{version}.md").exists()
+
+
+def test_changelog_lists_current_version() -> None:
+    manifest = json.loads((COMPONENT / "manifest.json").read_text(encoding="utf-8"))
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    heading = re.compile(rf"^##\s+v?{re.escape(manifest['version'])}\b", re.MULTILINE)
+    assert heading.search(changelog), (
+        f"CHANGELOG.md has no '## v{manifest['version']}' section for the current VERSION"
+    )

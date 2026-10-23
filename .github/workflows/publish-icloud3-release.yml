@@ -10,6 +10,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repo at release tag
         uses: actions/checkout@v4
@@ -19,18 +20,41 @@ jobs:
           cd custom_components/icloud3
           zip -r ../icloud3.zip .
 
-      - name: Upload zip to the release
+      - name: Verify zip contents
+        run: |
+          unzip -l custom_components/icloud3.zip
+          unzip -l custom_components/icloud3.zip | grep -q 'manifest.json'
+          unzip -l custom_components/icloud3.zip | grep -q 'const.py'
+          unzip -l custom_components/icloud3.zip | grep -q 'diagnostics.py'
+
+      - name: Prepare release assets
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG#v}"
+          BASE_VERSION=$(echo "$VERSION" | awk -F. '{print $1"."$2"."$3}')
+          NOTES_FILE="custom_components/icloud3/release_notes/release_notes_v${BASE_VERSION}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "Release notes file not found: $NOTES_FILE" >&2
+            exit 1
+          fi
+          cp "$NOTES_FILE" "release_notes_v${BASE_VERSION}.md"
+          sha256sum custom_components/icloud3.zip > custom_components/icloud3.zip.sha256
+          echo "BASE_VERSION=$BASE_VERSION" >> "$GITHUB_ENV"
+
+      - name: Upload assets to the release
         uses: softprops/action-gh-release@v2
         with:
-          files: custom_components/icloud3.zip
+          files: |
+            custom_components/icloud3.zip
+            custom_components/icloud3.zip.sha256
+            release_notes_v${{ env.BASE_VERSION }}.md
 
       - name: Set release title and notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          BASE_VERSION=$(echo "$VERSION" | awk -F. '{print $1"."$2"."$3}')
           NOTES_FILE="custom_components/icloud3/release_notes/release_notes_v${BASE_VERSION}.md"
           TITLE_DATE=$(date +'%-m/%-d/%Y')
 

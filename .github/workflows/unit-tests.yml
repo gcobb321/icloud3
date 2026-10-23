@@ -5,9 +5,17 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: unit-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -17,7 +25,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install pytest pytest-cov ruff mypy
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+      - name: Install test dependencies
+        run: pip install -r requirements_test.txt
       - name: Lint
         run: ruff check custom_components/icloud3
       - name: Type check
@@ -26,3 +37,10 @@ jobs:
         # pure.py is loaded by path, so coverage measures the directory and
         # pyproject's [tool.coverage.report] narrows the report to pure.py.
         run: pytest -q tests --cov=custom_components/icloud3/utils --cov-fail-under=90
+      - name: Version consistency
+        run: pytest -q tests/test_version_consistency.py
+      - name: Audit test dependencies
+        # Report-only: a new advisory in a test dependency must not block a
+        # release that does not ship that dependency.
+        continue-on-error: true
+        run: pip-audit -r requirements_test.txt
