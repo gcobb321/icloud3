@@ -772,7 +772,7 @@
           "iphone": "iPhones (default=120 min)",
           "watch": "Apple Watches (default=15 min)",
           "watch_wifi": "Apple Watches with WiFi (default=15 min)",
-          "ipad": " iPads (default=120 min)",
+          "ipad": "iPads (default=120 min)",
           "ipad_cell": "iPads with Cell Service (default=120 min)",
           "mac": "Apple Macs (default=120 min)",
           "airpods": "AirPods (AirPods are not tracked)(default=120 min)",
