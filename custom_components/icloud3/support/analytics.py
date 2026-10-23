@@ -155,7 +155,8 @@ async def async_request_report(request):
             # the 'error' item. A non-json response (429, 413) is returned as text.
             try:
                 response_json = await response.json(content_type=None)
-            except Exception:
+            except Exception as err:
+                log_debug_msg(f"async_request_report > The response is not json-{type(err).__name__}")
                 response_json = {}
 
             if response.status == 200 and response_json.get('ok') is True:

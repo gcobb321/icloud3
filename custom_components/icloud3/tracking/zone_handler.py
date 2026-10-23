@@ -20,7 +20,7 @@ from ..utils.file_io    import (file_size, file_exists, set_write_permission, )
 from ..utils.utils      import (instr, is_zone, is_statzone, isnot_statzone, isnot_zone, zone_dname,
                                 list_to_str, list_add, list_del, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
-                                log_info_msg, log_exception,
+                                log_info_msg, log_debug_msg, log_exception,
                                 _evlog, _log, )
 from ..utils.time_util import (time_now_secs, secs_to_hhmm, secs_to, secs_since, mins_since, time_now,
                                 datetime_now, secs_to_datetime, )
@@ -334,7 +334,7 @@ def is_same_or_overlapping_zone(zone1, zone2):
         return (zone_dist_m <= 2)
 
     except Exception as err:
-        #log_exception(err)
+        log_debug_msg(f"is_same_or_overlapping_zone > {type(err).__name__}")
         return False
 
 #--------------------------------------------------------------------

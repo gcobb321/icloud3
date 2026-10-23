@@ -14,6 +14,8 @@ from ..const import (CONF_FNAME, CONF_IC3_DEVICENAME, CONF_USERNAME,
                      DASH_50, DOMAIN, EVLOG_ALERT, IC3LOG_FILENAME, ICLOUD3,
                      NL4, NLSP4)
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def open_ic3log_file(new_log_file=False):
 
@@ -103,6 +105,7 @@ def write_ic3log_recd(log_msg):
             Gb.iC3Logger.info(log_msg)
 
     except Exception as err:
+        _LOGGER.debug(f"write_ic3log_recd > Unable to write the log record-{type(err).__name__}")
         return False
 
 #--------------------------------------------------------------------
@@ -131,6 +134,7 @@ def check_ic3log_file_exists(ic3logger_file):
     except IndexError:
         pass
     except Exception as err:
+        _LOGGER.debug(f"check_ic3log_file_exists > {type(err).__name__}")
         log_exception_HA(err)
 
     return False
@@ -169,7 +173,7 @@ def archive_ic3log_file():
             os.remove(f"{Gb.hass.config.path(IC3LOG_FILENAME)}.1")
             os.remove(f"{Gb.hass.config.path(IC3LOG_FILENAME)}.2")
         except Exception as err:
-            pass
+            _LOGGER.debug(f"archive_ic3log_file > No old log file to delete-{type(err).__name__}")
 
     except Exception as err:
         post_event(f"{ICLOUD3} Log File Archive encountered an error > {err}")

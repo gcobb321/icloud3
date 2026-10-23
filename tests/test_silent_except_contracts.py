@@ -13,12 +13,10 @@ Allowed handlers:
     * a narrow handler (``except WRCError``, ``except RuntimeError``, ...) is
       out of scope: it expresses an expected condition, not a blind catch.
 
-The bare-except rule is checked against ``ALL_SOURCES``, which is every module
-of the integration (``rglob``), so a new file cannot slip past it. The
-"must log or re-raise" rule is checked against ``SOURCES``: the modules that
-have been converted to named handlers. The remaining modules still carry silent
-broad handlers; converting them is a separate change, and hiding them behind a
-module-level exemption would weaken the contract for every handler in them.
+Both rules are checked against ``ALL_SOURCES``, which is every module of the
+integration (``rglob``), so a new file cannot slip past them. A module-level
+exemption would weaken the contract for every handler in the file, so it must
+not be used to skip a whole module.
 """
 
 from __future__ import annotations
@@ -110,6 +108,16 @@ SOURCES = (
     "apple_acct/apple_acct_upw.py",
     "apple_acct/icloud_session.py",
     "apple_acct/icloud_requests_io.py",
+    # The config flow, the restore-state mixin, the analytics reports screen
+    # and the zone/distance/log-file helpers. A failure here used to disappear
+    # into an empty Configure screen, a device without its restored location or
+    # a log file that was never written.
+    "config_flow.py",
+    "device_restore.py",
+    "support/analytics.py",
+    "tracking/zone_handler.py",
+    "utils/dist_util.py",
+    "utils/log_file.py",
 )
 
 # Every module in the integration. The bare-except rule is repo-wide: a new
@@ -202,7 +210,7 @@ def test_no_bare_except_in_the_integration() -> None:
 
 def test_broad_except_handlers_are_logged() -> None:
     silent: list[str] = []
-    for relative_path in SOURCES:
+    for relative_path in ALL_SOURCES:
         for handler, function_name in scan(relative_path):
             if handler_type_name(handler) not in ("Exception", "BaseException"):
                 continue

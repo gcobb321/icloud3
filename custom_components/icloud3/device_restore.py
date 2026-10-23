@@ -14,7 +14,7 @@ from .const                  import (ZONE_ENTER_SECS, ZONE_EXIT_SECS, LAST_ZONE_
 from .startup                import restore_state
 from .utils.time_util        import datetime_now
 from .utils.utils            import is_running_in_event_loop
-from .utils.messaging        import log_exception
+from .utils.messaging        import log_debug_msg, log_exception
 import copy
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -84,8 +84,7 @@ class DeviceRestoreMixin:
             self.mobapp_data_battery_update_secs =  mobapp_items['battery_update_secs']
 
         except Exception as err:
-            #log_exception(err)
-            pass
+            log_debug_msg(f"_restore_state_reset_mobapp_items > {type(err).__name__}")
 
 #--------------------------------------------------------------------
     def _restore_state_save_other_items(self):

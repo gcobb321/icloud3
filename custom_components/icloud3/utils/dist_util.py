@@ -1,5 +1,7 @@
 
 
+import logging
+
 from   homeassistant.util.location import distance
 
 from ..const            import (NEAR_DEVICE_DISTANCE, LT, )
@@ -7,6 +9,8 @@ from ..global_variables import GlobalVariables as Gb
 from .utils             import (round_to_zero, is_number, )
 from .messaging         import (_evlog, _log, )
 from .time_util         import (format_secs_since, )
+
+_LOGGER = logging.getLogger(__name__)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -58,7 +62,7 @@ def set_precision(dist, um=None):
         dist = round(float(dist), precision)
 
     except Exception as err:
-        pass
+        _LOGGER.debug(f"set_precision > {err}")
 
     return dist
 

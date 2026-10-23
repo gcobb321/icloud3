@@ -158,7 +158,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
             added_datetime = config_entry.data.get('added')
 
         except Exception as err:
-            pass
+            log_debug_msg(f"async_step_user > Unable to read the iCloud3 config entry-{type(err).__name__}")
 
         errors = {}
 
