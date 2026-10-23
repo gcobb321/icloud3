@@ -876,7 +876,6 @@
   "issues": {
     "icloud3_alert": {
       "title": "iCloud3 > {title}",
-      "description": "{message}",
       "fix_flow": {
         "step": {
           "confirm": {
@@ -892,15 +891,7 @@
     },
     "icloud3_notice": {
       "title": "iCloud3 > {title}",
-      "description": "{message}",
-      "fix_flow": {
-        "step": {
-          "confirm": {
-            "title": "iCloud3 > {title}",
-            "description": "{message}"
-          }
-        }
-      }
+      "description": "{message}"
     }
   },
 
