@@ -16,6 +16,8 @@
 1. **Diagnostics** - `Download diagnostics` now produces a redacted report (counts and versions only; no account names, tokens or locations).
 2. **Repairs** - Apple reauthentication and stale Mobile App mappings are now visible in Settings > Repairs. A stale mapping can be cleared with Submit.
 3. **Startup reliability** - Config writes triggered by entity-registry events move off the event loop, and config JSON writes fall back when `atomic_writes` is unavailable.
+4. **Health sensor** - `sensor.icloud3_health` reports loop p50/p95/p99, error counts, Apple/Waze request counts and config-write failures; the same snapshot is in diagnostics.
+5. **Storage** - The configuration file now carries a schema version, refuses to be downgraded by an older release, and keeps five rolling backups. Waze history uses WAL with a busy timeout.
 4. **Tests / CI** - Added Home-Assistant-free tests for the timezone/validator helpers, regression contracts for the fixed bugs, and a CI gate (ruff, strict mypy on the pure modules, 90% coverage of the pure module).
 
 ### ⚠️ Behaviour Changes

@@ -36,6 +36,9 @@ backup copy is kept next to it.
   action to every device.
 
 ### Improved
+- `sensor.icloud3_health` with loop/Apple/Waze/config-write counters.
+- Configuration schema versioning, five rolling backups and downgrade protection.
+- Waze history WAL mode; Event Log display cache.
 
 - **Download diagnostics** now produces a redacted report containing only
   counts, versions and non-identifying settings. Account names, tokens and
