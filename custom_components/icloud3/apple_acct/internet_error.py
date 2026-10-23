@@ -32,6 +32,10 @@ STATUS_MESSAGE_DOTS = '🟨🟨🟨🟨🟥'
 INTERNET_TEST_TIMEOUT   = aiohttp.ClientTimeout(total=5, connect=3)
 INTERNET_TEST_WAIT_SECS = 8
 
+# Number of icloud.com checks (one every 20-secs) that may fail while the internet is
+# available before iCloud3 is restarted to log into the Apple accounts again (5-mins)
+ICLOUD_CHECKS_BEFORE_RESTART = 15
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   CONNECTION ERROR HANDLER
@@ -119,6 +123,8 @@ class InternetConnection_ErrorHandler:
         if it is back up:
             - clear the alert message and EvLog status msg
             - Resume tracking
+        if it is back up but an Apple acct still can not be refreshed:
+            - Restart iCloud3 after ICLOUD_CHECKS_BEFORE_RESTART checks
         '''
 
         # Initial internet check before first status msg. Only do it on the first 5-sec
@@ -142,6 +148,15 @@ class InternetConnection_ErrorHandler:
             self.all_apple_accts_refreshed = self.refresh_all_apple_accts()
 
             if self.all_apple_accts_refreshed:
+                self.internet_connection_is_available_again()
+                return
+
+            # The internet is back but an Apple acct can not be refreshed. This happens
+            # when the login failed while the internet was down and the Apple acct was
+            # never set up. Waiting does not help since nothing logs into it again, so
+            # restart iCloud3 (icloud3_restart_needed is set by refresh_all_apple_accts)
+            if (self.icloud3_restart_needed
+                    and self.icloud_check_cnt >= ICLOUD_CHECKS_BEFORE_RESTART):
                 self.internet_connection_is_available_again()
                 return
 
