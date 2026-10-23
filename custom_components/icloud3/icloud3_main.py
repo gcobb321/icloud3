@@ -97,6 +97,7 @@ class iCloud3:
         self.pyicloud_refresh_time[ICLOUD] = 0
         self.attributes_initialized_flag   = False
         self.e_seconds_local_offset_secs   = 0
+        self._unsub_5sec_loop              = None
 
         Gb.authenticated_time              = 0
         Gb.icloud_acct_error_cnt           = 0
@@ -115,6 +116,20 @@ class iCloud3:
 
     def __repr__(self):
         return (f"<iCloud3: {Gb.version}>")
+
+    def shutdown(self):
+        '''
+        Cancel the 5-sec polling loop.
+
+        The loop is not owned by a platform or a listener, so nothing stopped it
+        when the config entry was unloaded. Every reload added another 5-sec
+        cycle and the old one kept polling after the entry was gone.
+        '''
+        if self._unsub_5sec_loop is not None:
+            self._unsub_5sec_loop()
+            self._unsub_5sec_loop = None
+
+        Gb.polling_5_sec_loop_running = False
 
     @property
     def loop_ctrl_device_update_in_process(self):
@@ -231,7 +246,8 @@ class iCloud3:
             if Gb.polling_5_sec_loop_running is False:
                 broadcast_info_msg("Set Up 5-sec Master Interval Cycle")
                 Gb.polling_5_sec_loop_running = True
-                track_utc_time_change(Gb.hass, self.master_5sec_interval_handler,
+                self._unsub_5sec_loop = track_utc_time_change(
+                        Gb.hass, self.master_5sec_interval_handler,
                         second=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
 
             return True
