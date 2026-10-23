@@ -20,7 +20,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del
                                 encode_password, decode_password, username_id, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                 secs_since, format_secs_since, format_age, format_time_age )
-from ..utils.messaging  import (_log, log_exception, )
+from ..utils.messaging  import (_log, log_exception, log_warning_msg, )
 from ..utils            import gps
 from .device_name_parser import owner_device_name_key
 
@@ -91,11 +91,11 @@ class iCloud_AppleAcctDeviceData():
         self.timestamp_field = timestamp_field
         self.AADevices       = AADevices           # iCloud object creating this AADevData object
 
-        self.name            = device_data[NAME] = self._remove_special_chars(device_data[NAME])
+        self.name            = device_data[NAME] = self._remove_special_chars(device_data.get(NAME) or '')
 
         self.model_display_name = self.filtered_model_display_name()
 
-        self.raw_model       = device_data['rawDeviceModel'].replace('_', ',')        # "iPhone17,2"
+        self.raw_model       = device_data.get('rawDeviceModel', '').replace('_', ',')        # "iPhone17,2"
         if self.raw_model.startswith(AIRPODS_DN):
             self.model       = AIRPODS_DN
             self.device_type = AIRPODS
@@ -103,8 +103,9 @@ class iCloud_AppleAcctDeviceData():
             self.model       = 'AirTags'
             self.device_type = 'airtags'
         else:
-            self.model       = device_data['deviceClass']
-            self.device_type = device_data['deviceClass'].lower()
+            device_class     = device_data.get('deviceClass', '')
+            self.model       = device_class
+            self.device_type = device_class.lower()
         self.model_no        = self.raw_model_no
         self.status_code     = 0
 
@@ -143,7 +144,7 @@ class iCloud_AppleAcctDeviceData():
 
 #----------------------------------------------------------------------
     def filtered_model_display_name(self):
-        display_name = self.device_data['deviceDisplayName']
+        display_name = self.device_data.get('deviceDisplayName', '')
         for from_str, to_str in DEVICE_DISPLAY_NAMES_FILTERS.items():
             display_name = display_name.replace(from_str, to_str)
 
@@ -192,7 +193,7 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def family_share_device(self):
-        return self.device_data['fmlyShare']
+        return self.device_data.get('fmlyShare', False)
 
 #......................................................................
     def _find_conf_device_devicename(self, field, field_value):
@@ -288,7 +289,11 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def device_status_code(self):
-        return int(self.device_data.get(ICLOUD_DEVICE_STATUS, '0'))
+        try:
+            return int(self.device_data.get(ICLOUD_DEVICE_STATUS, '0'))
+
+        except (TypeError, ValueError):
+            return 0
 
 #----------------------------------------------------------------------
     @property
@@ -306,9 +311,9 @@ class iCloud_AppleAcctDeviceData():
             - Gary-iPhone
         '''
         if self.is_data_source_ICLOUD:
-            display_name = self.device_data['deviceDisplayName'].split(' (')[0]
+            display_name = self.device_data.get('deviceDisplayName', '').split(' (')[0]
             display_name = display_name.replace('Series ', '')
-            if self.device_data.get('rawDeviceModel').startswith(AIRPODS_DN):
+            if self.device_data.get('rawDeviceModel', '').startswith(AIRPODS_DN):
                 device_class = AIRPODS_DN
             else:
                 device_class = self.device_data.get('deviceClass', '')
@@ -321,7 +326,7 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def device_class(self):
-        if self.device_data.get('rawDeviceModel').startswith(AIRPODS_DN):
+        if self.device_data.get('rawDeviceModel', '').startswith(AIRPODS_DN):
             return AIRPODS_DN
         else:
             return self.device_data.get('deviceClass', '')
@@ -329,8 +334,8 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def aadevice_model_info(self):
-        return [self.device_data['rawDeviceModel'].replace("_", ""),    # iPhone15,2
-                self.device_data['modelDisplayName'],                   # iPhone
+        return [self.device_data.get('rawDeviceModel', '').replace("_", ""),    # iPhone15,2
+                self.device_data.get('modelDisplayName', ''),                   # iPhone
                 self.model_display_name]                        # iPhone 14 Pro
 
 #----------------------------------------------------------------------
@@ -420,7 +425,7 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------------
     @property
     def is_offline(self):
-        return self.device_data[ICLOUD_DEVICE_STATUS] == 201
+        return self.device_data.get(ICLOUD_DEVICE_STATUS, 0) == 201
 
 #----------------------------------------------------------------------------
     @property
@@ -440,6 +445,22 @@ class iCloud_AppleAcctDeviceData():
             latitude, longitude = gps.bd_to_wgs(latitude, longitude)
 
         return device_data
+
+#----------------------------------------------------------------------------
+    def _device_status_from_data(self):
+        '''
+        Apple's deviceStatus is normally an int but it can be a string, including
+        a non-numeric one. A bad value must not stop the device from being set up.
+        '''
+        status = self.device_data.get('deviceStatus', '0')
+
+        try:
+            return int(status)
+
+        except (TypeError, ValueError):
+            log_warning_msg(f"{self.name} > Apple Acct deviceStatus is not a number "
+                            f"({status}), using 0")
+            return 0
 
 #----------------------------------------------------------------------------
     def _add_ic3_items_to_device_data(self):
@@ -463,7 +484,7 @@ class iCloud_AppleAcctDeviceData():
             self.last_loc_time_gps = ''
 
         self.status_code = self.device_data[ICLOUD_DEVICE_STATUS] = \
-            int(self.device_data.get('deviceStatus', '0'))
+            self._device_status_from_data()
 
         try:
             if self.is_location_data_available:

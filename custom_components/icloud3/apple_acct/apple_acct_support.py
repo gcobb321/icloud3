@@ -350,7 +350,8 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
     alert_msg = ''
     if (new_2fa_authentication_code_requested(AppleAcct, initial_setup)
             and AppleAcct.was_ha_auth_code_alert_sent is False):
-        alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)})"
+        alert_msg = (f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)}) - "
+                     f"Select `Configure > Authenticate Apple Account` to request a new code")
         post_alert(f"{AppleAcct.username_id_short} > {alert_msg}")
         _post_apple_reauth_repair_issue(AppleAcct, alert_msg)
         update_alert_sensor(AppleAcct.username_id, alert_msg)
@@ -394,8 +395,13 @@ def _clear_apple_reauth_repair_issue(AppleAcct):
     if AppleAcct.username_id not in _apple_reauth_repair_username_ids:
         return
 
-    _apple_reauth_repair_username_ids.discard(AppleAcct.username_id)
-    clear_repair_issue(f"apple_reauth_{AppleAcct.username_id}")
+    try:
+        clear_repair_issue(f"apple_reauth_{AppleAcct.username_id}")
+
+    # Drop the id even if deleting the issue fails; a stale id would hide the
+    # issue from the next clear and leave it in Repairs for good.
+    finally:
+        _apple_reauth_repair_username_ids.discard(AppleAcct.username_id)
 
     log_debug_msg(f"Apple Acct > Repair issue removed, "
                     f"apple_reauth_{AppleAcct.username_id}")

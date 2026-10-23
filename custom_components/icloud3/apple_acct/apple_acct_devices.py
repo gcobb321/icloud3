@@ -282,99 +282,110 @@ class iCloud_AppleAcctDevices():
             monitor_msg = f"UPDATED iCloud Data > RequestedBy-{requested_by_devicename}"
 
             for device_data in devices_data:
-                device_data[NAME] = device_data_name = self._remove_special_chars(device_data[NAME])
-                device_id         = device_data[ID]
-                aadevdata_hdr_msg = ''
+                try:
+                    device_data[NAME] = device_data_name = self._remove_special_chars(device_data[NAME])
+                    device_id         = device_data[ID]
+                    aadevdata_hdr_msg = ''
 
-                Device = Gb.Devices_by_icloud_device_id.get(device_id)
-
-                if (device_data_name in Gb.conf_icloud_dnames
-                        and requested_by_devicename != 'reload_all_devices'
-                        and Gb.is_icloud3_startup_inprocess):
-                    pass
-
-                elif Gb.was_icloud3_reloaded:
                     Device = Gb.Devices_by_icloud_device_id.get(device_id)
-                    if Device and Device.is_inactive:
+
+                    if (device_data_name in Gb.conf_icloud_dnames
+                            and requested_by_devicename != 'reload_all_devices'
+                            and Gb.is_icloud3_startup_inprocess):
                         pass
 
-                # only check tracked/monitored devices for location data
-                elif (LOCATION not in device_data
-                        or device_data[LOCATION] == {}
-                        or device_data[LOCATION] is None):
-                    if device_id not in Gb.devices_without_location_data:
-                        list_add(Gb.devices_without_location_data, device_data_name)
+                    elif Gb.was_icloud3_reloaded:
+                        Device = Gb.Devices_by_icloud_device_id.get(device_id)
+                        if Device and Device.is_inactive:
+                            pass
 
-                        aadevdata_hdr_msg = 'NO LOCATION'
-                        if device_data[ICLOUD_DEVICE_STATUS] == 201:
-                            aadevdata_hdr_msg += ', OFFLINE'
-                            monitor_msg += f"{CRLF_STAR}OFFLINE > "
-                        else:
-                            monitor_msg += f"{CRLF_STAR}NO LOCATION > "
-                        monitor_msg += (f"{self.AppleAcct.account_owner}, "
-                                        f"{device_data_name}/"
-                                        f"{device_id[:8]}, "
-                                        f"{device_data['modelDisplayName']} "
-                                        f"({device_data['rawDeviceModel']})")
+                    # only check tracked/monitored devices for location data
+                    elif (LOCATION not in device_data
+                            or device_data[LOCATION] == {}
+                            or device_data[LOCATION] is None):
+                        if device_id not in Gb.devices_without_location_data:
+                            list_add(Gb.devices_without_location_data, device_data_name)
 
-                if Device is None or Device.is_inactive:
-                    continue
+                            aadevdata_hdr_msg = 'NO LOCATION'
+                            if device_data.get(ICLOUD_DEVICE_STATUS, 0) == 201:
+                                aadevdata_hdr_msg += ', OFFLINE'
+                                monitor_msg += f"{CRLF_STAR}OFFLINE > "
+                            else:
+                                monitor_msg += f"{CRLF_STAR}NO LOCATION > "
+                            monitor_msg += (f"{self.AppleAcct.account_owner}, "
+                                            f"{device_data_name}/"
+                                            f"{device_id[:8]}, "
+                                            f"{device_data.get('modelDisplayName', 'Unknown')} "
+                                            f"({device_data.get('rawDeviceModel', device_id[:8])})")
 
-                # # Create AADevData object if the device_id is not already set up
-                AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
+                    if Device is None or Device.is_inactive:
+                        continue
 
-                AADevData.save_new_device_data(device_data)
-                #  Check Device.is_inactive now so it is created and in selection lists later
-                if (AADevData.Device is None
-                        or LOCATION not in AADevData.device_data):
-                    continue
+                    # # Create AADevData object if the device_id is not already set up
+                    AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
 
-                if AADevData.location_secs == 0:
-                    continue
+                    AADevData.save_new_device_data(device_data)
+                    #  Check Device.is_inactive now so it is created and in selection lists later
+                    if (AADevData.Device is None
+                            or LOCATION not in AADevData.device_data):
+                        continue
 
-                if ('all' in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
-                        or AADevData.ic3_devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-                    log_hdr = ( f"{self.AppleAcct.username_base}{LINK}"
-                                f"{device_data_name}/{Device.devicename}{RLINK}, "
-                                f"{aadevdata_hdr_msg}, iCloud Data ")
-                    log_data(log_hdr, AADevData.device_data,
-                                data_source='icloud', filter_id=self.AppleAcct.username)
+                    if AADevData.location_secs == 0:
+                        continue
 
-                if AADevData.last_loc_time_gps == AADevData.loc_time_gps:
-                    last_loc_time_gps_msg = last_loc_time_msg = ''
-                else:
-                    last_loc_time_gps_msg = f"{AADevData.last_loc_time_gps}{RARROW}"
-                    last_loc_time_msg     = f"{AADevData.last_loc_time}{RARROW}"
-                    Device.loc_time_updates_icloud.append(AADevData.location_time)
+                    if ('all' in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
+                            or AADevData.ic3_devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
+                        log_hdr = ( f"{self.AppleAcct.username_base}{LINK}"
+                                    f"{device_data_name}/{Device.devicename}{RLINK}, "
+                                    f"{aadevdata_hdr_msg}, iCloud Data ")
+                        log_data(log_hdr, AADevData.device_data,
+                                    data_source='icloud', filter_id=self.AppleAcct.username)
 
-                event_msg =(f"Located > iCloud-"
-                            f"{last_loc_time_msg}"
-                            f"{AADevData.location_time}, ")
+                    if AADevData.last_loc_time_gps == AADevData.loc_time_gps:
+                        last_loc_time_gps_msg = last_loc_time_msg = ''
+                    else:
+                        last_loc_time_gps_msg = f"{AADevData.last_loc_time_gps}{RARROW}"
+                        last_loc_time_msg     = f"{AADevData.last_loc_time}{RARROW}"
+                        Device.loc_time_updates_icloud.append(AADevData.location_time)
 
-                if secs_since(AADevData.location_secs) > Device.old_loc_threshold_secs + 5:
-                    event_msg += f", Old, {format_age(AADevData.location_secs)}"
+                    event_msg =(f"Located > iCloud-"
+                                f"{last_loc_time_msg}"
+                                f"{AADevData.location_time}, ")
 
-                elif AADevData.battery_level is None:
-                    AADevData.battery_level = 0
+                    if secs_since(AADevData.location_secs) > Device.old_loc_threshold_secs + 5:
+                        event_msg += f", Old, {format_age(AADevData.location_secs)}"
 
-                elif AADevData.battery_level > 0:
-                    if AADevData.battery_level != Device.dev_data_battery_level:
-                        event_msg += f"{Device.dev_data_battery_level}%{RARROW}"
-                    event_msg += f"{AADevData.battery_level}%"
+                    elif AADevData.battery_level is None:
+                        AADevData.battery_level = 0
 
-                if Gb.is_icloud3_startup_inprocess is True:
-                    pass
+                    elif AADevData.battery_level > 0:
+                        if AADevData.battery_level != Device.dev_data_battery_level:
+                            event_msg += f"{Device.dev_data_battery_level}%{RARROW}"
+                        event_msg += f"{AADevData.battery_level}%"
 
-                elif requested_by_devicename == Device.devicename:
-                    AADevData.last_requested_loc_time_gps = AADevData.loc_time_gps
-                    if last_loc_time_msg:
+                    if Gb.is_icloud3_startup_inprocess is True:
+                        pass
+
+                    elif requested_by_devicename == Device.devicename:
+                        AADevData.last_requested_loc_time_gps = AADevData.loc_time_gps
+                        if last_loc_time_msg:
+                            post_event(Device.devicename, event_msg)
+
+                    elif Device.isin_zone:
+                        post_monitor_msg(Device.devicename, event_msg)
+
+                    elif AADevData.location_secs > 0:
                         post_event(Device.devicename, event_msg)
 
-                elif Device.isin_zone:
-                    post_monitor_msg(Device.devicename, event_msg)
-
-                elif AADevData.location_secs > 0:
-                    post_event(Device.devicename, event_msg)
+                # One bad device payload must not stop the other devices from
+                # being updated, so skip it and keep going.
+                except Exception as err:
+                    log_warning_msg(f"Apple Acct > {self.AppleAcct.username_base}, "
+                                    f"iCloud Data for "
+                                    f"{device_data.get(NAME, '')}/{str(device_data.get(ID, ''))[:8]} "
+                                    f"was not updated, {err}")
+                    log_exception(err)
+                    continue
 
         except Exception as err:
             log_exception(err)

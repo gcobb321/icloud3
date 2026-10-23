@@ -29,6 +29,10 @@ log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
 log_data, log_exception, log_data_unfiltered, log_request_data, )
 
 from .icloud_cookie_jar     import PyiCloudCookieJar
+from .exceptions            import (AppleAcctException, AppleAcctAPIResponseException,
+                                    AppleAcctManagerNotActivatedException, AppleAcctFailedLoginException,
+                                    AppleAcct2FARequiredException, AppleAcct2SARequiredException,
+                                    AppleAcctNoStoredPasswordAvailableException, AppleAcctNoDevicesException,)
 
 #––––––––––––––––––––––––––––––––––
 from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
@@ -440,8 +444,11 @@ class iCloudSession(Session):
                         if retry_cnt <= 2:
                             self.AppleAcct.authenticate(refresh_session=True)
 
-                    except AppleAcctAPIResponseException:
-                        log_debug_msg(f"{self.username_base}, Authentication Failed")
+                    # authenticate() reports an invalid password as
+                    # AppleAcctFailedLoginException, which is not an
+                    # APIResponseException, so catch the base class.
+                    except AppleAcctException as err:
+                        log_debug_msg(f"{self.username_base}, Authentication Failed, {err}")
                         return self.request(method, url, **kwargs)
 
                     if (retry_cnt <= 2
@@ -549,8 +556,8 @@ class iCloudSession(Session):
         else:
             log_error_msg(f"iCloud3 Error > Apple Acct Session Error-{api_error}")
 
-        return
-        raise api_error
+        if api_error is not None:
+            raise api_error
 
     #--------------------------------------------------------------------
     @staticmethod
@@ -617,55 +624,7 @@ class iCloudSession(Session):
 #
 #   Exceptions (exceptions.py)
 #
+#   The classes are defined in exceptions.py and imported at the top of this
+#   module so the names stay importable from here.
+#
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-class AppleAcctException(Exception):
-    '''Generic iCloud exception.'''
-    pass
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcctAPIResponseException(AppleAcctException):
-    '''iCloud response exception.'''
-    def __init__(self, reason, code=None, retry=False):
-
-        self.reason = reason
-        self.code = code
-        message = reason or "Could not connect to iCloud Location Servers"
-        if code:
-            message += (f" (Error Code {code})")
-        if retry:
-            message += ". Retrying ..."
-
-        super(AppleAcctAPIResponseException, self).__init__(message)
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcctManagerNotActivatedException(AppleAcctAPIResponseException):
-    '''iCloud service not activated exception.'''
-    pass
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcctFailedLoginException(AppleAcctException):
-    '''iCloud failed login exception.'''
-    pass
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcct2FARequiredException(AppleAcctException):
-    '''iCloud 2SA required exception.'''
-    pass
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcct2SARequiredException(AppleAcctException):
-    """iCloud 2SA required exception."""
-    def __init__(self, apple_id):
-        message = f"Two-step authentication required for account: {apple_id}"
-        super().__init__(message)
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcctNoStoredPasswordAvailableException(AppleAcctException):
-    '''iCloud no stored password exception.'''
-    pass
-
-#––––––––––––––––––––––––––––––––––––––
-class AppleAcctNoDevicesException(AppleAcctException):
-    '''iCloud no device exception.'''
-    pass
