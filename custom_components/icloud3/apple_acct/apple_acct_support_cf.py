@@ -249,7 +249,7 @@ def create_AppleAcctManager_config_flow(username, password, apple_server_locatio
 
     except Exception as err:
         AppleAcct = None
-        pass
+        log_exception(err)
 
     # TEST CODE -Test Internet error and AppleAcct login failure
     # _log("TEST CODE ENABLED")

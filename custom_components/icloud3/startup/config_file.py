@@ -571,8 +571,8 @@ def build_initial_config_file_structure():
             Gb.conf_general[CONF_UNIT_OF_MEASUREMENT] = 'km'
             Gb.conf_general[CONF_TIME_FORMAT] = '24-hour'
 
-    except:
-        pass
+    except Exception as err:
+        log_debug_msg(f"Configuration File > Verify General Parameters - {err}")
 
 #--------------------------------------------------------------------
 def conf_apple_acct(idx_or_username):
@@ -631,7 +631,8 @@ def apple_acct_username_password(idx):
         return (Gb.conf_apple_accounts[idx][CONF_USERNAME],
             decode_password(Gb.conf_apple_accounts[idx][CONF_PASSWORD]),
             Gb.conf_apple_accounts[idx][CONF_LOCATE_ALL])
-    except:
+    except Exception as err:
+        log_debug_msg(f"Configuration File > Apple Account {idx} - {err}")
         return ('', '', '' , True)
 
 #--------------------------------------------------------------------
@@ -646,7 +647,8 @@ def apple_acct_password_for_username(username):
         return [apple_acct[CONF_PASSWORD]
                                 for apple_acct in Gb.conf_apple_accounts
                                 if apple_acct[CONF_USERNAME] == username][0]
-    except:
+    except Exception as err:
+        log_debug_msg(f"Configuration File > Password Lookup - {err}")
         return ''
 
 #-------------------------------------------------------------------------------------------
@@ -880,7 +882,8 @@ def get_sensor_fname(sensor):
     try:
         return SENSOR_DEFINITION[sensor][SENSOR_FNAME]
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"Sensor Definition > {sensor} - {err}")
         return sensor.replace('_', ' ').title()
 
 #-------------------------------------------------------------------------------------------
@@ -1320,8 +1323,8 @@ def encode_all_passwords():
     try:
         for apple_acct in Gb.conf_apple_accounts:
             apple_acct[CONF_PASSWORD] = encode_password(apple_acct[CONF_PASSWORD])
-    except:
-        pass
+    except Exception as err:
+        log_debug_msg(f"Configuration File > Encode Passwords - {err.__class__.__name__}")
 
 #--------------------------------------------------------------------
 def decode_all_passwords():

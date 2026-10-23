@@ -225,7 +225,7 @@ def dict_to_json_str(dict):
         return json.dumps(dict)
 
     except Exception as err:
-        pass
+        log_exception(err)
 
     return ''
 
@@ -265,8 +265,7 @@ def set_write_permission(filename):
     except FileNotFoundError:
         pass
     except Exception as err:
-        # log_exception(err)
-        pass
+        log_debug_msg(f"Set Write Permission > {filename} - {err}")
 
     return False
 

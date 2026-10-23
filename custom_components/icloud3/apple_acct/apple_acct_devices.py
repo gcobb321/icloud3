@@ -99,8 +99,8 @@ class iCloud_AppleAcctDevices():
             # thinks it is not done and resets everything.
             if isnot_empty(self.AppleAcct.device_id_by_aadev_dname):
                 return
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(f"AADevices > Device List Not Ready - {err}")
 
         self.refresh_device()
 
@@ -843,5 +843,6 @@ class iCloud_AppleAcctDevices():
         try:
             return (f"<AppleAcct.AADevices: {self.AppleAcct.setup_time}-{self.setup_time}-"
                     f"{self.AppleAcct.account_owner}>")
-        except:
+        except Exception as err:
+            log_debug_msg(f"AADevices > Not Set Up - {err}")
             return (f"<AppleAcct.AADevices: NotSetUp>")

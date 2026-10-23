@@ -61,7 +61,7 @@ def get_state(entity_id):
     # When starting iCloud3, the device_tracker for the mobapp might
     # not have been set up yet. Catch the entity_id error here.
     except Exception as err:
-        #log_exception(err)
+        log_debug_msg(f"Get State > {entity_id} - {err}")
         state = NOT_SET
 
     return state
@@ -178,8 +178,7 @@ def get_entity_registry_data(platform=None, domain=None):
                         model = device_reg_data.model
 
                 except Exception as err:
-                    # log_exception(err)
-                    pass
+                    log_debug_msg(f"Device Registry > {entity_id} - {err}")
 
                 entity_id_attrs[RAW_MODEL] = model
 
@@ -292,7 +291,8 @@ def ha_zone_attrs_id(zone):
     zone_entity_id = zone if zone.startswith('zone.') else f"zone.{zone}"
     try:
         return id(Gb.hass.states.get(zone_entity_id).attributes)
-    except:
+    except Exception as err:
+        log_debug_msg(f"HA Zone Attributes > {zone_entity_id} - {err}")
         return 0
 
 def ha_zone_attrs(zone):
@@ -302,7 +302,7 @@ def ha_zone_attrs(zone):
         return ha_zone_attrs
 
     except Exception as err:
-        # log_exception(err)
+        log_debug_msg(f"HA Zone Attributes > {zone_entity_id} - {err}")
         return None
 
 def ha_zone_entities():
@@ -337,7 +337,8 @@ def get_entity(entity_id):
     try:
         entity_reg = er.async_get(Gb.hass)
         return entity_reg.async_get(entity_id)
-    except:
+    except Exception as err:
+        log_debug_msg(f"Get Entity > {entity_id} - {err}")
         return {}
 
 #................................................................................
@@ -376,7 +377,8 @@ def get_assigned_sensor_entity(unique_id):
     try:
         entity_reg = er.async_get(Gb.hass)
         return entity_reg.async_get_entity_id(PLATFORM_SENSOR, DOMAIN, unique_id)
-    except:
+    except Exception as err:
+        log_debug_msg(f"Get Assigned Sensor Entity > {unique_id} - {err}")
         return None
 
 #................................................................................
@@ -393,7 +395,7 @@ def update_entity(entity_id, **kwargs):
         entity_reg = er.async_get(Gb.hass)
         entity_reg.async_update_entity(entity_id, **kwargs)
     except Exception as err:
-        # log_exception(err)
+        log_debug_msg(f"Update Entity > {entity_id} - {err}")
         return False
 
 #................................................................................
@@ -438,7 +440,8 @@ def extract_attr_value(attributes, attribute_name, numeric=False):
         else:
             return ''
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"Extract Attribute > {attribute_name} - {err}")
         return ''
 
 #--------------------------------------------------------------------
@@ -481,6 +484,6 @@ def trace_device_attributes(Device, description, fct_name, attrs):
         log_data(f"iCloud Rawdata - <{Device.devicename}> {description}", attrs)
 
     except Exception as err:
-        pass
+        log_debug_msg(f"Trace Device Attributes > {description} - {err}")
 
     return

@@ -3,7 +3,8 @@ from ..global_variables         import GlobalVariables as Gb
 from ..const                    import (HIGH_INTEGER, HHMMSS_ZERO, HHMM_ZERO, DATETIME_ZERO,
                                         DATETIME_FORMAT, WAZE_USED, )
 
-from .messaging                 import (_evlog, _log, post_event, post_alert, log_exception, internal_error_msg, )
+from .messaging                 import (_evlog, _log, post_event, post_alert, log_exception,
+                                        log_debug_msg, internal_error_msg, )
 from .utils                     import instr
 from .pure                      import (format_date as _format_date_pure,
                                         utc_offset_secs, )
@@ -103,7 +104,8 @@ def isnot_valid(secs):
     '''
     try:
         return secs < 1 or secs == HIGH_INTEGER or secs is None
-    except:
+    except Exception as err:
+        log_debug_msg(f"isnot_valid > {err}")
         return True
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -269,8 +271,8 @@ def time_to_12hrtime(hhmmss, ampm=True):
         hhmmss = f"{hhmmss_hh}:{hh_mm_ss[1]}:{secs_suffix[0]}{ap}"
         if len(secs_suffix) == 2:
             hhmmss += f"-{secs_suffix[1]}"
-    except:
-            pass
+    except Exception as err:
+        log_debug_msg(f"time_to_12hrtime > {err}")
 
     return hhmmss
 
@@ -334,7 +336,7 @@ def format_timer(secs):
         if time_str == '1 mins': time_str = '1 min'
 
     except Exception as err:
-        #_LOGGER.exception(err)
+        log_debug_msg(f"format_timer > {err}")
         time_str = ''
 
     return time_str
@@ -367,6 +369,7 @@ def format_mins_timer(mins):
         time_str = time_str.replace('.0 ', ' ')
 
     except Exception as err:
+        log_debug_msg(f"format_mins_timer > {err}")
         time_str = ''
 
     return time_str
@@ -468,7 +471,8 @@ def time_to_secs(hhmmss):
         hh_mm_ss = hhmmss.split(":")
         secs = int(hh_mm_ss[0]) * 3600 + int(hh_mm_ss[1]) * 60 + int(hh_mm_ss[2])
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"time_to_secs > {err}")
         secs = 0
 
     return secs
@@ -499,7 +503,8 @@ def time_str_to_secs(time_str=None) -> int:
 
         if secs < 0: secs = 0
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"time_str_to_secs > {err}")
         secs = 0
 
     return secs
@@ -554,8 +559,8 @@ def datetime_to_time(datetime):
         else:
             return datetime
 
-    except:
-        pass
+    except Exception as err:
+        log_debug_msg(f"datetime_to_time > {err}")
 
     return datetime
 
@@ -570,6 +575,7 @@ def datetime_for_filename():
         timestamp   = time.strftime("%Y.%m%d-%H.%M", time_struct)
 
     except Exception as err:
+        log_debug_msg(f"datetime_for_filename > {err}")
         timestamp = DATETIME_ZERO
 
     return timestamp
@@ -587,6 +593,7 @@ def secs_to_yymmdd_hhmm(secs=None):
         timestamp   = time.strftime("%y%m%d-%H%M", time_struct)
 
     except Exception as err:
+        log_debug_msg(f"secs_to_yymmdd_hhmm > {err}")
         timestamp = f"{secs}"
 
     return timestamp
@@ -609,6 +616,7 @@ def calculate_time_zone_offset(post_msg=True):
             # Extract offset (+08:00 part of 2025-05-28 06:12:01.718366+08:00)
             local_zone_offset = str(datetime.now(ZoneInfo(local_zone_name)))[-6:]
     except Exception as err:
+        log_debug_msg(f"calculate_time_zone_offset > {err}")
         local_zone_name = None
 
     # HA time zone is not available or eeor getting Zone Info (internet down),
@@ -692,7 +700,8 @@ def extract_time_fields(msg_str):
         # hh:mm or hh:mm:ss
         try:
             mmss_colon = 3 if msg_str[hhmm_colon+3] == ':' else 0
-        except:
+        except Exception as err:
+            log_debug_msg(f"extract_time_fields > {err}")
             mmss_colon = 0
 
         # if mmss_colon == len(msg_str): mmss_colon -= 1
@@ -701,8 +710,8 @@ def extract_time_fields(msg_str):
         time = msg_str[hhmm_colon-2:end_pos]
         try:
             if instr('apAP', msg_str[end_pos]): time += msg_str[end_pos]
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(f"extract_time_fields > {err}")
 
         if time[0].isnumeric() is False: time = time[1:]
 
@@ -757,8 +766,7 @@ def adjust_time_hour_value(hhmmss, hh_adjustment):
         return adj_hhmmss
 
     except Exception as err:
-        pass
-        # log_exception(err)
+        log_debug_msg(f"adjust_time_hour_value > {err}")
 
         return hhmmss
 

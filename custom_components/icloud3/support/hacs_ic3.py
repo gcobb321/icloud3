@@ -100,7 +100,7 @@ async def _async_get_hacs_ic3_data(hacs_repository_file):
             return hacs_ic3_items
 
     except Exception as err:
-        # log_exception(err)
+        log_exception(err)
         pass
 
     return {}
@@ -109,7 +109,8 @@ async def _async_get_hacs_ic3_data(hacs_repository_file):
 def _component_name(hacs_item_data):
     try:
         return hacs_item_data['full_name'].split('/')[1].replace(' ', '_')
-    except:
+    except Exception as err:
+        log_debug_msg(f"HACS > Component Name - {err}")
         return 'unknown'
 
 #--------------------------------------------------------------------
@@ -167,7 +168,7 @@ def _get_version_value(version):
         r_version += int(v_parts[2])*100
         r_version += int(v_parts[3])*10
         r_version += int(v_parts[4])
-    except:
-        pass
+    except Exception as err:
+        log_debug_msg(f"HACS > Version Value - {err}")
 
     return r_version, v_beta

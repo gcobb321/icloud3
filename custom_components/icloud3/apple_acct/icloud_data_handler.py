@@ -269,7 +269,7 @@ def update_AADevData_data(Device, results_msg_flag=True):
         except Exception as err:
             Device.is_icloud_acct_error      = True
             Device.is_icloud_devdata_useable = False
-            # log_exception(err)
+            log_exception(err)
 
         return False
 
@@ -344,11 +344,11 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                 latitude = _AADevData.device_data[LOCATION][LATITUDE]
             except Exception as err:
                 aadevdata_msg = 'No Location data'
+                log_debug_msg(f"iCloud > {aadevdata_msg} - {err}")
                 if _AADevData:
                     log_data(f"iCloud - {aadevdata_msg}-{_Device.devicename}/{_Device.is_data_source_ICLOUD}",
                                 {'filter': _AADevData.device_data})
                 continue
-                # log_exception(err)
 
             requesting_device_flag = (_Device.devicename == Device.devicename)
 

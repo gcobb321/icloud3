@@ -216,6 +216,7 @@ class InternetConnection_ErrorHandler:
             self.data = future.result(timeout=INTERNET_TEST_WAIT_SECS)
 
         except Exception as err:
+            log_debug_msg(f"Internet Connection Test > Not Completed - {err}")
             if future is not None:
                 future.cancel()
             self.data = {'url': url, 'code': 104, 'ok': False,
@@ -441,8 +442,8 @@ class InternetConnection_ErrorHandler:
                 for interface in interfaces:
                     if interface['ipv6']['method'] != 'disabled':
                         return [interface['interface'], interface['ipv6']['method']]
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(f"HA System Network IPv6 Info > Not Available - {err}")
 
         return None
 
@@ -485,7 +486,8 @@ class InternetConnection_ErrorHandler:
             _display_msg =  _internet_error_msg[0].split('(')[0] + 'Error, '
             _display_msg += _internet_error_msg[1].lstrip() + ', '
             _display_msg += _internet_error_msg[3].lstrip()
-        except:
+        except Exception as err:
+            log_debug_msg(f"Internet Error Message > Unexpected Format - {err}")
             _display_msg = self.internet_error_msg
 
         post_alert( f"INTERNET ERROR DETECTED > "

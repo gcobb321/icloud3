@@ -758,7 +758,7 @@ class EventLog(object):
                                 f"Monitor-{delete_mon_cnt})")
 
         except Exception as err:
-            # log_exception(err)
+            log_exception(err)
             pass
 
 #------------------------------------------------------

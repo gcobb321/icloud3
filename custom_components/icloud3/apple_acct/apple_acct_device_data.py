@@ -20,7 +20,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del
                                 encode_password, decode_password, username_id, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                 secs_since, format_secs_since, format_age, format_time_age )
-from ..utils.messaging  import (_log, log_exception, log_warning_msg, )
+from ..utils.messaging  import (_log, log_exception, log_debug_msg, log_warning_msg, )
 from ..utils            import gps
 from .device_name_parser import owner_device_name_key
 
@@ -353,7 +353,8 @@ class iCloud_AppleAcctDeviceData():
 
         try:
             return round(self.location[ICLOUD_HORIZONTAL_ACCURACY])
-        except:
+        except Exception as err:
+            log_debug_msg(f"AADevData > No gps accuracy - {err}")
             return 9999
 
     @property
@@ -480,7 +481,8 @@ class iCloud_AppleAcctDeviceData():
         try:
             self.last_loc_time     = self.location_time
             self.last_loc_time_gps = f"{self.location_time}/±{self.gps_accuracy}m"
-        except:
+        except Exception as err:
+            log_debug_msg(f"AADevData > No previous location time - {err}")
             self.last_loc_time_gps = ''
 
         self.status_code = self.device_data[ICLOUD_DEVICE_STATUS] = \
@@ -540,8 +542,8 @@ class iCloud_AppleAcctDeviceData():
             self.device_data[BATTERY_LEVEL]  = self.battery_level
             self.device_data[BATTERY_STATUS] = self.battery_status
 
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(f"AADevData > Battery data not available - {err}")
 
 #----------------------------------------------------------------------------
     @property
@@ -557,5 +559,6 @@ class iCloud_AppleAcctDeviceData():
     def __repr__(self):
         try:
             return f"{self.name} ({self.model_display_name})"
-        except:
+        except Exception as err:
+            log_debug_msg(f"AADevData > Not defined - {err}")
             return f"<AADevData: Undefined>"

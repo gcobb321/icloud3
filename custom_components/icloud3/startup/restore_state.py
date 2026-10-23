@@ -284,5 +284,5 @@ def _reset_sensor_value(sensors, sensor, statzone_value, initial_value):
             sensors[sensor] = initial_value
 
     except Exception as err:
-        #log_exception(err)
+        log_exception(err)
         pass

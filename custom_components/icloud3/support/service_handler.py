@@ -569,7 +569,8 @@ def _handle_action_device_locate(Device, action_option):
         interval_secs = time_str_to_secs(action_option)
         if interval_secs == 0:
             interval_secs = 5
-    except:
+    except Exception as err:
+        log_debug_msg(f"Service Call > Locate Interval - {err}")
         interval_secs = 5
 
     if Device.is_tracking_paused:

@@ -381,7 +381,7 @@ def enable_disabled_entity(entity_id):
             return True
 
     except Exception as err:
-        pass
+        log_exception(err)
 
     return False
 
@@ -489,7 +489,8 @@ def entity_id_base(entity_id):
     '''
     try:
         return entity_id.split('.')[1]
-    except:
+    except Exception as err:
+        log_debug_msg(f"Entity ID Base > {entity_id} - {err}")
         return None
 
 #................................................................................
@@ -498,7 +499,8 @@ def get_entity(entity_id):
         entity_reg = er.async_get(Gb.hass)
         return entity_reg.async_get(entity_id)
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"Get Entity > {entity_id} - {err}")
         return None
 
 #................................................................................
@@ -618,7 +620,8 @@ def get_assigned_sensor_entity(unique_id):
         entity_reg = er.async_get(Gb.hass)
         return entity_reg.async_get_entity_id(PLATFORM_SENSOR, DOMAIN, unique_id)
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"Get Assigned Sensor Entity > {unique_id} - {err}")
         return None
 
 #................................................................................
@@ -765,7 +768,8 @@ def get_device(device_id):
         device_reg = dr.async_get(Gb.hass)
         return device_reg.async_get(device_id)
 
-    except:
+    except Exception as err:
+        log_debug_msg(f"Get Device > {device_id} - {err}")
         return None
 
 #-------------------------------------------------------------------------------------------
@@ -1242,7 +1246,8 @@ def _set_entity_reg_data(entity_key, entity_data):
     # device_id is not specified for a deleted entity
     try:
         device_id = entity_data.device_id
-    except:
+    except Exception as err:
+        log_debug_msg(f"Deleted Entity > No Device Id - {err}")
         device_id = None
 
     data_item = {}
@@ -1435,7 +1440,7 @@ def _get_domain_devicename(device_data):
         return domain, devicename
 
     except Exception as err:
-        pass
+        log_debug_msg(f"Device Registry > Identifiers - {err}")
 
     return None, None
 

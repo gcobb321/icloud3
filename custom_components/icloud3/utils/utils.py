@@ -193,7 +193,8 @@ def instr(string, substring):
                 return False
 
             return substring in string
-        except:
+        except Exception as err:
+            _LOGGER.debug(f"instr > {err}")
             return False
 
     if string is None or substring is None:
@@ -223,7 +224,8 @@ def is_number(string):
 
         return True
 
-    except:
+    except Exception as err:
+        _LOGGER.debug(f"is_number > {err}")
         return False
 
 #--------------------------------------------------------------------
@@ -360,7 +362,8 @@ def obscure_field(field):
 def zone_dname(zone):
     try:
         return Gb.zones_dname[zone]
-    except:
+    except Exception as err:
+        _LOGGER.debug(f"zone_dname > {zone} - {err}")
         if zone in Gb.Zones_by_zone:
             Zone = Gb.Zones_by_zone[zone]
             Gb.zones_dname[zone] = Zone.dname
@@ -448,7 +451,7 @@ def encode_password(password):
         return f"««{base64_encode(password)}»»"
 
     except Exception as err:
-        #log_exception(err)
+        _LOGGER.debug(f"encode_password > {err.__class__.__name__}")
         password = password.replace('«', '').replace('»', '')
         return password
 
@@ -514,7 +517,7 @@ def is_running_in_event_loop():
     try:
         asyncio.get_running_loop()
         return True
-    except: # RuntimeError:
+    except Exception:   # No running loop is the normal state for the worker threads.
         return False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

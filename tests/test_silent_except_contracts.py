@@ -34,11 +34,19 @@ OBSERVABLE_CALLS = frozenset(
         "log_error_msg",
         "log_info_msg",
         "post_internal_error",
+        "internal_error_msg",
+        "internal_error_msg2",
         "post_error_msg",
         "post_alert",
         "post_event",
         "post_monitor_msg",
     }
+)
+
+# The stdlib logger methods on _LOGGER / Gb.HALogger. startup/config_file.py and
+# utils/file_io.py report through these instead of the messaging helpers.
+OBSERVABLE_LOGGER_METHODS = frozenset(
+    {"debug", "info", "warning", "error", "exception", "critical"}
 )
 
 SOURCES = (
@@ -47,7 +55,37 @@ SOURCES = (
     "tracking/determine_interval.py",
     "mobile_app/mobapp_data_handler.py",
     "mobile_app/mobapp_interface.py",
+    "apple_acct/icloud_data_handler.py",
+    "apple_acct/apple_acct_devices.py",
+    "apple_acct/apple_acct_device_data.py",
+    "apple_acct/apple_acct_support.py",
+    "apple_acct/apple_acct_support_cf.py",
+    "apple_acct/icloud_hwkey.py",
+    "apple_acct/internet_error.py",
+    "startup/config_file.py",
+    "startup/restore_state.py",
+    "startup/start_ic3_control.py",
+    "support/event_log.py",
+    "support/service_handler.py",
+    "support/hacs_ic3.py",
+    "utils/entity_io.py",
+    "utils/entity_reg_util.py",
+    "utils/file_io.py",
+    "utils/time_util.py",
+    "utils/utils.py",
 )
+
+# Handlers that stay silent on purpose. Each entry is "module::function" and
+# carries its own justification; an entry weakens the contract for that one
+# function only, so it must not be a way to skip a whole file.
+EXEMPT_HANDLERS = {
+    # asyncio.get_running_loop() raises RuntimeError for every call made off the
+    # event loop, which is the normal case for the worker threads: this helper
+    # returns False on the common path. A log line here would flood the log from
+    # the most frequently called helper in the integration, and the answer
+    # ("not in the loop") is already the caller's expected branch.
+    "utils/utils.py::is_running_in_event_loop",
+}
 
 
 def tree_of(relative_path: str) -> ast.Module:
@@ -56,11 +94,26 @@ def tree_of(relative_path: str) -> ast.Module:
 
 
 def handlers(relative_path: str) -> list[ast.ExceptHandler]:
-    return [
-        node
-        for node in ast.walk(tree_of(relative_path))
-        if isinstance(node, ast.ExceptHandler)
-    ]
+    return [handler for handler, _ in scan(relative_path)]
+
+
+def scan(relative_path: str) -> list[tuple[ast.ExceptHandler, str]]:
+    """Return each handler with the name of the function that contains it."""
+    found: list[tuple[ast.ExceptHandler, str]] = []
+
+    def visit(node: ast.AST, function_name: str) -> None:
+        for child in ast.iter_child_nodes(node):
+            child_function = (
+                child.name
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                else function_name
+            )
+            if isinstance(child, ast.ExceptHandler):
+                found.append((child, child_function))
+            visit(child, child_function)
+
+    visit(tree_of(relative_path), "")
+    return found
 
 
 def handler_type_name(handler: ast.ExceptHandler) -> str | None:
@@ -78,9 +131,16 @@ def observable_in(handler: ast.ExceptHandler) -> bool:
         func = node.func
         if isinstance(func, ast.Name) and func.id in OBSERVABLE_CALLS:
             return True
-        if isinstance(func, ast.Attribute) and func.attr in OBSERVABLE_CALLS:
+        if isinstance(func, ast.Attribute) and (
+            func.attr in OBSERVABLE_CALLS
+            or func.attr in OBSERVABLE_LOGGER_METHODS
+        ):
             return True
     return False
+
+
+def exempt_key(relative_path: str, function_name: str) -> str:
+    return f"{relative_path}::{function_name}"
 
 
 def test_no_bare_except_in_data_and_network_paths() -> None:
@@ -96,12 +156,39 @@ def test_no_bare_except_in_data_and_network_paths() -> None:
 def test_broad_except_handlers_are_logged() -> None:
     silent: list[str] = []
     for relative_path in SOURCES:
-        for handler in handlers(relative_path):
+        for handler, function_name in scan(relative_path):
             if handler_type_name(handler) not in ("Exception", "BaseException"):
                 continue
-            if not observable_in(handler):
-                silent.append(f"{relative_path}:{handler.lineno}")
+            if observable_in(handler):
+                continue
+            if exempt_key(relative_path, function_name) in EXEMPT_HANDLERS:
+                continue
+            silent.append(f"{relative_path}:{handler.lineno}")
     assert silent == [], f"broad except without a log or raise: {silent}"
+
+
+def test_exempt_handlers_still_name_their_exception() -> None:
+    for relative_path in SOURCES:
+        for handler, function_name in scan(relative_path):
+            key = exempt_key(relative_path, function_name)
+            if key not in EXEMPT_HANDLERS:
+                continue
+            assert handler.type is not None, (
+                f"{relative_path}:{handler.lineno}: an exempt handler still may not "
+                f"be a bare except"
+            )
+
+
+def test_exempt_handlers_exist() -> None:
+    for key in EXEMPT_HANDLERS:
+        relative_path, function_name = key.split("::")
+        assert relative_path in SOURCES, f"{key}: exempt module is not scanned"
+        names = {
+            node.name
+            for node in ast.walk(tree_of(relative_path))
+            if isinstance(node, ast.FunctionDef)
+        }
+        assert function_name in names, f"{key}: exempt function does not exist"
 
 
 def test_every_source_file_is_covered() -> None:
