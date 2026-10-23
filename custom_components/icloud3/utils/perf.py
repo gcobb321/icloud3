@@ -35,6 +35,8 @@ class PerfCounters:
         self._apple_requests = 0
         self._apple_failures = 0
         self._waze_status_counts: dict[str, int] = {}
+        self._startup_stages_ms: dict[str, float] = {}
+        self._startup_total_ms: float | None = None
 
     def record_loop(self, duration_secs: float, error: bool = False,
                     error_message: str = '') -> None:
@@ -66,6 +68,18 @@ class PerfCounters:
         with self._lock:
             self._waze_status_counts[key] = self._waze_status_counts.get(key, 0) + 1
 
+    def record_startup_stage(self, name: str, duration_secs: float) -> None:
+        """Record (or replace) one startup stage duration in milliseconds."""
+        stage = str(name).strip()
+        if not stage:
+            return
+
+        duration_ms = round(max(float(duration_secs), 0.0) * 1000.0, 3)
+        with self._lock:
+            self._startup_stages_ms[stage] = duration_ms
+            if stage == 'total':
+                self._startup_total_ms = duration_ms
+
     def snapshot(self) -> dict[str, Any]:
         """Return a JSON-serializable view of the counters."""
         with self._lock:
@@ -86,6 +100,8 @@ class PerfCounters:
                 'apple_requests': self._apple_requests,
                 'apple_failures': self._apple_failures,
                 'waze_status_counts': dict(self._waze_status_counts),
+                'startup_stages_ms': dict(self._startup_stages_ms),
+                'startup_total_ms': self._startup_total_ms,
             }
 
     def reset(self) -> None:
@@ -101,6 +117,8 @@ class PerfCounters:
             self._apple_requests = 0
             self._apple_failures = 0
             self._waze_status_counts.clear()
+            self._startup_stages_ms.clear()
+            self._startup_total_ms = None
 
 
 def _duration_stats(durations: list[float]) -> dict[str, Any]:

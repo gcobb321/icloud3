@@ -34,7 +34,21 @@ async def test_health_sensor_after_setup(hass):
     assert state is not None
     assert state.state in ("ok", "warning")
 
+    assert "startup_stages_ms" in state.attributes
+    stages = state.attributes["startup_stages_ms"]
+    assert isinstance(stages, dict)
+    assert "config_load" in stages
+    assert all(isinstance(stage, str) for stage in stages)
+    assert all(isinstance(value, (int, float)) for value in stages.values())
+
+    assert "startup_total_ms" in state.attributes
+    total = state.attributes["startup_total_ms"]
+    assert isinstance(total, (int, float))
+    assert total >= max(stages.values())
+
     result = await async_get_config_entry_diagnostics(hass, entry)
 
     assert "health" in result
     assert "last_error_message" in result["health"]
+    assert "startup_stages_ms" in result["health"]
+    assert "startup_total_ms" in result["health"]

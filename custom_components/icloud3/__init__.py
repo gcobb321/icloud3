@@ -18,6 +18,7 @@ from .utils.time_util   import (time_now_secs, time_now, secs_to, secs_since, se
 from .utils.file_io     import (read_json_file, save_json_file,
                                 make_directory, directory_exists, )
 from .utils             import entity_reg_util as er_util
+from .utils.perf        import install_perf_counters
 
 from .                  import device_tracker as ic3_device_tracker
 from .                  import sensor as ic3_sensor
@@ -35,6 +36,7 @@ from .support           import analytics
 
 #--------------------------------------------------------------------
 import asyncio
+import time
 from re import match
 from importlib import reload
 
@@ -59,6 +61,7 @@ Gb.HARootLogger = logging.getLogger("")
 Gb.HALogger     = logging.getLogger(__name__)
 
 successful_startup = True
+_perf = None
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><><><><><><><><><>
 #
@@ -103,6 +106,10 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 #--------------------------------------------------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """ Set up the iCloud3 integration from a ConfigEntry integration """
+    global _perf
+    _perf = install_perf_counters()
+    Gb.startup_started_secs    = time.perf_counter()
+    Gb.startup_last_stage_secs = Gb.startup_started_secs
 
     # Is 'icloud3' already in hass.data
     # A reload request can only skip teardown when the entry was LOADED and
@@ -125,6 +132,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         entry.async_on_unload(async_at_started(Gb.hass, async_start_icloud3))
 
     return True
+
+#................................................................................
+def _record_startup_stage(name):
+    global _perf
+    if _perf is None:
+        _perf = install_perf_counters()
+
+    now = time.perf_counter()
+    _perf.record_startup_stage(name, now - Gb.startup_last_stage_secs)
+    Gb.startup_last_stage_secs = now
 
 #................................................................................
 def setup_hass_icloud3_domain(hass, entry):
@@ -162,6 +179,7 @@ async def async_initialize_icloud3(hass, entry):
 
     await async_open_ic3log_file_init()
     await config_file.async_load_icloud3_configuration_file()
+    _record_startup_stage('config_load')
 
     Gb.EvLog                = EventLog()
     Gb.iCloud3              = iCloud3()
@@ -170,9 +188,12 @@ async def async_initialize_icloud3(hass, entry):
     post_event( f"{Gb.icloud3_attention_msg} > Initial Start-up")
 
     await async_create_device_tracker_sensor_platforms()
+    _record_startup_stage('platforms')
+
     Gb.is_icloud3_initial_startup = True
     await start_icloud3_on_init_load_only()
     await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
+    _record_startup_stage('stage_1_2_3')
 
     Gb.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, start_ic3.ha_stopping)
 
@@ -200,6 +221,7 @@ This is run when:
     - iCloud3 is being reloaded at the beginning of the async_setup_entry function
 '''
 async def async_start_icloud3(_dummy_parameter):
+    _record_startup_stage('ha_wait')
     startup_test_code()
 
     if Gb.was_icloud3_reloaded:
@@ -221,6 +243,7 @@ async def async_start_icloud3(_dummy_parameter):
         log_info_msg(f"Setting up {Gb.icloud3_version_msg}, {starting_msg}")
 
         await async_create_devices_tracker_and_sensor_entities()
+        _record_startup_stage('devices_sensors')
 
         log_debug_msg('Start iCloud3 Initial Load Executor Job (iCloud3.start_icloud3)')
 
@@ -230,6 +253,7 @@ async def async_start_icloud3(_dummy_parameter):
         # icloud3_started = await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3)
         icloud3_started = await Gb.hass.async_add_executor_job(
                                             Gb.iCloud3.start_icloud3_stage_4_5_6_load_aa_device_to_locate)
+        _record_startup_stage('stage_4_5_6')
 
         if icloud3_started:
             log_info_msg(f"{Gb.icloud3_version_msg} Start up Complete")
@@ -243,6 +267,11 @@ async def async_start_icloud3(_dummy_parameter):
 
     except Exception as err:
         log_exception(err)
+
+    _perf.record_startup_stage('total', time.perf_counter() - Gb.startup_started_secs)
+
+    if Gb.HealthSensor is not None:
+        Gb.HealthSensor.async_update_sensor()
 
     startup_test_code_after_complete()
 
@@ -258,7 +287,7 @@ async def start_icloud3_on_init_load_only():
                             "devices before continuing")
             return False
 
-        await hacs_ic3.check_hacs_icloud3_update_available()
+        Gb.hass.async_create_task(_async_check_hacs_update_background())
         await start_ic3.update_lovelace_resource_event_log_js_entry()
 
         Gb.EvLog.display_user_message("Registering Services")
@@ -269,6 +298,13 @@ async def start_icloud3_on_init_load_only():
             config_file.count_lines_of_code('custom_components/icloud3')
             Gb.count_lines_of_code = False
 
+    except Exception as err:
+        log_exception(err)
+
+#-------------------------------------------------------------------------------------------
+async def _async_check_hacs_update_background():
+    try:
+        await hacs_ic3.check_hacs_icloud3_update_available()
     except Exception as err:
         log_exception(err)
 

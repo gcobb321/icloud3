@@ -31,6 +31,8 @@ SNAPSHOT_KEYS = {
     "apple_requests",
     "apple_failures",
     "waze_status_counts",
+    "startup_stages_ms",
+    "startup_total_ms",
 }
 
 DURATION_KEYS = {"samples", "p50", "p95", "p99", "max", "last"}
@@ -63,6 +65,8 @@ def test_empty_snapshot_shape(perf: ModuleType) -> None:
     assert snapshot["apple_failures"] == 0
     assert snapshot["waze_status_counts"] == {}
     assert snapshot["uptime_secs"] >= 0
+    assert snapshot["startup_stages_ms"] == {}
+    assert snapshot["startup_total_ms"] is None
 
     durations = snapshot["loop_duration_ms"]
     assert set(durations) == DURATION_KEYS
@@ -170,6 +174,8 @@ def test_reset_clears_every_counter(perf: ModuleType) -> None:
     counters.record_apple_request(False)
     counters.record_waze_request("error")
     counters.record_config_write_failure()
+    counters.record_startup_stage("config_load", 0.25)
+    counters.record_startup_stage("total", 1.5)
 
     counters.reset()
     snapshot = counters.snapshot()
@@ -183,6 +189,68 @@ def test_reset_clears_every_counter(perf: ModuleType) -> None:
     assert snapshot["apple_failures"] == 0
     assert snapshot["waze_status_counts"] == {}
     assert snapshot["config_write_failures"] == 0
+    assert snapshot["startup_stages_ms"] == {}
+    assert snapshot["startup_total_ms"] is None
+
+
+def test_startup_stages_are_recorded_in_milliseconds(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_startup_stage("config_load", 0.25)
+    counters.record_startup_stage("platforms", 1.0)
+
+    snapshot = counters.snapshot()
+
+    assert snapshot["startup_stages_ms"] == {
+        "config_load": 250.0,
+        "platforms": 1000.0,
+    }
+    assert snapshot["startup_total_ms"] is None
+    assert all(isinstance(value, float)
+               for value in snapshot["startup_stages_ms"].values())
+
+
+def test_startup_stage_recording_is_ordered_by_name(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_startup_stage("stage_1_2_3", 0.4)
+    counters.record_startup_stage("config_load", 0.1)
+
+    snapshot = counters.snapshot()
+
+    assert set(snapshot["startup_stages_ms"]) == {"config_load", "stage_1_2_3"}
+    assert snapshot["startup_stages_ms"]["config_load"] == 100.0
+    assert snapshot["startup_stages_ms"]["stage_1_2_3"] == 400.0
+
+
+def test_repeated_startup_stage_overwrites_the_previous_value(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_startup_stage("ha_wait", 5.0)
+    counters.record_startup_stage("ha_wait", 0.25)
+
+    snapshot = counters.snapshot()
+
+    assert snapshot["startup_stages_ms"] == {"ha_wait": 250.0}
+
+
+def test_total_stage_sets_startup_total(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_startup_stage("config_load", 0.2)
+    counters.record_startup_stage("total", 3.5)
+
+    snapshot = counters.snapshot()
+
+    assert snapshot["startup_total_ms"] == 3500.0
+    assert snapshot["startup_stages_ms"]["total"] == 3500.0
+
+    counters.record_startup_stage("total", 4.0)
+
+    assert counters.snapshot()["startup_total_ms"] == 4000.0
+
+
+def test_negative_startup_durations_are_clamped(perf: ModuleType) -> None:
+    counters = perf.PerfCounters()
+    counters.record_startup_stage("config_load", -2.0)
+
+    assert counters.snapshot()["startup_stages_ms"] == {"config_load": 0.0}
 
 
 def test_concurrent_recording_is_thread_safe(perf: ModuleType) -> None:
@@ -214,6 +282,7 @@ def test_snapshot_is_json_serializable(perf: ModuleType) -> None:
     counters.record_loop(0.009, error=True, error_message="KeyError: 'x'")
     counters.record_apple_request(True)
     counters.record_waze_request("ok")
+    counters.record_startup_stage("config_load", 0.125)
 
     encoded = json.dumps(counters.snapshot())
     decoded = json.loads(encoded)
@@ -221,3 +290,5 @@ def test_snapshot_is_json_serializable(perf: ModuleType) -> None:
     assert decoded["loop_count"] == 2
     assert decoded["error_count"] == 1
     assert decoded["last_error_message"] == "KeyError: 'x'"
+    assert decoded["startup_stages_ms"] == {"config_load": 125.0}
+    assert decoded["startup_total_ms"] is None

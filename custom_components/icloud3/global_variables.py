@@ -325,6 +325,8 @@ class GlobalVariables(object):
     was_icloud3_reloaded            = False     # Set to True in __init__ if reloading iCloud3
     reload_in_progress              = False     # A reload was requested by options/service/registry
     reload_in_progress_secs         = 0         # When reload_in_progress was set (stale flag guard)
+    startup_started_secs            = 0         # perf_counter when async_setup_entry began
+    startup_last_stage_secs         = 0         # perf_counter when the last startup stage was recorded
     icloud3_reload_requested        = False
     icloud3_reload_requested_secs   = 0         # Set to True when a reload is prpbable (enable sensor)
     mobapp_disabled_dnames          = set()     # Mobile App trackers disabled in HA
