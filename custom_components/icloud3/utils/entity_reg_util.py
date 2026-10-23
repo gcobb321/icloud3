@@ -9,6 +9,7 @@ from .utils             import (instr, is_empty, isnot_empty, dict_del,
                                 list_add, list_del, list_to_str, set_to_list, )
 from .messaging         import (log_info_msg, log_debug_msg, log_exception, log_warning_msg,
                                 log_error_msg,
+                                post_repair_issue, clear_repair_issue,
                                 _run_in_event_loop,
                                 _evlog, _log, )
 from .time_util         import (secs_to_time, time_now_secs, secs_to_yymmdd_hhmm, )
@@ -27,6 +28,10 @@ from homeassistant.helpers          import entity_registry as er, device_registr
 #    Entity State and Attributes functions
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# Devices whose rename notice is posted. Keeps the issue from being recreated on
+# every device registry update of the same device.
+_rename_repair_devicenames = set()
+
 @callback
 def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData):
     '''
@@ -49,6 +54,12 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
 
     Enabling the device is the same in reverse. Nothing is remembered between the two -
     the device registry itself is the only record of who is disabled.
+
+    When the user renames the device on the Integrations screen:
+        The iCloud3 configuration is not changed. The entities are named from the
+        configured fname and renaming them would break the user's automations. A
+        Repairs notice points at Configure > Update iCloud3 Device instead. It is
+        posted once per device and cleared when the names match again.
 
     The device_entry `disabled_by` value is what identifies who requested the change.
     This is the only reliable way to tell a user request from iCloud3 housekeeping - the
@@ -114,10 +125,12 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
         if action != "update":
             return
 
-        # Only a disabled_by change is of interest here. Any other update (name,
-        # area, identifiers, the entity_id repair, etc) is not.
-        if 'disabled_by' not in event.data.get('changes', {}):
-            log_debug_msg('Update Device Reg Handler > Ignored, disabled_by did not change')
+        changes = event.data.get('changes') or {}
+
+        # A disabled_by change is handled below. A device name change is reported
+        # only - iCloud3 does not rewrite the configuration on its own.
+        if 'disabled_by' not in changes:
+            _report_device_rename(Device, devicename, device_data, changes)
             return
 
         # It was just enabled and HA will schedule an icloud3 reload. Setting
@@ -143,6 +156,56 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
 
     except Exception as err:
         log_exception(err)
+
+#-------------------------------------------------------------------------------------------
+def _report_device_rename(Device, devicename, device_data, changes):
+    '''
+    Report a device renamed on the Integrations screen without touching the iCloud3
+    configuration. The entities keep their names; the Repairs notice tells the user
+    to run Configure > Update iCloud3 Device, which is the place a name change is
+    expected to also rename the entities and their automations.
+
+    The issue is posted once per device. Reposting it on every registry update
+    would replace it continuously and also re-add it to the alerts sensor.
+    '''
+    if 'name' not in changes and 'name_by_user' not in changes:
+        log_debug_msg('Update Device Reg Handler > Ignored, disabled_by and name did not change')
+        return
+
+    if Device is None:
+        log_debug_msg('Update Device Reg Handler > Ignored, device is not tracked by iCloud3')
+        return
+
+    issue_id = f"device_renamed_{devicename}"
+    old_name = changes.get('name_by_user') or changes.get('name')
+    new_name = device_data.name_by_user or device_data.name
+
+    if new_name == Device.fname:
+        if devicename in _rename_repair_devicenames:
+            clear_repair_issue(issue_id, Device)
+            _rename_repair_devicenames.discard(devicename)
+            log_info_msg(f'Device Registry Update > {devicename}, name matches the '
+                          f'iCloud3 name ({Device.fname}), rename notice cleared')
+        return
+
+    if devicename in _rename_repair_devicenames:
+        log_debug_msg(f'Device Registry Update > {devicename}, rename notice already posted')
+        return
+
+    log_info_msg(f'Device Registry Update > {devicename}, device renamed '
+                  f'{old_name} -> {new_name} (iCloud3 name-{Device.fname})')
+
+    post_repair_issue(
+            issue_id = issue_id,
+            alert_key = devicename,
+            title = f"{Device.fname}, HA device renamed",
+            alert_msg = ('HA\'daki cihaz adı değişti. iCloud3 entity adlarını '
+                         'güncellemek için Configure > Update iCloud3 Device '
+                         'ekranını kullanın.'),
+            severity = 'warning',
+            fix_action = None)
+
+    _rename_repair_devicenames.add(devicename)
 
 #-------------------------------------------------------------------------------------------
 async def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData):
