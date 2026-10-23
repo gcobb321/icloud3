@@ -8,7 +8,7 @@ from ..utils.messaging  import (broadcast_info_msg, format_filename,
                                 post_event, post_alert, post_internal_error, post_monitor_msg,
                                 post_greenbar_msg,
                                 refresh_event_log, log_info_msg, log_error_msg, log_warning_msg,
-                                log_exception,
+                                log_exception, log_debug_msg,
                                 _evlog, _log, )
 from ..utils.time_util  import (datetime_now, format_timer, )
 from ..utils.dist_util  import (mi_to_km, gps_distance_km, format_dist_km,)
@@ -243,7 +243,7 @@ class WazeRouteHistory(object):
             for sql in CREATE_LOCATIONS_INDEXES:
                 self._sql(sql)
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
             self.connection = None
             self.cursor = None
@@ -439,7 +439,9 @@ class WazeRouteHistory(object):
                 elif table == 'zones':
                     monitor_msg = ( f"Zone-{record[ZON_ID]} "
                                     f"({record[ZON_ZONE]})")
-            except:
+            except Exception as err:
+                log_debug_msg(Gb.devicename,
+                        f"WazeHistDB > Get Record, Table-{table}, NoRecord > {err}")
                 monitor_msg = 'NoRecord'
 
             if self.wazehist_recalculate_time_dist_running_flag is False:
@@ -450,7 +452,7 @@ class WazeRouteHistory(object):
                                     f"{monitor_msg}")
             return record
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
             return []
 
@@ -479,7 +481,7 @@ class WazeRouteHistory(object):
 
             return records
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
             return []
 
@@ -522,7 +524,7 @@ class WazeRouteHistory(object):
 
             return (0, 0, 0)
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
             return (0, 0, 0)
 
@@ -548,7 +550,7 @@ class WazeRouteHistory(object):
 
             return location_id
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
             return -1
 
@@ -599,7 +601,7 @@ class WazeRouteHistory(object):
                                     f"Dist-{record[LOC_DIST]}, "
                                     f"Cnt-{cnt}")
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
 
 #--------------------------------------------------------------------
@@ -745,7 +747,7 @@ class WazeRouteHistory(object):
 
                 self._update_sensor_ic3_wazehist_track(Zone.latitude5, Zone.longitude5)
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -764,7 +766,8 @@ class WazeRouteHistory(object):
                 self.WazeRouteCalc = WazeRouteCalculator(Gb.Waze.waze_region, Gb.Waze.waze_realtime)
 
             self.wazehist_recalculate_time_dist(all_zones_flag=True)
-        except:
+        except Exception as err:
+            log_exception(err)
             post_event("Waze Hist > Error encountered recalculating time/distance values")
 
 
@@ -827,7 +830,7 @@ class WazeRouteHistory(object):
                 if self.wazehist_recalculate_time_dist_abort_flag:
                     break
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
 
         self.compress_wazehist_database()
@@ -925,7 +928,7 @@ class WazeRouteHistory(object):
                     post_greenbar_msg(alert_message)
                     refresh_event_log()
 
-            except:
+            except Exception:
                 post_internal_error(traceback.format_exc)
 
             if self.wazehist_recalculate_time_dist_abort_flag:
@@ -939,7 +942,7 @@ class WazeRouteHistory(object):
             #** 5/15/2022 Delete all records with invalid times or distances
             self._delete_record('locations', 'time < 0 or distance < 0')
 
-        except:
+        except Exception:
             post_internal_error(traceback.format_exc)
 
         running_time = time.perf_counter() - start_time

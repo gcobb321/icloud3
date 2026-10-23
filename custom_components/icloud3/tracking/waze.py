@@ -11,7 +11,8 @@ from ..const            import (WAZE_USED, WAZE_NOT_USED, WAZE_PAUSED, WAZE_OUT_
                                 LATITUDE, LONGITUDE, ZONE, )
 
 from ..utils.utils      import (instr, format_gps, )
-from ..utils.messaging  import (post_event, post_alert, post_internal_error, log_info_msg, _evlog, _log, )
+from ..utils.messaging  import (post_event, post_alert, post_internal_error,
+                                log_info_msg, log_debug_msg, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer,  )
 from ..utils.dist_util  import (km_to_um, )
 from ..utils.backoff    import waze_pause_secs
@@ -249,8 +250,9 @@ class Waze(object):
                                                         route_time,
                                                         route_dist_km)
                             wazehist_save_msg = f"Saved"
-                    except:
-                        pass
+                    except Exception as err:
+                        log_debug_msg(Device.devicename,
+                                f"Waze History > add_location_record failed > {err}")
 
                 if not is_valid_route(route_time, route_dist_km):
                     self._determine_next_waze_retry()
@@ -301,6 +303,7 @@ class Waze(object):
             return FromZone.waze_results
 
         except Exception as err:
+            log_debug_msg(Device.devicename, f"Waze Route > no results > {err}")
             self._set_waze_not_available_error(err)
 
             return (WAZE_NO_DATA, 0, 0, 0)
@@ -435,7 +438,7 @@ class Waze(object):
                     retry_waited_secs = self._wait_before_waze_retry(retry_cnt, retry_waited_secs)
 
         except Exception as err:
-            # log_exception(err)
+            log_debug_msg(Device.devicename, f"Waze Route > no results > {err}")
             self._set_waze_not_available_error(err)
 
         self._set_waze_not_available_error(f"No data returned")

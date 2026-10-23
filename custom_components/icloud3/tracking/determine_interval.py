@@ -427,8 +427,8 @@ def determine_interval(Device, FromZone):
                         interval_str     = _Device.FromZone_TrackFrom.interval_str
                         interval_method  = _Device.FromZone_TrackFrom.interval_method
 
-        except:
-            pass
+        except Exception as err:
+            log_debug_msg(Device.devicename, f"Nearby Devices > interval update failed > {err}")
 
         # Left a one, relocate non-mobapp devices that are nearby devices in 2-mins
         if wasin_zone and isnotin_zone:
@@ -1461,8 +1461,7 @@ def set_dist_to_devices(post_event_msg=False):
                     post_event(devicename_from, event_msg)
 
             except Exception as err:
-                # log_exception(err)
-                pass
+                log_debug_msg(devicename_from, f"DistTo Devices > error occurred > {err}")
 
 #...............................................................................
 def format_dist_to_devices_msg(Device, max_dist_to_m=HIGH_INTEGER, time=False, age=True):
