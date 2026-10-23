@@ -270,7 +270,7 @@ def form_delete_apple_acct(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            IMPORT APPLE DEVICES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_import_apple_devices(self, user_input=None, aa_username=None):
+def form_import_apple_devices(self, user_input=None, _aa_username=None):
 
     self.actions_list = IMPORT_APPLE_DEVICES.copy()
 

@@ -52,7 +52,7 @@ EVENT_DESCRIPTION = {EVENT_ENTER: "entering", EVENT_LEAVE: "leaving"}
 
 
 #-------------------------------------------------------------------------------------------
-async def async_setup_scanner(hass: HomeAssistant, config, see, discovery_info=None):
+async def async_setup_scanner(hass: HomeAssistant, config, _see, _discovery_info=None):
     """Old way of setting up the iCloud tracker with platform: icloud3 statement."""
 
     Gb.ha_config_platform_stmt = True if config.get('platform') == 'icloud3' else False

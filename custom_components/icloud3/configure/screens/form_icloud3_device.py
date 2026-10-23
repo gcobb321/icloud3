@@ -414,7 +414,7 @@ def form_change_device_order(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #              REVIEW INACTIVE DEVICES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_review_inactive_devices(self, start_cnt=None):
+def form_review_inactive_devices(self, _start_cnt=None):
 
     self.actions_list = REVIEW_INACTIVE_DEVICES.copy()
     if self.menu_item == 'device_list':

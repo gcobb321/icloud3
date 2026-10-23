@@ -132,8 +132,6 @@ def read_icloud3_restore_state_file():
         log_exception(err)
         return False
 
-    return False
-
 #--------------------------------------------------------------------
 def write_icloud3_restore_state_file():
     '''
@@ -205,7 +203,7 @@ def update_restore_state_apple_accts_data():
 
 #--------------------------------------------------------------------
 @callback
-async def _async_commit_icloud3_restore_state_file_changes(callback_datetime_struct):
+async def _async_commit_icloud3_restore_state_file_changes(_callback_datetime_struct):
     global _restore_state_unsub
 
     try:

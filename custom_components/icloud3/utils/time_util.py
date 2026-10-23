@@ -122,7 +122,7 @@ def secs_to_time(secs_utc):
     return time_to_12hrtime(time_local(secs_utc))
 
 #--------------------------------------------------------------------
-def secs_to_datetime(secs_utc, format_ymd=False):
+def secs_to_datetime(secs_utc, _format_ymd=False):
     ''' secs --> 2024-03-16 12:55:03 '''
 
     return datetime_local(secs_utc)

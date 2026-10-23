@@ -126,7 +126,7 @@ class InternetConnection_ErrorHandler:
         self.cancel_status_check_timer_fct = None
 
 #----------------------------------------------------------------------------
-    def check_internet_connection(self, check_time=None):
+    def check_internet_connection(self, _check_time=None):
         '''
         See if the intenet is back up.
         If it is still down:

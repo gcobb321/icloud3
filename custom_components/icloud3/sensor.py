@@ -958,7 +958,7 @@ class DeviceSensor_Base():
         return self._get_restore_or_default_value(sensor)
 
 #-------------------------------------------------------------------------------------------
-    def _get_sensor_value_um(self, sensor, value_and_um=True):
+    def _get_sensor_value_um(self, sensor, _value_and_um=True):
         '''
             Get the sensor value and determine if it has a value and unit_of_measurement.
 

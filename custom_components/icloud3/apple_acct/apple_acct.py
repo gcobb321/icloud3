@@ -884,8 +884,6 @@ class AppleAcctManager(object):
         finally:
             self.raise_api_errors = False
 
-        return False
-
 #----------------------------------------------------------------------------
     def authenticate_with_password_srp(self, username=None, password=None):
         '''
@@ -1016,9 +1014,6 @@ class AppleAcctManager(object):
         data.update({"rememberMe": True, "trustTokens": trust_tokens})
 
         return self._srp_icloud_io('complete', username, data, params)
-
-        self.response_code_pw = self.response_code
-        self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
 
 #............................................................................
     def _srp_icloud_io(self, url_suffix, username, data, params=None):

@@ -493,7 +493,7 @@ def _handle_global_action(global_action, action_option):
         return
 
 #--------------------------------------------------------------------
-def handle_action_log_level(action_option, change_conf_log_level=True):
+def handle_action_log_level(action_option, _change_conf_log_level=True):
 
     # Show/Hide Tracking Monitors
     if instr(action_option, 'monitor'):

@@ -517,8 +517,6 @@ def is_running_in_event_loop():
     except: # RuntimeError:
         return False
 
-    return False
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #            CONFIG_FLOW FUNCTIONS

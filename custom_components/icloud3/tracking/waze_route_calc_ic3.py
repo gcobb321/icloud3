@@ -182,7 +182,7 @@ class WazeRouteCalculator(object):
         return None
 
 #--------------------------------------------------------------------
-    def _add_up_route(self, results, stop_at_bounds=False):
+    def _add_up_route(self, results, _stop_at_bounds=False):
         """Calculate route time and distance."""
         try:
             time = 0

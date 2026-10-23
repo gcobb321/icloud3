@@ -31,7 +31,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT, CIRCLE_STAR2
                                 LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_NAME, LAST_ZONE_FNAME, LAST_ZONE_DATETIME,
                                 BATTERY_SOURCE, BATTERY, BATTERY_LEVEL, BATTERY_STATUS, BATTERY_LEVEL_LOW,
                                 BATTERY_ICLOUD, BATTERY_MOBAPP, BATTERY_LATEST,
-                                BATTERY_STATUS_CODES, BATTERY_STATUS_FNAME, BATTERY_UPDATE_TIME,
+                                BATTERY_STATUS_CODES, BATTERY_UPDATE_TIME,
                                 ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE, HOME_DISTANCE, MAX_DISTANCE,
                                 CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD,
                                 TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME, DIR_OF_TRAVEL,
@@ -943,7 +943,7 @@ class iCloud3_Device(TrackerEntity):
     def is_statzone_name(self, zone_name):
         return zone_name in Gb.StatZones_by_zone
 
-    def set_fname_alert(self, alert_char):
+    def set_fname_alert(self, _alert_char):
         return
 
     @property
@@ -1059,7 +1059,6 @@ class iCloud3_Device(TrackerEntity):
     @property
     def format_battery_status(self):
         return self.dev_data_battery_status
-        return f"{BATTERY_STATUS_FNAME.get(self.dev_data_battery_status, self.dev_data_battery_status.title())}"
 
     @property
     def format_battery_status_source(self):
@@ -2627,8 +2626,6 @@ class iCloud3_Device(TrackerEntity):
             if self.loc_data_zone in STATE_TO_ZONE_BASE: return STATE_TO_ZONE_BASE[self.loc_data_zone]
             if Gb.device_tracker_state_source == 'ic3_evlog': return Zone.dname
             return Zone.fname
-
-        return None
 
 #----------------------------------------------------------------------------
     def set_evlog_fname_suffix_char(self, char, add_char=False):

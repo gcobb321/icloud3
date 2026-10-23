@@ -199,7 +199,7 @@ This is run when:
     - HA is being restarted and the EVENT_HOMEASSISTANT_STARTED is fired
     - iCloud3 is being reloaded at the beginning of the async_setup_entry function
 '''
-async def async_start_icloud3(dummy_parameter):
+async def async_start_icloud3(_dummy_parameter):
     startup_test_code()
 
     if Gb.was_icloud3_reloaded:

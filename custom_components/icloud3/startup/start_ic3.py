@@ -211,7 +211,7 @@ def handle_config_parms_update():
 #   UPDATE LOVELACE RESOURCES FOR EVENT LOG CARD
 #
 #------------------------------------------------------------------------------
-async def update_lovelace_resource_event_log_js_entry(new_evlog_dir=None, silent=False):
+async def update_lovelace_resource_event_log_js_entry(_new_evlog_dir=None, silent=False):
     '''
     Check the lovelace resource for an icloud3_event-log-card.js entry.
     If found, it is already set up and there is nothing to do.
@@ -516,7 +516,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
 #   startup is complete.
 #
 #------------------------------------------------------------------------------
-def ha_startup_completed(dummy_parameter):
+def ha_startup_completed(_dummy_parameter):
 
     # HA may have not set up the notify service before iC3 starts. If so, the mobile_app
     # Notify entity was not setup either. Do it now.
@@ -525,13 +525,13 @@ def ha_startup_completed(dummy_parameter):
     mobapp_interface.setup_notify_service_name_for_mobapp_devices()
 
 #------------------------------------------------------------------------------
-def ha_stopping(dummy_parameter):
+def ha_stopping(_dummy_parameter):
     post_event("HA Shutting Down")
     Gb.EvLog.display_user_message("HA Shutting Down")
     close_ic3log_file()
 
 #------------------------------------------------------------------------------
-def ha_restart(dummp_parameter):
+def ha_restart(_dummy_parameter):
     Gb.hass.services.call("homeassistant", "restart")
 
 #------------------------------------------------------------------------------
