@@ -3,7 +3,7 @@ from ..global_variables     import GlobalVariables as Gb
 from ..const                import (CRLF_DOT, NL3, NL4, NL3D, NL3_DATA, NL3UD, )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
 from .messaging             import (log_exception, _evlog, _log, log_debug_msg, log_warning_msg,
-                                    log_data_unfiltered, write_ic3log_recd, )
+                                    write_ic3log_recd, )
 
 from collections            import OrderedDict
 import asyncio
@@ -34,11 +34,29 @@ _JSON_WRITE_LOCK = threading.Lock()
 def _save_json_atomic(filename, data):
     with _JSON_WRITE_LOCK:
         try:
-            json_helpers.save_json(filename, data, atomic_writes=True)
+            json_helpers.save_json(filename, data, atomic_writes=True, private=True)
         except TypeError:
-            # Older HA releases do not accept atomic_writes. Keep saving rather
-            # than losing every configuration change.
-            json_helpers.save_json(filename, data)
+            # Older HA releases do not accept private/atomic_writes. Keep saving
+            # rather than losing every configuration change.
+            try:
+                json_helpers.save_json(filename, data, atomic_writes=True)
+            except TypeError:
+                json_helpers.save_json(filename, data)
+
+        _set_private_permissions(filename)
+
+
+def _set_private_permissions(filename):
+    '''
+    Restrict a written file to the owning user (0600). Failure is not fatal:
+    the data is already on disk, so only the permission change is reported.
+    '''
+    try:
+        os.chmod(filename, 0o600)
+    except FileNotFoundError:
+        pass
+    except OSError as err:
+        _LOGGER.warning(f"Could not restrict permissions on {filename}: {err}")
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -88,8 +106,9 @@ def read_json_file(filename, async_msg=False):
         log_exception(err)
         data = {}
 
-    _data = {str(data)[:100]}
-    log_data_unfiltered(f"{filename_msg}", _data)
+    log_debug_msg(f"{filename_msg}{NL3_DATA}Read-"
+                  f"{type(data).__name__}, "
+                  f"Items-{len(data) if isinstance(data, (dict, list)) else 0}")
 
     return data
 
@@ -137,6 +156,9 @@ def read_file(filename):
     with open(filename, 'r') as f:
         file_data = f.read()
 
+    log_debug_msg(f"READ FILE--{filename}{NL3_DATA}Read-"
+                  f"{type(file_data).__name__}, Chars-{len(file_data)}")
+
     return file_data
 
 #--------------------------------------------------------------------
@@ -151,6 +173,7 @@ def write_file(filename, data):
         with open(filename, 'w') as f:
             f.write(data)
 
+        _set_private_permissions(filename)
         return True
 
     except Exception as err:

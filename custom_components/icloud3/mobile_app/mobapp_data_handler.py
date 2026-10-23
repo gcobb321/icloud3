@@ -623,7 +623,7 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     Device.mobapp_data_altitude          = device_trkr_attrs.get(ALTITUDE, 0)
 
     _hdr = f"{Device.devicename}, MobApp Data, {Device.mobapp_data_trigger}, Response, "
-    log_data_unfiltered(_hdr, device_trkr_attrs)
+    log_debug_msg(_hdr, device_trkr_attrs)
 
     if Device.FromZone_Home:
         home_dist = format_dist_km(Device.FromZone_Home.distance_km_mobapp)

@@ -54,6 +54,14 @@ def pure() -> ModuleType:
     )
 
 
+@pytest.fixture(scope="session")
+def redact() -> ModuleType:
+    return load_module(
+        "icloud3_redact",
+        "custom_components/icloud3/utils/redact.py",
+    )
+
+
 @pytest.fixture()
 def diagnostics_module() -> Iterator[ModuleType]:
     """Load diagnostics.py with a minimal package shim.

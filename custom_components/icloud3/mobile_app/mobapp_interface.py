@@ -117,7 +117,7 @@ def get_entity_registry_mobile_app_devices():
                 device_reg_data = device_entries.get(device_id)
 
                 log_title = (f"{NL3D}MobApp device_registry entry - <{mobapp_dname}>)")
-                log_data_unfiltered(log_title, str(device_reg_data)) #, is_log_level_rawdata=True)
+                log_debug_msg(log_title, str(device_reg_data)) #, is_log_level_rawdata=True)
 
                 raw_model = device_reg_data.model
 

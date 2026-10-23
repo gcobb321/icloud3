@@ -31,7 +31,7 @@ from ..const            import (ICLOUD3, DOMAIN,
                                 NEXT_UPDATE_TIME, INTERVAL,
                                 ICLOUD, MOBAPP,
                                 CONF_APPLE_ACCOUNT,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
+                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_PASSWORD, CONF_USERNAME,
                                 CONF_DEVICES, CONF_APPLE_ACCOUNTS,
                                 LATITUDE,  LONGITUDE, LOCATION_SOURCE,
                                 ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
@@ -47,6 +47,7 @@ from ..const            import (ICLOUD3, DOMAIN,
                                 )
 from ..const_more_info      import more_info_text
 from .utils                 import (obscure_field, instr, is_empty, isnot_empty, username_id, )
+from .redact                import redact_text, redact_value
 
 
 import homeassistant.util.dt   as dt_util
@@ -673,7 +674,7 @@ def open_ic3log_file(new_log_file=False):
             Gb.iC3Logger.addHandler(handler)
 
         if isnot_empty(Gb.conf_general):
-            Gb.iC3Logger.propagate = (Gb.conf_general[CONF_LOG_LEVEL] == 'debug-ha')
+            Gb.iC3Logger.propagate = False
 
         if is_empty(Gb.conf_general):
             write_ic3log_recd(f"Loading {Gb.icloud3_version_msg}")
@@ -838,12 +839,15 @@ def log_info_msg_HA(msg):
     Gb.HALogger.info(msg)
 
 def log_warning_msg_HA(msg):
+    _install_halogger_redact_filter()
     Gb.HALogger.warning(msg)
 
 def log_error_msg_HA(msg):
+    _install_halogger_redact_filter()
     Gb.HALogger.error(msg)
 
 def log_exception_HA(err):
+    _install_halogger_redact_filter()
     Gb.HALogger.exception(err)
 
 #--------------------------------------------------------------------
@@ -859,6 +863,7 @@ def log_info_msg(module_name, log_msg='+'):
 def log_warning_msg(module_name, log_msg='+'):
 
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
+    _install_halogger_redact_filter()
     Gb.HALogger.warning(log_msg)
 
     log_msg = format_msg_line(log_msg)
@@ -868,6 +873,7 @@ def log_warning_msg(module_name, log_msg='+'):
 def log_error_msg(module_name, log_msg='+'):
 
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
+    _install_halogger_redact_filter()
     Gb.HALogger.error(log_msg)
 
     log_msg = format_msg_line(log_msg)
@@ -881,6 +887,7 @@ def log_exception(err):
     except:
         write_ic3log_recd(err)
 
+    _install_halogger_redact_filter()
     Gb.HALogger.exception(err)
 
 #--------------------------------------------------------------------
@@ -1109,12 +1116,22 @@ def _resolve_module_name_log_msg(module_name, log_msg):
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def log_data_unfiltered(_hdr, rawdata, data_source=None, filter_id=None):
+    if Gb.is_log_level_rawdata is False and Gb.is_log_level_debug is False:
+        return
+
+    _hdr = redact_text(str(_hdr))
+
+    if Gb.is_log_level_rawdata is False:
+        log_debug_msg(f"{_hdr} > Raw data suppressed, log level is not rawdata")
+        return
+
     try:
         rawdata_copy = rawdata['raw'].copy() if 'raw' in rawdata else rawdata.copy()
         rawdata_copy = _set_validpw_invalidpw_text(rawdata_copy)
+        rawdata_copy = redact_value(rawdata_copy)
 
-    except:
-        log_info_msg(f"{_hdr.upper()}{NL3_DATA}{rawdata}")
+    except Exception:
+        log_info_msg(f"{_hdr.upper()}{NL3_DATA}{redact_text(str(rawdata))}")
         return
 
     devices_data = {}
@@ -1677,14 +1694,53 @@ class LoggerFilter(logging.Filter):
     '''
     @staticmethod
     def filter(record):
-        if Gb.disable_upw_filter:
+        try:
+            message = record.getMessage()
+
+            if Gb.disable_upw_filter is False:
+                for filtered_item, filtered_text in Gb.upw_filter_items.items():
+                    if instr(message, filtered_item):
+                        message = message.replace(filtered_item, filtered_text)
+
+            record.msg  = redact_text(message)
+            record.args = []
+
+        except Exception:
             return True
 
-        message = record.msg
-        for filtered_item, filtered_text in Gb.upw_filter_items.items():
-            if instr(message, filtered_item):
-                message = message.replace(filtered_item, filtered_text)
-
-        record.msg  = message
-        record.args = []
         return True
+
+
+#--------------------------------------------------------------------
+class HALoggerRedactFilter(logging.Filter):
+    '''
+    Replace secrets and coordinates before a record reaches the HA log
+    '''
+    def filter(self, record):
+        try:
+            message = record.getMessage()
+
+            if record.exc_info:
+                record.exc_text = redact_text(
+                    logging.Formatter().formatException(record.exc_info))
+                record.exc_info = None
+
+            record.msg  = redact_text(message)
+            record.args = ()
+
+        except Exception:
+            return True
+
+        return True
+
+
+def _install_halogger_redact_filter():
+    halogger = Gb.HALogger
+    if halogger is None:
+        return
+    if getattr(halogger, 'ic3_redact_filter', False):
+        return
+
+    halogger.addFilter(HALoggerRedactFilter())
+    halogger.ic3_redact_filter = True
+
