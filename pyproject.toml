@@ -11,6 +11,7 @@ select = ["E9", "F63", "F7", "F82", "F821"]
 testpaths = ["tests"]
 addopts = "-q"
 asyncio_mode = "auto"
+pythonpath = ["."]
 
 [tool.mypy]
 strict = true
@@ -22,6 +23,10 @@ files = [
     "custom_components/icloud3/startup/mobapp_resolver.py",
 ]
 ignore_missing_imports = true
+# Only type-check the listed modules. Following imports pulls the whole HA
+# integration into mypy and produces thousands of legacy errors that are not
+# part of this gate.
+follow_imports = "skip"
 
 [tool.coverage.run]
 # pure.py is loaded by path from the tests, so coverage cannot resolve it as a
