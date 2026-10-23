@@ -74,7 +74,7 @@ def test_timer_teardown_does_not_run_on_the_event_loop() -> None:
 
 def test_stale_mobapp_mapping_has_a_repair_path() -> None:
     handler = source_of("mobile_app/mobapp_data_handler.py")
-    setup = source_of("startup/start_ic3.py")
+    setup = source_of("startup/start_ic3_apple.py")
     assert "clear_mobapp_mapping" in handler
     assert "clear_mobapp_mapping" in setup
     assert "register_repair_fix_handler('clear_mobapp_mapping'" in setup

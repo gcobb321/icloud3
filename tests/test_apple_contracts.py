@@ -281,7 +281,7 @@ def test_create_AADeviceData_objects_isolates_each_device() -> None:
 
 
 def test_start_ic3_reads_fmlyShare_safely() -> None:
-    tree = tree_of("startup/start_ic3.py")
+    tree = tree_of("startup/start_ic3_apple.py")
 
     for node in ast.walk(tree):
         if (isinstance(node, ast.Subscript)
@@ -291,7 +291,7 @@ def test_start_ic3_reads_fmlyShare_safely() -> None:
                 "device_data['fmlyShare'] raises KeyError for a device that "
                 "omits the field")
 
-    assert ".get('fmlyShare'" in source_of("startup/start_ic3.py")
+    assert ".get('fmlyShare'" in source_of("startup/start_ic3_apple.py")
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
