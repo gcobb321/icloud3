@@ -1,4 +1,4 @@
-"""Contracts for error handling in the data and network paths.
+"""Contracts for error handling in the data, network and configuration paths.
 
 An exception handler that does nothing hides a failure: the caller sees an
 empty result and reports "no problems" instead of "could not read". These
@@ -73,6 +73,20 @@ SOURCES = (
     "utils/file_io.py",
     "utils/time_util.py",
     "utils/utils.py",
+    # The Configure/Options UI. These are the modules under configure/ that
+    # declare exception handlers; the form and apply paths run inside the
+    # config flow, where a swallowed failure shows up as an empty selection
+    # list or a form that saves nothing.
+    "configure/dashboard_builder.py",
+    "configure/selection_lists.py",
+    "configure/utils_cf.py",
+    "configure/screens/form_config_flow.py",
+    "configure/screens/form_parameters.py",
+    "configure/screens/step_icloud3_device.py",
+    "configure/screens/step_parameters.py",
+    "configure/screens/step_reauth.py",
+    "configure/screens/step_sensors.py",
+    "configure/screens/step_tools.py",
 )
 
 # Handlers that stay silent on purpose. Each entry is "module::function" and

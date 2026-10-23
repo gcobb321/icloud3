@@ -613,7 +613,8 @@ class OptionsFlow_iCloud3Device_Steps:
                 if (Gb.conf_devices[self.conf_device_idx][pname] != pvalue
                         and pname not in DEVICE_NON_TRACKING_FIELDS):
                     return False
-        except:
+        except Exception as err:
+            log_debug_msg(f"IC3 Device > Field update check failed ({err})")
             return False
 
         return True
@@ -830,8 +831,7 @@ class OptionsFlow_iCloud3Device_Steps:
                 try:
                     Sensor.update_entity_attribute(new_fname=self.conf_device[CONF_FNAME])
                 except  Exception as err:
-                    # log_exception(err)
-                    pass
+                    log_exception(err)
 
         # devicename was changed - delete device_tracker and all sensors for
         # devicename and add them for new_devicename

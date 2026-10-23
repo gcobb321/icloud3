@@ -876,7 +876,8 @@ def _dashboard_layout_views(dbname):
 
     try:
         return Gb.hass.data[LOVELACE_DATA].dashboards[dbname]._data[CONFIG][VIEWS]
-    except:
+    except Exception as err:
+        log_debug_msg(f"Dashboard-{dbname} > View layout not loaded from HA ({err})")
         return {}
 
 #-------------------------------------------------------------------------------------------

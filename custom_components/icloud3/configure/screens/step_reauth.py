@@ -579,8 +579,7 @@ class OptionsFlow_Reauth_Steps:
                     return
 
         except Exception as err:
-            pass
-            # log_exception(err)
+            log_exception(err)
 
 #------------------------------------------------------------------------------
     async def check_terms_of_use(self, AppleAcct, action_item, user_input):

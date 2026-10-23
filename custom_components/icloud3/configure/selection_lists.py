@@ -650,7 +650,7 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
                         for _conf_device in Gb.conf_devices}
 
     except Exception as err:
-        # log_exception(err)
+        log_debug_msg(f"Mobile App device selection > ScanFor items not built ({err})")
         scan_for_mobapp_devices = {}
 
     if devices_available == {}:
