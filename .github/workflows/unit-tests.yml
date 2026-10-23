@@ -44,3 +44,19 @@ jobs:
         # release that does not ship that dependency.
         continue-on-error: true
         run: pip-audit -r requirements_test.txt
+
+  ha-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install HA test harness
+        run: |
+          pip install pytest pytest-asyncio pytest-homeassistant-custom-component
+          pip install srp fido2 curl_cffi
+      - name: Import and config-entry migration
+        run: pytest -q tests_ha

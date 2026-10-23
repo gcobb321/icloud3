@@ -17,7 +17,6 @@ import json
 # from homeassistant.components import ios
 # from homeassistant.components.ios import notify
 from homeassistant.util             import slugify
-from homeassistant.components.mobile_app import notify as mobile_app_notify
 from homeassistant.components.notify import (
     ATTR_DATA,
     ATTR_MESSAGE,
