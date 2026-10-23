@@ -43,6 +43,11 @@ WAZE_STATUS_FNAME ={WAZE_USED: 'Used',
                     WAZE_UNDER_MIN: '<1km',
                     WAZE_OVER_MAX: '>100km'}
 
+# A 0-min/0-km answer is not a route. Waze returns it for an unroutable trip
+# instead of an error, and using it would report the device as being at the zone.
+def is_valid_route(route_time, route_dist_km):
+    return route_time > 0 and route_dist_km > 0
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class Waze(object):
     def __init__(self, is_waze_dist_method_used, waze_min_distance, waze_max_distance,
@@ -240,8 +245,9 @@ class Waze(object):
                     except:
                         pass
 
-                if route_dist_km == 0:
-                    route_time = 0
+                if not is_valid_route(route_time, route_dist_km):
+                    self._determine_next_waze_retry()
+                    return (WAZE_NO_DATA, 0, 0, 0)
 
                 # Get distance moved since last update
                 if Device.loc_data_dist_moved_km < .5:
@@ -408,6 +414,9 @@ class Waze(object):
 
                     route_time    = round(route_time, 2)
                     route_dist_km = route_dist_km
+                    if not is_valid_route(route_time, route_dist_km):
+                        return (WAZE_NO_DATA, 0, 0)
+
                     self._set_waze_cache(route_gps, route_time, route_dist_km)
 
                     self.internet_error_displayed = False
