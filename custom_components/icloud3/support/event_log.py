@@ -76,6 +76,31 @@ MONITORED_DEVICE_EVENT_FILTERS = [
     'Old',
 ]
 
+class FilteredEvLogCache:
+    '''
+    Bounded result cache for the formatted Event Log display string. The key
+    carries everything the string is derived from, so a hit cannot be stale.
+    '''
+
+    def __init__(self, max_entries=2):
+        self.max_entries = max_entries
+        self.entries     = {}
+
+    def get(self, key):
+        return self.entries.get(key)
+
+    def set(self, key, value):
+        self.entries.pop(key, None)
+        self.entries[key] = value
+        while len(self.entries) > self.max_entries:
+            self.entries.pop(next(iter(self.entries)))
+
+    def clear(self):
+        self.entries.clear()
+
+    def __len__(self):
+        return len(self.entries)
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class EventLog(object):
     def __init__(self):
@@ -83,6 +108,7 @@ class EventLog(object):
         self.initialize()
 
     def initialize(self):
+        self._filtered_cache         = FilteredEvLogCache(2)
         self.display_text_as         = {}
         self.event_recds             = []   # Device event recds
         self.startup_event_save_recd_flag = True
@@ -332,6 +358,7 @@ class EventLog(object):
                     for idx in range(0, 8):
                         if self.event_recds[idx][ELR_TEXT].startswith(EVLOG_UPDATE_START):
                             self.event_recds[idx].pop()
+                            self._filtered_cache.clear()
                             return
                         if self.is_monitor_recd(self.event_recds[idx]) is False:
                             break
@@ -557,6 +584,7 @@ class EventLog(object):
             self.user_message_alert_flag = True
 
         self.user_message = user_message
+        self._filtered_cache.clear()
         self.evlog_attrs['logs'] = self._filtered_evlog_recds(self.devicename, HIGH_INTEGER)
         if ('Setup' in self.fnames_by_devicename
                 or is_empty(self.fnames_by_devicename)):
@@ -606,6 +634,8 @@ class EventLog(object):
     def _add_recd_to_event_recds(self, event_recd):
         """Add the event recd into the event table"""
 
+        self._filtered_cache.clear()
+
         if self.event_recds is None:
             self.event_recds = CONTROL_RECD
 
@@ -643,6 +673,7 @@ class EventLog(object):
                 self.startup_event_recds.clear()
             else:
                 self.startup_event_recds = []
+            self._filtered_cache.clear()
 
         if Device:
             if event_text.startswith(EVLOG_UPDATE_END):
@@ -665,6 +696,7 @@ class EventLog(object):
         if not isinstance(self.startup_event_recds, list):
             self.startup_event_recds = []
         self.startup_event_recds.insert(0, event_recd)
+        self._filtered_cache.clear()
 
 #------------------------------------------------------
     def _shrink_event_recds(self, shrink_cnt):
@@ -681,6 +713,7 @@ class EventLog(object):
             if Gb.Devices == []:
                 return
 
+            self._filtered_cache.clear()
             keep_nonmonitor_recd_pct = .40
 
             delete_device_recd_cnt = shrink_cnt * keep_nonmonitor_recd_pct
@@ -744,6 +777,7 @@ class EventLog(object):
             return
 
         self.greenbar_alert_msg = ''
+        self._filtered_cache.clear()
         self.display_user_message('', clear_greenbar_msg=True)
 
 #------------------------------------------------------
@@ -755,6 +789,12 @@ class EventLog(object):
 
         if devicename == '':
             devicename = self.devicename
+
+        cache_key = self._filtered_evlog_recds_cache_key(devicename, max_recds)
+        filtered_evlog_recds = self._filtered_cache.get(cache_key)
+        if filtered_evlog_recds is not None:
+            return filtered_evlog_recds
+
         time_text_recds = self._extract_filtered_evlog_recds(devicename)
 
         if Gb.is_gps_lat_long_displayed is False:
@@ -780,7 +820,31 @@ class EventLog(object):
         if Gb.is_evlog_trk_monitors_displayed:
             time_text_recds_str = time_text_recds_str.replace(EVLOG_MONITOR, EVLOG_BLUE)
 
+        if self._filtered_evlog_recds_cache_key(devicename, max_recds) == cache_key:
+            self._filtered_cache.set(cache_key, time_text_recds_str)
+
         return time_text_recds_str
+
+#--------------------------------------------------------------------
+    def _filtered_evlog_recds_cache_key(self, devicename, max_recds):
+        '''
+        Everything the formatted display string is derived from. A change to any
+        element of the key produces a different string, so a cache hit is never
+        out of date.
+        '''
+        Device = Gb.Devices_by_devicename.get(devicename)
+        away_time_zone_offset = getattr(Device, 'away_time_zone_offset', 0)
+        startup_recd_cnt = len(self.startup_event_recds) \
+                                if isinstance(self.startup_event_recds, list) else 0
+
+        return (devicename, max_recds, len(self.event_recds),
+                self.greenbar_alert_msg,
+                Gb.is_gps_lat_long_displayed,
+                Gb.is_evlog_trk_monitors_displayed,
+                Gb.is_evlog_startup_log_displayed,
+                self.devicename,
+                startup_recd_cnt,
+                away_time_zone_offset)
 
 #--------------------------------------------------------------------
     def _extract_filtered_evlog_recds(self, devicename):

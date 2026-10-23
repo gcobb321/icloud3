@@ -7,7 +7,8 @@ from ..utils.utils      import (list_to_str, zone_dname,)
 from ..utils.messaging  import (broadcast_info_msg, format_filename,
                                 post_event, post_alert, post_internal_error, post_monitor_msg,
                                 post_greenbar_msg,
-                                refresh_event_log, log_info_msg, log_error_msg, log_exception,
+                                refresh_event_log, log_info_msg, log_error_msg, log_warning_msg,
+                                log_exception,
                                 _evlog, _log, )
 from ..utils.time_util  import (datetime_now, format_timer, )
 from ..utils.dist_util  import (mi_to_km, gps_distance_km, format_dist_km,)
@@ -119,6 +120,15 @@ SQL_PARAMETER_LIMIT = 900
 # SQL statements that read data and must not be committed
 SQL_READ_STATEMENTS = ('SELECT', 'PRAGMA')
 
+# Connection level settings that cut the per-statement write cost. They are
+# applied once per connection; a failure is logged but never closes the database.
+SQL_PRAGMAS = (
+    'PRAGMA journal_mode=WAL',
+    'PRAGMA synchronous=NORMAL',
+    'PRAGMA busy_timeout=5000',
+    'PRAGMA temp_store=MEMORY',
+)
+
 GET_LOCATIONS_TABLE_RECD_COUNT = '''
     SELECT count(*) FROM locations;
     '''
@@ -226,6 +236,7 @@ class WazeRouteHistory(object):
             with self.lock:
                 self.connection = sqlite3.connect(self.wazehist_database, check_same_thread=False)
                 self.cursor     = self.connection.cursor()
+                self._apply_sql_pragmas()
 
             self._sql(CREATE_ZONES_TABLE)
             self._sql(CREATE_LOCATIONS_TABLE)
@@ -238,6 +249,21 @@ class WazeRouteHistory(object):
             self.cursor = None
 
         return
+
+#--------------------------------------------------------------------
+    def _apply_sql_pragmas(self):
+        '''
+        Apply the connection level performance settings. Called while the lock is
+        held by open_waze_history_database, so the cursor is used directly
+        (self._sql would deadlock on the same lock).
+        '''
+
+        for sql_pragma in SQL_PRAGMAS:
+            try:
+                self.cursor.execute(sql_pragma)
+                self.cursor.fetchall()
+            except Exception as err:
+                log_warning_msg(f"Waze History Database > {sql_pragma} failed > {err}")
 
 #--------------------------------------------------------------------
     def close_waze_history_database(self):
