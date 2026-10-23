@@ -1007,6 +1007,9 @@ def _get_waze_time_dist(Device, FromZone,
             Gb.Waze.get_route_time_distance(Device, FromZone)
 
     Gb.Waze.waze_status = waze_status
+    perf = getattr(Gb, 'Perf', None)
+    if perf is not None:
+        perf.record_waze_request(Gb.Waze.waze_status_fname)
 
     if Gb.Waze.is_status_USED:
         post_event(Device, (f"{Gb.Waze.method} > {FromZone.from_zone_dname[:8]}, "

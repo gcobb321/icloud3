@@ -62,6 +62,7 @@ async def async_get_config_entry_diagnostics(
             'options': _redact(dict(getattr(entry, 'options', None) or {})),
         },
         'counts':              _counts(),
+        'health':              _perf_snapshot(),
         'conf_profile':        _redact(_conf_profile()),
     }
 
@@ -99,6 +100,16 @@ def _counts() -> dict[str, int]:
         'alerts':                   len(getattr(Gb, 'alerts_sensor_attrs', None) or {}),
         'startup_alerts':           len(getattr(Gb, 'startup_alerts_by_source', None) or {}),
     }
+
+#--------------------------------------------------------------------
+def _perf_snapshot() -> dict[str, Any]:
+    '''Return the runtime performance counters. Empty when unavailable.'''
+
+    perf = getattr(Gb, 'Perf', None)
+    if perf is None:
+        return {}
+
+    return _redact(perf.snapshot())
 
 #--------------------------------------------------------------------
 def _conf_profile() -> dict[str, Any]:

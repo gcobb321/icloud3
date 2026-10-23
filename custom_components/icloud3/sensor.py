@@ -42,6 +42,7 @@ from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3, RARROW, NLSP4,
 from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
                                 SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
+                                SENSOR_HEALTH_NAME,
                                 SENSOR_TYPE_RECORDER_EXCLUDE_ATTRS,
                                 CONF_NON_TRACKING_GROUPS,
                                 )
@@ -57,6 +58,7 @@ from .utils.time_util   import (time_to_12hrtime, time_remove_am_pm, format_time
                                 secs_to_datetime, secs_to_datetime, datetime_struct_to_secs,
                                 adjust_time_hour_values, adjust_time_hour_value)
 from .utils.dist_util   import (km_to_mi, m_to_ft, m_to_um, set_precision, reformat_um, )
+from .utils.perf        import install_perf_counters
 
 # from .configure         import sensors_cf as config_sensors
 from .startup           import config_file
@@ -118,8 +120,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 #--------------------------------------------------------------------
 def _create_icloud3_internal_sensors():
     '''
-    Create the sensors for the Event Log, Alerts and Waze Track History
+    Create the sensors for the Event Log, Alerts, Health and Waze Track History
     '''
+    if Gb.Perf is None:
+        install_perf_counters()
+
     SensorsToAdd = []
     if Gb.EvLogSensor is None:
         Gb.EvLogSensor = Sensor_EventLog(SENSOR_EVENT_LOG_NAME)
@@ -128,6 +133,10 @@ def _create_icloud3_internal_sensors():
     if Gb.AlertsSensor is None:
         Gb.AlertsSensor = Sensor_Alerts(SENSOR_ALERTS_NAME)
         SensorsToAdd.append(Gb.AlertsSensor)
+
+    if Gb.HealthSensor is None:
+        Gb.HealthSensor = Sensor_Health(SENSOR_HEALTH_NAME)
+        SensorsToAdd.append(Gb.HealthSensor)
 
     if Gb.WazeHistTrackSensor is None:
         Gb.WazeHistTrackSensor = Sensor_WazeHistTrack(SENSOR_WAZEHIST_TRACK_NAME)
@@ -1798,6 +1807,54 @@ class Sensor_Alerts(iCloud3Sensor_Base, SensorEntity):
         extra_attrs[','] = '-'*75
         extra_attrs['message_text'] = alert_msg
 
+        return extra_attrs
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+class Sensor_Health(iCloud3Sensor_Base, SensorEntity):
+    '''iCloud3 runtime health sensor (icloud3_health).'''
+
+    _ERROR_SECS = 60
+    _WARNING_SECS = 300
+
+    @property
+    def icon(self):
+        return {
+            'ok':      'mdi:heart-pulse',
+            'warning': 'mdi:alert-outline',
+            'error':   'mdi:alert-octagon-outline',
+        }.get(self.native_value, 'mdi:heart-pulse')
+
+    def _snapshot(self):
+        perf = getattr(Gb, 'Perf', None)
+        if perf is None:
+            return {}
+        return perf.snapshot()
+
+    @property
+    def native_value(self):
+        '''State value - ok / warning / error based on the last loop error.'''
+        last_error = self._snapshot().get('last_error_secs_ago')
+        if not isinstance(last_error, (int, float)):
+            return 'ok'
+        if last_error <= self._ERROR_SECS:
+            return 'error'
+        if last_error <= self._WARNING_SECS:
+            return 'warning'
+        return 'ok'
+
+    @property
+    def extra_state_attributes(self):
+        '''Return the runtime performance counters.'''
+        snapshot = self._snapshot()
+        extra_attrs = self._get_extra_attributes()
+        extra_attrs.update(snapshot)
+        extra_attrs.setdefault('config_write_failures', 0)
+        extra_attrs.setdefault('apple_requests', 0)
+        extra_attrs.setdefault('apple_failures', 0)
+        extra_attrs.setdefault('waze_status_counts', {})
+        extra_attrs['last_error'] = snapshot.get('last_error_secs_ago')
+        extra_attrs['health'] = self.native_value
         return extra_attrs
 
 

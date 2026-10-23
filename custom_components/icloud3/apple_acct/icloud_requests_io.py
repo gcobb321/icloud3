@@ -37,12 +37,20 @@ REQUEST_TIMEOUT_TIME = dt.timedelta(seconds=60)
 All data request calls to icloud.com are routed through this central io handler.
 '''
 
+def _record_apple_request(ok):
+    perf = getattr(Gb, 'Perf', None)
+    if perf is not None:
+        perf.record_apple_request(ok)
+
+
 def post(AppleAcct, url, **kwargs):
     schedule_request_timeout_timer(url)
     try:
         data = AppleAcct.iCloudSession.post(url, **kwargs)
+        _record_apple_request(True)
     except Exception as err:
         log_exception(err)
+        _record_apple_request(False)
         data = {}
 
     cancel_request_timeout_timer()
@@ -53,8 +61,10 @@ def get(AppleAcct, url, **kwargs):
     schedule_request_timeout_timer(url)
     try:
         data = AppleAcct.iCloudSession.get(url, **kwargs)
+        _record_apple_request(True)
     except Exception as err:
         log_exception(err)
+        _record_apple_request(False)
         data = {}
 
     cancel_request_timeout_timer()
@@ -65,8 +75,10 @@ def put(AppleAcct, url, **kwargs):
     schedule_request_timeout_timer(url)
     try:
         data = AppleAcct.iCloudSession.put(url, **kwargs)
+        _record_apple_request(True)
     except Exception as err:
         log_exception(err)
+        _record_apple_request(False)
         data = {}
 
     cancel_request_timeout_timer()

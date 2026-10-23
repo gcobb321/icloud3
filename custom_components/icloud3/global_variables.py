@@ -129,6 +129,7 @@ class GlobalVariables(object):
     Waze                            = None   # Waze Route ttime & distance handler
     WazeHist                        = None   # Waze History Database handler
     WazeHistTrackSensor             = None   # Sensor for updating the lat/long values for the WazeHist Map display
+    Perf                            = None   # Runtime performance counters (utils.perf.PerfCounters)
 
     HARootLogger                    = None   # HA Root Logger (used in messaging.py during initialization)
     HALogger                        = None   # HA Log
@@ -311,6 +312,7 @@ class GlobalVariables(object):
 
     # iCloud3 Alerts Sensor
     AlertsSensor                    = None   # icloud3_alerts Sensor
+    HealthSensor                    = None   # icloud3_health Sensor
     alerts_sensor                   = 'none' # Alerts sensor State value (last alert encountered)
     alerts_sensor_attrs             = {}     # Alerts Attributes by alert type
 

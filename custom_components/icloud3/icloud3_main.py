@@ -71,6 +71,7 @@ from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mi
                                 format_timer, format_age, format_time_age, format_secs_since,
                                 format_day_date, format_now, format_day_date_time_now, )
 from .utils.dist_util   import (km_to_um, m_to_um_ft, )
+from .utils.perf        import install_perf_counters
 
 #--------------------------------------------------------------------
 import traceback
@@ -283,6 +284,25 @@ class iCloud3:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     def master_5sec_interval_handler(self, ha_timer_secs):
+        import time
+        start = time.perf_counter()
+        error = False
+        try:
+            return self._master_5sec_interval_handler(ha_timer_secs)
+        except Exception:
+            error = True
+            raise
+        finally:
+            perf = getattr(Gb, 'Perf', None)
+            if perf is None:
+                perf = install_perf_counters()
+            perf.record_loop(time.perf_counter() - start, error)
+
+            health_sensor = getattr(Gb, 'HealthSensor', None)
+            if health_sensor is not None:
+                health_sensor.async_update_sensor()
+
+    def _master_5sec_interval_handler(self, ha_timer_secs):
         Gb.this_update_secs = time_now_secs()
         Gb.this_update_time = time_now()
 

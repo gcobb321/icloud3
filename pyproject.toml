@@ -16,6 +16,8 @@ strict = true
 files = [
     "custom_components/icloud3/utils/pure.py",
     "custom_components/icloud3/utils/backoff.py",
+    "custom_components/icloud3/utils/perf.py",
+    "custom_components/icloud3/utils/redact.py",
     "custom_components/icloud3/startup/mobapp_resolver.py",
 ]
 ignore_missing_imports = true
