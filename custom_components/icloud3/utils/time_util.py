@@ -605,7 +605,7 @@ def secs_to_yymmdd_hhmm(secs=None):
 #
 #########################################################
 
-def calculate_time_zone_offset():
+def calculate_time_zone_offset(post_msg=True):
     '''
     Calculate time zone offset seconds
     '''
@@ -630,20 +630,21 @@ def calculate_time_zone_offset():
                                         int(local_zone_offset[3:])*60
 
     try:
-        if local_zone_offset.startswith("-"):
-            local_zone_offset_secs = -1*local_zone_offset_secs
-
+        # Apply the sign once. It was applied twice, so every negative UTC
+        # offset (America, etc.) came out positive and all local times were
+        # shifted by twice the offset.
         if local_zone_offset.startswith("-"):
             local_zone_offset_secs = -1*local_zone_offset_secs
 
         Gb.time_zone_offset_str  = local_zone_offset
         Gb.time_zone_offset_secs = local_zone_offset_secs
 
-        post_event( f"Local Time Zone > "
-                    f"{local_zone_name}, "
-                    f"(UTC {Gb.time_zone_offset_str} hrs) "
-                    f"Country Code-{Gb.country_code.upper()}, "
-                    f"Apple Server Time-{apple_server_time()}")
+        if post_msg:
+            post_event( f"Local Time Zone > "
+                        f"{local_zone_name}, "
+                        f"(UTC {Gb.time_zone_offset_str} hrs) "
+                        f"Country Code-{Gb.country_code.upper()}, "
+                        f"Apple Server Time-{apple_server_time()}")
 
         return local_zone_offset_secs
 
