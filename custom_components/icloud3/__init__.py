@@ -312,6 +312,18 @@ async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry
     await hass.config_entries.async_reload(config_entry.entry_id)
 
 #-------------------------------------------------------------------------------------------
+def shutdown_polling_loop():
+    '''
+    Stop the 5-sec loop before the entry is unloaded or reloaded.
+
+    The loop is not owned by a platform or a listener, so HA does not stop it.
+    Without this, every reload added another 5-sec cycle and the old one kept
+    polling the Apple account after the entry was gone.
+    '''
+    if Gb.iCloud3 is not None:
+        Gb.iCloud3.shutdown()
+
+#-------------------------------------------------------------------------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     '''
     When disabled sensors are reenabled, HA will schedule an unload in 30s followed
@@ -320,10 +332,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     all of the DeviceTracker and Sensor objects from being unloaded and deleted here.
     '''
     if Gb.was_icloud3_reloaded:
+        shutdown_polling_loop()
         return True
 
     if Gb.icloud3_reload_requested:
         Gb.icloud3_reload_requested = False
+        shutdown_polling_loop()
         return True
 
     """Unload a config entry."""
@@ -343,6 +357,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # Remove config entry from domain.
     if unload_ok:
+        shutdown_polling_loop()
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
