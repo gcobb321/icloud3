@@ -4,11 +4,6 @@
     "abort": {
       "translation_file_by": "@gcobb321",
 
-      "_comment.en.json": "out_of_range: Value must be between {min} and {max}.",
-      "_comment.form.1b": "data_schema=forms.form_dashboard_builder(self),",
-      "_comment.form.1c": "     description_placeholders={'min': '1', 'max': '10'},",
-      "_comment.form.1d": "     errors=self.errors)",
-
       "config_update_complete": "✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
@@ -58,7 +53,8 @@
       "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
       "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
       "icloud_no_devices": "No devices were found in the iCloud `Family Sharing` list",
-      "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later"
+      "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later",
+      "config_write_failed": "❌ The iCloud3 configuration file was not written. Your changes were not saved. Check the Home Assistant log for the reason, then try again"
 
     },
 
@@ -156,6 +152,7 @@
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
+      "config_write_failed": "❌ The iCloud3 configuration file was not written. Your changes were not saved. Check the Home Assistant log for the reason, then try again",
 
       "apple_acct_logging_into": "Logging into Apple Account",
       "apple_acct_logged_into": "Logged into the Apple Account",
@@ -188,6 +185,7 @@
       "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Authenticate Apple Account Sign-in)",
 
+      "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
       "auth_code_needed": "An Apple Account needs to be Authenticated",
       "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
@@ -296,7 +294,7 @@
 
       "menu_0": {
         "title": "Configure Devices & Sensors",
-        "xdescription": "This menu contains items related to Apple Accounts, Tracked Devices, Apple Authentication, Sensors, iCloud3 Dashboard and Maintenance Tools",
+        "description": "This menu contains items related to Apple Accounts, Tracked Devices, Apple Authentication, Sensors, iCloud3 Dashboard and Maintenance Tools",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ "
@@ -306,7 +304,7 @@
 
       "menu_1": {
         "title": "Configure Parameters",
-        "xdescription": "This menu contains items related to configuring how iCloud3 should track devices and how the results should be reported",
+        "description": "This menu contains items related to configuring how iCloud3 should track devices and how the results should be reported",
         "data": {
           "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ "
@@ -659,7 +657,7 @@
 
       "exclude_sensors": {
         "title": "Exclude Sensors",
-        "description": "Many sensors are created for the devices but there may be times when you want to not create a sensor for a specific device. For example, you may want to create a bettery sensor for all devices except one.\n\nThis screen lets you specify the sensor entity name that should not be created.",
+        "description": "Many sensors are created for the devices but there may be times when you want to not create a sensor for a specific device. For example, you may want to create a battery sensor for all devices except one.\n\nThis screen lets you specify the sensor entity name that should not be created.",
         "data": {
           "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
           "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
@@ -834,7 +832,7 @@
 
       "analytics": {
         "title": "iCloud3 Analytics",
-        "description": "The iCloud3 Analytics collects version, location (country/region), usage and various counts from the 15,000+ iCloud3 users. It's purpose is to report summary information showing where users are located, what version is being used and various counts (Apple Account, tracked devices, comments, etc.). The data you will send is shown below. Summary reports can be selected on *Reports* screen\n \nHopefully, you will Enable *Send iCloud3 Analytics Data* below and participate in this project.\n \n*CURENT STATUS:* {downloads}",
+        "description": "The iCloud3 Analytics collects version, location (country/region), usage and various counts from the 15,000+ iCloud3 users. It's purpose is to report summary information showing where users are located, what version is being used and various counts (Apple Account, tracked devices, comments, etc.). The data you will send is shown below. Summary reports can be selected on *Reports* screen\n \nHopefully, you will Enable *Send iCloud3 Analytics Data* below and participate in this project.\n \n*CURRENT STATUS:* {downloads}",
         "data": {
           "analytics_enabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
           "analytics_comment": "COMMENT - How are you using iCloud3 to track your devices?",
@@ -849,7 +847,7 @@
 
       "analytics_reports": {
         "title": "iCloud3 Analytics Reports",
-        "description": "Summary Reports of the Analytics data are available and selected from the list below. The report will be displayed on this screen.\n \n*CURENT STATUS:* {downloads}",
+        "description": "Summary Reports of the Analytics data are available and selected from the list below. The report will be displayed on this screen.\n \n*CURRENT STATUS:* {downloads}",
         "data": {
           "analytics_enabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
           "report_selected": "REPORT - Generate this report from the iCloud3 Analytics Data",

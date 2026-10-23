@@ -8,7 +8,7 @@ from ...const               import (CONF_VERSION, RARROW, ICLOUD, MOBAPP,
                                     )
 
 from ...utils.utils         import (instr, list_add, list_del, is_empty, isnot_empty,
-                                    decode_password, dict_value_to_list, )
+                                    dict_value_to_list, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -167,16 +167,7 @@ def form_update_apple_acct(self):
 
     errs_ui = self.errors_user_input
     username   = errs_ui.get(CONF_USERNAME)   or self.conf_apple_acct[CONF_USERNAME] or ' '
-    password   = errs_ui.get(CONF_PASSWORD)   or self.conf_apple_acct[CONF_PASSWORD] or ' '
-    password   = decode_password(password)
     locate_all = errs_ui.get(CONF_LOCATE_ALL) or self.conf_apple_acct[CONF_LOCATE_ALL]
-
-    if (password.strip() == ''
-            or self.add_apple_acct_flag
-            or Gb.valid_upw_by_username.get(username, False) is False):
-        password_selector = selector.TextSelector()
-    else:
-        password_selector = selector.TextSelector(selector.TextSelectorConfig(type='password'))
 
     if Gb.internet_error:
             self.errors['base'] = 'internet_error_no_change'
@@ -214,8 +205,8 @@ def form_update_apple_acct(self):
                     default=username):
                     selector.TextSelector(),
         vol.Optional(CONF_PASSWORD ,
-                    default=password):
-                    password_selector,
+                    default=''):
+                    selector.TextSelector(selector.TextSelectorConfig(type='password')),
         })
 
     if Gb.country_code in ['cn', 'hk'] or Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED]:

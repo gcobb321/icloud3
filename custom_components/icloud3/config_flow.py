@@ -62,8 +62,6 @@ from homeassistant.core             import callback, HomeAssistant
 import homeassistant.util.dt as dt_util
 import voluptuous as vol
 
-CONFIG_UPDATE_COMPLETE_MSG = 'iCloud3 Configuration Update Complete'
-
 # #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #                     ICLOUD3 CONFIG FLOW - INITIAL SETUP
@@ -197,11 +195,16 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
                 await _OptFlow.delete_all_files_and_remove_directory(Gb.icloud_cookies_directory)
 
                 Gb.config_parms_update_control = ['tracking', 'restart']
-                await config_file.async_write_icloud3_configuration_file()
+                write_success = await config_file.async_write_icloud3_configuration_file()
+                if write_success is False:
+                    errors['base'] = 'config_write_failed'
+                    return self.async_show_form(step_id="user",
+                                                data_schema=forms.form_config_option_user(self),
+                                                errors=errors)
 
             data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
 
-            return self.async_create_entry(title=CONFIG_UPDATE_COMPLETE_MSG, data=data)
+            return self.async_create_entry(title='iCloud3', data=data)
 
         return self.async_show_form(step_id="user",
                                     data_schema=forms.form_config_option_user(self),
@@ -552,6 +555,16 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
                 return await self.async_step_update_apple_acct()
 
         return await self.async_step_menu()
+
+#-------------------------------------------------------------------------------------------
+    async def async_step_update_apple_acct(self, user_input=None, errors=None):
+        if (user_input is not None
+                and str(user_input.get(CONF_PASSWORD, '')).strip() == ''):
+            user_input[CONF_PASSWORD] = decode_password(
+                    (self.conf_apple_acct or {}).get(CONF_PASSWORD, ''))
+
+        return await super().async_step_update_apple_acct(
+                                user_input=user_input, errors=errors)
 
 #-------------------------------------------------------------------------------------------
     def _initialize_self_AppleAcct_fields_from_Gb(self):
@@ -938,7 +951,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow,
         if self.config_file_commit_updates is False and force_write is False:
             return
 
-        await config_file.async_write_icloud3_configuration_file()
+        write_success = await config_file.async_write_icloud3_configuration_file()
+
+        if write_success is False:
+            self.header_msg = ''
+            self.errors['base'] = 'config_write_failed'
+            return
 
         self.config_file_commit_updates = False
         if self.errors == {}:
