@@ -2,28 +2,29 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (IPHONE, IPAD, IPAD_CELL, MAC, WATCH, WATCH_WIFI, AIRPODS, NO_MOBAPP, OTHER,
-                                    PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
-                                    CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_BTNCONFIG_URL,
-                                    CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
-                                    CONF_INZONE_INTERVALS,
-                                    CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
-                                    CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_MOBAPP_ALIVE_INTERVAL,
-                                    CONF_GPS_ACCURACY_THRESHOLD, CONF_OLD_LOCATION_THRESHOLD, CONF_OLD_LOCATION_ADJUSTMENT,
-                                    CONF_TRAVEL_TIME_FACTOR, CONF_TFZ_TRACKING_MAX_DISTANCE,
-                                    CONF_PASSTHRU_ZONE_TIME,
-                                    CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE, CONF_DISPLAY_GPS_LAT_LONG,
-                                    CONF_DISCARD_POOR_GPS_INZONE,
-                                    CONF_DISTANCE_BETWEEN_DEVICES,
-                                    CONF_WAZE_USED, CONF_WAZE_SERVER, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
-                                    CONF_WAZE_REALTIME, CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
-                                    CONF_WAZE_HISTORY_TRACK_DIRECTION,
-                                    CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
-                                    CONF_DISPLAY_TEXT_AS,
-                                    CONF_DATA_SOURCE,
+                                    PICTURE_WWW_STANDARD_DIRS, )
+from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_EVLOG_CARD_DIRECTORY,
+                                    CONF_EVLOG_BTNCONFIG_URL, CONF_TRACK_FROM_BASE_ZONE_USED,
+                                    CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
+                                    CONF_INZONE_INTERVALS, CONF_UNIT_OF_MEASUREMENT,
+                                    CONF_TIME_FORMAT, CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL,
+                                    CONF_EXIT_ZONE_INTERVAL, CONF_MOBAPP_ALIVE_INTERVAL,
+                                    CONF_GPS_ACCURACY_THRESHOLD, CONF_OLD_LOCATION_THRESHOLD,
+                                    CONF_OLD_LOCATION_ADJUSTMENT, CONF_TRAVEL_TIME_FACTOR,
+                                    CONF_TFZ_TRACKING_MAX_DISTANCE, CONF_PASSTHRU_ZONE_TIME,
+                                    CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
+                                    CONF_DISPLAY_GPS_LAT_LONG, CONF_DISCARD_POOR_GPS_INZONE,
+                                    CONF_DISTANCE_BETWEEN_DEVICES, CONF_WAZE_USED,
+                                    CONF_WAZE_SERVER, CONF_WAZE_MAX_DISTANCE,
+                                    CONF_WAZE_MIN_DISTANCE, CONF_WAZE_REALTIME,
+                                    CONF_WAZE_HISTORY_DATABASE_USED,
+                                    CONF_WAZE_HISTORY_MAX_DISTANCE,
+                                    CONF_WAZE_HISTORY_TRACK_DIRECTION, CONF_STAT_ZONE_FNAME,
+                                    CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
+                                    CONF_DISPLAY_TEXT_AS, CONF_DATA_SOURCE,
                                     CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                     CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
-                                    CF_PROFILE,
-                                    )
+                                    CF_PROFILE, )
 
 from ...utils.utils         import (instr, is_empty, dict_value_to_list, six_item_list, six_item_dict, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
@@ -169,7 +170,7 @@ def form_format_settings(self):
         vol.Optional(CONF_UNIT_OF_MEASUREMENT,
                     default=utils_cf.option_parm_to_text(self, CONF_UNIT_OF_MEASUREMENT, UNIT_OF_MEASUREMENT_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list( UNIT_OF_MEASUREMENT_OPTIONS), mode='dropdown')),
+                        options=dict_value_to_list(UNIT_OF_MEASUREMENT_OPTIONS), mode='dropdown')),
         vol.Optional(CONF_TIME_FORMAT,
                     default=utils_cf.option_parm_to_text(self, CONF_TIME_FORMAT, TIME_FORMAT_OPTIONS)):
                     selector.SelectSelector(selector.SelectSelectorConfig(

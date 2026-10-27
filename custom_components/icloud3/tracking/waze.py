@@ -8,7 +8,8 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (WAZE_USED, WAZE_NOT_USED, WAZE_PAUSED, WAZE_OUT_OF_RANGE, WAZE_NO_DATA,
                                 EVLOG_ALERT, EVLOG_RED,
                                 WAZE_SERVERS_FNAME,
-                                LATITUDE, LONGITUDE, ZONE, )
+                                LATITUDE, LONGITUDE, )
+from ..const_config     import (ZONE, )
 
 from ..utils.utils      import (instr, format_gps, )
 from ..utils.messaging  import (post_event, post_alert, post_internal_error, log_info_msg, _evlog, _log, )

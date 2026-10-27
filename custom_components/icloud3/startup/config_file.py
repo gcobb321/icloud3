@@ -1,40 +1,38 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (
-                                ICLOUD3,
-                                RARROW, RARROW2, HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE,
+from ..const            import (ICLOUD3,
+                                HHMMSS_ZERO, DATETIME_ZERO, NONE_FNAME, INACTIVE,
                                 ICLOUD, MOBAPP, NO_MOBAPP, NO_IOSAPP, HOME,
-                                CONF_PARAMETER_TIME_STR,
-                                CONF_PICTURE_WWW_DIRS, CONF_SENSORS_HASH,
-                                CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
-                                CONF_INZONE_INTERVALS, DEVICE_TYPE_INZONE_INTERVALS, IPAD_CELL, WATCH_WIFI,
-                                CONF_IC3_VERSION, CONF_ANALYTICS_ENABLED,
-                                CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM, CONF_TRAVEL_TIME_FACTOR,
-                                CONF_UPDATE_DATE, CONF_VERSION_INSTALL_DATE, CONF_FIRST_SEEN,
-                                CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
-                                CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
-                                CONF_DEVICES, CONF_IC3_DEVICENAME, CONF_FNAME,
-                                CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
-                                CONF_DATA_SOURCE, CONF_LOG_ZONES,
-                                CONF_APPLE_ACCOUNT, CONF_AADEV_NAME,
-                                CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE,
-                                CONF_TRACKING_MODE, CONF_PASSWORD_SRP_ENABLED, CONF_EXCLUDED_SENSORS,
-                                CONF_PICTURE, CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES,
-                                CONF_DISPLAY_TEXT_AS,
-                                CONF_TRACK_FROM_BASE_ZONE,
-                                CF_DEFAULT_IC3_CONF_FILE,
-                                DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF, DEFAULT_DEVICE_CONF,
-                                DEFAULT_SENSORS_CONF, DEFAULT_DEVICE_SENSORS_CONF, BASE,
-                                RANGE_DEVICE_CONF, RANGE_GENERAL_CONF, MIN, MAX, STEP, RANGE_UM,
-                                CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS, CF_DEVICE_SENSORS,
-                                CONF_DEVICES, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
-                                CONF_AUTH_METHODS, CURRENT, PUSH, HWKEY, TEXT, CURRENT,
+                                DEVICE_TYPE_INZONE_INTERVALS, IPAD_CELL, WATCH_WIFI,
+                                BASE,
+                                MIN, MAX, STEP, RANGE_UM,
                                 IC3LOG_FILENAME,
-                                BASE, TRACKED, MONITORED, EXCLUDED, TRACK, MONITOR,
-                                NLSP4, ZONE,
-                                CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES,
-
-                                )
+                                BASE, TRACKED, MONITORED, EXCLUDED, TRACK, MONITOR, )
+from ..const_config     import (CONF_PARAMETER_TIME_STR, CONF_PICTURE_WWW_DIRS, CONF_SENSORS_HASH,
+                                CONF_FIXED_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
+                                CONF_INZONE_INTERVALS, CONF_IC3_VERSION, CONF_ANALYTICS_ENABLED,
+                                CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_CARD_PROGRAM,
+                                CONF_TRAVEL_TIME_FACTOR, CONF_UPDATE_DATE,
+                                CONF_VERSION_INSTALL_DATE, CONF_FIRST_SEEN,
+                                CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION,
+                                CONF_SERVER_LOCATION_NEEDED, CONF_DEVICES, CONF_IC3_DEVICENAME,
+                                CONF_FNAME, CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
+                                CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, CONF_DATA_SOURCE,
+                                CONF_LOG_ZONES, CONF_APPLE_ACCT, CONF_AADEV_NAME,
+                                CONF_APPLE_ACCT, CONF_AADEV_NAME, CONF_AADEV_DEVICE_ID,
+                                CONF_USERNAME, CONF_FAMSHR_NAME, CONF_FAMSHR_DEVICE_ID,
+                                CONF_MOBILE_APP_DEVICE, CONF_IOSAPP_DEVICE, CONF_TRACKING_MODE,
+                                CONF_PASSWORD_SRP_ENABLED, CONF_EXCLUDED_SENSORS, CONF_PICTURE,
+                                CONF_INZONE_INTERVAL, CONF_TRACK_FROM_ZONES, CONF_DISPLAY_TEXT_AS,
+                                CONF_TRACK_FROM_BASE_ZONE, CF_DEFAULT_IC3_CONF_FILE,
+                                DEFAULT_PROFILE_CONF, DEFAULT_TRACKING_CONF, DEFAULT_GENERAL_CONF,
+                                DEFAULT_DEVICE_CONF, DEFAULT_SENSORS_CONF,
+                                DEFAULT_DEVICE_SENSORS_CONF, RANGE_DEVICE_CONF, RANGE_GENERAL_CONF,
+                                CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS,
+                                CF_DEVICE_SENSORS, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
+                                CONF_AUTH_METHODS, CURRENT, PUSH, HWKEY, TEXT, ZONE,
+                                CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES, )
+from ..const_char       import (RARROW, RARROW2, NLSP4, )
 from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
                                 SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
@@ -45,7 +43,7 @@ from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_D
 from ..startup          import start_ic3
 from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dict, is_between,
                                 list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
-                                username_id, )
+                                apple_user, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, today, )
@@ -125,10 +123,13 @@ def read_icloud3_configuration_file(filename_suffix=''):
         Gb.conf_sensors        = Gb.conf_data[CF_SENSORS]
         Gb.conf_device_sensors = Gb.conf_data.get(CF_DEVICE_SENSORS, {})
 
+        Gb.conf_apple_acct_cnt = len(Gb.conf_apple_accounts)
+
         Gb.log_level           = Gb.conf_general[CONF_LOG_LEVEL]
         start_ic3.set_log_level(Gb.log_level)
 
         _add_parms_and_check_config_file()
+        _resolve_apple_conf_parameter_names()
 
         return True
 
@@ -283,8 +284,84 @@ def _add_parms_and_check_config_file():
 
     except Exception as err:
         _LOGGER.exception(err)
-        _LOGGER.error(  "iCloud3 > An error occured verifying the iCloud3 "
+        _LOGGER.error(  "iCloud3: An error occured verifying the iCloud3 "
                         "Configuration File. Will continue.")
+
+#--------------------------------------------------------------------
+def _resolve_apple_conf_parameter_names():
+    '''
+    The Apple Account config file parameter names changed in v3.8.0:
+        username            --> apple_id
+        famshr_devicename   --> appdev_name
+        famshr_device_id    --> appdev_device_id
+
+    The new names are used in the code. The old names are retained
+    until a later version for compatibility whdn reverting to an
+    earlier (v3.7.x) release.
+
+    This keeps everything in sync
+    '''
+
+    # Check Apple Account parameters
+    cd_idx = -1
+    for conf_apple_acct in Gb.conf_apple_accounts.copy():
+        cd_idx += 1
+        if CONF_USERNAME not in conf_apple_acct:
+            continue
+        if conf_apple_acct[CONF_APPLE_ACCT] != conf_apple_acct[CONF_USERNAME]:
+            conf_apple_acct = sync_apple_id_username_parameter(conf_apple_acct)
+            Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
+
+    # Check iCloud3 Device parameters
+    cd_idx = -1
+    for conf_device in Gb.conf_devices.copy():
+        cd_idx += 1
+        if CONF_FAMSHR_NAME not in conf_device:
+            continue
+        if (conf_device[CONF_AADEV_NAME] != conf_device[CONF_FAMSHR_NAME]
+                or conf_device[CONF_AADEV_DEVICE_ID] != conf_device[CONF_FAMSHR_DEVICE_ID]):
+            conf_device = sync_aadev_name_famshr_parameter(conf_device)
+            Gb.conf_devices[cd_idx] = conf_device
+
+#....................................................................
+def sync_apple_id_username_parameter(conf_apple_acct):
+    # Apple Acct apple_id/username
+    try:
+        if CONF_USERNAME not in conf_apple_acct:
+            return conf_apple_acct
+
+        if conf_apple_acct[CONF_APPLE_ACCT] == '':
+            conf_apple_acct[CONF_APPLE_ACCT] = conf_apple_acct[CONF_USERNAME]
+        elif conf_apple_acct[CONF_APPLE_ACCT] != conf_apple_acct[CONF_USERNAME]:
+            conf_apple_acct[CONF_USERNAME] = conf_apple_acct[CONF_APPLE_ACCT]
+
+    except Exception as err:
+        log_exception(err)
+
+    return conf_apple_acct
+
+#....................................................................
+def sync_aadev_name_famshr_parameter(conf_device):
+    # Apple Device Name
+    try:
+        if CONF_FAMSHR_NAME not in conf_device:
+            return conf_device
+
+        if conf_device[CONF_AADEV_NAME] == 'None':
+            conf_device[CONF_AADEV_NAME] = conf_device[CONF_FAMSHR_NAME]
+        elif conf_device[CONF_AADEV_NAME] != conf_device[CONF_FAMSHR_NAME]:
+            conf_device[CONF_FAMSHR_NAME] = conf_device[CONF_AADEV_NAME]
+
+        # Apple Device ID
+        if conf_device[CONF_AADEV_DEVICE_ID] == '':
+            conf_device[CONF_AADEV_DEVICE_ID] = conf_device[CONF_FAMSHR_DEVICE_ID]
+        elif conf_device[CONF_AADEV_DEVICE_ID] != conf_device[CONF_FAMSHR_DEVICE_ID]:
+            conf_device[CONF_FAMSHR_DEVICE_ID] = conf_device[CONF_AADEV_DEVICE_ID]
+
+    except Exception as err:
+        log_exception(err)
+
+    return conf_device
 
 #--------------------------------------------------------------------
 def set_conf_devices_index_by_devicename():
@@ -332,11 +409,11 @@ def build_log_file_filters():
         aa_idx = 0
         for conf_apple_acct in Gb.conf_apple_accounts:
             aa_idx += 1
-            if conf_apple_acct[CONF_USERNAME] == '':
+            if conf_apple_acct[CONF_APPLE_ACCT] == '':
                 continue
 
-            add_log_file_filter(conf_apple_acct[CONF_USERNAME], f"**{aa_idx}**")
-            add_log_file_filter(conf_apple_acct[CONF_USERNAME].upper(), f"**{aa_idx}**")
+            add_log_file_filter(conf_apple_acct[CONF_APPLE_ACCT], f"**{aa_idx}**")
+            add_log_file_filter(conf_apple_acct[CONF_APPLE_ACCT].upper(), f"**{aa_idx}**")
             add_log_file_filter(conf_apple_acct[CONF_PASSWORD])
             add_log_file_filter(decode_password(conf_apple_acct[CONF_PASSWORD]))
 
@@ -397,40 +474,45 @@ def build_initial_config_file_structure():
         pass
 
 #--------------------------------------------------------------------
-def conf_apple_acct(idx_or_username):
+def conf_apple_acct(idx_or_apple_id):
     '''
     Extract and return the Apple Account configuration item by it's index or
-    by username
+    by apple_id
 
     Returns:
         - conf_apple_acct = dictionary item
         - conf_apple_acct_idx = index
+                -1 = The apple_id is not in the config. Do not use it to update
+                Gb.conf_apple_accounts, a default index would overwrite another acct.
     '''
     try:
-        if len(Gb.conf_apple_accounts) == 0:
+        if (len(Gb.conf_apple_accounts) == 0
+                and type(idx_or_apple_id) is not str):
             return (DEFAULT_APPLE_ACCOUNT_CONF.copy(), 0)
 
         # Get conf_apple_acct by it's index
-        if type(idx_or_username) is int:
-            if is_between(idx_or_username, 0, len(Gb.conf_apple_accounts)-1):
-                conf_apple_acct = Gb.conf_apple_accounts[idx_or_username].copy()
+        if type(idx_or_apple_id) is int:
+            if is_between(idx_or_apple_id, 0, len(Gb.conf_apple_accounts)-1):
+                conf_apple_acct = Gb.conf_apple_accounts[idx_or_apple_id].copy()
                 conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
-                return (conf_apple_acct, idx_or_username)
+                return (conf_apple_acct, idx_or_apple_id)
 
             else:
                 return (DEFAULT_APPLE_ACCOUNT_CONF.copy(), -1)
 
-        # Get conf_apple_acct by it's username
-        elif type(idx_or_username) is str:
+        # Get conf_apple_acct by it's apple_id
+        elif type(idx_or_apple_id) is str:
             if is_empty(Gb.conf_apple_accounts):
                 return (DEFAULT_APPLE_ACCOUNT_CONF.copy(), -1)
 
             conf_apple_acct_idx = -1
             for conf_apple_acct in Gb.conf_apple_accounts:
                 conf_apple_acct_idx += 1
-                if conf_apple_acct[CONF_USERNAME] == idx_or_username:
+                if conf_apple_acct[CONF_APPLE_ACCT] == idx_or_apple_id:
                     conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
                     return (conf_apple_acct, conf_apple_acct_idx)
+
+            return (DEFAULT_APPLE_ACCOUNT_CONF.copy(), -1)
 
     except Exception as err:
         log_exception(err)
@@ -440,34 +522,34 @@ def conf_apple_acct(idx_or_username):
 
 
 #--------------------------------------------------------------------
-def apple_acct_username_password(idx):
+def apple_acct_apple_id_password(idx):
     '''
-    Extract and return the Apple Account username & password
+    Extract and return the Apple Account apple_id & password
 
-    Note: idx = -1 when adding a new username
+    Note: idx = -1 when adding a new apple_id
     '''
     if idx < 0 or idx > (len(Gb.conf_apple_accounts)-1):
         return ('', '', '', True)
 
     try:
-        return (Gb.conf_apple_accounts[idx][CONF_USERNAME],
+        return (Gb.conf_apple_accounts[idx][CONF_APPLE_ACCT],
             decode_password(Gb.conf_apple_accounts[idx][CONF_PASSWORD]),
             Gb.conf_apple_accounts[idx][CONF_LOCATE_ALL])
     except:
         return ('', '', '' , True)
 
 #--------------------------------------------------------------------
-def apple_acct_password_for_username(username):
+def apple_acct_password_for_apple_id(apple_id):
     '''
-    Extract and return the Apple Account password for a username
+    Extract and return the Apple Account password for a apple_id
     '''
-    if username is None:
+    if apple_id is None:
         return ''
 
     try:
         return [apple_acct[CONF_PASSWORD]
                                 for apple_acct in Gb.conf_apple_accounts
-                                if apple_acct[CONF_USERNAME] == username][0]
+                                if apple_acct[CONF_APPLE_ACCT] == apple_id][0]
     except:
         return ''
 
@@ -894,7 +976,7 @@ def _verify_device_parameters_values():
             conf_device[CONF_FIXED_INTERVAL] = 3.0
             update_configuration_flag = True
 
-        return update_configuration_flag
+    return update_configuration_flag
 
 #--------------------------------------------------------------------
 def _convert_hhmmss_to_minutes(conf_group):
@@ -984,22 +1066,23 @@ def _update_apple_acct_parameters():
     for conf_apple_acct in conf_apple_accts:
         cd_idx += 1
 
-        # v3.6-Change hwkey from list to str, delete hwkey_1 & hwkey_2
-        conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
-
         try:
-            if (HWKEY in conf_auth_methods and type(conf_auth_methods[HWKEY]) != str):
-                dict_del(conf_auth_methods, HWKEY)
-            dict_del(conf_auth_methods, 'hwkey_1')
-            dict_del(conf_auth_methods, 'hwkey_2')
+            # v3.6-Change hwkey from list to str, delete hwkey_1 & hwkey_2
+            if CONF_AUTH_METHODS in conf_apple_acct:
+                conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
 
-            if 'current' not in conf_auth_methods:
-                conf_auth_methods[CURRENT] = conf_auth_methods.get('last_method', PUSH)
-                dict_del(conf_auth_methods, 'last_method')
+                if (HWKEY in conf_auth_methods and type(conf_auth_methods[HWKEY]) != str):
+                    dict_del(conf_auth_methods, HWKEY)
+                dict_del(conf_auth_methods, 'hwkey_1')
+                dict_del(conf_auth_methods, 'hwkey_2')
 
-            if HWKEY not in conf_auth_methods:
-                conf_auth_methods[HWKEY] = ''
-            update_flag = True
+                if 'current' not in conf_auth_methods:
+                    conf_auth_methods[CURRENT] = conf_auth_methods.get('last_method', PUSH)
+                    dict_del(conf_auth_methods, 'last_method')
+
+                if HWKEY not in conf_auth_methods:
+                    conf_auth_methods[HWKEY] = ''
+                update_flag = True
 
         except Exception as err:
             log_exception(err)
@@ -1010,7 +1093,7 @@ def _update_apple_acct_parameters():
 
         if new_items or del_items:
             log_info_msg(   f"Updated Configuration File items (Apple Acct), "
-                            f"{username_id(conf_apple_acct[CONF_USERNAME])}, "
+                            f"{apple_user(conf_apple_acct[CONF_APPLE_ACCT])}, "
                             f"Added-{new_items}, Deleted-{del_items})")
 
             Gb.conf_apple_accounts[cd_idx] = conf_apple_acct
@@ -1130,7 +1213,7 @@ def decode_all_passwords():
 
     try:
         for apple_acct in Gb.conf_apple_accounts:
-            Gb.AppleAcct_password_by_username[apple_acct[CONF_USERNAME]] = \
+            Gb.AppleAcct_password_by_apple_id[apple_acct[CONF_APPLE_ACCT]] = \
                 decode_password(apple_acct[CONF_PASSWORD])
 
     except Exception as err:

@@ -1,19 +1,21 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (CRLF, NBSP2, CRLF_DOT, NL3, NL4, RED_ALERT,
-                                EVLOG_ALERT, EVLOG_ATTENTION, NOT_SET,
+from ..const            import (EVLOG_ALERT, EVLOG_ATTENTION, NOT_SET,
                                 APPLE_SERVER_ENDPOINT_IPv4,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 NOTIFY)
+from ..const_char       import (CRLF, NBSP2, CRLF_DOT, NL3, NL4, RED_ALERT, )
 
 from ..startup          import start_ic3
+from ..support          import test_controls as TEST
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del, is_running_in_event_loop,)
 from ..utils.time_util  import (time_now, time_now_secs, mins_since, format_time_age, format_age,
                                 secs_to_time, secs_since, )
 from ..utils.messaging  import (_evlog, _log, more_info, add_log_file_filter,
                                 post_event, post_alert, post_greenbar_msg, post_error_msg, update_alert_sensor,
                                 log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                log_data, log_exception, log_data_unfiltered, log_request_data, )
+                                log_exception, )
+from ..utils.rawdata_logging import (log_data_unfiltered, )
 
 from ..utils            import file_io
 
@@ -152,9 +154,10 @@ class InternetConnection_ErrorHandler:
         if (mins_since(self.internet_error_secs) >= 2
                 and self.internet_error_notify_msg_sent is False):
             self.internet_error_notify_msg_sent = True
-            update_alert_sensor(ALERT_CRITICAL, (
-                            "Internet Error detected at "
-                            f"{secs_to_time(self.internet_error_secs)}"))
+            update_alert_sensor(Source=Gb, name=ALERT_CRITICAL,
+                                error='internet_error',
+                                alert_msg=( f"Internet Error detected at "
+                                            f"{secs_to_time(self.internet_error_secs)}"))
             post_event(f"Alert Sensor Updated > Internet Error detected at "
                             f"{secs_to_time(self.internet_error_secs)}")
 
@@ -162,7 +165,7 @@ class InternetConnection_ErrorHandler:
     def is_internet_available(self):
         '''
         See if the internet is available by sending a data request to the Apple url used to
-        validate username/passwords via the https requests handler.
+        validate apple_id/passwords via the https requests handler.
 
         This it's also called from __init__.py
 
@@ -266,12 +269,12 @@ class InternetConnection_ErrorHandler:
 
         # When starting iCloud3, the Apple accounts have not been logged into yet
         # so we can not check icloud.com access by refreshing the device data
-        if is_empty(Gb.AppleAcct_by_username):
+        if is_empty(Gb.AppleAcct_by_apple_id):
             self.icloud3_restart_needed = True
             return True
 
         # Refresh the device data for each Apple acct
-        for username, AppleAcct in Gb.AppleAcct_by_username.items():
+        for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
             if (AppleAcct is None
                     or AppleAcct.is_AADevices_setup_complete is False):
                 self.icloud3_restart_needed = True
@@ -309,9 +312,10 @@ class InternetConnection_ErrorHandler:
                         f"Restarting")
 
             Gb.was_icloud3_restart_requested = True
-            Gb.AppleAcct_by_username = {}
-            Gb.iCloudSession_by_username = {}
-            Gb.valid_upw_by_username = {}
+            Gb.AppleAcct_by_apple_id     = {}
+            Gb.iCloudSession_by_apple_id = {}
+            Gb.upw_valid_by_apple_id     = {}
+            Gb.upw_code_by_apple_id      = {}
 
         else:
             event_msg =(f"Internet Connection Available at {secs_to_time(time_now_secs())}, "
@@ -330,7 +334,7 @@ class InternetConnection_ErrorHandler:
         post_event(f"{EVLOG_ATTENTION}{event_msg}")
         log_error_msg(f"iCloud3 Alert > {event_msg}")
 
-        update_alert_sensor(ALERT_CRITICAL, "")
+        update_alert_sensor(Source=Gb, name=ALERT_CRITICAL, clear=True)
 
 #----------------------------------------------------------------------------
     def update_internet_connection_status_msg(self):
@@ -363,13 +367,13 @@ class InternetConnection_ErrorHandler:
 #----------------------------------------------------------------------------
     def is_testing_internet_error(self, inet_chk=None, icloud_chk=None):
 
-        if Gb.test_internet_error is False:
+        if TEST.INTERNET_ERROR is False:
             return False
 
-        if inet_chk is True and self.status_check_cnt <= Gb.test_internet_error_counter:
+        if inet_chk is True and self.status_check_cnt <= TEST.INTERNET_ERROR_COUNTER:
             return True
 
-        if icloud_chk is True and self.icloud_check_cnt <= Gb.test_internet_error_counter:
+        if icloud_chk is True and self.icloud_check_cnt <= TEST.INTERNET_ERROR_COUNTER:
             return True
 
         return False
@@ -383,8 +387,8 @@ class InternetConnection_ErrorHandler:
             post_greenbar_msg('')
             self.initialize_variables_test_mode()
             if reset_test_control_flags is True:
-                Gb.test_internet_error = False
-                Gb.test_internet_error_after_startup = False
+                TEST.INTERNET_ERROR = False
+                TEST.INTERNET_ERROR_AFTER_STARTUP = False
 
         self.initialize_variables()
         start_ic3.set_log_level(self.log_level_save)

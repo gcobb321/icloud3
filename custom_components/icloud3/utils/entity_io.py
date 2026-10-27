@@ -2,17 +2,22 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR, DOMAIN, SENSOR, ICLOUD3LC,
                                 HIGH_INTEGER, NOT_SET,
-                                HOME, ZONE, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
-                                TRACE_ATTRS_BASE, TRACE_ICLOUD_ATTRS_BASE,                                BATTERY_LEVEL, BATTERY_STATUS, BATTERY_STATUS_CODES,
+                                HOME, UTC_TIME, MOBAPP_TRIGGER_ABBREVIATIONS,
+                                BATTERY_LEVEL, BATTERY_STATUS_CODES,
                                 LAST_CHANGED_SECS, LAST_CHANGED_TIME,
                                 LAST_UPDATED_SECS, LAST_UPDATED_TIME,
-                                STATE, LOCATION, ATTRIBUTES, TRIGGER, RAW_MODEL)
+                                STATE, LOCATION, ATTRIBUTES, RAW_MODEL,
+                                BATTERY_CHARGING, BATTERY_CHARGING_DESC, BATTERY_LEVEL_LOW,
+                                CHARGING_UNKNOWN, CHARGING_LOW, CHARGING_NOTCHARGING,
+                                CHARGING_CHARGING, CHARGING_CHARGED, )
+from ..const_config     import (ZONE, BATTERY_STATUS, TRIGGER, )
 from ..const_sensor     import (ICLOUD3_INTERNAL_SENSORS_ID, SENSOR_DEFINITION, )
 from .utils             import (instr,  is_empty, isnot_empty,
                                 list_add, list_del, list_to_str, set_to_list, )
 from .messaging         import (log_info_msg, log_debug_msg, log_exception,
-                                log_error_msg, log_data,
+                                log_error_msg,
                                 _evlog, _log, )
+from .rawdata_logging   import (log_data, )
 from .time_util         import (secs_to_time)
 
 from homeassistant.helpers import entity_registry as er, device_registry as dr
@@ -69,6 +74,12 @@ def get_state(entity_id):
 def get_attributes(entity_id):
     """
     Return the attributes of an entity.
+
+    entity_attrs={'unit_of_measurement': '%', 'device_class': 'battery', 'icon': 'mdi:battery',
+    'friendly_name': 'Gary-iPhone-app Battery Level', 'last_changed_secs': 1792953895,
+    'last_changed_time': '2:44:55p', 'last_updated_secs': 1792953895, '
+    last_updated_time': '2:44:55p', 'last_reported_secs': 1792957043,
+    'last_reported_time': '3:37:23p', 'state': '100'}
     """
 
     try:
@@ -88,9 +99,9 @@ def get_attributes(entity_id):
         entity_attrs['last_reported_time'] = secs_to_time(last_reported_secs)
         entity_attrs[STATE] = entity_state
 
-        if BATTERY_STATUS in entity_attrs:
-            battery_status = entity_attrs[BATTERY_STATUS].lower()
-            entity_attrs[BATTERY_STATUS] = BATTERY_STATUS_CODES.get(battery_status, battery_status)
+        if entity_attrs.get('device_class') == 'battery':
+            entity_attrs = _set_battery_attrs(entity_attrs)
+
 
     except (KeyError, AttributeError):
         entity_attrs = {}
@@ -133,6 +144,36 @@ def get_last_changed_time(entity_id):
 
     return time_secs
 
+#--------------------------------------------------------------------
+def _set_battery_attrs(entity_attrs):
+    '''
+    entity_attrs={'unit_of_measurement': '%', 'device_class': 'battery',
+    'icon': 'mdi:battery-90', 'friendly_name': 'Lillian-iPad-app Lillian-iPad Battery Level',
+    'last_changed_secs': 1792938245, 'last_changed_time': '10:24:05a', 'last_updated_secs': 1792938245,
+    'last_updated_time': '10:24:05a', 'last_reported_secs': 1792938245, 'last_reported_time': '10:24:05a',
+    'state': '95'}
+    '''
+    try:
+        entity_attrs[STATE] = int(entity_attrs[STATE])
+        battery_level  = entity_attrs[STATE]
+
+        #BATTERY_CHARGING_DESC = ['Unknown', 'NotCharging', 'Low', 'Charging', 'Charged']
+        if battery_level > 99:
+            charging_state = CHARGING_CHARGED
+        elif instr(entity_attrs['icon'], 'charging'):
+            charging_state = CHARGING_CHARGING
+        elif battery_level > 0 and battery_level < BATTERY_LEVEL_LOW:
+            charging_state = CHARGING_LOW
+        else:
+            charging_state = CHARGING_NOTCHARGING
+
+        entity_attrs[BATTERY_CHARGING] = charging_state
+        entity_attrs[BATTERY_STATUS] = BATTERY_CHARGING_DESC[charging_state]
+
+    except Exception as err:
+        log_exception(err)
+
+    return entity_attrs
 #--------------------------------------------------------------------
 def get_entity_registry_data(platform=None, domain=None):
     """
@@ -438,45 +479,45 @@ def extract_attr_value(attributes, attribute_name, numeric=False):
         return ''
 
 #--------------------------------------------------------------------
-def trace_device_attributes(Device, description, fct_name, attrs):
+# def trace_device_attributes(Device, description, fct_name, attrs):
 
-    try:
-        #Extract only attrs needed to update the device
-        if attrs is None:
-            return
+#     try:
+#         #Extract only attrs needed to update the device
+#         if attrs is None:
+#             return
 
-        attrs_in_attrs = {}
-        if description.find("iCloud") >= 0:
-            attrs_base_elements = TRACE_ICLOUD_ATTRS_BASE
-            if LOCATION in attrs:
-                attrs_in_attrs  = attrs[LOCATION]
-        elif 'Zone' in description:
-            attrs_base_elements = attrs
-        else:
-            attrs_base_elements = TRACE_ATTRS_BASE
-            if ATTRIBUTES in attrs:
-                attrs_in_attrs  = attrs[ATTRIBUTES]
+#         attrs_in_attrs = {}
+#         if description.find("iCloud") >= 0:
+#             attrs_base_elements = TRACE_ICLOUD_ATTRS_BASE
+#             if LOCATION in attrs:
+#                 attrs_in_attrs  = attrs[LOCATION]
+#         elif 'Zone' in description:
+#             attrs_base_elements = attrs
+#         else:
+#             attrs_base_elements = TRACE_ATTRS_BASE
+#             if ATTRIBUTES in attrs:
+#                 attrs_in_attrs  = attrs[ATTRIBUTES]
 
-        trace_attrs = {k: v for k, v in attrs.items() \
-                            if k in attrs_base_elements}
+#         trace_attrs = {k: v for k, v in attrs.items() \
+#                             if k in attrs_base_elements}
 
-        trace_attrs_in_attrs = {k: v for k, v in attrs_in_attrs.items() \
-                            if k in attrs_base_elements}
+#         trace_attrs_in_attrs = {k: v for k, v in attrs_in_attrs.items() \
+#                             if k in attrs_base_elements}
 
-        ls = Device.state_last_poll
-        cs = Device.state_this_poll
-        log_msg = (f"{description} Attrs ___ ({fct_name})")
-        log_debug_msg(Device.devicename, log_msg)
+#         ls = Device.state_last_poll
+#         cs = Device.state_this_poll
+#         log_msg = (f"{description} Attrs ___ ({fct_name})")
+#         log_debug_msg(Device.devicename, log_msg)
 
-        log_msg = (f"{description} Last State-{ls}, This State-{cs}")
-        log_debug_msg(Device.devicename, log_msg)
+#         log_msg = (f"{description} Last State-{ls}, This State-{cs}")
+#         log_debug_msg(Device.devicename, log_msg)
 
-        log_msg = (f"{description} Attrs-{trace_attrs}{trace_attrs_in_attrs}")
-        log_debug_msg(Device.devicename, log_msg)
+#         log_msg = (f"{description} Attrs-{trace_attrs}{trace_attrs_in_attrs}")
+#         log_debug_msg(Device.devicename, log_msg)
 
-        log_data(f"iCloud Rawdata - <{Device.devicename}> {description}", attrs)
+#         log_data(f"iCloud Rawdata - <{Device.devicename}> {description}", attrs)
 
-    except Exception as err:
-        pass
+#     except Exception as err:
+#         pass
 
-    return
+#     return

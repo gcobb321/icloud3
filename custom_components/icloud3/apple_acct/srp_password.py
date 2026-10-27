@@ -23,7 +23,7 @@ class SrpPassword:
     encode the password for the final m1 & m2 public key calculations.
 
         SrpPW   = SrpEncodePassword(password)
-        SrpUser = srp.User(username, SrpEncodePW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
+        SrpUser = srp.User(apple_id, SrpEncodePW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
 
     2. Once the salt, iterations & key_length are known, pass them to this class object to be set
     for later use..

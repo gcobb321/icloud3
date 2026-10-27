@@ -1,14 +1,11 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (BATTERY, HOME_DISTANCE,
-                                    ARRIVAL_TIME, TRAVEL_TIME, NEXT_UPDATE,
+from ...const_config        import (BATTERY, HOME_DISTANCE, ARRIVAL_TIME, TRAVEL_TIME, NEXT_UPDATE,
                                     CONF_SENSORS_TRACKING_TIME, CONF_SENSORS_TRACKING_DISTANCE,
                                     CONF_SENSORS_TRACK_FROM_ZONES, CONF_SENSORS_TRACKING_UPDATE,
                                     CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_DEVICE,
-                                    CONF_EXCLUDED_SENSORS,
-                                    DEFAULT_SENSORS_CONF,
-                                    )
+                                    CONF_EXCLUDED_SENSORS, DEFAULT_SENSORS_CONF, )
 from ...const_sensor        import (SENSOR_GROUPS )
 
 from ...utils.utils         import (isnot_empty, list_add, )
@@ -31,7 +28,18 @@ from ..const_form_lists     import *
 
 class OptionsFlow_Sensors_Steps:
 
-
+    def initialize_sensors_variables(self):
+        '''
+        Initialize the variables used by the Sensors screens. Called from the
+        flow handler's initialize_options (the mixin's __init__ would never be run).
+        '''
+        # List of all sensors created by ic3 during startup by sensor.py that is used
+        # in the exclude_sensors screen
+        # Format: ('gary_iphone_zone_distance': 'Gary ZoneDistance (gary_iphone_zone_distance)')
+        self.sensors_fname_list             = []
+        self.excluded_sensors               = []
+        self.excluded_sensors_removed       = []
+        self.sensors_list_filter            = '?'
 
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #            SENSORS

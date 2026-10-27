@@ -1,12 +1,10 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (PLATFORM_DEVICE_TRACKER,
-                                    CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
-                                    DEFAULT_GENERAL_CONF,
-                                    DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE, DEFAULT_DEVICE_MOBAPP_DATA_SOURCE,
-                                    DEFAULT_TRACKING_CONF,
-                                    )
+from ...const               import (PLATFORM_DEVICE_TRACKER, )
+from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFAULT_GENERAL_CONF,
+                                    DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE,
+                                    DEFAULT_DEVICE_MOBAPP_DATA_SOURCE, DEFAULT_TRACKING_CONF, )
 
 from ...utils.utils         import (is_empty, isnot_empty, list_to_str, list_del, list_add, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
@@ -36,6 +34,14 @@ from ..const_form_lists     import *
 
 class OptionsFlow_Tools_Steps:
 
+    def initialize_tools_variables(self):
+        '''
+        Initialize the variables used by the Tools screens. Called from the
+        flow handler's initialize_options (the mixin's __init__ would never be run).
+        '''
+        # Tools > Entity Registry Maintenance
+        self.tools_cleanup_er_sensor_all    = False
+        self.tools_entity_reg_check_all     = None    # Show action check all instead of check none
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           TOOLS

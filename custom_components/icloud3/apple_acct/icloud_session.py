@@ -19,16 +19,19 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (EVLOG_ALERT, CRLF_DOT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4)
+from ..const                import (EVLOG_ALERT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4)
+from ..const_char           import (CRLF_DOT, )
 from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del,
 is_running_in_event_loop, )
 from ..utils.file_io        import (save_json_file, )
 from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
 from ..utils.messaging      import (_log, _evlog, post_event, post_alert, post_error_msg,
 log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-log_data, log_exception, log_data_unfiltered, log_request_data, )
+log_exception, )
+from ..utils.rawdata_logging import (log_request_data, )
 
 from .icloud_cookie_jar     import PyiCloudCookieJar
+from ..support              import test_controls as TEST
 
 #––––––––––––––––––––––––––––––––––
 from typing                 import TYPE_CHECKING, Any, NoReturn, Optional, Union, cast
@@ -179,18 +182,16 @@ class iCloudSession(Session):
 
         self.validate_aa_upw = validate_aa_upw
         if validate_aa_upw is False:
-            self.username = AppleAcct.username
-            Gb.iCloudSession_by_username[self.username] = self
+            self.apple_id = AppleAcct.apple_id
+            Gb.iCloudSession_by_apple_id[self.apple_id] = self
         else:
-            self.username = 'validate_upw'
+            self.apple_id = 'validate_upw'
 
         self.response      = None # response object  after each requests call
         self.verify        = True
         self.response_code = 0
         self.response_ok   = True
         self.data          = {}
-
-        Gb.icloud_io_1_min_timer_fct = None
 
         super().__init__()
 
@@ -290,7 +291,7 @@ class iCloudSession(Session):
         # Log Response data to  the icloud3.log file
         # is_log_level_rawdata = (url.endswith('refreshClient') is False)
         # if Gb.is_log_level_rawdata or is_log_level_rawdata or Gb.is_icloud3_initial_startup:
-        #     _hdr = (f"{self.AppleAcct.username_base}, {method}, Request-"
+        #     _hdr = (f"{self.AppleAcct.apple_user}, {method}, Request-"
         #             f"{url.split('/')[-1]}")
         #     _data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
         #     _data.update(kwargs)
@@ -307,8 +308,8 @@ class iCloudSession(Session):
 
         #++++++++++++++++ REQUEST ICLOUD DATA ++++++++++++++++
         try:
-            if (Gb.test_internet_error
-                    and Gb.InternetError.status_check_cnt < Gb.test_internet_error_counter):
+            if (TEST.INTERNET_ERROR
+                    and Gb.InternetError.status_check_cnt < TEST.INTERNET_ERROR_COUNTER):
                 post_alert(f"Internet Connection Error > Test Started, Error Generated")
                 raise requests.exceptions.ConnectionError
 
@@ -387,7 +388,7 @@ class iCloudSession(Session):
         log_request_data('Response', method, url, kwargs, self.AppleAcct, response)
         #_log(f"{self.data=}")
 
-        # Validating the username/password, code=409 is valid, code=401 is invalid
+        # Validating the apple_id/password, code=409 is valid, code=401 is invalid
         if (url.startswith(APPLE_SERVER_ENDPOINT['auth_url'])
                 and response.status_code in [401, 409]):
             return response.status_code
@@ -428,7 +429,7 @@ class iCloudSession(Session):
                             or (self.AppleAcct.findme_url_root
                                 and url.startswith(self.AppleAcct.findme_url_root)))):
 
-                    log_debug_msg(  f"{self.AppleAcct.username_base}, "
+                    log_debug_msg(  f"{self.AppleAcct.apple_user}, "
                                     f"Authenticating Apple Account ({response.status_code})")
 
                     kwargs["retried"] = True
@@ -437,17 +438,19 @@ class iCloudSession(Session):
 
                     try:
                         # If 421/450/503, retry sign in request
+                        # srp_wait=False - Do not hold up the tracking loop waiting
+                        # to send another Password SRP signin, skip it instead
                         if retry_cnt <= 2:
-                            self.AppleAcct.authenticate(refresh_session=True)
+                            self.AppleAcct.authenticate(refresh_session=True, srp_wait=False)
 
                     except AppleAcctAPIResponseException:
-                        log_debug_msg(f"{self.username_base}, Authentication Failed")
+                        log_debug_msg(f"{self.apple_user}, Authentication Failed")
                         return self.request(method, url, **kwargs)
 
                     if (retry_cnt <= 2
                             and response.status_code in AUTHENTICATION_NEEDED_421_450_500):
                                                         # CONNECTION_ERROR_503]):
-                        log_debug_msg(f"{self.username_base}, "
+                        log_debug_msg(f"{self.apple_user}, "
                                             f"AUTHENTICTION NEEDED, Code-{response.status_code}, "
                                             f"RetryCnt-{retry_cnt}")
 
@@ -597,8 +600,8 @@ class iCloudSession(Session):
         return prefiltered_dict
 
     @property
-    def username_base(self):
-        return self.AppleAcct.username_base
+    def apple_user(self):
+        return self.AppleAcct.apple_user
 
     #--------------------------------------------------------------------
     @staticmethod

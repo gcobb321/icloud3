@@ -1,9 +1,10 @@
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (CRLF_DOT, NL3, NL4, NL3D, NL3_DATA, NL3UD, )
+from ..const_char           import (CRLF_DOT, NL3, NL4, NL3D, NL3_DATA, NL3UD, )
 from .utils                 import (instr, is_empty, isnot_empty, list_to_str, )
 from .messaging             import (log_exception, _evlog, _log, log_debug_msg, log_warning_msg,
-                                    log_data_unfiltered, write_ic3log_recd, )
+                                    write_ic3log_recd, )
+from .rawdata_logging       import (log_data_unfiltered, )
 
 from collections            import OrderedDict
 import asyncio
@@ -106,7 +107,7 @@ def save_json_file(filename, data):
 #--------------------------------------------------------------------
 async def async_read_file(filename):
 
-    file_exists_= await async_file_exists(filename)
+    file_exists = await async_file_exists(filename)
     if file_exists is False:
         return None
 

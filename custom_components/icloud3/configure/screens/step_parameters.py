@@ -1,33 +1,26 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (MONITOR, INACTIVE,
-                                    CONF_PICTURE_WWW_DIRS,
-                                    CONF_DISPLAY_TEXT_AS,
+from ...const               import (MONITOR, INACTIVE, )
+from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_DISPLAY_TEXT_AS,
                                     CONF_IC3_DEVICENAME, CONF_FNAME, CONF_DATA_SOURCE,
-                                    CONF_TRACKING_MODE,
-                                    CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
-                                    CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
-                                    CONF_EVLOG_BTNCONFIG_URL,
-                                    CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
-                                    CONF_INZONE_INTERVALS,
+                                    CONF_TRACKING_MODE, CONF_AWAY_TIME_ZONE_1_OFFSET,
+                                    CONF_AWAY_TIME_ZONE_1_DEVICES, CONF_AWAY_TIME_ZONE_2_OFFSET,
+                                    CONF_AWAY_TIME_ZONE_2_DEVICES, CONF_EVLOG_BTNCONFIG_URL,
+                                    CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE,
+                                    CONF_TRACK_FROM_HOME_ZONE, CONF_INZONE_INTERVALS,
                                     CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
-                                    CONF_TRAVEL_TIME_FACTOR,
-                                    CONF_PASSTHRU_ZONE_TIME,
-                                    CONF_DISPLAY_ZONE_FORMAT,
-                                    CONF_DEVICE_TRACKER_STATE_SOURCE,
+                                    CONF_TRAVEL_TIME_FACTOR, CONF_PASSTHRU_ZONE_TIME,
+                                    CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
                                     CONF_WAZE_USED, CONF_WAZE_SERVER,
                                     CONF_WAZE_HISTORY_DATABASE_USED,
-                                    CONF_WAZE_HISTORY_TRACK_DIRECTION,
-                                    CONF_STAT_ZONE_STILL_TIME,
+                                    CONF_WAZE_HISTORY_TRACK_DIRECTION, CONF_STAT_ZONE_STILL_TIME,
                                     CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
-                                    DEFAULT_GENERAL_CONF,
-                                    CF_GENERAL, CF_TRACKING,
-                                    )
+                                    DEFAULT_GENERAL_CONF, CF_GENERAL, CF_TRACKING, )
 
 from ...utils.utils         import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     is_running_in_event_loop, is_between, list_del, list_add,
-                                    dict_sort_values, username_id,
+                                    dict_sort_values, apple_user,
                                     encode_password, decode_password, )
 from ...utils.messaging     import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                     _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
@@ -58,6 +51,16 @@ from ..const_form_lists     import *
 
 class OptionsFlow_Parameters_Steps:
 
+    def initialize_parameters_variables(self):
+        '''
+        Initialize the variables used by the Parameters screens. Called from the
+        flow handler's initialize_options (the mixin's __init__ would never be run).
+        '''
+        # Variables used for the display_text_as update
+        self.dta_selected_idx               = UNSELECTED_IDX # Current conf index being updated
+        self.dta_selected_idx_page          = [0, 5]    # Selected idx to display on each page
+        self.dta_page_no                    = 0         # Current page being displayed
+        self.dta_working_copy               = {0: '', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '',}
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            AWAY TIME ZONE

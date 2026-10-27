@@ -16,28 +16,28 @@
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 from .global_variables  import GlobalVariables as Gb
-from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3, RARROW, NLSP4,
+from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3,
                                 SENSOR_EVENT_LOG_NAME, SENSOR_ALERTS_NAME, SENSOR_WAZEHIST_TRACK_NAME,
                                 ALERT_CRITICAL, ALERT_OTHER,
                                 HOME, HOME_FNAME, NOT_SET, NOT_SET_FNAME, NONE_FNAME,
                                 BASE, TRACKED, MONITORED, EXCLUDED,
                                 DATETIME_ZERO, HHMMSS_ZERO,
-                                BLANK_SENSOR_FIELD, DOT, HDOT, UM_FNAME, NBSP, RED_ALERT,
+                                UM_FNAME,
                                 TRACK, MONITOR, INACTIVE,
-                                NAME, FNAME, BADGE, FROM_ZONE, ZONE,
-                                ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
-                                HOME_DISTANCE, ICON,
-                                BATTERY, BATTERY_STATUS,
-                                WAZE_DISTANCE, WAZE_DISTANCE_ATTR, WAZE_METHOD, WAZE_USED,
-                                CALC_DISTANCE, CALC_DISTANCE_ATTR,
-                                CONF_TRACK_FROM_ZONES,
-                                CONF_IC3_DEVICENAME, CONF_MODEL, CONF_RAW_MODEL, CONF_FNAME,
-                                CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_TRACKING_MODE,
-                                CONF_SENSORS, FROM_ZONE, CONF_EXCLUDED_SENSORS,
-                                CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES,
-                                CONF_SENSORS_HASH,
-                                DEFAULT_DEVICE_SENSORS_CONF,
-                                )
+                                NAME, FNAME, FROM_ZONE,
+                                ICON,
+                                WAZE_METHOD, WAZE_USED,
+                                FROM_ZONE, )
+from .const_config      import (BADGE, ZONE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
+                                HOME_DISTANCE, BATTERY, BATTERY_STATUS, WAZE_DISTANCE,
+                                WAZE_DISTANCE_ATTR, CALC_DISTANCE, CALC_DISTANCE_ATTR,
+                                CONF_TRACK_FROM_ZONES, CONF_IC3_DEVICENAME, CONF_MODEL,
+                                CONF_RAW_MODEL, CONF_FNAME, CONF_AADEV_NAME,
+                                CONF_MOBILE_APP_DEVICE, CONF_TRACKING_MODE, CONF_SENSORS,
+                                CONF_EXCLUDED_SENSORS, CONF_SENSORS_MONITORED_DEVICES,
+                                CONF_SENSORS_TRACK_FROM_ZONES, CONF_SENSORS_HASH,
+                                DEFAULT_DEVICE_SENSORS_CONF, )
+from .const_char        import (RARROW, NLSP4, BLANK_SENSOR_FIELD, DOT, HDOT, NBSP, RED_ALERT, )
 
 from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
@@ -47,10 +47,11 @@ from .const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DI
                                 )
 
 from .utils.utils       import (instr, is_empty, isnot_empty, round_to_zero, is_number,
-                                list_add, list_del, list_to_str, get_string_hash, )
-from .utils.format      import (icon_circle, icon_box, )
+                                list_add, list_del, list_to_str, dict_sort, get_string_hash, apple_user,)
+from .utils.format      import (icon_circle, icon_box,  )
 from .utils.messaging   import (post_event, post_alert, post_greenbar_msg, log_info_msg, log_debug_msg,
                                 log_error_msg,log_exception, log_info_msg_HA, log_exception_HA,
+                                all_alerts_by_alert_key, alert_key_source,
                                 _evlog, _log, )
 from .utils.time_util   import (time_to_12hrtime, time_remove_am_pm, format_timer,
                                 format_mins_timer, format_day_date_time_now, time_now_secs, datetime_now,
@@ -327,7 +328,7 @@ def total_sensors_cnt():
             for conf_device in Gb.conf_devices:
                 if conf_device[CONF_TRACKING_MODE] == TRACK:
                     sensors_cnt += track_cnt
-                elif conf_device[CONF_TRACKING_MODE] == TRACK:
+                elif conf_device[CONF_TRACKING_MODE] == MONITOR:
                     sensors_cnt += monitor_cnt
                 if len(conf_device[CONF_TRACK_FROM_ZONES]) > 1:
                     sensors_cnt += tfz_cnt * len(conf_device[CONF_TRACK_FROM_ZONES])
@@ -897,10 +898,12 @@ class DeviceSensor_Base():
         '''
         try:
             if self.from_zone:
-                sensor_value = Gb.restore_state_devices[self.devicename][CONF_TRACK_FROM_ZONES][self.from_zone][sensor]
+                tfz_sensor   = sensor.replace(f"_{self.from_zone}", "")
+                sensor_value = Gb.restore_state_devices[self.devicename]['from_zone'][self.from_zone][tfz_sensor]
             else:
                 sensor_value = Gb.restore_state_devices[self.devicename]['sensors'][sensor]
-        except:
+        except Exception as err:
+            # log_exception(err)
             sensor_value = self._get_sensor_definition(sensor, SENSOR_DEFAULT)
 
         return sensor_value
@@ -1370,6 +1373,9 @@ class Sensor_Distance(DeviceSensor_Base, SensorEntity):
     def native_value(self):
         if instr(self.sensor_type, ','):
             sensor_type_um = self.sensor_type.split(',')[1]
+        else:
+            sensor_type_um = ''
+
 
         sensor_value, unit_of_measurement = self._get_sensor_value_um(self.sensor)
 
@@ -1558,7 +1564,6 @@ class iCloud3Sensor_Base():
         self.entity_name     = sensor
         self.entity_id       = f"{PLATFORM_SENSOR}.{self.entity_name}"
 
-        s    = None
         self.ha_entity_id    = None
         self.ha_disabled_by  = None
         self._attr_unique_id = f"{DOMAIN}_{self.entity_name}"
@@ -1576,6 +1581,8 @@ class iCloud3Sensor_Base():
         else:
             extn_alert = ''
         # log_info_msg(  f"Sensor entity, Config: {self.entity_id}{extn_alert}, #{self.sensor_number}")
+
+        self.alerts_sensor_extra_attrs = {}
 
 #..........................................................................................
     @property
@@ -1665,6 +1672,7 @@ class Sensor_EventLog(iCloud3Sensor_Base, SensorEntity):
     def icon(self):
         return 'mdi:message-text-clock-outline'
 
+#-------------------------------------------------------------------------------------------
     @property
     def native_value(self):
         '''State value - (devicename:time)'''
@@ -1682,6 +1690,7 @@ class Sensor_EventLog(iCloud3Sensor_Base, SensorEntity):
             log_exception(err)
             return 'Unavailable'
 
+#-------------------------------------------------------------------------------------------
     @property
     def extra_state_attributes(self):
         '''Return default attributes for the iCloud device entity.'''
@@ -1711,78 +1720,51 @@ class Sensor_Alerts(iCloud3Sensor_Base, SensorEntity):
     def icon(self):
         return 'mdi:alert-rhombus-outline'
 
+#-------------------------------------------------------------------------------------------
     @property
     def native_value(self):
         '''
         State value contains the last alert that was posted
 
-        Note: _source of apple acct items will be the filteredusername_id (gee**2**ry@)
+        Note: _source of apple acct items will be the filteredapple_user (gee**2**ry@)
         Convert it back to the real apple account text (geekstergary) for the state and attr value
         '''
         # Dispay the first attrs item
-        if is_empty(Gb.alerts_sensor_attrs):
+        alerts_by_alert_key = all_alerts_by_alert_key()
+        if is_empty(alerts_by_alert_key):
             return 'none'
 
-        _source, _msg = next(iter(Gb.alerts_sensor_attrs.items()))
+        _alert_key, _msg = next(iter(alerts_by_alert_key.items()))
+        _source = alert_key_source(_alert_key)
+        if instr(_source, '@'):
+            source = apple_user(_source)
+
         if _source in [ALERT_CRITICAL, ALERT_OTHER]:
             return f"{_msg} ({_source})"
 
         # Alerts dict = Alerts + 'updated' + 'message_text'
-        plus_other_msg = '' if len(Gb.alerts_sensor_attrs) == 1 \
-                            else f" +{len(Gb.alerts_sensor_attrs)-1} Alerts"
+        plus_other_msg = '' if len(alerts_by_alert_key) == 1 \
+                            else f" +{len(alerts_by_alert_key)-1} Alerts"
         _source = Gb.upw_unfilter_items.get(_source, _source)
-        return f"{_source} > {_msg}{plus_other_msg}"
 
+        return f"{_msg}{plus_other_msg}"
+
+#-------------------------------------------------------------------------------------------
     @property
     def extra_state_attributes(self):
         '''
         Alerts attributes contain the various types of alerts
 
-        Note: _source of apple acct items will be the filteredusername_id (gee**2**ry@)
+        Note: _source of apple acct items will be the filteredapple_user (gee**2**ry@)
         Convert it back to the real apple account text (geekstergary) for the state and attr value
         '''
         if (Gb.is_icloud3_initial_startup
                 or Gb.is_icloud3_startup_inprocess):
             return
 
-        extra_attrs = {}
-        extra_attrs['alert_count'] = len(Gb.alerts_sensor_attrs)
-        extra_attrs['updated']     = format_day_date_time_now()
-        if is_empty(Gb.alerts_sensor_attrs):
-            extra_attrs['message_text'] = ''
-            return extra_attrs
+        self.alerts_sensor_extra_attrs['updated'] = format_day_date_time_now()
 
-        alert_msg = ''
-        attrs_critical = {}
-        attrs_non_critical = {}
-        alert_cnt_msg = f" + {len(Gb.alerts_sensor_attrs)-1} other alerts"
-
-        # Put critical items at the top of the list
-        for _source, _msg in Gb.alerts_sensor_attrs.items():
-            if _source not in [ALERT_CRITICAL, ALERT_OTHER]:
-                continue
-            _source = Gb.upw_unfilter_items.get(_source, _source)
-            attrs_non_critical[_source] = _msg
-            alert_msg += f"✦ {_msg}{alert_cnt_msg}\n"
-            alert_cnt_msg = ''
-
-        # Add other items to the list
-        for _source, _msg in Gb.alerts_sensor_attrs.items():
-            if _source in [ALERT_CRITICAL, ALERT_OTHER]:
-                continue
-            _source = Gb.upw_unfilter_items.get(_source, _source)
-            attrs_critical[_source] = _msg
-            alert_msg += f"✦ {_source} > {_msg}{alert_cnt_msg}\n"
-            alert_cnt_msg = ''
-
-        if alert_msg.endswith('\n'): alert_msg = alert_msg[:-1]
-        extra_attrs['.'] = '-'*75
-        extra_attrs.update(attrs_critical)
-        extra_attrs.update(attrs_non_critical)
-        extra_attrs[','] = '-'*75
-        extra_attrs['message_text'] = alert_msg
-
-        return extra_attrs
+        return self.alerts_sensor_extra_attrs
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

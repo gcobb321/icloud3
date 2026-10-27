@@ -12,9 +12,11 @@
 
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, RARROW, HHMMSS_ZERO,
-                                GPS, HOME_DISTANCE, ENTER_ZONE, EXIT_ZONE, ZONE, LATITUDE,
+from ..const            import (HOME, NOT_HOME, NOT_SET, HIGH_INTEGER, HHMMSS_ZERO,
+                                GPS, ENTER_ZONE, EXIT_ZONE, LATITUDE,
                                 EVLOG_ALERT, )
+from ..const_config     import (HOME_DISTANCE, ZONE, )
+from ..const_char       import (RARROW, )
 
 from ..utils.file_io    import (file_size, file_exists, set_write_permission, )
 from ..utils.utils      import (instr, is_zone, is_statzone, isnot_statzone, isnot_zone, zone_dname,
@@ -155,10 +157,11 @@ def select_zone(Device, latitude=None, longitude=None):
         zones_distance_list - list of zone info [distance_m|zoneName-distance]
     '''
 
+    gps_accuracy_adj = int(Device.loc_data_gps_accuracy)
     if latitude is None:
         latitude  = Device.loc_data_latitude
         longitude = Device.loc_data_longitude
-        gps_accuracy_adj = int(Device.loc_data_gps_accuracy / 2)
+        gps_accuracy_adj = gps_accuracy_adj / 2
 
     # [distance from zone, Zone, zone_name, redius, display_as]
     zone_data_selected = [HIGH_INTEGER, None, '', HIGH_INTEGER, '', 1]

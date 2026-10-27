@@ -1,7 +1,8 @@
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (EVLOG_NOTICE, EVLOG_ALERT, CRLF_DOT, CRLF, RARROW2, DATETIME_ZERO,
-                                CONF_TRACK_FROM_ZONES, HIGH_INTEGER
-                                )
+from ..const            import (EVLOG_NOTICE, EVLOG_ALERT, DATETIME_ZERO,
+                                HIGH_INTEGER )
+from ..const_config     import (CONF_TRACK_FROM_ZONES, )
+from ..const_char       import (CRLF_DOT, CRLF, RARROW2, )
 
 from ..utils.utils      import (list_to_str, zone_dname,)
 from ..utils.messaging  import (broadcast_info_msg, format_filename,

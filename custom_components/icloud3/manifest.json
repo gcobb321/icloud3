@@ -1,7 +1,7 @@
 {
   "domain": "icloud3",
   "name": "iCloud3",
-  "after_dependencies": ["lovelace", "recorder", "ios"],
+  "after_dependencies": ["lovelace", "recorder", "ios", "zone", "mobile_app"],
   "codeowners": ["@gcobb321"],
   "config_flow": true,
   "dependencies": [],
@@ -10,5 +10,5 @@
   "issue_tracker": "https://github.com/gcobb321/icloud3/issues",
   "loggers": ["icloud3"],
   "requirements": ["srp", "fido2>=1.1.3", "curl_cffi"],
-  "version": "3.7.7"
+  "version": "3.8.0-beta.2"
 }

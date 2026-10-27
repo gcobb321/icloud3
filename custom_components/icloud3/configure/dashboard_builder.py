@@ -8,8 +8,8 @@ from homeassistant.components.lovelace.const import (LOVELACE_DATA,
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (IPHONE_DN, DEVICE_TYPES, IPHONE,
-                                    CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_DEVICE_TYPE,
                                     TRACK, INACTIVE)
+from ..const_config         import (CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_DEVICE_TYPE, )
 
 from ..utils.utils          import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     list_add, list_del, dict_value_to_list, six_item_list, six_item_dict, )
@@ -42,7 +42,7 @@ DASHBOARD_ICONS = [
         'mdi:cloud-remove-outline',
         'mdi:cloud-sync',
         'mdi:cloud-sync-outline',
-]        
+]
 
 DASHBOARD_TEMPLATE_FILES = [
         'template',

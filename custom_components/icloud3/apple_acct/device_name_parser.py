@@ -6,6 +6,18 @@ name ("Lillian's Apple Watch" and "Lillian-Watch" are both "Lillian-Watch").
 
 This module does not import any iCloud3 modules so it can be used by the Apple acct
 device modules and by the config flow.
+
+CathiPad 11 => Cath-iPad_ic3
+CathiPad 13 => Cath-iPad
+CathiPhone is correct
+KenniPad 11 => Kenn-iPad
+KenniPad 13 => Kenn-iPad_ic3
+KenniPhone is correct
+KenniWatch2 => Kenni-Watch
+KenniWatch11 is correct
+
+KenniWatch7 is missing
+
 '''
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            CONVERT APPLE DEVICE NAME INTO A SUGGESTED IC3 FNAME
@@ -77,13 +89,15 @@ _SUFFIX_RE = re.compile(
 )
 
 #----------------------------------------------------------------------------
-def owner_device_name_key(raw_name, device_type, first_name=None):
+def name_device_type_key(raw_name, device_type, first_name=None):
     '''
     Return the name used to recognize a replacement device of the same person,
-    e.g. "lillian-watch" for both "Lillian-Watch" and "Lillian's Apple Watch".
-    A device name that can not be parsed is returned lower case.
+    e.g. "lillian-watch" for "Lillian-Watch", "Lillian Watch" and "Lillian's Apple Watch".
+    A device name that can not be parsed is returned lower case with spaces and
+    underscores changed to a '-', the same as slugify treats them.
     '''
-    return make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name).lower()
+    name = make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name)
+    return re.sub(r"[\s\-_]+", "-", name.strip()).lower()
 
 #----------------------------------------------------------------------------
 def make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name=None):
@@ -111,8 +125,9 @@ def make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name=None):
     str
         "Name-DeviceType" on success.
         The original raw_name, unchanged, if device_type isn't a recognized
-        keyword, the keyword isn't found in raw_name, or no name could be
-        extracted.
+        keyword, the keyword isn't found in raw_name, raw_name does not have a
+        possessive ("KenniPad 11", "iPhone Gary", "Lillian-Watch") or no name
+        could be extracted.
     """
 
     output_name = DEVICE_TYPE_OUTPUT.get(device_type)
@@ -120,6 +135,7 @@ def make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name=None):
         return raw_name  # not a recognized/tracked device type
 
     raw = _normalise(raw_name)
+    has_possessive = False
 
     # Apple's default watch name is "Gary's Apple Watch" but the deviceClass is "Watch"
     if device_type == "Watch" and "Apple Watch" in raw:
@@ -128,16 +144,20 @@ def make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name=None):
     # Romanian: "iPhone-ul" → "iPhone"
     if f"{device_type}-ul" in raw:
         raw = raw.replace(f"{device_type}-ul", device_type, 1)
+        has_possessive = True
 
     # Turkish device-word suffix: "iPhone'u" → "iPhone"
     for sfx in ("'u", "'ü", "'ı", "'i", "\u2019u", "\u2019ü", "\u2019ı", "\u2019i"):
         if f"{device_type}{sfx}" in raw:
             raw = raw.replace(f"{device_type}{sfx}", device_type, 1)
+            has_possessive = True
             break
 
     # Chinese 的 / Hindi possession markers
     for particle in ("的", "का", "की", "के"):
-        raw = raw.replace(particle, " ").strip()
+        if particle in raw:
+            raw = raw.replace(particle, " ").strip()
+            has_possessive = True
 
     found = _find_device_in_raw(raw, device_type)
     if found is None:
@@ -150,9 +170,12 @@ def make_ic3_fname_from_aadevice_dname(raw_name, device_type, first_name=None):
     if hungarian_name:
         return f"{hungarian_name}-{output_name}"
 
-    name = (_strip_device_first_particles(remainder)
-            if device_was_first
-            else _strip_name_first_particles(remainder, first_name))
+    name, particle_found = (_strip_device_first_particles(remainder)
+                            if device_was_first
+                            else _strip_name_first_particles(remainder, first_name))
+
+    if has_possessive is False and particle_found is False:
+        return raw_name  # no possessive, the name is not an Apple default name
 
     name = name.strip(" -–—'\u2019")
     return f"{name}-{output_name}" if name else raw_name
@@ -179,54 +202,65 @@ def _find_device_in_raw(raw: str, keyword: str):
     """
     Locate *keyword* inside *raw* (the full localized device name string)
     and return (remainder, device_was_first), or None if not found.
+    The remainder before the keyword is not stripped so the Finnish -n and
+    Germanic -s rules can tell "Garys iPhone" from "KensiPhone".
     """
     idx = raw.find(keyword)
     if idx == -1:
         return None
 
-    before = raw[:idx].strip()
+    before = raw[:idx]
     after  = _strip_model_suffix(raw[idx + len(keyword):])
 
     return (after.strip(), True) if idx == 0 else (before, False)
 
 # ---------------------------------------------------------------------------
-def _strip_device_first_particles(remainder: str) -> str:
-    """Remove preposition between device and name: 'de Philippe' → 'Philippe'."""
+def _strip_device_first_particles(remainder: str) -> tuple[str, bool]:
+    """
+    Remove preposition between device and name: 'de Philippe' → 'Philippe'.
+    Return (name, particle_found).
+    """
     for p in DEVICE_FIRST_PARTICLES:
         if remainder.startswith(p):
-            return remainder[len(p):].strip()
-    return remainder.strip()
+            return remainder[len(p):].strip(), True
+    return remainder.strip(), False
 
 # ---------------------------------------------------------------------------
-def _strip_name_first_particles(remainder: str, first_name=None) -> str:
-    """Remove possessive marker after name: 'Gary's' → 'Gary'."""
-    s = remainder
+def _strip_name_first_particles(remainder: str, first_name=None) -> tuple[str, bool]:
+    """
+    Remove possessive marker after name: 'Gary's' → 'Gary'.
+    Return (name, particle_found).
+    """
+    # The Finnish -n and Germanic -s are only a possessive if the name is
+    # separated from the device ("Garys iPhone", not "KensiPhone")
+    separated = remainder[-1:].isspace()
+    s = remainder.strip()
 
     # The name is the owner's first name, there is no possessive to remove
     # ('Lillian' would be changed to 'Lillia' by the Finnish -n rule)
     name = s.strip(" -–—")
     if first_name and name.lower() == first_name.strip().lower():
-        return name
+        return name, False
 
     for ch in ("の", "의"):                # Japanese / Korean
         if s.endswith(ch):
-            return s[:-1].strip()
+            return s[:-1].strip(), True
 
     for apos in ("'s", "\u2019s"):         # English
         if s.endswith(apos):
-            return s[:-2].strip()
+            return s[:-2].strip(), True
 
     for sfx in NAME_SUFFIX_PARTICLES:      # Turkish
         if sfx in s:
-            return s[:s.rfind(sfx)].strip()
+            return s[:s.rfind(sfx)].strip(), True
 
-    if s.endswith("n") and len(s) > 2 and s[-2] != "n":    # Finnish -n
-        return s[:-1].strip()
+    if separated and s.endswith("n") and len(s) > 2 and s[-2] != "n":    # Finnish -n
+        return s[:-1].strip(), True
 
-    if s.endswith("s") and len(s) > 1 and s[-2].isalpha(): # Germanic bare -s
-        return s[:-1].strip()
+    if separated and s.endswith("s") and len(s) > 1 and s[-2].isalpha(): # Germanic bare -s
+        return s[:-1].strip(), True
 
-    return s.strip()
+    return s, False
 
 # ---------------------------------------------------------------------------
 def _try_hungarian(raw: str, keyword: str) -> str | None:
@@ -257,8 +291,8 @@ if __name__ == "__main__":
         ("iPhone van Jan",                 "iPhone", "Jan-iPhone", None),
         ("Garys iPhone",                   "iPhone", "Gary-iPhone", None),
         ("Garyn iPhone",                   "iPhone", "Gary-iPhone", None),
-        ("iPhone Гарри",                   "iPhone", "Гарри-iPhone", None),
-        ("iPhone Jana",                    "iPhone", "Jana-iPhone", None),
+        ("iPhone Гарри",                   "iPhone", "iPhone Гарри", None),
+        ("iPhone Jana",                    "iPhone", "iPhone Jana", None),
         ("Gary iPhone-ja",                 "iPhone", "Gary-iPhone", None),
         ("iPhone-ul lui Gary",             "iPhone", "Gary-iPhone", None),
         ("Gary'nin iPhone'u",              "iPhone", "Gary-iPhone", None),
@@ -270,14 +304,20 @@ if __name__ == "__main__":
         ("iPhone \u05e9\u05dc Gary",       "iPhone", "Gary-iPhone", None),
         ("iPhone \u0e02\u0e2d\u0e07 Gary", "iPhone", "Gary-iPhone", None),
         ("iPhone c\u1ee7a Gary",           "iPhone", "Gary-iPhone", None),
-        ("iPhone Gary",                    "iPhone", "Gary-iPhone", None),
+        ("iPhone Gary",                    "iPhone", "iPhone Gary", None),
         ("iPhone d'en Gary",               "iPhone", "Gary-iPhone", None),
-        # ── Owner's first name ends in -n/-s, not a possessive ───────────────
-        ("Lillian iPhone",                 "iPhone", "Lillian-iPhone", "Lillian"),
-        ("Lillian\u00a0iPhone",            "iPhone", "Lillian-iPhone", "Lillian"),
-        ("Chris iPhone",                   "iPhone", "Chris-iPhone", "Chris"),
+        # ── No possessive → original raw_name returned ───────────────────────
+        ("Lillian iPhone",                 "iPhone", "Lillian iPhone", "Lillian"),
+        ("Lillian\u00a0iPhone",            "iPhone", "Lillian\u00a0iPhone", "Lillian"),
+        ("Chris iPhone",                   "iPhone", "Chris iPhone", "Chris"),
         ("Lillian-iPhone",                 "iPhone", "Lillian-iPhone", "Lillian"),
         ("Garyn iPhone",                   "iPhone", "Gary-iPhone", "Gary"),
+        ("CathiPad 11",                    "iPad",   "CathiPad 11", None),
+        ("CathiPhone",                     "iPhone", "CathiPhone", None),
+        ("KenniPad 13",                    "iPad",   "KenniPad 13", None),
+        ("KenniPhone",                     "iPhone", "KenniPhone", None),
+        ("KenniWatch7",                    "Watch",  "KenniWatch7", None),
+        ("KensiPhone",                     "iPhone", "KensiPhone", None),
         # ── iPad (raw_name may include model, device_type never does) ────────
         ("Gary\u2019s iPad",               "iPad", "Gary-iPad", None),
         ("Gary\u2019s iPad Air",           "iPad", "Gary-iPad", None),

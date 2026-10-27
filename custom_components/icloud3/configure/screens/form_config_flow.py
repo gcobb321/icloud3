@@ -1,10 +1,8 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (INACTIVE,
-                                    CONF_VERSION,
-                                    CONF_IC3_DEVICENAME, CONF_TRACKING_MODE,
-                                    )
+from ...const               import (INACTIVE, )
+from ...const_config        import (CONF_VERSION, CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, )
 
 from ...utils.utils         import (list_to_str, list_add, list_del, isnot_empty,
                                     dict_value_to_list, )
@@ -92,9 +90,9 @@ def form_menu(self):
 
     if self.menu_page_no == 0:
         device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
-        if (self.username == '' or self.password == ''):
+        if (self.apple_id == '' or self.password == ''):
             self.menu_item_selected[0] = 'apple_accounts'
-        elif (self.username and self.password
+        elif (self.apple_id and self.password
                 and (device_cnt == 0 or device_cnt == inactive_device_cnt)):
             self.menu_item_selected[0] = 'device_list'
 

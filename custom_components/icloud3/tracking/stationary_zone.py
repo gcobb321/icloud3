@@ -8,15 +8,17 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (HIGH_INTEGER, NOT_SET, RARROW, HHMMSS_ZERO,
-                                ZONE, LATITUDE, LONGITUDE, GPS, RADIUS,
+from ..const            import (HIGH_INTEGER, NOT_SET, HHMMSS_ZERO,
+                                LATITUDE, LONGITUDE, GPS, RADIUS,
                                 STATZONE_RADIUS_1M,
-                                ENTER_ZONE, EXIT_ZONE, NEXT_UPDATE, INTERVAL, )
+                                ENTER_ZONE, EXIT_ZONE, )
+from ..const_config     import (ZONE, NEXT_UPDATE, INTERVAL, )
+from ..const_char       import (RARROW, )
 
 from ..utils.utils      import (is_between, is_statzone, format_gps, zone_dname,
                                 is_empty, isnot_empty, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
-                                log_debug_msg, log_exception, log_data, _evlog, _log, )
+                                log_debug_msg, log_exception, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, time_now, datetime_now, )
 from ..utils.dist_util  import (format_dist_m, gps_distance_km, )
 

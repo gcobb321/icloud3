@@ -2,9 +2,9 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (NOT_HOME, STATIONARY,
-                                CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
-                                UNKNOWN, CRLF_DOT, CRLF,
-                                CONF_USERNAME, CONF_PASSWORD, )
+                                UNKNOWN, )
+from ..const_config     import (CONF_APPLE_ACCT, CONF_PASSWORD, )
+from ..const_char       import (CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE, CRLF_DOT, CRLF, LINK, AASEP, )
 from collections        import OrderedDict
 # from homeassistant.util import json as json_util
 # from homeassistant.helpers import json as json_helpers
@@ -329,7 +329,7 @@ def circle_letter(field):
 def obscure_field(field):
     '''
     An obscured field is one where the first and last 2-characters are kept and the others
-    are replaced by a string of periods to hide it's actual value. This is used for usernames
+    are replaced by a string of periods to hide it's actual value. This is used for apple_ids
     and passwords. (geekstergary@gmail.com --> ge..........ry@gm.....om))
 
     Input:
@@ -380,9 +380,6 @@ def format_gps(latitude, longitude, accuracy, latitude_to=None, longitude_to=Non
     if longitude is None or latitude is None:
         gps_text = UNKNOWN
 
-    # elif Gb.is_gps_lat_long_displayed is False:
-    #     gps_text     = f"/±{accuracy:.0f}m"
-
     else:
         accuracy_text = (f"/±{accuracy:.0f}m)") if accuracy > 0 else ")"
         gps_to_text   = (f" to {latitude_to:.5f}, {longitude_to:.5f})") if latitude_to else ""
@@ -410,16 +407,45 @@ def strip_lead_comma(text):
         return text.strip()
 
 #--------------------------------------------------------------------
-def username_id(username):
-    if username == '':
+def apple_user(apple_id):
+    if apple_id == '':
         return ''
 
-    _username_base = username.split('@')[0]
-    return _username_base.rstrip("@") + "@"
+    _apple_user = apple_id.split('@')[0]
+    return _apple_user.rstrip("@") + "@"
 
 #--------------------------------------------------------------------
-def username_base(username):
-    return username_id(username)
+def apple_user_dev(apple_id, aadev_name):
+    '''
+    The apple_dkey is the display value of the apple_key.
+    Returned:
+        aadev_name:
+            1 Apple Acct (Gary-iPad)
+        aadev_name...apple_user:
+            Multiple 1 Apple Acct s (Gary-iPad...garyemail@)
+
+    Also, cache the apple_dkey value so it can be quickly looked up instead of
+    running through the apple_user function every time
+    '''
+
+    if Gb.conf_apple_acct_cnt < 2:
+        return aadev_name
+
+    try:
+        _apple_id_dev = apple_id_dev(apple_id, aadev_name)
+        return Gb.apple_user_dev_cache[_apple_id_dev]
+    except:
+        pass
+
+    _apple_user = apple_user(apple_id)
+    if len(_apple_user) > 9: _apple_user = f"{_apple_user[:7]}…@"
+    Gb.apple_user_dev_cache[_apple_id_dev] = (f"{aadev_name}{AASEP}{_apple_user}")
+
+    return Gb.apple_user_dev_cache[_apple_id_dev]
+
+#--------------------------------------------------------------------
+def apple_id_dev(apple_id, aadev_name):
+    return f"{aadev_name}{AASEP}{apple_id}"
 
 #--------------------------------------------------------------------
 def format_cnt(desc, n):
@@ -449,16 +475,13 @@ def encode_password(password):
         password = password.replace('«', '').replace('»', '')
         return password
 
-def base64_encode(string):
+def base64_encode(password):
     """
-    Encode the string via base64 encoder
+    Encode the password via base64 encoder
     """
-    # encoded = base64.urlsafe_b64encode(string)
-    # return encoded.rstrip("=")
-
     try:
-        string_bytes = string.encode('ascii')
-        base64_bytes = base64.b64encode(string_bytes)
+        password_bytes = password.encode('ascii')
+        base64_bytes = base64.b64encode(password_bytes)
         return base64_bytes.decode('ascii')
 
     except Exception as err:

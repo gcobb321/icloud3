@@ -3,13 +3,12 @@
 from ..global_variables  import GlobalVariables as Gb
 from ..const             import (PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR,
                                 INACTIVE, TRACK,
-                                CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_TRACK_FROM_ZONES,
-                                CONF_EXCLUDED_SENSORS, CONF_SENSORS_MONITORED_DEVICES,
-                                HOME, NONE_FNAME, FROM_ZONE, ZONE, SENSORS,
-                                TRACK, MONITOR, INACTIVE,
-                                BATTERY, BATTERY_STATUS,
-                                CONF_IC3_DEVICENAME, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
-                                )
+                                HOME, NONE_FNAME, FROM_ZONE,
+                                TRACK, MONITOR, INACTIVE, )
+from ..const_config      import (CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_TRACK_FROM_ZONES,
+                                 CONF_EXCLUDED_SENSORS, CONF_SENSORS_MONITORED_DEVICES, ZONE,
+                                 SENSORS, BATTERY, BATTERY_STATUS, CONF_AADEV_NAME,
+                                 CONF_MOBILE_APP_DEVICE, )
 from ..const_sensor     import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
                                 SENSOR_ATTRS, SENSOR_DEFAULT, SENSOR_LIST_ALWAYS, ICLOUD3_SENSORS,
@@ -195,8 +194,8 @@ def remove_track_fm_zone_sensor_entity(devicename, remove_tfz_zones_list):
         for sensor, Sensor in device_tfz_sensors.copy().items():
             devicename_sensor = f'{devicename}_{sensor}'
             if (sensor.endswith(f"_{zone}")
-                    and devicename_sensor not in Gb.Sensors_by_devicename_sensor):
-                er_util.remove_sensor(devicename_sensor)
+                    and devicename_sensor in Gb.Sensors_by_devicename_sensor):
+                er_util.remove_sensor(f"sensor.{devicename_sensor}")
 
     ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 

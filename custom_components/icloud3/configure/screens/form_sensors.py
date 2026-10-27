@@ -1,13 +1,11 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (HOME_DISTANCE,
-                                    CONF_SENSORS_MONITORED_DEVICES,
-                                    CONF_SENSORS_DEVICE,
-                                    CONF_SENSORS_TRACKING_UPDATE, CONF_SENSORS_TRACKING_TIME, CONF_SENSORS_TRACKING_DISTANCE,
+from ...const_config        import (HOME_DISTANCE, CONF_SENSORS_MONITORED_DEVICES,
+                                    CONF_SENSORS_DEVICE, CONF_SENSORS_TRACKING_UPDATE,
+                                    CONF_SENSORS_TRACKING_TIME, CONF_SENSORS_TRACKING_DISTANCE,
                                     CONF_SENSORS_TRACKING_OTHER, CONF_SENSORS_ZONE,
-                                    CONF_SENSORS_OTHER, CONF_EXCLUDED_SENSORS,
-                                    )
+                                    CONF_SENSORS_OTHER, CONF_EXCLUDED_SENSORS, )
 
 from ...utils.utils         import (instr, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,

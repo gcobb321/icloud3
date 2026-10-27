@@ -1,7 +1,7 @@
 
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
+from ..const_config         import (CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
                                     CONF_ANALYTICS_COMMENT, CONF_VERSION_INSTALL_DATE, )
 
 from ..utils.messaging      import (log_info_msg, log_debug_msg, log_exception, post_event, )
@@ -20,7 +20,7 @@ ANALYTICS_REPORTS_URL  = f'{ANALYTICS_URL}/reports'
 ANALYTICS_TIMEOUT_SECS = 15
 
 # Analytics Reports screen display limits
-REPORT_MAX_ROWS        = 25     # Rows displayed, the rest are summarized in the footer
+REPORT_MAX_ROWS        = 250    # Rows displayed, the rest are summarized in the footer
 REPORT_MAX_COL_LEN     = 55     # Longest text displayed in a column (comments)
 
 # Must match ANALYTICS_KEY in the icloud3-analytics Worker (wrangler.jsonc). The Worker

@@ -1,10 +1,10 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (DOTS,
-                                    CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
-                                    CONF_IC3_DEVICENAME, INACTIVE, CONF_TRACKING_MODE,
-                                    )
+from ...const               import (INACTIVE, )
+from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, CONF_IC3_DEVICENAME,
+                                    CONF_TRACKING_MODE, )
+from ...const_char          import (DOTS, )
 
 from ...utils.utils         import (list_to_str, list_add, list_del,
                                     is_empty, dict_value_to_list, six_item_dict, )

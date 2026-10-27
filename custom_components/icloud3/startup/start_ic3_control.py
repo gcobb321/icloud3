@@ -1,35 +1,38 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (ICLOUD3, DOMAIN,
                                 NOT_SET, IC3LOG_FILENAME,
-                                CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CRLF_RED_ALERT,
-                                NL, NL_DOT, LINK, YELLOW_ALERT, RED_ALERT, CRLF_CHK,
-                                EVLOG_ALERT, EVLOG_ERROR, EVLOG_ATTENTION, EVLOG_IC3_STAGE_HDR, NBSP6, DOT,
+                                EVLOG_ALERT, EVLOG_ERROR, EVLOG_ATTENTION, EVLOG_IC3_STAGE_HDR,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
-                                CONF_SENSORS_HASH,
-                                CONF_VERSION, ICLOUD, ZONE_DISTANCE,
-                                CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION,
-                                ICLOUD, MOBAPP, DISTANCE_TO_DEVICES,
-                                )
+                                ICLOUD,
+                                ICLOUD, MOBAPP, DISTANCE_TO_DEVICES, )
+from ..const_config     import (CONF_SENSORS_HASH, CONF_VERSION, ZONE_DISTANCE, CONF_APPLE_ACCT,
+                                CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION, )
+from ..const_char       import (CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CRLF_RED_ALERT, NL,
+                                NL_DOT, LINK, GREEN_ALERT, RED_ALERT, CRLF_CHK, NBSP6, DOT, )
 
 from ..utils.utils      import (instr, is_empty, isnot_empty, yes_no, list_to_str, list_add, list_del,
-                                username_id, is_running_in_event_loop, get_string_hash, )
+                                apple_user, is_running_in_event_loop, get_string_hash, )
 from ..utils.messaging  import (broadcast_info_msg,
-                                post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor,
+                                post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor, alert_key_source, all_alerts_by_alert_key,
                                 post_monitor_msg, post_internal_error, post_greenbar_msg, post_dotted_line,
                                 write_ic3log_recd,
-                                log_debug_msg, log_warning_msg, log_info_msg, log_exception, log_data,
+                                log_debug_msg, log_warning_msg, log_info_msg, log_exception,
                                 _evlog, _log, more_info, format_filename,
                                 write_config_file_to_ic3log,
+                                clear_config_error_repair_issues,
                                 open_ic3log_file, )
+from ..utils.rawdata_logging import (log_data, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, format_day_date_time_now, )
 
 from ..apple_acct       import apple_acct_support as aas
+from ..apple_acct       import user_auth_code_handler as uach
 from ..mobile_app       import mobapp_interface
 from ..                 import sensor as ic3_sensor
 from ..startup          import config_file
 from ..startup          import restore_state
 from ..startup          import start_ic3
+from ..support          import test_controls as TEST
 from ..tracking         import determine_interval as det_interval
 
 #--------------------------------------------------------------------
@@ -85,7 +88,7 @@ def stage_1_setup_variables():
         Gb.EvLog.update_event_log_display("")
 
         # If the internet_error handler is in test mode, force an internet_error condition
-        if Gb.test_internet_error:
+        if TEST.INTERNET_ERROR:
             Gb.internet_error = True
 
     except Exception as err:
@@ -133,6 +136,11 @@ def stage_2_prepare_configuration():
 
             Gb.EvLog.update_event_log_display("")
 
+        # Request approval if analytics_enabled is None, remove the request if it was
+        # answered (Configure > Analytics)
+        if len(Gb.conf_apple_accounts) > 0:
+            start_ic3.request_analytics_approval()
+
     except Exception as err:
         log_exception(err)
 
@@ -172,9 +180,7 @@ def stage_3_setup_configured_devices():
         if Gb.was_icloud3_reloaded is False:
             aas.reset_AppleAcct_Gb_variables()
 
-        aas.cleanup_unknown_AppleAcct_Gb_variables_username()
-
-        Gb.ValidateAppleAcctUPW.validate_upw_all_apple_accts()
+        aas.cleanup_unknown_AppleAcct_Gb_variables_apple_id()
 
         if Gb.config_track_devices_change_flag:
             pass
@@ -202,7 +208,8 @@ def stage_4_setup_data_sources():
     broadcast_info_msg(stage_title)
 
     for Device in Gb.Devices:
-        Device.set_fname_alert('')
+        Device.set_button_prefix_icon()
+
         if is_empty(Device.Sensors):
             Device.Sensors           = Gb.Sensors_by_devicename[Device.devicename]
             Device.Sensors_from_zone = Gb.Sensors_by_devicename_from_zone[Device.devicename]
@@ -213,31 +220,22 @@ def stage_4_setup_data_sources():
     post_event(f"Data Sources > {data_sources}")
     post_dotted_line()
 
-    # UPW was validated in Stage 3, Redisplay results
-    post_event(Gb.ValidateAppleAcctUPW.valid_upw_results_msg)
+    start_ic3.validate_upw_all_apple_accts()
+
+    post_dotted_line()
 
     try:
-        # Get list of all unique Apple Acct usernames in config
-        Gb.conf_usernames = [apple_account[CONF_USERNAME]
-                                    for apple_account in Gb.conf_apple_accounts
-                                    if (apple_account[CONF_USERNAME] in Gb.valid_upw_by_username
-                                            and apple_account[CONF_USERNAME] != '')]
-
+        # Gb.conf_apple_ids is set in start_ic3.validate_upw_all_apple_accts
         if Gb.use_data_source_ICLOUD:
-            # Password should already be validated, residual results
-            if Gb.ValidateAppleAcctUPW and Gb.ValidateAppleAcctUPW.valid_upw_results_msg:
-                post_event( f"Apple Acct > Verified Username-Password >"
-                            f"{Gb.ValidateAppleAcctUPW.valid_upw_results_msg}")
-
             start_ic3.log_into_apple_accounts()
-            # start_ic3.setup_data_source_ICLOUD()
 
-            for AppleAcct in Gb.AppleAcct_by_username.values():
+            for AppleAcct in Gb.AppleAcct_by_apple_id.values():
                 if AppleAcct.account_locked:
                     post_error_msg( f"{EVLOG_ERROR}Apple Account {AppleAcct.account_owner} "
                                     f"is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
-                    update_alert_sensor(AppleAcct.username_id, "Apple Acct is Locked")
+                    # The alerts sensor is updated with the HA Repairs issue
+                    # (start_ic3._check_apple_acct_status_issues)
 
             # Tell HA to generate reauth needed notification that will be handled
             # handled in config_flow
@@ -272,6 +270,11 @@ def stage_4_setup_data_sources():
         log_exception(err)
         were_all_verified = False
 
+    # Create the Request/Enter Auth Code entities for the Apple Accts that were logged
+    # into. The 5-sec loop creates them for one logged into later.
+    uach.remove_orphan_auth_entities()
+    uach.create_auth_entities()
+
     post_event(f"{EVLOG_IC3_STAGE_HDR} {stage_title}")
     Gb.EvLog.update_event_log_display("")
 
@@ -290,7 +293,7 @@ def stage_5_configure_tracked_devices():
     if is_empty(Gb.conf_apple_accounts):
         post_event(f"No Apple Accounts have been set up")
 
-    for username, AppleAcct in Gb.AppleAcct_by_username.items():
+    for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
         log_debug_msg(f"AppleAcct Finialized > {AppleAcct.account_owner}")
 
     try:
@@ -328,11 +331,15 @@ def stage_6_initialization_complete():
     Gb.startup_log_msgs = ''
 
     try:
+        # Remove the configuration error Repairs issues that no longer exist
+        clear_config_error_repair_issues()
+
         start_ic3.display_object_lists()
         start_ic3.dump_startup_lists_to_log()
         alert_msg = ''
-        if Gb.alerts_sensor_attrs:
-            for source, msg in Gb.alerts_sensor_attrs.items():
+        if alerts_by_alert_key := all_alerts_by_alert_key():
+            for alert_key, msg in alerts_by_alert_key.items():
+                source   = alert_key_source(alert_key)
                 alert_msg += f"{CRLF_DOT}{source} > {msg}"
 
             Gb.EvLog.alert_message = 'Startup Alerts and Notifications are available for review'
@@ -355,7 +362,7 @@ def stage_7_initial_locate():
 
     # The restart will be requested if using Apple as a data source and no data was returned
     # from AppleAcct
-    if is_empty(Gb.AppleAcct_by_username):
+    if is_empty(Gb.AppleAcct_by_apple_id):
         return
 
     if Gb.reinitialize_icloud_devices_flag and Gb.conf_icloud_device_cnt > 0:
@@ -372,8 +379,8 @@ def stage_7_initial_locate():
         Device.can_update_sensors = True
         Device.was_icloud_initial_locate_done = True
 
-        if Device.AADevData_icloud:
-            Device.update_dev_loc_data_from_raw_data_ICLOUD(Device.AADevData_icloud)
+        if Device.AADev_icloud:
+            Device.update_dev_loc_data_from_raw_data_ICLOUD(Device.AADev_icloud)
         else:
             continue
 
@@ -383,7 +390,7 @@ def stage_7_initial_locate():
 
         if Device.no_location_data:
             post_event(Device, f"{EVLOG_ALERT}NO GPS DATA RETURNED FROM ICLOUD LOCATION SERVICE")
-            error_msg = (f"iCloud3 > {Device.fname_devicename} > "
+            error_msg = (f"{Device.fname_devicename} > "
                         "No GPS data was returned from iCloud Location "
                         "Service on the initial locate")
             log_warning_msg(error_msg)

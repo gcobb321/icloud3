@@ -13,20 +13,17 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     HHMMSS_ZERO, HIGH_INTEGER, NONE, MOBAPP,
-                                    RED_X, RED_ALERT, YELLOW_ALERT,
-                                    CIRCLE_LETTERS_DARK, CIRCLE_LETTERS_LITE,
-                                    NL, NL_DOT, LDOT2,
-                                    CRLF, CRLF_DOT, CRLF_CHK, RARROW, DOT, LT, GT, DASH_50,
-                                    NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, CLOCK_FACE,
                                     EVENT_RECDS_MAX_CNT_BASE, EVENT_LOG_CLEAR_SECS,
                                     EVENT_LOG_CLEAR_CNT, EVENT_RECDS_MAX_CNT_ZONE, EVLOG_URL_LIST,
                                     EVLOG_ATTENTION, EVLOG_UPDATE_START, EVLOG_UPDATE_END, EVLOG_UPDATE_BARS,
                                     EVLOG_ALERT, EVLOG_WARNING, EVLOG_ERROR, EVLOG_NOTICE,
                                     EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR, EVLOG_TRACE, EVLOG_MONITOR,
-                                    EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
-                                    CONF_EVLOG_BTNCONFIG_URL,
-                                    CONF_SENSORS_MONITORED_DEVICES,
-                                    )
+                                    EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE, )
+from ..const_config         import (CONF_EVLOG_BTNCONFIG_URL, CONF_SENSORS_MONITORED_DEVICES, )
+from ..const_char           import (RED_X, RED_ALERT, GREEN_ALERT, CIRCLE_LETTERS_DARK,
+                                    CIRCLE_LETTERS_LITE, NL, NL_DOT, LDOT2, CRLF, CRLF_DOT,
+                                    CRLF_CHK, RARROW, DOT, LT, GT, DASH_50, NBSP, NBSP2, NBSP3,
+                                    NBSP4, NBSP5, NBSP6, CLOCK_FACE, )
 
 from ..utils.utils        import (instr, circle_letter, is_empty, isnot_empty, list_to_str, )
 from ..utils.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _log, _evlog,
@@ -253,9 +250,9 @@ class EventLog(object):
 
 #...................................................................
     def format_evlog_device_fname(self, Device):
-        suffix  = '' if Device.evlog_fname_suffix_char == '' else f" {Device.evlog_fname_suffix_char}"
+        suffix  = '' if Device.evlog_button_suffix_icon == '' else f" {Device.evlog_button_suffix_icon}"
         tracked = '' if Device.is_tracked else f" {circle_letter('m')}"
-        fname_text = f"{Device.evlog_fname_alert_char}{Device.fname}{tracked}{suffix}"
+        fname_text = f"{Device.evlog_button_prefix_icon}{Device.fname}{tracked}{suffix}"
 
         return fname_text
 
@@ -540,7 +537,7 @@ class EventLog(object):
                 f"{dt_util.now().strftime('%f')}")
 
 #------------------------------------------------------
-    def display_user_message(self, user_message, alert=False, clear_greenbar_msg=False):
+    def display_user_message(self, user_message, error=False, clear_greenbar_msg=False):
         '''
         Display or clear the special message displayed in the name0 button on
         the Event Log. However, do not change or clear it if the persists flag
@@ -553,7 +550,7 @@ class EventLog(object):
         if clear_greenbar_msg:
             self.user_message_alert_flag = alert = False
 
-        if alert:
+        if error:
             self.user_message_alert_flag = True
 
         self.user_message = user_message
@@ -764,8 +761,12 @@ class EventLog(object):
             refresh_recd = ['🔄',refresh_msg]
             time_text_recds.insert(0, refresh_recd)
 
+        # A quote in the text ("Lillian's Apple Watch") makes str() use the other quote
+        # for this recd and the Event Log card can not split the recds. Replace them
+        # the same as the event recds.
         if self.greenbar_alert_msg != '':
-            alert_msg = ( f"{EVLOG_HIGHLIGHT}{self.greenbar_alert_msg}")
+            alert_msg = ( f"{EVLOG_HIGHLIGHT}"
+                            f"{self._replace_special_chars(self.greenbar_alert_msg)}")
             alert_recd = ['⚠️', alert_msg]
             time_text_recds.insert(0, alert_recd)
 

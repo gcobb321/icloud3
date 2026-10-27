@@ -1,7 +1,8 @@
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (EVLOG_ALERT, CRLF_DOT, APPLE_SERVER_ENDPOINT, )
-from ..utils.messaging      import (post_alert, log_exception, _evlog, _log, log_debug_msg,
-                                    log_data_unfiltered, log_request_data, )
+from ..const                import (EVLOG_ALERT, APPLE_SERVER_ENDPOINT, )
+from ..const_char           import (CRLF_DOT, )
+from ..utils.messaging      import (post_alert, log_exception, _evlog, _log, log_debug_msg, )
+from ..utils.rawdata_logging import (log_request_data, )
 from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
 from ..utils.utils          import (is_running_in_event_loop)
 from .icloud_session        import iCloudSession
@@ -11,9 +12,11 @@ import datetime as dt
 import http.cookiejar as cookielib
 from os                     import path
 import requests
+import threading
 from requests.exceptions    import ConnectionError
 
-from homeassistant.helpers.event import track_time_interval
+from homeassistant.core     import HassJob
+from homeassistant.helpers.event import call_later
 from homeassistant.helpers  import httpx_client
 from httpx                  import (ConnectTimeout, HTTPError, RequestError,
                                     HTTPStatusError, InvalidURL, )
@@ -27,6 +30,11 @@ from httpx                  import (ConnectTimeout, HTTPError, RequestError,
 # socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 REQUEST_TIMEOUT_TIME = dt.timedelta(seconds=60)
+
+# Requests are made from several executor threads at once (each Apple Account,
+# the config flow). The read-cancel-arm of the shared timer handle must be done
+# as one step or two threads can both arm a timer and one handle is lost.
+_request_timer_lock = threading.Lock()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -79,8 +87,8 @@ def update_headers(AppleAcct, **kwargs):
 #--------------------------------------------------------------------
 def new_session(AppleAcct, **kwargs):
     # A validate-only AppleAcct must not register itself in
-    # Gb.iCloudSession_by_username - that entry belongs to the real AppleAcct
-    # for this username and would be replaced by the throw-away session
+    # Gb.iCloudSession_by_apple_id - that entry belongs to the real AppleAcct
+    # for this apple_id and would be replaced by the throw-away session
     _session = iCloudSession(AppleAcct, validate_aa_upw=AppleAcct.validate_aa_upw)
     return _session
 
@@ -123,7 +131,8 @@ def request_get_post(url, **kwargs):
     # inside ssl.do_handshake() / sock.recv(), saturating HA's thread pool and
     # leading to the symptoms reported in issue #552.
     try:
-        kwargs.setdefault("timeout", 30)
+        # if 'timeout' not in kwargs:
+        kwargs.setdefault("timeout", 5)
 
     except Exception as err:
         log_exception(err)
@@ -204,36 +213,59 @@ def schedule_request_timeout_timer(url):
     '''
     Set the timeout handler when a post/get call is made
     '''
-    if Gb.internet_error or is_running_in_event_loop():
+    # The threadsafe timer cancel raises a RuntimeError when it is called from
+    # within the event loop, so only the request time is reset there
+    if is_running_in_event_loop():
+        Gb.icloud_io_request_secs = 0
+        return
+
+    if Gb.internet_error:
         cancel_request_timeout_timer()
         return
 
     Gb.last_url_requested = url
 
-    if Gb.icloud_io_request_secs > 0:
-        cancel_request_timeout_timer()
+    with _request_timer_lock:
+        _cancel_timer_handle()
+        Gb.icloud_io_request_secs = time_now_secs()
 
-    Gb.icloud_io_request_secs = time_now_secs()
-
-    try:
-        Gb.icloud_io_1_min_timer_fct = None
-        Gb.icloud_io_1_min_timer_fct = track_time_interval(Gb.hass,
-                                    request_timed_out,
+        try:
+            # One-shot timer (PR #649) - a repeating timer whose handle was lost
+            # kept running a blocking internet check every 60s forever (#552)
+            Gb.icloud_io_1_min_timer_fct = call_later(Gb.hass,
                                     REQUEST_TIMEOUT_TIME,
-                                    cancel_on_shutdown=True)
+                                    HassJob(request_timed_out,
+                                            'iCloud3 Request Timeout',
+                                            cancel_on_shutdown=True))
 
-    except Exception as err:
-        # if instr(err, 'RunTimeError'):
-        #     log_error_msg('RuntimeError: Cannot be called from within the event loop')
-        log_exception(err)
+        except Exception as err:
+            log_exception(err)
 
 #------------------------------------------------------------------
 def cancel_request_timeout_timer():
 
-    if Gb.icloud_io_request_secs > 0:
+    if is_running_in_event_loop():
         Gb.icloud_io_request_secs = 0
-    if Gb.icloud_io_1_min_timer_fct is not None:
-        Gb.icloud_io_1_min_timer_fct()
+        return
+
+    with _request_timer_lock:
+        Gb.icloud_io_request_secs = 0
+        _cancel_timer_handle()
+
+#..................................................................
+def _cancel_timer_handle():
+    '''
+    Cancel the current timer and clear its handle so it is only cancelled once.
+    The caller must hold _request_timer_lock.
+    '''
+    timer_fct = Gb.icloud_io_1_min_timer_fct
+    Gb.icloud_io_1_min_timer_fct = None
+
+    if timer_fct is not None:
+        try:
+            timer_fct()
+        except Exception as err:
+            log_exception(err)
 
 #----------------------------------------------------------------------------
 def request_timed_out(current_time):

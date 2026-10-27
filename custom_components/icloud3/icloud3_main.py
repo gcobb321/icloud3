@@ -20,29 +20,31 @@ Thanks to all
 
 from .global_variables  import GlobalVariables as Gb
 from .const             import (HOME, NOT_HOME, HOME_FNAME,
-                                NOT_SET, HIGH_INTEGER, RARROW, LT, NBSP3, CLOCK_FACE, LINK,
-                                CRLF, DOT, LDOT2, CRLF_DOT, CRLF_LDOT, CRLF_LBDOT, CRLF_LHDOT, CRLF_HDOT2, CRLF_LX,
-                                CRLF_LRED_ALERT, CRLF_LDIAMOND, CRLF_LASTERISK, NBSP,
-                                EVLOG_IC3_STAGE_HDR, RED_ALERT, GB_ALERT, GB_ITEM,
+                                NOT_SET, HIGH_INTEGER,
+                                EVLOG_IC3_STAGE_HDR, GB_ALERT, GB_ITEM,
                                 EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE,
                                 ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                 EVLOG_ATTENTION,
                                 ICLOUD, TRACKING_NORMAL, FNAME,
-                                CONF_USERNAME, CONF_PASSWORD,
                                 IPHONE, IPAD, WATCH, AIRPODS, IPOD, ALERT, UNKNOWN,
                                 CMD_RESET_PYICLOUD_SESSION, NEAR_DEVICE_DISTANCE,
                                 DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
-                                OLD_LOCATION_CNT, AUTH_ERROR_CNT, DEVICE_TYPES_CELL_SVC,
-                                MOBAPP_UPDATE, ICLOUD_UPDATE, ARRIVAL_TIME, TOWARDS, AWAY_FROM, AWAY, INZONE_STATZONE,
+                                OLD_LOCATION_CNT, AUTH_ERROR_CNT,
+                                DEVICE_TYPES_CELL_SVC,
+                                MOBAPP_UPDATE, ICLOUD_UPDATE, TOWARDS, AWAY_FROM, AWAY, INZONE_STATZONE,
                                 EVLOG_UPDATE_START, EVLOG_UPDATE_END, EVLOG_ERROR, EVLOG_ALERT, EVLOG_NOTICE,
                                 ICLOUD, MOBAPP, TRUST_TOKEN_EXPIRE_WARNING_DAYS,
-                                ENTER_ZONE, EXIT_ZONE, INTERVAL, NEXT_UPDATE, NOTIFY,
-                                CONF_LOG_LEVEL, STATZONE_RADIUS_1M,
-                                ALERTS_SENSOR_ATTRS
-                                )
+                                ENTER_ZONE, EXIT_ZONE, NOTIFY,
+                                STATZONE_RADIUS_1M,)
+from .const_config      import (CONF_USERNAME, CONF_PASSWORD, ARRIVAL_TIME, INTERVAL, NEXT_UPDATE,
+                                CONF_LOG_LEVEL, )
+from .const_char        import (RARROW, LT, NBSP3, CLOCK_FACE, LINK, CRLF, DOT, LDOT2, CRLF_DOT,
+                                CRLF_LDOT, CRLF_LBDOT, CRLF_LHDOT, CRLF_HDOT2, CRLF_LX,
+                                CRLF_LRED_ALERT, CRLF_LDIAMOND, CRLF_LASTERISK, NBSP, RED_ALERT, )
 from .const_sensor      import (SENSOR_LIST_DISTANCE, )
 from .apple_acct        import apple_acct_support as aas
 from .apple_acct        import icloud_data_handler
+from .apple_acct        import user_auth_code_handler as uach
 # from .apple_acct.internet_error import InternetConnection_ErrorHandler
 # from .apple_acct.apple_acct_upw import ValidateAppleAcctUPW
 from .mobile_app        import mobapp_data_handler
@@ -50,19 +52,22 @@ from .mobile_app        import mobapp_interface
 from .startup           import restore_state
 from .startup           import start_ic3
 from .startup           import start_ic3_control
-from .support           import service_handler
 from .support           import analytics
+from .support           import service_handler
+from .support           import test_controls as TEST
 from .tracking          import stationary_zone as statzone
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
 from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzone, isnot_statzone, yes_no,
-                                list_to_str, is_between, username_id, zone_dname, is_running_in_event_loop, )
+                                list_to_str, is_between, apple_user, zone_dname, is_running_in_event_loop,
+                                list_add, list_sort, )
 from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
 from .utils.messaging   import (broadcast_info_msg,
                                 post_event, post_alert, post_error_msg, post_monitor_msg, post_internal_error,
                                 post_greenbar_msg, clear_greenbar_msg, update_alert_sensor,
+                                open_repair_issue_alert_keys, alert_key_source, all_alerts_by_alert_key,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
-                                log_debug_msg, log_data, archive_ic3log_file,
+                                log_debug_msg, archive_ic3log_file,
                                 _evlog, _log, )
 from .utils.time_util   import (time_now, time_now_secs, secs_to, secs_since, mins_since,
                                 secs_to_time, secs_to_hhmm, secs_to_datetime,
@@ -225,9 +230,6 @@ class iCloud3:
             Gb.startup_stage_status_controls = []
             Gb.broadcast_info_msg = None
 
-            Gb.AlertsSensor.async_update_sensor()
-            self._display_device_alert_evlog_greenbar_msg()
-
             if Gb.polling_5_sec_loop_running is False:
                 broadcast_info_msg("Set Up 5-sec Master Interval Cycle")
                 Gb.polling_5_sec_loop_running = True
@@ -246,6 +248,14 @@ class iCloud3:
             # stopped iCloud3 until HA was restarted.
             Gb.is_icloud3_initial_startup   = False
             Gb.is_icloud3_startup_inprocess = False
+
+            # The Alert Sensor is not updated during startup in case there ae multiple messages
+            # Do it now
+            Gb.AlertsSensor.async_update_sensor()
+            self._display_device_alert_evlog_greenbar_msg()
+
+            log_info_msg(f"\n\n{' 🟡'*12} STARTUP COMPLETE {' 🟡'*12}\n")
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -293,6 +303,10 @@ class iCloud3:
 
         if isnot_empty(Gb.config_parms_update_control):
             start_ic3.handle_config_parms_update()
+
+        # Update the Request/Enter Auth Code entities status, create them for an Apple
+        # Acct that was logged into after startup
+        uach.update_auth_entities_state()
 
         # Exit 5-sec loop if no devices, updating a device now, or restarting iCloud3
         info_msg = ''
@@ -596,7 +610,7 @@ class iCloud3:
         if icloud_data_handler.update_device_with_latest_raw_data(Device) is False:
             Device.is_icloud_acct_error = True
 
-        if Device.is_icloud_devdata_useable:
+        if Device.is_aadevdata_useable:
 
             event_msg = f"Trigger > {Device.icloud_update_reason}"
             post_event(devicename, event_msg)
@@ -690,8 +704,8 @@ class iCloud3:
             log_start_finish_update_banner('start', Device.devicename, 'icloud prefetch', '')
             post_monitor_msg(Device.devicename, "iCloud Location Requested (prefetch)")
 
-            Device.is_icloud_devdata_useable = \
-                icloud_data_handler.update_AADevData_data(Device,
+            Device.is_aadevdata_useable = \
+                icloud_data_handler.update_AADev_data(Device,
                         results_msg_flag=Device.is_location_old_or_gps_poor)
 
             log_start_finish_update_banner('finish', Device.devicename, 'icloud prefetch', '')
@@ -734,10 +748,13 @@ class iCloud3:
             if Gb.device_mobapp_verify_retry_needed:
                 mobapp_data_handler.unverified_devices_mobapp_handler()
 
-            if is_empty(Gb.mobapp_notify_devicenames):
-                mobapp_interface._get_mobile_app_notify_devices()
+            # The MobApp notify service may not have been set up when iCloud3 started.
+            # Match the notify names to the Devices when it is.
+            if (Gb.conf_data_source_MOBAPP
+                    and is_empty(Gb.mobile_app_notify_devicenames)):
+                mobapp_interface.setup_notify_service_name_for_mobapp_devices()
 
-            if isnot_empty(Gb.AppleAcct_error_by_username):
+            if isnot_empty(Gb.AppleAcct_error_by_apple_id):
                 aas.retry_apple_acct_login_after_error()
 
         # Every 15-minutes:
@@ -909,7 +926,7 @@ class iCloud3:
             # elif Device.is_offline or Device.no_location_data:
             #     pass
 
-            elif Device.is_icloud_devdata_useable is False or Device.is_icloud_acct_error:
+            elif Device.is_aadevdata_useable is False or Device.is_icloud_acct_error:
                 Device.can_update_sensors = False
 
             # Ignore old location when in a zone and discard=False
@@ -1349,6 +1366,12 @@ class iCloud3:
         Tracked device screen displayed - Show  all alert messages
         Monitored device screen displayed - Show only that devices alerts
         '''
+        # # TESTCODE GREENBAR
+        # _log(f"GREENBAR REBUILD > SelectedFname-{Gb.EvLog.evlog_attrs['selected_fname']}, "
+        #         f"InternetError-{Gb.internet_error}/{Gb.InternetError.internet_error_secs}, "
+        #         f"OpenRepairIssues-{open_repair_issue_alert_keys()}, "
+        #         f"AlertsSensorAttrs-{Gb.alerts_by_alert_key}")
+
         if (Gb.EvLog.evlog_attrs['selected_fname'] == 'Startup Events'
                 or Gb.EvLog.greenbar_alert_msg.startswith('Start up log')
                 or Gb.WazeHist.wazehist_recalculate_time_dist_running_flag):
@@ -1364,12 +1387,22 @@ class iCloud3:
         if Gb.version_hacs:
             general_alert_msg += (  f"{GB_ALERT}iCloud3 {Gb.version_hacs} is on HACS, "
                                     f"you are running v{Gb.version}")
-        if Gb.disable_upw_filter:
-            general_alert_msg += f"{RED_ALERT}PASSWORD LOG FILTER DISABLED (Gb.disable_upw_filter)"
+        general_alert_msg += TEST.test_controls_enabled_msg()
 
-        if Gb.alerts_sensor_attrs:
-            for source, msg in Gb.alerts_sensor_attrs.items():
-                general_alert_msg += f"{GB_ALERT}{source} > {msg}"
+        # Alerts with an open HA Repairs issue are listed at the end
+        repair_issue_alert_keys = open_repair_issue_alert_keys()
+        repair_issue_sources    = []
+        if alerts_by_alert_key := all_alerts_by_alert_key():
+            for alert_key, msg in alerts_by_alert_key.items():
+                source = alert_key_source(alert_key)
+                if instr(source, '@'):
+                    source = apple_user(source)
+                general_alert_msg += f"{GB_ALERT}{msg}"
+                if alert_key in repair_issue_alert_keys:
+                    list_add(repair_issue_sources, source)
+            if repair_issue_sources:
+                general_alert_msg += (  f"{GB_ALERT}REPAIR ISSUES EXIST FOR - "
+                                    f"{list_to_str(repair_issue_sources)}")
 
         verified_msg = poor_location_msg = offline_msg =''
         paused_msg = mobapp_unavailable_msg = ''
@@ -1414,8 +1447,8 @@ class iCloud3:
         if mobapp_unavailable_msg:
             general_alert_msg += f"{GB_ITEM}MobApp Device Unavailable-{mobapp_unavailable_msg[:-2]}"
 
-        if (Gb.test_internet_error
-                or Gb.test_internet_error_after_startup):
+        if (TEST.INTERNET_ERROR
+                or TEST.INTERNET_ERROR_AFTER_STARTUP):
             general_alert_msg += f"{CRLF_LRED_ALERT}InternetConnection Error Test > True"
 
         # if Gb.EvLog.alert_attr_filter(startup_alert_attr) != startup_alert_attr:
@@ -1436,7 +1469,7 @@ class iCloud3:
     def _check_apple_acct_authentication_needed(self):
 
         msg = ""
-        for username, AppleAcct in Gb.AppleAcct_by_username.items():
+        for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
             if AppleAcct.is_reauth_needed:
                 msg += (f"Apple Acct > {AppleAcct.account_owner}, "
                         f"Auth Code Needed")
@@ -1563,7 +1596,7 @@ class iCloud3:
         Update the old_loc_cnt if just_check=False
         """
 
-        if Device.is_location_gps_good or Device.is_icloud_devdata_useable:
+        if Device.is_location_gps_good or Device.is_aadevdata_useable:
             Device.old_loc_cnt = 0
             Device.old_loc_msg = ''
             return

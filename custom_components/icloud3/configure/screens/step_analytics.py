@@ -1,14 +1,13 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (CF_GENERAL,
-                                    CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
-                                    CONF_ANALYTICS_COMMENT, CONF_VERSION_INSTALL_DATE,
-                                    )
+from ...const_config        import (CF_GENERAL, CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
+                                    CONF_ANALYTICS_COMMENT, CONF_VERSION_INSTALL_DATE, )
 
 from ...utils.utils         import (is_empty, isnot_empty, list_to_str, list_del, list_add, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
-                                    post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
+                                    post_event, post_alert, post_greenbar_msg, update_alert_sensor,
+                                    clear_repair_issue, ANALYTICS_APPROVAL_ISSUE_ID, )
 
 from ...support             import analytics
 from .                      import form_analytics as forms
@@ -25,6 +24,15 @@ from ..const_form_lists     import *
 
 class OptionsFlow_Analytics_Steps:
 
+    def initialize_analytics_variables(self):
+        '''
+        Initialize the variables used by the Analytics screens. Called from the
+        flow handler's initialize_options (the mixin's __init__ would never be run).
+        '''
+        self.analytic_reports_by_name       = {}    # {report name: report name} in list_no order
+        self.analytic_reports_sql_by_name   = {}    # {report name: sql statement} (reference only)
+        self.report_selected                = ''
+        self.query_report_md                = ''
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           ANALYTICS
@@ -74,6 +82,8 @@ class OptionsFlow_Analytics_Steps:
             case 'send_analytics_data':
                 user_input[CONF_ANALYTICS_ENABLED] = True
                 self.update_config_file(CF_GENERAL, user_input, action_item)
+                Gb.analytics_enabled = True
+                clear_repair_issue(ANALYTICS_APPROVAL_ISSUE_ID)
                 if await analytics.async_send_analytics_data(write_config_file=False):
                     self.config_file_commit_updates = True
                     self.errors['base'] = 'analytics_sent'
@@ -83,6 +93,8 @@ class OptionsFlow_Analytics_Steps:
             case 'save':
                 self.update_config_file(CF_GENERAL, user_input, action_item)
                 Gb.analytics_enabled = Gb.conf_general[CONF_ANALYTICS_ENABLED]
+                # The analytics_approval Repairs issue was answered here
+                clear_repair_issue(ANALYTICS_APPROVAL_ISSUE_ID)
                 return await self.async_step_menu()
 
 

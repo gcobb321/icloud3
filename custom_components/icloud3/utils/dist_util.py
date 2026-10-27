@@ -2,7 +2,8 @@
 
 from   homeassistant.util.location import distance
 
-from ..const            import (NEAR_DEVICE_DISTANCE, LT, )
+from ..const            import (NEAR_DEVICE_DISTANCE, )
+from ..const_char       import (LT, )
 from ..global_variables import GlobalVariables as Gb
 from .utils             import (round_to_zero, is_number, )
 from .messaging         import (_evlog, _log, )

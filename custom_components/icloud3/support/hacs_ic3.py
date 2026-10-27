@@ -3,9 +3,9 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (STORAGE_DIR, EVLOG_ALERT,
                                     DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
-                                    HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME, ALERT,
-                                    ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_INFO,
-                                    LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
+                                    HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME, ALERT, )
+from ..const_config         import (ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_INFO, LAST_ZONE,
+                                    LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
                                     DIR_OF_TRAVEL, )
 
 from ..utils.utils        import (instr, is_empty, isnot_empty, )

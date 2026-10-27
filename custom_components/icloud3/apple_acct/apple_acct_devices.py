@@ -1,36 +1,37 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (AIRPODS_DN, NONE_FNAME,
-                                EVLOG_NOTICE, EVLOG_ALERT, LINK, RLINK, LLINK, DOTS,
-                                HHMMSS_ZERO, RARROW, DOT, CRLF, CRLF_DOT, CRLF_STAR, CRLF_CHK, CRLF_HDOT,
+                                EVLOG_NOTICE, EVLOG_ALERT,
+                                HHMMSS_ZERO,
                                 ICLOUD, NAME, ID, LOCATION, ICLOUD_DEVICE_STATUS, DEVICE_TYPES,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME,
-                                CONF_AADEV_DEVICE_ID, CONF_DEVICE_TYPE,
-                                CONF_APPLE_ACCOUNT,
+                                MISSING_DEVICE_RESTART_IN_SECS, MISSING_DEVICE_INTERVAL_SECS, )
+from ..const_config     import (CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME,
+                                CONF_AADEV_DEVICE_ID, CONF_DEVICE_TYPE, CONF_APPLE_ACCT,
                                 CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME,
-                                CONF_LOG_LEVEL_DEVICES,
-                                )
+                                CONF_LOG_LEVEL_DEVICES, )
+from ..const_char       import (LINK, RLINK, LLINK, DOTS, RED_X, RARROW, DOT, CRLF, CRLF_DOT,
+                                CRLF_STAR, CRLF_CHK, CRLF_HDOT, )
 from ..utils.utils      import (instr, is_empty, isnot_empty, list_add, list_del, list_to_str,
-                                dict_sort, )
+                                dict_sort,
+                                apple_user, apple_id_dev, apple_user_dev, )
 from ..utils.time_util  import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
-                                secs_since, format_secs_since, format_age, format_time_age )
+                                secs_since, format_secs_since, format_age, format_time_age,
+                                format_timer, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_error_msg,
                                 post_greenbar_msg, _evlog, _log,
                                 log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-                                log_data, log_exception, log_data_unfiltered, )
+                                log_exception, update_alert_sensor, )
+from ..utils.rawdata_logging import (log_data, )
 
-from .apple_acct_device_data import iCloud_AppleAcctDeviceData
+from .apple_acct_device import iCloud_AppleAcctDevice
 from .                  import icloud_requests_io  as icloud_io
+from ..tracking         import determine_interval as det_interval
+from ..support          import test_controls as TEST
 
 import copy
 import logging
 LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
 
-# TEST CODE - Add a copy of this device to the Apple data with another name and
-# device_id to test replacement device detection with 2 watches. None=Off
-TEST_COPY_DEVICE_NAME       = None                          # Disable duplicate device test
-# TEST_COPY_DEVICE_NAME     = "Lillian's Apple Watch"       # Device to use as the new one
-# TEST_COPY_NEW_DEVICE_NAME = "Gary's Apple Watch"          # Test auto selecting the real device
-TEST_COPY_NEW_DEVICE_NAME   = "Lillian's Apple Watch (2)"   #Test screen with 3 candidates
+#--------------------------------------------------------------------
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -59,9 +60,9 @@ class iCloud_AppleAcctDevices():
                         sounds=False, number="", newpasscode=""):
 
         self.setup_time      = time_now()
-        self.iCloudSession = iCloudSession
+        self.iCloudSession   = iCloudSession
         self.AppleAcct       = AppleAcct
-        self.username_base   = self.AppleAcct.username_base
+        self.apple_user      = self.AppleAcct.apple_user
 
         self.params       = params
         self.task         = task
@@ -176,11 +177,11 @@ class iCloud_AppleAcctDevices():
                 last_update_loc_time = '?'
 
             if locate_all_devices is False:
-                device_msg = f"OwnerDev-{len(Gb.owner_device_ids_by_username.get(AppleAcct.username, []))}"
+                device_msg = f"FamShrDev-{len(Gb.famshr_device_ids_by_apple_id.get(AppleAcct.apple_id, []))}"
             else:
-                device_msg = f"AllDevices-{len(Gb.Devices_by_username.get(AppleAcct.username, []))}"
+                device_msg = f"AllDevices-{len(Gb.Devices_by_apple_id.get(AppleAcct.apple_id, []))}"
 
-            log_debug_msg( f"Apple Acct > {AppleAcct.username_base}, "
+            log_debug_msg( f"Apple Acct > {AppleAcct.apple_user}, "
                                 f"RefreshRequestBy-{requested_by_devicename}, "
                                 f"LocateAllDev-{locate_all_devices}, {device_msg}, LastLoc-{last_update_loc_time}")
 
@@ -201,7 +202,7 @@ class iCloud_AppleAcctDevices():
             except Exception as err:
                 log_exception(err)
                 self.devices_data = {}
-                log_debug_msg(  f"{AppleAcct.username_base}, "
+                log_debug_msg(  f"{AppleAcct.apple_user}, "
                                 f"No data returned from iCloud refresh request {err=}")
 
             if AppleAcct.response_code == 501:
@@ -216,10 +217,16 @@ class iCloud_AppleAcctDevices():
 
             devices_data = self.devices_data.get("content", {})
 
-            # TEST CODE - Add a test device before the AADevData objects are created
+            # TEST CODE - Add a test device before the AADev objects are created
             # so it is set up as a new device
-            if TEST_COPY_DEVICE_NAME and isnot_empty(devices_data):
+            if TEST.NEWER_DEV_EXISTING_DEVICE_NAME and isnot_empty(devices_data):
                 self._add_test_device_data(devices_data)
+
+            # TEST CODE - Remove a tracked device to simulate a wiped or removed device
+            if (TEST.MISSING_DEV_DEVICE_NAME
+                    and Gb.is_icloud3_startup_inprocess is False
+                    and isnot_empty(devices_data)):
+                self._remove_test_device_data(devices_data)
 
             if isnot_empty(devices_data):
                 self._create_AADeviceData_objects(devices_data)
@@ -228,9 +235,10 @@ class iCloud_AppleAcctDevices():
 
             if (Gb.is_icloud3_startup_inprocess is False
                     and Gb.was_icloud3_restart_requested is False):
+                self._request_restart_if_tracked_device_missing(devices_data, locate_all_devices)
                 self._request_restart_if_tracked_device_replaced()
 
-            return isnot_empty(self.AppleAcct.AADevData_by_device_id)
+            return isnot_empty(self.AppleAcct.AADev_by_device_id)
 
         except Exception as err:
             log_exception(err)
@@ -238,30 +246,52 @@ class iCloud_AppleAcctDevices():
 #----------------------------------------------------------------------------
     def _add_test_device_data(self, devices_data):
         '''
-        TEST CODE - Add a copy of the TEST_COPY_DEVICE_NAME device to the Apple data
-        with the TEST_COPY_NEW_DEVICE_NAME name and a test device_id. The device_id
-        is the same on every refresh so the test device is only created once.
-
-        Test 1 candidate:  TEST_COPY_NEW_DEVICE_NAME = 'Gary's Apple Watch'
-        Test 2 candidates: TEST_COPY_NEW_DEVICE_NAME = 'Lillian's Apple Watch'
-
+        TEST CODE - Add a copy of the TEST.NEWER_DEV_EXISTING_DEVICE_NAME device to the Apple data
+        for each TEST.NEWER_DEV_SIMULATED_NEW_DEVICE_NAME name with a test device_id and the
+        TEST.NEWER_DEV_SIMULATED_NEW_RAW_MODEL model. The device_id is the same on every refresh so
+        each test device is only created once.
         '''
         try:
             source_device_data = [device_data for device_data in devices_data
-                                    if self._remove_special_chars(device_data[NAME]) == TEST_COPY_DEVICE_NAME]
+                                    if self._remove_special_chars(device_data[NAME]) == TEST.NEWER_DEV_EXISTING_DEVICE_NAME]
             if is_empty(source_device_data):
+                log_debug_msg(f"TEST > Device to copy was not found, {TEST.NEWER_DEV_EXISTING_DEVICE_NAME}")
                 return
 
             source_device_data = source_device_data[0]
-            test_device_id     = f"TEST-{source_device_data[ID][5:]}"
-            if test_device_id in [device_data[ID] for device_data in devices_data]:
-                return
+            new_device_names   = TEST.NEWER_DEV_SIMULATED_NEW_DEVICE_NAME
+            if isinstance(new_device_names, str):
+                new_device_names = [new_device_names]
 
-            # deepcopy, the location is a dict and must not be shared with the real device
-            test_device_data       = copy.deepcopy(source_device_data)
-            test_device_data[NAME] = TEST_COPY_NEW_DEVICE_NAME
-            test_device_data[ID]   = test_device_id
-            devices_data.append(test_device_data)
+            device_ids = [device_data[ID] for device_data in devices_data]
+            for test_no, new_device_name in enumerate(new_device_names, start=1):
+                test_device_id = f"TEST{test_no}-{source_device_data[ID][6:]}"
+                if test_device_id in device_ids:
+                    continue
+
+                # deepcopy, the location is a dict and must not be shared with the real device
+                test_device_data       = copy.deepcopy(source_device_data)
+                test_device_data[NAME] = new_device_name
+                test_device_data[ID]   = test_device_id
+                if TEST.NEWER_DEV_SIMULATED_NEW_RAW_MODEL:
+                    test_device_data['rawDeviceModel'] = TEST.NEWER_DEV_SIMULATED_NEW_RAW_MODEL
+                devices_data.append(test_device_data)
+
+        except Exception as err:
+            log_exception(err)
+
+#----------------------------------------------------------------------------
+    def _remove_test_device_data(self, devices_data):
+        '''
+        TEST CODE - Remove the TEST.MISSING_DEV_DEVICE_NAME device from the Apple data so
+        it is not in the device list, the same as a device that was wiped or removed
+        from the Apple acct. The list is changed in place.
+        '''
+        try:
+            for device_data in devices_data[:]:
+                if self._remove_special_chars(device_data[NAME]) == TEST.MISSING_DEV_DEVICE_NAME:
+                    devices_data.remove(device_data)
+                    log_debug_msg(f"TEST > Device removed from Apple data, {TEST.MISSING_DEV_DEVICE_NAME}")
 
         except Exception as err:
             log_exception(err)
@@ -320,60 +350,60 @@ class iCloud_AppleAcctDevices():
                 if Device is None or Device.is_inactive:
                     continue
 
-                # # Create AADevData object if the device_id is not already set up
-                AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
+                # # Create AADev object if the device_id is not already set up
+                AADev = self.AppleAcct.AADev_by_device_id[device_id]
 
-                AADevData.save_new_device_data(device_data)
+                AADev.save_new_device_data(device_data)
                 #  Check Device.is_inactive now so it is created and in selection lists later
-                if (AADevData.Device is None
-                        or LOCATION not in AADevData.device_data):
+                if (AADev.Device is None
+                        or LOCATION not in AADev.device_data):
                     continue
 
-                if AADevData.location_secs == 0:
+                if AADev.location_secs == 0:
                     continue
 
                 if ('all' in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
-                        or AADevData.ic3_devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-                    log_hdr = ( f"{self.AppleAcct.username_base}{LINK}"
-                                f"{device_data_name}/{Device.devicename}{RLINK}, "
+                        or AADev.ic3_devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
+                    log_hdr = ( f"{apple_user_dev(self.AppleAcct.apple_user, device_data_name)}/"
+                                f"{Device.devicename}, "
                                 f"{aadevdata_hdr_msg}, iCloud Data ")
-                    log_data(log_hdr, AADevData.device_data,
-                                data_source='icloud', filter_id=self.AppleAcct.username)
+                    log_data(log_hdr, AADev.device_data,
+                                data_source='icloud', filter_id=self.AppleAcct.apple_id)
 
-                if AADevData.last_loc_time_gps == AADevData.loc_time_gps:
+                if AADev.last_loc_time_gps == AADev.loc_time_gps:
                     last_loc_time_gps_msg = last_loc_time_msg = ''
                 else:
-                    last_loc_time_gps_msg = f"{AADevData.last_loc_time_gps}{RARROW}"
-                    last_loc_time_msg     = f"{AADevData.last_loc_time}{RARROW}"
-                    Device.loc_time_updates_icloud.append(AADevData.location_time)
+                    last_loc_time_gps_msg = f"{AADev.last_loc_time_gps}{RARROW}"
+                    last_loc_time_msg     = f"{AADev.last_loc_time}{RARROW}"
+                    Device.loc_time_updates_icloud.append(AADev.location_time)
 
                 event_msg =(f"Located > iCloud-"
                             f"{last_loc_time_msg}"
-                            f"{AADevData.location_time}, ")
+                            f"{AADev.location_time}, ")
 
-                if secs_since(AADevData.location_secs) > Device.old_loc_threshold_secs + 5:
-                    event_msg += f", Old, {format_age(AADevData.location_secs)}"
+                if secs_since(AADev.location_secs) > Device.old_loc_threshold_secs + 5:
+                    event_msg += f", Old, {format_age(AADev.location_secs)}"
 
-                elif AADevData.battery_level is None:
-                    AADevData.battery_level = 0
+                elif AADev.battery_level is None:
+                    AADev.battery_level = 0
 
-                elif AADevData.battery_level > 0:
-                    if AADevData.battery_level != Device.dev_data_battery_level:
+                elif AADev.battery_level > 0:
+                    if AADev.battery_level != Device.dev_data_battery_level:
                         event_msg += f"{Device.dev_data_battery_level}%{RARROW}"
-                    event_msg += f"{AADevData.battery_level}%"
+                    event_msg += f"{AADev.battery_level}%"
 
                 if Gb.is_icloud3_startup_inprocess is True:
                     pass
 
                 elif requested_by_devicename == Device.devicename:
-                    AADevData.last_requested_loc_time_gps = AADevData.loc_time_gps
+                    AADev.last_requested_loc_time_gps = AADev.loc_time_gps
                     if last_loc_time_msg:
                         post_event(Device.devicename, event_msg)
 
                 elif Device.isin_zone:
                     post_monitor_msg(Device.devicename, event_msg)
 
-                elif AADevData.location_secs > 0:
+                elif AADev.location_secs > 0:
                     post_event(Device.devicename, event_msg)
 
         except Exception as err:
@@ -385,31 +415,31 @@ class iCloud_AppleAcctDevices():
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def _create_AADeviceData_objects(self, devices_data):
         '''
-        Create the AADevData object for a new device and update the name of a device
+        Create the AADev object for a new device and update the name of a device
         that was renamed in the Apple acct. If a device was added or renamed, the
         duplicate names are resolved and the name lookup tables are rebuilt.
         '''
-        new_AADevData_items     = []
-        renamed_AADevData_items = []
+        new_AADev_items     = []
+        renamed_AADev_items = []
 
         for device_data in devices_data:
             device_id         = device_data[ID]
             device_data[NAME] = device_data_name = self._remove_special_chars(device_data[NAME])
 
-            AADevData = self.AppleAcct.AADevData_by_device_id.get(device_id)
-            if AADevData is None:
+            AADev = self.AppleAcct.AADev_by_device_id.get(device_id)
+            if AADev is None:
                 self._create_AADeviceData_object(device_id, device_data)
-                AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
-                AADevData.active = True
-                new_AADevData_items.append(AADevData)
+                AADev = self.AppleAcct.AADev_by_device_id[device_id]
+                AADev.active = True
+                new_AADev_items.append(AADev)
 
-            elif AADevData.name != device_data_name:
-                post_event( f"Apple Acct > {self.AppleAcct.username_base}, "
-                            f"Device Renamed > {AADevData.name}{RARROW}{device_data_name}")
-                AADevData.name = AADevData.device_data[NAME] = device_data_name
-                renamed_AADevData_items.append(AADevData)
+            elif AADev.name != device_data_name:
+                post_event( f"Apple Acct > {self.AppleAcct.apple_user}, "
+                            f"Device Renamed > {AADev.name}{RARROW}{device_data_name}")
+                AADev.name = AADev.device_data[NAME] = device_data_name
+                renamed_AADev_items.append(AADev)
 
-        if is_empty(new_AADevData_items) and is_empty(renamed_AADevData_items):
+        if is_empty(new_AADev_items) and is_empty(renamed_AADev_items):
             return
 
         self._resolve_duplicate_dnames()
@@ -417,7 +447,7 @@ class iCloud_AppleAcctDevices():
 
         if Gb.is_icloud3_startup_inprocess is False:
             self._request_restart_if_tracked_device_changed(
-                                    new_AADevData_items, renamed_AADevData_items)
+                                    new_AADev_items, renamed_AADev_items)
 
 #----------------------------------------------------------------------------
     def _save_owner_first_names(self):
@@ -450,50 +480,51 @@ class iCloud_AppleAcctDevices():
         The dnames are set from the Apple device name each time so this can be run
         again when a device is added or renamed.
         '''
-        AADevData_items = [AADevData
-                    for AADevData in self.AppleAcct.AADevData_by_device_id.values()
-                    if AADevData and AADevData.active]
+        AADev_items = [AADev
+                    for AADev in self.AppleAcct.AADev_by_device_id.values()
+                    if AADev and AADev.active]
 
         # Newest first within the name and owner. The device_id makes the order the
         # same each time if the model and location time are the same.
-        AADevData_items.sort(key=lambda AADevData: (
-                                    AADevData.name, AADevData.prs_id or '',
-                                    -AADevData.model_no, -AADevData.location_secs,
-                                    AADevData.device_id))
+        AADev_items.sort(key=lambda AADev: (
+                                    AADev.name, AADev.prs_id or '',
+                                    -AADev.model_no, -AADev.location_secs,
+                                    AADev.device_id))
 
-        AADevData_items_by_name = {}
-        for AADevData in AADevData_items:
-            AADevData_items_by_name.setdefault(AADevData.name, []).append(AADevData)
+        AADev_items_by_name = {}
+        for AADev in AADev_items:
+            AADev_items_by_name.setdefault(AADev.name, []).append(AADev)
 
-        for name, same_name_AADevData_items in AADevData_items_by_name.items():
-            prs_ids = {AADevData.prs_id for AADevData in same_name_AADevData_items}
+        for name, same_name_AADev_items in AADev_items_by_name.items():
+            prs_ids = {AADev.prs_id for AADev in same_name_AADev_items}
             is_multiple_owners = len(prs_ids) > 1
 
             dname_dots_by_prs_id = {}
-            for AADevData in same_name_AADevData_items:
+            for AADev in same_name_AADev_items:
                 startup_msg = []
-                AADevData.dname = name
+                AADev.dname = name
 
-                if is_multiple_owners and AADevData.prs_id:
-                    owner_name = AADevData.owner_first_name or AADevData.prs_id[:6]
-                    AADevData.dname += f" ({owner_name})"
+                if is_multiple_owners and AADev.prs_id:
+                    owner_name = AADev.owner_first_name or AADev.prs_id[:6]
+                    AADev.dname += f" ({owner_name})"
 
-                if AADevData.prs_id in dname_dots_by_prs_id:
-                    dname_dots_by_prs_id[AADevData.prs_id] += '.'
-                    AADevData.dname += dname_dots_by_prs_id[AADevData.prs_id]
-                    AADevData.is_duplicate_dname = True
+                if AADev.prs_id in dname_dots_by_prs_id:
+                    dname_dots_by_prs_id[AADev.prs_id] += '.'
+                    AADev.dname += dname_dots_by_prs_id[AADev.prs_id]
+                    AADev.is_duplicate_dname = True
                     list_add(startup_msg, 'DUPLICATE')
                 else:
-                    dname_dots_by_prs_id[AADevData.prs_id] = ''
-                    AADevData.is_duplicate_dname = False
+                    dname_dots_by_prs_id[AADev.prs_id] = ''
+                    AADev.is_duplicate_dname = False
 
-                if AADevData.location_secs == 0:
+                if AADev.location_secs == 0:
                     list_add(startup_msg, 'NOT LOCATED')
-                if AADevData.device_status_code == 201:
+                if AADev.device_status_code == 201:
                     list_add(startup_msg, 'OFFLINE')
 
-                AADevData.device_data['dname'] = AADevData.dname
-                AADevData.startup_msg = list_to_str(startup_msg)
+                AADev.device_data['dname'] = AADev.dname
+                AADev.apple_id_dev         = apple_id_dev(AADev.apple_id, AADev.dname)
+                AADev.startup_msg = list_to_str(startup_msg)
 
 #----------------------------------------------------------------------------
     def _rebuild_aadev_by_dname_dicts(self):
@@ -503,26 +534,26 @@ class iCloud_AppleAcctDevices():
         so the config flow never sees an empty table.
         '''
         AppleAcct = self.AppleAcct
-        AADevData_items                  = []
+        AADev_items                  = []
         aadev_dname_by_device_id         = {}
         device_id_by_aadev_dname         = {}
         device_info_by_aadev_dname       = {}
         device_model_info_by_aadev_dname = {}
         device_model_name_by_aadev_dname = {}
 
-        for device_id, AADevData in AppleAcct.AADevData_by_device_id.items():
-            if AADevData is None or AADevData.active is False:
+        for device_id, AADev in AppleAcct.AADev_by_device_id.items():
+            if AADev is None or AADev.active is False:
                 continue
 
-            dname = AADevData.dname
-            AADevData_items.append(AADevData)
+            dname = AADev.dname
+            AADev_items.append(AADev)
             aadev_dname_by_device_id[device_id]     = dname
             device_id_by_aadev_dname[dname]         = device_id
-            device_info_by_aadev_dname[dname]       = AADevData.aa_device_info
-            device_model_info_by_aadev_dname[dname] = AADevData.aadevice_model_info
-            device_model_name_by_aadev_dname[dname] = AADevData.model_display_name
+            device_info_by_aadev_dname[dname]       = AADev.device_info
+            device_model_info_by_aadev_dname[dname] = AADev.aadevice_model_info
+            device_model_name_by_aadev_dname[dname] = AADev.model_display_name
 
-        AppleAcct.AADevData_items                  = AADevData_items
+        AppleAcct.AADev_items                  = AADev_items
         AppleAcct.aadev_dname_by_device_id         = aadev_dname_by_device_id
         AppleAcct.device_id_by_aadev_dname         = device_id_by_aadev_dname
         AppleAcct.device_info_by_aadev_dname       = device_info_by_aadev_dname
@@ -530,8 +561,8 @@ class iCloud_AppleAcctDevices():
         AppleAcct.device_model_name_by_aadev_dname = device_model_name_by_aadev_dname
 
 #----------------------------------------------------------------------------
-    def _request_restart_if_tracked_device_changed(self, new_AADevData_items,
-                                                        renamed_AADevData_items):
+    def _request_restart_if_tracked_device_changed(self, new_AADev_items,
+                                                        renamed_AADev_items):
         '''
         Restart iCloud3 when a new or renamed device affects a tracked device so it
         can be reassigned (start_ic3._verify_conf_apple_device_parameters):
@@ -543,46 +574,46 @@ class iCloud_AppleAcctDevices():
         Other new devices are listed in the Event Log. They can be added in Configure.
         '''
         conf_devices = [conf_device for conf_device in Gb.conf_devices
-                            if conf_device[CONF_APPLE_ACCOUNT] == self.AppleAcct.username]
+                            if conf_device[CONF_APPLE_ACCT] == self.AppleAcct.apple_id]
         tracked_device_ids = [conf_device[CONF_AADEV_DEVICE_ID] for conf_device in conf_devices]
         tracked_names      = [conf_device[CONF_AADEV_NAME] for conf_device in conf_devices]
-        tracked_owner_keys = [AADevData.owner_device_key
-                                for AADevData in [self.AppleAcct.AADevData_by_device_id.get(device_id)
+        tracked_owner_keys = [AADev.owner_device_key
+                                for AADev in [self.AppleAcct.AADev_by_device_id.get(device_id)
                                                     for device_id in tracked_device_ids]
-                                if AADevData]
+                                if AADev]
 
         restart_reasons = []
-        for AADevData in renamed_AADevData_items:
-            if AADevData.device_id in tracked_device_ids:
-                list_add(restart_reasons, f"{AADevData.name}, Tracked device was renamed")
+        for AADev in renamed_AADev_items:
+            if AADev.device_id in tracked_device_ids:
+                list_add(restart_reasons, f"{AADev.name}, Tracked device was renamed")
 
-        for AADevData in new_AADevData_items + renamed_AADevData_items:
-            if AADevData.device_id in tracked_device_ids:
+        for AADev in new_AADev_items + renamed_AADev_items:
+            if AADev.device_id in tracked_device_ids:
                 continue
-            if AADevData.name in tracked_names:
-                list_add(restart_reasons, f"{AADevData.name}, Has a tracked device's name")
-            elif AADevData.owner_device_key in tracked_owner_keys:
-                list_add(restart_reasons, f"{AADevData.name}, May replace a tracked device")
+            if AADev.name in tracked_names:
+                list_add(restart_reasons, f"{AADev.name}, Has a tracked device's name")
+            elif AADev.owner_device_key in tracked_owner_keys:
+                list_add(restart_reasons, f"{AADev.name}, May replace a tracked device")
 
         if restart_reasons:
-            post_event( f"Apple Acct > {self.AppleAcct.username_base}, "
+            post_event( f"Apple Acct > {self.AppleAcct.apple_user}, "
                         f"Tracked Device Changed, Restarting iCloud3"
                         f"{CRLF_DOT}{CRLF_DOT.join(restart_reasons)}")
             Gb.was_icloud3_restart_requested = True
             return
 
-        new_devices_msg = [f"{AADevData.dname} ({AADevData.model_display_name})"
-                                for AADevData in new_AADevData_items]
+        new_devices_msg = [f"{AADev.dname} ({AADev.model_display_name})"
+                                for AADev in new_AADev_items]
         if new_devices_msg:
-            post_event( f"Apple Acct > {self.AppleAcct.username_base}, "
+            post_event( f"Apple Acct > {self.AppleAcct.apple_user}, "
                         f"New Apple Device Detected, It can be tracked by adding it "
                         f"in iCloud3 Configure > iCloud3 Devices"
                         f"{CRLF_DOT}{CRLF_DOT.join(new_devices_msg)}")
 
 #----------------------------------------------------------------------------
-    def find_replacement_devices(self, AADevData):
+    def find_replacement_devices(self, AADev):
         '''
-        Return the devices that may have replaced the tracked device (AADevData):
+        Return the devices that may have replaced the tracked device (AADev):
             candidates   - Same owner and device type, a higher model number, not a
                            duplicate and not tracked by an iCloud3 device
             name_matches - Candidates with the tracked device's name without the model
@@ -592,21 +623,21 @@ class iCloud_AppleAcctDevices():
         Used by start_ic3._check_for_replacement_device and by the refresh check
         (_request_restart_if_tracked_device_replaced) so both use the same rules.
         '''
-        if AADevData.device_class in ['Accessory', AIRPODS_DN]:
+        if AADev.device_class in ['Accessory', AIRPODS_DN]:
             return None, None
 
         tracked_device_ids = [conf_device[CONF_AADEV_DEVICE_ID] for conf_device in Gb.conf_devices]
-        candidates = [_AADevData
-                        for _AADevData in self.AppleAcct.AADevData_by_device_id.values()
-                        if (_AADevData
-                            and _AADevData.active
-                            and _AADevData.device_id not in tracked_device_ids
-                            and _AADevData.is_duplicate_dname is False
-                            and _AADevData.prs_id == AADevData.prs_id
-                            and _AADevData.device_class == AADevData.device_class
-                            and _AADevData.model_no > AADevData.model_no)]
-        name_matches = [_AADevData for _AADevData in candidates
-                            if _AADevData.owner_device_key == AADevData.owner_device_key]
+        candidates = [_AADev
+                        for _AADev in self.AppleAcct.AADev_by_device_id.values()
+                        if (_AADev
+                            and _AADev.active
+                            and _AADev.device_id not in tracked_device_ids
+                            and _AADev.is_duplicate_dname is False
+                            and _AADev.prs_id == AADev.prs_id
+                            and _AADev.device_class == AADev.device_class
+                            and _AADev.model_no > AADev.model_no)]
+        name_matches = [_AADev for _AADev in candidates
+                            if _AADev.owner_device_key == AADev.owner_device_key]
 
         return candidates, name_matches
 
@@ -623,31 +654,108 @@ class iCloud_AppleAcctDevices():
         '''
         restart_reasons = []
         for conf_device in Gb.conf_devices:
-            if conf_device[CONF_APPLE_ACCOUNT] != self.AppleAcct.username:
+            if conf_device[CONF_APPLE_ACCT] != self.AppleAcct.apple_id:
                 continue
 
-            AADevData = self.AppleAcct.AADevData_by_device_id.get(conf_device[CONF_AADEV_DEVICE_ID])
-            if (AADevData is None
-                    or AADevData.is_duplicate_dname
-                    or (AADevData.is_retired or AADevData.is_offline_stale) is False):
+            AADev = self.AppleAcct.AADev_by_device_id.get(conf_device[CONF_AADEV_DEVICE_ID])
+            if (AADev is None
+                    or AADev.is_duplicate_dname
+                    or (AADev.is_retired or AADev.is_offline_stale) is False):
                 continue
 
-            _, name_matches = self.find_replacement_devices(AADevData)
+            _, name_matches = self.find_replacement_devices(AADev)
             if name_matches and len(name_matches) == 1:
                 list_add(restart_reasons,
-                        f"{AADevData.name} ({AADevData.model_display_name}){RARROW}"
+                        f"{AADev.name} ({AADev.model_display_name}){RARROW}"
                         f"{name_matches[0].name} ({name_matches[0].model_display_name})")
 
         if restart_reasons:
-            post_alert( f"Apple Acct > {self.AppleAcct.username_base}, "
+            post_alert( f"Apple Acct > {self.AppleAcct.apple_user}, "
                         f"Newer Apple Device detected, Restarting iCloud3"
+                        f"{CRLF_DOT}{CRLF_DOT.join(restart_reasons)}")
+            Gb.was_icloud3_restart_requested = True
+
+#----------------------------------------------------------------------------
+    def _request_restart_if_tracked_device_missing(self, devices_data, locate_all_devices):
+        '''
+        A tracked device that was wiped, removed from the Apple acct or had Find My
+        turned off is no longer in the device list. Its AADev keeps the last data
+        it had so it is never retired or offline. An offline device (on an airplane)
+        is still in the list and is not missing.
+
+        The device is checked every 15-mins. If it is still missing after 1-hour (4
+        refreshes, other devices may refresh it too), restart iCloud3. The startup
+        (start_ic3._verify_conf_apple_device_parameters) changes the config to the
+        device with the same name or posts the Unknown Apple Device error with a
+        Repairs issue.
+
+        A refresh is not used if it did not return any devices or if it was for the
+        acct owner's devices only (locate_all_devices=False), the Family Sharing
+        devices are not in it.
+        '''
+        if is_empty(devices_data):
+            return
+
+        device_ids = [device_data[ID] for device_data in devices_data]
+
+        restart_reasons = []
+        for conf_device in Gb.conf_devices:
+            if conf_device[CONF_APPLE_ACCT] != self.AppleAcct.apple_id:
+                continue
+
+            device_id = conf_device[CONF_AADEV_DEVICE_ID]
+            AADev = self.AppleAcct.AADev_by_device_id.get(device_id)
+            Device    = Gb.Devices_by_icloud_device_id.get(device_id)
+            if AADev is None or Device is None or Device.is_inactive:
+                continue
+
+            if device_id in device_ids:
+                if AADev.missing_since_secs > 0:
+                    post_event(Device,
+                                f"Apple Device Found > {AADev.dname}, "
+                                f"Missing-{format_age(AADev.missing_since_secs)}")
+                AADev.missing_since_secs = 0
+                Device.set_button_prefix_icon('')
+                continue
+
+            if (locate_all_devices is False
+                    and AADev.device_data.get('fmlyShare', False)):
+                continue
+
+            if AADev.missing_since_secs == 0:
+                AADev.missing_since_secs = Gb.this_update_secs or time_now_secs()
+                det_interval.update_all_device_fm_zone_sensors_interval(
+                                                Device, MISSING_DEVICE_INTERVAL_SECS)
+                Device.set_button_prefix_icon(RED_X)
+                update_alert_sensor(Source=Device, error='missing_aadevice',
+                                    alert_msg=( f"{Device.devicename} > "
+                                                f"Apple Device no longer available ({AADev.dname})"))
+                Gb.restart_at_secs = time_now_secs() + MISSING_DEVICE_RESTART_IN_SECS
+                post_event( f"{EVLOG_ALERT}Apple Device > Device is No Longer Available, > "
+                            f"{AADev.dname} ({AADev.model_display_name}), "
+                            f"RecheckAt-{Device.next_update_time} "
+                            f"({format_timer(MISSING_DEVICE_INTERVAL_SECS)}), "
+                            f"iCloud3 will restart at "
+                            f"{secs_to_time(Gb.restart_at_secs)}")
+                continue
+
+            # The location prefetch requests the data up to 15-secs before the
+            # next update time so the 4th 15-min refresh is a little less than 1-hour
+            if secs_since(AADev.missing_since_secs) >= MISSING_DEVICE_RESTART_IN_SECS - 60:
+                list_add(restart_reasons,
+                        f"{Device.fname} > {AADev.dname} ({AADev.model_display_name}), "
+                        f"Missing-{format_age(AADev.missing_since_secs)}")
+
+        if restart_reasons:
+            post_alert( f"Apple Acct > {self.AppleAcct.apple_user}, "
+                        f"Tracked Apple Device is not in the Apple Acct, Restarting iCloud3"
                         f"{CRLF_DOT}{CRLF_DOT.join(restart_reasons)}")
             Gb.was_icloud3_restart_requested = True
 
 #----------------------------------------------------------------------------
     def _create_AADeviceData_object(self, device_id, device_data):
 
-        AADevData = iCloud_AppleAcctDeviceData(device_id,
+        AADev = iCloud_AppleAcctDevice(device_id,
                                     device_data,
                                     self.iCloudSession,
                                     self.params,
@@ -655,51 +763,51 @@ class iCloud_AppleAcctDevices():
                                     'timeStamp',
                                     self)
 
-        self.AppleAcct.AADevData_by_device_id[device_id] = AADevData
+        self.AppleAcct.AADev_by_device_id[device_id] = AADev
 
         dup_msg = ''
-        log_debug_msg(  f"{self.AppleAcct.username_base}, "
+        log_debug_msg(  f"{self.AppleAcct.apple_user}, "
                         f"Create AppleAcctDeviceData object, "
-                        f"{self.AppleAcct.account_owner}{LINK}{AADevData.dname}{RLINK}"
+                        f"{apple_user_dev(self.AppleAcct.apple_user, AADev.dname)}"
                         f"{dup_msg}")
 
-        log_hdr = f"{self.AppleAcct.account_name}{LINK}{AADevData.dname}{RLINK}, AADeviceData"
-        log_data(log_hdr, AADevData.device_data,
-                    data_source='icloud', filter_id=self.AppleAcct.username)
+        log_hdr = f"{apple_user_dev(self.AppleAcct.apple_user, AADev.dname)}, AADeviceData"
+        log_data(log_hdr, AADev.device_data,
+                    data_source='icloud', filter_id=self.AppleAcct.apple_id)
 
 
 
 #----------------------------------------------------------------------------
-    def _initialize_iCloud_AADevData_object(self, device_id, device_data):
+    def _initialize_iCloud_AADev_object(self, device_id, device_data):
 
-        AADevData = self.AppleAcct.AADevData_by_device_id[device_id]
+        AADev = self.AppleAcct.AADev_by_device_id[device_id]
 
-        dname = self._remove_special_chars(AADevData.name)
+        dname = self._remove_special_chars(AADev.name)
         self.AppleAcct.dup_icloud_dname_cnt[dname] = 0
 
-        AADevData.__init__(  device_id,
+        AADev.__init__(  device_id,
                             device_data,
                             self.iCloudSession,
                             self.params,
                             'iCloud', 'timeStamp',
                             self, )
 
-        self.set_apple_acct_device_data_fields(device_id, AADevData)
+        self.set_apple_acct_device_data_fields(device_id, AADev)
 
-        post_greenbar_msg(f"Apple Acct > {self.AppleAcct.username_base}, {AADevData.dname}")
-        log_debug_msg(  f"Initialize AADevData_icloud object "
-                        f"{self.AppleAcct.username_base}{LINK}<{AADevData.dname}")
+        post_greenbar_msg(f"Apple Acct > {self.AppleAcct.apple_user}, {AADev.dname}")
+        log_debug_msg(  f"Initialize AADev_icloud object "
+                        f"{apple_user_dev(self.AppleAcct.apple_user, AADev.dname)}")
 
-        log_hdr = f"{self.AppleAcct.account_name}{LINK}{AADevData.dname}{RLINK}, iCloud Data"
-        log_data(log_hdr, AADevData.device_data,
-                    data_source='icloud', is_log_level_rawdata=True, filter_id=self.AppleAcct.username)
+        log_hdr = f"{apple_user_dev(self.AppleAcct.account_name, AADev.dname)}, iCloud Data"
+        log_data(log_hdr, AADev.device_data,
+                    data_source='icloud', is_log_level_rawdata=True, filter_id=self.AppleAcct.apple_id)
 
 #----------------------------------------------------------------------
-    def set_apple_acct_device_data_fields(self, device_id, AADevData):
+    def set_apple_acct_device_data_fields(self, device_id, AADev):
         '''
         The iCloud dictionaries contain info about the devices that is set
-        up when the AADevData object for the device is created. If the iCloud
-        object is recreated during error, the device's AADevData object already
+        up when the AADev object for the device is created. If the iCloud
+        object is recreated during error, the device's AADev object already
         exists and is not recreated. The iCloud dictionaries need to be
         set up again.
         '''
@@ -784,7 +892,7 @@ class iCloud_AppleAcctDevices():
 #----------------------------------------------------------------------------
     def _create_test_data(self, device_id, device_data):
         '''
-        Create duplicate devices test data in _AADevData using data from the
+        Create duplicate devices test data in _AADev using data from the
         current device
         '''
         device_data_test1 = device_data.copy()
@@ -794,21 +902,18 @@ class iCloud_AppleAcctDevices():
 
         device_data[LOCATION]['timeStamp'] = 0
 
-        monitor_msg +=\
-            self._create_AADeviceData_object(device_id, device_data)
+        self._create_AADeviceData_object(device_id, device_data)
 
         device_data_test1[NAME] = f"TestDevice-1"
         device_data_test1[ID]   = f"XX1_{device_id}"
         device_data_test1[LOCATION]['timeStamp'] -= 3000000000
         device_data_test1['rawDeviceModel'] = 'iPad8,91'
+        self._create_AADeviceData_object(device_data_test1[ID], device_data_test1)
 
-        monitor_msg +=\
-            self._create_AADeviceData_object(device_data_test1[ID], device_data_test1)
         device_data_test2[NAME] = f"TestDevice-2"
         device_data_test2[ID]   = f"XX2_{device_id}"
         device_data_test2['rawDeviceModel'] = 'iPad8,92'
-        monitor_msg +=\
-            self._create_AADeviceData_object(device_data_test2[ID], device_data_test2)
+        self._create_AADeviceData_object(device_data_test2[ID], device_data_test2)
 
 #----------------------------------------------------------------------------
     def __repr__(self):

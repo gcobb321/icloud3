@@ -658,9 +658,9 @@ def calculate_time_zone_offset():
 def apple_server_time():
     # Get Apple Server Time that displays when password authentication is done
     apple_zone_datetime = datetime.now(ZoneInfo('America/Los_Angeles'))
-    apple_time_structure = '%b %d, %Y, %H:%M PST'
+    apple_time_structure = '%b %d, %Y, %H:%M %Z'
     if Gb.time_format_12_hour:
-        apple_time_structure.replace('H', '-I')
+        apple_time_structure = apple_time_structure.replace('%H:%M', '%-I:%M %p')
 
     return apple_zone_datetime.strftime(apple_time_structure)
 

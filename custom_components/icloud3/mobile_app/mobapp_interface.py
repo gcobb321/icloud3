@@ -1,14 +1,15 @@
 
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (NOTIFY, EVLOG_NOTICE, NEXT_UPDATE, DEVICE_TYPES,
-                                    CRLF_DOT, CRLF, NBSP6, NL3D, RED_X, YELLOW_ALERT, RARROW,
-                                    CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE)
+from ..const                import (NOTIFY, EVLOG_NOTICE, DEVICE_TYPES, )
+from ..const_config         import (NEXT_UPDATE, CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE, )
+from ..const_char           import (CRLF_DOT, CRLF, NBSP6, NL3D, RED_X, GREEN_ALERT, RARROW, )
 from ..utils.utils          import (instr, is_empty, list_add, list_to_str, )
 from ..utils                import  file_io
 from ..utils.messaging      import (post_event, post_alert, post_error_msg, post_greenbar_msg,
-                                    log_info_msg, log_exception, log_data, log_debug_msg,
-                                    log_data_unfiltered, _evlog, _log, )
+                                    log_info_msg, log_exception, log_debug_msg,
+                                    _evlog, _log, )
+from ..utils.rawdata_logging import (log_data, log_data_unfiltered, )
 from ..utils.time_util      import (secs_to_time, secs_since, mins_since, secs_to_time, format_time_age,
                                     format_timer, time_now_secs)
 from homeassistant.helpers  import  entity_registry as er, device_registry as dr
@@ -98,9 +99,12 @@ def get_entity_registry_mobile_app_devices():
             log_title = (f"MobApp entity_registry entry - <{mobapp_dname}>)")
             log_data(log_title, dev_trkr_entity, is_log_level_rawdata=True)
 
-        last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities, '_last_update_trigger')
-        battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_level')
-        battery_state_sensors     = _extract_mobile_app_entities(mobile_app_entities, '_battery_state')
+        last_updt_trigger_sensors = _extract_mobile_app_entities(mobile_app_entities,
+                                                                ['_last_update_trigger', '_last_update'])
+        battery_level_sensors     = _extract_mobile_app_entities(mobile_app_entities,
+                                                                ['_battery_level', '_level'])
+        battery_state_sensors     = _extract_mobile_app_entities(mobile_app_entities,
+                                                                ['_battery_state'])
 
         Gb.last_updt_trig_by_mobapp_dname        = _extract_sensor_entities(last_updt_trigger_sensors)
         Gb.battery_level_sensors_by_mobapp_dname = _extract_sensor_entities(battery_level_sensors)
@@ -119,7 +123,7 @@ def get_entity_registry_mobile_app_devices():
     return
 
 #-----------------------------------------------------------------------------------------------------
-def _extract_mobile_app_entities(mobile_app_entities, entity_name):
+def _extract_mobile_app_entities(mobile_app_entities, name_instr_items):
     '''
     Extract mobile_app entities fields (dictionary) for the specific type
     of entity (_last_update_trigger, _battery_state
@@ -127,7 +131,14 @@ def _extract_mobile_app_entities(mobile_app_entities, entity_name):
     Return - A list of the mobile_app entities
     '''
     return [x   for x in mobile_app_entities
-                if instr(x['unique_id'], entity_name)]
+                if (instr(x['unique_id'], name_instr_items)
+                    or instr(x['entity_id'], name_instr_items))]
+
+def _contains_instr_item(item, instr_items):
+    for instr_item in instr_items:
+        if instr_item in item:
+            return True
+    return False
 
 #-----------------------------------------------------------------------------------------------------
 def _extract_sensor_entities(sensor_entities):
@@ -172,7 +183,13 @@ def _get_mobile_app_notify_devices():
         'Gary-iPad-app': '7f8496d4c94b958b7d091e5438353ac5795323b1b261815b4573f690f1b7b7ff'}
 
     '''
-    mobapp_notify_service = Gb.hass.data['mobile_app']['notify']
+    # The mobile_app Integration sets up it's notify platform in a separate task that HA
+    # does not wait for, so it may not be there yet when iCloud3 is starting
+    mobapp_notify_service = Gb.hass.data.get('mobile_app', {}).get('notify')
+    if mobapp_notify_service is None:
+        log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
+        return {}
+
     notify_targets = mobapp_notify_service.registered_targets
     mobapp_fname_targets = mobapp_notify_service.targets
     Gb.mobile_app_notify_devicenames = list(mobapp_fname_targets.keys())

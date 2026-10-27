@@ -20,32 +20,36 @@
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (HOME, NOT_HOME, AWAY, NOT_SET, NOT_HOME_ZONES, HIGH_INTEGER,
-                                    LT, RED_X, RARROW, CRLF_DOT, CRLF,
-                                    EVLOG_ALERT, HOME_ICON,
+                                    EVLOG_ALERT,
                                     WATCH, DEVICE_TYPES_CELL_SVC,
                                     AWAY_FROM, FAR_AWAY, TOWARDS, PAUSED, INZONE, INZONE_STATZONE, INZONE_HOME,
                                     ERROR, UNKNOWN, VALID_DATA, NEAR_DEVICE_DISTANCE,
-                                    WAZE_USED, WAZE_NOT_USED, WAZE_PAUSED, WAZE_OUT_OF_RANGE, WAZE_NO_DATA,
-                                    NEAR_DEVICE_USEABLE_SYM, EXIT_ZONE, ENTER_ZONE,
-                                    ZONE, ZONE_INFO, ZONE_ENTER_SECS, ZONE_EXIT_SECS,
-                                    INTERVAL, INTERVAL_METHOD,
-                                    DISTANCE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZONE_DISTANCE_M_EDGE,
-                                    MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE, WAZE_METHOD,
-                                    TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME, DIR_OF_TRAVEL, MOVED_DISTANCE,
-                                    LAST_LOCATED, LAST_LOCATED_TIME, LAST_LOCATED_DATETIME,
-                                    LAST_UPDATE, LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
-                                    NEXT_UPDATE, NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
-                                    LAST_LOCATED,
-                                    CONF_AWAY_TIME_ZONE_1_DEVICES, CONF_AWAY_TIME_ZONE_2_DEVICES,
-                                    CONF_SENSORS_MONITORED_DEVICES,
-                                    )
+                                    WAZE_USED, WAZE_NOT_USED, WAZE_PAUSED, WAZE_OUT_OF_RANGE, WAZE_NO_DATA, WENT_3KM, NEAR_DEVICE_USED,
+                                    EXIT_ZONE, ENTER_ZONE,
+                                    MAX_DISTANCE, WAZE_METHOD,
+                                    LAST_LOCATED_TIME, LAST_LOCATED_DATETIME,
+                                    LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
+                                    NEXT_UPDATE_TIME, NEXT_UPDATE_DATETIME,
+                                    OLD_LOCATION_CNT, AUTH_ERROR_CNT,
+                                    RETRY_INTERVAL_RANGE_1, RETRY_INTERVAL_RANGE_2,MOBAPP_REQUEST_LOC_CNT,
+                                    MISSING_DEVICE_INTERVAL_SECS, MISSING_DEVICE_RESTART_IN_SECS, )
+from ..const_config         import (ZONE, ZONE_INFO, ZONE_ENTER_SECS, ZONE_EXIT_SECS, INTERVAL,
+                                    INTERVAL_METHOD, DISTANCE, ZONE_DISTANCE, ZONE_DISTANCE_M,
+                                    ZONE_DISTANCE_M_EDGE, CALC_DISTANCE, WAZE_DISTANCE,
+                                    TRAVEL_TIME, TRAVEL_TIME_MIN, TRAVEL_TIME_HHMM, ARRIVAL_TIME,
+                                    DIR_OF_TRAVEL, MOVED_DISTANCE, LAST_LOCATED, LAST_UPDATE,
+                                    NEXT_UPDATE, CONF_AWAY_TIME_ZONE_1_DEVICES,
+                                    CONF_AWAY_TIME_ZONE_2_DEVICES, CONF_SENSORS_MONITORED_DEVICES, )
+from ..const_char           import (LT, RED_X, RARROW, CRLF_DOT, CRLF, HOME_ICON,
+                                    NEAR_DEVICE_USEABLE_SYM, )
 
 from ..utils.utils          import (instr, is_between, round_to_zero, is_zone, is_statzone, isnot_zone,
                                     zone_dname, list_add, list_to_str, )
 from ..utils.messaging      import (post_event, post_alert, post_error_msg,
                                     post_greenbar_msg, clear_greenbar_msg,
-                                    post_internal_error, post_monitor_msg, log_debug_msg, log_data,
+                                    post_internal_error, post_monitor_msg, log_debug_msg,
                                     log_info_msg, log_info_msg_HA, log_exception, _evlog, _log, )
+from ..utils.rawdata_logging import (log_data, )
 from ..utils.time_util      import (secs_to_time, format_timer, format_time_age, format_secs_since,
                                     secs_since, mins_since, time_to_12hrtime, secs_to_datetime, secs_to, format_age, format_time_units,
                                     datetime_now, time_now, time_now_secs, secs_to_hhmm, secs_to_hhmm, )
@@ -74,20 +78,6 @@ WAZ_TIME     = 1
 WAZ_DISTANCE = 2
 WAZ_MOVED    = 3
 
-# Interval range table used for setting the interval based on a retry count
-# The key is starting retry count range, the value is the interval (in minutes)
-# poor_location_gps cnt, icloud_authentication cnt (default)
-OLD_LOCATION_CNT       = 1.1
-AUTH_ERROR_CNT         = 1.2
-# RETRY_INTERVAL_RANGE_1 = 15s*4=1m, 4*1m=4m=5m, 4*5m=20m=25m, 4*30m=2h=2.5h, 4*1h=4h=6.5h
-
-# RETRY_INTERVAL_RANGE_1 = 30s*4=2m, 4*1.5m=6m=8m, 4*15m=1h=1h8m, 4*30m=2h=3h8m, 4*1h=4h=6.5h
-# RETRY_INTERVAL_RANGE_1 = {0:.25, 4:1, 8:5, 12:30, 16:60, 20:60}
-# RETRY_INTERVAL_RANGE_1 = 15s*5=1.25m, 5*1m=5m=6m, 5*5m=25m=30m, 5*30m=2.5h=3, 4*1h=4h=6h25h
-RETRY_INTERVAL_RANGE_1 = {0:.25, 4:.5, 8:1, 12:5, 16:15, 20:30, 24:60}
-MOBAPP_REQUEST_LOC_CNT = 2.1
-RETRY_INTERVAL_RANGE_2 = {0:.5, 4:2, 8:30, 12:60, 16:60}
-# RETRY_INTERVAL_RANGE_2 = {0:.5, 4:2, 8:30, 12:60, 14:120, 16:180, 18:240, 20:240}
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 def determine_interval_from_zones(Device):
@@ -102,8 +92,8 @@ def determine_interval(Device, FromZone):
     The last location:      Device.sensors[LATITUDE]/[LONGITUDE]
     '''
 
-    battery10_flag  = (0 > Device.dev_data_battery_level >= 10)
-    battery5_flag   = (0 > Device.dev_data_battery_level >= 5)
+    battery5_flag   = is_between(Device.dev_data_battery_level, 1, 5)
+    battery10_flag  = is_between(Device.dev_data_battery_level, 1, 10)
 
     isin_zone       = (Device.loc_data_zone not in NOT_HOME_ZONES)
     isnotin_zone    = (Device.loc_data_zone in NOT_HOME_ZONES)
@@ -438,10 +428,10 @@ def determine_interval(Device, FromZone):
                 and isin_zone_home):
             _reset_away_time_zone(Device)
 
-        if isin_zone_home:
-            Device.set_evlog_fname_suffix_char(HOME_ICON)
-        elif Device.set_evlog_fname_suffix_char == HOME_ICON:
-            Device.set_evlog_fname_suffix_char()
+        if isin_zone_home and Device.is_tracked:
+            Device.set_button_suffix_icon(HOME_ICON, add_char=True)
+        elif instr(Device.set_button_suffix_icon, HOME_ICON):
+            Device.set_button_suffix_icon()
 
         # Update all dates and other fields
         Device.loc_data_dist_moved_km = dist_moved_km
@@ -523,6 +513,8 @@ def determine_interval(Device, FromZone):
     sensors[CALC_DISTANCE]        = km_to_mi(calc_dist_from_zone_km)
     sensors[MOVED_DISTANCE]       = km_to_mi(dist_moved_km)
     sensors[ZONE_INFO]            = _sensor_zone_info(Device, FromZone)
+    sensors[WENT_3KM]             = Device.went_3km
+    sensors[NEAR_DEVICE_USED]     = Device.near_device_used
 
     #save for event log
     if type(waze_time_msg) != str: waze_time_msg = ''
@@ -544,6 +536,7 @@ def _sensor_arrival_time(Device, FromZone):
 
     if Device.isin_zone and Device.FromZone_TrackFrom == FromZone:
         if Device.sensors[ZONE_ENTER_SECS] > 0:
+            # home_icon = HOME_ICON if Device.isin_zone_home else ''
             return f"@{secs_to_hhmm(Device.sensors[ZONE_ENTER_SECS])}"
 
         return f"@{secs_to_hhmm(Device.zone_change_secs)}"
@@ -613,7 +606,7 @@ def post_tracking_results_info(Device):
             event_msg += f"{FromZone.dir_of_travel}, "
 
         if FromZone.sensors[ARRIVAL_TIME]:
-            if FromZone.sensors[ARRIVAL_TIME].startswith('@'):
+            if instr(FromZone.sensors[ARRIVAL_TIME], '@'):
                 event_msg += f"Since-{FromZone.sensors[ARRIVAL_TIME][1:]}, "
             else:
                 event_msg += f"Arrive-{FromZone.sensors[ARRIVAL_TIME]}, "
@@ -680,7 +673,7 @@ def determine_interval_monitored_device_offline(Device):
         interval_secs = 3600        # 1-hr
     elif age > 1800:
         interval_secs = 1800        # 30-min
-    elif age > 3600:
+    elif age > 900:
         interval_secs = 900         # 15-min
     elif age > 180:
         interval_secs = 300         # 5-min
@@ -724,6 +717,22 @@ def determine_interval_after_error(Device, counter=OLD_LOCATION_CNT):
     devicename = Device.devicename
 
     try:
+        # The Apple device is not in the Apple acct's device list, its data is the last
+        # data received. Keep checking every 15-mins instead of using the error retry
+        # intervals (apple_acct_devices._request_restart_if_tracked_device_missing)
+        AADev = Device.AADev_icloud
+        if AADev and AADev.missing_since_secs > 0:
+            update_all_device_fm_zone_sensors_interval(Device, MISSING_DEVICE_INTERVAL_SECS)
+            post_event( f"{EVLOG_ALERT}Apple Device Missing > {AADev.dname} "
+                            f"({AADev.model_display_name}), "
+                            f"No longer in Apple Acct device data, "
+                            f"RecheckAt-{Device.next_update_time} "
+                            f"({format_timer(MISSING_DEVICE_INTERVAL_SECS)}), "
+                            f"iCloud3 will restart at "
+                            f"{secs_to_time(Gb.restart_at_secs)}")
+
+            return
+
         interval_secs, error_cnt, max_error_cnt = get_error_retry_interval(Device, counter)
 
         # Reset interval and counter if the max count was reached
@@ -818,7 +827,7 @@ def get_error_retry_interval(Device, counter=OLD_LOCATION_CNT):
             range_tbl = RETRY_INTERVAL_RANGE_1
 
         elif counter == MOBAPP_REQUEST_LOC_CNT:
-            error_cnt = Device.mobapp_request_loc_retry_cnt
+            error_cnt = Device.mobapp_request_loc_cnt
             range_tbl = RETRY_INTERVAL_RANGE_2
         else:
             error_cnt = Device.old_loc_cnt
@@ -1177,11 +1186,11 @@ def _get_interval_for_error_retry_cnt(Device, counter=OLD_LOCATION_CNT, pause_co
         range_tbl = RETRY_INTERVAL_RANGE_1
 
     elif counter == AUTH_ERROR_CNT:
-        retry_cnt = Gb.icloud_acct_auth_error_cnt
+        retry_cnt = Gb.icloud_acct_error_cnt
         range_tbl = RETRY_INTERVAL_RANGE_1
 
     elif counter == MOBAPP_REQUEST_LOC_CNT:
-        retry_cnt = Device.mobapp_request_loc_retry_cnt
+        retry_cnt = Device.mobapp_request_loc_cnt
         range_tbl = RETRY_INTERVAL_RANGE_2
     else:
         return 60
@@ -1216,7 +1225,7 @@ def _reset_away_time_zone(Device):
 
     try:
         if Device.devicename in Gb.away_time_zone_1_devices:
-            post_event (f"Resetting Away Time Zone #1 for "
+            post_event (f"Entered Home Zone, Resetting Away Time Zone #1 for "
                         f"{len(Gb.away_time_zone_1_devices)} devices")
 
             for _devicename in Gb.away_time_zone_1_devices:
@@ -1225,7 +1234,7 @@ def _reset_away_time_zone(Device):
             Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES] = ['none']
 
         if Device.devicename in Gb.away_time_zone_2_devices:
-            post_event (f"Resetting Away Time Zone #2 for "
+            post_event (f"Entered Home Zone, Resetting Away Time Zone #2 for "
                         f"{len(Gb.away_time_zone_2_devices)} devices")
             for _devicename in Gb.away_time_zone_2_devices:
                 if _devicename == 'all': continue
@@ -1243,7 +1252,7 @@ def _reset_away_time_zone(Device):
 def _reset_away_time_zone_device_fields(devicename):
     Device = Gb.Devices_by_devicename[devicename]
     Device.away_time_zone_offset   = 0
-    Device.evlog_fname_suffix_char = ''
+    Device.evlog_button_suffix_icon = ''
 
 #-------------------------------------------------------------------
 def device_will_update_in_15secs(Device=None, update_in_secs=None, only_icloud_devices=False):
@@ -1450,7 +1459,7 @@ def set_dist_to_devices(post_event_msg=False):
 
             try:
                 Device_from.dist_to_devices_data = dist_to_devices_data
-                Device_from.dist_to_devices_secs = Device_from.loc_data_sec
+                Device_from.dist_to_devices_secs = Device_from.loc_data_secs
 
                 if post_event_msg and dist_to_devices_data != []:
                     event_msg =(f"DistTo Devices > "

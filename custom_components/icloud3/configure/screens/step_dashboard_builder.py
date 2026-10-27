@@ -21,7 +21,41 @@ from ..const_form_lists     import *
 
 class OptionsFlow_DashboardBuilder_Steps:
 
+    def initialize_dashboard_builder_variables(self):
+        '''
+        Initialize the variables used by the Dashboard Builder screen. Called from the
+        flow handler's initialize_options (the mixin's __init__ would never be run).
+        '''
+        self.db_templates                   = {}    # iCloud3 device templates from icloud3/dashboard folder
+        self.db_templates_used              = []    # Templates used in master-dashboard template
+        self.master_dashboard               = {}    # Master Dashboard dictionary (json str --> dict)
+        self.dashboards                     = []    # List of dashboards (lovelace.icloud3_xxx files) in conig./storage)
+        self.ic3db_Dashboards_by_dbname     = {}    # HA Dashboard by dashboard name for Dashboards with Device-x available
+        self.AllDashboards_by_dbname        = {}    # All HA Dashboard objects by dashboard name
+        self.dbname                         = ''    # Dashboard  being created or updates
+        self.Dashboard                      = None
 
+        # These items are extracted from the main view when the dashboard is loaded. They are used to build to
+        # selection list on the dashboard form
+        self.main_view_extracted_dnames_by_dbname = {}  # Devicenames on the Main view of the dashboard
+        self.main_view_extracted_fnames_by_dbname = {}  # Devices on the Main view of the dashboard
+
+        # These items are set in config_flow dashboard form and passed to the dashboard functions when a dashboard
+        # is recreated
+        self.ui_main_view_style          = ''    #
+        self.ui_selected_dbname          = ADD   # Dashboard currently selected on Dashboard Builder screen
+        self.ui_main_view_dnames         = []    # Devices to be inserted into the dashboard layout
+        self.dbf_dashboard_key_text      = {}    # db form device selection dictionary
+        self.dbf_dashboard_icons_msg     = ''    # db form '<ha-icon..> title, ...' reference line
+
+        # Main View Info from the main_view_info_str on the Events Log view
+        # These items are loaded when the ic3db dashboards are loaded. They are used to set ui_xxx values when
+        # a device is added or deleted and the dashboards are recreated
+        self.main_view_info_style_by_dbname     = {}  # Devices on the Main view of the dashboard
+        self.main_view_info_dnames_by_dbname    = {}  # Devices on the Main view of the dashboard
+        self.main_view_dbfile_length_by_dbname  = {}  # Length of the main view str from the Lovelace db file
+        self.main_view_created_length_by_dbname = {}  # Length of the main view str right now
+        self.main_view_infomsg_length_by_dbname = {}  # Length of the main view str right now
 
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #            DASHBOARD BUILDER

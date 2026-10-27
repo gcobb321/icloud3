@@ -22,32 +22,22 @@ from ..const            import (ICLOUD3, DOMAIN,
                                 EVLOG_ALERT, EVLOG_WARNING, EVLOG_HIGHLIGHT, EVLOG_IC3_STAGE_HDR,
                                 ALERT_CRITICAL, ALERT_OTHER,
                                 IC3LOG_FILENAME, EVLOG_TRACE,
-                                CRLF, CRLF_DOT, CRLF_HDOT,
-                                NL, NL3, NL4, NLSP4, NL3U, NL3D, NL3_DATA, NL4_DATA,
-                                NBSP, NBSP2, NBSP3, NBSP4, NBSP5, NBSP6,
-                                DOT, HDOT, CRLF_INDENT, LINK,
-                                DASH_50, DASH_DOTTED_50, TAB_11, RED_ALERT, RED_STOP, RED_CIRCLE, YELLOW_ALERT,
                                 DATETIME_FORMAT, DATETIME_ZERO,
-                                NEXT_UPDATE_TIME, INTERVAL,
+                                NEXT_UPDATE_TIME,
                                 ICLOUD, MOBAPP,
-                                CONF_APPLE_ACCOUNT,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_LOG_LEVEL, CONF_PASSWORD, CONF_USERNAME,
-                                CONF_DEVICES, CONF_APPLE_ACCOUNTS,
-                                LATITUDE,  LONGITUDE, LOCATION_SOURCE,
-                                ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
-                                TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
-                                TRIGGER, BATTERY, BATTERY_LEVEL, BATTERY_STATUS,
-                                INTERVAL, ZONE_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
-                                TRAVEL_TIME, TRAVEL_TIME_MIN, DIR_OF_TRAVEL, MOVED_DISTANCE,
-                                DEVICE_STATUS, LOW_POWER_MODE, ICLOUD_LOST_MODE_CAPABLE,
-                                AUTHENTICATED,
-                                LAST_UPDATE_TIME, LAST_UPDATE_DATETIME, NEXT_UPDATE_TIME, LAST_LOCATED_DATETIME, LAST_LOCATED_TIME,
-                                INFO, GPS_ACCURACY, GPS, POLL_COUNT, VERT_ACCURACY, ALTITUDE,
-                                BADGE,
-                                )
+                                NEXT_UPDATE_TIME, )
+from ..const_config     import (INTERVAL, CONF_APPLE_ACCT, CONF_IC3_DEVICENAME, CONF_FNAME,
+                                CONF_LOG_LEVEL, CONF_PASSWORD, CONF_APPLE_ACCT, CONF_DEVICES,
+                                CONF_APPLE_ACCOUNTS, INFO, )
+from ..const_char       import (GEAR_ICON, YELLOW_WARNING, SNOW_FLAKE, CRLF, CRLF_DOT, CRLF_HDOT,
+                                RARROW, NL, NL3, NL4, NLSP4, NL3U, NL3D, NL3_DATA, NL4_DATA, NBSP,
+                                NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, DOT, HDOT, CRLF_INDENT, LINK,
+                                DASH_50, DASH_DOTTED_50, TAB_11, RED_ALERT, RED_STOP, RED_CIRCLE,
+                                GREEN_ALERT, )
 from ..const_more_info      import more_info_text
-from .utils                 import (obscure_field, instr, is_empty, isnot_empty, username_id, )
-
+from .utils                 import (obscure_field, instr, is_empty, isnot_empty, apple_user, dict_sort, list_to_str, )
+#from .time_util             import (format_day_date_time_now, )
+from ..support              import test_controls as TEST
 
 import homeassistant.util.dt   as dt_util
 from homeassistant.components  import persistent_notification
@@ -62,74 +52,6 @@ import time
 import inspect
 import traceback
 import logging
-
-DO_NOT_SHRINK     = ['url', 'accountName', ]
-FILTER_DATA_DICTS = ['items', 'userInfo', 'dsid', 'dsInfo', 'webservices', 'locations','location',
-                    'params', 'headers', 'kwargs', 'clientContext', 'identifiers', 'labels',
-                    'securityCode', 'trustedPhoneNumber', 'devices']
-FILTER_DATA_LISTS = ['devices', 'content', 'followers', 'following', 'contactDetails', 'protocols', 'trustTokens',
-                    'keyNames', 'trustedPhoneNumbers', ]
-FILTER_FIELDS = [
-        AUTHENTICATED,
-        LATITUDE,  LONGITUDE, LOCATION_SOURCE,
-        ZONE, ZONE_DATETIME, INTO_ZONE_DATETIME, LAST_ZONE,
-        TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
-        TRIGGER, BATTERY, BATTERY_LEVEL, BATTERY_STATUS,
-        INTERVAL, ZONE_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
-        TRAVEL_TIME, TRAVEL_TIME_MIN, DIR_OF_TRAVEL, MOVED_DISTANCE,
-        DEVICE_STATUS, LOW_POWER_MODE, BADGE,
-        LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
-        NEXT_UPDATE_TIME, NEXT_UPDATE_TIME,
-        LAST_LOCATED_TIME, LAST_LOCATED_DATETIME,
-        INFO, GPS_ACCURACY, GPS, POLL_COUNT, VERT_ACCURACY, ALTITUDE, ICLOUD_LOST_MODE_CAPABLE,
-        'ResponseCode', 'reason',
-        'id', 'firstName', 'lastName', 'name', 'fullName', CONF_IC3_DEVICENAME,
-        'appleId', 'emails', 'phones', 'locked',
-        'deviceStatus', 'batteryStatus', 'batteryLevel', 'membersInfo',
-        'deviceModel', 'rawDeviceModel', 'deviceDisplayName', 'modelDisplayName', 'deviceClass',
-        # Retired/replaced device indicators. An unpaired watch or an iPhone erased
-        # for trade-in drops Activation Lock, and a removed device is pendingRemove.
-        'activationLocked', 'wipedTimestamp', 'wipeInProgress',
-        'pendingRemove', 'pendingRemoveUntilTS', 'fmlyShare', 'deviceDiscoveryId',
-        'isOld', 'isInaccurate', 'timeStamp', 'altitude', 'location', 'latitude', 'longitude',
-        'horizontalAccuracy', 'verticalAccuracy', 'positionType',
-        'hsaVersion', 'hsaEnabled', 'hsaTrustedBrowser', 'hsaChallengeRequired',
-        'locale', 'appleIdEntries', 'statusCode',
-        'familyEligible', 'findme', 'requestInfo',
-        'termsUpdateNeeded', 'iCloudTerms', 'version',
-        'invitationSentToEmail', 'invitationAcceptedByEmail', 'invitationFromHandles',
-        'invitationFromEmail', 'invitationAcceptedHandles',
-        'items', 'userInfo', 'prsId', 'dsid', 'dsInfo', 'webservices', 'locations', 'dslang',
-        'devices', 'content', 'followers', 'following', 'contactDetails', 'countryCode',
-        'dsWebAuthToken', 'accountCountryCode', 'extended_login', 'trustToken', 'trustTokens',
-        'data', 'json', 'headers', 'params', 'url', 'retry_cnt', 'retried', 'retry', '#',
-        'code', 'ok', 'method', 'fmly', 'shouldLocate', 'selectedDevice', 'membersInfo',
-        'X-Apple-OAuth-State', 'X-Apple-ID-Session-Id', 'Accept', 'Authorization',
-        # scnt pairs with X-Apple-ID-Session-Id to identify the idmsa signin
-        # session. Logged so a rejected /appleauth/auth request can be checked
-        # for whether the session headers were actually attached to it.
-        'scnt', 'Content-Type', 'X-Apple-Widget-Key',
-        'identifiers', 'labels', 'model', 'name_by_user', 'area_id', 'manufacturer', 'sw_version',
-        'keyNames', 'securityCode', 'trustedPhoneNumbers', 'trustedPhoneNumber',
-        'deviceType', 'areaCode', 'phoneNumber', 'deviceId',
-        'authenticationType', 'pushSupported',
-        # Apple's 2fa error/status fields. Without these, a rejected auth code
-        # request (verify/phone 423) logs only the trusted phone numbers and the
-        # reason Apple gives for the rejection is filtered out of the log.
-        'service_errors', 'serviceErrors', 'hasError', 'message', 'title',
-        'restrictedAccount', 'authType', 'mode', 'pushMode',
-        'tooManyCodesSent', 'tooManyCodesValidated',
-        'securityCodeLocked', 'securityCodeCooldown',
-        'username', 'password', 'accountName', 'salt', 'protocols', 'protocol', 'iteration',
-        'a', 'A', 'b', 'B', 'c', 'm1', 'M1', 'm2', 'M2', 'g', 'K', 'N', 'u', 'v',
-        ]
-FILTER_OUT = [
-    'features', 'BTR', 'LLC', 'CLK', 'TEU', 'SND', 'ALS', 'CLT', 'PRM', 'SVP', 'SPN', 'XRM', 'NWF', 'CWP',
-    'MSG', 'LOC', 'LME', 'LMG', 'LYU', 'LKL', 'LST', 'LKM', 'WMG', 'SCA', 'PSS', 'EAL', 'LAE', 'PIN',
-    'LCK', 'REM', 'MCS', 'REP', 'KEY', 'KPD', 'WIP', 'scd',
-    'rm2State', 'pendingRemoveUntilTS', 'repairReadyExpireTS', 'repairReady', 'lostModeCapable', 'wipedTimestamp',
-    'encodedDeviceId', 'scdPh', 'locationCapable', 'trackingInfo', 'nwd', 'remoteWipe', 'canWipeAfterLock', 'baUUID',
-    'snd', 'continueButtonTitle', 'alertText', 'cancelButtonTitle', 'createTimestamp',  'alertTitle', ]
 
 SP_str = ' '*50
 SP_dict = {
@@ -237,6 +159,7 @@ def post_event(devicename_or_Device, event_msg='+'):
 #--------------------------------------------------------------------
 def post_dotted_line():
     post_event(f"{'⠒ '*28}")
+
 #--------------------------------------------------------------------
 def post_alert(devicename_or_Device, event_msg="+"):
     '''
@@ -245,7 +168,170 @@ def post_alert(devicename_or_Device, event_msg="+"):
     devicename, event_msg = _resolve_devicename_log_msg(devicename_or_Device, event_msg)
     evlog_alert = '' if instr(event_msg, EVLOG_ALERT) else EVLOG_ALERT
 
-    return post_event(devicename, f"{evlog_alert}{event_msg}")
+    post_event(devicename, f"{evlog_alert}{event_msg}")
+
+#--------------------------------------------------------------------
+def post_config_error(**kwargs):
+    '''
+    This will handle various configurationh errors detected during startup (start_ic3.py). The
+    parameters below define the nature of the problem and how it should be handled.
+
+    - The post_alert message is displayed on the Event Log
+    - The icloud3_alerts sensor is updated
+    - If the repair_step is specified, a HA Repairs issue is created. Submit:
+        - update_device     - Opens the Update Device screen for the source    devicename
+        - update_apple_acct - Opens the Update Apple Account screen for the source    apple_id
+        - restart           - Sets Gb.was_icloud3_restart_requested to restart iCloud3
+        - alert             - Removes the notice, nothing else is done. A condition that
+                                still exists is posted again on the next startup, the
+                                ones that were not are removed then.
+        - notice            - Removes the notice, nothing else is done. It reports an
+                                event (the configuration was changed), it is not posted
+                                again and is not removed on the next startup.
+    - The Device's Event Log button gets the red alert icon unless it is an alert or notice
+
+    kwargs: source       - devicename, aa apple_id, 'general', 'repair
+            name         - Device.fname, Apple Account apple_user, etc.
+            error_item   - The item in error (mobapp dname, apple_user, etc.)
+            error        - Configuration Error
+            message      - Some Devices were not verified. Restart may be needed
+            details      - {list_to_str(unverified_devices), CRLF_DOT}
+            repair_step  - 'update_device', 'update_apple_acct', 'restart', 'alert', 'notice'
+            fix_data     - 'update_apple_acct' only, other items used by the repair flow
+            translation_key, translation_placeholders
+                         - 'alert' & 'notice' only, the issue's own text in strings.json
+                            & en.json. None - icloud3_notice with the title and message
+
+    Return:
+        issue_id of the Repairs issue, None if one was not created. It is also saved in
+        the kwargs added to Gb.startup_msg, the issues that were not posted again are
+        removed when startup is complete (clear_config_error_repair_issues).
+    '''
+    try:
+        Gb.startup_msg.append(kwargs)
+
+        Source       = kwargs.get('Source')                      # Device or AppleAcct
+        source       = kwargs.get('source', 'Other')             # geekstergary_ipad
+        source_name  = kwargs.get('source_name', '')                 # GeeksterGary
+        error        = kwargs.get('error', 'Configuration Error')   # Unknown Apple Account
+        error_item   = kwargs.get('error_item', '')                 # geekstergary@
+        message      = kwargs.get('message', 'General Warning')     # The Apple Acct was not found Device ...
+        details      = kwargs.get('details', '')                    # Gary > AppleAcct: geekstergary@
+        repair_step  = kwargs.get('repair_step', '')                # update_device
+        translation_key          = kwargs.get('translation_key')
+        translation_placeholders = kwargs.get('translation_placeholders')
+
+        # The source id is the Device's devicename or the AppleAcct's apple_id so the
+        # alert_key is the same in the alerts sensor and the Repairs issue
+        Source, source = alert_source(Source or source)
+        alert_key     = alert_key_for(source, error)
+        alert_title   = f"{source_name} > {error.title()} ({error_item})"
+        repair_msg    = f"{message}{details}"
+        alert_msg     = f"{error.upper()} > {source_name}{CRLF}{message}{details}"
+        log_msg       = filter_special_chars(alert_msg)
+        kwargs['alert_key'] = alert_key
+
+        update_alert_sensor(Source=Source, name=source, error=error,
+                            alert_msg=alert_title)
+
+        post_alert(alert_msg)
+
+        if repair_step in ['alert', 'notice', 'restart']:
+            log_warning_msg(f"iCloud3: {log_msg}")
+        else:
+            log_error_msg(f"iCloud3: {log_msg}")
+
+        if (repair_step not in ['alert', 'notice']
+                and (Device := Gb.Devices_by_devicename.get(source))):
+            Device.set_button_prefix_icon(RED_ALERT)
+
+        if repair_step == '':
+            return None
+
+    except Exception as err:
+        log_exception(err)
+
+    # A notice is not removed by clear_config_error_repair_issues on the next startup
+    if repair_step == 'notice':
+        issue_id = f"{CONFIG_NOTICE_ISSUE_ID_PREFIX}_{alert_key}"
+    else:
+        issue_id = f"{CONFIG_ERROR_ISSUE_ID_PREFIX}_{repair_step}_{alert_key}"
+
+    match repair_step:
+        case 'update_device':
+            issue_id = post_repair_issue_update_device(
+                                issue_id   = issue_id,
+                                alert_key  = alert_key,
+                                title      = alert_title,
+                                message    = repair_msg)
+
+        case 'update_apple_acct':
+            issue_id = post_repair_issue_update_apple_acct(
+                                issue_id   = issue_id,
+                                alert_key  = alert_key,
+                                title      = alert_title,
+                                message    = repair_msg,
+                                fix_data   = kwargs.get('fix_data'))
+
+        case 'restart':
+            issue_id = post_repair_issue(
+                                issue_id   = issue_id,
+                                alert_key  = alert_key,
+                                title      = alert_title,
+                                alert_msg  = '',
+                                fix_action = FIX_ACTION_RESTART,
+                                translation_key = RESTART_TRANSLATION_KEY,
+                                translation_placeholders = {
+                                        'title': _evlog_msg_to_markdown(alert_title),
+                                        'message': _evlog_msg_to_markdown(repair_msg)})
+
+        case _:     # 'alert', 'notice'
+            issue_id = post_repair_issue(
+                                issue_id   = issue_id,
+                                alert_key  = alert_key,
+                                title      = alert_title,
+                                alert_msg  = repair_msg,
+                                translation_key = translation_key,
+                                translation_placeholders = translation_placeholders)
+
+    kwargs['issue_id'] = issue_id
+
+    return issue_id
+
+#--------------------------------------------------------------------
+def clear_config_error_repair_issues():
+    '''
+    Remove the post_config_error Repairs issues that were not posted again during this
+    startup, their error no longer exists. The ones posted again keep their 'Ignore'
+    state. Called when startup is complete.
+    '''
+    keep_issue_ids = [startup_msg.get('issue_id') for startup_msg in Gb.startup_msg
+                                if isinstance(startup_msg, dict)]
+    clear_repair_issues(CONFIG_ERROR_ISSUE_ID_PREFIX, keep_issue_ids=keep_issue_ids)
+
+#--------------------------------------------------------------------
+def clear_config_error(Source=None, name=None, error=None):
+    '''
+    The configuration error posted by post_config_error was corrected later in the
+    startup. Remove it from Gb.startup_msg so its Repairs issue is not kept, then
+    remove the issue and its sensor.icloud3_alerts message.
+
+    Source, error:
+        The post_config_error Source (Device, AppleAcct, devicename, apple_id) and
+        error ('unknown_apple_acct')
+    '''
+    Source, source = alert_source(Source, name)
+    alert_key = alert_key_for(source, error)
+
+    for startup_msg in Gb.startup_msg.copy():
+        if (isinstance(startup_msg, dict)
+                and startup_msg.get('alert_key') == alert_key):
+            Gb.startup_msg.remove(startup_msg)
+
+            if issue_id := startup_msg.get('issue_id'):
+                clear_repair_issue(issue_id)
+
+    update_alert_sensor(Source=Source, error=error, clear=True)
 
 #--------------------------------------------------------------------
 def post_error_msg(devicename_or_Device, event_msg="+"):
@@ -325,109 +411,216 @@ def clear_greenbar_msg():
     Gb.EvLog.clear_greenbar_msg()
     Gb.EvLog.display_user_message(Gb.EvLog.user_message)
 
-#-------------------------------------------------------------------------------------------
-def update_alert_sensor(alert_key=None, alert_msg=None, update_sensor=False):
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   ICLOUD3_ALERTS SENSOR
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def update_alert_sensor(Source=None, name=None, error=None,
+                        alert_msg=None, clear=False, update_sensor=False):
     '''
-    Update the Gb.alerts_sensor_attrs dictionary
-    Critical alerts (ALERT_CRITICAL) will replace any previous critical alerts instead of appending it
+    Add or remove an alert in the Device's, AppleAcct's or Gb's alerts_by_alert_key
+    dictionary and rebuild the icloud3_alerts sensor attributes. The alert_key is
+    'source^error' (see alert_source, alert_key_for).
 
-    alert_key:
-        - ALERT_CRITICAL - Critical alerts not associated with Apple acct or device
-        - Apple acct username_id
-        - Device's devicename
-        - Other value
+    Source:
+        Device, AppleAcct, devicename, apple_id or Gb. Others are kept in Gb.
+    name:
+        The source id when the alert is kept in Gb (ALERT_CRITICAL, etc.)
+    error:
+        Type of error that will become part of the alert key
+    alert_msg:
+        The message that will be in the alert sensor
+    clear:
+        True to remove the error's alert, all of the Source's alerts if error is None
+
     '''
-    if alert_key is None and alert_msg is None:
+    if Source is None and name is None and clear is False:
         Gb.AlertsSensor.async_update_sensor()
         return
 
-    if alert_key is None:
-        alert_key = ALERT_OTHER
+    if error is None and clear is False:
+        return
 
-    update_sensor = False
+    Source, source = alert_source(Source, name)
 
-    # Clear this message
-    if alert_msg == '':
-        Gb.alerts_sensor_attrs.pop(alert_key, None)
+    # Clear this message, all of the Source's alerts if no error was specified
+    if clear is True:
+        if error is None:
+            for _alert_key in list(Source.alerts_by_alert_key):
+                if _alert_key.startswith(f"{source}^"):
+                    Source.alerts_by_alert_key.pop(_alert_key, None)
+        else:
+            Source.alerts_by_alert_key.pop(alert_key_for(source, error), None)
         update_sensor = True
 
     # Add the alert
     else:
-        Gb.alerts_sensor_attrs[alert_key] = alert_msg
+        alert_key = alert_key_for(source, error)
+        # Gb.alerts_by_alert_key[alert_key] = alert_msg
+        Source.alerts_by_alert_key[alert_key] = alert_msg
 
-        if Gb.is_icloud3_startup_inprocess is False or update_sensor:
-            update_sensor = True
+    if Gb.is_icloud3_startup_inprocess is False:
+        update_sensor = True
 
-    # Rebuild list so critical alerts are at the top
-    if len(Gb.alerts_sensor_attrs) > 1:
-        new_alerts_sensor_attrs = {}
-        # Critical alerts
-        new_alerts_sensor_attrs.update(
-            {_alert_key: _msg  for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
-                            if _alert_key == ALERT_CRITICAL})
-
-        # Apple Acct alerts (-source will be the filter value, change it back to the real value)
-        new_alerts_sensor_attrs.update(
-            {_alert_key: _msg
-                            for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
-                            if instr(_alert_key, '@')})
-
-        # Device alerts
-        new_alerts_sensor_attrs.update(
-            {_alert_key: _msg  for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
-                            if _alert_key in Gb.Devices_by_devicename})
-
-        # Other alerts
-        new_alerts_sensor_attrs.update(
-            {_alert_key: _msg  for _alert_key, _msg in Gb.alerts_sensor_attrs.items()
-                            if _alert_key not in new_alerts_sensor_attrs})
-        Gb.alerts_sensor_attrs = new_alerts_sensor_attrs
+    Gb.AlertsSensor.alerts_sensor_extra_attrs = build_alerts_sensor_extra_attrs()
 
     if update_sensor:
-        Gb.AlertsSensor.async_update_sensor()
+        try:
+            Gb.AlertsSensor.async_update_sensor()
+        except Exception as err:
+            log_exception(err)
 
     log_debug_msg(  f"Alerts Sensor > Sensor-{Gb.alerts_sensor}, "
-                    f"Attrs-{Gb.alerts_sensor_attrs}")
+                    f"Attrs-{all_alerts_by_alert_key()}")
+
+#..........................................................................................
+def alert_source(Source=None, name=None):
+    '''
+    Get the object that keeps the alert and the source id used in its alert_key.
+
+    Source:
+        Device, AppleAcct, devicename, apple_id or Gb
+    name:
+        The source id for alerts kept in Gb (ALERT_CRITICAL, etc.) when Source is
+        not a Device or an AppleAcct
+
+    Returns:
+        (Device, devicename), (AppleAcct, apple_id) or (Gb, name or 'icloud3')
+    '''
+    if Source in Gb.Devices:
+        return Source, Source.devicename
+    if Source in Gb.AppleAccts:
+        return Source, Source.apple_id
+
+    if isinstance(Source, str):
+        if Device := Gb.Devices_by_devicename.get(Source):
+            return Device, Device.devicename
+        if AppleAcct := Gb.AppleAcct_by_apple_id.get(Source):
+            return AppleAcct, AppleAcct.apple_id
+        return Gb, Source
+
+    return Gb, name or 'icloud3'
+
+#..........................................................................................
+def alert_key_for(source, error):
+    '''
+    The alert_key used in the alerts_by_alert_key dictionaries and the Repairs issues,
+    'source^error' (lower case error)
+    '''
+    return f"{source}^{error.lower()}"
+
+#..........................................................................................
+def alert_key_source(alert_key):
+    return alert_key.split('^')[0]
+
+#..........................................................................................
+def alert_key_source_error(alert_key):
+    '''
+    The alert key is 'source^error' where the source is the source id (devicename, apple_id)
+    of the error and the error (lower case) is the type of error.
+
+    Returns:
+        (source, error)
+    '''
+
+    if instr(alert_key, '^'):
+        return alert_key.split('^')
+    else:
+        return alert_key, ''
 
 #-------------------------------------------------------------------------------------------
-def ha_notification(msg_line1, msg_line2=None) -> None:
+def build_alerts_sensor_extra_attrs():
+    '''
+    Alerts attributes contain the various types of alerts
 
-    if msg_line2:
-        msg_line1 += f"<br />{msg_line2}"
+    Note: _source of apple acct items will be the filteredapple_user (gee**2**ry@)
+    Convert it back to the real apple account text (geekstergary) for the state and attr value
+    '''
+    extra_attrs = {}
+    extra_attrs['alert_count'] = 0
+    extra_attrs['updated']     = ''
 
-    persistent_notification.create(
-        Gb.hass,
-        f"Notification: {msg_line1}",
-        title=f"iCloud3 Notification",
-        notification_id="icloud3",
-    )
+    try:
+        alerts = all_alerts_by_alert_key()
+
+        extra_attrs['alert_count'] = len(alerts)
+        if is_empty(alerts):
+            return extra_attrs
+
+        extra_attrs['.'] = '-'*75
+
+        message_text = ''
+        alert_cnt = 0
+        for alert_msg in alerts.values():
+            alert_cnt += 1
+            message_text += f"\n{DOT}{alert_msg}"
+
+            alert_fname_msg = alert_msg.split(' > ')
+            if len(alert_fname_msg) == 2:
+                extra_attrs[alert_fname_msg[0]] = alert_fname_msg[1]
+            else:
+                extra_attrs[f"Alert #{alert_cnt}"] = alert_msg
+
+        extra_attrs['..'] = '-'*75
+        extra_attrs['message_text'] = message_text
+        # extra_attrs[','] = '-'*75
+
+    except Exception as err:
+        log_exception(err)
+
+    return extra_attrs
+
+#-------------------------------------------------------------------------------------------
+def all_alerts_by_alert_key():
+    '''
+    The alerts kept in Gb (critical first), the Apple Accts and the Devices.
+    Used to build the icloud3_alerts sensor and the Event Log greenbar.
+    '''
+    alerts = {}
+    alerts.update({alert_key: alert_msg
+                        for alert_key, alert_msg in Gb.alerts_by_alert_key.items()
+                        if alert_key.startswith(f"{ALERT_CRITICAL}^")})
+
+    for AppleAcct in Gb.AppleAccts:
+        alerts.update(dict_sort(AppleAcct.alerts_by_alert_key))
+
+    for Device in Gb.Devices:
+        alerts.update(dict_sort(Device.alerts_by_alert_key))
+
+    alerts.update(dict_sort(Gb.alerts_by_alert_key))
+
+    return alerts
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   HA REPAIRS ISSUE ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# iCloud3 issues use these translation keys. The title and message are passed as
-# placeholders ('issues' in strings.json & translations/en.json).
-#   icloud3_alert  - Issue with a change that is made when Submit is selected
+# Each iCloud3 issue has its own translation key with its text in 'issues' in
+# strings.json & translations/en.json. A simple notice that does not need its own
+# text can use icloud3_notice, the title and message are passed as placeholders.
 #   icloud3_notice - Notice (fix_action='acknowledge'), Submit only removes it
-REPAIR_ISSUE_TRANSLATION_KEY        = 'icloud3_alert'
 REPAIR_NOTICE_TRANSLATION_KEY       = 'icloud3_notice'
 
 # Fix handlers run by repairs.py when Submit is selected on a fixable issue.
 #   {fix_action: handler(fix_data) -> bool}, see register_repair_fix_handler
 repair_fix_handlers = {}
 
-# Added to the device's sensor.icloud3_alerts entry (keyed by the device's fname) when
-# a Repairs issue is posted. An entry with this text is removed after Submit.
-REPAIR_ISSUED_ALERT_MSG = 'HA Repair issue created'
+# The Repairs issues that are open and their sensor.icloud3_alerts entry. HA does not
+# keep them when it restarts (is_persistent=False), they are posted again when
+# iCloud3 starts. The alerts entry is shared by all of a device's or Apple acct's
+# alerts, it is only removed with the issue if it is still the issue's title.
+# The Event Log greenbar lists the alert_keys with an open issue.
+#   {issue_id: (alert_key, title)}
+open_repair_issues = {}
 
 #--------------------------------------------------------------------
 def post_repair_issue(  issue_id, alert_key, title, alert_msg,
-                        fix_action=None, fix_data=None, severity='warning'):
+                        fix_action=None, fix_data=None, severity='warning',
+                        translation_key=None, translation_placeholders=None):
     '''
-    Add an iCloud3 notification to HA Settings > Repairs. It is also added to the
-    sensor.icloud3_alerts attribute for the alert_key (Event Log greenbar).
+    Add an iCloud3 notification to HA Settings > Repairs. The title is also added to
+    the sensor.icloud3_alerts attribute for the alert_key. The Event Log greenbar
+    lists the alert_keys with an open issue.
 
     issue_id:
         Stable id of the condition, e.g. f"device_replaced_{devicename}_{device_id8}".
@@ -438,13 +631,15 @@ def post_repair_issue(  issue_id, alert_key, title, alert_msg,
     alert_key:
         What the issue is for, used as the sensor.icloud3_alerts key:
             - devicename - The Device's fname is used
-            - Apple acct username - The AppleAcct's username_id is used
+            - Apple acct apple_id - The AppleAcct's apple_user is used
             - Other text - Used as is
         The issue data has the alert_key and the devicename ('' if it is not a
         device) for the fix handler.
-    title, alert_msg:
-        Repairs title and message. Event Log formatting (CRLF, CRLF_DOT) is converted
-        to markdown for the Repairs dialog.
+    title:
+        sensor.icloud3_alerts message. It is also the Repairs title for icloud3_notice.
+    alert_msg:
+        Repairs message for icloud3_notice ('' with a translation_key). Event Log
+        formatting (CRLF, CRLF_DOT) is converted to markdown for the Repairs dialog.
     fix_action:
         Name of a handler registered with register_repair_fix_handler. The issue
         is fixable and the handler runs when Submit is selected in Repairs.
@@ -453,24 +648,29 @@ def post_repair_issue(  issue_id, alert_key, title, alert_msg,
         dict of str/int/float/None values passed to the fix handler
     severity:
         'warning', 'error' or 'critical'
+    translation_key, translation_placeholders:
+        The issue's text in 'issues' in strings.json & translations/en.json. The
+        issue's fix_flow must have the 'confirm' step (and the abort reasons if it
+        is fixable). None - icloud3_notice with the title and alert_msg, only for a
+        notice. A fixable issue must have its own translation_key.
 
     Return:
         issue_id used for the Repairs issue (slugified)
     '''
     try:
         issue_id = slugify(issue_id)
-        devicename = ''
-        if Device := Gb.Devices_by_devicename.get(alert_key):
-            devicename = alert_key
-            alert_key  = Device.fname
-        elif AppleAcct := Gb.AppleAcct_by_username.get(alert_key):
-            alert_key  = AppleAcct.username_id
-
+        source  , error = alert_key_source_error(alert_key)
+        devicename = apple_id = ''
+        if Device := Gb.Devices_by_devicename.get(source):
+            devicename = source
+        elif AppleAcct := Gb.AppleAcct_by_apple_id.get(source):
+            apple_id = source
         if fix_action is None:
             fix_action = 'acknowledge'
 
         data = {'devicename': devicename,
-                'alert_key': alert_key,
+                'apple_id':   apple_id,
+                'alert_key ': alert_key,
                 'fix_action': fix_action}
         data.update(fix_data or {})
 
@@ -479,20 +679,34 @@ def post_repair_issue(  issue_id, alert_key, title, alert_msg,
         if fix_action == 'acknowledge':
             _run_in_event_loop(ir.async_delete_issue, Gb.hass, DOMAIN, issue_id)
 
+        if translation_key is None:
+            if fix_action != 'acknowledge':
+                raise ValueError(f"Repair issue {issue_id} is fixable and needs a translation_key")
+            translation_key = REPAIR_NOTICE_TRANSLATION_KEY
+            translation_placeholders = {
+                                'title': _evlog_msg_to_markdown(title),
+                                'message': _evlog_msg_to_markdown(alert_msg)}
+
+        # The Repairs dialog title is 'iCloud3 Repair Issue > {fname} (...)' and the full
+        # title is the message heading. fname is the name before the ' > ' in the title.
+        if translation_placeholders and 'title' in translation_placeholders:
+            translation_placeholders = {
+                    'fname': str(translation_placeholders['title']).split(' > ')[0].strip(),
+                    **translation_placeholders}
+
         _run_in_event_loop(ir.async_create_issue,
                                 Gb.hass, DOMAIN, issue_id,
                                 is_fixable     = fix_action is not None,
                                 is_persistent  = False,
                                 severity       = ir.IssueSeverity(severity),
-                                translation_key= REPAIR_NOTICE_TRANSLATION_KEY
-                                                    if fix_action == 'acknowledge'
-                                                    else REPAIR_ISSUE_TRANSLATION_KEY,
-                                translation_placeholders = {
-                                        'title': _evlog_msg_to_markdown(title),
-                                        'message': _evlog_msg_to_markdown(alert_msg)},
+                                translation_key= translation_key,
+                                translation_placeholders = translation_placeholders,
                                 data          = data)
 
-        update_alert_sensor(alert_key, f"{title}, {REPAIR_ISSUED_ALERT_MSG}")
+        # update_alert_sensor(alert_key, title)
+        # Source=None, name=None, error=None,
+        #                 alert_msg=alert_key,
+        open_repair_issues[issue_id] = (alert_key, title)
 
     except Exception as err:
         log_exception(err)
@@ -500,13 +714,15 @@ def post_repair_issue(  issue_id, alert_key, title, alert_msg,
     return issue_id
 
 #--------------------------------------------------------------------
-def clear_repair_issue(issue_id, devicename_or_Device=None):
+def clear_repair_issue(issue_id):
     '''
     Remove the Repairs issue and its sensor.icloud3_alerts message. Only call this
     when the condition no longer exists. Deleting the issue also deletes its
     'Ignore' state, so it is displayed again if it is posted later.
+
+    The alerts sensor entry is only removed if it is still this issue's title.
+    Another alert for the same device or Apple acct may have replaced it.
     '''
-    devicename, _ = _resolve_devicename_log_msg(devicename_or_Device, '')
     issue_id = slugify(issue_id)
 
     try:
@@ -514,8 +730,7 @@ def clear_repair_issue(issue_id, devicename_or_Device=None):
     except Exception as err:
         log_exception(err)
 
-    if Device := Gb.Devices_by_devicename.get(devicename):
-        clear_repair_issue_alert_msg(Device.fname)
+    remove_open_repair_issue(issue_id)
 
 #--------------------------------------------------------------------
 def clear_repair_issues(issue_id_prefix, keep_issue_ids=None):
@@ -528,12 +743,15 @@ def clear_repair_issues(issue_id_prefix, keep_issue_ids=None):
         Leading words of the issue_id, 'device_replaced_gary_iphone' removes
         'device_replaced_gary_iphone_...' but not 'device_replaced_gary_iphone2_...'
 
-    The device's sensor.icloud3_alerts entry is not cleared. It is shared by all of
-    the device's issues (keyed by fname) and this runs right after a new issue for
-    the device may have been posted. The alerts sensor is reset when iCloud3 starts.
+    The alerts sensor entry is only removed if it is still the removed issue's title.
     '''
     issue_id_prefix = f"{slugify(issue_id_prefix)}_"
     keep_issue_ids  = [slugify(issue_id) for issue_id in (keep_issue_ids or []) if issue_id]
+
+    for issue_id in list(open_repair_issues):
+        if issue_id.startswith(issue_id_prefix) and issue_id not in keep_issue_ids:
+            remove_open_repair_issue(issue_id)
+
 
     def _async_delete_issues():
         issue_registry = ir.async_get(Gb.hass)
@@ -549,15 +767,24 @@ def clear_repair_issues(issue_id_prefix, keep_issue_ids=None):
         log_exception(err)
 
 #--------------------------------------------------------------------
-def clear_repair_issue_alert_msg(alert_key):
+def remove_open_repair_issue(issue_id):
     '''
-    Remove the sensor.icloud3_alerts entry for the alert_key (from the issue's data,
-    a device's fname, Apple acct username_id or other text) if it is a Repairs issue
-    notification (has REPAIR_ISSUED_ALERT_MSG). Another alert that replaced it is
-    left. Called by repairs.py after Submit.
+    The issue was removed (cleared or fixed with Submit, repairs.py). Remove it from
+    the open issues and remove its sensor.icloud3_alerts entry if it is still the
+    issue's title. Another alert that replaced it is left.
     '''
-    if REPAIR_ISSUED_ALERT_MSG in Gb.alerts_sensor_attrs.get(alert_key, ''):
-        update_alert_sensor(alert_key, '')
+    alert_key, title = open_repair_issues.pop(issue_id, (None, None))
+    if alert_key and all_alerts_by_alert_key().get(alert_key) == title:
+        source, error = alert_key_source_error(alert_key)
+        update_alert_sensor(Source=source, name=source, error=error, clear=True)
+
+#--------------------------------------------------------------------
+def open_repair_issue_alert_keys():
+    '''
+    The sensor.icloud3_alerts keys (devicename^error, apple_id^error) with an
+    open Repairs issue. Used by the Event Log greenbar.
+    '''
+    return {alert_key for alert_key, _title in list(open_repair_issues.values())}
 
 #--------------------------------------------------------------------
 def register_repair_fix_handler(fix_action, handler):
@@ -565,15 +792,138 @@ def register_repair_fix_handler(fix_action, handler):
     Register the function run when Submit is selected on a fixable Repairs issue.
 
     handler(fix_data) -> bool:
-        fix_data - the issue's data (devicename, fix_action and the fix_data values)
-        Return True if fixed (the issue is removed), False if it failed (the issue
-        stays in Repairs). It runs in an executor thread so it can use the iCloud3
-        routines and write the configuration file.
+        fix_data:
+            the issue's data (devicename, fix_action and the fix_data values)
+        Return:
+            True if fixed (the issue is removed),
+            False if it failed (the issue stays in Repairs).
+        Note:
+            It runs in an executor thread so it can use the iCloud3
+            routines and write the configuration file.
     '''
     repair_fix_handlers[fix_action] = handler
 
 # 'acknowledge' - The issue is a notice. Submit removes it and its alerts sensor message.
 register_repair_fix_handler('acknowledge', lambda fix_data: True)
+
+# 'restart' - Submit restarts iCloud3
+FIX_ACTION_RESTART = 'restart'
+
+def _fix_repair_issue_restart(fix_data):
+    post_event(f"HA Repairs > Restarting iCloud3")
+    Gb.was_icloud3_restart_requested = True
+    return True
+
+register_repair_fix_handler(FIX_ACTION_RESTART, _fix_repair_issue_restart)
+
+# 'update_device' - Submit opens the iCloud3 Configure Update Device screen for the
+# fix_data 'devicename' (repairs.iCloud3DeviceRepairFlow). It does not have a handler.
+FIX_ACTION_UPDATE_DEVICE = 'update_device'
+
+# 'update_apple_acct' - Submit opens the iCloud3 Configure Update Apple Account screen
+# for the fix_data 'apple_id' (repairs.iCloud3AppleAcctRepairFlow). It does not have
+# a handler.
+FIX_ACTION_UPDATE_APPLE_ACCT = 'update_apple_acct'
+
+# 'analytics_approval' - Request approval to send the iCloud3 Analytics data
+# (repairs.iCloud3AnalyticsRepairFlow). Submit enables it, closing the dialog with
+# the X disables it. It does not have a handler. The issue_id is also the
+# translation key.
+FIX_ACTION_ANALYTICS_APPROVAL = 'analytics_approval'
+ANALYTICS_APPROVAL_ISSUE_ID   = 'analytics_approval'
+
+# The issues used for the configuration errors. Their fix_flow has the configuration
+# screens' text, the title & message are placeholders.
+UPDATE_DEVICE_TRANSLATION_KEY     = 'update_device'
+UPDATE_APPLE_ACCT_TRANSLATION_KEY = 'update_apple_acct'
+RESTART_TRANSLATION_KEY           = 'restart_icloud3'
+
+# Leading words of the post_config_error issue_ids
+CONFIG_ERROR_ISSUE_ID_PREFIX = 'config_error'
+
+# Leading words of the post_config_error 'notice' issue_ids. They are only removed by Submit.
+CONFIG_NOTICE_ISSUE_ID_PREFIX = 'config_notice'
+
+#--------------------------------------------------------------------
+def post_repair_issue_update_device(issue_id, alert_key, title, message,
+                                            severity='warning'):
+    '''
+    Add a fixable iCloud3 device configuration error to HA Settings > Repairs. Submit
+    opens the iCloud3 Configure Update Device screen for the device so the error can
+    be corrected. The issue is removed when the configuration is updated.
+
+    issue_id:
+        Stable id of the condition, see post_repair_issue
+    devicename:
+        iCloud3 devicename with the error
+    title:
+        Short description of the error, e.g. 'Newer Apple Devices detected'. It is the
+        sensor.icloud3_alerts message and is displayed as 'iCloud3: Fname, title'.
+    message:
+        Description of the error and how to correct it. Event Log formatting (CRLF,
+        CRLF_DOT) is converted to markdown.
+
+    Return:
+        issue_id used for the Repairs issue (slugified)
+    '''
+    devicename, error = alert_key_source_error(alert_key)
+    fname = [conf_device[CONF_FNAME] for conf_device in Gb.conf_devices
+                            if conf_device[CONF_IC3_DEVICENAME] == devicename]
+    fname = fname[0] if fname else devicename
+    return post_repair_issue(
+                issue_id   = issue_id,
+                alert_key  = alert_key,
+                title      = title,
+                alert_msg  = '',
+                fix_action = FIX_ACTION_UPDATE_DEVICE,
+                fix_data   = {'devicename': devicename},
+                severity   = severity,
+                translation_key = UPDATE_DEVICE_TRANSLATION_KEY,
+                translation_placeholders = {
+                                'title':   title,
+                                'message': _evlog_msg_to_markdown(message),
+                                'device':  fname})
+
+#--------------------------------------------------------------------
+def post_repair_issue_update_apple_acct(issue_id, alert_key, title, message,
+                                            fix_data=None, severity='warning'):
+    '''
+    Add a fixable iCloud3 Apple Account configuration error to HA Settings > Repairs.
+    Submit opens the iCloud3 Configure Update Apple Account screen for the account so
+    the error can be corrected. The issue is removed when the configuration is updated.
+
+    issue_id:
+        Stable id of the condition, see post_repair_issue
+    apple_id:
+        Apple Account apple_id with the error
+    title:
+        Short description of the error, e.g. 'INVALID USERNAME/PW'. It is the
+        sensor.icloud3_alerts message and is displayed as 'iCloud3: apple_user, title'.
+    message:
+        Description of the error and how to correct it. Event Log formatting (CRLF,
+        CRLF_DOT) is converted to markdown.
+    fix_data:
+        Other items used by the repair flow, e.g. 'apple_acct_status' for an unknown
+        Apple Acct (start_ic3.report_unknown_apple_accounts)
+
+    Return:
+        issue_id used for the Repairs issue (slugified)
+    '''
+    apple_id, error = alert_key_source_error(alert_key)
+
+    return post_repair_issue(
+                issue_id   = issue_id,
+                alert_key  = alert_key,
+                title      = title,
+                alert_msg  = '',
+                fix_action = FIX_ACTION_UPDATE_APPLE_ACCT,
+                fix_data   = {**(fix_data or {}), 'apple_id': apple_id},
+                severity   = severity,
+                translation_key = UPDATE_APPLE_ACCT_TRANSLATION_KEY,
+                translation_placeholders = {
+                                'title':   title,
+                                'message': _evlog_msg_to_markdown(message),
+                                'account': apple_user(apple_id)})
 
 #--------------------------------------------------------------------
 def _run_in_event_loop(func, *args, **kwargs):
@@ -807,7 +1157,7 @@ def write_config_file_to_ic3log():
                 f"{NLSP4}{Gb.conf_device_sensors}")
 
     for conf_apple_accounts in Gb.conf_apple_accounts:
-        log_msg += (f"{NLSP4}APPLE ACCOUNT: {conf_apple_accounts.get(CONF_USERNAME)}:"
+        log_msg += (f"{NLSP4}APPLE ACCOUNT: {conf_apple_accounts.get(CONF_APPLE_ACCT)}:"
                     f"{NLSP4}{conf_apple_accounts}")
 
     for conf_device in Gb.conf_devices:
@@ -847,18 +1197,24 @@ def log_info_msg(module_name, log_msg='+'):
 def log_warning_msg(module_name, log_msg='+'):
 
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
+    if log_msg.startswith('iCloud3: ') is False:
+        log_msg = f"iCloud3: {log_msg}"
     Gb.HALogger.warning(log_msg)
 
     log_msg = format_msg_line(log_msg)
+
     write_ic3log_recd(log_msg)
 
 #--------------------------------------------------------------------
 def log_error_msg(module_name, log_msg='+'):
 
     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
+    if log_msg.startswith('iCloud3: ') is False:
+        log_msg = f"iCloud3: {log_msg}"
     Gb.HALogger.error(log_msg)
 
     log_msg = format_msg_line(log_msg)
+
     write_ic3log_recd(log_msg)
 
 #--------------------------------------------------------------------
@@ -979,7 +1335,7 @@ def format_msg_line(log_msg, log_stack_pgm=None):
         elif instr(msg_prefix, '\n'):
             source = f"{_called_from_history()}"
         else:
-            source  = f"{_called_from()}{program_area}"
+            source = f"{_called_from()}{program_area}"
 
         log_msg = format_startup_header_box(log_msg)
         log_msg = f"{source}{msg_prefix}{log_msg}"
@@ -1090,281 +1446,6 @@ def _resolve_module_name_log_msg(module_name, log_msg):
             pass
 
     return (f"{module_name} {log_msg.replace(NBSP, '')}")
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#   RAWDATA LOGGING ROUTINES
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def log_data_unfiltered(_hdr, rawdata, data_source=None, filter_id=None):
-    try:
-        rawdata_copy = rawdata['raw'].copy() if 'raw' in rawdata else rawdata.copy()
-        rawdata_copy = _set_validpw_invalidpw_text(rawdata_copy)
-
-    except:
-        log_info_msg(f"{_hdr.upper()}{NL3_DATA}{rawdata}")
-        return
-
-    devices_data = {}
-
-    if 'content' in rawdata_copy:
-        for device_data in rawdata_copy['content']:
-            devices_data[device_data['name']] = device_data
-
-        rawdata_copy['content'] = 'DeviceData……'
-
-    # Cycle thru rawdata items and create log line for each dict item
-    # Add dict items to rawdata_items list, save others and add at end
-    if type(rawdata_copy) is dict:
-        rawdata_items = ''
-        rawdata_non_dict_items = {}
-        for k, v in rawdata_copy.items():
-            if type(k) is dict:
-                d = {k: v}
-                rawdata_items += f"{NL3_DATA}{d}"
-            else:
-                rawdata_non_dict_items[k] = v
-        rawdata_items += f"{NL3_DATA}{rawdata_non_dict_items}"
-
-    else:
-        rawdata_items = f"{NL3_DATA}{rawdata_copy}"
-
-    log_info_msg(f"{_hdr.upper()}{rawdata_items}")
-
-
-    for device_data in devices_data:
-        log_msg = ( f"iCloud AppleAcct Data (unfiltered -- "
-                    f"{device_data}")
-        log_info_msg(log_msg)
-
-#--------------------------------------------------------------------
-def log_request_data(request_response_text, method, url, kwargs, AppleAcct=None, response=None):
-
-        is_log_level_rawdata = False if response is None else (response.status_code != 200)
-
-        is_log_level_rawdata = is_log_level_rawdata or (url.endswith('refreshClient') is False)
-        if Gb.is_log_level_rawdata or is_log_level_rawdata or Gb.is_icloud3_initial_startup:
-            pass
-        else:
-            return
-
-        try:
-            if AppleAcct in Gb.AppleAcct_by_username.values():
-                username = AppleAcct.username_base
-            else:
-                username = AppleAcct
-            _hdr = (f"{username}, {method}, {request_response_text}-{url.split('/')[-2:]}")
-
-            if request_response_text.startswith('Request'):
-                _data = {'url': url[8:], 'retry': kwargs.get("retry_cnt", 0)}
-                _data.update(kwargs)
-
-            elif request_response_text.startswith('Response'):
-                if response is None:
-                    _data = kwargs
-                else:
-                    try:
-                        data = response.json()
-                    except:
-                        data = {}
-                    _data = {'code': response.status_code, 'ok': response.ok, 'data': data}
-                    if Gb.is_log_level_rawdata_unfiltered:
-                        _data['headers'] = response.headers
-
-
-            log_data(_hdr, _data, is_log_level_rawdata=is_log_level_rawdata)
-
-        except Exception as err:
-            log_exception(err)
-
-#--------------------------------------------------------------------
-def log_data(_hdr, rawdata, is_log_level_rawdata=False, data_source=None, filter_id=None):
-    '''
-    Add raw data records to the HA log file for debugging purposes.
-
-    This is used in Pyicloud_ic3 to log all data requests and responses,
-    and in other routines in iCloud3 when device_tracker or other entities
-    are read from or updated in HA.
-
-    A filter is applied to the raw data and dictionaries and lists in the
-    data to eliminate displaying uninteresting fields. The fields, dictionaries,
-    and list are defined in the FILTER_FIELDS, FILTER_DATA_DICTS and
-    FILTER_DATA_LISTS.
-    '''
-
-    if rawdata is None:
-        return False
-    elif Gb.is_log_level_rawdata is False and is_log_level_rawdata is False:
-        return False
-
-    if (Gb.is_icloud3_startup_inprocess
-            or 'all' in Gb.log_level_devices
-            or Gb.log_level_devices == []):
-        pass
-
-    elif instr(_hdr,'iCloud Data'):
-        log_level_devices = [devicename for devicename in Gb.log_level_devices
-                                        if instr(_hdr, devicename)]
-        if log_level_devices == []:
-            return
-
-    rawdata_data   = {}
-    log_msg        = ''
-
-    try:
-        if type(rawdata) is not dict:
-            log_info_msg(f"{_hdr.upper()}{NL3_DATA}{rawdata}")
-            return
-
-        rawdata_data = rawdata.pop('data', None)
-        log_msg += _create_log_msg_from_data(rawdata)
-        log_msg += _create_log_msg_from_data(rawdata_data, data=True)
-
-        if log_msg:
-            log_info_msg(f"{_hdr.upper()} {_called_from(show_fct_name=True)}{log_msg}")
-
-        return
-
-    except Exception as err:
-        log_exception(err)
-        log_info_msg(f"{_hdr.upper()} *** Data could not be filtered ***{NL3_DATA}{rawdata}")
-        return
-
-#..........................................................................................
-def _create_log_msg_from_data(rawdata, data=None):
-    '''
-    Extract lists and dictionaries from the rawdata dictionary
-
-    Returns a new rawdata dictionary:
-        log_items_data[listitem]               - lists by the list item name
-        log_items_data[listitem.sublist]       - sublists of the list
-        log_items_data[dictitem]               - dictionaries by the dict item name
-        log_items_data[dictietm.subdictitem]   - dicts within that dict
-        log_items_data[items]                  - non-list & non_dict items
-    '''
-    if is_empty(rawdata):
-        return ''
-
-    log_items_data = {}
-    try:
-        filtered_rawdata = {k: v for k, v in rawdata.items() if k in FILTER_FIELDS}
-    except Exception as err:
-        log_exception(err)
-
-    if Gb.log_level_devices == 'all':
-        filtered_names = []
-    else:
-        filtered_names = [name  for name, devicename in Gb.devicenames_by_aadev_dname.items()
-                                if devicename in Gb.log_level_devices]
-
-    for k, v in filtered_rawdata.copy().items():
-        if type(v) is list:
-            if is_empty(v): continue
-
-            # The list contains a dict item Format it as a sub dict
-            if type(v[0]) is dict:
-                idx = -1
-                filtered = []
-                for vsd in v:
-                    idx += 1
-                    if k == 'content':
-                        ksd = vsd.get('name', idx)
-                        if ksd in filtered_names or Gb.is_icloud3_startup_inprocess:
-                            log_items_data[f"{k}.{ksd}"] = _filter_rawdata_items(vsd)
-                        else:
-                            filtered.append(ksd)
-                    else:
-                        log_items_data[f"{k}.{idx}"] = _filter_rawdata_items(vsd, shrink_only=True)
-                if isnot_empty(filtered):
-                    log_items_data[f"{k}.Filtered"] = f'{filtered}'
-            else:
-                log_items_data[f"{k}"] = _filter_rawdata_items(v)
-            filtered_rawdata.pop(k)
-
-        elif type(v) is dict:
-            if is_empty(v): continue
-
-            # The dict contains another dict item Format it as a sub dict
-            try:
-                # ksd_0 = v.keys()[0]
-                for ksd, vsd in v.items():
-                    if ksd not in FILTER_FIELDS: continue
-                    if type(vsd) is dict:
-                        vsd_data = v.pop(ksd)
-                        shrink_only = ksd in ['membersInfo']
-                        log_items_data[f"{k}.{ksd}"] = _filter_rawdata_items(vsd_data, shrink_only)
-            except:
-                pass
-
-            log_items_data[f"{k}"] = _filter_rawdata_items(v)
-
-            filtered_rawdata.pop(k)
-
-    filtered_rawdata = {k: shrink_item(v, k) for k, v in filtered_rawdata.items()}
-    log_items_data['items'] = filtered_rawdata
-
-    log_msg = ''
-    data_text = 'data.' if data else '_.'
-    for k, v in log_items_data.items():
-        if isnot_empty(v):
-            log_msg += f"{NL3_DATA}{data_text}{k}={v}"
-
-    return log_msg
-
-#..........................................................................................
-def _is_device_filtered(aadev_name):
-    devicename = Gb.devicenames_by_aadev_dname.get(aadev_name, '')
-    return not (devicename in Gb.log_level_devices or 'all' in Gb.log_level_devices)
-
-#..........................................................................................
-def _filter_rawdata_items(item_value_dict, shrink_only=None):
-    '''
-    Cycle thru the items dict, filter and shrink the value items
-    '''
-    if (Gb.is_log_level_rawdata_unfiltered
-            or type(item_value_dict) is not dict):
-        return item_value_dict
-
-    _filtered_rawdata_items = {}
-    for k, v in item_value_dict.items():
-        if k not in FILTER_FIELDS and shrink_only is None:
-            continue
-
-        _filtered_rawdata_items[k] = shrink_item(v, k)
-
-    return _filtered_rawdata_items
-
-#..........................................................................................
-def shrink_item(v, k=None):
-    '''
-    Reduce the size of str fields longer than 20-chars
-    '''
-    if k in DO_NOT_SHRINK:
-        return v
-
-    if (type(v) is str
-            and len(v) > 20
-            and v.startswith('http') is False):
-        v = f"{v[:6]}……{v[-6:]}"
-
-    return v
-
-#--------------------------------------------------------------------
-def _set_validpw_invalidpw_text(rawdata):
-
-    rawdata_items = rawdata['data'] if 'data' in rawdata else rawdata
-
-    try:
-        if 'code' in rawdata_items:
-            if rawdata_items['code'] == 409:
-                rawdata_items['ok'] = 'ValidPW'
-            elif rawdata_items['code'] == 401:
-                rawdata_items['ok'] = 'InvalidPW'
-
-    except:
-        pass
-
-    return rawdata
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1529,7 +1610,8 @@ def _called_from(show_fct_name=False, trace=False):
                 or caller.filename.endswith('sessions.py')
                 or instr(caller.filename, 'httpx')):
             continue
-        if caller.filename.endswith('messaging.py') is False:
+        if (caller.filename.endswith('messaging.py') is False
+                and caller.filename.endswith('rawdata_logging.py') is False):
             break
 
     if caller is None:
@@ -1565,6 +1647,7 @@ def _called_from_history(trace=False):
             if py_filename.startswith('thread'):
                 break
             if (py_filename == 'messaging'
+                    or py_filename == 'rawdata_logging'
                     or py_filename == 'sessions'):
                 continue
 
@@ -1629,7 +1712,7 @@ def add_log_file_filter(filtered_item, filtered_text=None):
             or filtered_item.strip() == ''
             or len(filtered_item) < 6):
         return
-    elif Gb.disable_upw_filter:
+    elif TEST.DISABLE_UPW_FILTER:
         return
 
     if instr(filtered_item, '@') is False:
@@ -1639,7 +1722,7 @@ def add_log_file_filter(filtered_item, filtered_text=None):
         return
 
     # email address = geekstergary@domain - reformat to xx**#**xx@
-    email_id = username_id(filtered_item)        # Will be geekstergary@
+    email_id = apple_user(filtered_item)        # Will be geekstergary@
     if len(email_id) < 4: email_id = '***'
 
     if filtered_text is None:
@@ -1665,7 +1748,7 @@ class LoggerFilter(logging.Filter):
     '''
     @staticmethod
     def filter(record):
-        if Gb.disable_upw_filter:
+        if TEST.DISABLE_UPW_FILTER:
             return True
 
         message = record.msg

@@ -1,12 +1,11 @@
 
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (RESTORE_STATE_FILE,
-                                    DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
-                                    HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME, ALERT,
-                                    ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME, ZONE_INFO,
-                                    LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME, LAST_ZONE_NAME,
-                                    DIR_OF_TRAVEL, )
+from ..const                import (DISTANCE_TO_OTHER_DEVICES, DISTANCE_TO_OTHER_DEVICES_DATETIME,
+                                    HHMMSS_ZERO, AWAY, AWAY_FROM, NOT_SET, NOT_HOME, STATIONARY, STATIONARY_FNAME, ALERT, )
+from ..const_config         import (RESTORE_STATE_FILE, ZONE, ZONE_DNAME, ZONE_FNAME, ZONE_NAME,
+                                    ZONE_INFO, LAST_ZONE, LAST_ZONE_DNAME, LAST_ZONE_FNAME,
+                                    LAST_ZONE_NAME, DIR_OF_TRAVEL, )
 
 from ..utils.utils        import (instr, )
 from ..utils.file_io      import (file_exists, read_json_file, save_json_file, async_save_json_file, )
@@ -172,9 +171,9 @@ def update_restore_state_apple_accts_data():
         Gb.restore_state_file_data['apple_accts'] = {}
 
     Gb.restore_state_apple_accts = {}
-    for username, AppleAcct in Gb.AppleAcct_by_username.items():
-        Gb.restore_state_apple_accts[username] = {}
-        Gb.restore_state_apple_accts[username]['is_reauth_needed_secs'] = AppleAcct.is_reauth_needed_secs
+    for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
+        Gb.restore_state_apple_accts[apple_id] = {}
+        Gb.restore_state_apple_accts[apple_id]['is_reauth_needed_secs'] = AppleAcct.is_reauth_needed_secs
 
 #--------------------------------------------------------------------
 @callback

@@ -1,7 +1,8 @@
 """Cookie jar with persistence support."""
 
 from ..const             import HIGH_INTEGER, TRUST_COOKIE_NAME
-from ..utils.messaging   import (_log, log_info_msg, log_exception, shrink_item, )
+from ..utils.messaging   import (_log, log_info_msg, log_exception, )
+from ..utils.rawdata_logging import (shrink_item, )
 from ..utils.time_util   import (secs_to_datetime, format_date_time)
 
 from http.cookiejar import LWPCookieJar
@@ -214,7 +215,7 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
 #     info = self.get_trust_cookie_info()
 
 #     if not info['found']:
-#         log_warning_msg(f"{self.username_base}, Trust cookie MISSING from cookie jar — "
+#         log_warning_msg(f"{self.apple_user}, Trust cookie MISSING from cookie jar — "
 #                         f"full re-authentication required")
 #         return False
 
@@ -223,17 +224,17 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
 #         return True
 
 #     if info['expired']:
-#         log_warning_msg(f"{self.username_base}, Trust cookie EXPIRED — "
+#         log_warning_msg(f"{self.apple_user}, Trust cookie EXPIRED — "
 #                         f"full re-authentication required")
 #         return False
 
 #     # Warn if expiring soon
 #     if info['expire_in_days'] <= warn_days:
-#         log_warning_msg(f"{self.username_base}, Trust cookie expiring soon — "
+#         log_warning_msg(f"{self.apple_user}, Trust cookie expiring soon — "
 #                         f"{info['expire_in_days']} days remaining "
 #                         f"(expires {info['expires_time']})")
 #         # Still valid though — don't return False
-#         post_alert( f"Apple Acct > {self.username_base}, "
+#         post_alert( f"Apple Acct > {self.apple_user}, "
 #                     f"Trust cookie expires in {info['expire_in_days']} days "
 #                     f"({info['expires_time']}) — re-authentication will be needed soon")
 
@@ -251,11 +252,11 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
 #     try:
 #         cookies = list(self.iCloudSession.cookies)
 #         if not cookies:
-#             log_debug_msg(f"{self.username_base}, Cookie jar is empty")
+#             log_debug_msg(f"{self.apple_user}, Cookie jar is empty")
 #             return
 
 #         now_secs = time.time()
-#         lines = [f"{self.username_base}, Cookie jar contents ({len(cookies)} cookies):"]
+#         lines = [f"{self.apple_user}, Cookie jar contents ({len(cookies)} cookies):"]
 
 #         for cookie in cookies:
 #             if cookie.expires is None:

@@ -2,23 +2,22 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOMAIN, DEVICE_TRACKER,
-                                CRLF_DOT, EVLOG_NOTICE, EVLOG_ERROR, EVLOG_ALERT,
-                                ICLOUD, CONF_DATA_SOURCE,
-                                CONF_APPLE_ACCOUNT, CONF_USERNAME, CONF_PASSWORD, CONF_LOCATE_ALL,
-                                CONF_SERVER_LOCATION,
-                                CONF_IC3_DEVICENAME, CONF_FNAME, CONF_DEVICE_TYPE,
-                                CONF_APPLE_ACCOUNT, CONF_AADEV_NAME, CONF_AADEV_DEVICE_ID,
-                                CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME,
-                                CONF_TRACKING_MODE, CONF_MOBILE_APP_DEVICE,
-                                CONF_PICTURE, CONF_ICON,
+                                EVLOG_NOTICE, EVLOG_ERROR, EVLOG_ALERT,
+                                ICLOUD,
                                 IPHONE_DN, WATCH_DN, IPAD_DN, MAC_DN, DEVICE_TYPES, DEVICE_TYPE_TRACKING_MODE,
                                 DEVICE_TYPE_PICTURE_FILENAMES, DEVICE_TYPE_ICONS,
-                                TRACK, MONITOR, INACTIVE, TRACKING_MODES,
-                                )
+                                TRACK, MONITOR, INACTIVE, TRACKING_MODES, )
+from ..const_config     import (CONF_DATA_SOURCE, CONF_APPLE_ACCT, CONF_APPLE_ACCT, CONF_PASSWORD,
+                                CONF_LOCATE_ALL, CONF_SERVER_LOCATION, CONF_IC3_DEVICENAME,
+                                CONF_FNAME, CONF_DEVICE_TYPE, CONF_AADEV_NAME,
+                                CONF_AADEV_DEVICE_ID, CONF_RAW_MODEL, CONF_MODEL,
+                                CONF_MODEL_DISPLAY_NAME, CONF_TRACKING_MODE,
+                                CONF_MOBILE_APP_DEVICE, CONF_PICTURE, CONF_ICON, )
+from ..const_char       import (CRLF_DOT, )
 
 from ..utils.utils      import (instr, isnot_empty,
                                 list_add, list_del, dict_del, dict_sort,
-                                encode_password, decode_password, username_id,
+                                encode_password, decode_password, apple_user,
                                 is_running_in_event_loop, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_error_msg,
                                 update_alert_sensor,
@@ -29,6 +28,7 @@ from ..utils.time_util  import (time_now_secs, secs_to_hhmm, )
 
 from ..apple_acct.apple_acct import (AppleAcctManager, AppleAcctFailedLoginException, HTTP_RESPONSE_CODES)
 from .device_name_parser     import make_ic3_fname_from_aadevice_dname
+from .                       import apple_acct_support as aas
 from ..startup          import start_ic3
 from ..utils            import file_io
 from ..utils            import entity_io
@@ -49,9 +49,9 @@ async def async_log_into_apple_account(self, user_input):
     If so, the calling step displays the Authentication form and gets the code from the user.
 
     Input:
-        user_input  = A dictionary with the username and password, or
-                        {username: icloudAccountUsername, password: icloudAccountPassword}
-                    = {} to use the username/password in the tracking configuration parameters
+        user_input  = A dictionary with the apple_id and password, or
+                        {apple_id: icloudAccountUsername, password: icloudAccountPassword}
+                    = {} to use the apple_id/password in the tracking configuration parameters
 
     Exception:
         The self.AppleAcct.requres_2fa must be checked after a login to see if the account
@@ -71,25 +71,26 @@ async def async_log_into_apple_account(self, user_input):
         self.login_successful_srp = None
         self.auth_failed_503      = False
 
-        # The username may be changed to assign a new account, if so, log into the new one
-        if CONF_USERNAME not in user_input or CONF_PASSWORD not in user_input:
+        # The apple_id may be changed to assign a new account, if so, log into the new one
+        if CONF_APPLE_ACCT not in user_input or CONF_PASSWORD not in user_input:
             return False
 
-        username = user_input[CONF_USERNAME].lower()
+        apple_id = user_input[CONF_APPLE_ACCT].lower()
         password = user_input[CONF_PASSWORD]
 
-        add_log_file_filter(username, f"**{self.aa_idx}**")
-        add_log_file_filter(username.upper(), f"**{self.aa_idx}**")
+        add_log_file_filter(apple_id, f"**{self.aa_idx}**")
+        add_log_file_filter(apple_id.upper(), f"**{self.aa_idx}**")
         add_log_file_filter(password)
 
         apple_server_location = user_input.get(CONF_SERVER_LOCATION,'usa')
 
-        log_info_msg(   f"Apple Acct > {username}, Logging in, "
-                        f"UserInput-{user_input}, Errors-{self.errors}, "
+        log_user_input = {**user_input, CONF_PASSWORD: '********'}
+        log_info_msg(   f"Apple Acct > {apple_id}, Logging in, "
+                        f"UserInput-{log_user_input}, Errors-{self.errors}, "
                         f"Step-{self.step_id}")
 
         # Already logged in and no changes
-        AppleAcct = Gb.AppleAcct_by_username.get(username)
+        AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
         if (AppleAcct
                 and password == AppleAcct.password
                 and AppleAcct.login_successful
@@ -98,24 +99,24 @@ async def async_log_into_apple_account(self, user_input):
                 and apple_server_location == AppleAcct.apple_server_location
                 and AppleAcct.login_successful):
             self.AppleAcct = AppleAcct
-            self.username = username
+            self.apple_id = apple_id
             self.password = password
             # self.header_msg = 'apple_acct_logged_into'
 
-            log_info_msg(f"Apple Acct > {username}, Already Logged in, {self.AppleAcct}")
+            log_info_msg(f"Apple Acct > {apple_id}, Already Logged in, {self.AppleAcct}")
             # return True
 
             # Validate the account before actually logging in
-            valid_upw = await Gb.ValidateAppleAcctUPW.async_validate_username_password(username, password)
-            if valid_upw is False:
-                if username in Gb.valid_upw_by_username:
-                    del Gb.valid_upw_by_username[username]
-                self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
-                log_info_msg(f"Apple Acct > {username}, Invalid Username/password")
+            upw_valid = await Gb.ValidateAppleAcctUPW.async_validate_apple_id_password(apple_id, password)
+            if upw_valid is False:
+                Gb.upw_valid_by_apple_id.pop(apple_id, None)
+                Gb.upw_code_by_apple_id.pop(apple_id, None)
+                self.errors[CONF_APPLE_ACCT] = 'apple_acct_inupw_valid'
+                log_info_msg(f"Apple Acct > {apple_id}, Invalid Username/password")
                 return False
 
 
-        event_msg =(f"{EVLOG_NOTICE}Configure Settings > Logging into Apple Account {username}")
+        event_msg =(f"{EVLOG_NOTICE}Configure Settings > Logging into Apple Account {apple_id}")
         if apple_server_location != 'usa':
             event_msg += f", iCloud.com ServerSuffix-{apple_server_location}"
         log_info_msg(event_msg)
@@ -129,7 +130,7 @@ async def async_log_into_apple_account(self, user_input):
         AppleAcct = None
         AppleAcct = await Gb.hass.async_add_executor_job(
                                     create_AppleAcctManager_config_flow,
-                                    username,
+                                    apple_id,
                                     password,
                                     apple_server_location)
 
@@ -140,23 +141,23 @@ async def async_log_into_apple_account(self, user_input):
 
         if AppleAcct is None:
             self.AppleAcct = None
-            log_info_msg(f"Apple Acct > {username}, Login Failed")
+            log_info_msg(f"Apple Acct > {apple_id}, Login Failed")
             return False
 
         # Successful login, set AppleAcct fields
         self.AppleAcct = AppleAcct
-        self.username = username
+        self.apple_id = apple_id
         self.password = password
         self.apple_server_location = apple_server_location
-        Gb.valid_upw_by_username[username] = True
-        log_info_msg(f"Apple Acct > {username}, Login successful, {self.AppleAcct}")
+        Gb.upw_valid_by_apple_id[apple_id] = True
+        log_info_msg(f"Apple Acct > {apple_id}, Login successful, {self.AppleAcct}")
 
         start_ic3.dump_startup_lists_to_log()
 
         if AppleAcct.is_reauth_needed:
-            log_info_msg(f"Apple Acct > {username}, 2fa Authentication Needed, {self.AppleAcct}")
+            log_info_msg(f"Apple Acct > {apple_id}, 2fa Authentication Needed, {self.AppleAcct}")
             alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)})"
-            update_alert_sensor(AppleAcct.username_id, alert_msg)
+            update_alert_sensor(Source=AppleAcct, error='auth_needed', alert_msg=alert_msg)
 
             # Display the orange 'Reconfigure' button on the HA Settings screen as
             # soon as the login reports that an Auth Code is needed. Waiting until
@@ -202,22 +203,22 @@ async def async_log_into_apple_account(self, user_input):
                 self.errors[CONF_SERVER_LOCATION] = 'apple_acct_login_error_302'
 
         elif response_code == 400:
-            self.errors['base'] = 'apple_acct_invalid_upw'
+            self.errors['base'] = 'apple_acct_inupw_valid'
         elif response_code == 401 and instr(err, 'Python SRP'):
             Gb.AppleAcctLoggingInto.setup_error(401)
             self.errors['base'] = 'apple_acct_login_error_srp_401'
         elif response_code == 401:
             Gb.AppleAcctLoggingInto.setup_error(401)
-            self.errors[CONF_USERNAME] = 'apple_acct_invalid_upw'
+            self.errors[CONF_APPLE_ACCT] = 'apple_acct_inupw_valid'
         elif response_code == 403:
             Gb.AppleAcctLoggingInto.setup_error(403)
-            self.errors[CONF_USERNAME] = 'apple_acct_locked'
+            self.errors[CONF_APPLE_ACCT] = 'apple_acct_locked'
         else:
             Gb.AppleAcctLoggingInto.setup_error(response_code)
             self.errors['base'] = 'apple_acct_login_error_other'
         error_msg = HTTP_RESPONSE_CODES.get(response_code, 'Other Error')
 
-        post_error_msg( f"Apple Acct > {username}, Login Failed, "
+        post_error_msg( f"Apple Acct > {apple_id}, Login Failed, "
                         f"Error-{err}/{error_msg}, Code-{response_code}")
 
     except Exception as err:
@@ -232,7 +233,7 @@ async def async_log_into_apple_account(self, user_input):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            CREATE APPLE ACCOUNT SERVICE OBJECTS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def create_AppleAcctManager_config_flow(username, password, apple_server_location):
+def create_AppleAcctManager_config_flow(apple_id, password, apple_server_location):
     '''
     Create the AppleAcctManager object without going through the error checking and
     authentication test routines. This is used by config_flow to open a second
@@ -240,7 +241,7 @@ def create_AppleAcctManager_config_flow(username, password, apple_server_locatio
     '''
     try:
         AppleAcct = None
-        AppleAcct = AppleAcctManager( username,
+        AppleAcct = AppleAcctManager( apple_id,
                                     password,
                                     apple_server_location=apple_server_location,
                                     cookie_directory=Gb.icloud_cookies_directory,
@@ -259,7 +260,7 @@ def create_AppleAcctManager_config_flow(username, password, apple_server_locatio
     if AppleAcct and AppleAcct.login_successful:
         log_debug_msg(  f"Apple Acct > {AppleAcct.account_owner}, Login Successful, "
                         f"Error-{AppleAcct.response_code_desc}, "
-                        f"Update Connfiguration")
+                        f"Update Configuration")
     else:
         # raise AppleAcctFailedLoginException
         return None
@@ -279,7 +280,7 @@ def create_AADevices_config_flow(AppleAcct):
 
 #..............................................................................................
 def clear_AppleAcct_auth_alerts():
-    for username, AppleAcct in Gb.AppleAcct_by_username.items():
+    for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
         if AppleAcct.is_reauth_needed:
             AppleAcct.was_ha_auth_code_alert_sent = False
 
@@ -294,11 +295,17 @@ async def async_finish_authentication_and_data_refresh(caller_self):
     is not available. Do this now.
     '''
     AppleAcct = caller_self.AppleAcct
+
+    # The accountLogin request accepts the Terms of Use (_handle_accept_terms_of_use).
+    # refresh_session=True skips the session token validation, authenticate() returns
+    # before accountLogin is done when the token is still valid.
+    accepting_terms_of_use = (AppleAcct.terms_of_use_update_needed
+                                and AppleAcct.terms_of_use_accepted)
     AppleAcct.login_successful = \
-        await Gb.hass.async_add_executor_job(AppleAcct.authenticate)
+        await Gb.hass.async_add_executor_job(AppleAcct.authenticate, accepting_terms_of_use)
 
     if AppleAcct.login_successful is False:
-        err_msg = ( f"Apple Acct > {AppleAcct.username_base}, Authentication Failed, "
+        err_msg = ( f"Apple Acct > {AppleAcct.apple_user}, Authentication Failed, "
                     f"Error-{AppleAcct.response_code_desc}, "
                     f"AppleServerLocation-`{AppleAcct.apple_server_location}`, "
                     "Location Data not Refreshed")
@@ -320,29 +327,37 @@ async def async_finish_authentication_and_data_refresh(caller_self):
                                 locate_all_devices)
 
         if AppleAcct.is_authenticated:
-            AppleAcct.terms_of_use_update_needed = False
-            post_event( f"{AppleAcct.username_base} > "
-                        f"Apple Acct > Terms of Service agreement approved")
-            update_alert_sensor(AppleAcct.username_id, '')
+            # terms_of_use_update_needed is set from Apple's accountLogin response
+            if accepting_terms_of_use and AppleAcct.terms_of_use_update_needed:
+                post_error_msg( f"{EVLOG_ALERT}Apple Acct > {AppleAcct.apple_user}, "
+                                f"Apple did not accept the Terms of Use")
+
+            elif accepting_terms_of_use:
+                post_event( f"{AppleAcct.apple_user} > "
+                            f"Apple Acct > Terms of Service agreement approved")
+                aas.clear_repair_issue_aa_terms_of_use(AppleAcct)
+
+            if AppleAcct.terms_of_use_update_needed is False:
+                update_alert_sensor(Source=AppleAcct, clear=True)
 
     finally:
         Gb.is_icloud3_startup_inprocess = was_startup_inprocess
 
 #--------------------------------------------------------------------
-def any_conf_devices_for_apple_acct(ui_username):
+def any_conf_devices_for_apple_acct(ui_apple_id):
     existing_devices = [conf_device[CONF_IC3_DEVICENAME]
                                     for conf_device in Gb.conf_devices
-                                    if conf_device[CONF_APPLE_ACCOUNT] == ui_username]
+                                    if conf_device[CONF_APPLE_ACCT] == ui_apple_id]
 
     return isnot_empty(existing_devices)
 
 #--------------------------------------------------------------------
 def any_apple_accts_not_used():
-    aa_list = list(Gb.AppleAcct_by_username.keys())
-    aa_used = [conf_device[CONF_APPLE_ACCOUNT]
+    aa_list = list(Gb.AppleAcct_by_apple_id.keys())
+    aa_used = [conf_device[CONF_APPLE_ACCT]
                             for conf_device in Gb.conf_devices]
-    aa_unused = [username   for username in aa_list
-                            if username not in aa_used]
+    aa_unused = [apple_id   for apple_id in aa_list
+                            if apple_id not in aa_used]
 
     return isnot_empty(aa_unused)
 
@@ -352,7 +367,7 @@ def any_apple_accts_not_used():
 #     AppleAcct.iCloudSession.cookies.save()
 
 #--------------------------------------------------------------------
-async def async_delete_icloud_session_file(AppleAcct, username):
+async def async_delete_icloud_session_file(AppleAcct, apple_id):
     '''
     Delete the cookies and session files as part of the reset_session
     and request_auth_code. This is called from config_flow/step_reauth
@@ -363,26 +378,169 @@ async def async_delete_icloud_session_file(AppleAcct, username):
         session_filename = AppleAcct.session_filename
         AppleAcct.delete_cookie_and_session_files()
 
-        username_msg = AppleAcct.account_owner
+        apple_id_msg = AppleAcct.account_owner
 
     elif AppleAcct is None:
-        cookies_base = "".join([c for c in username if match(r"\w", c)])
+        cookies_base = "".join([c for c in apple_id if match(r"\w", c)])
         cookies_filename = path.join(Gb.icloud_cookies_directory, f"{cookies_base}.cookies")
         session_filename = path.join(Gb.icloud_cookies_directory, f"{cookies_base}.session")
         await file_io.async_delete_file(cookies_filename)
         await file_io.async_delete_file(session_filename)
 
-        username_msg = username_id(username)
+        apple_id_msg = apple_user(apple_id)
 
-    elif AppleAcct not in Gb.AppleAcct_by_username:
+    elif AppleAcct not in Gb.AppleAcct_by_apple_id:
         return
 
-    post_event( f"{EVLOG_NOTICE}Apple Acct > {username_msg}, "
+    post_event( f"{EVLOG_NOTICE}Apple Acct > {apple_id_msg}, "
                 f"Resetting iCloud Session Files")
-    log_info_msg(   f"Apple Acct > {username_msg}, "
+    log_info_msg(   f"Apple Acct > {apple_id_msg}, "
                     f"Deleting Session Files ({Gb.icloud_cookies_directory})"
                     f"{CRLF_DOT}Cookies ({cookies_filename})"
                     f"{CRLF_DOT}Session ({session_filename})")
+
+#--------------------------------------------------------------------
+def is_apple_acct_logged_into(apple_id):
+    '''
+    An Apple Acct can be authenticated (reauth) only if its apple_id/password is valid
+    and it was logged into. A login that only needs the 2fa code is logged into.
+
+    Return:
+        True  - Valid apple_id/password and logged into
+        False - Unknown acct, invalid apple_id/password or the login failed
+    '''
+    AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+
+    return (AppleAcct is not None
+            and AppleAcct.login_successful is True
+            and Gb.upw_valid_by_apple_id.get(apple_id, False) is True)
+
+#--------------------------------------------------------------------
+def _apple_acct_filenames(apple_id):
+    '''
+    The .cookies, .session and .tpw files AppleAcctManager uses for the apple_id
+    (see AppleAcctManager.make_cookie_filename_base_from_apple_id)
+    '''
+    cookies_base = "".join([c for c in apple_id if match(r"\w", c)])
+
+    return [path.join(Gb.icloud_cookies_directory, f"{cookies_base}.{file_ext}")
+                    for file_ext in ['cookies', 'session', 'tpw']]
+
+#--------------------------------------------------------------------
+async def async_delete_apple_acct_files(apple_id):
+    '''
+    Delete the .cookies, .session and .tpw files of an Apple Acct that was deleted
+    '''
+    if apple_id == '':
+        return
+
+    for filename in _apple_acct_filenames(apple_id):
+        await file_io.async_delete_file(filename)
+
+    log_info_msg(   f"Apple Acct > {apple_user(apple_id)}, Deleted the Session Files "
+                    f"(.cookies, .session, .tpw)")
+
+#--------------------------------------------------------------------
+async def async_is_login_verifying_upw(apple_id):
+    '''
+    Determine if logging into the apple_id will verify the password itself, without
+    a separate ValidateAppleAcctUPW SRP check first.
+
+    An apple_id with no session token can only be signed into with a Password SRP
+    signin, which verifies the password. Validating it first adds a second SRP signin
+    that has to wait out SRP_SIGNIN_MIN_INTERVAL_SECS and sends a second 2fa push.
+
+    Return:
+        True  - Not logged in and no session token (new acct, session files deleted)
+        False - Logged in or has a session token. The login signs in with the token
+                without checking the password and a failed login would replace the
+                working session, validate it first.
+    '''
+    AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+    if AppleAcct and AppleAcct.login_successful:
+        return False
+
+    session_filename = _apple_acct_filenames(apple_id)[1]
+    session_data = await Gb.hass.async_add_executor_job(
+                                    file_io.read_json_file, session_filename)
+
+    return not (session_data or {}).get('session_token')
+
+#--------------------------------------------------------------------
+def _read_files(filenames):
+    files_data = {}
+    for filename in filenames:
+        if path.exists(filename):
+            with open(filename, 'rb') as f:
+                files_data[filename] = f.read()
+        else:
+            files_data[filename] = None
+
+    return files_data
+
+def _restore_files(files_data):
+    for filename, data in files_data.items():
+        if data is None:
+            file_io.delete_file(filename)
+        else:
+            with open(filename, 'wb') as f:
+                f.write(data)
+
+#--------------------------------------------------------------------
+async def async_save_apple_acct_login_state(apple_id):
+    '''
+    Save what a login of the apple_id changes so it can be undone if Apple rejects
+    the apple_id/password. A login creates and registers a new AppleAcct and writes
+    the .cookies, .session and .tpw files even when it fails. The .tpw file gets the
+    entered password, the TokenPW validation would accept it the next time.
+    '''
+    try:
+        files_data = await Gb.hass.async_add_executor_job(
+                                    _read_files, _apple_acct_filenames(apple_id))
+
+    except Exception as err:
+        log_exception(err)
+        files_data = None
+
+    return {'AppleAcct':  Gb.AppleAcct_by_apple_id.get(apple_id),
+            'password':   Gb.AppleAcct_password_by_apple_id.get(apple_id),
+            'files_data': files_data, }
+
+#--------------------------------------------------------------------
+async def async_restore_apple_acct_login_state(apple_id, saved_login_state):
+    '''
+    Undo a login of an apple_id/password Apple rejected
+    (see async_save_apple_acct_login_state)
+    '''
+    failed_AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+    prev_AppleAcct   = saved_login_state['AppleAcct']
+
+    if failed_AppleAcct and failed_AppleAcct is not prev_AppleAcct:
+        update_alert_sensor(Source=failed_AppleAcct, error='login_failed', clear=True)
+
+    if prev_AppleAcct:
+        Gb.AppleAcct_by_apple_id[apple_id] = prev_AppleAcct
+    else:
+        Gb.AppleAcct_by_apple_id.pop(apple_id, None)
+
+    if saved_login_state['password'] is not None:
+        Gb.AppleAcct_password_by_apple_id[apple_id] = saved_login_state['password']
+    else:
+        Gb.AppleAcct_password_by_apple_id.pop(apple_id, None)
+
+    if Gb.AppleAcctLoggingInto is failed_AppleAcct:
+        Gb.AppleAcctLoggingInto = prev_AppleAcct
+
+    if saved_login_state['files_data'] is not None:
+        try:
+            await Gb.hass.async_add_executor_job(
+                                    _restore_files, saved_login_state['files_data'])
+
+        except Exception as err:
+            log_exception(err)
+
+    log_info_msg(   f"Apple Acct > {apple_user(apple_id)}, Login rejected by Apple, "
+                    f"Removed the failed login and restored the Session Files")
 
 #--------------------------------------------------------------------
 def is_asp_password(ui_password):
@@ -396,7 +554,7 @@ def is_asp_password(ui_password):
                 and ui_password[14:15] == '-')
 
 #--------------------------------------------------------------------
-def login_err_msg(AppleAcct, username):
+def login_err_msg(AppleAcct, apple_id):
     ipv6_info = Gb.InternetError.ha_system_network_ipv6_info()
     if ipv6_info:
         err_msg = 'apple_acct_login_error_ipv6'
@@ -404,26 +562,26 @@ def login_err_msg(AppleAcct, username):
         err_msg = 'internet_error'
     elif AppleAcct and AppleAcct.response_code_pw == 503:
         err_msg = 'apple_acct_login_error_503'
-    elif Gb.valid_upw_by_username.get(username, None) is False:
-        err_msg = 'apple_acct_invalid_upw'
+    elif Gb.upw_valid_by_apple_id.get(apple_id, None) is False:
+        err_msg = 'apple_acct_inupw_valid'
     else:
         err_msg = 'apple_acct_login_error_other'
 
     return err_msg
 
 #--------------------------------------------------------------------
-async def async_delete_icloud_session_requests_file(username=None):
+async def async_delete_icloud_session_requests_file(apple_id=None):
     '''
     Delete the cookies and session files as part of the reset_session and request_Authentication_code
     This is called from config_flow/setp_reauth and pyicloud_reset_session
     '''
 
-    if username is None:
+    if apple_id is None:
         return
 
     post_event(f"{EVLOG_NOTICE}Configure Apple Acct > Resetting Cookie/Session Files")
     cookie_directory  = Gb.icloud_cookies_directory
-    cookie_filename   = "".join([c for c in username if match(r"\w", c)])
+    cookie_filename   = "".join([c for c in apple_id if match(r"\w", c)])
 
     delete_msg =  f"Apple Acct > Deleting Session Files > ({cookie_directory})"
 
@@ -444,7 +602,7 @@ async def async_get_hwkey_names(self, AppleAcct=None):
     Runs AppleAcct.get_hwkey_names() in executor (not in event loop).
     '''
 
-    _AppleAcct_list = Gb.AppleAcct_by_username.values() if AppleAcct is None else [AppleAcct]
+    _AppleAcct_list = Gb.AppleAcct_by_apple_id.values() if AppleAcct is None else [AppleAcct]
     for _AppleAcct in _AppleAcct_list:
         try:
             await Gb.hass.async_add_executor_job(_AppleAcct.get_hwkey_names)
@@ -486,7 +644,7 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
     '''
     device_id_filter = [conf_device[CONF_AADEV_DEVICE_ID]
                             for conf_device in Gb.conf_devices
-                            if conf_device[CONF_APPLE_ACCOUNT] == AppleAcct.username]
+                            if conf_device[CONF_APPLE_ACCT] == AppleAcct.apple_id]
 
     # Build list of existing devicenames and fnames. Then add devicenames and fnames just imported
     dt_devicenames, _    = entity_io.get_entity_registry_data(domain=DEVICE_TRACKER)
@@ -506,9 +664,9 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         raw_model, model, model_display_name = \
                     AppleAcct.device_model_info_by_aadev_dname[aadevice_dname]
 
-        AADevData  = AppleAcct.AADevData_by_device_id.get(device_id)
-        first_name = AADevData.owner_first_name if AADevData else None
-        aadev_name = AADevData.name if AADevData else aadevice_dname
+        AADev  = AppleAcct.AADev_by_device_id.get(device_id)
+        first_name = AADev.owner_first_name if AADev else None
+        aadev_name = AADev.name if AADev else aadevice_dname
         ic3_fname  = make_ic3_fname_from_aadevice_dname(aadev_name, model, first_name)
 
         ic3_devicename = slugify(ic3_fname)
@@ -530,7 +688,7 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         ic3_conf_device = {}
         ic3_conf_device[CONF_IC3_DEVICENAME]     = ic3_devicename
         ic3_conf_device[CONF_FNAME]              = ic3_fname
-        ic3_conf_device[CONF_APPLE_ACCOUNT]      = AppleAcct.username
+        ic3_conf_device[CONF_APPLE_ACCT]      = AppleAcct.apple_id
         ic3_conf_device[CONF_AADEV_NAME]  = aadevice_dname
         # ic3_conf_device.update(aadevice_conf( aadevice_dname, device_id,
         #                     model, raw_model, model_display_name))

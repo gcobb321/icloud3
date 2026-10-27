@@ -2,21 +2,22 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (DEVICE_TRACKER, NOTIFY,
-                                CRLF_DOT, CRLF, EVLOG_ALERT, RARROW, LT,
-                                NOT_SET, NOT_HOME, RARROW,
+                                EVLOG_ALERT,
+                                NOT_SET, NOT_HOME,
                                 NUMERIC, HIGH_INTEGER, HHMMSS_ZERO,
                                 ENTER_ZONE, EXIT_ZONE, MOBAPP_TRIGGERS_EXIT,
                                 LATITUDE, LONGITUDE, TIMESTAMP_SECS, TIMESTAMP_TIME,
-                                TRIGGER, LAST_ZONE, ZONE, NEXT_UPDATE,
-                                GPS_ACCURACY, VERT_ACCURACY, ALTITUDE,
-                                CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE,
-                                )
+                                VERT_ACCURACY, )
+from ..const_config     import (TRIGGER, LAST_ZONE, ZONE, NEXT_UPDATE, GPS_ACCURACY, ALTITUDE,
+                                CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE, )
+from ..const_char       import (CRLF_DOT, CRLF, RARROW, LT, )
 
 from ..utils.utils      import (instr, is_statzone, is_zone, zone_dname,
                                     list_add, list_to_str, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, more_info,
-                                    log_debug_msg, log_exception, log_error_msg, log_data, log_data_unfiltered,
+                                    log_debug_msg, log_exception, log_error_msg,
                                     _evlog, _log, )
+from ..utils.rawdata_logging import (log_data_unfiltered, )
 from ..utils.time_util  import (secs_to_time, secs_since, secs_to_hhmm, time_now, time_now_secs,
                                     format_time_age, format_age,  )
 from ..utils.dist_util    import (format_dist_km, format_dist_m, )

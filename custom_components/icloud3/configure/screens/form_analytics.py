@@ -1,10 +1,8 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (CF_GENERAL,
-                                    CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
-                                    CONF_ANALYTICS_COMMENT,
-                                    )
+from ...const_config        import (CF_GENERAL, CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
+                                    CONF_ANALYTICS_COMMENT, )
 
 from ...utils.utils         import (list_to_str, list_add, list_del,
                                     is_empty, dict_value_to_list, six_item_dict, )

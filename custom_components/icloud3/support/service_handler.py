@@ -6,12 +6,13 @@
 
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOMAIN,
-                                RED_ALERT, EVLOG_ALERT, EVLOG_ERROR, CRLF_DOT, EVLOG_ATTENTION,
+                                EVLOG_ALERT, EVLOG_ERROR, EVLOG_ATTENTION,
                                 CMD_RESET_PYICLOUD_SESSION,
-                                LOCATION, NEXT_UPDATE_TIME, NEXT_UPDATE, INTERVAL,
-                                CONF_DEVICENAME, CONF_ZONE, CONF_COMMAND, CONF_LOG_LEVEL,
-                                ICLOUD_LOST_MODE_CAPABLE,
-                                )
+                                LOCATION, NEXT_UPDATE_TIME,
+                                ICLOUD_LOST_MODE_CAPABLE, )
+from ..const_config     import (NEXT_UPDATE, INTERVAL, CONF_DEVICENAME, CONF_ZONE, CONF_COMMAND,
+                                CONF_LOG_LEVEL, )
+from ..const_char       import (RED_ALERT, CRLF_DOT, )
 
 from ..utils.utils      import (instr, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
@@ -25,6 +26,7 @@ from ..utils.time_util  import (secs_to_time, time_str_to_secs, datetime_now, se
 from ..mobile_app        import mobapp_interface
 from ..startup           import config_file
 from ..startup           import start_ic3
+from ..support           import test_controls as TEST
 from ..tracking          import determine_interval as det_interval
 
 #--------------------------------------------------------------------
@@ -131,6 +133,7 @@ def process_restart_icloud3_service_request(call):
     """ icloud3.restart service call request  """
 
     Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
+    _handle_global_action(CMD_RESTART, None)
 
 #--------------------------------------------------------------------
 def process_find_iphone_alert_service_request(call):
@@ -164,9 +167,9 @@ def process_lost_device_alert_service_request(call):
             result_msg = (  f"Required field missing, device_name-{devicename}, "
                             f"number-{number}, message-{message}")
 
-        elif (Device.AADevData_icloud
-                and Device.AADevData_icloud.device_data
-                and Device.AADevData_icloud.device_data.get(ICLOUD_LOST_MODE_CAPABLE, False)):
+        elif (Device.AADev_icloud
+                and Device.AADev_icloud.device_data
+                and Device.AADev_icloud.device_data.get(ICLOUD_LOST_MODE_CAPABLE, False)):
 
             lost_device_alert_service_handler(devicename, number, message)
 
@@ -363,9 +366,9 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
 
         elif action == CMD_LOCATE:
             # Trigger an Internet Error test
-            if Gb.test_internet_error_after_startup:
+            if TEST.INTERNET_ERROR_AFTER_STARTUP:
                 Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
-                Gb.test_internet_error = True
+                TEST.INTERNET_ERROR = True
                 Gb.icloud_io_request_secs = time_now_secs() + 70
                 Device = Gb.Devices_by_devicename.get(Gb.EvLog.evlog_attrs['selected_dname'])
                 if Device:
@@ -413,11 +416,12 @@ def _handle_global_action(global_action, action_option):
     if global_action == CMD_RESTART:
         Gb.is_log_level_debug_restart         = Gb.is_log_level_debug
         Gb.is_log_level_rawdata_restart       = Gb.is_log_level_rawdata
-        Gb.was_icloud3_restart_requested   = True
-        Gb.restart_requested_by           = 'user'
+        Gb.was_icloud3_restart_requested      = True
+        Gb.restart_requested_by               = 'user'
         Gb.InternetError.reset_internet_error(reset_test_control_flags=True)
         post_greenbar_msg(f"Restarting {Gb.icloud3_version_msg}")
-        Gb.EvLog.display_user_message('iCloud3 is Restarting')
+        # Gb.EvLog.display_user_message('iCloud3 is Restarting')
+        post_event(f"{EVLOG_ALERT}iCloud3 {Gb.icloud3_version_msg} > Restart Requested")
 
         log_info_msg(f"\n{'-'*10} Opened by Event Log > Actions > Restart {'-'*10}")
         return
@@ -607,7 +611,7 @@ def find_iphone_alert_service_handler(devicename):
     if Device.conf_icloud_device_id and Device.verified is False:
         alert_msg =(f"{EVLOG_ALERT}ALERT CAN NOT BE SENT - The iCloud device has been specified "
                     f"but it was not verified during startup and is not available."
-                    f"{more_info('icloud_dind_my_phone_alert_error')}")
+                    f"{more_info('icloud_find_my_phone_alert_error')}")
     else:
         alert_msg =("The iCloud iCloud Device was not specified or is not available. "
                     "The alert will be sent using the Mobile App")

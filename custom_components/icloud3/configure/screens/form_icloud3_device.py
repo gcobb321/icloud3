@@ -1,19 +1,19 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (RED_ALERT, LINK, RARROW, HOME, NONE, INACTIVE_SYMB, MONITOR_SYMB,
+from ...const               import (HOME, NONE,
                                     DEVICE_TYPE_DN, DEVICE_TYPE_DNS, DEVICE_TYPES_TRACK_MONITOR, INACTIVE,
-                                    PICTURE_WWW_STANDARD_DIRS, CONF_PICTURE_WWW_DIRS,
-                                    CONF_APPLE_ACCOUNT, CONF_USERNAME,
+                                    PICTURE_WWW_STANDARD_DIRS, )
+from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_APPLE_ACCT, CONF_APPLE_ACCT,
                                     CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
-                                    CONF_TRACK_FROM_BASE_ZONE,
-                                    CONF_PICTURE, CONF_ICON, CONF_DEVICE_TYPE,
-                                    CONF_IC3_DEVICENAME, CONF_FNAME, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
-                                    CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL,
-                                    )
+                                    CONF_TRACK_FROM_BASE_ZONE, CONF_PICTURE, CONF_ICON,
+                                    CONF_DEVICE_TYPE, CONF_IC3_DEVICENAME, CONF_FNAME,
+                                    CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_TRACKING_MODE,
+                                    CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL, )
+from ...const_char          import (RED_ALERT, LINK, RARROW, INACTIVE_SYMB, MONITOR_SYMB, )
 
-from ...utils.utils         import (instr, list_to_str, list_add,
-                                    is_empty, isnot_empty,
+from ...utils.utils         import (instr, list_to_str, list_add, is_empty, isnot_empty,
+                                    apple_user, apple_user_dev, apple_id_dev,
                                     zone_dname, dict_value_to_list, six_item_dict, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
@@ -158,29 +158,33 @@ def form_update_device(self):
     self.errors = self.errors or {}
     self.actions_list = []
     self.actions_list.append(otp_action_item)
-    self.actions_list.extend(DEVICE_UPDATE_ACTIONS)
+    if self.is_repair_flow:
+        self.actions_list.extend(DEVICE_UPDATE_REPAIR_ACTIONS)
+    else:
+        self.actions_list.extend(DEVICE_UPDATE_ACTIONS)
 
-    devicename    = utils_cf.parm_or_device(self, CONF_IC3_DEVICENAME)
+    devicename = utils_cf.parm_or_device(self, CONF_IC3_DEVICENAME)
 
     # iCloud Devices list default item
-    apple_acct    = utils_cf.parm_or_device(self, CONF_APPLE_ACCOUNT)
-    icloud_dname  = utils_cf.parm_or_device(self, CONF_AADEV_NAME)
-    if icloud_dname == 'None' or devicename == '':
-        device_list_item_key = 'None'
+    apple_id   = utils_cf.parm_or_device(self, CONF_APPLE_ACCT)
+    aadev_name = utils_cf.parm_or_device(self, CONF_AADEV_NAME)
+    if aadev_name == 'None' or devicename == '':
+        apple_devices_list_key = 'None'
     else:
-        icloud_dname_apple_acct, status_msg = \
+        apple_devices_list_key, status_msg = \
                         lists.format_apple_acct_device_info(self, self.conf_device)
 
         if status_msg == '':
-            device_list_item_key = f"{icloud_dname}{LINK}{apple_acct}"
+            apple_devices_list_key = apple_id_dev(apple_id, aadev_name)
         else:
-            device_list_item_key = f"{devicename}{LINK}{apple_acct}"
+            apple_devices_list_key = apple_id_dev(apple_id, devicename)
 
-    device_list_item_text = self.icloud_list_text_by_fname.get(device_list_item_key)
-    if device_list_item_text is None:
-        device_list_item_text = self.icloud_list_text_by_fname['None']
+    apple_devices_list_text = self.icloud_list_text_by_fname.get(apple_devices_list_key)
 
-    # Check the icloud_dname and mobile app devicename for any errors
+    if apple_devices_list_text is None:
+        apple_devices_list_text = self.icloud_list_text_by_fname['None']
+
+    # Check the aadev_name and mobile app devicename for any errors
     self._validate_data_source_selections(self.conf_device)
 
     # Mobile App Devices list default item
@@ -228,8 +232,8 @@ def form_update_device(self):
         vol.Optional(CONF_FNAME,
                     default=utils_cf.parm_or_device(self, CONF_FNAME)):
                     selector.TextSelector(),
-        vol.Optional(CONF_AADEV_NAME,
-                    default=device_list_item_text):
+        vol.Optional('apple_devices_list_key',
+                    default=apple_devices_list_text):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.icloud_list_text_by_fname), mode='dropdown')),
         vol.Optional(CONF_MOBILE_APP_DEVICE,

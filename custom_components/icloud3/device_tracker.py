@@ -3,26 +3,26 @@
 from .global_variables  import GlobalVariables as Gb
 from .const             import (DOMAIN, PLATFORM_DEVICE_TRACKER,ICLOUD3,
                                 DISTANCE_TO_DEVICES,
-                                NOT_SET, HOME, RARROW,
+                                NOT_SET, HOME,
                                 DEVICE_TYPE_ICONS,
-                                BLANK_SENSOR_FIELD, DEVICE_TRACKER_STATE,
+                                DEVICE_TRACKER_STATE,
                                 INACTIVE,
                                 NAME, FNAME, PICTURE, ICON, ALERT,
-                                DEVICE_TRACKER, LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE, TRIGGER,
-                                ZONE, ZONE_DATETIME,  LAST_ZONE, FROM_ZONE, ZONE_FNAME,
+                                DEVICE_TRACKER, LATITUDE, LONGITUDE, GPS, LOCATION_SOURCE,
+                                FROM_ZONE,
                                 NOT_HOME_ZONES,
-                                BATTERY,
-                                MAX_DISTANCE, CALC_DISTANCE, WAZE_DISTANCE,
-                                HOME_DISTANCE, ZONE_DISTANCE,
+                                MAX_DISTANCE,
                                 DEVICE_STATUS,
-                                LAST_UPDATE, LAST_UPDATE_DATETIME, WENT_3KM,
-                                NEXT_UPDATE, NEXT_UPDATE_DATETIME,
-                                LOCATED, LAST_LOCATED, LAST_LOCATED_SECS, LAST_LOCATED_DATETIME,
-                                GPS_ACCURACY, ALTITUDE, VERT_ACCURACY,
-                                CONF_DEVICE_TYPE, CONF_RAW_MODEL, CONF_MODEL, CONF_MODEL_DISPLAY_NAME,
-                                CONF_TRACKING_MODE,
-                                CONF_IC3_DEVICENAME,
-                                )
+                                LAST_UPDATE_DATETIME, WENT_3KM,
+                                NEXT_UPDATE_DATETIME,
+                                LAST_LOCATED_SECS, LAST_LOCATED_DATETIME,
+                                VERT_ACCURACY, )
+from .const_config      import (TRIGGER, ZONE, ZONE_DATETIME, LAST_ZONE, ZONE_FNAME, BATTERY,
+                                CALC_DISTANCE, WAZE_DISTANCE, HOME_DISTANCE, ZONE_DISTANCE,
+                                LAST_UPDATE, NEXT_UPDATE, LOCATED, LAST_LOCATED, GPS_ACCURACY,
+                                ALTITUDE, CONF_DEVICE_TYPE, CONF_RAW_MODEL, CONF_MODEL,
+                                CONF_MODEL_DISPLAY_NAME, CONF_TRACKING_MODE, CONF_IC3_DEVICENAME, )
+from .const_char        import (RARROW, BLANK_SENSOR_FIELD, )
 
 from .utils.utils       import (instr, is_number, is_statzone, zone_dname, is_empty, list_to_str,
                                 is_running_in_event_loop, )
@@ -518,7 +518,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
 
             if self.Device:
                 if self.Device.AppleAcct:
-                    extra_attrs['apple_account'] = self.Device.AppleAcct.account_owner_username
+                    extra_attrs['apple_account'] = self.Device.AppleAcct.account_owner_apple_id
                 else:
                     extra_attrs['apple_account'] = 'None'
                 if self.Device.mobapp[DEVICE_TRACKER]:

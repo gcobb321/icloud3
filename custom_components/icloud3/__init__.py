@@ -3,15 +3,17 @@
 from .global_variables  import GlobalVariables as Gb
 from .const             import (ICLOUD3, DOMAIN,
                                 PLATFORMS, PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR,
-                                CRLF, RED_ALERT, INACTIVE,
-                                CONF_FNAME, CONF_TRACKING_MODE,
-                                MODE_PLATFORM, MODE_INTEGRATION, CONF_VERSION,
+                                PLATFORM_BUTTON, PLATFORM_TEXT,
+                                INACTIVE,
+                                MODE_PLATFORM, MODE_INTEGRATION,
                                 EVLOG_ATTENTION, EVLOG_ALERT, VERSION, VERSION_BETA,)
+from .const_config      import (CONF_FNAME, CONF_TRACKING_MODE, CONF_VERSION, )
+from .const_char        import (CRLF, RED_ALERT, )
 
 
 from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init,
                                 post_event, post_monitor_msg, post_greenbar_msg, post_alert,
-                                log_info_msg, log_debug_msg, log_error_msg, log_data_unfiltered,
+                                log_info_msg, log_debug_msg, log_error_msg,
                                 log_exception_HA, log_exception, add_log_file_filter)
 from .utils.time_util   import (time_now_secs, time_now, secs_to, secs_since, secs_to_hhmm,
                                 calculate_time_zone_offset, format_day_date_time_now, )
@@ -29,8 +31,9 @@ from .startup           import config_file
 from .startup           import restore_state
 from .support.service_handler import register_icloud3_services
 from .support.event_log import EventLog
-from .support           import hacs_ic3
 from .support           import analytics
+from .support           import hacs_ic3
+from .support           import test_controls as TEST
 
 
 #--------------------------------------------------------------------
@@ -73,15 +76,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     Gb.was_icloud3_reloaded = DOMAIN in hass.data.get(DOMAIN, {})
 
     if Gb.was_icloud3_reloaded:
-        # Reloading/restarting, reinitialization is not needed
+        # Reloading/restarting, reinitialization is not needed. Run the restart as a
+        # background task so the Apple Acct logins do not hold up the config entry setup.
         if entry.entry_id != Gb.config_entry_id:
             setup_hass_icloud3_domain(hass, entry)
-        await async_start_icloud3(None)
+        Gb.startup_stage_1_3_task = None
+        entry.async_create_background_task(hass, async_start_icloud3(None),
+                                            'icloud3_restart')
     else:
-        # Initial load, initialize iCloud3 an wait for HA to finish starting up
+        # Initial load, initialize iCloud3. Stages 4-6 are run right after stages 1-3 or
+        # after HA has finished starting up (Gb.run_startup_stages_4_6_after_ha_started).
+        # async_start_icloud3 waits for the stage 1-3 task either way.
         setup_hass_icloud3_domain(hass, entry)
         await async_initialize_icloud3(hass, entry)
-        entry.async_on_unload(async_at_started(Gb.hass, async_start_icloud3))
+
+        if Gb.run_startup_stages_4_6_after_ha_started:
+            entry.async_on_unload(async_at_started(Gb.hass, async_start_icloud3))
+        else:
+            entry.async_create_background_task(hass, async_start_icloud3(None),
+                                                'icloud3_startup_stage_4_6')
+
+        # Finish any setup that needs HA to be started (Mobile App notify service)
+        entry.async_on_unload(async_at_started(Gb.hass, start_ic3.ha_startup_completed))
 
     return True
 
@@ -129,7 +145,17 @@ async def async_initialize_icloud3(hass, entry):
     await async_create_device_tracker_sensor_platforms()
     Gb.is_icloud3_initial_startup = True
     await start_icloud3_on_init_load_only()
-    await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
+
+    # Stages 1-3 make internet requests (internet connection test, Apple Acct logins).
+    # HA waits for the executor jobs started by a tracked task (async_setup_entry) before
+    # it finishes starting up. Executor jobs started by a background task are not
+    # tracked, so HA finishes starting up while stages 1-3 are running.
+    # async_start_icloud3 waits for this task before running stages 4-6.
+    # The manifest after_dependencies (zone, mobile_app) has HA set them up before iCloud3
+    # is loaded so the Zones and Mobile App devices are available to stages 2 and 4.
+    Gb.startup_stage_1_3_task = entry.async_create_background_task(hass,
+                                            async_start_icloud3_stage_1_2_3(),
+                                            'icloud3_startup_stage_1_3')
 
     Gb.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, start_ic3.ha_stopping)
 
@@ -140,11 +166,26 @@ async def async_initialize_icloud3(hass, entry):
         # right now instead of waiting for an event that will never come. Waiting for it
         # left stages 4-6 unrun and Gb.is_icloud3_startup_inprocess set until HA restarted.
         log_info_msg('HA is already running, starting iCloud3 now')
-    else:
-        Gb.EvLog.display_user_message("Waiting for HA Startup to Finish Loading")
-        post_greenbar_msg("Waiting for HA Startup to Finish Loading")
 
     # entry.async_on_unload(async_at_started(Gb.hass, async_start_icloud3))
+
+#--------------------------------------------------------------------
+async def async_start_icloud3_stage_1_2_3():
+    '''
+    Run startup stages 1-3 in an executor thread. This is run as a background task so
+    HA does not wait for it to finish before it finishes starting up.
+    '''
+    try:
+        await Gb.hass.async_add_executor_job(
+                                Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
+
+        if (Gb.run_startup_stages_4_6_after_ha_started
+                and Gb.hass.state is not CoreState.running):
+            Gb.EvLog.display_user_message("Waiting for HA Startup to Finish Loading")
+            post_greenbar_msg("Waiting for HA Startup to Finish Loading")
+
+    except Exception as err:
+        log_exception(err)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -153,16 +194,23 @@ async def async_initialize_icloud3(hass, entry):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 '''
 This is run when:
-    - HA is being restarted and the EVENT_HOMEASSISTANT_STARTED is fired
+    - Initial load, right after stages 1-3 in a background task, or when HA has
+      finished starting up if Gb.run_startup_stages_4_6_after_ha_started is True
     - iCloud3 is being reloaded at the beginning of the async_setup_entry function
 '''
 async def async_start_icloud3(dummy_parameter):
+    # Stages 1-3 are run in a background task on the initial load. HA may finish
+    # starting up before they are done, so wait for them before running stages 4-6.
+    if Gb.startup_stage_1_3_task is not None:
+        await Gb.startup_stage_1_3_task
+        Gb.startup_stage_1_3_task = None
+
     startup_test_code()
 
     if Gb.was_icloud3_reloaded:
         starting_msg = 'Reloading'
         log_info_msg(f"{'<'*30}{'>'*30}")
-        log_info_msg(f"\n\n{'🔶'*5} ICLOUD3 IS RELOADING {'🔶'*5}\n\n")
+        log_info_msg(f"\n\n{' 🟡'*12} ICLOUD3 IS RELOADING {' 🟡'*12}\n")
         log_info_msg(f"{'<'*30}{'>'*30}")
 
         await Gb.hass.async_add_executor_job(Gb.iCloud3.start_icloud3_stage_1_2_3_prep_to_config_device)
@@ -211,7 +259,7 @@ async def start_icloud3_on_init_load_only():
         setup_event_listeners()
 
         if Gb.is_ha_restart_needed:
-            log_error_msg("iCloud3 > Waiting for HA restart to remove legacy "
+            log_error_msg("Waiting for HA restart to remove legacy "
                             "devices before continuing")
             return False
 
@@ -222,9 +270,9 @@ async def start_icloud3_on_init_load_only():
         Gb.EvLog.post_event('Seting up iCloud3 Actions/Services')
         Gb.hass.async_add_executor_job(register_icloud3_services)
 
-        if Gb.count_lines_of_code:
+        if TEST.COUNT_LINES_OF_CODE:
             config_file.count_lines_of_code('custom_components/icloud3')
-            Gb.count_lines_of_code = False
+            TEST.COUNT_LINES_OF_CODE = False
 
     except Exception as err:
         log_exception(err)
@@ -293,6 +341,11 @@ async def async_create_device_tracker_sensor_platforms():
     await Gb.hass.config_entries.async_forward_entry_setups(Gb.config_entry, [PLATFORM_DEVICE_TRACKER])
     await Gb.hass.config_entries.async_forward_entry_setups(Gb.config_entry, [PLATFORM_SENSOR])
 
+    # The user auth code entities are created at the end of Stage 4 when the Apple Accts
+    # have been logged into (apple_acct/user_auth_code_handler)
+    await Gb.hass.config_entries.async_forward_entry_setups(Gb.config_entry,
+                                                            [PLATFORM_BUTTON, PLATFORM_TEXT])
+
 #-------------------------------------------------------------------------------------------
 async def async_create_devices_tracker_and_sensor_entities():
     '''
@@ -329,7 +382,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     unload_ok = all(await asyncio.gather(
             *[  hass.config_entries.async_forward_entry_unload(entry, PLATFORM_DEVICE_TRACKER),
-                hass.config_entries.async_forward_entry_unload(entry, PLATFORM_SENSOR)]
+                hass.config_entries.async_forward_entry_unload(entry, PLATFORM_SENSOR),
+                hass.config_entries.async_forward_entry_unload(entry, PLATFORM_BUTTON),
+                hass.config_entries.async_forward_entry_unload(entry, PLATFORM_TEXT)]
             ))
 
     # Remove options_update_listener.

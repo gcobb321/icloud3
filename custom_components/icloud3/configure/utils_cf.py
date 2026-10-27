@@ -1,10 +1,10 @@
 
 
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (DEVICE_TYPE_DN, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
-                                CONF_PARAMETER_TIME_STR, CONF_PARAMETER_FLOAT,
-                                CF_PROFILE, CF_TRACKING, CF_GENERAL,
-                                )
+from ..const             import (DEVICE_TYPE_DN, )
+from ..const_config      import (CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_PARAMETER_TIME_STR,
+                                 CONF_PARAMETER_FLOAT, CF_PROFILE, CF_TRACKING, CF_GENERAL,
+                                 CONF_PASSWORD, )
 
 from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
                                 encode_password, decode_password, )
@@ -217,7 +217,7 @@ def parm_or_error_msg(self, pname, conf_group=CF_GENERAL, conf_dict_variable=Non
         return self.errors_user_input.get(pname) or Gb.conf_profile[pname]
 
     # pname is in the 'Tracking' data fields
-    # Example: [data][general][tracking][username]
+    # Example: [data][general][tracking][apple_id]
     # Example: [data][general][tracking][devices]
     elif conf_group == CF_TRACKING:
         return self.errors_user_input.get(pname) or Gb.conf_tracking[pname]
@@ -296,11 +296,11 @@ def option_parm_to_text(self, pname, option_list_key_text, conf_device=False):
         elif pname in self.conf_device:
             pvalue_key = self.conf_device[pname]
 
-        else:
+        elif pname in Gb.conf_general:
             pvalue_key = Gb.conf_general[pname]
 
         if type(pvalue_key) in [float, int, str]:
-            return option_list_key_text[pvalue_key]
+            return option_list_key_text.get(pvalue_key, '')
 
         elif type(pvalue_key) is list:
             return [option_list_key_text[pvalue_key_item] for pvalue_key_item in pvalue_key]
@@ -330,32 +330,25 @@ def option_text_to_parm(user_input, pname, option_list_key_text):
     user_input contains the full text of the option list item selected. Replace it with
     the actual parameter value for the item selected.
     '''
+
+    pvalue_text = '_'
+    if user_input is None:
+        return None
+    if pname not in user_input:
+        return user_input
+
+    pvalue_text = user_input[pname]
+
     try:
-        pvalue_text = '_'
-        if user_input is None:
-            return None
-        if pname not in user_input:
-            #user_input[pname] = ''
-            return user_input
-
-        pvalue_text = user_input[pname]
-
         # Handle special text added to the end of the key_list
         pvalue_text = pvalue_text.replace(UNKNOWN_DEVICE_TEXT, '')
-
-        # if pvalue_text in ['', '.']:
-        #     self.errors[pname] = 'required_field'
-        pvalue_key = [k for  k, v in option_list_key_text.items() if v == pvalue_text]
-        pvalue_key = pvalue_key[0] if pvalue_key else pvalue_text
-
-        user_input[pname] = pvalue_key
-
-    except Exception as err:
-        log_exception(err)
+    except:
         pass
-        # If the parameter value is already the key to the items dict, it is ok.
-        # if pvalue_text not in option_list_key_text:
-        #     self.errors[pname] = 'invalid_value'
+
+    pvalue_key = [k for  k, v in option_list_key_text.items() if v == pvalue_text]
+    pvalue_key = pvalue_key[0] if pvalue_key else pvalue_text
+
+    user_input[pname] = pvalue_key
 
     return  user_input
 
@@ -477,6 +470,10 @@ def log_step_info(self, user_input, action_item=None, subtitle=''):
 
 
     log_stack_pgm, log_stack_fct = _get_log_stack_info()
+
+    # The password is logged before the step adds it to the log file filter
+    if isinstance(user_input, dict) and user_input.get(CONF_PASSWORD):
+        user_input = {**user_input, CONF_PASSWORD: '********'}
 
     info_msg =( f"⭐ {self.step_id.upper()} {subtitle.upper()} "
                 f"({action_item}/{self.menu_item}) {log_stack_fct}> "

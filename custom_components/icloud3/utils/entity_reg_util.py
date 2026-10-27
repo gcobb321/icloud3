@@ -1,9 +1,12 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (PLATFORMS, PLATFORM_DEVICE_TRACKER, PLATFORM_SENSOR,
+                                PLATFORM_BUTTON, PLATFORM_TEXT,
                                 DOMAIN, SENSOR, ICLOUD3, DEVICE_TRACKER_DOT,
-                                CONF_DEVICES, CONF_TRACKING_MODE, INACTIVE,
-                                CONF_IC3_DEVICENAME,
-                                BASE, CONF_EXCLUDED_SENSORS, RARROW, )
+                                INACTIVE,
+                                BASE, )
+from ..const_config     import (CONF_DEVICES, CONF_TRACKING_MODE, CONF_IC3_DEVICENAME,
+                                CONF_EXCLUDED_SENSORS, )
+from ..const_char       import (RARROW, )
 from ..const_sensor     import (ICLOUD3_INTERNAL_SENSORS_ID, SENSOR_DEFINITION, )
 from .utils             import (instr, is_empty, isnot_empty, dict_del,
                                 list_add, list_del, list_to_str, set_to_list, )
@@ -167,6 +170,11 @@ def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData
     try:
         action       = event.data['action']
         entity_id    = event.data['entity_id']
+
+        # The user auth code button/text entities are not sensors
+        if entity_id.split('.')[0] in [PLATFORM_BUTTON, PLATFORM_TEXT]:
+            return
+
         entity_data  = get_entity(entity_id)
 
         if (entity_data is None
@@ -1120,8 +1128,11 @@ def extract_icloud3_entity_registry_items(scan_active_items):
 #--------------------------------------------------------------------
 def _is_icloud3_entity_item(entity_data):
 
+    # The user auth code button/text entities are not device entities and are
+    # created and removed with their Apple Acct (user_auth_code_handler)
     return (entity_data.platform == DOMAIN
-            and entity_data.entity_id not in ICLOUD3_INTERNAL_SENSORS_ID)
+            and entity_data.entity_id not in ICLOUD3_INTERNAL_SENSORS_ID
+            and entity_data.entity_id.split('.')[0] not in [PLATFORM_BUTTON, PLATFORM_TEXT])
 
 #--------------------------------------------------------------------
 def _get_entity_status(scan_active_items, RegData):

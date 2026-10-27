@@ -25,32 +25,27 @@
 
 from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
                             NOT_SET, HOME_FNAME, HOME, STORAGE_DIR, WAZE_USED,
-                            APPLE_SERVER_ENDPOINT,
-                            DEFAULT_GENERAL_CONF, DEFAULT_TRACKING_CONF,
-                            CONF_UNIT_OF_MEASUREMENT,
-                            CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
-                            CONF_CENTER_IN_ZONE, CONF_DISPLAY_GPS_LAT_LONG,
-                            CONF_TRAVEL_TIME_FACTOR, CONF_GPS_ACCURACY_THRESHOLD,
-                            CONF_DISCARD_POOR_GPS_INZONE, CONF_OLD_LOCATION_THRESHOLD, CONF_OLD_LOCATION_ADJUSTMENT,
-                            CONF_MAX_INTERVAL, CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_MOBAPP_ALIVE_INTERVAL,
-                            CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
-                            CONF_WAZE_REALTIME, CONF_PASSWORD_SRP_ENABLED,
-                            CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE ,
-                            CONF_WAZE_HISTORY_TRACK_DIRECTION,
-                            CONF_STAT_ZONE_FNAME,
-                            CONF_STAT_ZONE_BASE_LATITUDE, CONF_STAT_ZONE_BASE_LONGITUDE,
-                            CONF_STAT_ZONE_INZONE_INTERVAL, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES,
-                            CONF_MOBAPP_REQUEST_LOC_MAX_CNT, CONF_DISTANCE_BETWEEN_DEVICES,
-                            CONF_PASSTHRU_ZONE_TIME,
-                            CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
-                            CONF_TFZ_TRACKING_MAX_DISTANCE,
-                            CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
-                            CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
-
-                            CONF_STAT_ZONE_STILL_TIME,
-                            CONF_STAT_ZONE_INZONE_INTERVAL,
-                            ALERTS_SENSOR_ATTRS,
-                            )
+                            APPLE_SERVER_ENDPOINT, )
+from .const_config   import (DEFAULT_GENERAL_CONF, DEFAULT_TRACKING_CONF, CONF_UNIT_OF_MEASUREMENT,
+                             CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE,
+                             CONF_CENTER_IN_ZONE, CONF_DISPLAY_GPS_LAT_LONG,
+                             CONF_TRAVEL_TIME_FACTOR, CONF_GPS_ACCURACY_THRESHOLD,
+                             CONF_DISCARD_POOR_GPS_INZONE, CONF_OLD_LOCATION_THRESHOLD,
+                             CONF_OLD_LOCATION_ADJUSTMENT, CONF_MAX_INTERVAL,
+                             CONF_OFFLINE_INTERVAL, CONF_EXIT_ZONE_INTERVAL,
+                             CONF_MOBAPP_ALIVE_INTERVAL, CONF_WAZE_REGION, CONF_WAZE_MAX_DISTANCE,
+                             CONF_WAZE_MIN_DISTANCE, CONF_WAZE_REALTIME, CONF_PASSWORD_SRP_ENABLED,
+                             CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
+                             CONF_WAZE_HISTORY_TRACK_DIRECTION, CONF_STAT_ZONE_FNAME,
+                             CONF_STAT_ZONE_BASE_LATITUDE, CONF_STAT_ZONE_BASE_LONGITUDE,
+                             CONF_STAT_ZONE_INZONE_INTERVAL, CONF_LOG_LEVEL,
+                             CONF_LOG_LEVEL_DEVICES, CONF_MOBAPP_REQUEST_LOC_MAX_CNT,
+                             CONF_DISTANCE_BETWEEN_DEVICES, CONF_PASSTHRU_ZONE_TIME,
+                             CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE,
+                             CONF_TRACK_FROM_HOME_ZONE, CONF_TFZ_TRACKING_MAX_DISTANCE,
+                             CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
+                             CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
+                             CONF_STAT_ZONE_STILL_TIME, )
 
 
 #import logging
@@ -58,28 +53,6 @@ from .const          import (DEVICENAME_MOBAPP, VERSION, VERSION_BETA,
 
 #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 class GlobalVariables(object):
-    '''
-    Define global variables used to enable testing iCloud3 functions
-    '''
-    disable_upw_filter = False # Disable filtering passwords in the icloud3.log file
-    hwkey_authentication_enabled = True
-    count_lines_of_code = False
-
-    # This variable provides a mechanism of testing Internet Connection Errors when iCloud3 is
-    # starting without an actual error.
-    # Setting to True will raise an ConnectionError error in 'icloud_requests'
-    # that sets Gb.internet_error to True. Then in the 'icloud3_main' 5-sec loop, the Gb.internet_error
-    # flag is tested and then calls the start_internet_error_handler function
-    # below that handles internet errors.
-    test_internet_error = False
-    test_internet_error_counter = 2
-
-    # This variable provides a mechanism of testing Internet Connection Errors after iCloud3 has
-    # starting without an actual error.
-    # Set this to True, then select 'EvLog > Actions > Locate All Devices using iCloud'. This will set the
-    # 'internet_error_test' to True and set this variable to False. A Locate will then be issued
-    # and caught as described above.
-    test_internet_error_after_startup = False
 
     '''
     Define global variables used in the various iCloud3 modules
@@ -124,6 +97,8 @@ class GlobalVariables(object):
     evlog_btnconfig_url             = ''
     sensor_async_add_entities       = None            # Initial add_entities link passed to sensor during ha startup
     async_add_entities_device_tracker = None    # Initial add_entities link passed to device_tracker during ha startup
+    button_async_add_entities       = None      # add_entities link passed to button (user auth code entities)
+    text_async_add_entities         = None      # add_entities link passed to text (user auth code entities)
     async_executor_call_parameters  = None
 
     ha_location_info                = {'country_code': 'us', 'use_metric': False}
@@ -131,6 +106,14 @@ class GlobalVariables(object):
     use_metric                      = False
 
     iCloud3                         = None   # iCloud3 Platform object
+    startup_stage_1_3_task          = None   # Background task running startup stages 1-3 (__init__)
+
+    # Initial load - When to run startup stages 4-6 (Apple Acct & Mobile App data, Devices)
+    #   False - Run them right after stages 1-3 in the startup background task. HA does
+    #           not wait for it. The manifest after_dependencies (zone, mobile_app) makes
+    #           sure the Zones and Mobile App devices are set up before iCloud3 is loaded.
+    #   True  - Wait until HA has finished starting up (the previous method)
+    run_startup_stages_4_6_after_ha_started = False
     MobileApp_data                  = {}     # mobile_app Integration data dict from hass.data['mobile_app']
     MobileApp_devices               = {}     # mobile_app Integration devices dict from hass.data['mobile_app']['devices]
 
@@ -156,35 +139,46 @@ class GlobalVariables(object):
     AppleAcct                       = None   # iCloud Account service
     AppleAcctLoggingInto            = None   # AppleAcct being set up  that can be used if the login fails
     AppleAcct_reauth_needed         = None   # Reauth needed sent to ha for notify msg display
-    ValidateAppleAcctUPW            = None    # A session that can be used to verify the username/password
+    apple_id_by_auth_key            = {}     # User auth code entities, {auth_key: apple_id}
+    AuthGetButton_by_auth_key       = {}     # User auth code Request Auth Code entity, {auth_key: AuthGetButton}
+    AuthSendText_by_auth_key        = {}     # User auth code Enter Auth Code entity, {auth_key: AuthSendText}
+    auth_code_requested_secs_by_apple_id = {} # Time a code was last requested by an AuthGetButton
+    ValidateAppleAcctUPW            = None    # A session that can be used to verify the apple_id/password
 
     # AppleAcct objects by various categories
-    AppleAcct_by_username            = {}  # AppleAcct object for each Apple acct username
-    AppleAcct_password_by_username   = {}  # Password for each Apple acct username
-    AppleAcct_logging_in_usernames   = []  # usernames that are currently logging in. Used to prevent another login
-    AppleAcct_error_by_username      = {}  # An error was encountered during verification, login or authentication
-    iCloudSession_by_username        = {}  # Session object for a username, set in Session so exists on an error
+    AppleAccts                       = []
+    AppleAcct_by_apple_id            = {}  # AppleAcct object for each Apple acct apple_id
+    AppleAcct_password_by_apple_id   = {}  # Password for each Apple acct apple_id
+    AppleAcct_logging_in_apple_ids   = []  # apple_ids that are currently logging in. Used to prevent another login
+    AppleAcct_error_by_apple_id      = {}  # An error was encountered during verification, login or authentication
+    iCloudSession_by_apple_id        = {}  # Session object for a apple_id, set in Session so exists on an error
+    apple_user_dev_cache          = {}  # Cache of apple_user-link-device results lookup dictionary
 
-    # The signin session token earned by a username/password SRP validation is reused
+    # The signin session token earned by a apple_id/password SRP validation is reused
     # by the acct login that runs right after validation. This prevents second srp password proof,
     # preventing Apple refusal leading to a 503 error.
     # See AppleAcctManager._use_srp_signin_handoff. Consumed once, then discarded.
-    srp_token_info_by_username       = {}
+    srp_token_info_by_apple_id       = {}
 
-    valid_upw_by_username            = {}  # The username/password validation status
-    valid_upw_results_msg            = ''  # valid upw results from Stage 3 to redisplay in Stage 4
+    # Time the last SRP signin/complete (M1 password proof) was sent for an apple_id.
+    # Kept by apple_id, not AppleAcct, so the validate-only AppleAcct and the real one
+    # share it. See AppleAcctManager._wait_for_srp_signin_interval.
+    srp_signin_complete_secs_by_apple_id = {}
 
-    conf_usernames                   = []  # List of Apple Acct usernames in config
+    upw_valid_by_apple_id            = {}  # True/False-The apple_id/password validation status
+    upw_code_by_apple_id             = {}  # Status code for initial upw validation
+
+    conf_apple_ids                   = []  # List of Apple Acct apple_ids in config
     AppleAcct_by_devicename          = {}  # AppleAcct object for each ic3 devicename
-    Devices_by_username              = {}  # List of Devices for each username ('gary@email.com': [gary_iphone, lillian_iphone])
-    owner_device_ids_by_username     = {}  # List of owner info for Devices in Apple Acct
-    owner_Devices_by_username        = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
+    Devices_by_apple_id              = {}  # List of Devices for each apple_id ('gary@email.com': [gary_iphone, lillian_iphone])
+    famshr_device_ids_by_apple_id     = {}  # List of owner info for Devices in Apple Acct
+    famshr_Devices_by_apple_id        = {}  # List of Devices in the owner Apple Acct (excludes those in the iCloud list)
 
-    upw_filter_items                 = {}    # username/pws to be filtered from the EvLog and log file
-    upw_unfilter_items               = {}    # username/pws that are filtered that need to be unfiltered (icloud3_alerts items)
-    upw_hide_items                   = []    # username/passwords that should be hidded instead of filtered
+    upw_filter_items                 = {}    # apple_id/pws to be filtered from the EvLog and log file
+    upw_unfilter_items               = {}    # apple_id/pws that are filtered that need to be unfiltered (icloud3_alerts items)
+    upw_hide_items                   = []    # apple_id/passwords that should be hidded instead of filtered
 
-    usernames_setup_error_retry_list  = []  # usernames that failed to set up in Stage 4 and need to be retried
+    apple_ids_setup_error_retry_list  = []  # apple_ids that failed to set up in Stage 4 and need to be retried
     devicenames_setup_error_retry_list= []  # devices that failed to set up in Stage 4 and need to be retried
     startup_alerts_by_source          = {}  # alerts during startup by devicename/apple_acct/mobapp device
 
@@ -209,8 +203,8 @@ class GlobalVariables(object):
     picture_www_dirs            = []
 
     # Platform and iCloud account parameters
-    username                     = ''
-    username_base                = ''
+    apple_id                     = ''
+    apple_user                = ''
     password                     = ''
     is_password_encoded          = True
     all_find_devices             = True
@@ -232,7 +226,8 @@ class GlobalVariables(object):
     Devices_by_devicename_tracked   = {}  # All monitored Devices by devicename
     Devices_by_icloud_device_id     = {}  # Devices by the icloud device_id receive from Apple
     Devices_by_mobapp_dname         = {}  # All verified Devices by the  conf_mobapp_dname
-    Devices_by_nearby_group         = {}  # Devvic by group within  50mm of each other
+    Devices_by_nearby_group         = {}  # Device by group within  50mm of each other
+    name_x_devicename               = {}  # Device.name by devicename and devicename by Device.fname
     inactive_fname_by_devicename    = {}  # Devices with tracking_mode=inactive
     entity_reg_items_by_status      = {}  # Entity registry icloud3 devicename errors by (orphaned, disabled, deleted)
                                             # Set in entity_io.scan_entity_reg_for_icloud3_items)
@@ -328,9 +323,13 @@ class GlobalVariables(object):
     evlog_version                   = ''  # EvLog version reported back from the EvLog via the event_log_version svc call
 
     # iCloud3 Alerts Sensor
-    AlertsSensor                    = None   # icloud3_alerts Sensor
+    AlertsSensor                    = None  # icloud3_alerts Sensor
     alerts_sensor                   = 'none' # Alerts sensor State value (last alert encountered)
-    alerts_sensor_attrs             = {}     # Alerts Attributes by alert type
+    alerts_by_alert_key             = {}    # Alerts Attributes by alert type
+    startup_msg                     = []    # Holds errors and msgs encountered during startup. Each item contains
+                                            # info for the alert sensor and repair issue:
+                                                # 'flow key (devicename, apple acct) | type (device,apple acct,mobapp) |
+                                                # error msg | fixable (T,F)'
 
     # System Wide variables control iCloud3 start/restart procedures
     ic3_timer_events_are_setup      = False     # Indicates the 5-sec polling loop is set up
@@ -343,6 +342,7 @@ class GlobalVariables(object):
     icloud3_reload_requested_secs   = 0         # Set to True when a reload is prpbable (enable sensor)
     is_ha_restart_needed            = False     # HA needs to be restarted
     restart_requested_by            = ''        # Requested by 'service_handler', 'config_flow'
+    restart_at_secs                 = 0         # iCloud3 is scheduled to restart at this time
     any_device_was_updated_reason   = ''
     startup_stage_status_controls   = []        # A general list used by various modules for noting startup progress
     startup_lists                   = {}        # Log variable and dictionsry field/values to icloud3-0.log file
@@ -372,7 +372,7 @@ class GlobalVariables(object):
     startup_log_msgs          = ''
     startup_log_msgs_prefix   = ''
     mobapp_entities           = ''
-    mobapp_notify_devicenames = ''
+    mobile_app_notify_devicenames = []
     started_secs              = 0
 
     # Configuration parameters that can be changed in config_ic3.yaml
@@ -423,6 +423,7 @@ class GlobalVariables(object):
     conf_devicenames        = []
     conf_icloud_dnames      = []
     conf_devices_idx_by_devicename = {}           # Index of  each device names preposition in the conf_devices parameter
+    conf_apple_acct_cnt     = 0                   # Number of Apple Accounts
     conf_icloud_device_cnt  = 0                   # Number of devices with iCloud tracking set up
     conf_fmf_device_cnt     = 0                   # Number of devices with FmF tracking set up
     conf_mobapp_device_cnt  = 0                   # Number of devices with Mobile App  tracking set up
@@ -580,18 +581,11 @@ class GlobalVariables(object):
     broadcast_msg        = ''
     broadcast_info_msg   = None
 
-    # Test variables
-    test_true_1         = True
-    test_true_2         = True
-    test_false_1        = False
-    test_false_2        = False
-    test_str_1          = ''
-    test_str_2          = ''
-    test_list_1         = []
-    test_list_2         = []
-    test_dict_1         = {}
-    test_dict_2         = {}
 
     #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
     is_config_flow_open = False
+
+    #----------------------------------------------------------------------------
+    def __repr__(self):
+        return f"⢸Gb⡇"

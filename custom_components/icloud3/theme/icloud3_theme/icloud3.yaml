@@ -18,7 +18,7 @@ iCloud3 Theme:
   modes:
     light:
       # Text field label, Select box label, hh.mm.ss label
-      mdc-text-field-label-ink-color: rgb(9, 119, 170)
+      mdc-text-field-label-ink-color: rgb(5, 116, 165)
 
       # Field label text box, time text, boolean field text, option bullet text
       mdc-theme-text-primary-on-background: rgb(0, 0, 0)
@@ -27,13 +27,15 @@ iCloud3 Theme:
       #mdc-dialog-content-ink-color: rgb(10, 136, 194)
 
       # Text entry heading, Dropdown box label, Description text
-      mdc-dialog-content-heading-ink-color: rgb(9, 119, 170)
-      wa-form-control-label-color: rgb(9, 119, 170)
-      secondary-text-color: rgb(9, 119, 170)
-      ha-color-text-secondary: rgb(9, 119, 170)
+      mdc-dialog-content-heading-ink-color: rgb(5, 116, 165)
+      wa-form-control-label-color: rgb(5, 116, 165)
+      secondary-text-color: rgb(5, 116, 165)
+
+      # Config_flow Description field
+      ha-color-text-secondary: rgb(5, 116, 165)
 
       # Select item heading
-      mdc-select-label-ink-color: rgb(9, 119, 170)
+      mdc-select-label-ink-color: rgb(5, 116, 165)
 
       # Config-flow dialog window background
       # ha-dialog-surface-background: rgb(40, 46, 54)
@@ -58,7 +60,9 @@ iCloud3 Theme:
       # secondary text UI-wide); ha-color-text-secondary had no effect (no-op).
       wa-form-control-label-color: rgb(135, 206, 250)
       secondary-text-color: rgb(135, 206, 250)
-      #ha-color-text-secondary: rgb(135, 206, 250)
+
+      # Config_flow Description field
+      ha-color-text-secondary: rgb(135, 206, 250)
 
       # Select item heading
       mdc-select-label-ink-color: rgb(135, 206, 250)

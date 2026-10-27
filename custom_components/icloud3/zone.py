@@ -17,16 +17,18 @@
 
 from .global_variables  import GlobalVariables as Gb
 from .const             import (HOME, NOT_HOME, STATIONARY, HIGH_INTEGER,
-                                ZONE, TITLE, FNAME, NAME, ID, FRIENDLY_NAME, ICON,
+                                TITLE, FNAME, NAME, ID, FRIENDLY_NAME, ICON,
                                 LATITUDE, LONGITUDE, RADIUS, PASSIVE,
                                 STATZONE_RADIUS_1M,
-                                ZONE, NON_ZONE_ITEM_LIST, )
+                                NON_ZONE_ITEM_LIST, )
+from .const_config      import (ZONE, )
 
 from .utils             import entity_io
 from .utils.utils       import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
 from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
-                                log_exception, log_data,_evlog, _log, )
+                                log_exception, _evlog, _log, )
+from .utils.rawdata_logging import (log_data, )
 from .utils.time_util   import (time_now_secs, )
 from .utils.dist_util   import (gps_distance_m, gps_distance_km, )
 
