@@ -552,7 +552,6 @@ class iCloudSession(Session):
         else:
             log_error_msg(f"iCloud3 Error > Apple Acct Session Error-{api_error}")
 
-        return
         raise api_error
 
     #--------------------------------------------------------------------
