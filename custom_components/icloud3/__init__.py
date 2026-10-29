@@ -367,19 +367,18 @@ async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry
 #-------------------------------------------------------------------------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     '''
-    When disabled sensors are reenabled, HA will schedule an unload in 30s followed
-    by a reload. The er_util.async_handle_update_entity_registry function is called when
-    the sensor is enabled and sets the Gb.icloud3_reload_requested to True. This prevents
-    all of the DeviceTracker and Sensor objects from being unloaded and deleted here.
+    Unload a config entry.
+
+    A reload goes through the same teardown as a removal. Returning early kept
+    the old platforms and in-memory sensor objects alive, so the next setup
+    skipped creating them and every device sensor stayed 'unavailable'. The
+    entity registry preserves entity_ids and user customisations, so a full
+    unload/recreate is safe.
     '''
-    if Gb.was_icloud3_reloaded:
-        return True
+    Gb.was_icloud3_reloaded = False
+    Gb.icloud3_reload_requested = False
+    Gb.reload_in_progress = False
 
-    if Gb.icloud3_reload_requested:
-        Gb.icloud3_reload_requested = False
-        return True
-
-    """Unload a config entry."""
     unload_ok = all(await asyncio.gather(
             *[  hass.config_entries.async_forward_entry_unload(entry, PLATFORM_DEVICE_TRACKER),
                 hass.config_entries.async_forward_entry_unload(entry, PLATFORM_SENSOR),
@@ -392,15 +391,51 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     log_debug_msg(f"Remove Listener > update_device_registry")
     log_debug_msg(f"Remove Listener > update_entity_registry")
 
-    hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
-    hass.data[DOMAIN][entry.entry_id]["update_device_registry"]()
-    hass.data[DOMAIN][entry.entry_id]["update_entity_registry"]()
+    domain_data = hass.data.get(DOMAIN, {})
+    entry_data  = domain_data.get(entry.entry_id, {})
+
+    # The options listener is stored on the domain, the registry listeners on
+    # the entry. Reading all three from entry_data raised
+    # KeyError: 'unsub_options_update_listener' and left the entry half-unloaded.
+    unsub_options = (domain_data.get("unsub_options_update_listener")
+                        or entry_data.get("unsub_options_update_listener"))
+    if callable(unsub_options):
+        unsub_options()
+
+    for key in ("update_device_registry", "update_entity_registry"):
+        unsub = entry_data.get(key) or domain_data.get(key)
+        if callable(unsub):
+            unsub()
+        entry_data.pop(key, None)
+    domain_data.pop("unsub_options_update_listener", None)
 
     # Remove config entry from domain.
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        reset_runtime_entity_objects()
+        domain_data.pop(entry.entry_id, None)
+        if not any(isinstance(value, dict) for value in domain_data.values()):
+            hass.data.pop(DOMAIN, None)
 
     return unload_ok
+
+#-------------------------------------------------------------------------------------------
+def reset_runtime_entity_objects():
+    '''
+    Drop the in-memory Sensor/device_tracker objects on a full unload.
+
+    The platforms unload their entities, so keeping these dicts made the next
+    setup think every sensor still exists, skip creating new ones, and leave
+    all device sensors 'unavailable' after a reload.
+    '''
+    Gb.Sensors_by_devicename.clear()
+    Gb.Sensors_by_devicename_from_zone.clear()
+    Gb.Sensors_by_devicename_sensor.clear()
+    Gb.sensors_added_by_devicename.clear()
+    Gb.sensors_cnt = 0
+    Gb.sensors_created_cnt = 0
+    Gb.EvLogSensor = None
+    Gb.AlertsSensor = None
+    Gb.WazeHistTrackSensor = None
 
 #-------------------------------------------------------------------------------------------
 async def async_remove_config_entry_device(hass: HomeAssistant,
