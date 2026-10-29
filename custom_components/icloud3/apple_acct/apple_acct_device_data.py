@@ -95,7 +95,7 @@ class iCloud_AppleAcctDeviceData():
 
         self.model_display_name = self.filtered_model_display_name()
 
-        self.raw_model       = device_data['rawDeviceModel'].replace('_', ',')        # "iPhone17,2"
+        self.raw_model       = device_data.get('rawDeviceModel', 'Unknown').replace('_', ',')
         if self.raw_model.startswith(AIRPODS_DN):
             self.model       = AIRPODS_DN
             self.device_type = AIRPODS
@@ -308,7 +308,7 @@ class iCloud_AppleAcctDeviceData():
         if self.is_data_source_ICLOUD:
             display_name = self.device_data['deviceDisplayName'].split(' (')[0]
             display_name = display_name.replace('Series ', '')
-            if self.device_data.get('rawDeviceModel').startswith(AIRPODS_DN):
+            if self.device_data.get('rawDeviceModel', '').startswith(AIRPODS_DN):
                 device_class = AIRPODS_DN
             else:
                 device_class = self.device_data.get('deviceClass', '')
@@ -321,7 +321,7 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def device_class(self):
-        if self.device_data.get('rawDeviceModel').startswith(AIRPODS_DN):
+        if self.device_data.get('rawDeviceModel', '').startswith(AIRPODS_DN):
             return AIRPODS_DN
         else:
             return self.device_data.get('deviceClass', '')
@@ -329,8 +329,8 @@ class iCloud_AppleAcctDeviceData():
 #----------------------------------------------------------------------
     @property
     def aadevice_model_info(self):
-        return [self.device_data['rawDeviceModel'].replace("_", ""),    # iPhone15,2
-                self.device_data['modelDisplayName'],                   # iPhone
+        return [self.device_data.get('rawDeviceModel', 'Unknown').replace("_", ""),
+                self.device_data.get('modelDisplayName', 'Unknown'),
                 self.model_display_name]                        # iPhone 14 Pro
 
 #----------------------------------------------------------------------

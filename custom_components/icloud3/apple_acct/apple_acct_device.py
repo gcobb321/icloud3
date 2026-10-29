@@ -96,7 +96,7 @@ class iCloud_AppleAcctDevice():
         self.device_data['name']  = self.name
 
         self.model_display_name = self.filtered_model_display_name()
-        self.raw_model       = device_data['rawDeviceModel'].replace('_', ',')        # "iPhone17,2"
+        self.raw_model       = device_data.get('rawDeviceModel', 'Unknown').replace('_', ',')
         self.model           = device_data['deviceClass']
         self.device_type     = device_data['deviceClass'].lower()
         self.model_no        = self.raw_model_no
@@ -338,7 +338,7 @@ class iCloud_AppleAcctDevice():
     @property
     def aadevice_model_info(self):
         return [self.raw_model,                         # iPhone15,2
-                self.device_data['modelDisplayName'],   # iPhone
+                self.device_data.get('modelDisplayName', 'Unknown'),   # iPhone
                 self.model_display_name]                # iPhone 14 Pro
 
 #----------------------------------------------------------------------

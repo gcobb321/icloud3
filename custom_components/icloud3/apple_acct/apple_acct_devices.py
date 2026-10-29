@@ -344,8 +344,8 @@ class iCloud_AppleAcctDevices():
                         monitor_msg += (f"{self.AppleAcct.account_owner}, "
                                         f"{device_data_name}/"
                                         f"{device_id[:8]}, "
-                                        f"{device_data['modelDisplayName']} "
-                                        f"({device_data['rawDeviceModel']})")
+                                        f"{device_data.get('modelDisplayName', 'Unknown')} "
+                                        f"({device_data.get('rawDeviceModel', device_id[:8])})")
 
                 if Device is None or Device.is_inactive:
                     continue
