@@ -426,7 +426,8 @@ class WazeRouteHistory(object):
                                     in the zones table and the zone time/dist values need to be
                                     recalculated. Get the info from Waze and do not update the db.
         '''
-        if self.connection is None: return
+        if self.connection is None:
+            return (0, 0, 0)
 
         try:
             zone_id = Gb.wazehist_zone_id.get(from_zone, 0)
