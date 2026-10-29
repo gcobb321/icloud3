@@ -320,11 +320,13 @@ def _trigger_monitored_device_update(StatZone, Device, action):
         if action == ENTER_ZONE and _Device.StatZone is None:
             dist_apart_m = _Device.distance_m(Device.loc_data_latitude, Device.loc_data_longitude)
             if dist_apart_m <= Gb.statzone_radius_m:
-                post_event(_Device, f"Trigger > Enter New Stationary Zone > {StatZone.dname}")
+                event_msg = f"Trigger > Enter New Stationary Zone > {StatZone.dname}"
+                post_event(_Device, event_msg)
 
         elif action == EXIT_ZONE and _Device.StatZone is StatZone:
             _Device.StatZone = None
-            post_event(_Device, f"Trigger > Exit Removed Stationary Zone > {StatZone.dname}")
+            event_msg = f"Trigger > Exit Removed Stationary Zone > {StatZone.dname}"
+            post_event(_Device, event_msg)
 
         else:
             continue
