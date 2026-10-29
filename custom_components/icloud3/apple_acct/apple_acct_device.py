@@ -378,8 +378,15 @@ class iCloud_AppleAcctDevice():
 #----------------------------------------------------------------------------
     def save_new_device_data(self, new_device_data):
         '''Update the device data.'''
-        new_device_data[CONF_IC3_DEVICENAME] = self.Device.devicename
-        new_device_data['Device']            = self.Device
+        if self.Device is not None:
+            new_device_data[CONF_IC3_DEVICENAME] = self.Device.devicename
+            new_device_data['Device']            = self.Device
+        else:
+            # An Apple device that is not assigned to an iCloud3 device (Watch,
+            # AirPods, an unconfigured family device). Keep the data update but
+            # do not crash on the missing Device object.
+            new_device_data[CONF_IC3_DEVICENAME] = self.ic3_devicename
+            new_device_data['Device']            = None
         new_device_data['dname']             = self.dname
 
         self.status_code = 0  #device_data.get('snd', []).get('status_code', 0)
