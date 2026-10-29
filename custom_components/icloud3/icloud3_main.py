@@ -1127,7 +1127,7 @@ class iCloud3:
                                     else Device.icloud_update_reason
 
         if Device.is_tracked and Device.is_location_data_rejected():
-            if Device.is_dev_data_source_iCloud:
+            if Device.is_dev_data_source_ICLOUD:
                 det_interval.determine_interval_after_error(Device, counter=OLD_LOCATION_CNT)
 
         elif Device.is_monitored and Device.is_offline:
