@@ -518,7 +518,7 @@ class iCloud3:
         # sync them. Do this every 10-mins if the time since the last request is older than 10-min ago
         elif (Device.isin_statzone
                 and Device.mobapp_data_state == NOT_HOME
-                and (secs_since(Device.mobapp_request_loc_sent_secs) > 36000
+                and (secs_since(Device.mobapp_request_loc_sent_secs) > 600
                     or Device.mobapp_request_loc_sent_secs == 0)
                 and Gb.this_update_time.endswith('0:00')):
             mobapp_interface.request_location(Device, is_alive_check=False, force_request=True)
