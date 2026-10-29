@@ -155,6 +155,7 @@
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "conf_write_failed": "❌ iCloud3 could not save the configuration file. Check the Home Assistant log and disk permissions.",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
 
       "apple_acct_logging_into": "Logging into Apple Account",
@@ -1041,6 +1042,7 @@
           "unknown_action": "Selected Action could not be identified",
           "update_aborted": "Update aborted, an error was detected in one of the data fields",
           "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "conf_write_failed": "❌ iCloud3 could not save the configuration file. Check the Home Assistant log and disk permissions.",
 
           "apple_acct_logged_into": "Logged into the Apple Account",
           "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
@@ -1249,6 +1251,7 @@
           "unknown_action": "Selected Action could not be identified",
           "update_aborted": "Update aborted, an error was detected in one of the data fields",
           "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "conf_write_failed": "❌ iCloud3 could not save the configuration file. Check the Home Assistant log and disk permissions.",
           "apple_acct_logged_into": "Logged into the Apple Account",
           "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
           "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",

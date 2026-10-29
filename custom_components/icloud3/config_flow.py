@@ -188,7 +188,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
                 await _OptFlow.delete_all_files_and_remove_directory(Gb.icloud_cookies_directory)
 
                 Gb.config_parms_update_control = ['tracking', 'restart']
-                await config_file.async_write_icloud3_configuration_file()
+                if not await config_file.async_write_icloud3_configuration_file():
+                    errors['base'] = 'conf_write_failed'
+                    return self.async_show_form(
+                        step_id="user",
+                        data_schema=forms.form_config_option_user(self),
+                        errors=errors)
 
             data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
 

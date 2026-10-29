@@ -143,12 +143,18 @@ class OptionsFlow_Common_Steps:
         if self.config_file_commit_updates is False and force_write is False:
             return
 
-        await config_file.async_write_icloud3_configuration_file()
+        success = await config_file.async_write_icloud3_configuration_file()
 
         self.config_file_commit_updates = False
-        if self.errors == {}:
-            self.header_msg = 'conf_updated'
-            self.errors['base'] = 'conf_updated'
+        if success:
+            if self.errors == {}:
+                self.header_msg = 'conf_updated'
+                self.errors['base'] = 'conf_updated'
+        else:
+            # The file write failed (permissions, full disk, ...). Do not tell
+            # the user the configuration was saved.
+            self.header_msg = 'conf_write_failed'
+            self.errors['base'] = 'conf_write_failed'
 
         # Updating the config file will encode the password. Make sure the
         # password is deoded in the self.conf_apple_acct variable in case it
