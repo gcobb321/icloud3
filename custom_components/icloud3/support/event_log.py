@@ -636,7 +636,10 @@ class EventLog(object):
 
 
         if instr(event_text, 'ICLOUD3 IS RELOADING'):
-            self.startup_event_recds = {}
+            # Keep the list shape: the next line inserts into it. Assigning
+            # {} made the reload record raise AttributeError, so the startup
+            # and alert log was lost after a reload.
+            self.startup_event_recds.clear()
 
         if Device:
             if event_text.startswith(EVLOG_UPDATE_END):
