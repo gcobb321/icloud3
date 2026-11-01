@@ -263,8 +263,7 @@ class OptionsFlow_iCloud3Device_Steps:
             if len(Gb.conf_devices) <= 1:
                 return self._delete_all_devices()
 
-            if Gb.DeviceTrackers_by_devicename.get(devicename):
-                sensors_cf.remove_device_tracker_and_sensor_entities(self, devicename)
+            sensors_cf.remove_device_tracker_and_sensor_entities(self, devicename)
 
             self.dev_page_last_selected_devicename[self.dev_page_no] = ''
             Gb.conf_devices.pop(self.conf_device_idx)
