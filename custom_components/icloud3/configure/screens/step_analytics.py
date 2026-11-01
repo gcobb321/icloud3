@@ -69,7 +69,7 @@ class OptionsFlow_Analytics_Steps:
         utils_cf.log_step_info(self, user_input, action_item)
 
         match action_item:
-            case 'menu':
+            case 'cancel_goto_menu':
                 return await self.async_step_menu()
 
             case 'analytics_reports':

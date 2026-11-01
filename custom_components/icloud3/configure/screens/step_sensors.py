@@ -63,7 +63,7 @@ class OptionsFlow_Sensors_Steps:
                                         data_schema=forms.form_sensors(self),
                                         errors=self.errors)
 
-        if action_item == 'menu':
+        if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
         self.set_default_sensors(user_input)

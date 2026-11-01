@@ -481,7 +481,7 @@ class OptionsFlow_Parameters_Steps:
         elif action_item == 'select_text_as':
             return await self.async_step_display_text_as_update(user_input)
 
-        elif action_item == 'menu':
+        elif action_item == 'cancel_goto_menu':
             self.dta_selected_idx = UNSELECTED_IDX
             return await self.async_step_menu()
 

@@ -80,7 +80,7 @@ ACTION_LIST_OPTIONS = {
         'goto_previous':            '➤ RETURN → Return to the previous screen',
         'cancel_goto_previous':     '➤ RETURN → Return to the previous screen. Cancel any unsaved changes',
         'menu':                     '➤ MENU → Display the Menu screen',
-        'cancel_goto_menu':         '➤ MENU → Display the Menu screen. Cancel any unsaved changes',
+        'cancel_goto_menu':         '➤ CANCEL & RETURN → Discard any unsaved changes, Return to the Menu',
         'exit':                     '➤ EXIT → End the iCloud3 Configure Session, Return to HA',
         'exit_repair':              '➤ EXIT → Return to the Repair Item. Cancel any unsaved changes',
         'save':                     '➤ SAVE & RETURN → Update Configuration File, Return to the Previous screen',
@@ -185,7 +185,7 @@ UNSELECTED_IDX = -1
 # Action List Items for all screens
 ACTION_LIST_ITEMS_SAVE_MENU = [
         ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['menu']]
+        ACTION_LIST_OPTIONS['cancel_goto_menu']]
 
 APPLE_ACCOUNT_ACTIONS = [
         ACTION_LIST_OPTIONS['update_apple_acct'],
@@ -260,7 +260,7 @@ SENSORS_ACTIONS = [
         ACTION_LIST_OPTIONS['exclude_sensors'],
         ACTION_LIST_OPTIONS['set_to_default_sensors'],
         ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['menu']]
+        ACTION_LIST_OPTIONS['cancel_goto_menu']]
 SENSORS_EXCLUDE_ACTIONS_= [
         ACTION_LIST_OPTIONS['filter_sensors'],
         ACTION_LIST_OPTIONS['update_sensor_list'],
@@ -340,7 +340,7 @@ TOOL_LIST_ITEMS = [
 
 LOG_LEVEL = [
         ACTION_LIST_OPTIONS['save_menu'],
-        ACTION_LIST_OPTIONS['menu'],
+        ACTION_LIST_OPTIONS['cancel_goto_menu'],
 ]
 TOOL_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in TOOL_LIST.items()}
 

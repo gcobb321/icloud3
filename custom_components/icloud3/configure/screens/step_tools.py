@@ -275,7 +275,7 @@ class OptionsFlow_Tools_Steps:
 
         utils_cf.log_step_info(self, user_input, action_item)
 
-        if action_item == 'menu':
+        if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
         # Log Level not was changed
