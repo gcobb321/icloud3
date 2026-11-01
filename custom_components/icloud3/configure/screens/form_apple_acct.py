@@ -251,10 +251,10 @@ def form_delete_apple_acct(self):
 
     apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
     apple_acct_info = self.apple_acct_items_by_apple_id[apple_id]
-    if (instr(apple_acct_info, '0 of')
-            or instr(apple_acct_info, '1 of 1')
-            or instr(apple_acct_info, 'Tracked-()')
-            or instr(apple_acct_info, NOT_LOGGED_IN)):
+    # The Apple Account's device counts are 0 when it is not logged into. Only default
+    # to deleting the devices when no iCloud3 device uses it.
+    devicenames, _ = lists.get_conf_device_names_by_apple_id(apple_id)
+    if is_empty(devicenames):
         default_device_action = 'delete_devices'
     else:
         default_device_action = 'reassign_devices'
