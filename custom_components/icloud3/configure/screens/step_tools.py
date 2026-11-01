@@ -309,18 +309,18 @@ class OptionsFlow_Tools_Steps:
                                         errors=self.errors)
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-        user_input = utils_cf.option_text_to_parm(user_input,
+        user_input = utils_cf.select_value(user_input,
                                 CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)
 
         utils_cf.log_step_info(self, user_input, action_item)
 
-        if action_item == 'menu':
-            return await self.async_step_menu()
+        if action_item == 'cancel_goto_menu':
+            return await self.async_step_tools()
 
         # Log Level not was changed
         if (user_input[CONF_LOG_LEVEL] == Gb.conf_general[CONF_LOG_LEVEL]
                 and user_input[CONF_LOG_LEVEL_DEVICES] == Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-            return await self.async_step_menu()
+            return await self.async_step_tools()
 
         if (is_empty(user_input[CONF_LOG_LEVEL_DEVICES])
                 or len(user_input[CONF_LOG_LEVEL_DEVICES]) >= len(Gb.Devices)):
@@ -331,15 +331,18 @@ class OptionsFlow_Tools_Steps:
 
         Gb.log_level_devices = user_input[CONF_LOG_LEVEL_DEVICES].copy()
 
+        self.saved_item = 'log_level'
         self._update_config_file_general(user_input)
 
-        return await self.async_step_menu()
+        self.header_msg = 'conf_updated'
+        return await self.async_step_tools()
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           CLEANUP ENTITY REGISTRY
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_cleanup_entity_registry(self, user_input=None, errors=None):
         self.step_id = 'cleanup_entity_registry'
+        self.errors = {}
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
         utils_cf.log_step_info(self, user_input, action_item)
 
@@ -348,36 +351,71 @@ class OptionsFlow_Tools_Steps:
                                         data_schema=forms.form_cleanup_entity_registry(self),
                                         errors=self.errors)
 
+        placeholders = {}
         match action_item:
-            case 'check_all':
-                self.tools_entity_reg_check_all = True
-
-            case 'check_none':
-                self.tools_entity_reg_check_all = False
-
-            case 'show_all_sensors':
-                self.tools_cleanup_er_sensor_all = True
-
-            case 'show_some_sensors':
-                self.tools_cleanup_er_sensor_all = False
-
             case 'goto_previous':
                 return await self.async_step_tools()
 
+            case 'select_all':
+                self.tools_entity_reg_check_all = True
+
+            case 'toggle_sensor_lists':
+                self.tools_cleanup_er_sensor_all = not self.tools_cleanup_er_sensor_all
+
             case 'delete_device_sensors':
-                for status in list(user_input.keys()):
-                    if isnot_empty(user_input[status]):
-                        break
-                else:
+                if all(is_empty(devicenames) for devicenames in user_input.values()):
                     return await self.async_step_tools()
 
-                self._tools_delete_device_sensors(user_input)
-                self.repair_entity_show_check_all = False
-                er_util.scan_entity_reg_for_icloud3_items()
-                self.errors['base'] = 'action_completed'
+                if isnot_empty(user_input.get('active')):
+                    return await self._confirm_delete_active_device_sensors(user_input)
+
+                placeholders = self._tools_delete_device_sensors(user_input)
 
         return self.async_show_form(step_id='cleanup_entity_registry',
                             data_schema=forms.form_cleanup_entity_registry(self, user_input),
+                            description_placeholders=placeholders,
+                            errors=self.errors)
+
+#......................................................
+    async def _confirm_delete_active_device_sensors(self, user_input):
+        '''
+        The sensors of the active (tracked) devices are deleted and created again. Confirm it.
+        '''
+        async def _async_delete_device_sensors():
+            self.cleanup_er_placeholders = self._tools_delete_device_sensors(user_input)
+
+        # The items checked in the other groups are deleted with the active devices
+        other_groups = [f"{utils_cf.tr_path(f'options.step.cleanup_entity_registry.data.{status}')} "
+                        f"({len(devicenames)})"
+                                for status, devicenames in user_input.items()
+                                if status != 'active' and isnot_empty(devicenames)]
+        other_groups_msg = ' ' + utils_cf.tr('confirm_cleanup_other_groups', groups=list_to_str(other_groups)) \
+                                if other_groups else ''
+        self.confirm_action = {
+                'action_desc': utils_cf.tr('confirm_cleanup_active_devices',
+                                            devices=list_to_str(user_input['active']),
+                                            other_groups=other_groups_msg),
+                'yes_label': utils_cf.tr('confirm_yes_cleanup_active_devices'),
+                'no_label': utils_cf.tr('confirm_no_cleanup_active_devices'),
+                'yes_func': None,
+                'yes_func_async': _async_delete_device_sensors,
+                'done_msg': 'deleted_device_sensors',
+                'return_to_func_async': self.async_step_cleanup_entity_registry_done,
+                'return_to_next_yes_func_async': None}
+        return await self.async_step_confirm_action()
+
+    async def async_step_cleanup_entity_registry_done(self, user_input=None, errors=None):
+        '''
+        Redisplay the cleanup screen with the result of the Confirm Action screen
+        '''
+        self.errors = errors or {}
+        placeholders = getattr(self, 'cleanup_er_placeholders', None) or {}
+        self.cleanup_er_placeholders = None
+        if self.errors.get('base') == 'deleted_device_sensors' and is_empty(placeholders):
+            self.errors = {}
+        return self.async_show_form(step_id='cleanup_entity_registry',
+                            data_schema=forms.form_cleanup_entity_registry(self),
+                            description_placeholders=placeholders,
                             errors=self.errors)
 
 #......................................................
@@ -398,6 +436,18 @@ class OptionsFlow_Tools_Steps:
         All Others:     Delete from the device & entity registry as normal.
         '''
 
+        # The device registry item (.dr:) is a device, the device_tracker and the other
+        # entities of a device are counted as sensors without its device_tracker entity
+        device_cnt = sensor_cnt = 0
+        for status, devicenames in user_input.items():
+            for devicename in devicenames:
+                device_items = Gb.entity_reg_items_by_status.get(status, {}).get(devicename, {})
+                if any(item.startswith('.dr:') for item in device_items):
+                    device_cnt += 1
+                sensor_cnt += len([item for item, item_data in device_items.items()
+                                        if item.startswith('.') is False
+                                            and item_data.get('platform') != PLATFORM_DEVICE_TRACKER])
+
         # Cycle thru status groups, delete all devices selected in each group
         for status in list(user_input.keys()):
             if status != 'active' and isnot_empty(user_input[status]):
@@ -407,6 +457,12 @@ class OptionsFlow_Tools_Steps:
         # recreated correctly
         if 'active' in user_input and isnot_empty(user_input['active']):
             self._tools_delete_active_devices(user_input['active'])
+
+        er_util.scan_entity_reg_for_icloud3_items()
+        self.errors['base'] = 'deleted_device_sensors'
+
+        return {'devices': utils_cf.tr_cnt('cnt_devices', device_cnt),
+                'sensors': utils_cf.tr_cnt('cnt_sensors', sensor_cnt)}
 
 #......................................................
     def _tools_delete_active_devices(self, devicenames):
@@ -460,7 +516,7 @@ class OptionsFlow_Tools_Steps:
 
             _sensors = list(device_sensors.keys())
             _deleted_msg = (f"{_device_msg}"
-                            f"BaseName: sensor.{devicename}_",
+                            f"BaseName: sensor.{devicename}_, "
                             f"Count: {len(_sensors)}, "
                             f"Entities: {list_to_str(_sensors)}")
 

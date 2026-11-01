@@ -2,8 +2,8 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (IPHONE, IPAD, IPAD_CELL, MAC, WATCH, WATCH_WIFI, AIRPODS, NO_MOBAPP, OTHER,
-                                    PICTURE_WWW_STANDARD_DIRS, )
-from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_EVLOG_CARD_DIRECTORY,
+                                    )
+from ...const_config        import (CONF_EVLOG_CARD_DIRECTORY,
                                     CONF_EVLOG_BTNCONFIG_URL, CONF_TRACK_FROM_BASE_ZONE_USED,
                                     CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
                                     CONF_INZONE_INTERVALS, CONF_UNIT_OF_MEASUREMENT,
@@ -26,7 +26,7 @@ from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_EVLOG_CARD_DIREC
                                     CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
                                     CF_PROFILE, )
 
-from ...utils.utils         import (instr, is_empty, dict_value_to_list, six_item_list, six_item_dict, )
+from ...utils.utils         import (instr, is_empty, dict_value_to_list, six_item_dict, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -59,10 +59,7 @@ import voluptuous as vol
 #            AWAY TIME ZONE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_away_time_zone(self):
-    self.actions_list = []
-    self.actions_list.extend(ACTION_LIST_ITEMS_SAVE_MENU)
-
-    return vol.Schema({
+    schema = {
         vol.Required(CONF_AWAY_TIME_ZONE_1_DEVICES,
                     default=Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]):
                     cv.multi_select(six_item_dict(self.away_time_zone_devices_key_text)),
@@ -79,24 +76,20 @@ def form_away_time_zone(self):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
 
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+        }
+
+    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            TRACKING PARAMETERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_tracking_parameters(self):
-    self.actions_list = ACTION_LIST_ITEMS_SAVE_MENU.copy()
 
-    return vol.Schema({
+    schema = {
         vol.Optional('data_source',
-                    default=utils_cf.option_parm_to_text(self, CONF_DATA_SOURCE, DATA_SOURCE_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DATA_SOURCE_OPTIONS), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_DATA_SOURCE, DATA_SOURCE_OPTIONS)):
+                    utils_cf.select(DATA_SOURCE_OPTIONS, translation_key='data_source', mode='dropdown'),
         vol.Optional(CONF_DISTANCE_BETWEEN_DEVICES,
                     default=Gb.conf_general[CONF_DISTANCE_BETWEEN_DEVICES]):
                     selector.BooleanSelector(),
@@ -110,84 +103,63 @@ def form_tracking_parameters(self):
         vol.Optional(CONF_OLD_LOCATION_THRESHOLD,
                     default=Gb.conf_general[CONF_OLD_LOCATION_THRESHOLD]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=1, max=60, step=1, unit_of_measurement='minutes')),
+                        min=1, max=60, step=1, unit_of_measurement='min')),
         vol.Optional(CONF_OLD_LOCATION_ADJUSTMENT,
                     default=Gb.conf_general[CONF_OLD_LOCATION_ADJUSTMENT]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=0, max=60, step=1, unit_of_measurement='minutes')),
+                        min=0, max=60, step=1, unit_of_measurement='min')),
         vol.Optional(CONF_MAX_INTERVAL,
                     default=Gb.conf_general[CONF_MAX_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=15, max=480, step=5, unit_of_measurement='minutes')),
+                        min=15, max=480, step=5, unit_of_measurement='min')),
         vol.Optional(CONF_EXIT_ZONE_INTERVAL,
                     default=Gb.conf_general[CONF_EXIT_ZONE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=.5, max=10, step=.5, unit_of_measurement='minutes')),
+                        min=.5, max=10, step=.5, unit_of_measurement='min')),
         vol.Optional(CONF_MOBAPP_ALIVE_INTERVAL,
                     default=Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=15, max=240, step=5, unit_of_measurement='minutes')),
+                        min=15, max=240, step=5, unit_of_measurement='min')),
         vol.Optional(CONF_OFFLINE_INTERVAL,
                     default=Gb.conf_general[CONF_OFFLINE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=240, step=5, unit_of_measurement='minutes')),
+                        min=5, max=240, step=5, unit_of_measurement='min')),
         vol.Optional(CONF_TFZ_TRACKING_MAX_DISTANCE,
-                    default=Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=1, max=100, unit_of_measurement='Km')),
+                    default=utils_cf.km_field_default(CONF_TFZ_TRACKING_MAX_DISTANCE)):
+                    utils_cf.km_field_selector(CONF_TFZ_TRACKING_MAX_DISTANCE, 1, 100),
         vol.Optional(CONF_TRAVEL_TIME_FACTOR,
-                    default=utils_cf.option_parm_to_text(self, CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
+                    utils_cf.select(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT, translation_key='travel_time_factor', mode='dropdown'),
 
-        vol.Optional('action_items',
-                    default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+        }
+
+    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #              FORMAT SETTINGS & ICLOUD3 DIRECTORIES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_format_settings(self):
-    self.actions_list = ACTION_LIST_ITEMS_SAVE_MENU.copy()
     display_zone_format_options = build_display_zone_format_options(self)
 
-    self.picture_by_filename = {}
-    if PICTURE_WWW_STANDARD_DIRS in Gb.conf_profile[CONF_PICTURE_WWW_DIRS]:
-        Gb.conf_profile[CONF_PICTURE_WWW_DIRS] = []
-
-    return vol.Schema({
+    schema = {
         vol.Optional(CONF_DISPLAY_ZONE_FORMAT,
-                    default=utils_cf.option_parm_to_text(self, CONF_DISPLAY_ZONE_FORMAT, display_zone_format_options)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(display_zone_format_options), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_DISPLAY_ZONE_FORMAT, display_zone_format_options)):
+                    utils_cf.select(display_zone_format_options),
         vol.Optional(CONF_DEVICE_TRACKER_STATE_SOURCE,
-                    default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TRACKER_STATE_SOURCE, DEVICE_TRACKER_STATE_SOURCE_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DEVICE_TRACKER_STATE_SOURCE_OPTIONS), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_DEVICE_TRACKER_STATE_SOURCE, DEVICE_TRACKER_STATE_SOURCE_OPTIONS)):
+                    utils_cf.select(DEVICE_TRACKER_STATE_SOURCE_OPTIONS, translation_key='device_tracker_state_source', mode='dropdown'),
         vol.Optional(CONF_UNIT_OF_MEASUREMENT,
-                    default=utils_cf.option_parm_to_text(self, CONF_UNIT_OF_MEASUREMENT, UNIT_OF_MEASUREMENT_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(UNIT_OF_MEASUREMENT_OPTIONS), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_UNIT_OF_MEASUREMENT, UNIT_OF_MEASUREMENT_OPTIONS)):
+                    utils_cf.select(UNIT_OF_MEASUREMENT_OPTIONS, translation_key='unit_of_measurement', mode='dropdown'),
         vol.Optional(CONF_TIME_FORMAT,
-                    default=utils_cf.option_parm_to_text(self, CONF_TIME_FORMAT, TIME_FORMAT_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(TIME_FORMAT_OPTIONS), mode='dropdown')),
-        vol.Optional(CONF_PICTURE_WWW_DIRS,
-                    default=Gb.conf_profile[CONF_PICTURE_WWW_DIRS] or self.www_directory_list):
-                    cv.multi_select(six_item_list(self.www_directory_list)),
+                    default=utils_cf.option_parm_key(self, CONF_TIME_FORMAT, TIME_FORMAT_OPTIONS)):
+                    utils_cf.select(TIME_FORMAT_OPTIONS, translation_key='time_format', mode='dropdown'),
         vol.Optional(CONF_DISPLAY_GPS_LAT_LONG,
                     default=Gb.conf_general[CONF_DISPLAY_GPS_LAT_LONG]):
                     # cv.boolean,
                     selector.BooleanSelector(),
 
-        vol.Optional('evlog_header',
-                    default=IC3_DIRECTORY_HEADER):
-                    # cv.multi_select([IC3_DIRECTORY_HEADER]),
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=[IC3_DIRECTORY_HEADER], mode='list')),
         vol.Optional(CONF_EVLOG_CARD_DIRECTORY,
                     default=utils_cf.parm_or_error_msg(self, CONF_EVLOG_CARD_DIRECTORY, conf_group=CF_PROFILE)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
@@ -196,28 +168,19 @@ def form_format_settings(self):
                     default=f"{utils_cf.parm_or_error_msg(self, CONF_EVLOG_BTNCONFIG_URL, conf_group=CF_PROFILE)} "):
                     selector.TextSelector(),
 
-        vol.Optional('action_items',
-                    default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+        }
+
+    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
 
 
 #-------------------------------------------------------------------------------------------
 def build_display_zone_format_options(self):
     '''
-    This is used in config_flow_forms
-
-    'fname': 'HA Zone Friendly Name used by zone automation triggers (TheShores)',
-    'zone': 'HA Zone entity_id (the_shores)',
-    'name': 'iCloud3 reformated Zone entity_id (zone.the_shores → TheShores)',
-    'title': 'iCloud3 reformated Zone entity_id (zone.the_shores → The Shores)'
-
-    example_to_real = { 'the_shores': 'the_point',
-                        'The Shores': 'The Point',
-                        'TheShores': 'The Point'}
+    The selector.display_zone_format.options labels, the examples (the_shores, The Shores,
+    TheShores) are replaced with a zone of this HA
     '''
-    display_zone_format_options = DISPLAY_ZONE_FORMAT_OPTIONS_BASE.copy()
+    display_zone_format_options = {key: utils_cf.tr_option('display_zone_format', key)
+                                        for key in DISPLAY_ZONE_FORMAT_OPTIONS_BASE}
 
     Zone = [Zone    for zone, Zone in Gb.HAZones_by_zone.items()
                     if instr(Zone.zone, '_')]
@@ -316,154 +279,133 @@ def form_display_text_as_update(self):
 #            INZONE INTERVALS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_inzone_intervals(self):
-    self.actions_list = ACTION_LIST_ITEMS_SAVE_MENU.copy()
-    return vol.Schema({
+    schema = {
         vol.Optional(IPHONE,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][IPHONE]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         vol.Optional(WATCH,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][WATCH]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         vol.Optional(WATCH_WIFI,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][WATCH_WIFI]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         vol.Optional(IPAD,
-                    default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL]):
+                    default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         vol.Optional(IPAD_CELL,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         vol.Optional(MAC,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][MAC]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         # vol.Optional(AIRPODS,
         #             default=Gb.conf_general[CONF_INZONE_INTERVALS][AIRPODS]):
         #             selector.NumberSelector(selector.NumberSelectorConfig(
-        #                 min=5, max=480, step=5, unit_of_measurement='minutes')),
+        #                 min=5, max=480, step=5, unit_of_measurement='min')),
         vol.Optional(NO_MOBAPP,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][NO_MOBAPP]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
         vol.Optional(OTHER,
                     default=Gb.conf_general[CONF_INZONE_INTERVALS][OTHER]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=5, max=360, step=5, unit_of_measurement='minutes')),
+                        min=5, max=360, step=5, unit_of_measurement='min')),
 
-        vol.Optional('action_items',
-                    default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+        }
+
+    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            WAZE MAIN
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_waze_main(self):
-    self.actions_list = ACTION_LIST_ITEMS_SAVE_MENU.copy()
 
-    wuh_default  = [WAZE_USED_HEADER] if Gb.conf_general[CONF_WAZE_USED] else []
-    whuh_default = [WAZE_HISTORY_USED_HEADER] if Gb.conf_general[CONF_WAZE_HISTORY_DATABASE_USED] else []
-    return vol.Schema({
+    schema = {
         vol.Optional(CONF_WAZE_USED,
-                    default=wuh_default):
-                    cv.multi_select([WAZE_USED_HEADER]),
+                    default=Gb.conf_general[CONF_WAZE_USED]):
+                    selector.BooleanSelector(),
         vol.Optional(CONF_WAZE_SERVER,
-                    default=utils_cf.option_parm_to_text(self, CONF_WAZE_SERVER, WAZE_SERVER_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(WAZE_SERVER_OPTIONS), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_WAZE_SERVER, WAZE_SERVER_OPTIONS)):
+                    utils_cf.select(WAZE_SERVER_OPTIONS, translation_key='waze_server', mode='dropdown'),
         vol.Optional(CONF_WAZE_MIN_DISTANCE,
-                    default=Gb.conf_general[CONF_WAZE_MIN_DISTANCE]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=0, max=100, step=5, unit_of_measurement='km')),
+                    default=utils_cf.km_field_default(CONF_WAZE_MIN_DISTANCE)):
+                    utils_cf.km_field_selector(CONF_WAZE_MIN_DISTANCE, 0, 100, 5),
         vol.Optional(CONF_WAZE_MAX_DISTANCE,
-                    default=Gb.conf_general[CONF_WAZE_MAX_DISTANCE]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=0, max=1000, step=5, unit_of_measurement='km')),
+                    default=utils_cf.km_field_default(CONF_WAZE_MAX_DISTANCE)):
+                    utils_cf.km_field_selector(CONF_WAZE_MAX_DISTANCE, 0, 1000, 5),
         vol.Optional(CONF_WAZE_REALTIME,
                     default=Gb.conf_general[CONF_WAZE_REALTIME]):
                     selector.BooleanSelector(),
 
         vol.Required(CONF_WAZE_HISTORY_DATABASE_USED,
-                    default=whuh_default):
-                    cv.multi_select([WAZE_HISTORY_USED_HEADER]),
+                    default=Gb.conf_general[CONF_WAZE_HISTORY_DATABASE_USED]):
+                    selector.BooleanSelector(),
         vol.Required(CONF_WAZE_HISTORY_MAX_DISTANCE,
-                    default=Gb.conf_general[CONF_WAZE_HISTORY_MAX_DISTANCE]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=0, max=1000, step=5, unit_of_measurement='km')),
+                    default=utils_cf.km_field_default(CONF_WAZE_HISTORY_MAX_DISTANCE)):
+                    utils_cf.km_field_selector(CONF_WAZE_HISTORY_MAX_DISTANCE, 0, 1000, 5),
         vol.Optional(CONF_WAZE_HISTORY_TRACK_DIRECTION,
-                    default=utils_cf.option_parm_to_text(self, CONF_WAZE_HISTORY_TRACK_DIRECTION,
-                                                        WAZE_HISTORY_TRACK_DIRECTION_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(WAZE_HISTORY_TRACK_DIRECTION_OPTIONS), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_WAZE_HISTORY_TRACK_DIRECTION, WAZE_HISTORY_TRACK_DIRECTION_OPTIONS)):
+                    utils_cf.select(WAZE_HISTORY_TRACK_DIRECTION_OPTIONS, translation_key='waze_history_track_direction', mode='dropdown'),
 
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+        }
+
+    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            SPECIAL ZONES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_special_zones(self):
-    self.actions_list = ACTION_LIST_ITEMS_SAVE_MENU.copy()
 
     try:
         pass_thru_zone_used  = (Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] > 0)
         stat_zone_used       = (Gb.conf_general[CONF_STAT_ZONE_STILL_TIME] > 0)
         track_from_base_zone_used = Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
 
-        ptzh_default = [PASSTHRU_ZONE_HEADER] if pass_thru_zone_used else []
-        szh_default  = [STAT_ZONE_HEADER] if stat_zone_used else []
-        tfzh_default = [TRK_FROM_HOME_ZONE_HEADER] if track_from_base_zone_used else []
 
-        return vol.Schema({
+        schema = {
             vol.Required('stat_zone_header',
-                        default=szh_default):
-                        cv.multi_select([STAT_ZONE_HEADER]),
+                        default=stat_zone_used):
+                        selector.BooleanSelector(),
             vol.Required(CONF_STAT_ZONE_FNAME,
                         default=utils_cf.parm_or_error_msg(self, CONF_STAT_ZONE_FNAME)):
                         selector.TextSelector(),
             vol.Required(CONF_STAT_ZONE_STILL_TIME,
                         default=Gb.conf_general[CONF_STAT_ZONE_STILL_TIME]):
                         selector.NumberSelector(selector.NumberSelectorConfig(
-                            min=0, max=60, unit_of_measurement='minutes')),
+                            min=0, max=60, unit_of_measurement='min')),
             vol.Required(CONF_STAT_ZONE_INZONE_INTERVAL,
                         default=Gb.conf_general[CONF_STAT_ZONE_INZONE_INTERVAL]):
                         selector.NumberSelector(selector.NumberSelectorConfig(
-                            min=5, max=60, step=5, unit_of_measurement='minutes')),
+                            min=5, max=60, step=5, unit_of_measurement='min')),
 
             vol.Optional('passthru_zone_header',
-                        default=ptzh_default):
-                        cv.multi_select([PASSTHRU_ZONE_HEADER]),
+                        default=pass_thru_zone_used):
+                        selector.BooleanSelector(),
             vol.Required(CONF_PASSTHRU_ZONE_TIME,
                         default=Gb.conf_general[CONF_PASSTHRU_ZONE_TIME]):
                         selector.NumberSelector(selector.NumberSelectorConfig(
-                            min=0, max=5, step=.5, unit_of_measurement='minutes')),
+                            min=0, max=5, step=.5, unit_of_measurement='min')),
 
             vol.Optional(CONF_TRACK_FROM_BASE_ZONE_USED,
-                        default=tfzh_default):
-                        cv.multi_select([TRK_FROM_HOME_ZONE_HEADER]),
+                        default=track_from_base_zone_used):
+                        selector.BooleanSelector(),
             vol.Optional(CONF_TRACK_FROM_BASE_ZONE,
-                        default=utils_cf.option_parm_to_text(self, CONF_TRACK_FROM_BASE_ZONE, self.zone_name_key_text)):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
-                            options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
+                        default=utils_cf.zone_entity_ids(Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE])):
+                        utils_cf.zone_selector(self),
             vol.Optional(CONF_TRACK_FROM_HOME_ZONE,
                         default=Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
                         # cv.boolean,
                         selector.BooleanSelector(),
 
-            vol.Required('action_items',
-                        default=utils_cf.default_action_text('save')):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
-                            options=self.actions_list, mode='list')),
-            })
+            }
+
+        return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
     except Exception as err:
         log_exception(err)

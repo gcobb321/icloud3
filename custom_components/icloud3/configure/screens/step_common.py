@@ -46,16 +46,19 @@ class OptionsFlow_Common_Steps:
         self.menu_item                      = ''
         self.is_repair_flow                 = False # The screen was opened from HA Repairs (repairs.py)
         self.header_msg                     = None  # Message displayed on menu after update
+        self.saved_item                     = ''    # Name of the item in the '✓ Saved: [name]' message
 
-        self.actions_list                   = []    # Actions list at the bottom of the screen
-        self.actions_list_default           = ''    # Default action_items to reassign on screen redisplay
+        self.form_submit_action             = None  # Action done by the form's Submit button (submit_back_field)
+        self.form_back_action               = None  # Action done by the form's Back row
         self.config_parms_update_control    = []    # Stores the type of parameters that were updated, used to reinitialize parms
         self.config_file_commit_updates     = False # The config file has been updated and needs to be written
 
         # The step displaying the Confirm Action screen sets all of the fields,
         # including the return_to_func_async step
         self.confirm_action                 = {
-            'action_desc':          'Confirm Action',
+            'action_desc':          None,
+            'yes_label':            None,
+            'no_label':             None,
             'yes_func':             None,
             'yes_func_async':       None,
             'return_to_func_async': None,
@@ -252,6 +255,8 @@ class OptionsFlow_Common_Steps:
                 Gb.conf_profile[CONF_VERSION] = 1
 
             self.config_file_commit_updates = True
+            self.saved_item = (self.saved_item
+                    or (self.menu_item if utils_cf.has_tr(f"saved_{self.menu_item}") else ''))
 
         return was_config_fle_changed
 

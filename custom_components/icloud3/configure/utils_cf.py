@@ -2,7 +2,7 @@
 
 from ..global_variables  import GlobalVariables as Gb
 from ..const             import (DOMAIN, DEVICE_TYPE_DN, )
-from ..const_config      import (CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_PARAMETER_TIME_STR,
+from ..const_config      import (CONF_UNIT_OF_MEASUREMENT, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_PARAMETER_TIME_STR,
                                  CONF_PARAMETER_FLOAT, CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                  CONF_PASSWORD, )
 
@@ -11,9 +11,13 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, log_stack, )
 
-from .const_form_lists   import (ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
+from .const_form_lists   import (FORM_ACTION, FORM_ACTION_SAVES_DATA,
+                                ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
-from homeassistant.helpers import translation
+from homeassistant.helpers import translation, selector
+import voluptuous as vol
+import re
+import json
 
 VALID_ERROR_MSG = [ 'conf_updated',
                     'internet_error',
@@ -76,6 +80,102 @@ def tr_cnt(key, cnt, **placeholders):
 
 def has_tr(key):
     return f"component.{DOMAIN}.selector.cf_text.options.{key}" in _cf_texts['texts']
+
+def tr_option(translation_key, value):
+    '''
+    The label of an option of a SelectSelector with a translation_key
+    '''
+    return tr_path(f"selector.{translation_key}.options.{value}")
+
+def option_value(key):
+    '''
+    The SelectSelector value of an option key. A translated option's value is its
+    strings.json key, which can only have a-z, 0-9, _ and - (.25 --> 0_25,
+    'iCloud,MobApp' --> icloud_mobapp). It can not start or end with _ or - or have
+    __ (hassfest), '.cn,GCJ02' --> cn_gcj02.
+    '''
+    value = re.sub(r'[^a-z0-9_-]', '_', str(key).lower())
+    return re.sub(r'_{2,}', '_', value).strip('_-')
+
+def select(options, translation_key=None, mode='dropdown', multiple=False):
+    '''
+    A SelectSelector of the options:
+        [key] - The labels are the strings.json selector.[translation_key].options.[value]
+                texts, HA translates them. The values are option_value(key).
+        {value: label} - The labels are displayed as they are (names, built text)
+    The values are strings, select_value converts one back to its key.
+    '''
+    if isinstance(options, dict):
+        options = [{'value': str(value), 'label': label} for value, label in options.items()]
+    else:
+        options = [option_value(value) for value in options]
+
+    config = {'options': options, 'mode': mode, 'multiple': multiple}
+    if translation_key:
+        config['translation_key'] = translation_key
+
+    return selector.SelectSelector(selector.SelectSelectorConfig(**config))
+
+# {pname: (first option value, stored value)} of the option_parm_key fields whose stored
+# value is not one of the options
+_unknown_option_values = {}
+
+def select_value(user_input, pname, keys):
+    '''
+    Change the selected value (str) of the pname field back to its key (float, int)
+    '''
+    if user_input is None or pname not in user_input:
+        return user_input
+
+    # An unknown stored value that was displayed as the first option and not changed
+    first_value, stored_value = _unknown_option_values.pop(pname, (None, None))
+    if first_value is not None and user_input[pname] == first_value:
+        user_input[pname] = stored_value
+        return user_input
+
+    keys_by_value = {option_value(key): key for key in keys}
+    keys_by_value.update({str(key): key for key in keys})
+    pvalue = user_input[pname]
+    if isinstance(pvalue, list):
+        user_input[pname] = [keys_by_value.get(value, value) for value in pvalue]
+    else:
+        user_input[pname] = keys_by_value.get(pvalue, pvalue)
+
+    return user_input
+
+def json_code_block(data):
+    return f"\n```json\n{json.dumps(data, indent=2, ensure_ascii=False)}\n```\n"
+
+def version_downloads_msg():
+    '''
+    The GitHub release download counts and, when there is a newer beta, the beta's
+    download counts displayed on the Analytics screens
+    '''
+    from ..support import analytics
+
+    if Gb.github_version == '':
+        return tr('downloads_not_available')
+
+    # The analytics users are a portion of the release downloads, it is not displayed when
+    # it rounds to 0%
+    users = f"{Gb.analytics_installs:,}"
+    if Gb.github_icloud3_downloads > 0:
+        analytics_pct = round(100.0 * Gb.analytics_installs / Gb.github_icloud3_downloads)
+        users += f" ({analytics_pct}%)" if analytics_pct >= 1 else ''
+
+    downloads_msg = tr('downloads_msg',
+                version=Gb.github_version,
+                date=analytics._format_release_date(Gb.github_published_date),
+                downloads=f"{Gb.github_icloud3_downloads:,}",
+                users=users)
+
+    if Gb.github_beta_version:
+        downloads_msg += '\n' + tr('downloads_beta_msg',
+                version=Gb.github_beta_version,
+                date=analytics._format_release_date(Gb.github_beta_published_date),
+                downloads=f"{Gb.github_beta_downloads:,}")
+
+    return downloads_msg
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -276,20 +376,33 @@ def strip_special_text_from_user_input(user_input, pname):
     return user_input
 
 #--------------------------------------------------------------------
-def actions_list(self):
-    '''
-    Create a [{'value': action_item, 'label': action_item_text}, {..}]
-    selection list for the action items being displayed in the Actions area at the
-    bottom of the screen.
-    '''
-    return [{   'value': action_item,
-                'label': ACTION_LIST_OPTIONS.get(action_item, action_item)}
-                            for action_item in self.actions_list]
 
 #--------------------------------------------------------------------
 def action_text_to_item(self, user_input):
     '''
-    Convert the user_input['action_items'] = action_selection field to it's key name.
+    Return the user_input without the form's Action field (FORM_ACTION) and the
+    action_item selected in it, None if the form has no Action field.
+    '''
+    if user_input is None:
+        return None, None
+
+    if FORM_ACTION not in user_input:
+        if 'action_items' in user_input:
+            return _legacy_action_text_to_item(self, user_input)
+        return user_input, None
+
+    form_action = user_input.pop(FORM_ACTION)
+    if form_action == 'back':
+        return user_input, self.form_back_action
+    if form_action == 'submit':
+        return user_input, self.form_submit_action
+    return user_input, form_action
+
+#-------------------------------------------------------------------------------------------
+def _legacy_action_text_to_item(self, user_input):
+    '''
+    Convert the user_input['action_items'] = action_selection field to it's key name. The
+    device, Apple Account, authentication and Display Text As forms still have the action list.
     '''
 
     if user_input is None:
@@ -457,6 +570,47 @@ def option_parm_to_text(self, pname, option_list_key_text, conf_device=False):
         return f"{pvalue_key} {DATA_ENTRY_ALERT}Unknown Selection"
 
 #-------------------------------------------------------------------------------------------
+def option_parm_key(self, pname, keys, conf_device=False):
+    '''
+    The option_value of the parameter's current value, the default of a translated
+    SelectSelector (select(keys, translation_key)). The first key if the value is
+    not one of the keys, select_value keeps the stored value if the first key is not
+    changed.
+    '''
+    keys = list(keys)
+    key_by_value = {**{option_value(key): key for key in keys}, **{key: key for key in keys}}
+    pvalue = option_parm_to_text(self, pname, key_by_value, conf_device)
+    _unknown_option_values.pop(pname, None)
+    if isinstance(pvalue, list):
+        return [option_value(value) for value in pvalue if value in keys]
+    if pvalue not in keys:
+        stored_value = _stored_parm_value(self, pname, conf_device)
+        if stored_value not in [None, '']:
+            _unknown_option_values[pname] = (option_value(keys[0]), stored_value)
+        pvalue = keys[0]
+    return option_value(pvalue)
+
+def _stored_parm_value(self, pname, conf_device):
+    '''
+    The stored value of the parameter, looked up like option_parm_to_text
+    '''
+    conf_apple_acct = getattr(self, 'conf_apple_acct', None) or {}
+    conf_device_parms = getattr(self, 'conf_device', None) or {}
+    if pname in getattr(self, 'errors_user_input', {}):
+        return None
+    if pname in Gb.conf_profile:
+        return Gb.conf_profile[pname]
+    if pname in Gb.conf_tracking:
+        return Gb.conf_tracking[pname]
+    if pname in conf_apple_acct:
+        return conf_apple_acct[pname]
+    if pname in Gb.conf_general and pname in conf_device_parms:
+        return conf_device_parms[pname] if conf_device else Gb.conf_general[pname]
+    if pname in conf_device_parms:
+        return conf_device_parms[pname]
+    return Gb.conf_general.get(pname)
+
+#-------------------------------------------------------------------------------------------
 # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
 # def key_text_to_text_list(key_text):
 #     return [text for text in key_text.values()]
@@ -488,6 +642,93 @@ def option_text_to_parm(user_input, pname, option_list_key_text):
     user_input[pname] = pvalue_key
 
     return  user_input
+
+#-------------------------------------------------------------------------------------------
+#   Zones are stored without the 'zone.' domain and selected with the HA zone picker
+def _selectable_zones(self):
+    '''
+    The zones of the old zone lists (zone_name_key_text), the Stationary zones and the
+    zones iCloud3 does not use are not offered
+    '''
+    return [zone for zone in getattr(self, 'zone_name_key_text', {}) if zone not in ['', '.']
+                    and zone.startswith('.') is False]
+
+def zone_selector(self, multiple=False):
+    return selector.EntitySelector(selector.EntitySelectorConfig(domain='zone', multiple=multiple,
+                    include_entities=zone_entity_ids(_selectable_zones(self))))
+
+def zone_entity_ids(zones):
+    if isinstance(zones, str):
+        return f"zone.{zones.strip()}" if zones.strip() not in ['', '.'] else None
+    return [f"zone.{zone}" for zone in zones if zone.strip() not in ['', '.']]
+
+def zones_from_ui(self, user_input, pnames, conf):
+    '''
+    Remove the 'zone.' domain from the selected zones. A newly selected zone that is not
+    one of the selectable zones is a field error, the stored zones are kept as they are.
+
+    Parameters:
+        conf - The stored parameters (Gb.conf_general, self.conf_device)
+    '''
+    if user_input is None:
+        return user_input
+    selectable_zones = _selectable_zones(self)
+    for pname in pnames:
+        zones = user_input.get(pname)
+        if isinstance(zones, str):
+            user_input[pname] = zones = zones.removeprefix('zone.')
+            new_zones = [zones] if zones != conf.get(pname) else []
+        elif isinstance(zones, list):
+            user_input[pname] = zones = [zone.removeprefix('zone.') for zone in zones]
+            new_zones = [zone for zone in zones if zone not in (conf.get(pname) or [])]
+        else:
+            continue
+        if [zone for zone in new_zones if zone not in selectable_zones]:
+            self.errors[pname] = 'zone_not_selectable'
+    return user_input
+
+#-------------------------------------------------------------------------------------------
+#   Distances are stored in km. They are displayed in mi when the unit of measurement that
+#   is saved is mi. Gb.um_km_mi_factor is the factor of the unit iCloud3 is running with,
+#   it is not changed until Configure is closed.
+KM_TO_MI = .62137
+
+def _is_um_mi():
+    return Gb.conf_general.get(CONF_UNIT_OF_MEASUREMENT) == 'mi'
+
+def km_field_default(pname):
+    km = Gb.conf_general[pname]
+    return round(km * KM_TO_MI, 1) if _is_um_mi() else km
+
+def km_field_selector(pname, min_km, max_km, step=1):
+    if _is_um_mi():
+        return selector.NumberSelector(selector.NumberSelectorConfig(
+                    min=round(min_km * KM_TO_MI, 1), max=round(max_km * KM_TO_MI, 1),
+                    step=.1, unit_of_measurement='mi'))
+    # A km value entered in mi has a decimal, the slider would change it when touched
+    if Gb.conf_general[pname] != int(Gb.conf_general[pname]):
+        step = .1
+    return selector.NumberSelector(selector.NumberSelectorConfig(
+                    min=min_km, max=max_km, step=step, unit_of_measurement='km'))
+
+def km_fields_from_ui(user_input, pnames):
+    '''
+    Change the distances entered in mi back to km. A distance that was not changed keeps
+    its stored km value. An entered distance is displayed with the same value when the
+    screen is opened again.
+    '''
+    if user_input is None or _is_um_mi() is False:
+        return user_input
+    for pname in pnames:
+        if pname not in user_input:
+            continue
+        if user_input[pname] == km_field_default(pname):
+            user_input[pname] = Gb.conf_general[pname]
+        else:
+            # A whole km value is used when it is displayed as the entered mi value (1 decimal)
+            km = user_input[pname] / KM_TO_MI
+            user_input[pname] = round(km) if abs(km - round(km)) <= .05 / KM_TO_MI + 1e-9 else round(km, 1)
+    return user_input
 
 #-------------------------------------------------------------------------------------------
 # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
@@ -522,6 +763,82 @@ def validate_numeric_field(self, user_input):
             self.errors_user_input[pname] = pvalue
 
     return user_input
+
+#--------------------------------------------------------------------
+def submit_back_field(self, submit_action, back_action, destination, submit_destination=None,
+                        other_actions=None, default_action='submit'):
+    '''
+    Forms do not display an action list. The last field on the form selects the
+    submit_action (default) or the back_action. action_text_to_item returns the
+    action_item of the one selected.
+
+    Parameters:
+        destination - The screen displayed after the back_action, a dest_[key] text
+                key (selector.cf_text) or a name
+        submit_destination - The screen displayed after the submit_action when it is
+                not the destination
+        other_actions - {action_item: label} listed between the submit and back actions.
+                action_text_to_item returns the action_item when one is selected.
+        default_action - 'submit' or 'back' (a form whose Submit deletes something)
+
+    Labels (selector.cf_text):
+        submit_[submit_action] - The Submit label
+        back_[submit_action] - The Back label of a form whose Submit stays on the form,
+                otherwise back_discard (the Submit saves the entered data) or back
+    Return:
+        The Submit/Back schema item to be added to the end of the form's schema
+    '''
+    self.form_submit_action = submit_action
+    self.form_back_action   = back_action
+
+    dest        = destination_name(destination)
+    submit_dest = destination_name(submit_destination) if submit_destination else dest
+    submit_label = tr(f"submit_{submit_action}", dest=submit_dest)
+    if has_tr(f"back_{submit_action}"):
+        back_label = tr(f"back_{submit_action}", dest=dest)
+    elif submit_action in FORM_ACTION_SAVES_DATA:
+        back_label = tr('back_discard', dest=dest)
+    else:
+        back_label = tr('back', dest=dest)
+
+    form_action_options = [{'value': 'submit', 'label': submit_label}]
+    form_action_options.extend([{'value': action_item, 'label': label}
+                                    for action_item, label in (other_actions or {}).items()])
+    form_action_options.append({'value': 'back', 'label': back_label})
+
+    return {vol.Required(FORM_ACTION, default=default_action):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=form_action_options, mode='list'))}
+
+def form_action_field(self, actions, default_action):
+    '''
+    The Action field of a form whose actions are not a Submit/Back pair. The values
+    are the action_items, action_text_to_item returns the one selected.
+
+    Parameters:
+        actions - {action_item: label}, the last one should leave the form
+        default_action - The action_item selected when the form is displayed
+    '''
+    self.form_submit_action = default_action
+    self.form_back_action   = list(actions)[-1]
+
+    return {vol.Required(FORM_ACTION, default=default_action):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=[{'value': action_item, 'label': label}
+                                for action_item, label in actions.items()],
+                    mode='list'))}
+
+def destination_name(destination):
+    return tr(f"dest_{destination}") if has_tr(f"dest_{destination}") else destination
+
+#--------------------------------------------------------------------
+def menu_name(self):
+    '''
+    The dest_[key] text key (submit_back_field) of the menu the configure screen was
+    opened from and returns to
+    '''
+    menu_id = getattr(self, 'menu_id', '') or 'menu'
+    return menu_id if has_tr(f"dest_{menu_id}") else 'menu'
 
 #-------------------------------------------------------------------------------------------
 # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0

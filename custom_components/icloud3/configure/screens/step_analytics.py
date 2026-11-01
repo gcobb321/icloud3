@@ -4,7 +4,7 @@ from ...global_variables    import GlobalVariables as Gb
 from ...const_config        import (CF_GENERAL, CONF_ANALYTICS_ENABLED, CONF_ANALYTICS_SENT_DATE,
                                     CONF_ANALYTICS_COMMENT, CONF_VERSION_INSTALL_DATE, )
 
-from ...utils.utils         import (is_empty, isnot_empty, list_to_str, list_del, list_add, )
+from ...utils.utils         import (is_empty, list_to_str, list_del, list_add, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,
                                     clear_repair_issue, ANALYTICS_APPROVAL_ISSUE_ID, )
@@ -50,7 +50,7 @@ class OptionsFlow_Analytics_Steps:
         await self.async_write_icloud3_configuration_file()
 
         json_payload = await analytics.async_build_json_payload()
-        json_payload['uuid'] = 'HA Installation ID'
+        json_payload['uuid'] = utils_cf.tr('analytics_uuid')
 
         # GitHub download counts, refreshed once a day
         await analytics.async_get_version_downloads()
@@ -59,8 +59,8 @@ class OptionsFlow_Analytics_Steps:
             return self.async_show_form(step_id='analytics',
                                         data_schema=forms.form_analytics(self, user_input),
                                         description_placeholders={
-                                                'json_payload': str(json_payload),
-                                                'downloads': analytics.format_version_downloads_msg()},
+                                                'json_payload': utils_cf.json_code_block(json_payload),
+                                                'downloads': utils_cf.version_downloads_msg()},
                                         errors=self.errors)
 
         user_input = self._unpack_ui_analytics(user_input)
@@ -68,18 +68,18 @@ class OptionsFlow_Analytics_Steps:
 
         utils_cf.log_step_info(self, user_input, action_item)
 
+        # Turning on sending the analytics data sends it now. It is None until the user
+        # chooses whether to send it.
+        if (action_item == 'save'
+                and user_input[CONF_ANALYTICS_ENABLED]
+                and Gb.analytics_enabled is not True):
+            action_item = 'send_analytics_data'
+
         match action_item:
-            case 'menu':
+            case 'cancel_goto_menu':
                 return await self.async_step_menu()
 
-            case 'analytics_reports':
-                # Refresh the report list when the screen is opened to pick up
-                # reports that have been added, renamed or reordered.
-                self.analytic_reports_by_name = {}
-                return await self.async_step_analytics_reports()
-
             case 'send_analytics_data':
-                user_input[CONF_ANALYTICS_ENABLED] = True
                 self.update_config_file(CF_GENERAL, user_input, action_item)
                 Gb.analytics_enabled = True
                 clear_repair_issue(ANALYTICS_APPROVAL_ISSUE_ID)
@@ -88,6 +88,7 @@ class OptionsFlow_Analytics_Steps:
                     self.errors['base'] = 'analytics_sent'
                 else:
                     self.errors['base'] = 'analytics_not_sent'
+                return await self.async_step_menu(errors=self.errors)
 
             case 'save':
                 self.update_config_file(CF_GENERAL, user_input, action_item)
@@ -102,7 +103,7 @@ class OptionsFlow_Analytics_Steps:
 #-------------------------------------------------------------------------------------------
     def _unpack_ui_analytics(self, user_input):
 
-        user_input['analytics_enabled'] = isnot_empty(user_input['analytics_enabled'])
+        user_input['analytics_enabled'] = bool(user_input.get('analytics_enabled'))
 
         return user_input
 
@@ -134,7 +135,7 @@ class OptionsFlow_Analytics_Steps:
                                         data_schema=forms.form_analytics_reports(self, user_input),
                                         description_placeholders={
                                                 'report': str(self.query_report_md),
-                                                'downloads': analytics.format_version_downloads_msg()},
+                                                'downloads': utils_cf.version_downloads_msg()},
                                         errors=self.errors)
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
@@ -145,9 +146,6 @@ class OptionsFlow_Analytics_Steps:
         match action_item:
             case 'menu':
                 return await self.async_step_menu()
-
-            case 'analytics':
-                return await self.async_step_analytics()
 
             case 'run_report':
                 self.report_selected = user_input['report_selected']

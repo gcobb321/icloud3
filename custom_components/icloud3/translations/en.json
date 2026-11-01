@@ -118,19 +118,13 @@
 
       "restart_ha": {
         "title": "Confirm Restarting Home Assistant",
-        "description": "iCloud3 needs to restart Home Assistant to prevent device_tracker entity name conflicts",
-        "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
+        "description": "iCloud3 needs to restart Home Assistant to prevent device_tracker entity name conflicts"
       },
 
 
       "restart_ha_reload_icloud3": {
         "title": "Restart Home Assistant or iCloud3",
-        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
-        "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
+        "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING"
       }
     }
   },
@@ -151,7 +145,7 @@
       "action_not_available": "Internet Connection Error > Action not Available",
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
-      "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "conf_updated": "✓ Saved",
       "conf_updated_item": "✓ Saved: {saved_item}",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
 
@@ -284,6 +278,8 @@
       "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
       "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
       "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+      "deleted_device_sensors": "✓ Deleted {devices} and {sensors} from HA",
+      "zone_not_selectable": "This zone can't be selected. Select one of the zones iCloud3 uses, Stationary zones are not available.",
       "action_failed": "⚠︎ The action failed, see the iCloud3 log file",
       "prerelease_repo_not_installed": "Not changed: iCloud3 wasn't installed from HACS or the Marketplace.",
       "prerelease_switch_not_found": "Not changed: the iCloud3 Pre-release switch wasn't found in HACS or the Marketplace.",
@@ -406,28 +402,19 @@
 
       "xrestart_ha": {
         "title": "Restart Home Assistant",
-        "description": "Restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
-        "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
+        "description": "Restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING"
       },
 
 
       "xrestart_ha_ic3_load_error": {
         "title": "iCloud3 Load Error",
-        "description": "iCloud3 did not load and initialize when HA started. Reload iCloud3 again or restart HA",
-        "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
-        }
+        "description": "iCloud3 did not load and initialize when HA started. Reload iCloud3 again or restart HA"
       },
 
 
       "xrestart_ha_reload_icloud3": {
         "title": "Reload iCloud3, Restart Home Assistant",
-        "description": "Reload and reinitialize the iCloud3 Integration or restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING",
-        "data": {
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
+        "description": "Reload and reinitialize the iCloud3 Integration or restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING"
       },
 
 
@@ -680,20 +667,19 @@
           "www_group_2": "Group 2 - Directory 6-10",
           "www_group_3": "Group 3 - Directory 11-15",
           "www_group_4": "Group 4 - Directory 16-20",
-          "www_group_5": "Group 5 - Directory 21-25",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "www_group_5": "Group 5 - Directory 21-25"
         }
       },
 
 
       "dashboard_builder": {
         "title": "iCloud3 Dashboard Builder",
-        "description": "This screen will create and update iCloud3 Dashboards for tracked devices (up to 4) with different styles and views. The Dashboards can then be customized using the HA Dashboard tools or used as-is.\n\n{db_icons}",
+        "description": "This screen will create and update iCloud3 Dashboards for tracked devices (up to 4) with different styles and views. The Dashboards can then be customized using the HA Dashboard tools or used as-is.\n\n{db_icons}\n\n{header_msg}",
         "data": {
+          "form_action": "Action",
           "selected_dashboard": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ICLOUD3 DASHBOARDS",
           "main_view_style": "MAIN VIEW STYLE FORMAT - How the device information should be presented",
-          "main_view_devices": "MAIN VIEW DEVICES - Devices to display on the Main view screen",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "main_view_devices": "MAIN VIEW DEVICES - Devices to display on the Main view screen"
         },
         "data_description": {
           "selected_dashboard": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ \nCREATE/UPDATE DASHBOARD SPECIFICATIONS - The Style Format & Devices fields below specify how the Dashboard's Main View screen will be constructed when a dashboard is created or updated"
@@ -746,7 +732,7 @@
         "data": {
           "log_level": "LOG LEVEL - The type of messages (Informational, Debug or RawData from the Apple Account)",
           "log_level_devices": "RAWDATA LOG DEVICE FILTER - Write iCloud Device Data to the log file for only these devices",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+          "form_action": "Action"
         },
         "data_description": {
         }
@@ -765,8 +751,8 @@
           "deleted_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  DELETED SENSORS - Sensors that belong to an iCloud3 device that are no longer used",
           "suffix_error": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  SUFFIX ERRORS > Sensors that have been duplicated by HA and are now Unavailable (`[sensor]` & `[sensor_2]`)",
           "other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯  OTHER SENSORS > Sensors that were not in the other groups",
-          "check_all": " ",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "form_action": "Action",
+          "check_all": " "
         }
       },
 
@@ -775,6 +761,7 @@
         "title": "Sensors",
         "description": "Many sensors are used to display tracking results and other information for a device.\n\n This screen is used to select the sensors that should be created.",
         "data": {
+          "form_action": "Action",
           "monitored_devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MONITORED DEVICE SENSORS - Select the type of sensors to create for a Monitored Device",
           "device": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DEVICE SENSORS - Device status and information",
           "tracking_update": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ LOCATION UPDATE SENSORS - Device location update times",
@@ -784,8 +771,7 @@
           "tracking_other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER TRACKING SENSORS - Not normally used but available",
           "zone": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ZONE SENSORS - Device zone status and information",
           "other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER SENSORS - Sensors not in the above areas",
-          "excluded_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "excluded_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts"
         }
       },
 
@@ -797,7 +783,7 @@
           "excluded_sensors": "EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts",
           "filter": "FILTER DISPLAYED SENSORS - Select the Sensors that should be displayed",
           "filtered_sensors": "ICLOUD3 SENSORS - A list of Sensors that are created when iCloud3 starts",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "form_action": "Action"
         }
       },
 
@@ -806,11 +792,11 @@
         "title": "Display Location Time Zone when Away",
         "description": "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location.\n\nThis screen lets you display time events using your current location's time zone.",
         "data": {
+          "form_action": "Action",
           "away_time_zone_1_devices": "Devices in Away Time Zone #1",
           "away_time_zone_1_offset": "Time & Time Zone Adjustment at Current Location #1",
           "away_time_zone_2_devices": "Devices in Away Time Zone #2",
-          "away_time_zone_2_offset": "Time & Time Zone Adjustment at Current Location #2",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "away_time_zone_2_offset": "Time & Time Zone Adjustment at Current Location #2"
         },
         "data_description": {
           "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
@@ -823,6 +809,7 @@
         "title": "Tracking Parameters",
         "description": "Many parameters are used when tracking a device and displaying the results. These include how poor GPS Accuracy should be handled, various polling interval values and zone distances used to set the time to locate the device. They are customized on this screen.",
         "data": {
+          "form_action": "Action",
           "data_source": "GPS LOCATION AND ZONE TRIGGER DATA SOURCES ",
           "discard_poor_gps_inzone": "DISCARD POOR RESULTS",
           "gps_accuracy_threshold": "GPS ACCURACY THRESHOLD",
@@ -834,8 +821,7 @@
           "mobapp_alive_interval": "REQUEST MOBILE APP LOCATION INTERVAL",
           "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
           "offline_interval": "DEVICE OFFLINE INTERVAL",
-          "travel_time_factor": "TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "travel_time_factor": "TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER"
         },
         "data_description": {
           "data_source": "Source of Location data and Zone Enter/Exit triggers used to track iCloud3 devices",
@@ -858,6 +844,7 @@
         "title": "DISPLAY SETTINGS & OTHER PARAMETERS",
         "description": "This screen specifies how tracking results and other information is displayed in the Event Log, sensors and device_tracker entities",
         "data": {
+          "form_action": "Action",
           "display_zone_format": "EVENT LOG ZONE DISPLAY NAME - How the Zone name is displayed in sensors and the Event Log",
           "device_tracker_state_source": "DEVICE TRACKER STATE VALUE - How the device's device_tracker entity state value is determined",
           "time_format": "TIME FORMAT - How time fields are displayed in sensors and in the Event Log",
@@ -867,8 +854,7 @@
           "evlog_header": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EVENT LOG SYSTEM OVERRIDES",
           "picture_www_dirs": "PICTURE DIRECTORY FILTER - Select the directories containingg Device image files (.png, .jpg)",
           "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
-          "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen"
         },
         "data_description": {
           "picture_www_dirs": "iCloud3 scans the /www for all picture files (.png, .jpg) to build a table for selecting the picture for a device. The picture can be hard to find if you have many image files in many directories. Specify the directories with your device image files here",
@@ -893,7 +879,7 @@
         "data": {
           "text_from": "ORIGINAL TEXT - Text to be replaced (example: gary_real_email@gmail.com)",
           "text_to": "DISPLAYED TEXT- Text to be displayed (display:  gary@email.com)",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "form_action": "Action"
         },
         "data_description": {
         }
@@ -904,6 +890,7 @@
         "title": "inZone Parameters and Default Intervals",
         "description": "An inZone interval is the time between location requests when the Device is in a zone.\n\n This screen is used to set the default values for different types of devices. This value is assigned to a device when it is added.\n\nNote: The inZone Interval can be set to a different value on the Update Device screen for each device.\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
         "data": {
+          "form_action": "Action",
           "iphone": "iPhones (default=120 min)",
           "watch": "Apple Watches (default=15 min)",
           "watch_wifi": "Apple Watches with WiFi (default=15 min)",
@@ -912,8 +899,7 @@
           "mac": "Apple Macs (default=120 min)",
           "airpods": "AirPods (AirPods are not tracked)(default=120 min)",
           "no_mobapp": "Mobile App is not installed on the tracked device (default=15 min)",
-          "other": "Any other type of device being tracked (default=120 min)",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯w⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "other": "Any other type of device being tracked (default=120 min)"
         },
         "data_description": {
         }
@@ -923,6 +909,7 @@
       "waze_main": {
         "title": "Waze - Route Service Travel Time/Distance",
         "data": {
+          "form_action": "Action",
           "waze_used": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ WAZE ROUTE SERVICE",
           "waze_region": "ROUTE SERVER LOCATION - Location of the Waze Route Server for your area",
           "waze_realtime": "USE REAL TIME DATA - Waze should consider traffic delays when determining travel time",
@@ -930,8 +917,7 @@
           "waze_max_distance": "WAZE MAXIMUM DISTANCE",
           "waze_history_database_used": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ WAZE HISTORY DATABASE",
           "waze_history_track_direction": "GENERAL TRAVEL DIRECTION - Used to display 'Map Trace Lines' between saved locations",
-          "waze_history_max_distance": "HISTORY MAX DISTANCE",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "waze_history_max_distance": "HISTORY MAX DISTANCE"
         },
         "data_description": {
           "waze_min_distance": "Use the Waze Route Service when the zone distance is greater than this value",
@@ -945,6 +931,7 @@
         "title": "Special Zones",
         "description": "This screen is used to configure:\n&nbsp;&nbsp;• Stationary Zones - Created when the device is in the same location for a short\n&nbsp;&nbsp;&nbsp;&nbsp;period of time\n&nbsp;&nbsp;• Enter Zone Delay Time - Delay processing a Zone Enter Trigger\n&nbsp;&nbsp;• A temporary “home” zone at another location",
         "data": {
+          "form_action": "Action",
           "stat_zone_header":     "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ STATIONARY ZONE",
           "stat_zone_fname":      "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
           "stat_zone_still_time": "NO MOVEMENT TIME",
@@ -953,8 +940,7 @@
           "passthru_zone_time":   "ENTER ZONE DELAY TIME",
           "track_from_base_zone_used": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ PRIMARY TRACK-FROM-HOME ZONE OVERRIDE",
           "track_from_base_zone": "TRACK FROM ZONE - Use this zone instead of Home for tracking results for all devices. Global setting",
-          "track_from_home_zone": "TRACK FROM HOME ZONE - Keep tracking from the Home zone when the Primary Track From Zone is not Home",
-          "action_items":         "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "track_from_home_zone": "TRACK FROM HOME ZONE - Keep tracking from the Home zone when the Primary Track From Zone is not Home"
         },
         "data_description": {
           "passthru_zone_time": "Delay processing an Enter Zone Trigger that you may be driving through and not actually entering",
@@ -971,7 +957,7 @@
         "data": {
           "analytics_enabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
           "analytics_comment": "COMMENT - How are you using iCloud3 to track your devices?",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "form_action": "Action"
         },
         "data_description": {
           "analytics_enabled": "Default interval if the Mobile App is not used for location monitoring and zone enter/exit triggers",
@@ -986,7 +972,7 @@
         "data": {
           "analytics_enabled": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
           "report_selected": "REPORT - Generate this report from the iCloud3 Analytics Data",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "form_action": "Action"
         },
         "data_description": {
           "report_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ {report}"
@@ -1153,80 +1139,136 @@
           }
         },
         "error": {
-          "unknown_action": "Selected Action could not be identified",
-          "update_aborted": "Update aborted, an error was detected in one of the data fields",
-          "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+          "action_not_available": "Not available, iCloud3 can't connect to the internet",
+          "not_available": "This Action is not available at this time",
+          "update_aborted": "Not saved. Correct the fields marked below.",
+          "conf_updated": "✓ Saved",
           "conf_updated_item": "✓ Saved: {saved_item}",
+          "conf_reloaded": "The iCloud3 configuration file was reloaded",
+          "apple_acct_logging_into": "Signing in to the Apple Account",
 
-          "apple_acct_logged_into": "Logged into the Apple Account",
-          "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
+          "apple_acct_logged_into": "Logged in to the Apple Account",
+          "apple_acct_already_logged_into": "Already signed in to the Apple Account",
+          "apple_acct_locate_all_reqd": "Keep this on: devices of other Family Sharing members are tracked with this Apple Account.",
           "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
-          "apple_acct_inupw_valid": "❌ Invalid Username or Password",
-          "apple_acct_invalid_format": "❌ Invalid Apple Account, it must be an email address or phone number",
-          "apple_acct_login_error_503": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
-          "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
-          "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
-          "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
-          "apple_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into.",
-          "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
+          "apple_acct_inupw_valid": "⚠︎ Invalid Username or Password",
+          "apple_acct_invalid_format": "⚠︎ Invalid Apple Account, it must be an email address or phone number",
+          "apple_acct_login_error_503": "Apple refused the sign-in (503). Close Configure (✕), wait a few minutes, then try again.",
+          "apple_acct_login_error_302": "⚠︎ Sign-in failed, the Apple server refused the connection (error 302)",
+          "apple_acct_login_error_302_cn": "⚠︎ Apple Server Error 302, Should be China but USA was selected",
+          "apple_acct_login_error_302_usa": "⚠︎ Apple Server Error 302, Should be USA but China was selected",
+          "apple_acct_login_error_srp_401": "⚠︎ Python SRP library credentials error. The Python module that creates the Secure Remote Password hash calculated an incorrect value for a valid username and password. Try changing the password to see if the Apple Account can be signed in to.",
+          "apple_acct_login_error_other": "⚠︎ Sign-in error, another error or the Apple server is not available",
 
-          "apple_acct_dup_apple_id_error": "Error: This Apple Account is already being used and cannot be added again",
-          "apple_acct_no_changes": "No changes were made to the Apple Account, it is already logged into",
+          "apple_acct_dup_apple_id_error": "⚠︎ This Apple Account is already set up",
+          "apple_acct_no_changes": "Nothing to save. This Apple Account is already signed in.",
           "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
-          "apple_acct_apple_id_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
-          "apple_acct_locked": "❌ Login Failed, Unknown Apple Account or the Account is Locked",
-          "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
-          "apple_acct_updated_login_error": "Apple Acct info was saved, An error occurred logging into the Apple Acct",
-          "apple_acct_not_set_up": "No Apple Accounts are set up. Add them on the `APPLE ACCOUNTS` screen (it is selected). Then click NEXT",
-          "import_aa_no_devices_avail": "All Apple Account devices have been configured",
+          "apple_acct_apple_id_inuse_error": "This Apple Account is already set up. Delete the other one on the Apple Accounts screen first.",
+          "apple_acct_not_available": "⚠︎ Sign-in failed, the Apple Account is not available",
+          "apple_acct_locked": "⚠︎ Sign-in failed, unknown Apple Account or the account is locked",
+          "apple_acct_not_logged_into": "Not signed in to this Apple Account. Check the email or phone and password, then save.",
+          "apple_acct_updated_login_error": "Saved, but signing in to the Apple Account failed",
+          "apple_acct_data_source_warning": "Apple Accounts are set up but aren't used as a data source (Tracking parameters → Data sources)",
+          "apple_acct_not_set_up": "No Apple Account is set up yet. Add one on Main menu ▸ Apple Accounts.",
+          "apple_acct_no_data_source": "⚠︎ No data source is selected (Apple Account or Mobile App)",
+          "import_aa_no_devices_avail": "All devices in the Apple Accounts are already set up.",
+          "ic3_icloud_same_name": "The entity ID and the name on the device (Settings → General → About) can't be exactly the same",
+          "mobile_app_error": "⚠︎ The Mobile App integration isn't installed, the Mobile App is not used as a data source",
 
-          "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
-          "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
-          "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Authenticate Apple Account Sign-in)",
+          "password_asp_invalid": "App-specific passwords don't work here. Enter your Apple Account password.",
+          "apple_acct_terms_update_accepted": "✓ Apple's new Terms of Use were accepted",
+          "apple_acct_terms_of_use_update_needed": "⚠︎ Apple changed its Terms of Use. Accept them to resume location updates.",
 
           "auth_code_needed": "An Apple Account needs to be Authenticated",
-          "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
-          "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-          "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
-          "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
+          "auth_code_requested": "⚠︎ Waiting for the code ({auth_method}). Enter it, then select ✓ Send the code to Apple",
+          "auth_code_accepted": "✓ The Authentication Code was accepted. Reauthentication is complete",
+          "auth_code_complete": "✓ The Authentication Code process is complete",
+          "auth_code_cancelled": "The Apple Account authentication was cancelled",
+          "auth_code_another_auth_needed": "⚠︎ Another Apple Account needs to be authenticated",
+          "auth_code_invalid": "⚠︎ The Authentication Code was not correct. Reenter or request a new code",
+          "auth_code_invalid_text": "⚠︎ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
+          "auth_code_send_error": "⚠︎ Failed to send the Authentication Code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
 
-          "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
-          "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
-          "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
-          "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
+          "hwkey_waiting_for_keypress": "⚠︎ Select ✓ Authenticate with the security key, then touch the key",
+          "hwkey_auth_succeeded": "✓ Security Key authentication succeeded. Reauthentication is complete",
+          "hwkey_names_refreshed": "✓ Security Key names refreshed from Apple",
+          "hwkey_names_none": "⚠︎ No Security Keys were found in the Apple Account",
+          "hwkey_auth_not_avail": "⚠︎ The Security Key is not inserted into the HA Server, insert and retry",
+          "hwkey_auth_failed": "⚠︎ Security Key authentication failed. Error: {info_msg}",
 
           "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
           "used_by_other_integration": "This name is already used by Integration {info_msg}",
+          "already_assigned": "This selection is already assigned to another device",
+          "mobapp_search_error": "⚠︎ No Mobile App device starting with the iCloud3 or Apple device name was found. Select None or the device to use",
+          "disabled_in_ha": "⚠︎ This device is disabled in HA. Enable it in HA before it can be tracked. Tracking mode changes are discarded",
+          "inactive_most_devices": "Most devices are inactive and are not located or tracked",
+          "inactive_few_devices": "A few devices are inactive and are not located or tracked",
+          "away_time_zone_dup_devices_1": "A device is also selected in the other time zone",
+          "away_time_zone_dup_devices_2": "A device is also selected in the other time zone",
+          "waze_server_error_us": "The correct server for your location is: United States, Canada",
+          "waze_server_error_il": "The correct server for your location is: Israel",
+          "waze_server_error_row": "The correct server for your location is: Rest of the World",
+          "analytics_sent": "The iCloud3 Analytics data was sent",
+          "analytics_not_sent": "The iCloud3 Analytics data could not be sent. See the iCloud3 log file for more information",
+          "analytics_enable_needed": "To remove this message, open iCloud3 Analytics, then turn sending the data on or leave it off.",
 
-          "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-          "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED. TRACKING MODE CHANGES WILL ⛔ BE DISCARDED",
-          "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
-          "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Import Apple Account Devices` or `Add a New Device`, then select `Submit` to display the screen to add iCloud3 device_tracker entities.",
+          "required_field": "Required",
+          "review_filledin_fields": "Review the 'Filled in' fields",
+          "not_numeric": "Enter a number",
+          "no_data_source": "Select an Apple Account device or a Mobile App device, or set the tracking mode to Inactive.",
+          "no_data_source_set_inactive": "Set the tracking mode to Inactive when there is no data source",
+          "no_add_entities_device_tracker_fct": "The HA component that adds devices isn't available, restart HA",
 
-          "required_field": "This parameter must be specified",
-          "not_numeric": "❌ The value entered is not numeric",
-          "no_data_source": "The Apple Acct or Mobile App device is required when in Tracking Mode is not Inactive",
-          "no_data_source_set_inactive": "Set the Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
+          "unknown_value": "Check the fields marked below.",
+          "invalid_selection": "A header or invalid item was selected, the previous value was restored",
+          "unknown_devicename": "The device wasn't found in the Apple Accounts or the Mobile App devices",
+          "unknown_icloud": "The device wasn't found in the Apple Accounts",
+          "unknown_mobapp": "The device wasn't found in the Mobile App devices",
+          "unknown_picture": "The picture file wasn't found in the /www directories",
+          "unknown_apple_acct": "No Apple Account is selected for this Apple device",
+          "unknown_icloud_mobapp": "Check the Apple Account and Mobile App devices (not found or invalid)",
+          "unknown_icloud_mobapp_picture": "Check the Apple Account device, Mobile App device and picture (not found or invalid)",
+          "unknown_icloud_picture": "Check the Apple Account device and picture (not found or invalid)",
 
-          "unknown_value": "One of the selection parameters needs to be reviewed",
-          "invalid_selection": "An invalid or header item was selected, reset to original value",
-          "unknown_icloud": "The configured device was not found in any of the Apple Accounts",
-          "unknown_mobapp": "The configured device was not found in the Mobile App devices list",
-          "unknown_picture": "The configured picture file was not found in `config/www/...` directories",
-          "unknown_apple_acct": "Apple Account is not selected for the assigned iCloud device",
+          "internet_error": "⚠︎ iCloud3 can't connect to the internet",
+          "internet_error_no_change": "⚠︎ iCloud3 can't connect to the internet, the actions that need the Apple Account aren't available",
+          "apple_acct_connection_err": "⚠︎ The internet works but iCloud3 can't connect to apple.com, the actions that need the Apple Account aren't available",
+          "tfz_selection_invalid": "Select a zone that is tracked from",
+          "time_factor_invalid_range": "The travel time factor must be between 0.1 and 0.9",
 
-          "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
-          "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
-
-          "fixed_interval_invalid_range": "The 'Fixed Interval' must be 0 (not used) or >= 3 (> 5 recommended)",
+          "fixed_interval_invalid_range": "The fixed interval must be 0 (not used) or at least 3 min (5 or more recommended)",
+          "display_text_as_no_gtsign": "The '>' between the ActualText and DisplayAsText is missing",
+          "display_text_as_no_actual": "The 'ActualText' is not specified",
+          "display_text_as_no_display_as": "The 'DisplayAsText' is not specified",
+          "not_found_directory": "The directory was not found",
+          "not_found_file": "The file was not found",
 
           "action_completed": "✓ Done",
           "action_cancelled": "Cancelled, nothing was changed",
+          "restart_ha": "Home Assistant needs to be restarted to continue",
+          "excluded_sensors_ha_restart": "✓ Saved. The excluded sensors are not created after the next HA restart",
+          "fix_entity_name_complete": "The sensor entity names were corrected",
+          "fix_entity_name_not_needed": "No sensor entity name errors were found",
+          "dashboard_device_keyword_error": "The Dashboard wasn't updated, the device keyword isn't available",
+          "dashboard_created_initial": "✓ The first iCloud3 Dashboard was created",
+          "dashboard_created": "✓ The Dashboard was created",
+          "dashboard_updated": "✓ The Dashboard was updated",
+          "dashboard_name_used": "This name is used by another Dashboard",
+          "dashboard_main_2_devices": "Only 2 devices can be on the main view",
+          "dashboard_error": "⚠︎ An error occurred updating the Dashboard",
+          "dashboard_json_error": "⚠︎ The Dashboard file (lovelace.dashboard…) wasn't created, the Dashboard code isn't valid JSON",
+          "apple_acct_already_authenticated": "No authentication needed. This Apple Account's sign-in is valid.",
           "conf_updated_restart": "✓ Saved · close Configure (✕) to apply",
           "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
+          "section_error_1": "{section_error_1}",
+          "section_error_2": "{section_error_2}",
+          "section_error_3": "{section_error_3}",
+          "section_error_4": "{section_error_4}",
+          "internet_error_device": "No Internet connection. Changes that need the Apple Account can't be saved now.",
           "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
           "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+          "zone_not_selectable": "This zone can't be selected. Select one of the zones iCloud3 uses, Stationary zones are not available.",
           "action_failed": "⚠︎ The action failed, see the iCloud3 log file"
         },
         "abort": {
@@ -1367,68 +1409,124 @@
           }
         },
         "error": {
-          "unknown_action": "Selected Action could not be identified",
-          "update_aborted": "Update aborted, an error was detected in one of the data fields",
-          "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+          "action_not_available": "Not available, iCloud3 can't connect to the internet",
+          "not_available": "This Action is not available at this time",
+          "update_aborted": "Not saved. Correct the fields marked below.",
+          "conf_updated": "✓ Saved",
           "conf_updated_item": "✓ Saved: {saved_item}",
-          "apple_acct_logged_into": "Logged into the Apple Account",
-          "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
+          "conf_reloaded": "The iCloud3 configuration file was reloaded",
+          "apple_acct_logging_into": "Signing in to the Apple Account",
+          "apple_acct_logged_into": "Logged in to the Apple Account",
+          "apple_acct_already_logged_into": "Already signed in to the Apple Account",
+          "apple_acct_locate_all_reqd": "Keep this on: devices of other Family Sharing members are tracked with this Apple Account.",
           "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
-          "apple_acct_inupw_valid": "❌ Invalid Username or Password",
-          "apple_acct_invalid_format": "❌ Invalid Apple Account, it must be an email address or phone number",
-          "apple_acct_login_error_503": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
-          "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
-          "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
-          "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
-          "apple_acct_login_error_srp_401": "❌ Python SRP Library Credentials Error. The Python module that creates the Secure Remote Password hash key has calculated an incorrect value for a valid Username/Password. Try changing the Password to see if the Apple Acct can be logged into.",
-          "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
-          "apple_acct_dup_apple_id_error": "Error: This Apple Account is already being used and cannot be added again",
-          "apple_acct_no_changes": "No changes were made to the Apple Account, it is already logged into",
+          "apple_acct_inupw_valid": "⚠︎ Invalid Username or Password",
+          "apple_acct_invalid_format": "⚠︎ Invalid Apple Account, it must be an email address or phone number",
+          "apple_acct_login_error_503": "Apple refused the sign-in (503). Close Configure (✕), wait a few minutes, then try again.",
+          "apple_acct_login_error_302": "⚠︎ Sign-in failed, the Apple server refused the connection (error 302)",
+          "apple_acct_login_error_302_cn": "⚠︎ Apple Server Error 302, Should be China but USA was selected",
+          "apple_acct_login_error_302_usa": "⚠︎ Apple Server Error 302, Should be USA but China was selected",
+          "apple_acct_login_error_srp_401": "⚠︎ Python SRP library credentials error. The Python module that creates the Secure Remote Password hash calculated an incorrect value for a valid username and password. Try changing the password to see if the Apple Account can be signed in to.",
+          "apple_acct_login_error_other": "⚠︎ Sign-in error, another error or the Apple server is not available",
+          "apple_acct_dup_apple_id_error": "⚠︎ This Apple Account is already set up",
+          "apple_acct_no_changes": "Nothing to save. This Apple Account is already signed in.",
           "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
-          "apple_acct_apple_id_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
-          "apple_acct_locked": "❌ Login Failed, Unknown Apple Account or the Account is Locked",
-          "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
-          "apple_acct_updated_login_error": "Apple Acct info was saved, An error occurred logging into the Apple Acct",
-          "apple_acct_not_set_up": "No Apple Accounts are set up. Add them on the `APPLE ACCOUNTS` screen (it is selected). Then click NEXT",
-          "import_aa_no_devices_avail": "All Apple Account devices have been configured",
-          "password_asp_invalid": "Apple does not support App Specific Passwords in WebAuth applications",
-          "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
-          "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Authenticate Apple Account Sign-in)",
+          "apple_acct_apple_id_inuse_error": "This Apple Account is already set up. Delete the other one on the Apple Accounts screen first.",
+          "apple_acct_not_available": "⚠︎ Sign-in failed, the Apple Account is not available",
+          "apple_acct_locked": "⚠︎ Sign-in failed, unknown Apple Account or the account is locked",
+          "apple_acct_not_logged_into": "Not signed in to this Apple Account. Check the email or phone and password, then save.",
+          "apple_acct_updated_login_error": "Saved, but signing in to the Apple Account failed",
+          "apple_acct_data_source_warning": "Apple Accounts are set up but aren't used as a data source (Tracking parameters → Data sources)",
+          "apple_acct_not_set_up": "No Apple Account is set up yet. Add one on Main menu ▸ Apple Accounts.",
+          "apple_acct_no_data_source": "⚠︎ No data source is selected (Apple Account or Mobile App)",
+          "import_aa_no_devices_avail": "All devices in the Apple Accounts are already set up.",
+          "ic3_icloud_same_name": "The entity ID and the name on the device (Settings → General → About) can't be exactly the same",
+          "mobile_app_error": "⚠︎ The Mobile App integration isn't installed, the Mobile App is not used as a data source",
+          "password_asp_invalid": "App-specific passwords don't work here. Enter your Apple Account password.",
+          "apple_acct_terms_update_accepted": "✓ Apple's new Terms of Use were accepted",
+          "apple_acct_terms_of_use_update_needed": "⚠︎ Apple changed its Terms of Use. Accept them to resume location updates.",
           "auth_code_needed": "An Apple Account needs to be Authenticated",
-          "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
-          "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-          "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
-          "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
+          "auth_code_requested": "⚠︎ Waiting for the code ({auth_method}). Enter it, then select ✓ Send the code to Apple",
+          "auth_code_accepted": "✓ The Authentication Code was accepted. Reauthentication is complete",
+          "auth_code_complete": "✓ The Authentication Code process is complete",
+          "auth_code_cancelled": "The Apple Account authentication was cancelled",
+          "auth_code_another_auth_needed": "⚠︎ Another Apple Account needs to be authenticated",
+          "auth_code_invalid": "⚠︎ The Authentication Code was not correct. Reenter or request a new code",
+          "auth_code_invalid_text": "⚠︎ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
+          "auth_code_send_error": "⚠︎ Failed to send the Authentication Code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
-          "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
-          "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
-          "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
-          "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
+          "hwkey_waiting_for_keypress": "⚠︎ Select ✓ Authenticate with the security key, then touch the key",
+          "hwkey_auth_succeeded": "✓ Security Key authentication succeeded. Reauthentication is complete",
+          "hwkey_names_refreshed": "✓ Security Key names refreshed from Apple",
+          "hwkey_names_none": "⚠︎ No Security Keys were found in the Apple Account",
+          "hwkey_auth_not_avail": "⚠︎ The Security Key is not inserted into the HA Server, insert and retry",
+          "hwkey_auth_failed": "⚠︎ Security Key authentication failed. Error: {info_msg}",
           "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
           "used_by_other_integration": "This name is already used by Integration {info_msg}",
-          "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-          "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED. TRACKING MODE CHANGES WILL ⛔ BE DISCARDED",
-          "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
-          "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Import Apple Account Devices` or `Add a New Device`, then select `Submit` to display the screen to add iCloud3 device_tracker entities.",
-          "required_field": "This parameter must be specified",
-          "not_numeric": "❌ The value entered is not numeric",
-          "no_data_source": "The Apple Acct or Mobile App device is required when in Tracking Mode is not Inactive",
-          "no_data_source_set_inactive": "Set the Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
-          "unknown_value": "One of the selection parameters needs to be reviewed",
-          "invalid_selection": "An invalid or header item was selected, reset to original value",
-          "unknown_icloud": "The configured device was not found in any of the Apple Accounts",
-          "unknown_mobapp": "The configured device was not found in the Mobile App devices list",
-          "unknown_picture": "The configured picture file was not found in `config/www/...` directories",
-          "unknown_apple_acct": "Apple Account is not selected for the assigned iCloud device",
-          "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
-          "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
-          "fixed_interval_invalid_range": "The 'Fixed Interval' must be 0 (not used) or >= 3 (> 5 recommended)",
+          "already_assigned": "This selection is already assigned to another device",
+          "mobapp_search_error": "⚠︎ No Mobile App device starting with the iCloud3 or Apple device name was found. Select None or the device to use",
+          "disabled_in_ha": "⚠︎ This device is disabled in HA. Enable it in HA before it can be tracked. Tracking mode changes are discarded",
+          "inactive_most_devices": "Most devices are inactive and are not located or tracked",
+          "inactive_few_devices": "A few devices are inactive and are not located or tracked",
+          "away_time_zone_dup_devices_1": "A device is also selected in the other time zone",
+          "away_time_zone_dup_devices_2": "A device is also selected in the other time zone",
+          "waze_server_error_us": "The correct server for your location is: United States, Canada",
+          "waze_server_error_il": "The correct server for your location is: Israel",
+          "waze_server_error_row": "The correct server for your location is: Rest of the World",
+          "analytics_sent": "The iCloud3 Analytics data was sent",
+          "analytics_not_sent": "The iCloud3 Analytics data could not be sent. See the iCloud3 log file for more information",
+          "analytics_enable_needed": "To remove this message, open iCloud3 Analytics, then turn sending the data on or leave it off.",
+          "required_field": "Required",
+          "review_filledin_fields": "Review the 'Filled in' fields",
+          "not_numeric": "Enter a number",
+          "no_data_source": "Select an Apple Account device or a Mobile App device, or set the tracking mode to Inactive.",
+          "no_data_source_set_inactive": "Set the tracking mode to Inactive when there is no data source",
+          "no_add_entities_device_tracker_fct": "The HA component that adds devices isn't available, restart HA",
+          "unknown_value": "Check the fields marked below.",
+          "invalid_selection": "A header or invalid item was selected, the previous value was restored",
+          "unknown_devicename": "The device wasn't found in the Apple Accounts or the Mobile App devices",
+          "unknown_icloud": "The device wasn't found in the Apple Accounts",
+          "unknown_mobapp": "The device wasn't found in the Mobile App devices",
+          "unknown_picture": "The picture file wasn't found in the /www directories",
+          "unknown_apple_acct": "No Apple Account is selected for this Apple device",
+          "unknown_icloud_mobapp": "Check the Apple Account and Mobile App devices (not found or invalid)",
+          "unknown_icloud_mobapp_picture": "Check the Apple Account device, Mobile App device and picture (not found or invalid)",
+          "unknown_icloud_picture": "Check the Apple Account device and picture (not found or invalid)",
+          "internet_error": "⚠︎ iCloud3 can't connect to the internet",
+          "internet_error_no_change": "⚠︎ iCloud3 can't connect to the internet, the actions that need the Apple Account aren't available",
+          "apple_acct_connection_err": "⚠︎ The internet works but iCloud3 can't connect to apple.com, the actions that need the Apple Account aren't available",
+          "tfz_selection_invalid": "Select a zone that is tracked from",
+          "time_factor_invalid_range": "The travel time factor must be between 0.1 and 0.9",
+          "fixed_interval_invalid_range": "The fixed interval must be 0 (not used) or at least 3 min (5 or more recommended)",
+          "display_text_as_no_gtsign": "The '>' between the ActualText and DisplayAsText is missing",
+          "display_text_as_no_actual": "The 'ActualText' is not specified",
+          "display_text_as_no_display_as": "The 'DisplayAsText' is not specified",
+          "not_found_directory": "The directory was not found",
+          "not_found_file": "The file was not found",
           "action_completed": "✓ Done",
           "action_cancelled": "Cancelled, nothing was changed",
+          "restart_ha": "Home Assistant needs to be restarted to continue",
+          "excluded_sensors_ha_restart": "✓ Saved. The excluded sensors are not created after the next HA restart",
+          "fix_entity_name_complete": "The sensor entity names were corrected",
+          "fix_entity_name_not_needed": "No sensor entity name errors were found",
+          "dashboard_device_keyword_error": "The Dashboard wasn't updated, the device keyword isn't available",
+          "dashboard_created_initial": "✓ The first iCloud3 Dashboard was created",
+          "dashboard_created": "✓ The Dashboard was created",
+          "dashboard_updated": "✓ The Dashboard was updated",
+          "dashboard_name_used": "This name is used by another Dashboard",
+          "dashboard_main_2_devices": "Only 2 devices can be on the main view",
+          "dashboard_error": "⚠︎ An error occurred updating the Dashboard",
+          "dashboard_json_error": "⚠︎ The Dashboard file (lovelace.dashboard…) wasn't created, the Dashboard code isn't valid JSON",
           "conf_updated_restart": "✓ Saved · close Configure (✕) to apply",
           "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
+          "section_error_1": "{section_error_1}",
+          "section_error_2": "{section_error_2}",
+          "section_error_3": "{section_error_3}",
+          "section_error_4": "{section_error_4}",
+          "internet_error_device": "No Internet connection. Changes that need the Apple Account can't be saved now.",
           "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
-          "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account"
+          "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+          "auth_code_request_error": "⚠︎ The code could not be requested. Check the HA log, then try again."
         },
         "abort": {
           "fix_action_not_available": "iCloud3 can not make this change right now. It may still be starting. Try again after iCloud3 has finished starting.",
@@ -1612,6 +1710,32 @@
   "selector": {
     "cf_text": {
       "options": {
+        "submit_save": "✓ Save and return to {dest}",
+        "submit_save_menu": "✓ Save and return to {dest}",
+        "submit_save_log_into_apple_acct": "✓ Save and sign in",
+        "submit_update_text_as": "✓ Update the text and return to {dest}",
+        "submit_update_sensor_list": "✓ Apply the filter, stay on this screen",
+        "submit_update_tracking_mode": "✓ Track the selected devices and return to {dest}",
+        "submit_run_report": "✓ Run the report, show it on this screen",
+        "submit_build_dashboard": "✓ Build the dashboard",
+        "submit_add_imported_apple_devices": "＋ Add the selected devices and return to {dest}",
+        "submit_delete_apple_acct": "✕ Delete the Apple Account and return to {dest}",
+        "submit_delete_device_sensors": "✕ Delete the selected devices and sensors, stay on this screen",
+        "back": "◀ Back to {dest}",
+        "back_discard": "◀ Discard changes and return to {dest}",
+        "back_delete_apple_acct": "◀ Keep the account and return to it",
+        "dest_menu": "Main menu",
+        "dest_menu_tracking": "Tracking & zones",
+        "dest_menu_display": "Display",
+        "dest_menu_sensors": "Sensors & dashboards",
+        "dest_menu_system": "iCloud3 system",
+        "dest_device_list": "Devices",
+        "dest_apple_accounts": "Apple Accounts",
+        "dest_tools": "Tools",
+        "dest_the_device": "the device",
+        "dest_add_device": "Add a device",
+        "dest_the_apple_acct": "the Apple Account",
+        "dest_text_list": "the text list",
         "saved_inzone_intervals": "Default intervals for new devices",
         "saved_tracking_parameters": "Tracking parameters",
         "saved_special_zones": "Special zones",
@@ -1626,12 +1750,19 @@
         "saved_log_level": "Log level",
         "saved_device_order": "Device order",
         "saved_tracking_modes": "Tracking modes",
+        "exclude_sensors_enter_filter": "No sensors are listed. Enter a filter, or `all` to list all {count} sensors.",
+        "exclude_sensors_none_found": "No sensors contain “{filter}”.",
+        "downloads_msg": "Release v{version} ({date}) · {downloads} downloads · {users} analytics users",
+        "downloads_beta_msg": "Beta v{version} ({date}) · {downloads} downloads",
         "beta_version_store_unknown": "HACS or the Marketplace",
         "beta_version_state_unknown": "unknown, the iCloud3 Pre-release switch wasn't found in HACS or the Marketplace",
         "beta_version_state_off": "off",
         "beta_version_state_on": "on",
+        "downloads_not_available": "The GitHub download counts are not available",
         "auth_terms_of_use_needed": "Terms of Use need accepting",
         "auth_needed": "Authentication needed",
+        "submit_save_repair": "✓ Save and finish the repair",
+        "back_exit_repair": "◀ Discard the changes and finish the repair",
         "status_apple_accts_one": "{cnt} Apple Account",
         "status_apple_accts_other": "{cnt} Apple Accounts",
         "status_tracked_one": "{cnt} device tracked",
@@ -1662,6 +1793,9 @@
         "confirm_delete_device": "Delete {device} ({devicename}) and its {sensors}?",
         "confirm_yes_delete_device": "✕ Yes, delete {device}",
         "confirm_no_delete_device": "◀ No, keep it",
+        "confirm_rebuild_dashboard": "Rebuild “{dashboard}”? Your changes to it in HA are replaced by a new version.",
+        "confirm_yes_rebuild_dashboard": "↻ Yes, rebuild it",
+        "confirm_no_rebuild_dashboard": "◀ No, keep my changes",
         "aa_status_503": "Sign-in failed, Apple refused the request (503)",
         "aa_status_login_failed": "Sign-in failed",
         "aa_status_login_failed_retrying": "Sign-in failed, retrying",
@@ -1669,15 +1803,131 @@
         "aa_status_not_logged_in": "Not signed in",
         "aa_devices_tracked_one": "{tracked} of {total} device tracked",
         "aa_devices_tracked_other": "{tracked} of {total} devices tracked",
+        "dev_status_monitored": "Monitored",
+        "dev_status_inactive": "Inactive",
+        "er_device": "device",
+        "er_sensors": "sensors",
+        "analytics_uuid": "HA installation ID",
+        "dashboard_all_devices": "All devices",
+        "dashboard_first_2_iphones": "First 2 iPhones",
+        "dashboard_built": "✓ Dashboard built: {dashboard}",
+        "dashboard_rebuilt": "✓ Dashboard updated: {dashboard}",
+        "action_select_all": "Select all items",
+        "action_show_full_sensor_lists": "Show the full sensor lists",
+        "action_show_short_sensor_lists": "Show the short sensor lists",
         "cnt_devices_one": "{cnt} device",
         "cnt_devices_other": "{cnt} devices",
+        "cnt_sensors_one": "{cnt} sensor",
+        "cnt_sensors_other": "{cnt} sensors",
         "changes_pending": "Changes are applied when you close Configure (✕).",
         "confirm_cleanup_active_devices": "The sensors of the tracked devices {devices} are deleted from HA and created again.{other_groups} Continue?",
         "confirm_yes_cleanup_active_devices": "✕ Yes, delete and create them again",
         "confirm_no_cleanup_active_devices": "◀ No, keep them",
         "cnt_apple_accts_one": "{cnt} Apple Account",
         "cnt_apple_accts_other": "{cnt} Apple Accounts",
+        "select_default_sensors": "Select the default sensors (review, then save)",
+        "action_save_excluded_sensors": "✓ Save and return to {dest}",
+        "exclude_sensors_none_excluded": "No sensors are excluded.",
         "confirm_cleanup_other_groups": "The items checked in the other groups are deleted too: {groups}."
+      }
+    },
+    "data_source": {
+      "options": {
+        "icloud_mobapp": "Apple Account and Mobile App (recommended)",
+        "icloud": "Apple Account only",
+        "mobapp": "Mobile App only"
+      }
+    },
+    "travel_time_factor": {
+      "options": {
+        "0_25": "¼ of the travel time, shortest (8 min away → next update in 2 min)",
+        "0_33": "⅓ of the travel time (8 min away → next update in 2 min 40 s)",
+        "0_5": "½ of the travel time, default (8 min away → next update in 4 min)",
+        "0_66": "⅔ of the travel time (8 min away → next update in 5 min 20 s)",
+        "0_75": "¾ of the travel time, longest (8 min away → next update in 6 min)"
+      }
+    },
+    "device_tracker_state_source": {
+      "options": {
+        "ic3_evlog": "iCloud3 zone, the zone name shown in the Event Log (recommended)",
+        "ic3_fname": "iCloud3 zone, the HA zone name",
+        "ha_gps": "HA zone, HA decides the zone from the GPS location (no Stationary zones)"
+      }
+    },
+    "unit_of_measurement": {
+      "options": {
+        "mi": "Imperial (mi, ft)",
+        "km": "Metric (km, m)"
+      }
+    },
+    "time_format": {
+      "options": {
+        "12-hour": "12-hour (9:05:30a, 4:40:15p)",
+        "24-hour": "24-hour (09:05:30, 16:40:15)"
+      }
+    },
+    "waze_server": {
+      "options": {
+        "us": "United States, Canada",
+        "il": "Israel",
+        "row": "Rest of the World"
+      }
+    },
+    "waze_history_track_direction": {
+      "options": {
+        "north_south": "North-south: you mostly travel north or south",
+        "east_west": "East-west: you mostly travel east or west"
+      }
+    },
+    "log_level": {
+      "options": {
+        "info": "Info: general information and Event Log messages",
+        "debug": "Debug: Info and the internal tracking details",
+        "debug-ha": "Debug (HA log): Debug, also written to home-assistant.log",
+        "debug-auto-reset": "Debug (auto reset): Debug, back to Info at midnight",
+        "rawdata": "Rawdata: Debug and the device data received from Apple (filtered)",
+        "rawdata-auto-reset": "Rawdata (auto reset): Rawdata, back to Info at midnight",
+        "unfiltered": "Rawdata (unfiltered): Debug and all of the device data received from Apple"
+      }
+    },
+    "dashboard_main_view_style": {
+      "options": {
+        "result-summary": "Result summary: arrival time, distance, travel time and battery",
+        "track-details": "Tracking details: all results of a location update"
+      }
+    },
+    "sensor": {
+      "options": {
+        "md_badge": "_badge · The zone name or the distance from Home",
+        "md_battery": "_battery, _battery_status · Battery level and status",
+        "md_location_sensors": "Location sensors · _name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update",
+        "name": "_name · The device name",
+        "badge": "_badge · The zone name or the distance from Home",
+        "battery": "_battery, _battery_status · Battery level (65%) and status (Charging, Low)",
+        "info": "_info · Status, alerts and errors of the location updates",
+        "interval": "_interval · Time between location requests",
+        "last_update": "_last_update · When the location was last updated",
+        "next_update": "_next_update · When the location will be updated next",
+        "last_located": "_last_located · When the device was last located",
+        "travel_time": "_travel_time · Waze travel time to Home or the closest track from zone",
+        "travel_time_min": "_travel_time_min · The travel time in minutes",
+        "travel_time_hhmm": "_travel_time_hhmm · The travel time in hours:minutes",
+        "arrival_time": "_arrival_time · Arrival time at Home from the Waze travel time",
+        "home_distance": "_home_distance · Distance to Home",
+        "zone_distance": "_zone_distance · Distance to Home or the closest track from zone",
+        "dir_of_travel": "_dir_of_travel · Direction of travel (Towards, AwayFrom, inZone)",
+        "moved_distance": "_moved_distance · Distance moved since the last location",
+        "trigger": "_trigger · What triggered the last location update",
+        "waze_distance": "_waze_distance · Waze distance from a track from zone",
+        "calc_distance": "_calc_distance · Straight line distance from a track from zone",
+        "zone_fname": "_zone_fname · HA zone name (Home, The Shores)",
+        "zone": "_zone · HA zone entity ID (home, the_shores)",
+        "zone_name": "_zone_name · Zone entity ID reformatted (Home, TheShores)",
+        "zone_datetime": "_zone_datetime · When the device entered the zone",
+        "last_zone": "_last_zone_[…] · The same sensors for the previous zone",
+        "gps_accuracy": "_gps_accuracy · GPS accuracy of the last location",
+        "vertical_accuracy": "_vertical_accuracy · Vertical (elevation) accuracy",
+        "altitude": "_altitude · Altitude (elevation)"
       }
     }
   }
