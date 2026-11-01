@@ -80,6 +80,8 @@ ADVANCED_SECTION = 'advanced_section'
 # Warning symbol displayed in the Configure screen text (text presentation, not the emoji)
 CF_ALERT = '⚠︎ '
 
+PICTURE_DIR_FILTER = 'setup_picture_dir_filter'
+
 #----------------------------------------------------------------------------------------
 
 
@@ -203,11 +205,6 @@ TOOL_ITEMS = [  'log_level', 'beta_version', 'cleanup_entity_registry', 'restart
                 'reset_data_source', 'reset_tracking', 'reset_general', 'del_apple_acct_cookies',
                 'del_icloud3_config_files', ]
 
-# Action List Items for all screens
-ACTION_LIST_ITEMS_SAVE_MENU = [
-        ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['menu']]
-
 APPLE_ACCOUNT_ACTIONS = [
         ACTION_LIST_OPTIONS['update_apple_acct'],
         ACTION_LIST_OPTIONS['authenticate_apple_acct'],
@@ -245,41 +242,12 @@ USER_AUTH_DASHBOARD = [
         ACTION_LIST_OPTIONS['refresh'],
         ACTION_LIST_OPTIONS['goto_previous']]
 
-DEVICE_LIST_ACTIONS = [
-        ACTION_LIST_OPTIONS['update_device'],
-        ACTION_LIST_OPTIONS['import_apple_devices'],
-        ACTION_LIST_OPTIONS['delete_device'],
-        ACTION_LIST_OPTIONS['change_device_order'],
-        ACTION_LIST_OPTIONS['menu']]
-DEVICE_UPDATE_ACTIONS = [
-        ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['rtn_device_list'],
-        ACTION_LIST_OPTIONS['menu']]
-DEVICE_UPDATE_REPAIR_ACTIONS = [            # Update Device screen opened from HA Repairs
-        ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['exit_repair']]
-DEVICE_ADD_ACTIONS = [
-        ACTION_LIST_OPTIONS['add_device'],
-        ACTION_LIST_OPTIONS['rtn_device_list']]
 IMPORT_APPLE_DEVICES = [
         ACTION_LIST_OPTIONS['add_imported_apple_devices'],
         ACTION_LIST_OPTIONS['rtn_device_list'],
         ACTION_LIST_OPTIONS['rtn_apple_accounts'],
         ACTION_LIST_OPTIONS['menu']]
-DEVICE_LIST_ACTIONS_NO_ADD = [
-        ACTION_LIST_OPTIONS['update_device'],
-        ACTION_LIST_OPTIONS['delete_device'],
-        ACTION_LIST_OPTIONS['change_device_order'],
-        ACTION_LIST_OPTIONS['menu']]
-CHANGE_DEVICE_ORDER = [
-        ACTION_LIST_OPTIONS['move_up'],
-        ACTION_LIST_OPTIONS['move_down'],
-        ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['rtn_device_list']
-]
 
-REVIEW_INACTIVE_DEVICES = [
-        ACTION_LIST_OPTIONS['update_tracking_mode']]
         # ACTION_LIST_OPTIONS['rtn_device_list']]
         # ACTION_LIST_OPTIONS['menu']]
         # ACTION_LIST_OPTIONS['exit'],
@@ -290,6 +258,14 @@ PRERELEASE_SWITCH_ERRORS = {
         'repo_not_installed': 'prerelease_repo_not_installed',
         'switch_not_found':   'prerelease_switch_not_found',
         'fix_action_failed':  'prerelease_switch_failed'}
+
+# The Devices, Change Device Order, Apple Accounts and Display Text As menus display a menu
+# row for each device, Apple Account and text replacement item. The rows are opened by the
+# async_step_device_list_device_[slot], async_step_change_device_order_device_[idx],
+# async_step_apple_accounts_acct_[slot] and async_step_display_text_as_item_[idx] functions
+DEVICE_LIST_PAGE_SIZE     = 6
+DEVICE_ORDER_MAX_CNT      = 100
+DISPLAY_TEXT_AS_ITEM_CNT  = 10
 
 #------------------------–--------------------------------------------------------------
 
@@ -324,6 +300,8 @@ PICTURE_NONE_KEY_TEXT = {
         'None': '📱 Icon - Display the Device’s Icon instead of a picture'
         }
 DASHBOARD_MAIN_VIEW_STYLE_OPTIONS = [RESULT_SUMMARY, TRACK_DETAILS]
+# The selector.cf_text.options log_zones_[key] texts
+LOG_ZONES_FILE_NAMES = ['name-zone', 'name-device', 'name-device-zone', 'name-zone-device']
 DASHBOARD_MAIN_VIEW_STYLES = {
         'result-summary': 'Result Summary',
         'track-details':  'Tracking Details',
@@ -344,11 +322,7 @@ AWAY_FROM_ZONE_OPTIONS = {
         'all': 'All are Away and in the same Time Zone',
 }
 DATA_SOURCE_OPTIONS = ['iCloud,MobApp', 'iCloud', 'MobApp']
-TRACKING_MODE_OPTIONS = {
-        'track':    'Track - Request Location and track the device',
-        'monitor':  'Monitor - Report location only when another tracked device is updated',
-        'inactive': 'INACTIVE - Device is inactive and will not be tracked'
-        }
+TRACKING_MODE_OPTIONS = ['track', 'monitor', 'inactive']
 UNIT_OF_MEASUREMENT_OPTIONS = ['mi', 'km']
 TIME_FORMAT_OPTIONS = ['12-hour', '24-hour']
 TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT = [.25, .33, .50, .66, .75]

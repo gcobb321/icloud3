@@ -280,8 +280,10 @@
       "section_error_2": "{section_error_2}",
       "section_error_3": "{section_error_3}",
       "section_error_4": "{section_error_4}",
+      "internet_error_device": "No Internet connection. Changes that need the Apple Account can't be saved now.",
       "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
       "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+      "deleted_item": "✓ Deleted: {item}",
       "deleted_device_sensors": "✓ Deleted {devices} and {sensors} from HA",
       "zone_not_selectable": "This zone can't be selected. Select one of the zones iCloud3 uses, Stationary zones are not available.",
       "action_failed": "⚠︎ The action failed, see the iCloud3 log file",
@@ -544,121 +546,244 @@
 
 
       "device_list": {
-        "title": "iCloud3 Devices",
-        "description": "This screen is used to select a device that needs to be updated, add a new device or delete a device that should no longer be tracked or monitored. Apple Devices can also be imported into iCloud3 and the order of devices on the Event Log can be changed.",
-        "data": {
-          "devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
-      },
-
-
-      "add_device": {
-        "title": "Add iCloud3 Device",
-        "data": {
-          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity for this device. (Example: gary_iphone)",
-          "fname": "FRIENDLY NAME - Displayed in HA entities and on the Event Log (Example: Gary-iPhone)",
-          "apple_devices_list_key": "APPLE ACCOUNT DEVICE - Apple Acct device providing location data",
-          "mobile_app_device": "MOBILE APP DEVICE - Mobile App device_tracker entity providing location data & zone triggers",
-          "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
-          "icon": "ICON - Icon to display when the Picture has not been selected (=None)",
-          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc.",
-          "tracking_mode": "TRACKING MODE - Location request method (Tracked, Monitored, Inactive)",
-          "mobapp": "MOBILE APP INSTALLED - HA Mobile App is installed on this device",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        "title": "Devices",
+        "description": "Select a device to change or delete it.\n\n{header_msg}",
+        "menu_options": {
+          "device_list_review_inactive": "⚠︎ Review inactive devices",
+          "device_list_next_page": "▶ More devices → {devices}",
+          "device_list_add": "＋ Add a new device",
+          "device_list_import": "＋ Import devices from the Apple Accounts",
+          "device_list_change_order": "⇅ Change the device order",
+          "device_list_back": "◀ Main menu"
         },
-        "data_description": {
-          "ic3_devicename": "The device_tracker entity you are assigning to the iCloud3 device you want to track."
+        "menu_option_descriptions": {
+          "device_list_device_0": "{device_0}",
+          "device_list_device_1": "{device_1}",
+          "device_list_device_2": "{device_2}",
+          "device_list_device_3": "{device_3}",
+          "device_list_device_4": "{device_4}",
+          "device_list_device_5": "{device_5}",
+          "device_list_review_inactive": "{inactive_cnt} of {device_cnt} devices are inactive and aren't located, change their tracking mode",
+          "device_list_next_page": "Show the devices on the next page",
+          "device_list_add": "Add a device that is tracked or monitored by iCloud3",
+          "device_list_import": "Create devices from the devices in the Apple Accounts",
+          "device_list_change_order": "The order the devices are tracked and shown in the Event Log"
         }
       },
 
 
       "import_apple_devices": {
-        "title": "Import Apple Devices into iCloud3",
-        "description": "Import the devices from all Apple Accounts that have not been configured. Then create an iCloud3 device for those that are selected. The devices can be customized on the `Update Devices` screen.",
+        "title": "Devices › Import devices",
+        "description": "Create devices from the Apple Account devices that are not set up yet. Change them later on the Devices screen.",
         "data": {
-          "imported_aadevices_track":    "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TRACKED DEVICES - iCloud3 device_tracker entities that will be actively tracked",
-          "imported_aadevices_monitor":  "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MONITORED DEVICES - iCloud3 device_tracker entities that will be monitored",
-          "imported_aadevices_inactive": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ INACTIVE DEVICES - Apple Devices and Accessories that can not be tracked",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "imported_aadevices_track": "Tracked devices",
+          "imported_aadevices_monitor": "Monitored devices",
+          "imported_aadevices_inactive": "Add as inactive",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS",
+          "form_action": "Action"
+        },
+        "data_description": {
+          "imported_aadevices_track": "iCloud3 requests their location on its own schedule",
+          "imported_aadevices_monitor": "iCloud3 uses the location received when a tracked device is located instead of requesting it",
+          "imported_aadevices_inactive": "Devices iCloud3 can't locate (AirPods, accessories). They're added but not tracked."
         }
       },
 
 
       "update_device": {
-        "title": "Update iCloud3 Device",
-        "description": "This screen lets you configure each of the devices that can be tracked or monitored using iCloud3",
+        "title": "{form_title}",
+        "description": "**{device_name}**{device_info}\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
         "data": {
-          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-          "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-          "apple_devices_list_key": "APPLE ACCOUNT DEVICE - Apple Account device providing location data",
-          "mobile_app_device": "MOBILE APP DEVICE - Mobile App device_tracker entity providing location data & zone triggers",
-          "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
-          "icon": "ICON - Icon to display when the Picture has not been selected (=None)",
-          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
-          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-          "inzone_interval": "INZONE INTERVAL",
-          "rarely_updated_parms": "DISPLAY RARELY UPDATED PARAMETERS - Check and Submit to update these items",
-          "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
-          "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-          "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
-          "fixed_interval": "FIXED INTERVAL",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-        }
-      },
-
-
-      "update_other_device_parameters": {
-        "title": "Update Other Device Parameters",
-        "description": "This screen updates device parameters that are rearely updated",
-        "data": {
-          "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-          "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-          "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
-          "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-          "inzone_interval": "INZONE INTERVAL",
-          "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
-          "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-          "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
-          "fixed_interval": "FIXED INTERVAL",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "ic3_devicename": "Entity ID",
+          "fname": "Display name",
+          "tracking_mode": "Tracking mode",
+          "form_action": "Action"
         },
         "data_description": {
-          "inzone_interval": "Time between location requests when in a zone",
-          "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less than 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
-          "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
-        }
-      },
-
-
-      "delete_device": {
-        "title": "Delete iCloud3 Device",
-        "data": {
-          "device_selected": "SELECTED DEVICE",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DELETE OPTIONS"
+          "ic3_devicename": "The device_tracker entity ID, for example gary_iphone. A new device without one gets it from the display name.",
+          "fname": "Used in the HA entity names and the Event Log",
+          "tracking_mode": "Tracked: iCloud3 requests the location on its own schedule and updates the zone, distance, travel time and next update\nMonitored: iCloud3 doesn't request the location. It uses the location received when a tracked device is located or from the Mobile App, and creates fewer sensors\nInactive: kept in the configuration, but not located and without entities"
+        },
+        "sections": {
+          "data_sources_section": {
+            "name": "Data sources",
+            "description": "The Apple Account device and the Mobile App device that locate this device",
+            "data": {
+              "apple_devices_list_key": "Apple Account device",
+              "mobile_app_device": "Mobile App device"
+            },
+            "data_description": {
+              "apple_devices_list_key": "The Apple Account device that provides the location data",
+              "mobile_app_device": "The Mobile App device that provides location data and zone triggers"
+            }
+          },
+          "appearance_section": {
+            "name": "Appearance",
+            "description": "The picture or icon shown for this device",
+            "data": {
+              "picture": "Picture",
+              "icon": "Icon"
+            },
+            "data_description": {
+              "picture": "Image of the person using this device (44x44 pixels works well)",
+              "icon": "Displayed when no picture is selected"
+            }
+          },
+          "zones_section": {
+            "name": "Zones",
+            "description": "Zones that travel time and distance are measured from, and the zone log file",
+            "data": {
+              "track_from_zones": "Track from zones",
+              "track_from_base_zone": "Primary zone instead of Home",
+              "log_zones": "Zone activity log"
+            },
+            "data_description": {
+              "track_from_zones": "The travel time and distance are also calculated to these zones",
+              "track_from_base_zone": "Ignored while Special zones ▸ Home zone override is on",
+              "log_zones": "Write the zone enter and exit times to a .csv file"
+            }
+          },
+          "advanced_section": {
+            "name": "Advanced",
+            "description": "Entity ID, device type and the inZone and fixed intervals, rarely changed",
+            "data": {
+              "ic3_devicename": "Entity ID",
+              "device_type": "Device type",
+              "inzone_interval": "inZone interval",
+              "fixed_interval": "Fixed interval"
+            },
+            "data_description": {
+              "ic3_devicename": "The device_tracker entity ID, for example gary_iphone",
+              "device_type": "iPhone, iPad, Watch, Mac or other",
+              "inzone_interval": "Time between location requests while the device is in a zone",
+              "fixed_interval": "A fixed time between location requests outside a zone, 0 = calculated by iCloud3"
+            }
+          }
         }
       },
 
 
       "review_inactive_devices": {
-        "title": "Review Untracked (Inactive) Devices",
-        "description": "A large number of devices are set to Inactive and will not be located or tracked. Review and change the device status On this screen. ",
+        "title": "Devices › Review inactive devices",
+        "description": "These devices are inactive and aren't located. Select the ones to track.",
         "data": {
-          "inactive_devices": "TRACK DEVICES - Update these Devices to Tracked (from Inactive)",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "inactive_devices": "Devices to track",
+          "form_action": "Action"
         },
         "data_description": {
-          "inactive_devices": "iPhone/Watch devices are Tracked, iPad/Mac devices are Monitored"
+          "inactive_devices": "iPhones and Watches are tracked, iPads and Macs are monitored"
         }
       },
 
 
       "change_device_order": {
-        "title": "Event Log Device Display Sequence",
-        "description": "The devices are displayed in the Event Log heading area and in various Event Log messages in the sequence below.\n\nThis screen lets you change the order of the devices.",
-        "data": {
-          "device_desc": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ICLOUD3 DEVICES",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        "title": "Devices › Change the device order",
+        "description": "The order the devices are tracked and shown in the Event Log. Select a device to move it up one position, then save the new order.\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.\n\n{header_msg}",
+        "menu_options": {
+          "change_device_order_save": "✓ Save the new order",
+          "change_device_order_back": "◀ Discard changes and return to Devices"
+        },
+        "menu_option_descriptions": {
+          "change_device_order_device_0": "Top position",
+          "change_device_order_device_1": "Move up one position",
+          "change_device_order_device_2": "Move up one position",
+          "change_device_order_device_3": "Move up one position",
+          "change_device_order_device_4": "Move up one position",
+          "change_device_order_device_5": "Move up one position",
+          "change_device_order_device_6": "Move up one position",
+          "change_device_order_device_7": "Move up one position",
+          "change_device_order_device_8": "Move up one position",
+          "change_device_order_device_9": "Move up one position",
+          "change_device_order_device_10": "Move up one position",
+          "change_device_order_device_11": "Move up one position",
+          "change_device_order_device_12": "Move up one position",
+          "change_device_order_device_13": "Move up one position",
+          "change_device_order_device_14": "Move up one position",
+          "change_device_order_device_15": "Move up one position",
+          "change_device_order_device_16": "Move up one position",
+          "change_device_order_device_17": "Move up one position",
+          "change_device_order_device_18": "Move up one position",
+          "change_device_order_device_19": "Move up one position",
+          "change_device_order_device_20": "Move up one position",
+          "change_device_order_device_21": "Move up one position",
+          "change_device_order_device_22": "Move up one position",
+          "change_device_order_device_23": "Move up one position",
+          "change_device_order_device_24": "Move up one position",
+          "change_device_order_device_25": "Move up one position",
+          "change_device_order_device_26": "Move up one position",
+          "change_device_order_device_27": "Move up one position",
+          "change_device_order_device_28": "Move up one position",
+          "change_device_order_device_29": "Move up one position",
+          "change_device_order_device_30": "Move up one position",
+          "change_device_order_device_31": "Move up one position",
+          "change_device_order_device_32": "Move up one position",
+          "change_device_order_device_33": "Move up one position",
+          "change_device_order_device_34": "Move up one position",
+          "change_device_order_device_35": "Move up one position",
+          "change_device_order_device_36": "Move up one position",
+          "change_device_order_device_37": "Move up one position",
+          "change_device_order_device_38": "Move up one position",
+          "change_device_order_device_39": "Move up one position",
+          "change_device_order_device_40": "Move up one position",
+          "change_device_order_device_41": "Move up one position",
+          "change_device_order_device_42": "Move up one position",
+          "change_device_order_device_43": "Move up one position",
+          "change_device_order_device_44": "Move up one position",
+          "change_device_order_device_45": "Move up one position",
+          "change_device_order_device_46": "Move up one position",
+          "change_device_order_device_47": "Move up one position",
+          "change_device_order_device_48": "Move up one position",
+          "change_device_order_device_49": "Move up one position",
+          "change_device_order_device_50": "Move up one position",
+          "change_device_order_device_51": "Move up one position",
+          "change_device_order_device_52": "Move up one position",
+          "change_device_order_device_53": "Move up one position",
+          "change_device_order_device_54": "Move up one position",
+          "change_device_order_device_55": "Move up one position",
+          "change_device_order_device_56": "Move up one position",
+          "change_device_order_device_57": "Move up one position",
+          "change_device_order_device_58": "Move up one position",
+          "change_device_order_device_59": "Move up one position",
+          "change_device_order_device_60": "Move up one position",
+          "change_device_order_device_61": "Move up one position",
+          "change_device_order_device_62": "Move up one position",
+          "change_device_order_device_63": "Move up one position",
+          "change_device_order_device_64": "Move up one position",
+          "change_device_order_device_65": "Move up one position",
+          "change_device_order_device_66": "Move up one position",
+          "change_device_order_device_67": "Move up one position",
+          "change_device_order_device_68": "Move up one position",
+          "change_device_order_device_69": "Move up one position",
+          "change_device_order_device_70": "Move up one position",
+          "change_device_order_device_71": "Move up one position",
+          "change_device_order_device_72": "Move up one position",
+          "change_device_order_device_73": "Move up one position",
+          "change_device_order_device_74": "Move up one position",
+          "change_device_order_device_75": "Move up one position",
+          "change_device_order_device_76": "Move up one position",
+          "change_device_order_device_77": "Move up one position",
+          "change_device_order_device_78": "Move up one position",
+          "change_device_order_device_79": "Move up one position",
+          "change_device_order_device_80": "Move up one position",
+          "change_device_order_device_81": "Move up one position",
+          "change_device_order_device_82": "Move up one position",
+          "change_device_order_device_83": "Move up one position",
+          "change_device_order_device_84": "Move up one position",
+          "change_device_order_device_85": "Move up one position",
+          "change_device_order_device_86": "Move up one position",
+          "change_device_order_device_87": "Move up one position",
+          "change_device_order_device_88": "Move up one position",
+          "change_device_order_device_89": "Move up one position",
+          "change_device_order_device_90": "Move up one position",
+          "change_device_order_device_91": "Move up one position",
+          "change_device_order_device_92": "Move up one position",
+          "change_device_order_device_93": "Move up one position",
+          "change_device_order_device_94": "Move up one position",
+          "change_device_order_device_95": "Move up one position",
+          "change_device_order_device_96": "Move up one position",
+          "change_device_order_device_97": "Move up one position",
+          "change_device_order_device_98": "Move up one position",
+          "change_device_order_device_99": "Move up one position"
         }
       },
 
@@ -671,7 +796,8 @@
           "www_group_2": "Group 2 - Directory 6-10",
           "www_group_3": "Group 3 - Directory 11-15",
           "www_group_4": "Group 4 - Directory 16-20",
-          "www_group_5": "Group 5 - Directory 21-25"
+          "www_group_5": "Group 5 - Directory 21-25",
+          "form_action": "Action"
         }
       },
 
@@ -1033,11 +1159,12 @@
 
 
       "display_text_as": {
-        "title": "Event Log 'Display Text As'",
-        "description": "There may be some text fields, such as email addresses or phone numbers, that are displayed on the Event Log screen that are private and should not be displayed. For example, you can replace 'geekstergary@apple.com' with 'gary@email.com'.\n\nThis screen is used to specify the original text and the text that should be displayed.",
-        "data": {
-          "display_text_as": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TEXT REPLACEMENT FIELDS - [Actual text > Displayed text]",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        "title": "Display › Hide private text in the Event Log",
+        "description": "Replace private text in the Event Log, such as an email address. For example, show gary@email.com instead of the real address.\n\nSelect a replacement to change or remove it, then save. Nothing is saved until you choose ✓ Save. Closing with ✕ discards changes.\n\n{header_msg}",
+        "menu_options": {
+          "display_text_as_add": "＋ Add a text replacement",
+          "display_text_as_save": "✓ Save the changes",
+          "display_text_as_back": "◀ Discard changes and return to Display"
         }
       },
 
@@ -1334,60 +1461,76 @@
             "description": "### {title}\n\n{message}\n\nSelect **Submit** to open the *Update Device* screen for **{device}** and correct the configuration. iCloud3 will restart after the configuration is updated."
           },
           "update_device": {
-            "title": "Update iCloud3 Device",
-            "description": "This screen lets you configure each of the devices that can be tracked or monitored using iCloud3",
+            "title": "{form_title}",
+            "description": "**{device_name}**{device_info}\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-              "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-              "apple_devices_list_key": "APPLE ACCOUNT DEVICE - Apple Account device providing location data",
-              "mobile_app_device": "MOBILE APP DEVICE - Mobile App device_tracker entity providing location data & zone triggers",
-              "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
-              "icon": "ICON - Icon to display when the Picture has not been selected (=None)",
-              "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
-              "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-              "inzone_interval": "INZONE INTERVAL",
-              "rarely_updated_parms": "DISPLAY RARELY UPDATED PARAMETERS - Check and Submit to update these items",
-              "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
-              "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-              "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
-              "fixed_interval": "FIXED INTERVAL",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "ic3_devicename": "Entity ID",
+              "fname": "Display name",
+              "tracking_mode": "Tracking mode",
+              "form_action": "Action",
+              "apple_devices_list_key": "Apple Account device",
+              "mobile_app_device": "Mobile App device",
+              "picture": "Picture",
+              "icon": "Icon",
+              "track_from_zones": "Track from zones",
+              "track_from_base_zone": "Home zone override",
+              "log_zones": "Zone activity log",
+              "device_type": "Device type",
+              "inzone_interval": "inZone interval",
+              "fixed_interval": "Fixed interval"
+            },
+            "data_description": {
+              "ic3_devicename": "The device_tracker entity ID, for example gary_iphone",
+              "fname": "Used in the HA entity names and the Event Log",
+              "tracking_mode": "Tracked: iCloud3 requests the location on its own schedule and updates the zone, distance, travel time and next update\nMonitored: iCloud3 doesn't request the location. It uses the location received when a tracked device is located or from the Mobile App, and creates fewer sensors\nInactive: kept in the configuration, but not located and without entities",
+              "apple_devices_list_key": "The Apple Account device that provides the location data",
+              "mobile_app_device": "The Mobile App device that provides location data and zone triggers",
+              "picture": "Image of the person using this device (44x44 pixels works well)",
+              "icon": "Displayed when no picture is selected",
+              "track_from_zones": "The travel time and distance are also calculated to these zones",
+              "track_from_base_zone": "Use this zone instead of Home for the tracking results of this device",
+              "log_zones": "Write the zone enter and exit times to a .csv file",
+              "device_type": "iPhone, iPad, Watch, Mac or other",
+              "inzone_interval": "Time between location requests while the device is in a zone",
+              "fixed_interval": "A fixed time between location requests outside a zone, 0 = calculated by iCloud3"
             }
           },
 
           "update_other_device_parameters": {
-            "title": "Update Other Device Parameters",
-            "description": "This screen updates device parameters that are rearely updated",
+            "title": "Other device parameters",
+            "description": "**{device_name}**{device_info}\n\nThe zones, device type and intervals of the device. Nothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-              "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-              "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
-              "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-              "inzone_interval": "INZONE INTERVAL",
-              "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
-              "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-              "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
-              "fixed_interval": "FIXED INTERVAL",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "fname": "Display name",
+              "track_from_zones": "Track from zones",
+              "track_from_base_zone": "Home zone override",
+              "log_zones": "Zone activity log",
+              "device_type": "Device type",
+              "inzone_interval": "inZone interval",
+              "fixed_interval": "Fixed interval",
+              "form_action": "Action"
             },
             "data_description": {
-              "inzone_interval": "Time between location requests when in a zone",
-              "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less than 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
-              "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
+              "track_from_zones": "The travel time and distance are also calculated to these zones",
+              "track_from_base_zone": "Use this zone instead of Home for the tracking results of this device",
+              "log_zones": "Write the zone enter and exit times to a .csv file",
+              "device_type": "iPhone, iPad, Watch, Mac or other",
+              "inzone_interval": "Time between location requests while the device is in a zone",
+              "fixed_interval": "A fixed time between location requests outside a zone, 0 = calculated by iCloud3"
             }
           },
 
           "picture_dir_filter": {
-            "title": "Set up Picture Directory Filter",
-            "description": "Select the \\www directorys to be searched for image (png, jpg) files",
+            "title": "Picture directory filter",
+            "description": "Select the /www directories that are searched for picture files (png, jpg).\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "www_group_1": "Group 1 - Directory 1-5",
-              "www_group_2": "Group 2 - Directory 6-10",
-              "www_group_3": "Group 3 - Directory 11-15",
-              "www_group_4": "Group 4 - Directory 16-20",
-              "www_group_5": "Group 5 - Directory 21-25",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-            }
+              "www_group_1": "Directories 1-5",
+              "www_group_2": "Directories 6-10",
+              "www_group_3": "Directories 11-15",
+              "www_group_4": "Directories 16-20",
+              "www_group_5": "Directories 21-25",
+              "form_action": "Action"
+            },
+            "data_description": {}
           }
         },
         "error": {
@@ -1545,7 +1688,7 @@
             "title": "iCloud3: {fname} > Apple Account Error",
             "description": "## {title}\n\n{message}\n\niCloud3 will restart after the configuration is updated.",
             "data": {
-              "repair_action": "ACTION - Select what should be done to correct the error"
+              "repair_action": "Action - Select what should be done to correct the error"
             }
           },
           "update_apple_acct": {
@@ -1604,60 +1747,76 @@
           },
 
           "update_device": {
-            "title": "Update iCloud3 Device",
-            "description": "This screen lets you configure each of the devices that can be tracked or monitored using iCloud3",
+            "title": "{form_title}",
+            "description": "**{device_name}**{device_info}\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-              "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-              "apple_devices_list_key": "APPLE ACCOUNT DEVICE - Apple Account device providing location data",
-              "mobile_app_device": "MOBILE APP DEVICE - Mobile App device_tracker entity providing location data & zone triggers",
-              "picture": "PICTURE - Image of the person normally using this device (44x44 pixels is a good size)",
-              "icon": "ICON - Icon to display when the Picture has not been selected (=None)",
-              "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
-              "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-              "inzone_interval": "INZONE INTERVAL",
-              "rarely_updated_parms": "DISPLAY RARELY UPDATED PARAMETERS - Check and Submit to update these items",
-              "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
-              "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-              "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
-              "fixed_interval": "FIXED INTERVAL",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "ic3_devicename": "Entity ID",
+              "fname": "Display name",
+              "tracking_mode": "Tracking mode",
+              "form_action": "Action",
+              "apple_devices_list_key": "Apple Account device",
+              "mobile_app_device": "Mobile App device",
+              "picture": "Picture",
+              "icon": "Icon",
+              "track_from_zones": "Track from zones",
+              "track_from_base_zone": "Home zone override",
+              "log_zones": "Zone activity log",
+              "device_type": "Device type",
+              "inzone_interval": "inZone interval",
+              "fixed_interval": "Fixed interval"
+            },
+            "data_description": {
+              "ic3_devicename": "The device_tracker entity ID, for example gary_iphone",
+              "fname": "Used in the HA entity names and the Event Log",
+              "tracking_mode": "Tracked: iCloud3 requests the location on its own schedule and updates the zone, distance, travel time and next update\nMonitored: iCloud3 doesn't request the location. It uses the location received when a tracked device is located or from the Mobile App, and creates fewer sensors\nInactive: kept in the configuration, but not located and without entities",
+              "apple_devices_list_key": "The Apple Account device that provides the location data",
+              "mobile_app_device": "The Mobile App device that provides location data and zone triggers",
+              "picture": "Image of the person using this device (44x44 pixels works well)",
+              "icon": "Displayed when no picture is selected",
+              "track_from_zones": "The travel time and distance are also calculated to these zones",
+              "track_from_base_zone": "Use this zone instead of Home for the tracking results of this device",
+              "log_zones": "Write the zone enter and exit times to a .csv file",
+              "device_type": "iPhone, iPad, Watch, Mac or other",
+              "inzone_interval": "Time between location requests while the device is in a zone",
+              "fixed_interval": "A fixed time between location requests outside a zone, 0 = calculated by iCloud3"
             }
           },
 
           "update_other_device_parameters": {
-            "title": "Update Other Device Parameters",
-            "description": "This screen updates device parameters that are rearely updated",
+            "title": "Other device parameters",
+            "description": "**{device_name}**{device_info}\n\nThe zones, device type and intervals of the device. Nothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "ic3_devicename": "ICLOUD3 DEVICE_TRACKER ENTITY ID - The HA device_tracker entity assigned to this device",
-              "fname": "DISPLAY NAME - Displayed in HA device_tracker and sensor names and on the Event Log",
-              "device_type": "DEVICE TYPE - iPhone, iPad, Watch, etc",
-              "tracking_mode": "TRACKING MODE - How location requests should be done (Full tracking, Monitor, Inactive)",
-              "inzone_interval": "INZONE INTERVAL",
-              "log_zones": "ZONE LOG ACTIVITY - Enter/exit zone info (date, time, distance) is saved to a spreadsheet .csv file",
-              "track_from_zones": "TRACK-FROM-ZONES - Track travel time & distance from Home and other zones",
-              "track_from_base_zone": "TRACK-FROM-HOME ZONE OVERRIDE - Use this zone instead of the Home for tracking results",
-              "fixed_interval": "FIXED INTERVAL",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "fname": "Display name",
+              "track_from_zones": "Track from zones",
+              "track_from_base_zone": "Home zone override",
+              "log_zones": "Zone activity log",
+              "device_type": "Device type",
+              "inzone_interval": "inZone interval",
+              "fixed_interval": "Fixed interval",
+              "form_action": "Action"
             },
             "data_description": {
-              "inzone_interval": "Time between location requests when in a zone",
-              "fixed_interval": "A fixed time between location requests when not in a zone. iCloud3 calculates the interval for the next locate request and uses the calculated value if this is not set (= 0). This value will NOT be used when the calculated interval is less than 5-min, the current location data is old, the device is off-line or when the device is not in a zone.",
-              "track_from_base_zone": "Normally, the Home zone is used as the primary Track-from-Zone for all tracking (travel time, distance, etc).  However, a different zone can be used as the primary Track-from-Zone if you are away from Home for an extended period or the device is normally at another location (vacation house, second home, parent's house, etc.). This can be set Globally for all devices on the Special Zones screen."
+              "track_from_zones": "The travel time and distance are also calculated to these zones",
+              "track_from_base_zone": "Use this zone instead of Home for the tracking results of this device",
+              "log_zones": "Write the zone enter and exit times to a .csv file",
+              "device_type": "iPhone, iPad, Watch, Mac or other",
+              "inzone_interval": "Time between location requests while the device is in a zone",
+              "fixed_interval": "A fixed time between location requests outside a zone, 0 = calculated by iCloud3"
             }
           },
 
           "picture_dir_filter": {
-            "title": "Set up Picture Directory Filter",
-            "description": "Select the \\www directorys to be searched for image (png, jpg) files",
+            "title": "Picture directory filter",
+            "description": "Select the /www directories that are searched for picture files (png, jpg).\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "www_group_1": "Group 1 - Directory 1-5",
-              "www_group_2": "Group 2 - Directory 6-10",
-              "www_group_3": "Group 3 - Directory 11-15",
-              "www_group_4": "Group 4 - Directory 16-20",
-              "www_group_5": "Group 5 - Directory 21-25",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-            }
+              "www_group_1": "Directories 1-5",
+              "www_group_2": "Directories 6-10",
+              "www_group_3": "Directories 11-15",
+              "www_group_4": "Directories 16-20",
+              "www_group_5": "Directories 21-25",
+              "form_action": "Action"
+            },
+            "data_description": {}
           }
         },
         "error": {
@@ -2002,8 +2161,11 @@
         "saved_log_level": "Log level",
         "saved_device_order": "Device order",
         "saved_tracking_modes": "Tracking modes",
+        "action_delete_device": "✕ Delete this device",
+        "action_accept_terms_of_use": "⚠︎ Accept Apple's new Terms of Use",
         "exclude_sensors_enter_filter": "No sensors are listed. Enter a filter, or `all` to list all {count} sensors.",
         "exclude_sensors_none_found": "No sensors contain “{filter}”.",
+        "review_inactive_all": "All of the devices below",
         "downloads_msg": "Release v{version} ({date}) · {downloads} downloads · {users} analytics users",
         "downloads_beta_msg": "Beta v{version} ({date}) · {downloads} downloads",
         "beta_version_store_unknown": "HACS or the Marketplace",
@@ -2013,6 +2175,7 @@
         "downloads_not_available": "The GitHub download counts are not available",
         "auth_terms_of_use_needed": "Terms of Use need accepting",
         "auth_needed": "Authentication needed",
+        "action_update_other_device_parameters": "Other parameters ({summary}), opens a screen",
         "submit_save_repair": "✓ Save and finish the repair",
         "back_exit_repair": "◀ Discard the changes and finish the repair",
         "status_apple_accts_one": "{cnt} Apple Account",
@@ -2023,6 +2186,7 @@
         "status_monitored_other": "{cnt} monitored",
         "status_needs_attention_one": "{cnt} needs attention",
         "status_needs_attention_other": "{cnt} need attention",
+        "action_delete_text_as": "✕ Remove this text replacement",
         "confirm_default": "Do you want to perform the selected action?",
         "confirm_restart_icloud3": "Restart iCloud3 now?",
         "confirm_yes_restart_icloud3": "✓ Yes, restart iCloud3",
@@ -2048,6 +2212,9 @@
         "confirm_rebuild_dashboard": "Rebuild “{dashboard}”? Your changes to it in HA are replaced by a new version.",
         "confirm_yes_rebuild_dashboard": "↻ Yes, rebuild it",
         "confirm_no_rebuild_dashboard": "◀ No, keep my changes",
+        "title_add_device": "Devices › Add a device",
+        "title_device": "Devices › Change the device",
+        "new_device": "New device",
         "aa_status_503": "Sign-in failed, Apple refused the request (503)",
         "aa_status_login_failed": "Sign-in failed",
         "aa_status_login_failed_retrying": "Sign-in failed, retrying",
@@ -2055,8 +2222,40 @@
         "aa_status_not_logged_in": "Not signed in",
         "aa_devices_tracked_one": "{tracked} of {total} device tracked",
         "aa_devices_tracked_other": "{tracked} of {total} devices tracked",
+        "dev_status_tracked": "Tracked",
         "dev_status_monitored": "Monitored",
         "dev_status_inactive": "Inactive",
+        "dev_status_disabled": "Disabled in HA",
+        "dev_source_apple": "Apple: {device}",
+        "dev_source_mobapp": "Mobile App: {device}",
+        "dev_home_override": "Primary zone: {zone}",
+        "dev_track_from": "Tracked from: {zones}",
+        "unknown": "unknown",
+        "none": "None",
+        "aadev_acct_unavailable": "Apple Account unavailable",
+        "aadev_not_in_acct": "Not in the Apple Account",
+        "aadev_no_apple_accts": "No Apple Account is set up",
+        "aadev_data_source_off": "Apple data source is off",
+        "aadev_unknown_apple_acct": "Unknown Apple Account",
+        "aadev_family_device": "Family device",
+        "aadev_family_device_not_located": "Family device, the Apple Account does not locate all devices",
+        "mobapp_none": "None (no Mobile App on this device)",
+        "mobapp_scan_for": "Scan for a Mobile App device starting with ‘{devicename}’",
+        "mobapp_all_assigned": "All Mobile App devices are assigned",
+        "mobapp_unknown_device": "Unknown Mobile App device",
+        "mobapp_list_available_hdr": "Available Mobile App devices",
+        "mobapp_list_assigned_hdr": "Assigned to another iCloud3 device",
+        "mobapp_list_scan_for_hdr": "Scan for a device tracker entity",
+        "picture_none": "None, show the icon instead of a picture",
+        "picture_dirs": "Picture directories: {dirs}",
+        "picture_dir_filter": "Set the picture directory filter → select the directories with the picture files",
+        "picture_list_file_names_hdr": "Picture file names",
+        "picture_not_found": "File not found",
+        "log_zones_hdr": "Activity file name",
+        "log_zones_name_zone": "Zone ([year]-[zone].csv)",
+        "log_zones_name_device": "Device ([year]-[device].csv)",
+        "log_zones_name_device_zone": "Device+Zone ([year]-[device]-[zone].csv)",
+        "log_zones_name_zone_device": "Zone+Device ([year]-[zone]-[device].csv)",
         "er_device": "device",
         "er_sensors": "sensors",
         "analytics_uuid": "HA installation ID",
@@ -2064,6 +2263,7 @@
         "dashboard_first_2_iphones": "First 2 iPhones",
         "dashboard_built": "✓ Dashboard built: {dashboard}",
         "dashboard_rebuilt": "✓ Dashboard updated: {dashboard}",
+        "dev_mobapp_not_found": "Mobile App device {device} not found",
         "action_select_all": "Select all items",
         "action_show_full_sensor_lists": "Show the full sensor lists",
         "action_show_short_sensor_lists": "Show the short sensor lists",
@@ -2077,9 +2277,20 @@
         "confirm_no_cleanup_active_devices": "◀ No, keep them",
         "cnt_apple_accts_one": "{cnt} Apple Account",
         "cnt_apple_accts_other": "{cnt} Apple Accounts",
+        "device_list_import_none_new": "＋ Import devices (none new)",
         "select_default_sensors": "Select the default sensors (review, then save)",
+        "dev_zone_away": "Away",
+        "dev_located_now": "located just now",
+        "dev_located_mins": "located {mins} min ago",
+        "dev_located_hrs": "located {hrs} h ago",
+        "dev_located_days": "located {days} d ago",
+        "ods_inzone_interval": "inZone interval {mins} min",
+        "ods_fixed_interval": "fixed interval {mins} min",
+        "ods_log_zones": "Activity logged in: {zones}",
         "action_save_excluded_sensors": "✓ Save and return to {dest}",
         "exclude_sensors_none_excluded": "No sensors are excluded.",
+        "action_auth_options": "▶ Authentication options: change how the code is sent, request a code, dashboard card",
+        "action_auth_options_sign_in_first": "Authentication options (sign in first: choose ✓ Save)",
         "confirm_cleanup_other_groups": "The items checked in the other groups are deleted too: {groups}."
       }
     },
@@ -2131,6 +2342,13 @@
         "east_west": "East-west: you mostly travel east or west"
       }
     },
+    "tracking_mode": {
+      "options": {
+        "track": "Tracked",
+        "monitor": "Monitored",
+        "inactive": "Inactive"
+      }
+    },
     "log_level": {
       "options": {
         "info": "Info: general information and Event Log messages",
@@ -2146,6 +2364,19 @@
       "options": {
         "result-summary": "Result summary: arrival time, distance, travel time and battery",
         "track-details": "Tracking details: all results of a location update"
+      }
+    },
+    "device_type": {
+      "options": {
+        "iphone": "iPhone",
+        "watch": "Watch (WiFi+Cell)",
+        "watch_wifi": "Watch (WiFi)",
+        "ipad": "iPad (WiFi)",
+        "ipad_cell": "iPad (WiFi+Cell)",
+        "airpods": "AirPods",
+        "mac": "Mac",
+        "ipod": "iPod",
+        "other": "Other"
       }
     },
     "sensor": {

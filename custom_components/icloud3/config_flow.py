@@ -627,7 +627,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
                 self.menu_item = 'device_list'
                 if Gb.use_data_source_ICLOUD and isnot_empty(Gb.AppleAcct_by_apple_id):
                     return await self.async_step_import_apple_devices()
-                return await self.async_step_device_list()
+                return await self.async_step_device_list_add()
             case 'action_review_inactive' | 'action_review_inactive_some':
                 self.menu_item = 'device_list'
                 return await self.async_step_review_inactive_devices()

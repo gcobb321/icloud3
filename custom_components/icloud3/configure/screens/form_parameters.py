@@ -1,8 +1,7 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (IPHONE, IPAD, IPAD_CELL, MAC, WATCH, WATCH_WIFI, AIRPODS, NO_MOBAPP, OTHER,
-                                    )
+from ...const               import (IPHONE, IPAD, IPAD_CELL, MAC, WATCH, WATCH_WIFI, AIRPODS, NO_MOBAPP, OTHER, )
 from ...const_config        import (CONF_EVLOG_CARD_DIRECTORY,
                                     CONF_EVLOG_BTNCONFIG_URL, CONF_TRACK_FROM_BASE_ZONE_USED,
                                     CONF_TRACK_FROM_BASE_ZONE, CONF_TRACK_FROM_HOME_ZONE,
@@ -21,7 +20,7 @@ from ...const_config        import (CONF_EVLOG_CARD_DIRECTORY,
                                     CONF_WAZE_HISTORY_MAX_DISTANCE,
                                     CONF_WAZE_HISTORY_TRACK_DIRECTION, CONF_STAT_ZONE_FNAME,
                                     CONF_STAT_ZONE_STILL_TIME, CONF_STAT_ZONE_INZONE_INTERVAL,
-                                    CONF_DISPLAY_TEXT_AS, CONF_DATA_SOURCE,
+                                    CONF_DATA_SOURCE,
                                     CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                     CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
                                     CF_PROFILE, )
@@ -234,48 +233,9 @@ def build_display_zone_format_options(self):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            DISPLAY TEXT AS
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_display_text_as(self):
-    self.dta_selected_idx = self.dta_selected_idx_page[self.dta_page_no]
-    if self.dta_selected_idx <= 4:
-        dta_page_display_list = [v for k,v in self.dta_working_copy.items()
-                                        if k <= 4]
-        dta_next_page_display_list = [v.split('>')[0] for k,v in self.dta_working_copy.items()
-                                        if k >= 5]
-    else:
-        dta_page_display_list = [v for k,v in self.dta_working_copy.items()
-                                        if k >= 5]
-        dta_next_page_display_list = [v.split('>')[0] for k,v in self.dta_working_copy.items()
-                                        if k <= 4]
-
-    dta_next_page_display_items = ", ".join(dta_next_page_display_list)
-    next_page_text = ACTION_LIST_OPTIONS['next_page_items']
-    next_page_text = next_page_text.replace('^add-text^', dta_next_page_display_items)
-
-    self.actions_list = [next_page_text]
-    self.actions_list.extend([ACTION_LIST_OPTIONS['select_text_as']])
-    self.actions_list.extend(ACTION_LIST_ITEMS_SAVE_MENU)
-
-    return vol.Schema({
-        vol.Required(CONF_DISPLAY_TEXT_AS,
-                    default=self.dta_working_copy[self.dta_selected_idx]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dta_page_display_list)),
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text('select_text_as')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DISPLAY TEXT AS UPDATE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_display_text_as_update(self):
-    self.actions_list = [ACTION_LIST_OPTIONS['clear_text_as']]
-    self.actions_list.extend([ACTION_LIST_OPTIONS['update_text_as']])
-
     if instr(self.dta_working_copy[self.dta_selected_idx], '>'):
         text_from_to_parts = self.dta_working_copy[self.dta_selected_idx].split('>')
         text_from = text_from_to_parts[0].strip()
@@ -291,10 +251,10 @@ def form_display_text_as_update(self):
         vol.Optional('text_to'  ,
                     default=text_to):
                     selector.TextSelector(),
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text('update_text_as')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
+        **utils_cf.submit_back_field(self, 'update_text_as', 'cancel_goto_previous',
+                                        'text_list',
+                                        other_actions={'delete_text_as': utils_cf.tr('action_delete_text_as')}
+                                                        if text_from else None),
         })
 
 
