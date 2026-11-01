@@ -284,7 +284,9 @@
       "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
       "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
       "deleted_item": "✓ Deleted: {item}",
+      "deleted_apple_acct": "✓ Deleted the Apple Account {apple_acct}",
       "deleted_device_sensors": "✓ Deleted {devices} and {sensors} from HA",
+      "added_devices": "✓ Added {devices}",
       "zone_not_selectable": "This zone can't be selected. Select one of the zones iCloud3 uses, Stationary zones are not available.",
       "action_failed": "⚠︎ The action failed, see the iCloud3 log file",
       "prerelease_repo_not_installed": "Not changed: iCloud3 wasn't installed from HACS or the Marketplace.",
@@ -436,56 +438,62 @@
 
       "apple_accounts": {
         "title": "Apple Accounts",
-        "description": "This screen is used to list, add, delete and update the Apple Accounts that provide location and other data to track and monitor iCloud3 device. Several other screens also help configure iCloud3 devices.",
-        "data": {
-          "data_source": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DATA SOURCE",
-          "data_source_apple_acct": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ICLOUD ACCOUNTS",
-          "apple_accts": " ",
-          "data_source_mobapp": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-          "xdata_source_mobapp": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MOBILE APP INTEGRATION",
-          "action_items":       "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        "description": "Apple Accounts provide the location data of the devices. Select an account to change or delete it.\n\n{header_msg}",
+        "menu_options": {
+          "apple_accounts_next_page": "▶ More Apple Accounts → {accounts}",
+          "apple_accounts_add": "＋ Add a new Apple Account",
+          "apple_accounts_back": "◀ Main menu"
         },
-        "data_description": {
+        "menu_option_descriptions": {
+          "apple_accounts_acct_0": "{acct_0}",
+          "apple_accounts_acct_1": "{acct_1}",
+          "apple_accounts_acct_2": "{acct_2}",
+          "apple_accounts_acct_3": "{acct_3}",
+          "apple_accounts_acct_4": "{acct_4}",
+          "apple_accounts_next_page": "Show the Apple Accounts on the next page",
+          "apple_accounts_add": "Add the username and password of an Apple Account"
         }
       },
 
 
       "update_apple_acct": {
-        "title": "Update Apple Account Username/Password",
+        "title": "{form_title}",
         "data": {
-          "account_selected": "ACCOUNT SELECTED",
-          "apple_account": "USERNAME - Email address/apple_id used to sign in to the Apple Account",
-          "password": "PASSWORD - Account Password",
-          "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
-          "locate_all": "LOCATE ALL DEVICES (Only applies with multiple Apple Accounts)",
-          "url_suffix_china": "CHINA USERS - Use Apple Acct Servers located in China (.cn URL suffix)",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "apple_account": "Username",
+          "password": "Password",
+          "locate_all": "Locate the Family Sharing devices with every request",
+          "form_action": "Action"
         },
         "data_description": {
-          "locate_all": "ENABLED →Locate the Owner's & other Family members devices in the Apple Acct DISABLED→Locate the Owner's devices. Do not locate other Family members devices"
-        }
-      },
-
-
-      "other_apple_acct_parameters": {
-        "title": "Other Apple Account Parameters",
-        "data": {
-          "apple_server_location_needed": "APPLE SERVER LOCATION (CHINA) - Always display Apple Server Location Selection field on `Apple Acct Username/Password` screen (China, Hong Kong)",
-          "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "locate_all": "Off: a request locates only the device being updated. Must stay on while this account tracks a Family Sharing member's device. Usually turned off only when the family members use their own Apple Account in iCloud3",
+          "apple_account": "Email address or phone number used to sign in to the Apple Account",
+          "password": "The Apple Account password (not an app-specific password)"
         },
-        "data_description": {
-          "password_srp_enabled": "This indicates how the password should be verified when logging into the Apple Account. The PasswordSRP protocol sends an encoded key over the internet to Apple instead of sending the password itself. \n • ENABLED - Use the Password SRP Protocol\n • DISABLED - Use the standard Password protocol\n • NOTES - There are times when Appple servers will refuse the password if too many login attempts have been made in a short period of time. This is done  to prevent fraudulent logins. An Error 503-Server Refuses Connection is returned."
+        "description": "**{acct_name}**{acct_info}\n\nIf Apple asks for a code, the authentication screen opens next. Nothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
+        "sections": {
+          "advanced_section": {
+            "name": "Advanced",
+            "description": "The Apple server location, only needed for accounts in China",
+            "data": {
+              "server_location": "Apple server location"
+            },
+            "data_description": {
+              "server_location": "The country of this account's Apple server"
+            }
+          }
         }
       },
 
 
       "delete_apple_acct": {
-        "title": "Remove an Apple Account",
+        "title": "Apple Accounts › Delete the Apple Account",
         "data": {
-          "account_selected": "ACCOUNT SELECTED",
-          "device_action": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ HOW SHOULD DEVICES ASSIGNED TO THIS APPLE ACCT BE HANDLED",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ CONFIRM DELETING THE APPLE ACCOUNT"
+          "device_action": "Devices using this Apple Account",
+          "form_action": "Action"
+        },
+        "description": "**{acct_name}**{acct_info}\n\nDelete this Apple Account? iCloud3 stops using it and removes its sign-in files. Choose what happens to its devices:",
+        "data_description": {
+          "device_action": "What happens to the devices of this Apple Account"
         }
       },
 
@@ -579,7 +587,6 @@
           "imported_aadevices_track": "Tracked devices",
           "imported_aadevices_monitor": "Monitored devices",
           "imported_aadevices_inactive": "Add as inactive",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS",
           "form_action": "Action"
         },
         "data_description": {
@@ -1692,29 +1699,33 @@
             }
           },
           "update_apple_acct": {
-            "title": "Update Apple Account Username/Password",
+            "title": "{form_title}",
             "data": {
-              "account_selected": "ACCOUNT SELECTED",
-              "apple_account": "USERNAME - Email address/apple_id used to sign in to the Apple Account",
-              "password": "PASSWORD - Account Password",
-              "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
-              "locate_all": "LOCATE ALL DEVICES (Only applies with multiple Apple Accounts)",
-              "url_suffix_china": "CHINA USERS - Use Apple Acct Servers located in China (.cn URL suffix)",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "apple_account": "Username",
+              "password": "Password",
+              "locate_all": "Locate the Family Sharing devices with every request",
+              "form_action": "Action",
+              "server_location": "Apple server location"
             },
             "data_description": {
-              "locate_all": "ENABLED →Locate the Owner's & other Family members devices in the Apple Acct DISABLED→Locate the Owner's devices. Do not locate other Family members devices"
-            }
+              "locate_all": "Off: a request locates only the device being updated. Must stay on while this account tracks a Family Sharing member's device. Usually turned off only when the family members use their own Apple Account in iCloud3",
+              "apple_account": "Email address or phone number used to sign in to the Apple Account",
+              "password": "The Apple Account password (not an app-specific password)",
+              "server_location": "The country of this account's Apple server"
+            },
+            "description": "**{acct_name}**{acct_info}\n\nIf Apple asks for a code, the authentication screen opens next. Nothing is saved until you choose ✓ Save. Closing with ✕ discards changes."
           },
           "other_apple_acct_parameters": {
-            "title": "Other Apple Account Parameters",
+            "title": "Other Apple Account parameters",
+            "description": "**{acct_name}**{acct_info}\n\nNothing is saved until you choose ✓ Save. Closing with ✕ discards changes.",
             "data": {
-              "apple_server_location_needed": "APPLE SERVER LOCATION (CHINA) - Always display Apple Server Location Selection field on `Apple Acct Username/Password` screen (China, Hong Kong)",
-              "server_location": "APPLE SERVER LOCATION - The country hosting this account's Apple Server",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "apple_server_location_needed": "Show the Apple server location on the account screen",
+              "server_location": "Apple server location",
+              "form_action": "Action"
             },
             "data_description": {
-              "password_srp_enabled": "This indicates how the password should be verified when logging into the Apple Account. The PasswordSRP protocol sends an encoded key over the internet to Apple instead of sending the password itself. \n • ENABLED - Use the Password SRP Protocol\n • DISABLED - Use the standard Password protocol\n • NOTES - There are times when Appple servers will refuse the password if too many login attempts have been made in a short period of time. This is done  to prevent fraudulent logins. An Error 503-Server Refuses Connection is returned."
+              "apple_server_location_needed": "Only needed for accounts in China and Hong Kong",
+              "server_location": "The country of this account's Apple server"
             }
           },
           "reauth": {
@@ -2162,6 +2173,9 @@
         "saved_device_order": "Device order",
         "saved_tracking_modes": "Tracking modes",
         "action_delete_device": "✕ Delete this device",
+        "action_delete_apple_acct": "✕ Delete this Apple Account",
+        "action_stop_login_retry": "Stop retrying the sign-in",
+        "action_reauth_now": "⚠︎ Reauthenticate now (Apple is waiting for a code)",
         "action_accept_terms_of_use": "⚠︎ Accept Apple's new Terms of Use",
         "exclude_sensors_enter_filter": "No sensors are listed. Enter a filter, or `all` to list all {count} sensors.",
         "exclude_sensors_none_found": "No sensors contain “{filter}”.",
@@ -2175,6 +2189,7 @@
         "downloads_not_available": "The GitHub download counts are not available",
         "auth_terms_of_use_needed": "Terms of Use need accepting",
         "auth_needed": "Authentication needed",
+        "action_other_apple_acct_parameters": "Other parameters (Apple server location), opens a screen",
         "action_update_other_device_parameters": "Other parameters ({summary}), opens a screen",
         "submit_save_repair": "✓ Save and finish the repair",
         "back_exit_repair": "◀ Discard the changes and finish the repair",
@@ -2215,13 +2230,24 @@
         "title_add_device": "Devices › Add a device",
         "title_device": "Devices › Change the device",
         "new_device": "New device",
+        "title_add_apple_acct": "Apple Accounts › Add an Apple Account",
+        "title_apple_acct": "Apple Accounts › Change the Apple Account",
+        "new_apple_acct": "New Apple Account",
         "aa_status_503": "Sign-in failed, Apple refused the request (503)",
         "aa_status_login_failed": "Sign-in failed",
         "aa_status_login_failed_retrying": "Sign-in failed, retrying",
         "aa_status_logged_in": "Signed in",
         "aa_status_not_logged_in": "Not signed in",
+        "aa_status_setting_up": "Setting up",
         "aa_devices_tracked_one": "{tracked} of {total} device tracked",
         "aa_devices_tracked_other": "{tracked} of {total} devices tracked",
+        "aa_info_tracked": "Tracked ({tracked} of {total}): {devices}",
+        "aa_info_more_untracked_one": "{cnt} more device isn't tracked",
+        "aa_info_more_untracked_other": "{cnt} more devices aren't tracked",
+        "aa_info_none_tracked_one": "The device isn't tracked",
+        "aa_info_none_tracked_other": "None of the {total} devices are tracked",
+        "aa_info_import_hint_one": "Add it with Devices → Import devices",
+        "aa_info_import_hint_other": "Add them with Devices → Import devices",
         "dev_status_tracked": "Tracked",
         "dev_status_monitored": "Monitored",
         "dev_status_inactive": "Inactive",
@@ -2264,6 +2290,7 @@
         "dashboard_built": "✓ Dashboard built: {dashboard}",
         "dashboard_rebuilt": "✓ Dashboard updated: {dashboard}",
         "dev_mobapp_not_found": "Mobile App device {device} not found",
+        "aa_add_info": "iCloud3 uses your Apple Account to locate your devices. Enter the email or phone number and password you use for iCloud.com. Choose Back if you only use the HA Mobile App.",
         "action_select_all": "Select all items",
         "action_show_full_sensor_lists": "Show the full sensor lists",
         "action_show_short_sensor_lists": "Show the short sensor lists",
@@ -2358,6 +2385,21 @@
         "rawdata": "Rawdata: Debug and the device data received from Apple (filtered)",
         "rawdata-auto-reset": "Rawdata (auto reset): Rawdata, back to Info at midnight",
         "unfiltered": "Rawdata (unfiltered): Debug and all of the device data received from Apple"
+      }
+    },
+    "server_location": {
+      "options": {
+        "usa": "USA and all other countries",
+        "cn": "China (GCJ02 coordinates)",
+        "cn_gcj02": "China (GCJ02 coordinates converted to WGS84)",
+        "cn_bd09": "China (BD09 coordinates converted to WGS84)"
+      }
+    },
+    "delete_apple_acct_devices": {
+      "options": {
+        "reassign_devices": "Move them to another Apple Account that has them (otherwise set them to inactive)",
+        "delete_devices": "Delete the devices and their sensors",
+        "set_devices_inactive": "Keep them, set to inactive"
       }
     },
     "dashboard_main_view_style": {

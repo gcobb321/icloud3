@@ -205,28 +205,6 @@ TOOL_ITEMS = [  'log_level', 'beta_version', 'cleanup_entity_registry', 'restart
                 'reset_data_source', 'reset_tracking', 'reset_general', 'del_apple_acct_cookies',
                 'del_icloud3_config_files', ]
 
-APPLE_ACCOUNT_ACTIONS = [
-        ACTION_LIST_OPTIONS['update_apple_acct'],
-        ACTION_LIST_OPTIONS['authenticate_apple_acct'],
-        ACTION_LIST_OPTIONS['import_apple_devices'],
-        ACTION_LIST_OPTIONS['delete_apple_acct'],
-        ACTION_LIST_OPTIONS['menu']]
-APPLE_ACCOUNT_DELETE_ACTIONS = [
-        ACTION_LIST_OPTIONS['delete_apple_acct'],
-        ACTION_LIST_OPTIONS['cancel_goto_previous']]
-APPLE_ACCOUNT_OTHER_PARMS_ACTIONS = [
-        ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['rtn_update_apple_acct']]
-APPLE_ACCOUNT_UPDATE_ACTIONS = [
-        ACTION_LIST_OPTIONS['save_log_into_apple_acct'],
-        ACTION_LIST_OPTIONS['authenticate_apple_acct'],
-        ACTION_LIST_OPTIONS['other_apple_acct_parameters'],
-        ACTION_LIST_OPTIONS['rtn_apple_accounts']]
-APPLE_ACCOUNT_UPDATE_REPAIR_ACTIONS = [     # Update Apple Account screen opened from HA Repairs
-        ACTION_LIST_OPTIONS['save_log_into_apple_acct'],
-        ACTION_LIST_OPTIONS['authenticate_apple_acct'],
-        ACTION_LIST_OPTIONS['other_apple_acct_parameters'],
-        ACTION_LIST_OPTIONS['exit_repair']]
 REAUTH_ACTIONS = [
         ACTION_LIST_OPTIONS['request_auth_code'],
         ACTION_LIST_OPTIONS['send_auth_code'],
@@ -241,12 +219,6 @@ CHANGE_AUTH_METHOD = [
 USER_AUTH_DASHBOARD = [
         ACTION_LIST_OPTIONS['refresh'],
         ACTION_LIST_OPTIONS['goto_previous']]
-
-IMPORT_APPLE_DEVICES = [
-        ACTION_LIST_OPTIONS['add_imported_apple_devices'],
-        ACTION_LIST_OPTIONS['rtn_device_list'],
-        ACTION_LIST_OPTIONS['rtn_apple_accounts'],
-        ACTION_LIST_OPTIONS['menu']]
 
         # ACTION_LIST_OPTIONS['rtn_device_list']]
         # ACTION_LIST_OPTIONS['menu']]
@@ -266,6 +238,7 @@ PRERELEASE_SWITCH_ERRORS = {
 DEVICE_LIST_PAGE_SIZE     = 6
 DEVICE_ORDER_MAX_CNT      = 100
 DISPLAY_TEXT_AS_ITEM_CNT  = 10
+APPLE_ACCT_LIST_PAGE_SIZE = 5
 
 #------------------------–--------------------------------------------------------------
 
@@ -282,17 +255,8 @@ REAUTH_AUTH_METHODS = {
         }
 
 # Apple Server Endpoint value - Add onto the Server URL in AppleAcct_ic3 if this starts with a period ('.')
-APPLE_SERVER_LOCATION_OPTIONS = {
-        'usa':       'USA/OTHER - The Apple Server is not located in China',
-        '.cn':       'CHINA - The Apple Server is located in China (GCJ02)',
-        '.cn,GCJ02': 'CHINA - The Apple Server is located in China (GCJ02 → WGS84)',
-        '.cn,BD09':  'CHINA - The Apple Server is located in China (BD09 → WGS84)'
-        }
-DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS = {
-        'reassign_devices': 'REASSIGN DEVICES → Search for another Apple Account with this device device and reassign it to that Apple Account. Set it to  Inactive if one is not found',
-        'delete_devices':   'DELETE DEVICES → Delete all devices that are using this Apple Account',
-        'set_devices_inactive': 'SET DEVICES TO INACTIVE →  Set the devices using this Apple Account to Inactive. They will be assigned to another Apple Account later'
-        }
+APPLE_SERVER_LOCATION_OPTIONS = ['usa', '.cn', '.cn,GCJ02', '.cn,BD09']
+DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS = ['reassign_devices', 'delete_devices', 'set_devices_inactive']
 MOBAPP_DEVICE_NONE_OPTIONS = {
         'None': 'ⓧ The Mobile App is not installed on this device'
         }
@@ -421,8 +385,6 @@ ACTIONS_ACTION_ITEMS = {
 # Section Headers used on various forms
 MOBILE_APP_USED_HEADER = (
         'MOBILE APP INTEGRATION - Monitor the Mobile App Integration devices location data and zone enter/exit triggers')
-APPLE_ACCT_USED_HEADER = (
-        'Request location data from the devices in the Apple Account’s Family Sharing List')
 RARELY_UPDATED_PARMS        = 'rarely_updated_parms'
 RARELY_UPDATED_PARMS_HEADER = (
         "➤ RARELY USED PARAMETERS - Display inZone & Fixed Interval, Track-from-Zone and Track-from-Home Zone Override parameters the parameters")

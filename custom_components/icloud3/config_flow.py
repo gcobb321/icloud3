@@ -616,6 +616,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
                 return await self.async_step_device_list()
             case 'action_login_failed':
                 self.menu_item = 'apple_accounts'
+                login_failed_apple_ids = aascf.login_failed_apple_ids()
+                if login_failed_apple_ids and self._select_apple_acct(login_failed_apple_ids[0]):
+                    return await self.async_step_update_apple_acct()
                 return await self.async_step_apple_accounts()
             case 'action_add_apple_acct':
                 self.menu_item = 'apple_accounts'
