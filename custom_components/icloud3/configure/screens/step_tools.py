@@ -421,7 +421,7 @@ class OptionsFlow_Tools_Steps:
 
             _sensors = list(device_sensors.keys())
             _deleted_msg = (f"{_device_msg}"
-                            f"BaseName: sensor.{devicename}_",
+                            f"BaseName: sensor.{devicename}_, "
                             f"Count: {len(_sensors)}, "
                             f"Entities: {list_to_str(_sensors)}")
 
