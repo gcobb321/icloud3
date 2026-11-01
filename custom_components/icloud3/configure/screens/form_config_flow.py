@@ -6,15 +6,14 @@ from ...const_config        import (CONF_AADEV_NAME, CONF_APPLE_ACCT, CONF_DEVIC
 
 from ...utils.utils         import (apple_user, list_to_str, list_add, list_del, isnot_empty,
                                     dict_value_to_list, )
-from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
+from ...utils.messaging     import (_log, log_info_msg, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
 from ...startup             import config_file
 from ..                     import utils_cf
 from ..const_form_lists     import *
 
-from homeassistant.helpers  import (selector,
-                                    entity_registry as er,
+from homeassistant.helpers  import (entity_registry as er,
                                     device_registry as dr,)
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -182,39 +181,6 @@ def menu_status_line(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             MENU
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#             CONFIRM ACTION
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_confirm_action(self, action_items=None):
-    '''
-    confirm_action form uses information in the self.confirm_action{}
-    '''
-
-    try:
-        if action_items is None:
-            actions_list = CONFIRM_ACTIONS.copy()
-            actions_list_default = len(actions_list) - 1    # LAST ITEM
-        else:
-            actions_list = action_items
-            actions_list_default = self.confirm_action.get('action_items_default') or 0
-
-        action_desc = self.confirm_action.get('action_desc') or \
-                    'Do you want to perform the selected action?'
-
-        return vol.Schema({
-            vol.Required('action_desc',
-                    default=action_desc):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=[action_desc], mode='list')),
-            vol.Required('action_items',
-                    default=actions_list[actions_list_default]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=actions_list, mode='list')),
-            })
-    except Exception as err:
-        log_exception(err)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

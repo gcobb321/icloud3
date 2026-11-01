@@ -68,6 +68,12 @@ def tr(key, **placeholders):
     '''
     return tr_path(f"selector.cf_text.options.{key}", **placeholders)
 
+def tr_cnt(key, cnt, **placeholders):
+    '''
+    The [key]_one text when cnt is 1, otherwise [key]_other ({cnt} is the count)
+    '''
+    return tr(f"{key}_{'one' if cnt == 1 else 'other'}", cnt=cnt, **placeholders)
+
 def has_tr(key):
     return f"component.{DOMAIN}.selector.cf_text.options.{key}" in _cf_texts['texts']
 
@@ -183,6 +189,40 @@ async def async_header_msgs(self, msg_keys):
     self.header_placeholders = {}
 
     return msgs
+
+#--------------------------------------------------------------------
+async def async_show_list_menu(self, step_id, menu_options, header_msg='', placeholders=None):
+    '''
+    Display a menu with rows that are built from the configuration (devices, Apple Accts).
+    HA only translates a menu when all labels come from strings.json, so the static
+    labels are looked up here.
+
+    Parameters:
+        menu_options - {option: label}. A label of None uses the strings.json
+                options.step.<step_id>.menu_options.<option> label.
+        header_msg - Text displayed above the rows. The self.errors['base'] message
+                is added to it.
+        placeholders - {placeholder: text} inserted into the strings.json labels here and
+                into the description and menu_option_descriptions by HA
+    '''
+    placeholders = placeholders or {}
+    await async_load_texts()
+
+    menu_labels = {}
+    for option, label in menu_options.items():
+        if label is None:
+            label = tr_path(f"options.step.{step_id}.menu_options.{option}", **placeholders)
+        menu_labels[option] = label
+
+    header_msgs = [header_msg] if header_msg else []
+    header_msgs.extend(await async_header_msgs(self,
+                    [self.errors['base']] if self.errors.get('base') else []))
+
+    return self.async_show_menu(step_id=step_id,
+                                menu_options=menu_labels,
+                                description_placeholders={
+                                        **placeholders,
+                                        'header_msg': '\n\n'.join(header_msgs)})
 
 #--------------------------------------------------------------------
 def strip_spaces(user_input, parm_list=[]):

@@ -32,25 +32,6 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#           TOOLS
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_tools(self, user_input):
-    self.actions_list = TOOL_LIST_ITEMS.copy()
-    if user_input is None:
-        default_action = 'log_level'
-    else:
-        default_action = 'menu'
-
-    return vol.Schema({
-        vol.Required('action_items',
-                    default=TOOL_LIST[default_action]):
-                    selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
-        })
-
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           LOG LEVEL
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

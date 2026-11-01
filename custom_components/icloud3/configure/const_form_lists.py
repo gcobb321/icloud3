@@ -19,6 +19,12 @@ TITLE          = 'title'
 PATH           = 'path'
 ADD            = 'add'
 IC3DB          = 'ic3db-'
+
+# The Tools that display the Confirm Action screen. The question and the Yes/No rows are the
+# strings.json selector.cf_text.options confirm_[tool], confirm_yes_[tool] and
+# confirm_no_[tool] texts
+TOOL_CONFIRM_ITEMS = [  'restart_icloud3', 'reset_data_source', 'reset_tracking', 'reset_general',
+                        'del_apple_acct_cookies', 'del_icloud3_config_files', ]
 NOT_LOGGED_IN  = 'NOT LOGGED IN'
 
 DATA_ENTRY_ALERT_CHAR = '⛔'
@@ -178,6 +184,12 @@ APPLE_ACCOUNT_USERNAME_ACTION_LIST_IDX = 0     # Index number of the Action list
 APPLE_ACCOUNTS_MULTI_HDR = {'apple_acct_hdr': '═════════ Additional Apple Accounts ═════════'}
 UNSELECTED_IDX = -1
 
+#------------------------–--------------------------------------------------------------
+# Tools menu (step_id tools) options. The labels are in strings.json options.step.tools.menu_options
+TOOL_ITEMS = [  'log_level', 'beta_version', 'cleanup_entity_registry', 'restart_icloud3',
+                'reset_data_source', 'reset_tracking', 'reset_general', 'del_apple_acct_cookies',
+                'del_icloud3_config_files', ]
+
 # Action List Items for all screens
 ACTION_LIST_ITEMS_SAVE_MENU = [
         ACTION_LIST_OPTIONS['save'],
@@ -268,13 +280,6 @@ REVIEW_INACTIVE_DEVICES = [
         # ACTION_LIST_OPTIONS['menu']]
         # ACTION_LIST_OPTIONS['exit'],
 
-CONFIRM_ACTIONS = [
-        ACTION_LIST_OPTIONS['confirm_action_yes'],
-        ACTION_LIST_OPTIONS['confirm_action_no']]
-CONFIRM_ACTIONS_BETA_VERSION = [
-        ACTION_LIST_OPTIONS['confirm_action_yes_enable_beta'],
-        ACTION_LIST_OPTIONS['confirm_action_no_disable_beta'],
-        ACTION_LIST_OPTIONS['goto_previous']]
 
 # marketplace.async_set_icloud3_prerelease_switch return value --> options error key
 PRERELEASE_SWITCH_ERRORS = {
@@ -304,36 +309,11 @@ CLEANUP_ENTITY_REGISTRY = [
         ACTION_LIST_OPTIONS['goto_previous']]
 
 #------------------------–--------------------------------------------------------------
-TOOL_LIST = {
-        'log_level':                 'CHANGE THE LOG LEVEL → Change the current log level (info, debug, rawdata)',
-        'beta_version':              'ICLOUD3 BETA VERSION → Enable/Disable iCloud3 Beta Downloads from the HA Marketplace',
-        'cleanup_entity_registry':   'CLEANUP HA ENTITY REGISTRY → Extract and Delete iCloud3  Entity Registry Devices and Sensors',
-        'restart_icloud3':           'RESTART ICLOUD3 → Restart iCloud3 Now (Reloads the current version of iCloud3)',
-        'reset_data_source':         'CLEAR DEVICE’S DATA SOURCE SELECTIONS → Erase the `Apple Acct Device` and `Mobile App Device` selection fields for all iCloud3 devices (Update iCloud3 Device screen)',
-        'reset_tracking':            'REMOVE ALL APPLE ACCTS & DEVICES → Erase all Apple Accts (Apple Acct and Mobile App screen) and Erase all Devices (iCloud3 Devices screen)',
-        'reset_general':             'RESET GENERAL CONFIGURATION PARAMETERS → Set the `General Parameters` to their default value (Other Parameter Menu screens). Sensors are reset on the Sensors screen.',
-        'del_apple_acct_cookies':    'DELETE ALL APPLE/ICLOUD COOKIE FILES → Delete Apple Acct Cookie & Session files in the ‘.storage/icloud3.apple_acct’ directory, Restart HA',
-        'del_icloud3_config_files':  'DELETE ALL ICLOUD3 CONFIGURATION FILES → Delete the iCloud3  Configuration files in the ‘.storage/icloud3’ directory. Apple Accts will be reverified.',
-        'menu':                      ACTION_LIST_OPTIONS['menu']
-}
-TOOL_LIST_ITEMS = [
-        TOOL_LIST['log_level'],
-        TOOL_LIST['beta_version'],
-        TOOL_LIST['cleanup_entity_registry'],
-        TOOL_LIST['restart_icloud3'],
-        TOOL_LIST['reset_data_source'],
-        TOOL_LIST['reset_tracking'],
-        TOOL_LIST['reset_general'],
-        TOOL_LIST['del_apple_acct_cookies'],
-        TOOL_LIST['del_icloud3_config_files'],
-        ACTION_LIST_OPTIONS['menu'],
-]
 
 LOG_LEVEL = [
         ACTION_LIST_OPTIONS['save_menu'],
         ACTION_LIST_OPTIONS['menu'],
 ]
-TOOL_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in TOOL_LIST.items()}
 
 #------------------------–--------------------------------------------------------------
 #   Parameter List Selections Items

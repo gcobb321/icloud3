@@ -2,7 +2,7 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (PLATFORM_DEVICE_TRACKER, )
-from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFAULT_GENERAL_CONF,
+from ...const_config        import (CONF_APPLE_ACCT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFAULT_GENERAL_CONF,
                                     DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE,
                                     DEFAULT_DEVICE_MOBAPP_DATA_SOURCE, DEFAULT_TRACKING_CONF, )
 
@@ -49,63 +49,57 @@ class OptionsFlow_Tools_Steps:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_tools(self, user_input=None, errors=None):
         '''
+        Display the tools as menu rows:
         1. Delete the device from the tracking devices list and adjust the device index
         2. Delete all devices
         3. Clear the iCloud, Mobile App and track_from_zone fields from all devices
         '''
         self.step_id = 'tools'
-        self.errors = errors or {}
+        self.errors = errors or utils_cf.set_header_msg(self) or {}
         self.errors_user_input = {}
 
         await self.async_write_icloud3_configuration_file()
+        utils_cf.log_step_info(self, user_input)
 
-        if user_input is None or 'confrm_action_item' in user_input:
-            return self.async_show_form(step_id='tools',
-                                        data_schema=forms.form_tools(self, user_input),
-                                        errors=self.errors)
+        menu_options = {f"tools_{tool_item}": None for tool_item in TOOL_ITEMS}
+        menu_options['tools_back'] = None
 
-        action_item = TOOL_LIST_ITEMS_KEY_BY_TEXT.get(user_input['action_items'], '')
-        user_input['action_items'] = action_item
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)
+        return await utils_cf.async_show_list_menu(self, 'tools', menu_options)
 
-        utils_cf.log_step_info(self, user_input, action_item)
+#...........................................................
+    async def async_step_tools_back(self, user_input=None):
+        return await self.async_step_menu()
 
-        match action_item:
-            case 'menu':
-                return await self.async_step_menu()
+    async def open_tool(self, tool_item):
+        utils_cf.log_step_info(self, None, tool_item)
 
+        match tool_item:
             case 'log_level':
                 return await self.async_step_log_level()
 
+            case 'beta_version':
+                return await self.async_step_beta_version()
 
             case 'cleanup_entity_registry':
                 return await self.async_step_cleanup_entity_registry()
 
+        is_confirm_item = tool_item in TOOL_CONFIRM_ITEMS
+        removed_cnts = {
+                'devices': utils_cf.tr_cnt('cnt_devices', len(Gb.conf_devices)),
+                'apple_accts': utils_cf.tr_cnt('cnt_apple_accts',
+                                    len([conf_apple_acct for conf_apple_acct in Gb.conf_apple_accounts
+                                                        if conf_apple_acct[CONF_APPLE_ACCT]]))}
         self.confirm_action = {
-                'action_desc': TOOL_LIST[action_item],
-                'action_items': None,
-                'action_items_default': 0,
-                'no_func': None,
-                'no_func_async': None,
+                'action_desc': utils_cf.tr(f"confirm_{tool_item}", **removed_cnts) if is_confirm_item else None,
+                'yes_label': utils_cf.tr(f"confirm_yes_{tool_item}") if is_confirm_item else None,
+                'no_label': utils_cf.tr(f"confirm_no_{tool_item}") if is_confirm_item else None,
                 'yes_func': None,
                 'yes_func_async': None,
+                'done_msg': f"{tool_item}_done" if is_confirm_item else None,
                 'return_to_func_async': self.async_step_tools,
                 'return_to_next_yes_func_async': None}
 
-        match action_item:
-            case 'beta_version':
-                # Default to the opposite of the Pre-release switch's current state
-                # (CONFIRM_ACTIONS_BETA_VERSION: 0=Enable, 1=Disable)
-                is_prerelease_on = mp.icloud3_prerelease_switch_state()
-                if is_prerelease_on is not None:
-                    self.confirm_action['action_desc'] += \
-                            f" (Currently {'Enabled' if is_prerelease_on else 'Disabled'})"
-                self.confirm_action['action_items'] = CONFIRM_ACTIONS_BETA_VERSION
-                self.confirm_action['action_items_default'] = 1 if is_prerelease_on else 0
-                self.confirm_action['no_func_async']  = self.async_disable_icloud3_beta_downloads
-                self.confirm_action['yes_func_async'] = self.async_enable_icloud3_beta_downloads
-
+        match tool_item:
             case 'restart_icloud3':
                 self.confirm_action['yes_func'] = self.restart_icloud3
 
@@ -118,9 +112,6 @@ class OptionsFlow_Tools_Steps:
             case 'reset_general':
                 self.confirm_action['yes_func'] = self.reset_icloud3_config_file_general
 
-            case 'reset_config':
-                self.confirm_action['yes_func'] = self.reset_icloud3_config_file_tracking_general
-
             case 'del_apple_acct_cookies':
                 self.confirm_action['yes_func_async'] = self.async_delete_all_apple_cookie_files
 
@@ -132,6 +123,53 @@ class OptionsFlow_Tools_Steps:
             return await self.async_step_confirm_action()
 
         list_add(self.config_parms_update_control, ['tracking', 'restart'])
+
+        return await self.async_step_tools(errors=self.errors)
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#           BETA VERSIONS
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    async def async_step_beta_version(self, user_input=None, errors=None):
+        '''
+        Turn the iCloud3 Pre-release switch in HACS or the Marketplace on or off. The
+        configuration is not changed and iCloud3 is not restarted.
+        '''
+        self.step_id = 'beta_version'
+        self.errors = errors or {}
+        utils_cf.log_step_info(self, user_input)
+
+        is_prerelease_on = mp.icloud3_prerelease_switch_state()
+        store_domain, _update_entity_id = mp.repo_update_entity(mp.IC3_REPO_ID)
+        store = mp.STORE_FNAME.get(store_domain) or utils_cf.tr('beta_version_store_unknown')
+        state = utils_cf.tr('beta_version_state_unknown') if is_prerelease_on is None \
+                    else utils_cf.tr('beta_version_state_on') if is_prerelease_on \
+                    else utils_cf.tr('beta_version_state_off')
+
+        # The row that changes the switch is first
+        menu_options = {'beta_version_on': None, 'beta_version_off': None}
+        if is_prerelease_on:
+            menu_options = {'beta_version_off': None, 'beta_version_on': None}
+        menu_options['beta_version_back'] = None
+
+        return await utils_cf.async_show_list_menu(self, 'beta_version', menu_options,
+                                    placeholders={'store': store, 'state': state})
+
+    async def async_step_beta_version_on(self, user_input=None):
+        return await self._async_set_beta_version(turn_on=True)
+
+    async def async_step_beta_version_off(self, user_input=None):
+        return await self._async_set_beta_version(turn_on=False)
+
+    async def async_step_beta_version_back(self, user_input=None):
+        return await self.async_step_tools()
+
+    async def _async_set_beta_version(self, turn_on):
+        self.errors = {}
+        if turn_on:
+            await self.async_enable_icloud3_beta_downloads()
+        else:
+            await self.async_disable_icloud3_beta_downloads()
+        self.errors = self.errors or {'base': 'beta_version_on_done' if turn_on else 'beta_version_off_done'}
 
         return await self.async_step_tools(errors=self.errors)
 
@@ -155,7 +193,7 @@ class OptionsFlow_Tools_Steps:
     def _set_prerelease_switch_error(self, result):
         '''
         Set the error message displayed when the Pre-release switch was not changed.
-        The 'action_completed' message is displayed if it was.
+        The done message is displayed if it was.
         '''
         if result == '':
             return
@@ -192,10 +230,11 @@ class OptionsFlow_Tools_Steps:
 #------------------------------------------------------------------------------------------
     async def async_delete_all_apple_cookie_files(self):
         '''
-        Delete all files in the .storage/icloud3 directory
+        Delete all files in the .storage/icloud3.apple_acct directory
         '''
 
-        post_alert(f"All iCloud3 Configuration files are being deleted")
+        post_alert("All Apple Account cookie and session files are being deleted, "
+                    "tracking is paused until iCloud3 restarts")
         list_add(self.config_parms_update_control, ['restart'])
 
         await self.delete_all_files_and_remove_directory(Gb.icloud_cookies_directory)
@@ -426,3 +465,16 @@ class OptionsFlow_Tools_Steps:
                             f"Entities: {list_to_str(_sensors)}")
 
             log_info_msg(f"ENTITIES REMOVED ({status}): {_deleted_msg}")
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   The tools on the Tools menu are menu options. HA opens a menu option's
+#   async_step_[option] function so one is created for each tool.
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _open_tool_step(tool_item):
+    async def async_step_tool(self, user_input=None):
+        return await self.open_tool(tool_item)
+    return async_step_tool
+
+for _tool_item in TOOL_ITEMS:
+    setattr(OptionsFlow_Tools_Steps, f"async_step_tools_{_tool_item}", _open_tool_step(_tool_item))
