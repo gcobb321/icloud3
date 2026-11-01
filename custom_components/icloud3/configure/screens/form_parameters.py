@@ -331,7 +331,7 @@ def form_inzone_intervals(self):
                     selector.NumberSelector(selector.NumberSelectorConfig(
                         min=5, max=360, step=5, unit_of_measurement='minutes')),
         vol.Optional(IPAD,
-                    default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL]):
+                    default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
                         min=5, max=360, step=5, unit_of_measurement='minutes')),
         vol.Optional(IPAD_CELL,
