@@ -186,8 +186,6 @@ ACTION_LIST_OPTIONS = {
 
         }
 
-ACTION_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in ACTION_LIST_OPTIONS.items()}
-ACTION_LIST_ITEM_KEYS         = list(ACTION_LIST_OPTIONS.keys())
 
 NONE_DICT_KEY_TEXT          = {'None': 'None'}
 NONE_FAMSHR_DICT_KEY_TEXT   = {'None': 'ⓧ Apple iCloud Location Service is not used on this device'}
@@ -205,20 +203,6 @@ TOOL_ITEMS = [  'log_level', 'beta_version', 'cleanup_entity_registry', 'restart
                 'reset_data_source', 'reset_tracking', 'reset_general', 'del_apple_acct_cookies',
                 'del_icloud3_config_files', ]
 
-REAUTH_ACTIONS = [
-        ACTION_LIST_OPTIONS['request_auth_code'],
-        ACTION_LIST_OPTIONS['send_auth_code'],
-        ACTION_LIST_OPTIONS['change_auth_method'],
-        ACTION_LIST_OPTIONS['user_auth_dashboard']]
-REAUTH_CODE_FROM_APPLECOM_LOGIN = [
-        ACTION_LIST_OPTIONS['send_auth_code'],
-        ACTION_LIST_OPTIONS['goto_previous']]
-CHANGE_AUTH_METHOD = [
-        ACTION_LIST_OPTIONS['refresh_hwkey_names'],
-        ACTION_LIST_OPTIONS['save']]
-USER_AUTH_DASHBOARD = [
-        ACTION_LIST_OPTIONS['refresh'],
-        ACTION_LIST_OPTIONS['goto_previous']]
 
         # ACTION_LIST_OPTIONS['rtn_device_list']]
         # ACTION_LIST_OPTIONS['menu']]
@@ -247,11 +231,6 @@ APPLE_ACCT_LIST_PAGE_SIZE = 5
 DATA_SOURCE_OPTIONS = {
         'iCloud':   'APPLE ACCOUNT - Location data is provided for devices in the Family Sharing List',
         'MobApp':   'HA MOBILE APP - Location data and zone enter/exit triggers from devices with the Mobile App'
-        }
-REAUTH_AUTH_METHODS = {
-        'push':     'Authentication Code popup window',
-        'text':     'Text Message to `……{method_info}`',
-        'hwkey':    'Security Key ({method_info})'
         }
 
 # Apple Server Endpoint value - Add onto the Server URL in AppleAcct_ic3 if this starts with a period ('.')
@@ -301,6 +280,7 @@ DISTANCE_METHOD_OPTIONS = {
         }
 WAZE_SERVER_OPTIONS = ['us', 'il', 'row']
 WAZE_HISTORY_TRACK_DIRECTION_OPTIONS = ['north_south', 'east_west']
+USER_AUTH_RAW_YAML_DISPLAY_MODES = ['always', 'when_auth_needed']
 # The sensors that are always created. They are not on the Sensors screen, the section
 # descriptions name them.
 ALWAYS_CREATED_SENSORS = {
@@ -309,10 +289,6 @@ ALWAYS_CREATED_SENSORS = {
         'tracking_time':        [TRAVEL_TIME, ARRIVAL_TIME],
         'tracking_distance':    [HOME_DISTANCE],
         'monitored_devices':    ['md_badge', 'md_battery'],
-        }
-USER_AUTH_RAW_YAML_DISPLAY_MODE = {
-        'always':           'Always display the text/button entities on the Dashboard',
-        'when_auth_needed': 'Only display text/button entities when an Authentication is needed'
         }
 CONF_SENSORS_DEFAULT = {
         BATTERY:            '_battery, _battery_status → Create Battery Level (65%) and Battery Status (Charging, Low, etc) (ALWAYS CREATED)',

@@ -29,34 +29,37 @@
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
 
       "auth_code_needed": "An Apple Account needs to be Authenticated",
-      "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
-      "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
-      "auth_code_complete": "✅ The Authentication Code process is complete",
+      "auth_code_requested": "✓ A new code was requested ({auth_method})",
+      "auth_code_accepted": "✓ The Authentication Code was accepted. Reauthentication is complete",
+      "auth_code_complete": "✓ The Authentication Code process is complete",
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
-      "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
-      "auth_code_invalid": "❌ The Auth Code was not correct. Reenter or request a new code",
-      "auth_code_invalid_text": "❌ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
-      "auth_code_send_error": "❌ Failed to send the Authentication Code",
+      "auth_code_another_auth_needed": "⚠︎ Another Apple Account needs to be authenticated",
+      "auth_code_invalid": "⚠︎ The Authentication Code was not correct. Reenter or request a new code",
+      "auth_code_invalid_text": "⚠︎ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
+      "auth_code_send_error": "⚠︎ Failed to send the Authentication Code",
       "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
 
-      "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
-      "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
-      "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
-      "text_or_hwkey_none": "❌ No Trusted Phone Numbers or Security Keys were found in the Apple Account",
-      "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
-      "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
+      "hwkey_waiting_for_keypress": "✓ The security key authentication was started",
+      "hwkey_auth_succeeded": "✓ Security Key authentication succeeded. Reauthentication is complete",
+      "hwkey_names_refreshed": "✓ Security Key names refreshed from Apple",
+      "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+      "hwkey_auth_not_avail": "⚠︎ The Security Key is not inserted into the HA Server, insert and retry",
+      "hwkey_auth_failed": "⚠︎ Security Key authentication failed. Error: {info_msg}",
 
-      "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
-      "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
-      "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Apple Acct screen)",
+      "apple_acct_not_logged_into": "Not signed in to this Apple Account. Check the email or phone and password, then save.",
+      "apple_acct_terms_update_accepted": "✓ Apple's new Terms of Use were accepted",
+      "apple_acct_terms_of_use_update_needed": "⚠︎ Apple changed its Terms of Use. Accept them to resume location updates.",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
-      "apple_acct_login_error_503": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request",
-      "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
+      "apple_acct_login_error_503": "Apple refused the sign-in (503). Close Configure (✕), wait a few minutes, then try again.",
+      "apple_acct_login_error_other": "⚠︎ Sign-in error, another error or the Apple server is not available",
 
-      "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
-      "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
+      "internet_error": "⚠︎ iCloud3 can't connect to the internet",
+      "internet_error_no_change": "⚠︎ iCloud3 can't connect to the internet, the actions that need the Apple Account aren't available",
       "icloud_no_devices": "No devices were found in the iCloud `Family Sharing` list",
-      "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later"
+      "icloud_other_error": "An unknown error was encountered authenticating the Apple Account. Try again later",
+      "apple_acct_inupw_valid": "⚠︎ Invalid Username or Password",
+      "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
+      "auth_code_request_error": "⚠︎ The code could not be requested. Check the HA log, then try again."
 
     },
 
@@ -64,11 +67,11 @@
     "step": {
       "user": {
         "data": {
-          "continue": "CONTINUE > Select SUBMIT to complete the iCloud3 installation",
-          "reset_tracking": "PREVIOUS ICLOUD3 CONFIG WAS FOUND. DO YOU WANT TO REINITIALIZE THE APPLE ACCOUNTS & DEVICES?",
+          "continue": "Continue > Select SUBMIT to complete the iCloud3 installation",
+          "reset_tracking": "Previous iCloud3 config was found. Do you want to reinitialize the Apple Accounts & devices?",
           "continue_restart_ha": "Select to continue iCloud3 installation. Then RESTART HOME ASSISTANT"
         },
-        "description": "CONGRATULATIONS! The iCloud3 v3 Integration has been added to Home Assistant. The next step is to configure the devices you want to track.\n\nSelect SUBMIT below, then select CONFIGURE to configure iCloud3.\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\nThe iCloud3 User Guide will help you get started. Select the question mark (?) in the upper-right corner of this screen to open the “iCloud User Guide”. The following chapters will be helpful:\n&nbsp;&nbsp;• ICLOUD COMPONENTS - Provides an overview of the Device Tracker screen,\n&nbsp;&nbsp;&nbsp;&nbsp;the Event Logand the Configure screens that are used to set up iCloud3\n&nbsp;&nbsp;• APPLE ACCOUNT - Covers setting up and logging into your Apple Account.\n&nbsp;&nbsp;&nbsp;&nbsp;It will provide information about your devices including their location.\n&nbsp;&nbsp;• MOBILE APP INTEGRATION - Covers setting up and configuring the Mobile App. \n&nbsp;&nbsp;&nbsp;&nbsp;It will provide zone enter/exit triggers and location data.\n&nbsp;&nbsp;• EVENT LOG - Provides information on iCloud3 activities to include startup status, \n&nbsp;&nbsp;&nbsp;&nbsp;errors, alerts, device tracking results, battery information, shortcuts for\n&nbsp;&nbsp;&nbsp;&nbsp;configuring iCloud3 and Actions that can control iCloud3 operations.\n&nbsp;&nbsp;• DASHBOARD BUILDER - Builds an iCloud3 Dashboard showing Device\n&nbsp;&nbsp;&nbsp;&nbsp;Tracking Results and the Event log.\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n🕓 After you click Submit, be patient. HA will scan for your iCloud Devices. It may take up to 30-seconds to discover them all.",
+        "description": "CONGRATULATIONS! The iCloud3 v3 Integration has been added to Home Assistant. The next step is to configure the devices you want to track.\n\nSelect SUBMIT below, then select CONFIGURE to configure iCloud3.\n\n---\n\nThe iCloud3 User Guide will help you get started. Select the question mark (?) in the upper-right corner of this screen to open the “iCloud3 User Guide”. The following chapters will be helpful:\n&nbsp;&nbsp;• ICLOUD COMPONENTS - Provides an overview of the Device Tracker screen,\n&nbsp;&nbsp;&nbsp;&nbsp;the Event Log and the Configure screens that are used to set up iCloud3\n&nbsp;&nbsp;• APPLE ACCOUNT - Covers setting up and logging into your Apple Account.\n&nbsp;&nbsp;&nbsp;&nbsp;It will provide information about your devices including their location.\n&nbsp;&nbsp;• MOBILE APP INTEGRATION - Covers setting up and configuring the Mobile App. \n&nbsp;&nbsp;&nbsp;&nbsp;It will provide zone enter/exit triggers and location data.\n&nbsp;&nbsp;• EVENT LOG - Provides information on iCloud3 activities to include startup status, \n&nbsp;&nbsp;&nbsp;&nbsp;errors, alerts, device tracking results, battery information, shortcuts for\n&nbsp;&nbsp;&nbsp;&nbsp;configuring iCloud3 and Actions that can control iCloud3 operations.\n&nbsp;&nbsp;• DASHBOARD BUILDER - Builds an iCloud3 Dashboard showing Device\n&nbsp;&nbsp;&nbsp;&nbsp;Tracking Results and the Event log.\n\n---\n\n🕓 After you click Submit, be patient. HA will scan for your iCloud Devices. It may take up to 30 seconds to discover them all.",
         "title": "iCloud3 v3 Integration Installer",
         "data_description": {
           "reset_tracking": "The iCloud3 Configuration has been previously set up and is normally used when adding the iCloud3 Integration again. Check this option if you want to remove the Apple account and Devices configuration and start over"
@@ -77,42 +80,62 @@
 
 
       "reauth": {
-        "title": "Authenticate Apple Account Sign-In",
-        "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
+        "title": "Authenticate the Apple Account",
+        "description": "**{acct_name}** · {acct_status}\n{acct_info}\n\n{header_msg}",
         "data": {
-          "account_selected": "APPLE ACCOUNT",
-          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
-          "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
-          "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "auth_code": "Authentication code",
+          "terms_of_use": "Accept Apple's new Terms of Use",
+          "form_action": "Action"
+        },
+        "data_description": {
+          "auth_code": "The 6-digit code from Apple",
+          "terms_of_use": "Review them at https://www.apple.com/legal/internet-services/icloud/"
+        }
+      },
+
+
+      "reauth_options": {
+        "title": "Authentication options",
+        "description": "**{acct_name}** · {acct_status}\n{acct_info}\n\n{header_msg}",
+        "menu_options": {
+          "reauth_options_request_code": "Request a new code",
+          "reauth_change_auth_method": "Change how the code is sent",
+          "user_auth_dashboard": "Build a Dashboard card for entering the code"
+        },
+        "menu_option_descriptions": {
+          "reauth_options_request_code": "{request_info}",
+          "reauth_change_auth_method": "Now: {auth_method}",
+          "user_auth_dashboard": "A card with the Request code button and the Enter code field, to authenticate from a Dashboard"
         }
       },
 
 
       "reauth_change_auth_method": {
-        "title": "Change Apple Account Authentication Method",
-        "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
+        "title": "Authenticate › Change how the code is sent",
+        "description": "**{acct_name}** · {acct_status}\n\nApple can show the code on your Apple devices (default) or send it in a text message, or you can use a security key (YubiKey). iCloud3 uses the method selected here.",
         "data": {
-          "account_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT",
-          "auth_method": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ AUTHENTICATION METHOD - Method used to authenticate the Apple Account",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "auth_method": "Method",
+          "form_action": "Action"
         }
       },
 
 
       "reauth_hwkey_progress": {
-        "title": "Touch the Security Security Key",
-        "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
+        "title": "Touch the security key",
+        "description": "{spinner}  Touch the security key “{key_name}” plugged into the Home Assistant server\n\nTime left: {remaining} seconds"
       },
 
 
       "reauth_code_from_applecom_login": {
-        "title": "Get an Authentication Code from Apple.com",
-        "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the Text Message never arrives, follow these steps to generate one: \n\n**&#9312; Go to your Apple Account Signin screen** - Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n* If you are already signed in, sign out \n* If you are on a device with Face ID, cover the camera so you are not automatically signed into your account again.\n\n**&#9313; Sign into your Apple Account** - Enter your _**apple_id**_, tap _**Continue**_, enter your _**password**_, tap _**Sign-in**_. If you are using a device with Face ID (iPhone, iPad), you may have to select _Use a different Apple Account_ to bypass the Face Id process.\n\n* The auth code will be displayed on a Trusted Device as it always is.\n* Display the auth code as you normally do.\n\n _**Do not enter it on apple.com. That will authenticate apple.com, not iCloud3**_\n\n**&#9314; Return to this screen** - If you opened a browser tab (i.e., Windows) to log into your Apple Account, you can close it.\n\n**&#9315; Authenticate iCloud3** - Enter the auth code in the field below and send it to Apple for verification. If it is not accepted, follow these same steps again to get a new code.",
+        "title": "Authenticate › Get a code from apple.com",
+        "description": "If you request an Authentication Code but the *Apple Account Sign-In Requested* window or the Text Message never arrives, follow these steps to generate one: \n\n**&#9312; Go to your Apple Account Signin screen** - Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n* If you are already signed in, sign out \n* If you are on a device with Face ID, cover the camera so you are not automatically signed into your account again.\n\n**&#9313; Sign in to your Apple Account** - Enter your _**apple_id**_, tap _**Continue**_, enter your _**password**_, tap _**Sign-in**_. If you are using a device with Face ID (iPhone, iPad), you may have to select _Use a different Apple Account_ to bypass the Face Id process.\n\n* The auth code will be displayed on a Trusted Device as it always is.\n* Display the auth code as you normally do.\n\n _**Do not enter it on apple.com. That will authenticate apple.com, not iCloud3**_\n\n**&#9314; Return to this screen** - If you opened a browser tab (i.e., Windows) to log into your Apple Account, you can close it.\n\n**&#9315; Authenticate iCloud3** - Enter the auth code in the field below and send it to Apple for verification. If it is not accepted, follow these same steps again to get a new code.",
           "data": {
-            "auth_code": "AUTHENTICATION CODE - Authentication Code just received by logging into your Apple Account",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-          }
+          "auth_code": "Authentication code",
+          "form_action": "Action"
+          },
+        "data_description": {
+          "auth_code": "The code shown on your Apple device after signing in to apple.com"
+        }
       },
 
 
@@ -125,6 +148,19 @@
       "restart_ha_reload_icloud3": {
         "title": "Restart Home Assistant or iCloud3",
         "description": "Restart Home Assistant or reload and reinitialize the iCloud3 Integration\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING"
+      },
+      "user_auth_dashboard": {
+        "title": "Authenticate › Dashboard card for entering the code",
+        "description": "A Dashboard card with the Request code button and the Enter code field, so an Apple Account can be authenticated from a Dashboard.",
+        "data": {
+          "include_acct": "Apple Accounts on the card",
+          "display_mode": "Show the card",
+          "raw_yaml_code": "Card code (YAML)",
+          "form_action": "Action"
+        },
+        "data_description": {
+          "raw_yaml_code": "• COPY - Click the raw_yaml code above, press Ctrl+A/⌘+A (select), then Ctrl+C/⌘+C (copy)\n• DASHBOARD - Go to the Dashboard, select *Edit Dashboard > +Add Card*. Select *Manual* at the bottom of the card list\n• MANUAL CARD - Select all of the text already in the Manual card (probably *type: ' '* ) on the left\n• PASTE - Press Ctrl+V/⌘+V (paste) to replace it with this code, then *Save*, then *Done*"
+        }
       }
     }
   },
@@ -184,7 +220,7 @@
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Authenticate Apple Account Sign-in)",
 
       "auth_code_needed": "An Apple Account needs to be Authenticated",
-      "auth_code_requested": "⛔ WAITING… ① ENTER {auth_method} CODE, ② SELECT AUTHENTICATE ⛔",
+      "auth_code_requested": "✓ A new code was requested ({auth_method})",
       "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
       "auth_code_complete": "✅ The Authentication Code process is complete",
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
@@ -194,7 +230,7 @@
       "auth_code_send_error": "❌ Failed to send the Authentication Code",
       "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
 
-      "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
+      "hwkey_waiting_for_keypress": "✓ The security key authentication was started",
       "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
       "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
       "hwkey_names_none": "❌ No Security Keys were found in the Apple Account",
@@ -287,6 +323,7 @@
       "deleted_apple_acct": "✓ Deleted the Apple Account {apple_acct}",
       "deleted_device_sensors": "✓ Deleted {devices} and {sensors} from HA",
       "added_devices": "✓ Added {devices}",
+      "auth_code_request_error": "⚠︎ The code could not be requested. Check the HA log, then try again.",
       "zone_not_selectable": "This zone can't be selected. Select one of the zones iCloud3 uses, Stationary zones are not available.",
       "action_failed": "⚠︎ The action failed, see the iCloud3 log file",
       "prerelease_repo_not_installed": "Not changed: iCloud3 wasn't installed from HACS or the Marketplace.",
@@ -499,43 +536,60 @@
 
 
       "reauth": {
-        "title": "Authenticate Apple Account Sign-In",
-        "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
+        "title": "Authenticate the Apple Account",
+        "description": "**{acct_name}** · {acct_status}\n{acct_info}\n\n{header_msg}",
         "data": {
-          "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-          "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
-          "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
-          "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "auth_code": "Authentication code",
+          "terms_of_use": "Accept Apple's new Terms of Use",
+          "form_action": "Action"
+        },
+        "data_description": {
+          "auth_code": "The 6-digit code from Apple",
+          "terms_of_use": "Review them at https://www.apple.com/legal/internet-services/icloud/"
+        }
+      },
+
+
+      "reauth_options": {
+        "title": "Authentication options",
+        "description": "**{acct_name}** · {acct_status}\n{acct_info}\n\n{header_msg}",
+        "menu_options": {
+          "reauth_options_request_code": "Request a new code",
+          "reauth_change_auth_method": "Change how the code is sent",
+          "user_auth_dashboard": "Build a Dashboard card for entering the code"
+        },
+        "menu_option_descriptions": {
+          "reauth_options_request_code": "{request_info}",
+          "reauth_change_auth_method": "Now: {auth_method}",
+          "user_auth_dashboard": "A card with the Request code button and the Enter code field, to authenticate from a Dashboard"
         }
       },
 
 
       "reauth_change_auth_method": {
-        "title": "Change Apple Account Authentication Method",
-        "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
+        "title": "Authenticate › Change how the code is sent",
+        "description": "**{acct_name}** · {acct_status}\n\nApple can show the code on your Apple devices (default) or send it in a text message, or you can use a security key (YubiKey). iCloud3 uses the method selected here.",
         "data": {
-          "account_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT BEING AUTHENTICATED",
-          "auth_method": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ AUTHENTICATION METHOD - Method used to authenticate the Apple Account",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "auth_method": "Method",
+          "form_action": "Action"
         }
       },
 
 
       "reauth_hwkey_progress": {
-        "title": "Touch the Security Security Key",
-        "description": "{spinner}  Touch key '{key_name}' on the HA server now\n\nTimeout in {remaining} seconds"
+        "title": "Apple Accounts › Touch the security key",
+        "description": "{spinner}  Touch key “{key_name}” on the HA server now\n\nTimeout in {remaining} seconds"
       },
 
 
       "user_auth_dashboard": {
-        "title": "Build User Authentication Dashboard Card",
-        "description": "Create the text/button entity raw_yaml code for authenticating Apple Account signin from an HA Dashboard",
+        "title": "Authenticate › Dashboard card for entering the code",
+        "description": "A Dashboard card with the Request code button and the Enter code field, so an Apple Account can be authenticated from a Dashboard.",
         "data": {
-          "include_acct": "INCLUDE - Build raw_yaml code for these Apple Accounts",
-          "display_mode": "DISPLAY MODE - How the raw_yaml code should displayed on the Dashboard",
-          "raw_yaml_code": " Copy the code below and paste it into a Dashboard Card raw_yaml edit field",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+          "include_acct": "Apple Accounts on the card",
+          "display_mode": "Show the card",
+          "raw_yaml_code": "Card code (YAML)",
+          "form_action": "Action"
         },
         "data_description": {
           "raw_yaml_code": "• COPY - Click the raw_yaml code above, press Ctrl+A/⌘+A (select), then Ctrl+C/⌘+C (copy)\n• DASHBOARD - Go to the Dashboard, select *Edit Dashboard > +Add Card*. Select *Manual* at the bottom of the card list\n• MANUAL CARD - Select all of the text already in the Manual card (probably *type: ' '* ) on the left\n• PASTE - Press Ctrl+V/⌘+V (paste) to replace it with this code, then *Save*, then *Done*"
@@ -544,12 +598,15 @@
 
 
       "reauth_code_from_applecom_login": {
-        "title": "Get an Authentication Code from Apple.com",
-        "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the Text Message never arrives, follow these steps to generate one: \n\n**&#9312; Go to your Apple Account Signin screen** - Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n* If you are already signed in, sign out \n* If you are on a device with Face ID, cover the camera so you are not automatically signed into your account again.\n\n**&#9313; Sign into your Apple Account** - Enter your _**apple_id**_, tap _**Continue**_, enter your _**password**_, tap _**Sign-in**_. If you are using a device with Face ID (iPhone, iPad), you may have to select _Use a different Apple Account_ to bypass the Face Id process.\n\n* The auth code will be displayed on a Trusted Device as it always is.\n* Display the auth code as you normally do.\n\n _**Do not enter it on apple.com. That will authenticate apple.com, not iCloud3**_\n\n**&#9314; Return to this screen** - If you opened a browser tab (i.e., Windows) to log into your Apple Account, you can close it.\n\n**&#9315; Authenticate iCloud3** - Enter the auth code in the field below and send it to Apple for verification. If it is not accepted, follow these same steps again to get a new code.",
+        "title": "Authenticate › Get a code from apple.com",
+        "description": "If you request an Authentication Code but the *Apple Account Sign-In Requested* window or the Text Message never arrives, follow these steps to generate one: \n\n**&#9312; Go to your Apple Account Signin screen** - Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n* If you are already signed in, sign out \n* If you are on a device with Face ID, cover the camera so you are not automatically signed into your account again.\n\n**&#9313; Sign in to your Apple Account** - Enter your _**apple_id**_, tap _**Continue**_, enter your _**password**_, tap _**Sign-in**_. If you are using a device with Face ID (iPhone, iPad), you may have to select _Use a different Apple Account_ to bypass the Face Id process.\n\n* The auth code will be displayed on a Trusted Device as it always is.\n* Display the auth code as you normally do.\n\n _**Do not enter it on apple.com. That will authenticate apple.com, not iCloud3**_\n\n**&#9314; Return to this screen** - If you opened a browser tab (i.e., Windows) to log into your Apple Account, you can close it.\n\n**&#9315; Authenticate iCloud3** - Enter the auth code in the field below and send it to Apple for verification. If it is not accepted, follow these same steps again to get a new code.",
           "data": {
-            "auth_code": "AUTHENTICATION CODE - Authentication Code just received by logging into your Apple Account",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
-          }
+          "auth_code": "Authentication code",
+          "form_action": "Action"
+          },
+        "data_description": {
+          "auth_code": "The code shown on your Apple device after signing in to apple.com"
+        }
       },
 
 
@@ -1582,7 +1639,7 @@
           "apple_acct_terms_of_use_update_needed": "⚠︎ Apple changed its Terms of Use. Accept them to resume location updates.",
 
           "auth_code_needed": "An Apple Account needs to be Authenticated",
-          "auth_code_requested": "⚠︎ Waiting for the code ({auth_method}). Enter it, then select ✓ Send the code to Apple",
+          "auth_code_requested": "✓ A new code was requested ({auth_method})",
           "auth_code_accepted": "✓ The Authentication Code was accepted. Reauthentication is complete",
           "auth_code_complete": "✓ The Authentication Code process is complete",
           "auth_code_cancelled": "The Apple Account authentication was cancelled",
@@ -1592,7 +1649,7 @@
           "auth_code_send_error": "⚠︎ Failed to send the Authentication Code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
 
-          "hwkey_waiting_for_keypress": "⚠︎ Select ✓ Authenticate with the security key, then touch the key",
+          "hwkey_waiting_for_keypress": "✓ The security key authentication was started",
           "hwkey_auth_succeeded": "✓ Security Key authentication succeeded. Reauthentication is complete",
           "hwkey_names_refreshed": "✓ Security Key names refreshed from Apple",
           "hwkey_names_none": "⚠︎ No Security Keys were found in the Apple Account",
@@ -1729,31 +1786,49 @@
             }
           },
           "reauth": {
-            "title": "Authenticate Apple Account Sign-In",
-            "description": "The Apple Account sign-in must be reauthenticated every 90-days or so. This screen is used to enter the 6-digit authentication code or to authenticate using Security Key (YubiKey) plugged into your HA server.",
+            "title": "Authenticate the Apple Account",
+            "description": "**{acct_name}** · {acct_status}\n{acct_info}\n\n{header_msg}",
             "data": {
-              "account_selected": "APPLE ACCOUNT TO BE AUTHENTICATED",
-              "auth_method": "METHOD - Send the Code to a Push Notification Window, in a Text Msg or use a Security Key",
-              "auth_code": "AUTHENTICATION CODE - Authenticate Code displayed on the Trusted Devices",
-              "terms_of_use": "TERMS OF USE - Accept Apple `Terms of Use`. For more information, go to http://icloud.com",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "auth_code": "Authentication code",
+              "terms_of_use": "Accept Apple's new Terms of Use",
+              "form_action": "Action"
+            },
+            "data_description": {
+              "auth_code": "The 6-digit code from Apple",
+              "terms_of_use": "Review them at https://www.apple.com/legal/internet-services/icloud/"
+            }
+          },
+          "reauth_options": {
+            "title": "Authentication options",
+            "description": "**{acct_name}** · {acct_status}\n{acct_info}\n\n{header_msg}",
+            "menu_options": {
+              "reauth_options_request_code": "Request a new code",
+              "reauth_change_auth_method": "Change how the code is sent",
+              "user_auth_dashboard": "Build a Dashboard card for entering the code"
+            },
+            "menu_option_descriptions": {
+              "reauth_options_request_code": "{request_info}",
+              "reauth_change_auth_method": "Now: {auth_method}",
+              "user_auth_dashboard": "A card with the Request code button and the Enter code field, to authenticate from a Dashboard"
             }
           },
           "reauth_change_auth_method": {
-            "title": "Change Apple Account Authentication Method",
-            "description": "Apple uses several methods to authenticate access to the Apple Account - a 'push notification' window (default), in a text message or by a Security Key (YubiKey). iCloud3 will use the authentication method selected on this screen",
+            "title": "Authenticate › Change how the code is sent",
+            "description": "**{acct_name}** · {acct_status}\n\nApple can show the code on your Apple devices (default) or send it in a text message, or you can use a security key (YubiKey). iCloud3 uses the method selected here.",
             "data": {
-              "account_selected": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT BEING AUTHENTICATED",
-              "auth_method": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ AUTHENTICATION METHOD - Method used to authenticate the Apple Account",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "auth_method": "Method",
+              "form_action": "Action"
             }
           },
           "reauth_code_from_applecom_login": {
-            "title": "Get an Authentication Code from Apple.com",
-            "description": "If you request an Authentication Code but the *Apple Acct Sign-in is Requested* window or the Text Message never arrives, follow these steps to generate one: \n\n**&#9312; Go to your Apple Account Signin screen** - Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n* If you are already signed in, sign out \n* If you are on a device with Face ID, cover the camera so you are not automatically signed into your account again.\n\n**&#9313; Sign into your Apple Account** - Enter your _**apple_id**_, tap _**Continue**_, enter your _**password**_, tap _**Sign-in**_. If you are using a device with Face ID (iPhone, iPad), you may have to select _Use a different Apple Account_ to bypass the Face Id process.\n\n* The auth code will be displayed on a Trusted Device as it always is.\n* Display the auth code as you normally do.\n\n _**Do not enter it on apple.com. That will authenticate apple.com, not iCloud3**_\n\n**&#9314; Return to this screen** - If you opened a browser tab (i.e., Windows) to log into your Apple Account, you can close it.\n\n**&#9315; Authenticate iCloud3** - Enter the auth code in the field below and send it to Apple for verification. If it is not accepted, follow these same steps again to get a new code.",
+            "title": "Authenticate › Get a code from apple.com",
+            "description": "If you request an Authentication Code but the *Apple Account Sign-In Requested* window or the Text Message never arrives, follow these steps to generate one: \n\n**&#9312; Go to your Apple Account Signin screen** - Click this link to go to your Apple Account Sign-in screen in a web browser  https://appleid.apple.com/ \n* If you are already signed in, sign out \n* If you are on a device with Face ID, cover the camera so you are not automatically signed into your account again.\n\n**&#9313; Sign in to your Apple Account** - Enter your _**apple_id**_, tap _**Continue**_, enter your _**password**_, tap _**Sign-in**_. If you are using a device with Face ID (iPhone, iPad), you may have to select _Use a different Apple Account_ to bypass the Face Id process.\n\n* The auth code will be displayed on a Trusted Device as it always is.\n* Display the auth code as you normally do.\n\n _**Do not enter it on apple.com. That will authenticate apple.com, not iCloud3**_\n\n**&#9314; Return to this screen** - If you opened a browser tab (i.e., Windows) to log into your Apple Account, you can close it.\n\n**&#9315; Authenticate iCloud3** - Enter the auth code in the field below and send it to Apple for verification. If it is not accepted, follow these same steps again to get a new code.",
             "data": {
-              "auth_code": "AUTHENTICATION CODE - Authentication Code just received by logging into your Apple Account",
-              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+              "auth_code": "Authentication code",
+              "form_action": "Action"
+            },
+            "data_description": {
+              "auth_code": "The code shown on your Apple device after signing in to apple.com"
             }
           },
 
@@ -1828,6 +1903,19 @@
               "form_action": "Action"
             },
             "data_description": {}
+          },
+          "user_auth_dashboard": {
+            "title": "Authenticate › Dashboard card for entering the code",
+            "description": "A Dashboard card with the Request code button and the Enter code field, so an Apple Account can be authenticated from a Dashboard.",
+            "data": {
+              "include_acct": "Apple Accounts on the card",
+              "display_mode": "Show the card",
+              "raw_yaml_code": "Card code (YAML)",
+              "form_action": "Action"
+            },
+            "data_description": {
+              "raw_yaml_code": "• COPY - Click the raw_yaml code above, press Ctrl+A/⌘+A (select), then Ctrl+C/⌘+C (copy)\n• DASHBOARD - Go to the Dashboard, select *Edit Dashboard > +Add Card*. Select *Manual* at the bottom of the card list\n• MANUAL CARD - Select all of the text already in the Manual card (probably *type: ' '* ) on the left\n• PASTE - Press Ctrl+V/⌘+V (paste) to replace it with this code, then *Save*, then *Done*"
+            }
           }
         },
         "error": {
@@ -1868,7 +1956,7 @@
           "apple_acct_terms_update_accepted": "✓ Apple's new Terms of Use were accepted",
           "apple_acct_terms_of_use_update_needed": "⚠︎ Apple changed its Terms of Use. Accept them to resume location updates.",
           "auth_code_needed": "An Apple Account needs to be Authenticated",
-          "auth_code_requested": "⚠︎ Waiting for the code ({auth_method}). Enter it, then select ✓ Send the code to Apple",
+          "auth_code_requested": "✓ A new code was requested ({auth_method})",
           "auth_code_accepted": "✓ The Authentication Code was accepted. Reauthentication is complete",
           "auth_code_complete": "✓ The Authentication Code process is complete",
           "auth_code_cancelled": "The Apple Account authentication was cancelled",
@@ -1877,7 +1965,7 @@
           "auth_code_invalid_text": "⚠︎ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
           "auth_code_send_error": "⚠︎ Failed to send the Authentication Code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
-          "hwkey_waiting_for_keypress": "⚠︎ Select ✓ Authenticate with the security key, then touch the key",
+          "hwkey_waiting_for_keypress": "✓ The security key authentication was started",
           "hwkey_auth_succeeded": "✓ Security Key authentication succeeded. Reauthentication is complete",
           "hwkey_names_refreshed": "✓ Security Key names refreshed from Apple",
           "hwkey_names_none": "⚠︎ No Security Keys were found in the Apple Account",
@@ -2157,6 +2245,8 @@
         "dest_the_device": "the device",
         "dest_add_device": "Add a device",
         "dest_the_apple_acct": "the Apple Account",
+        "dest_reauth": "the authentication screen",
+        "dest_reauth_options": "Authentication options",
         "dest_text_list": "the text list",
         "saved_inzone_intervals": "Default intervals for new devices",
         "saved_tracking_parameters": "Tracking parameters",
@@ -2172,6 +2262,7 @@
         "saved_log_level": "Log level",
         "saved_device_order": "Device order",
         "saved_tracking_modes": "Tracking modes",
+        "saved_auth_method": "How the code is sent",
         "action_delete_device": "✕ Delete this device",
         "action_delete_apple_acct": "✕ Delete this Apple Account",
         "action_stop_login_retry": "Stop retrying the sign-in",
@@ -2187,6 +2278,35 @@
         "beta_version_state_off": "off",
         "beta_version_state_on": "on",
         "downloads_not_available": "The GitHub download counts are not available",
+        "reauth_accept_terms_of_use": "✓ Accept Apple's new Terms of Use",
+        "reauth_send_auth_code": "✓ Send the code to Apple",
+        "reauth_request_auth_code": "Request a new code",
+        "reauth_send_hwkey": "✓ Authenticate with the security key",
+        "reauth_request_hwkey": "Start the security key authentication",
+        "reauth_change_auth_method": "Change how the code is sent",
+        "reauth_auth_code_from_applecom_login": "Apple didn't send a code — get one from apple.com",
+        "reauth_status_waiting": "⚠︎ Apple is waiting for a 6-digit code",
+        "reauth_status_waiting_hwkey": "⚠︎ Apple is waiting for the security key",
+        "reauth_status_terms": "⚠︎ Apple changed its Terms of Use",
+        "reauth_status_signed_in": "Signed in, Apple isn't waiting for a code",
+        "reauth_enter_push": "Enter the code shown on your Apple devices, or request a new one",
+        "reauth_enter_text": "Enter the code sent by text message to ……{method_info}, or request a new one",
+        "reauth_enter_hwkey": "Start the security key authentication, then choose ✓ Authenticate with the security key and touch the key ({method_info})",
+        "reauth_info_terms": "Accept them to resume location updates",
+        "reauth_method_push": "New codes are shown on your Apple devices",
+        "reauth_method_text": "New codes are sent by text message to ……{method_info}",
+        "reauth_method_hwkey": "Sign-in uses the security key ({method_info})",
+        "reauth_request_info": "Untrusts this sign-in and asks Apple for a new code to enter here",
+        "reauth_request_info_hwkey": "Untrusts this sign-in and starts the security key authentication",
+        "reauth_close": "◀ Close and return to Home Assistant",
+        "reauth_back_repair": "◀ Done, finish the repair",
+        "reauth_save_auth_method": "✓ Use the selected method and return to {dest}",
+        "reauth_refresh_hwkey_names": "Get the trusted phone numbers and security keys from Apple again, stay on this screen",
+        "reauth_refresh_card": "✓ Update the card code, stay on this screen",
+        "user_auth_all_accts": "All Apple Accounts on one card",
+        "auth_method_push": "Code shown on your Apple devices",
+        "auth_method_text": "Text message to ……{method_info}",
+        "auth_method_hwkey": "Security key ({method_info})",
         "auth_terms_of_use_needed": "Terms of Use need accepting",
         "auth_needed": "Authentication needed",
         "action_other_apple_acct_parameters": "Other parameters (Apple server location), opens a screen",
@@ -2319,6 +2439,12 @@
         "action_auth_options": "▶ Authentication options: change how the code is sent, request a code, dashboard card",
         "action_auth_options_sign_in_first": "Authentication options (sign in first: choose ✓ Save)",
         "confirm_cleanup_other_groups": "The items checked in the other groups are deleted too: {groups}."
+      }
+    },
+    "user_auth_display_mode": {
+      "options": {
+        "always": "Always",
+        "when_auth_needed": "Only when an authentication is needed"
       }
     },
     "data_source": {

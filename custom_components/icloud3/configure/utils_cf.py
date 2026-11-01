@@ -12,7 +12,6 @@ from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_l
                                 _log, _evlog, log_stack, )
 
 from .const_form_lists   import (SECTION_SUFFIX, FORM_ACTION, FORM_ACTION_SAVES_DATA,
-                                ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 from homeassistant.helpers import translation, selector
 import voluptuous as vol
@@ -377,8 +376,6 @@ def strip_special_text_from_user_input(user_input, pname):
     return user_input
 
 #--------------------------------------------------------------------
-
-#--------------------------------------------------------------------
 def action_text_to_item(self, user_input):
     '''
     Return the user_input without the form's Action field (FORM_ACTION) and the
@@ -388,8 +385,6 @@ def action_text_to_item(self, user_input):
         return None, None
 
     if FORM_ACTION not in user_input:
-        if 'action_items' in user_input:
-            return _legacy_action_text_to_item(self, user_input)
         return user_input, None
 
     form_action = user_input.pop(FORM_ACTION)
@@ -398,56 +393,6 @@ def action_text_to_item(self, user_input):
     if form_action == 'submit':
         return user_input, self.form_submit_action
     return user_input, form_action
-
-#-------------------------------------------------------------------------------------------
-def _legacy_action_text_to_item(self, user_input):
-    '''
-    Convert the user_input['action_items'] = action_selection field to it's key name. The
-    device, Apple Account, authentication and Display Text As forms still have the action list.
-    '''
-
-    if user_input is None:
-        return None, None
-
-    action_selection = None
-    if 'action_items' not in user_input:
-        return user_input, None
-
-    action_selection = user_input.pop('action_items')
-
-    # If the actions_list is set up as an {value: key, label: text} item, the action_selection value
-    # will be the action_item
-    if action_selection in ACTION_LIST_OPTIONS:
-        return user_input, action_selection
-
-    try:
-        # If the actions_list is set up as an [display text] item, scan the actions_list table
-        # for a match. Then get action_item value
-        action_item = ACTION_LIST_ITEMS_KEY_BY_TEXT.get(action_selection)
-
-        # Action item was not found in the list of action items and may include
-        # special text updated at run time. The special text iss inserted by replacing
-        # a text string starting with a ^. Cycle back through the action items looking
-        # for one that starts with the text before the ^.
-        if action_item is None:
-            action_item = [action_item_key
-                            for action_item_key, action_item_text in ACTION_LIST_OPTIONS.items()
-                            if action_selection.startswith(action_item_text[:action_item_text.find('^')])]
-
-            if isnot_empty(action_item):
-                action_item = action_item[0]
-
-            else:
-                action_item = 'cancel_goto_menu'
-                self.base = 'unknown_action'
-
-        if action_item == 'cancel_goto_menu':
-            self.header_msg = None
-
-    except Exception as err:
-        log_exception(err)
-
-    return user_input, action_item
 
 #-------------------------------------------------------------------------------------------
 def parm_or_error_msg(self, pname, conf_group=CF_GENERAL, conf_dict_variable=None):
@@ -1048,11 +993,6 @@ def menu_name(self):
 #     return input_select_list_KEY_TEXT[0]
 
 #--------------------------------------------------------------------
-def default_action_text(action_item, action_OPTIONS=None):
-    if action_OPTIONS:
-        return action_OPTIONS.get(action_item, 'UNKNOWN ACTION > Unknown Action')
-    else:
-        return ACTION_LIST_OPTIONS.get(action_item, 'UNKNOWN ACTION - Unknown Action')
 
 #--------------------------------------------------------------------
 # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0

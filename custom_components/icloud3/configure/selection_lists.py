@@ -29,7 +29,7 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_
 
 from ..apple_acct       import apple_acct_support_cf as aascf
 from .const_form_lists  import (CF_ALERT, PICTURE_DIR_FILTER, NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, AWAY_FROM_ZONE_OPTIONS,
-                                REAUTH_AUTH_METHODS, PICTURE_NONE_KEY_TEXT,)
+                                PICTURE_NONE_KEY_TEXT,)
 from ..startup          import config_file
 from ..utils            import file_io
 from .                  import utils_cf
@@ -172,11 +172,9 @@ def build_apple_accounts_auth_list(self):
 
         aa_text = _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct)
         if AppleAcct.is_reauth_needed:
-            auth_needed_items_by_apple_id[apple_id] = \
-                f"{apple_user(apple_id)}{RARROW}{aa_text}"
+            auth_needed_items_by_apple_id[apple_id] = f"{apple_user(apple_id)} · {aa_text}"
         else:
-            auth_not_needed_items_by_apple_id[apple_id] = \
-                f"{apple_user(apple_id)}{RARROW}{aa_text}"
+            auth_not_needed_items_by_apple_id[apple_id] = f"{apple_user(apple_id)} · {aa_text}"
 
     self.apple_acct_auth_items_by_apple_id = auth_needed_items_by_apple_id
     self.apple_acct_auth_items_by_apple_id.update(auth_not_needed_items_by_apple_id)
@@ -185,20 +183,19 @@ def build_apple_accounts_auth_list(self):
 def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
     build_aa_auth_methods_list(self, AppleAcct)
 
-    aa_text = ''
-    if AppleAcct.terms_of_use_update_needed:
-        aa_text = f"{RED_ALERT}TERMS-OF-USE APPROVAL NEEDED, "
     if (AppleAcct.current_auth_method in AppleAcct.auth_methods
             and AppleAcct.current_auth_method_value != ''):
         auth_method = AppleAcct.current_auth_method
     else:
         auth_method = PUSH
 
-    aa_text += f"{self.aa_auth_methods_by_auth_method[auth_method]}"
+    aa_text = self.aa_auth_methods_by_auth_method.get(auth_method,
+                                self.aa_auth_methods_by_auth_method[PUSH])
 
-    if AppleAcct.is_reauth_needed:
-        aa_text = aa_text.split('> ')[0]
-        aa_text += f" {RED_ALERT}AUTH NEEDED"
+    if AppleAcct.terms_of_use_update_needed:
+        aa_text += f" · {CF_ALERT}{utils_cf.tr('auth_terms_of_use_needed')}"
+    elif AppleAcct.is_reauth_needed:
+        aa_text += f" · {CF_ALERT}{utils_cf.tr('auth_needed')}"
 
     return aa_text
 
@@ -206,7 +203,7 @@ def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
 def build_aa_auth_methods_list(self, AppleAcct):
 
     self.aa_auth_methods_by_auth_method = {}
-    self.aa_auth_methods_by_auth_method[PUSH] = REAUTH_AUTH_METHODS[PUSH]
+    self.aa_auth_methods_by_auth_method[PUSH] = utils_cf.tr('auth_method_push')
 
     # Not self.update_auth_method (async, it also writes the config file). This is
     # not async and only needs the auth method updated to build the list.
@@ -219,11 +216,11 @@ def build_aa_auth_methods_list(self, AppleAcct):
 
         if auth_method.startswith(TEXT):
             self.aa_auth_methods_by_auth_method[auth_method] = (
-                            REAUTH_AUTH_METHODS[TEXT].replace('{method_info}', method_info))
+                            utils_cf.tr('auth_method_text', method_info=method_info))
 
         if auth_method == HWKEY:
             self.aa_auth_methods_by_auth_method[HWKEY] = (
-                            REAUTH_AUTH_METHODS[HWKEY].replace('{method_info}', method_info))
+                            utils_cf.tr('auth_method_hwkey', method_info=method_info))
 
     return self.aa_auth_methods_by_auth_method
 
