@@ -17,13 +17,17 @@
 //      - Changed background gradient of body from .05 to .08 to be a little darker
 //      - Added refreshing the fname buttons to apply name changes without reloading iCloud3
 //
+//  v3.8.0 - 10/31/2026
+//      - Fixed the Event Log staying blank after an HA restart until the dashboard was
+//        reselected. The table hidden while iCloud3 was starting is now redisplayed.
+//
 /////////////////////////////////////////////////////////////////////////////
 
 class iCloud3EventLogCard extends HTMLElement {
 
     constructor() {
         super()
-        this._version        = "3.7"
+        this._version        = "3.8.0"
         this._latestVersion  = ''
         this._buttonCount    = 0
         this._thisButtonId   = ''
@@ -38,6 +42,7 @@ class iCloud3EventLogCard extends HTMLElement {
         this._screenHeight   = 0
         this._resizeObserver = null
         this._resizeRafId    = null
+        this._startupMsgFlag = false    // 'Starting'/'Not Running' msg displayed, table hidden
         this._versionSentFlag = null
         this._infoText       = ''
         this._displayUserMsgFlag = false
@@ -346,7 +351,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const btnHelp = document.createElement('A')
         btnHelp.id = "btnHelp"
         btnHelp.classList.add("btnHelp")
-        btnHelp.setAttribute('href', 'https://gcobb321.github.io/icloud3_v3_docs/#/')
+        btnHelp.setAttribute('href', 'https://gcobb321.github.io/icloud3_docs/#/')
         btnHelp.setAttribute('target', '_blank')
         btnHelp.innerHTML = `<svg fill="#ffffff" width="24px" height="24px" viewBox="-3.84 -3.84 71.68 71.68" version="1.1" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;" stroke="#ffffff" stroke-width="0.00064">
         <g stroke-width="0"><rect x="-3.84" y="-3.84" width="71.68" height="71.68" rx="35.84" fill="#316ce3" strokewidth="0"></rect></g>
@@ -360,7 +365,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const btnIssues = document.createElement('A')
         btnIssues.id = "btnIssues"
         btnIssues.classList.add("btnIssues")
-        btnIssues.setAttribute('href', 'https://github.com/gcobb321/icloud3_v3/issues')
+        btnIssues.setAttribute('href', 'https://github.com/gcobb321/icloud3/issues')
         btnIssues.setAttribute('target', '_blank')
         btnIssues.innerHTML = `<svg height="24px" width="24px" viewBox="0 0 480 480" xml:space="preserve" fill="#ffffff" stroke="#ffffff"><g stroke-width="0"></g>
         <g stroke-linecap="round" stroke-linejoin="round"></g>
@@ -1397,6 +1402,14 @@ class iCloud3EventLogCard extends HTMLElement {
             const userMessage  = hass.states['sensor.icloud3_event_log'].attributes['user_message']
             const btnName0     = root.getElementById("btnName0")
 
+            // The sensor did not exist on an earlier hass tick (HA/iCloud3 restarting).
+            // Clear the 'Starting' msg and redisplay the table that was hidden then.
+            if (this._startupMsgFlag) {
+                this._startupMsgFlag = false
+                statusMsgPopup.innerHTML = ''
+                tblEvlog.style.removeProperty('visibility')
+            }
+
             optiC3Version.text  = "• iCloud3 v" + iC3Version
 
             if (EvLogLatestVersion.startsWith(' Not Found')) {
@@ -1497,6 +1510,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 return
             }
             tblEvlog.style.setProperty('visibility', 'hidden')
+            this._startupMsgFlag = true
             const msgStarting = '<p>iCloud3 is Starting<br><hr><br>Please wait</p>'
             const msgNotRunning = '<br><br><hr><br><b>iCLOUD3 RAN INTO A PROBLEM STARTING UP</b>\
             <p>iCloud3 is an HA Integration and probably has not been added \

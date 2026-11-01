@@ -82,32 +82,33 @@ class iCloud3_Zone(object):
         return self.zone
 
 #---------------------------------------------------------------------
-    def update_zone_config(self, force_update=False):
-        '''
-        Check to see if the zone configuration was changed on the Settings >
-        Devices & services > Areas & Zones > Zones screen by comparing the
-        id(zone-attributes) with the one saved when the zone was set up.
-        If they are different, update the zone lat, long, radius, passive & name
-        with the new values.
-        '''
-        if self.is_ha_zone is False:
-            return
-        elif force_update:
-            pass
-        elif self.ha_zone_attrs_id == entity_io.ha_zone_attrs_id(self.zone):
-            return
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def update_zone_config(self, force_update=False):
+    #     '''
+    #     Check to see if the zone configuration was changed on the Settings >
+    #     Devices & services > Areas & Zones > Zones screen by comparing the
+    #     id(zone-attributes) with the one saved when the zone was set up.
+    #     If they are different, update the zone lat, long, radius, passive & name
+    #     with the new values.
+    #     '''
+    #     if self.is_ha_zone is False:
+    #         return
+    #     elif force_update:
+    #         pass
+    #     elif self.ha_zone_attrs_id == entity_io.ha_zone_attrs_id(self.zone):
+    #         return
 
-        ha_zone_attrs = entity_io.ha_zone_attrs(self.zone)
+    #     ha_zone_attrs = entity_io.ha_zone_attrs(self.zone)
 
-        if ha_zone_attrs and LATITUDE not in ha_zone_attrs:
-            return
+    #     if ha_zone_attrs and LATITUDE not in ha_zone_attrs:
+    #         return
 
-        if self not in Gb.HAZones:
-            Gb.HAZones.append(self)
-            Gb.HAZones_by_zone[self.zone] = self
+    #     if self not in Gb.HAZones:
+    #         Gb.HAZones.append(self)
+    #         Gb.HAZones_by_zone[self.zone] = self
 
-        self.ha_zone_attrs    = ha_zone_attrs
-        self.ha_zone_attrs_id = id(ha_zone_attrs)
+    #     self.ha_zone_attrs    = ha_zone_attrs
+    #     self.ha_zone_attrs_id = id(ha_zone_attrs)
 
     #---------------------------------------------------------------------
     @property
@@ -226,8 +227,9 @@ class iCloud3_Zone(object):
     def isnot_statzone(self):
         return instr(self.zone, STATIONARY) is False
 
-    def is_my_statzone(self, Device):
-        return self.zone == f"{Device.devicename}_{STATIONARY}"
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def is_my_statzone(self, Device):
+    #     return self.zone == f"{Device.devicename}_{STATIONARY}"
 
     @property
     def gps(self):

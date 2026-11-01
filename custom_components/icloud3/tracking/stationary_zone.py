@@ -135,11 +135,12 @@ def move_device_into_statzone(Device):
     return True
 
 #....................................................................
-def _within_radius(Zone):
-    if Zone.isnot_statzone:
-        return Zone.radius_m
-    else:
-        return Zone.radius_m * 1.5
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def _within_radius(Zone):
+#     if Zone.isnot_statzone:
+#         return Zone.radius_m
+#     else:
+#         return Zone.radius_m * 1.5
 
 #--------------------------------------------------------------------
 def create_StationaryZones_object():
@@ -166,18 +167,19 @@ def create_StationaryZones_object():
     return StatZone
 
 #--------------------------------------------------------------------
-def exit_all_statzones():
-    '''
-    Move all devices out of there stat zones. Move stat zone back to base and set the
-    Devices loc_data_zone to not_home
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def exit_all_statzones():
+#     '''
+#     Move all devices out of there stat zones. Move stat zone back to base and set the
+#     Devices loc_data_zone to not_home
 
-    Parameter:
-        Device - The Device (this device or another device) being moved out of this device's stat zone
-    '''
-    for Device in Gb.Devices:
-        StatZone = Device.StatZone
-        if StatZone and StatZone.passive is False:
-            remove_statzone(StatZone, Device)
+#     Parameter:
+#         Device - The Device (this device or another device) being moved out of this device's stat zone
+#     '''
+#     for Device in Gb.Devices:
+#         StatZone = Device.StatZone
+#         if StatZone and StatZone.passive is False:
+#             remove_statzone(StatZone, Device)
 
 #--------------------------------------------------------------------
 def exit_statzone(Device):
@@ -243,32 +245,33 @@ def kill_and_recreate_unuseable_statzone(Device):
     remove_statzone(StatZone)
 
 #--------------------------------------------------------------------
-def move_statzone_to_device_location(Device, latitude=None, longitude=None):
-    '''
-    The Device is currently in a stat zone but the Device's location may
-    have been updated on the next locate. This might make it's stat zone
-    further away than another device's stat zone. HA will then put this
-    device (and Person) into the other device's stat zone.
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def move_statzone_to_device_location(Device, latitude=None, longitude=None):
+#     '''
+#     The Device is currently in a stat zone but the Device's location may
+#     have been updated on the next locate. This might make it's stat zone
+#     further away than another device's stat zone. HA will then put this
+#     device (and Person) into the other device's stat zone.
 
-    Move the Device's stat zone to the same location as the device to try
-    to prevent this.
-    '''
-    StatZone = Device.StatZone
-    if StatZone is None: return
+#     Move the Device's stat zone to the same location as the device to try
+#     to prevent this.
+#     '''
+#     StatZone = Device.StatZone
+#     if StatZone is None: return
 
-    # Set new location, it will be updated when Device's attributes are updated in main routine
-    latitude  = Device.loc_data_latitude  if latitude  is None else latitude
-    longitude = Device.loc_data_longitude if longitude is None else longitude
+#     # Set new location, it will be updated when Device's attributes are updated in main routine
+#     latitude  = Device.loc_data_latitude  if latitude  is None else latitude
+#     longitude = Device.loc_data_longitude if longitude is None else longitude
 
-    clear_statzone_timer_distance(Device)
+#     clear_statzone_timer_distance(Device)
 
-    StatZone.attrs[LATITUDE]  = latitude
-    StatZone.attrs[LONGITUDE] = longitude
-    StatZone.attrs[RADIUS]    = _get_statzone_radius(Device)
-    StatZone.write_ha_zone_state(StatZone.attrs)
+#     StatZone.attrs[LATITUDE]  = latitude
+#     StatZone.attrs[LONGITUDE] = longitude
+#     StatZone.attrs[RADIUS]    = _get_statzone_radius(Device)
+#     StatZone.write_ha_zone_state(StatZone.attrs)
 
-    Device.StatZone      = StatZone
-    Device.loc_data_zone = StatZone.zone
+#     Device.StatZone      = StatZone
+#     Device.loc_data_zone = StatZone.zone
 
 #--------------------------------------------------------------------
 def remove_statzone(StatZone, Device=None):
@@ -315,16 +318,21 @@ def _trigger_monitored_device_update(StatZone, Device, action):
     it, move all monitored devices in that StatZone out of it. Then trigger an update
     to reset the monitored device as Away
     '''
+    # The 5-sec interval makes the monitored device reprocess its current location on the
+    # next 5-sec loop so it moves into/out of the StatZone. Monitored devices do not make
+    # an Apple request of their own, so this does not add one. (PR #687)
     for _Device in Gb.Devices_by_devicename_monitored.values():
         event_msg = ""
         if action == ENTER_ZONE and _Device.StatZone is None:
             dist_apart_m = _Device.distance_m(Device.loc_data_latitude, Device.loc_data_longitude)
             if dist_apart_m <= Gb.statzone_radius_m:
-                post_event(_Device, f"Trigger > Enter New Stationary Zone > {StatZone.dname}")
+                event_msg = f"Trigger > Enter New Stationary Zone > {StatZone.dname}"
+                post_event(_Device, event_msg)
 
         elif action == EXIT_ZONE and _Device.StatZone is StatZone:
             _Device.StatZone = None
-            post_event(_Device, f"Trigger > Exit Removed Stationary Zone > {StatZone.dname}")
+            event_msg = f"Trigger > Exit Removed Stationary Zone > {StatZone.dname}"
+            post_event(_Device, event_msg)
 
         else:
             continue

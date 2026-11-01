@@ -32,7 +32,7 @@ from .startup           import restore_state
 from .support.service_handler import register_icloud3_services
 from .support.event_log import EventLog
 from .support           import analytics
-from .support           import hacs_ic3
+from .support           import marketplace as mp
 from .support           import test_controls as TEST
 
 
@@ -263,7 +263,7 @@ async def start_icloud3_on_init_load_only():
                             "devices before continuing")
             return False
 
-        await hacs_ic3.check_hacs_icloud3_update_available()
+        await mp.check_hacs_icloud3_update_available()
         await start_ic3.update_lovelace_resource_event_log_js_entry()
 
         Gb.EvLog.display_user_message("Registering Services")
@@ -372,10 +372,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     the sensor is enabled and sets the Gb.icloud3_reload_requested to True. This prevents
     all of the DeviceTracker and Sensor objects from being unloaded and deleted here.
     '''
-    if Gb.was_icloud3_reloaded:
-        return True
+    # The integration is being disabled, it will not be set up again. Stop the 5-sec
+    # loop or it keeps polling the Apple Accts until HA is restarted. This is checked
+    # before the reload returns below.
+    if entry.disabled_by is not None and Gb.iCloud3 is not None:
+        Gb.iCloud3.stop_5sec_loop()
 
-    if Gb.icloud3_reload_requested:
+    # A reload (iCloud3 Restart, Configure exit, a reenabled sensor or Reload on the
+    # Integrations screen) keeps the platforms, entities and iCloud3 objects and
+    # async_setup_entry restarts iCloud3 on them. The Integrations screen Reload did not
+    # set a reload flag, so the first one after an HA start fell through to the full
+    # unload below and needed an HA restart to finish. A delete also returns here, HA
+    # removes the entities and async_remove_entry stops the 5-sec loop.
+    if Gb.was_icloud3_reloaded or entry.disabled_by is None:
         Gb.icloud3_reload_requested = False
         return True
 
@@ -392,15 +401,32 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     log_debug_msg(f"Remove Listener > update_device_registry")
     log_debug_msg(f"Remove Listener > update_entity_registry")
 
-    hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
-    hass.data[DOMAIN][entry.entry_id]["update_device_registry"]()
-    hass.data[DOMAIN][entry.entry_id]["update_entity_registry"]()
+    # The options listener is saved in hass.data[DOMAIN], the registry listeners in
+    # hass.data[DOMAIN][entry_id] (setup_hass_icloud3_domain, setup_event_listeners)
+    unsub_listener = hass.data[DOMAIN].pop("unsub_options_update_listener", None)
+    if unsub_listener:
+        unsub_listener()
+
+    entry_data = hass.data[DOMAIN].get(entry.entry_id, {})
+    for listener_key in ["update_device_registry", "update_entity_registry"]:
+        unsub_listener = entry_data.pop(listener_key, None)
+        if unsub_listener:
+            unsub_listener()
 
     # Remove config entry from domain.
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
 
     return unload_ok
+
+#-------------------------------------------------------------------------------------------
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
+    '''
+    The iCloud3 integration is being deleted. HA has already called async_unload_entry.
+    Stop the 5-sec loop or it keeps polling the Apple Accts until HA is restarted.
+    '''
+    if Gb.iCloud3 is not None:
+        Gb.iCloud3.stop_5sec_loop()
 
 #-------------------------------------------------------------------------------------------
 async def async_remove_config_entry_device(hass: HomeAssistant,

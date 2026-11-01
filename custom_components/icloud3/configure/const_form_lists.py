@@ -32,7 +32,7 @@ MENU_0 = {
         'sensors':              'SENSORS → Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors',
         'dashboard_builder':    'DASHBOARD BUILDER → Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates',
         'away_time_zone':       'AWAY TIME ZONE → Change the time displayed in the Event Log to the local time when away from Home',
-        'tools':                'TOOLS → Log Level, Cleanup HA Registry Files, Cleanup/Reset iCloud3 Device Parameters, Apple Acct Cookies & iCloud3 Config File',
+        'tools':                'TOOLS → Log Level, Beta Download, Cleanup HA Registry Files,  Clear Device Data Source Parms, Apple Acct Cookies & iCloud3 Config File',
 }
 MENU_0_ACTIONS = {
         'menu_1':               '➤ MENU #2 (PARAMETERS) → Tracking, Display Settings, Display Text As, Waze Route Service, Special Zones, iCloud3 Analytics',
@@ -157,6 +157,8 @@ ACTION_LIST_OPTIONS = {
         'analytics_reports':        'REPORTS → Run a Report using data in Analytics Database',
         'run_report':               'RUN REPORT → Run the selected Report and Display the Results',
 
+        'confirm_action_yes_enable_beta':  'ENABLE BETA VERSION → Start downloading Beta Versions from the HA Marketplace',
+        'confirm_action_no_disable_beta':  'DISABLE BETA VERSION → Stop downloading Beta Versions from the HA Marketplace',
         'confirm_action_yes':       'YES → Complete the requested action',
         'confirm_action_no':        'NO  → Cancel the request',
         'confirm_save':             '➤ SAVE THE CONFIGURATION CHANGES → Save any changes, Return to the Main Menu',
@@ -278,6 +280,16 @@ EXIT_ICLOUD3_CONFIGURE_SETTINGS = [
 CONFIRM_ACTIONS = [
         ACTION_LIST_OPTIONS['confirm_action_yes'],
         ACTION_LIST_OPTIONS['confirm_action_no']]
+CONFIRM_ACTIONS_BETA_VERSION = [
+        ACTION_LIST_OPTIONS['confirm_action_yes_enable_beta'],
+        ACTION_LIST_OPTIONS['confirm_action_no_disable_beta'],
+        ACTION_LIST_OPTIONS['goto_previous']]
+
+# marketplace.async_set_icloud3_prerelease_switch return value --> options error key
+PRERELEASE_SWITCH_ERRORS = {
+        'repo_not_installed': 'prerelease_repo_not_installed',
+        'switch_not_found':   'prerelease_switch_not_found',
+        'fix_action_failed':  'prerelease_switch_failed'}
 
 DASHBOARD_BUILDER_ACTIONS = [
         ACTION_LIST_OPTIONS['create_dashboard'],
@@ -302,7 +314,8 @@ CLEANUP_ENTITY_REGISTRY = [
 
 #------------------------–--------------------------------------------------------------
 TOOL_LIST = {
-        'log_level':                 ' CHANGE THE LOG LEVEL → Change the current log level (info, debug, rawdata)',
+        'log_level':                 'CHANGE THE LOG LEVEL → Change the current log level (info, debug, rawdata)',
+        'beta_version':              'ICLOUD3 BETA VERSION → Enable/Disable iCloud3 Beta Downloads from the HA Marketplace',
         'cleanup_entity_registry':   'CLEANUP HA ENTITY REGISTRY → Extract and Delete iCloud3  Entity Registry Devices and Sensors',
         'restart_icloud3':           'RESTART ICLOUD3 → Restart iCloud3 Now (Reloads the current version of iCloud3)',
         'reset_data_source':         'CLEAR DEVICE’S DATA SOURCE SELECTIONS → Erase the `Apple Acct Device` and `Mobile App Device` selection fields for all iCloud3 devices (Update iCloud3 Device screen)',
@@ -314,6 +327,7 @@ TOOL_LIST = {
 }
 TOOL_LIST_ITEMS = [
         TOOL_LIST['log_level'],
+        TOOL_LIST['beta_version'],
         TOOL_LIST['cleanup_entity_registry'],
         TOOL_LIST['restart_icloud3'],
         TOOL_LIST['reset_data_source'],
@@ -323,6 +337,7 @@ TOOL_LIST_ITEMS = [
         TOOL_LIST['del_icloud3_config_files'],
         ACTION_LIST_OPTIONS['menu'],
 ]
+
 LOG_LEVEL = [
         ACTION_LIST_OPTIONS['save_menu'],
         ACTION_LIST_OPTIONS['menu'],

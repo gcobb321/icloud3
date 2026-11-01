@@ -48,10 +48,13 @@ def get_entity_registry_mobile_app_devices():
 
     try:
         entity_reg_data = file_io.read_json_file(Gb.entity_registry_file)
-        mobile_app_entities = [x for x in entity_reg_data['data']['entities']
-                                    if x['platform'] == 'mobile_app']
-        dev_trkr_entities = [x for x in mobile_app_entities
-                                if x['entity_id'].startswith('device_tracker')]
+        mobile_app_entities = [entity
+                                for entity in entity_reg_data['data']['entities']
+                                if (entity['platform'] == 'mobile_app'
+                                        and entity["disabled_by"] is None)]
+
+        dev_trkr_entities = [entity for entity in mobile_app_entities
+                                if entity['entity_id'].startswith('device_tracker')]
 
         for dev_trkr_entity in dev_trkr_entities:
             if 'device_id' not in dev_trkr_entity: continue
@@ -62,7 +65,7 @@ def get_entity_registry_mobile_app_devices():
                 dup_cnt += 1
                 mobapp_dname = f"{mobapp_dname} ({dup_cnt})"
             if dup_cnt > 1:
-                alert_msg = (f"Duplicate Mobile App devices in Entity Registry for "
+                alert_msg =(f"Duplicate Mobile App devices in Entity Registry for "
                             f"{dev_trkr_entity['entity_id']}")
                 post_greenbar_msg(alert_msg)
 
@@ -130,15 +133,16 @@ def _extract_mobile_app_entities(mobile_app_entities, name_instr_items):
 
     Return - A list of the mobile_app entities
     '''
-    return [x   for x in mobile_app_entities
-                if (instr(x['unique_id'], name_instr_items)
-                    or instr(x['entity_id'], name_instr_items))]
+    return [entity   for entity in mobile_app_entities
+                if (instr(entity['unique_id'], name_instr_items)
+                    or instr(entity['entity_id'], name_instr_items))]
 
-def _contains_instr_item(item, instr_items):
-    for instr_item in instr_items:
-        if instr_item in item:
-            return True
-    return False
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def _contains_instr_item(item, instr_items):
+#     for instr_item in instr_items:
+#         if instr_item in item:
+#             return True
+#     return False
 
 #-----------------------------------------------------------------------------------------------------
 def _extract_sensor_entities(sensor_entities):
@@ -156,14 +160,16 @@ def _extract_sensor_entities(sensor_entities):
                                 if sensor['device_id'] in Gb.mobapp_dname_by_mobapp_id}
 
 #-----------------------------------------------------------------------------------------------------
-def _entity_name(entity_id):
-    return entity_id.replace('sensor.', '')
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def _entity_name(entity_id):
+#     return entity_id.replace('sensor.', '')
 
-def x_entity_name_disabled_by(sensor):
-    disabled_prefix = ''    if sensor['disabled_by'] is None \
-                            else f"{RED_X}DISABLED SENSOR{CRLF}{NBSP6}{NBSP6}{NBSP6}"
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def x_entity_name_disabled_by(sensor):
+#     disabled_prefix = ''    if sensor['disabled_by'] is None \
+#                             else f"{RED_X}DISABLED SENSOR{CRLF}{NBSP6}{NBSP6}{NBSP6}"
 
-    return f"{disabled_prefix}{sensor['entity_id'].replace('sensor.', '')}"
+#     return f"{disabled_prefix}{sensor['entity_id'].replace('sensor.', '')}"
 
 def _entity_name_disabled_by(sensor):
     if sensor['disabled_by']:
@@ -198,98 +204,6 @@ def _get_mobile_app_notify_devices():
         log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
 
     return mobapp_fname_targets
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
-#   GET MOBILE APP DEVICE FNAME
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-def get_mobile_app_integration_device_info(ha_started_check=False):
-    '''
-    Check to see if the Mobile App Integration is installed.
-        - If it is, set the Device.conf_mobapp_fname to the value in the Mobile App Integration
-        - If it is not, a temporary name will be assigned for display in Stage 4 and this will
-            be rechedked when ha has finished loading.
-
-    {'d7f4264ab72046285ca92c0946f381e167a6ba13292eef17d4f60a4bf0bd654c':
-    DeviceEntry(area_id=None, config_entries={'ad5c8f66b14fda011107827b383d4757'},
-    configuration_url=None, connections=set(), disabled_by=None, entry_type=None,
-    hw_version=None, id='93e3d6b65eb05072dcb590b46c02d920',
-    identifiers={('mobile_app', '1A9EAFA3-2448-4F37-B069-3B3A1324EFC5')},
-    manufacturer='Apple', model='iPad8,9', name_by_user='Gary-iPad-app',
-    name='Gary-iPad', serial_number=None, suggested_area=None, sw_version='17.2',
-    via_device_id=None, is_new=False),
-    '''
-    try:
-        return
-        #if Gb.conf_data_source_MOBAPP is False:
-        #    return True
-
-        if 'mobile_app' in Gb.hass.data:
-            Gb.MobileApp_data  = Gb.hass.data['mobile_app']
-            mobile_app_devices = Gb.MobileApp_data.get('devices', {})
-
-            Gb.MobileApp_device_fnames      = []
-            Gb.MobileApp_fnames_x_mobapp_id = {}
-            Gb.MobileApp_fnames_disabled    = []
-            for device_id, device_entry in mobile_app_devices.items():
-                if device_entry.disabled_by is None:
-                    list_add(Gb.MobileApp_device_fnames, device_entry.name_by_user)
-                    list_add(Gb.MobileApp_device_fnames, device_entry.name)
-                    Gb.MobileApp_fnames_x_mobapp_id[device_entry.id] = device_entry.name_by_user or device_entry.name
-                    Gb.MobileApp_fnames_x_mobapp_id[device_entry.name]         = device_entry.id
-                    Gb.MobileApp_fnames_x_mobapp_id[device_entry.name_by_user] = device_entry.id
-                else:
-                    list_add(Gb.MobileApp_fnames_disabled, device_entry.id)
-                    list_add(Gb.MobileApp_fnames_disabled, device_entry.name)
-                    list_add(Gb.MobileApp_fnames_disabled, device_entry.name_by_user)
-
-            if Gb.MobileApp_device_fnames:
-                ha_started_check = True
-                log_debug_msg(  f"Mobile App Integration Started-True"
-                                f"Devices-{list_to_str(Gb.MobileApp_device_fnames)}")
-
-        Gb.startup_lists['Gb.MobileApp_device_fnames']   = Gb.MobileApp_device_fnames
-        Gb.startup_lists['Gb.MobileApp_fnames_disabled'] = Gb.MobileApp_fnames_disabled
-        Gb.startup_lists['Gb.MobileApp_fnames_x_mobapp_id'] = \
-                            {k: v for k, v in Gb.MobileApp_fnames_x_mobapp_id.items()}
-
-        if len(Gb.MobileApp_device_fnames) == Gb.conf_mobapp_device_cnt:
-            return True
-
-        if len(Gb.MobileApp_device_fnames) == 0:
-            msg = f"Mobile App Integration Started-False > Temporary names assigned. "
-            if ha_started_check is False:
-                msg += f"Will recheck after HA is started"
-            post_event(msg)
-            return
-
-        post_event(f"Mobile App Integration Started-True")
-
-        # Cycle thru conf_devices and update the Device's mobapp_fname
-        mobapp_fname_update_msg = ''
-
-        for conf_device in Gb.conf_devices:
-            conf_mobapp_dname = conf_device[CONF_MOBILE_APP_DEVICE]
-            if conf_mobapp_dname == 'None':
-                continue
-
-            Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
-            mobapp_id = Gb.mobapp_id_by_mobapp_dname.get(conf_mobapp_dname)
-            if mobapp_id:
-                if Device.conf_mobapp_fname != '':
-                    mobapp_fname_update_msg += (f"{CRLF_DOT}{Device.fname} > "
-                                                f"{Device.conf_mobapp_fname}{RARROW}"
-                                                f"{Gb.MobileApp_fnames_x_mobapp_id[mobapp_id]}")
-                Device.conf_mobapp_fname = Gb.MobileApp_fnames_x_mobapp_id[mobapp_id]
-
-        if mobapp_fname_update_msg:
-            post_event(f"Mobile App Integration Name Assigned >{mobapp_fname_update_msg}")
-
-    except Exception as err:
-        log_exception(err)
-        return False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -449,14 +363,15 @@ def request_location(Device, is_alive_check=False, force_request=False):
         post_error_msg(devicename, error_msg)
 
 #-----------------------------------------------------------------------------------------------------
-def request_sensor_update(Device):
-    '''
-    Request the mobapp to update it's sensors
-    '''
-    #if mins_since(Device.mobapp_request_sensor_update_secs) > 15:
-    Device.mobapp_request_sensor_update_secs = time_now_secs()
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def request_sensor_update(Device):
+#     '''
+#     Request the mobapp to update it's sensors
+#     '''
+#     #if mins_since(Device.mobapp_request_sensor_update_secs) > 15:
+#     Device.mobapp_request_sensor_update_secs = time_now_secs()
 
-    message = {"message": "command_update_sensors"}
-    message_sent_ok = send_message_to_device(Device, message)
+#     message = {"message": "command_update_sensors"}
+#     message_sent_ok = send_message_to_device(Device, message)
 
-    return message_sent_ok
+#     return message_sent_ok

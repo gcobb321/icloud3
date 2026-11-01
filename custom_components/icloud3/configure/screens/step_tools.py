@@ -12,6 +12,7 @@ from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug
 
 
 from ...support             import service_handler
+from ...support             import marketplace as mp
 from ...utils               import entity_reg_util as er_util
 from ...utils               import file_io
 
@@ -77,17 +78,34 @@ class OptionsFlow_Tools_Steps:
             case 'log_level':
                 return await self.async_step_log_level()
 
+
             case 'cleanup_entity_registry':
                 return await self.async_step_cleanup_entity_registry()
 
         self.confirm_action = {
                 'action_desc': TOOL_LIST[action_item],
+                'action_items': None,
+                'action_items_default': 0,
+                'no_func': None,
+                'no_func_async': None,
                 'yes_func': None,
                 'yes_func_async': None,
                 'return_to_func_async': self.async_step_tools,
                 'return_to_next_yes_func_async': None}
 
         match action_item:
+            case 'beta_version':
+                # Default to the opposite of the Pre-release switch's current state
+                # (CONFIRM_ACTIONS_BETA_VERSION: 0=Enable, 1=Disable)
+                is_prerelease_on = mp.icloud3_prerelease_switch_state()
+                if is_prerelease_on is not None:
+                    self.confirm_action['action_desc'] += \
+                            f" (Currently {'Enabled' if is_prerelease_on else 'Disabled'})"
+                self.confirm_action['action_items'] = CONFIRM_ACTIONS_BETA_VERSION
+                self.confirm_action['action_items_default'] = 1 if is_prerelease_on else 0
+                self.confirm_action['no_func_async']  = self.async_disable_icloud3_beta_downloads
+                self.confirm_action['yes_func_async'] = self.async_enable_icloud3_beta_downloads
+
             case 'restart_icloud3':
                 self.confirm_action['yes_func'] = self.restart_icloud3
 
@@ -116,6 +134,33 @@ class OptionsFlow_Tools_Steps:
         list_add(self.config_parms_update_control, ['tracking', 'restart'])
 
         return await self.async_step_tools(errors=self.errors)
+
+#------------------------------------------------------------------------------------------
+    async def async_disable_icloud3_beta_downloads(self):
+        '''
+        Turn off the iCloud3 Pre-release switch in HACS/Marketplace
+        '''
+        result = await mp.async_set_icloud3_prerelease_switch(turn_on=False)
+        self._set_prerelease_switch_error(result)
+
+#------------------------------------------------------------------------------------------
+    async def async_enable_icloud3_beta_downloads(self):
+        '''
+        Turn on the iCloud3 Pre-release switch in HACS/Marketplace
+        '''
+        result = await mp.async_set_icloud3_prerelease_switch(turn_on=True)
+        self._set_prerelease_switch_error(result)
+
+#------------------------------------------------------------------------------------------
+    def _set_prerelease_switch_error(self, result):
+        '''
+        Set the error message displayed when the Pre-release switch was not changed.
+        The 'action_completed' message is displayed if it was.
+        '''
+        if result == '':
+            return
+
+        self.errors = {'base': PRERELEASE_SWITCH_ERRORS.get(result, 'prerelease_switch_failed')}
 
 #------------------------------------------------------------------------------------------
     def restart_icloud3(self):

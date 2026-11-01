@@ -436,13 +436,6 @@ def update_entity(entity_id, **kwargs):
         # log_exception(err)
         return False
 
-#................................................................................
-def is_entity_available(entity_id):
-    try:
-        entity_reg = er.async_get(Gb.hass)
-        entity_reg._entity_id_available(entity_id, None)
-    except:
-        return True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

@@ -289,26 +289,27 @@ def post_zone_selected_msg(Device, ZoneSelected, zone_selected,
                     post_event(_Device, f"Zone-Device Counts > {zones_cnt_msg}")
 
 #--------------------------------------------------------------------
-def closest_zone(latitude, longitude):
-    '''
-    Get the  closest zone to this location
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def closest_zone(latitude, longitude):
+#     '''
+#     Get the  closest zone to this location
 
-    Return:
-        - Zone, Zone entity, Zone display name, distance (m)
-    '''
-    try:
-        zones_data = [[Zone.distance_m(latitude, longitude), Zone.zone]
-                            for Zone in Gb.HAZones
-                            if Zone.radius_m > 1]
-        zones_data.sort()
-        zone_dist_m, zone = zones_data[0]
-        Zone = Gb.Zones_by_zone.get(zone)
+#     Return:
+#         - Zone, Zone entity, Zone display name, distance (m)
+#     '''
+#     try:
+#         zones_data = [[Zone.distance_m(latitude, longitude), Zone.zone]
+#                             for Zone in Gb.HAZones
+#                             if Zone.radius_m > 1]
+#         zones_data.sort()
+#         zone_dist_m, zone = zones_data[0]
+#         Zone = Gb.Zones_by_zone.get(zone)
 
-        return Zone, zone, Zone.dname, zone_dist_m
+#         return Zone, zone, Zone.dname, zone_dist_m
 
-    except Exception as err:
-        log_exception(err)
-        return None, 'unknown', 'Unknown', 0
+#     except Exception as err:
+#         log_exception(err)
+#         return None, 'unknown', 'Unknown', 0
 
 #--------------------------------------------------------------------
 def is_same_or_overlapping_zone(zone1, zone2):

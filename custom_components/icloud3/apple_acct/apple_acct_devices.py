@@ -778,29 +778,30 @@ class iCloud_AppleAcctDevices():
 
 
 #----------------------------------------------------------------------------
-    def _initialize_iCloud_AADev_object(self, device_id, device_data):
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _initialize_iCloud_AADev_object(self, device_id, device_data):
 
-        AADev = self.AppleAcct.AADev_by_device_id[device_id]
+    #     AADev = self.AppleAcct.AADev_by_device_id[device_id]
 
-        dname = self._remove_special_chars(AADev.name)
-        self.AppleAcct.dup_icloud_dname_cnt[dname] = 0
+    #     dname = self._remove_special_chars(AADev.name)
+    #     self.AppleAcct.dup_icloud_dname_cnt[dname] = 0
 
-        AADev.__init__(  device_id,
-                            device_data,
-                            self.iCloudSession,
-                            self.params,
-                            'iCloud', 'timeStamp',
-                            self, )
+    #     AADev.__init__(  device_id,
+    #                         device_data,
+    #                         self.iCloudSession,
+    #                         self.params,
+    #                         'iCloud', 'timeStamp',
+    #                         self, )
 
-        self.set_apple_acct_device_data_fields(device_id, AADev)
+    #     self.set_apple_acct_device_data_fields(device_id, AADev)
 
-        post_greenbar_msg(f"Apple Acct > {self.AppleAcct.apple_user}, {AADev.dname}")
-        log_debug_msg(  f"Initialize AADev_icloud object "
-                        f"{apple_user_dev(self.AppleAcct.apple_user, AADev.dname)}")
+    #     post_greenbar_msg(f"Apple Acct > {self.AppleAcct.apple_user}, {AADev.dname}")
+    #     log_debug_msg(  f"Initialize AADev_icloud object "
+    #                     f"{apple_user_dev(self.AppleAcct.apple_user, AADev.dname)}")
 
-        log_hdr = f"{apple_user_dev(self.AppleAcct.account_name, AADev.dname)}, iCloud Data"
-        log_data(log_hdr, AADev.device_data,
-                    data_source='icloud', is_log_level_rawdata=True, filter_id=self.AppleAcct.apple_id)
+    #     log_hdr = f"{apple_user_dev(self.AppleAcct.account_name, AADev.dname)}, iCloud Data"
+    #     log_data(log_hdr, AADev.device_data,
+    #                 data_source='icloud', is_log_level_rawdata=True, filter_id=self.AppleAcct.apple_id)
 
 #----------------------------------------------------------------------
     def set_apple_acct_device_data_fields(self, device_id, AADev):
@@ -890,30 +891,31 @@ class iCloud_AppleAcctDevices():
         return
 
 #----------------------------------------------------------------------------
-    def _create_test_data(self, device_id, device_data):
-        '''
-        Create duplicate devices test data in _AADev using data from the
-        current device
-        '''
-        device_data_test1 = device_data.copy()
-        device_data_test2 = device_data.copy()
-        device_data_test1[LOCATION] = device_data[LOCATION].copy()
-        device_data_test2[LOCATION] = device_data[LOCATION].copy()
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _create_test_data(self, device_id, device_data):
+    #     '''
+    #     Create duplicate devices test data in _AADev using data from the
+    #     current device
+    #     '''
+    #     device_data_test1 = device_data.copy()
+    #     device_data_test2 = device_data.copy()
+    #     device_data_test1[LOCATION] = device_data[LOCATION].copy()
+    #     device_data_test2[LOCATION] = device_data[LOCATION].copy()
 
-        device_data[LOCATION]['timeStamp'] = 0
+    #     device_data[LOCATION]['timeStamp'] = 0
 
-        self._create_AADeviceData_object(device_id, device_data)
+    #     self._create_AADeviceData_object(device_id, device_data)
 
-        device_data_test1[NAME] = f"TestDevice-1"
-        device_data_test1[ID]   = f"XX1_{device_id}"
-        device_data_test1[LOCATION]['timeStamp'] -= 3000000000
-        device_data_test1['rawDeviceModel'] = 'iPad8,91'
-        self._create_AADeviceData_object(device_data_test1[ID], device_data_test1)
+    #     device_data_test1[NAME] = f"TestDevice-1"
+    #     device_data_test1[ID]   = f"XX1_{device_id}"
+    #     device_data_test1[LOCATION]['timeStamp'] -= 3000000000
+    #     device_data_test1['rawDeviceModel'] = 'iPad8,91'
+    #     self._create_AADeviceData_object(device_data_test1[ID], device_data_test1)
 
-        device_data_test2[NAME] = f"TestDevice-2"
-        device_data_test2[ID]   = f"XX2_{device_id}"
-        device_data_test2['rawDeviceModel'] = 'iPad8,92'
-        self._create_AADeviceData_object(device_data_test2[ID], device_data_test2)
+    #     device_data_test2[NAME] = f"TestDevice-2"
+    #     device_data_test2[ID]   = f"XX2_{device_id}"
+    #     device_data_test2['rawDeviceModel'] = 'iPad8,92'
+    #     self._create_AADeviceData_object(device_data_test2[ID], device_data_test2)
 
 #----------------------------------------------------------------------------
     def __repr__(self):

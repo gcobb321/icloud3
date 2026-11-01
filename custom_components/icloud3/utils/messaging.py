@@ -82,37 +82,6 @@ log_field = ''
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
-#   MISCELLANEOUS MESSAGING ROUTINES
-#
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def broadcast_info_msg(info_msg):
-    '''
-    Display a message in the info sensor for all devices
-    '''
-    return
-
-
-    if INFO not in Gb.conf_sensors['device']:
-        return
-
-    Gb.broadcast_info_msg = f"{info_msg}"
-
-    try:
-        for conf_device in Gb.conf_devices:
-            devicename = conf_device[CONF_IC3_DEVICENAME]
-            InfoSensor = Gb.Sensors_by_devicename[devicename][INFO]
-            InfoSensor.write_ha_sensor_state()
-
-    # Catch error if the Info sensor has not been set up yet during startup
-    # or if the info sensor has not been selected in config_vlow > sensors
-    except KeyError:
-        pass
-
-
-    return
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#
 #   EVENT LOG POST ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -188,6 +157,9 @@ def post_config_error(**kwargs):
         - notice            - Removes the notice, nothing else is done. It reports an
                                 event (the configuration was changed), it is not posted
                                 again and is not removed on the next startup.
+        - switch_repository - Switches the HACS/Marketplace installation from the iCloud3
+                                Beta repository to the iCloud3 repository
+                                (marketplace.async_switch_to_icloud3_repository)
     - The Device's Event Log button gets the red alert icon unless it is an alert or notice
 
     kwargs: source       - devicename, aa apple_id, 'general', 'repair
@@ -196,11 +168,14 @@ def post_config_error(**kwargs):
             error        - Configuration Error
             message      - Some Devices were not verified. Restart may be needed
             details      - {list_to_str(unverified_devices), CRLF_DOT}
-            repair_step  - 'update_device', 'update_apple_acct', 'restart', 'alert', 'notice'
+            repair_step  - 'update_device', 'update_apple_acct', 'restart', 'alert', 'notice',
+                            'switch_repository'
             fix_data     - 'update_apple_acct' only, other items used by the repair flow
             translation_key, translation_placeholders
                          - 'alert' & 'notice' only, the issue's own text in strings.json
                             & en.json. None - icloud3_notice with the title and message
+                         - 'switch_repository' - translation_placeholders 'store' (HACS,
+                            Marketplace)
 
     Return:
         issue_id of the Repairs issue, None if one was not created. It is also saved in
@@ -215,6 +190,7 @@ def post_config_error(**kwargs):
         source_name  = kwargs.get('source_name', '')                 # GeeksterGary
         error        = kwargs.get('error', 'Configuration Error')   # Unknown Apple Account
         error_item   = kwargs.get('error_item', '')                 # geekstergary@
+        error_item   = f' ({error_item})' if error_item else ''
         message      = kwargs.get('message', 'General Warning')     # The Apple Acct was not found Device ...
         details      = kwargs.get('details', '')                    # Gary > AppleAcct: geekstergary@
         repair_step  = kwargs.get('repair_step', '')                # update_device
@@ -225,7 +201,7 @@ def post_config_error(**kwargs):
         # alert_key is the same in the alerts sensor and the Repairs issue
         Source, source = alert_source(Source or source)
         alert_key     = alert_key_for(source, error)
-        alert_title   = f"{source_name} > {error.title()} ({error_item})"
+        alert_title   = f"{source_name} > {error}{error_item}"
         repair_msg    = f"{message}{details}"
         alert_msg     = f"{error.upper()} > {source_name}{CRLF}{message}{details}"
         log_msg       = filter_special_chars(alert_msg)
@@ -236,7 +212,7 @@ def post_config_error(**kwargs):
 
         post_alert(alert_msg)
 
-        if repair_step in ['alert', 'notice', 'restart']:
+        if repair_step in ['alert', 'notice', 'restart', 'switch_repository']:
             log_warning_msg(f"iCloud3: {log_msg}")
         else:
             log_error_msg(f"iCloud3: {log_msg}")
@@ -284,6 +260,19 @@ def post_config_error(**kwargs):
                                 translation_placeholders = {
                                         'title': _evlog_msg_to_markdown(alert_title),
                                         'message': _evlog_msg_to_markdown(repair_msg)})
+
+        case 'switch_repository':
+            issue_id = post_repair_issue(
+                                issue_id   = issue_id,
+                                alert_key  = alert_key,
+                                title      = alert_title,
+                                alert_msg  = '',
+                                fix_action = FIX_ACTION_SWITCH_REPOSITORY,
+                                translation_key = SWITCH_REPOSITORY_TRANSLATION_KEY,
+                                translation_placeholders = {
+                                        'title': _evlog_msg_to_markdown(alert_title),
+                                        'message': _evlog_msg_to_markdown(repair_msg),
+                                        **(translation_placeholders or {})})
 
         case _:     # 'alert', 'notice'
             issue_id = post_repair_issue(
@@ -832,11 +821,17 @@ FIX_ACTION_UPDATE_APPLE_ACCT = 'update_apple_acct'
 FIX_ACTION_ANALYTICS_APPROVAL = 'analytics_approval'
 ANALYTICS_APPROVAL_ISSUE_ID   = 'analytics_approval'
 
+# 'switch_repository' - iCloud3 was installed from the iCloud3 Beta repository
+# (repairs.iCloud3SwitchRepositoryRepairFlow). Submit switches the HACS/Marketplace
+# installation to the iCloud3 repository. It does not have a handler.
+FIX_ACTION_SWITCH_REPOSITORY = 'switch_repository'
+
 # The issues used for the configuration errors. Their fix_flow has the configuration
 # screens' text, the title & message are placeholders.
 UPDATE_DEVICE_TRANSLATION_KEY     = 'update_device'
 UPDATE_APPLE_ACCT_TRANSLATION_KEY = 'update_apple_acct'
 RESTART_TRANSLATION_KEY           = 'restart_icloud3'
+SWITCH_REPOSITORY_TRANSLATION_KEY = 'switch_repository'
 
 # Leading words of the post_config_error issue_ids
 CONFIG_ERROR_ISSUE_ID_PREFIX = 'config_error'

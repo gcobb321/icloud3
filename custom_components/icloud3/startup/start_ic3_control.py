@@ -13,8 +13,7 @@ from ..const_char       import (CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CR
 
 from ..utils.utils      import (instr, is_empty, isnot_empty, yes_no, list_to_str, list_add, list_del,
                                 apple_user, is_running_in_event_loop, get_string_hash, )
-from ..utils.messaging  import (broadcast_info_msg,
-                                post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor, alert_key_source, all_alerts_by_alert_key,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor, alert_key_source, all_alerts_by_alert_key,
                                 post_monitor_msg, post_internal_error, post_greenbar_msg, post_dotted_line,
                                 write_ic3log_recd,
                                 log_debug_msg, log_warning_msg, log_info_msg, log_exception,
@@ -33,6 +32,7 @@ from ..startup          import config_file
 from ..startup          import restore_state
 from ..startup          import start_ic3
 from ..support          import test_controls as TEST
+from ..support          import marketplace as mp
 from ..tracking         import determine_interval as det_interval
 
 #--------------------------------------------------------------------
@@ -49,7 +49,6 @@ def stage_1_setup_variables():
 
     log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
-    broadcast_info_msg(stage_title)
 
     Gb.EvLog.display_user_message(f'iCloud3 v{Gb.version} > Initializiing')
 
@@ -67,8 +66,7 @@ def stage_1_setup_variables():
 
         # Run these setup items on a restart. Do not then when initially starting iC3
         if Gb.is_icloud3_initial_startup is False:
-            Gb.EvLog.startup_event_recds = []
-            Gb.EvLog.startup_event_save_recd_flag = True
+            Gb.EvLog.start_logging_startup_events()
 
         if Gb.ha_config_directory != '/config':
             post_event(f"Base Config Directory > {CRLF_DOT}{Gb.ha_config_directory}")
@@ -104,7 +102,6 @@ def stage_2_prepare_configuration():
 
     try:
         Gb.EvLog.display_user_message(stage_title)
-        broadcast_info_msg(stage_title)
 
         start_ic3.create_Zones_object()
         start_ic3.create_Waze_object()
@@ -141,6 +138,10 @@ def stage_2_prepare_configuration():
         if len(Gb.conf_apple_accounts) > 0:
             start_ic3.request_analytics_approval()
 
+        # Request the switch to the iCloud3 repository if iCloud3 was installed from
+        # the iCloud3 Beta repository in HACS or the Marketplace
+        mp.check_icloud3_beta_repository()
+
     except Exception as err:
         log_exception(err)
 
@@ -154,7 +155,6 @@ def stage_3_setup_configured_devices():
 
     try:
         Gb.EvLog.display_user_message(stage_title)
-        broadcast_info_msg(stage_title)
 
         Gb.InternetError.is_internet_available()
         event_msg = f"Internet Connection Test > Connected-{yes_no(not Gb.internet_error)}"
@@ -205,7 +205,6 @@ def stage_4_setup_data_sources():
     stage_title = f"Stage 4 > Connect to Apple Accounts"
     log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
     Gb.EvLog.display_user_message(stage_title)
-    broadcast_info_msg(stage_title)
 
     for Device in Gb.Devices:
         Device.set_button_prefix_icon()
@@ -254,7 +253,6 @@ def stage_4_setup_data_sources():
         Gb.EvLog.display_user_message(stage_title)
 
         mobapp_interface.get_entity_registry_mobile_app_devices()
-        mobapp_interface.get_mobile_app_integration_device_info()
 
         if Gb.conf_data_source_MOBAPP:
             start_ic3.setup_tracked_devices_for_mobapp()
@@ -298,7 +296,6 @@ def stage_5_configure_tracked_devices():
 
     try:
         Gb.EvLog.display_user_message(stage_title)
-        broadcast_info_msg(stage_title)
 
         # start_ic3.remove_unverified_untrackable_devices()
         start_ic3.identify_tracked_monitored_devices()
@@ -323,7 +320,6 @@ def stage_6_initialization_complete():
     stage_title = f'{ICLOUD3} Initialization Complete'
     log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
-    broadcast_info_msg(stage_title)
 
     start_ic3.display_platform_operating_mode_msg()
     Gb.EvLog.display_user_message('')
@@ -399,6 +395,12 @@ def stage_7_initial_locate():
         Device.restore_state_reset_other_items()
 
     post_greenbar_msg('')
+
+
+    if instr(str(Gb.alerts_by_alert_key.keys()), '^beta'):
+        post_event( f"{EVLOG_ATTENTION}BETA VERSIONS ARE NOW ICLOUD3 PRERELEASES"
+                    f"{CRLF}{mp.BETA_MOVING_ALERT_MSG}")
+
 
 
     # Update the distance between all devices not that they have all been located

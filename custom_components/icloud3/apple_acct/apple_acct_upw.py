@@ -540,18 +540,20 @@ class ValidateAppleAcctUPW():
 #   SUPPORT FUNCTIONS
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    @staticmethod
-    def _log_pw(password):
-        return f"{password[:4]}{DOTS}{password[4:]}"
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # @staticmethod
+    # def _log_pw(password):
+    #     return f"{password[:4]}{DOTS}{password[4:]}"
 
 #............................................................................
-    def delete_password_from_token_pw(self):
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def delete_password_from_token_pw(self):
 
-        dict_del(self.AppleAcct.token_pw_data, CONF_PASSWORD)
-        try:
-            file_io.save_json_file(self.AppleAcct.tokenpw_filename, self.AppleAcct.token_pw_data)
+    #     dict_del(self.AppleAcct.token_pw_data, CONF_PASSWORD)
+    #     try:
+    #         file_io.save_json_file(self.AppleAcct.tokenpw_filename, self.AppleAcct.token_pw_data)
 
-        except Exception as err:
-            log_exception(err)
-            log_warning_msg(f"Apple Acct > {self.AppleAcct.account_owner}, "
-                            f"Failed to update tokenpw file {self.AppleAcct.tokenpw_filename}")
+    #     except Exception as err:
+    #         log_exception(err)
+    #         log_warning_msg(f"Apple Acct > {self.AppleAcct.account_owner}, "
+    #                         f"Failed to update tokenpw file {self.AppleAcct.tokenpw_filename}")

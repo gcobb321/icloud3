@@ -55,6 +55,7 @@ from .startup           import start_ic3_control
 from .support           import analytics
 from .support           import service_handler
 from .support           import test_controls as TEST
+from .support           import marketplace as mp
 from .tracking          import stationary_zone as statzone
 from .tracking          import zone_handler
 from .tracking          import determine_interval as det_interval
@@ -62,8 +63,7 @@ from .utils.utils       import (instr, is_empty, isnot_empty, is_zone, is_statzo
                                 list_to_str, is_between, apple_user, zone_dname, is_running_in_event_loop,
                                 list_add, list_sort, )
 from .utils.file_io     import (file_exists, directory_exists, make_directory, extract_filename, )
-from .utils.messaging   import (broadcast_info_msg,
-                                post_event, post_alert, post_error_msg, post_monitor_msg, post_internal_error,
+from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg, post_internal_error,
                                 post_greenbar_msg, clear_greenbar_msg, update_alert_sensor,
                                 open_repair_issue_alert_keys, alert_key_source, all_alerts_by_alert_key,
                                 log_info_msg, log_exception, log_start_finish_update_banner,
@@ -98,6 +98,7 @@ class iCloud3:
         Gb.hass_configurator_request_id    = {}
 
         Gb.polling_5_sec_loop_running      = False
+        self.unsub_5sec_loop               = None   # track_utc_time_change cancel function
         self.pyicloud_refresh_time         = {}     # Last time Pyicloud was refreshed for the trk method
         self.pyicloud_refresh_time[ICLOUD] = 0
         self.attributes_initialized_flag   = False
@@ -126,6 +127,21 @@ class iCloud3:
         return (self.loop_ctrl_device_update_in_process_secs > 0)
 
 #--------------------------------------------------------------------
+    def stop_5sec_loop(self):
+        '''
+        Cancel the 5-sec polling loop when the config entry is disabled or deleted.
+
+        This is not done on a reload. The iCloud3 object and its loop survive a reload
+        and the loop is not set up again if stages 4-6 fail, so cancelling it there
+        would stop tracking until HA is restarted.
+        '''
+        if self.unsub_5sec_loop is not None:
+            self.unsub_5sec_loop()
+            self.unsub_5sec_loop = None
+
+        Gb.polling_5_sec_loop_running = False
+
+#--------------------------------------------------------------------
     def initialize_5_sec_loop_control_flags(self):
         self.loop_ctrl_master_update_in_process_flag = False
         self.loop_ctrl_device_update_in_process_secs = 0
@@ -151,9 +167,10 @@ class iCloud3:
 #   START/RESTART ICLOUD3
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def start_icloud3(self):
-        self.start_icloud3_stage_1_2_3_prep_to_config_device()
-        self.start_icloud3_stage_4_5_6_load_aa_device_to_locate()
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def start_icloud3(self):
+    #     self.start_icloud3_stage_1_2_3_prep_to_config_device()
+    #     self.start_icloud3_stage_4_5_6_load_aa_device_to_locate()
 
 #--------------------------------------------------------------------
     def start_icloud3_stage_1_2_3_prep_to_config_device(self):
@@ -180,6 +197,7 @@ class iCloud3:
         Gb.was_icloud3_restart_requested = False
 
         if Gb.was_icloud3_reloaded:
+            Gb.EvLog.start_logging_startup_events()
             post_event( f"{Gb.icloud3_attention_msg} > Restarting")
 
         # On a cold start, stages 4-6 are not run until HA has finished starting, so
@@ -226,14 +244,12 @@ class iCloud3:
             Gb.trace_prefix = '------'
             Gb.EvLog.display_user_message('', clear_greenbar_msg=True)
 
-            Gb.EvLog.startup_event_save_recd_flag = False
             Gb.startup_stage_status_controls = []
-            Gb.broadcast_info_msg = None
 
             if Gb.polling_5_sec_loop_running is False:
-                broadcast_info_msg("Set Up 5-sec Master Interval Cycle")
                 Gb.polling_5_sec_loop_running = True
-                track_utc_time_change(Gb.hass, self.master_5sec_interval_handler,
+                self.unsub_5sec_loop = track_utc_time_change(
+                        Gb.hass, self.master_5sec_interval_handler,
                         second=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
 
             return True
@@ -248,6 +264,9 @@ class iCloud3:
             # stopped iCloud3 until HA was restarted.
             Gb.is_icloud3_initial_startup   = False
             Gb.is_icloud3_startup_inprocess = False
+
+            # Stop saving every event into the startup log, or it grows until HA is restarted
+            Gb.EvLog.stop_logging_startup_events()
 
             # The Alert Sensor is not updated during startup in case there ae multiple messages
             # Do it now
@@ -515,7 +534,9 @@ class iCloud3:
                     mobapp_interface.request_location(Device, is_alive_check=False, force_request=True)
 
         # The Device is in a StatZone but the mobapp is not home. Send a location request to try to
-        # sync them. Do this every 10-mins if the time since the last request is older than 10-min ago
+        # sync them. Send one when this starts, then every 10-hours (36000 secs) while it continues.
+        # The mobapp may not know about a new StatZone, so a shorter interval would push a request
+        # to the phone every 10-mins for the whole time the Device is in the StatZone.
         elif (Device.isin_statzone
                 and Device.mobapp_data_state == NOT_HOME
                 and (secs_since(Device.mobapp_request_loc_sent_secs) > 36000
@@ -663,10 +684,21 @@ class iCloud3:
         Device.FromZone_TrackFrom    = Device.FromZone_Home
         Device.last_track_from_zone  = HOME
 
+        mobapp_trigger_flag = False
         if Device.is_mobapp_monitored and Gb.conf_data_source_MOBAPP:
             mobapp_data_handler.check_mobapp_state_trigger_change(Device)
+            mobapp_trigger_flag = (Device.was_mobapp_data_updated
+                                    and Device.mobapp_data_latitude != 0.0)
 
-        if Device.is_tracking_resumed:
+        # A MobApp trigger (launch, manual, zone enter/exit) updates the device now. Its location
+        # is moved into the loc_data fields by _update_device_location_raw_data, so the distance
+        # moved and next update time checks below are not used. A device only located by the
+        # MobApp (no Apple Account) is never updated otherwise.
+        if mobapp_trigger_flag:
+            if instr(Device.mobapp_data_change_reason, ' ') is False:
+                Device.mobapp_data_change_reason = Device.mobapp_data_change_reason.title()
+            post_event(Device, f"MobApp Trigger > {Device.mobapp_data_change_reason}")
+        elif Device.is_tracking_resumed:
             Device.tracking_status = TRACKING_NORMAL
         elif Device.is_next_update_time_reached is False:
             Device.calculate_distance_moved()
@@ -682,7 +714,7 @@ class iCloud3:
         event_msg =(f"Trigger > Moved {km_to_um(Device.loc_data_dist_moved_km)}")
 
         # self.process_updated_location_data(Device, '')
-        self.location_updated_by_Device[Device] = ''
+        self.location_updated_by_Device[Device] = MOBAPP if mobapp_trigger_flag else ''
         Device.update_sensor_values_from_data_fields()
 
 #----------------------------------------------------------------------------
@@ -1127,7 +1159,7 @@ class iCloud3:
                                     else Device.icloud_update_reason
 
         if Device.is_tracked and Device.is_location_data_rejected():
-            if Device.is_dev_data_source_iCloud:
+            if Device.is_dev_data_source_ICLOUD:
                 det_interval.determine_interval_after_error(Device, counter=OLD_LOCATION_CNT)
 
         elif Device.is_monitored and Device.is_offline:
@@ -1385,7 +1417,8 @@ class iCloud3:
             return
 
         if Gb.version_hacs:
-            general_alert_msg += (  f"{GB_ALERT}iCloud3 {Gb.version_hacs} is on HACS, "
+            store_fname = 'Marketplace' if mp.IS_HA_MARKETPLACE_VERSION else 'HACS'
+            general_alert_msg += (  f"{GB_ALERT}iCloud3 {Gb.version_hacs} is on {store_fname}, "
                                     f"you are running v{Gb.version}")
         general_alert_msg += TEST.test_controls_enabled_msg()
 
@@ -1466,32 +1499,35 @@ class iCloud3:
             clear_greenbar_msg()
 
 #----------------------------------------------------------------------------
-    def _check_apple_acct_authentication_needed(self):
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _check_apple_acct_authentication_needed(self):
 
-        msg = ""
-        for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
-            if AppleAcct.is_reauth_needed:
-                msg += (f"Apple Acct > {AppleAcct.account_owner}, "
-                        f"Auth Code Needed")
-
-#--------------------------------------------------------------------
-    def _format_fname_devtype(self, Device):
-        try:
-            return f"{Device.fname_devtype}"
-        except:
-            return ''
+    #     msg = ""
+    #     for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
+    #         if AppleAcct.is_reauth_needed:
+    #             msg += (f"Apple Acct > {AppleAcct.account_owner}, "
+    #                     f"Auth Code Needed")
 
 #--------------------------------------------------------------------
-    def _wait_if_update_in_process(self, Device=None):
-        # An update is in process, must wait until done
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _format_fname_devtype(self, Device):
+    #     try:
+    #         return f"{Device.fname_devtype}"
+    #     except:
+    #         return ''
 
-        wait_cnt = 0
-        while self.loop_ctrl_master_update_in_process_flag:
-            wait_cnt += 1
-            if Device:
-                Device.write_ha_sensor_state(INTERVAL, (f"WAIT-{wait_cnt}"))
+#--------------------------------------------------------------------
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _wait_if_update_in_process(self, Device=None):
+    #     # An update is in process, must wait until done
 
-            time.sleep(2)
+    #     wait_cnt = 0
+    #     while self.loop_ctrl_master_update_in_process_flag:
+    #         wait_cnt += 1
+    #         if Device:
+    #             Device.write_ha_sensor_state(INTERVAL, (f"WAIT-{wait_cnt}"))
+
+    #         time.sleep(2)
 
 #--------------------------------------------------------------------
     def _post_before_update_monitor_msg(self, Device):
@@ -1522,13 +1558,14 @@ class iCloud3:
 #   Perform tasks on a regular time schedule
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_timer_hour(self, timer):
-        post_event(f"Timer {timer}")
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # async def async_timer_hour(self, timer):
+    #     post_event(f"Timer {timer}")
 
 #--------------------------------------------------------------------
     def _timer_tasks_every_hour(self):
-        # See if there is a new iCloud3 version on HACS
-        # Gb.hass.loop.create_task(hacs_ic3.check_hacs_icloud3_update_available(Gb.this_update_timr))
+        # See if there is a new iCloud3 version on the HACS/Marketplace update entity
+        mp.check_icloud3_update_available()
 
         # Clean out lingering StatZone
         Gb.StatZones_to_delete = [StatZone  for StatZone in Gb.StatZones

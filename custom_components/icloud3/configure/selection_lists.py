@@ -455,12 +455,6 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
         if AppleAcct is None:
             continue
 
-        # Make sure AppleAcct Devices is initialied
-        # if AppleAcct.AADevices is None or AppleAcct.is_AADevices_setup_complete is False:
-        #     _AppleDev = await Gb.hass.async_add_executor_job(
-        #                             aascf.create_AADevices_config_flow,
-        #                             AppleAcct)
-
         devices_available, devices_used, devices_not_available, this_device, longest_aa_line_len = \
                 get_icloud_devices_list_avail_used_this(
                         aa_idx, AppleAcct, AppleAcct.account_owner, selected_devicename)
@@ -673,6 +667,7 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
             else:
                 fname_devicename = f"{RED_ALERT}{devicename} (UNKNOWN)"
 
+            mobapp_info = f" ⊘ {mobapp_info[2:]}"
             devices_used[mobapp_dname] = (
                         f"{mobapp_info.split(';')[0]}{RARROW}{fname_devicename}")
 
@@ -693,18 +688,24 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
             and self.conf_device[CONF_MOBILE_APP_DEVICE] != 'None'
             and self.conf_device[CONF_MOBILE_APP_DEVICE].startswith('ScanFor:') is False):
         devices_this_device = {'.unknown':
-                f"{RED_ALERT}{self.conf_device[CONF_MOBILE_APP_DEVICE]}{RARROW}UNKNOWN MOBILE APP DEVICE"}
+                f"{RED_ALERT}{self.conf_device[CONF_MOBILE_APP_DEVICE]}"
+                f"{RARROW}UNKNOWN MOBILE APP DEVICE"}
 
     if isnot_empty(devices_this_device):
         self.mobapp_list_text_by_entity_id.update(devices_this_device)
         self.mobapp_list_text_by_entity_id.update({'.dashes': '…'*60})
     self.mobapp_list_text_by_entity_id.update(MOBAPP_DEVICE_NONE_OPTIONS)
-    # self.mobapp_list_text_by_entity_id.update({'None': f" • {MOBAPP_DEVICE_NONE_OPTIONS['None']}"})
-    self.mobapp_list_text_by_entity_id.update({'.available': f"{'…'*6} AVAILABLE MOBILE APP DEVICES {'…'*30}"})
+
+    self.mobapp_list_text_by_entity_id.update(
+                            {'.available': f"{'…'*6} AVAILABLE MOBILE APP DEVICES {'…'*30}"})
     self.mobapp_list_text_by_entity_id.update(dict_sort_values(devices_available))
-    self.mobapp_list_text_by_entity_id.update({'.assigned': f"{'…'*6} ASSIGNED TO ANOTHER ICLOUD3 DEVICE {'…'*25}"})
+
+    self.mobapp_list_text_by_entity_id.update(
+                            {'.assigned': f"{'…'*6} ASSIGNED TO ANOTHER ICLOUD3 DEVICE {'…'*25}"})
     self.mobapp_list_text_by_entity_id.update(dict_sort_values(devices_used))
-    self.mobapp_list_text_by_entity_id.update({'.scanfor': f"{'…'*6} SCAN FOR DEVICE TRACKER ENTITY {'…'*28}"})
+
+    self.mobapp_list_text_by_entity_id.update(
+                            {'.scanfor': f"{'…'*6} SCAN FOR DEVICE TRACKER ENTITY {'…'*28}"})
     self.mobapp_list_text_by_entity_id.update(dict_sort_values(scan_for_mobapp_devices))
 
     return
@@ -808,9 +809,6 @@ async def build_zone_selection_list(self):
 
 #-------------------------------------------------------------------------------------------
 def build_away_time_zone_hours_list(self):
-    # if self.away_time_zone_hours_key_text != {}:
-    #     return
-
     time_hhmmss = time_now()
     ha_time = int(time_hhmmss[0:2])
     for hh in range(ha_time-12, ha_time+13):

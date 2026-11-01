@@ -32,47 +32,48 @@ def no_errors(self):
     return not any_errors(self)
 
 #--------------------------------------------------------------------
-def menu_text_to_item(self, user_input, selection_list):
-    '''
-    Convert the text of the menu item selected to it's key name.
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def menu_text_to_item(self, user_input, selection_list):
+#     '''
+#     Convert the text of the menu item selected to it's key name.
 
-    selection_list - Field name in user_input to use:
-        ''menu_item' 'menu_action_item'
-    '''
+#     selection_list - Field name in user_input to use:
+#         ''menu_item' 'menu_action_item'
+#     '''
 
-    if user_input is None:
-        return None, None
+#     if user_input is None:
+#         return None, None
 
-    selected_text = None
-    if selection_list in user_input:
-        selected_text = user_input[selection_list]
-        selected_text_len = 35 if len(selected_text) > 35 else len(selected_text)
+#     selected_text = None
+#     if selection_list in user_input:
+#         selected_text = user_input[selection_list]
+#         selected_text_len = 35 if len(selected_text) > 35 else len(selected_text)
 
-        # selected_text contains the 'exit_xxx key', not the displayed menu text
-        if selected_text.startswith('exit_'):
-            user_input['menu_items'] = selected_text
-            return user_input, selected_text
+#         # selected_text contains the 'exit_xxx key', not the displayed menu text
+#         if selected_text.startswith('exit_'):
+#             user_input['menu_items'] = selected_text
+#             return user_input, selected_text
 
-        # selected_text contains the displayed menu text
-        elif selected_text.startswith('EXIT'):
-            user_input['menu_items'] = 'exit'
-            return user_input, 'exit'
+#         # selected_text contains the displayed menu text
+#         elif selected_text.startswith('EXIT'):
+#             user_input['menu_items'] = 'exit'
+#             return user_input, 'exit'
 
-        elif selected_text.startswith('MENU'):
-            user_input['menu_items'] = 'menu'
-            return user_input, 'menu'
+#         elif selected_text.startswith('MENU'):
+#             user_input['menu_items'] = 'menu'
+#             return user_input, 'menu'
 
-        menu_items = MENU_0_ITEMS if self.menu_page_no == 0 else MENU_1_ITEMS
-        menu_item = [k  for k, v in menu_items.items()
-                        if v.startswith(selected_text[:selected_text_len])][0]
+#         menu_items = MENU_0_ITEMS if self.menu_page_no == 0 else MENU_1_ITEMS
+#         menu_item = [k  for k, v in menu_items.items()
+#                         if v.startswith(selected_text[:selected_text_len])][0]
 
-        user_input.pop(selection_list)
-    else:
-        menu_item = self.menu_item_selected
+#         user_input.pop(selection_list)
+#     else:
+#         menu_item = self.menu_item_selected
 
-    user_input['menu_items'] = menu_item
+#     user_input['menu_items'] = menu_item
 
-    return user_input, menu_item
+#     return user_input, menu_item
 
 #--------------------------------------------------------------------
 def set_header_msg(self):
@@ -321,8 +322,9 @@ def option_parm_to_text(self, pname, option_list_key_text, conf_device=False):
         return f"{pvalue_key} {DATA_ENTRY_ALERT}Unknown Selection"
 
 #-------------------------------------------------------------------------------------------
-def key_text_to_text_list(key_text):
-    return [text for text in key_text.values()]
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def key_text_to_text_list(key_text):
+#     return [text for text in key_text.values()]
 
 #-------------------------------------------------------------------------------------------
 def option_text_to_parm(user_input, pname, option_list_key_text):
@@ -353,16 +355,17 @@ def option_text_to_parm(user_input, pname, option_list_key_text):
     return  user_input
 
 #-------------------------------------------------------------------------------------------
-def convert_field_str_to_numeric(user_input):
-    '''
-    Config_flow chokes with malformed input errors when a field is numeric. To avoid this,
-    the field's default value is always a string. This converts it back to a float.
-    '''
-    for pname, pvalue in user_input.items():
-        if pname in CONF_PARAMETER_FLOAT:
-            user_input[pname] = float(pvalue)
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def convert_field_str_to_numeric(user_input):
+#     '''
+#     Config_flow chokes with malformed input errors when a field is numeric. To avoid this,
+#     the field's default value is always a string. This converts it back to a float.
+#     '''
+#     for pname, pvalue in user_input.items():
+#         if pname in CONF_PARAMETER_FLOAT:
+#             user_input[pname] = float(pvalue)
 
-    return user_input
+#     return user_input
 
 #-------------------------------------------------------------------------------------------
 def validate_numeric_field(self, user_input):
@@ -386,66 +389,68 @@ def validate_numeric_field(self, user_input):
     return user_input
 
 #-------------------------------------------------------------------------------------------
-def validate_time_str(self, user_input):
-    '''
-    Cycle through the each of the parameters. If it is a time string, check it's
-    value and sec/min/hrs entry
-    '''
-    new_user_input = {}
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def validate_time_str(self, user_input):
+#     '''
+#     Cycle through the each of the parameters. If it is a time string, check it's
+#     value and sec/min/hrs entry
+#     '''
+#     new_user_input = {}
 
-    for pname, pvalue in user_input.items():
-        if pname in CONF_PARAMETER_TIME_STR:
-            time_parts  = (f"{pvalue} mins").split(' ')
+#     for pname, pvalue in user_input.items():
+#         if pname in CONF_PARAMETER_TIME_STR:
+#             time_parts  = (f"{pvalue} mins").split(' ')
 
-            if time_parts[0].strip() == '':
-                self.errors[pname] = "required_field"
-                self.errors_user_input[pname] = ''
-                continue
-            elif is_number(str(time_parts[0])) is False:
-                self.errors[pname] = "not_numeric"
-                self.errors_user_input[pname] = user_input[pname]
-                continue
+#             if time_parts[0].strip() == '':
+#                 self.errors[pname] = "required_field"
+#                 self.errors_user_input[pname] = ''
+#                 continue
+#             elif is_number(str(time_parts[0])) is False:
+#                 self.errors[pname] = "not_numeric"
+#                 self.errors_user_input[pname] = user_input[pname]
+#                 continue
 
-            if instr(time_parts[1], 'm'):
-                pvalue = f"{time_parts[0]} mins"
-            elif instr(time_parts[1], 'h'):
-                pvalue = f"{time_parts[0]} hrs"
-            elif instr(time_parts[1], 's'):
-                pvalue = f"{time_parts[0]} secs"
-            else:
-                pvalue = f"{time_parts[0]} mins"
+#             if instr(time_parts[1], 'm'):
+#                 pvalue = f"{time_parts[0]} mins"
+#             elif instr(time_parts[1], 'h'):
+#                 pvalue = f"{time_parts[0]} hrs"
+#             elif instr(time_parts[1], 's'):
+#                 pvalue = f"{time_parts[0]} secs"
+#             else:
+#                 pvalue = f"{time_parts[0]} mins"
 
-            if not self.errors.get(pname):
-                try:
-                    if float(time_parts[0]) == 1:
-                        pvalue = pvalue.replace('s', '')
-                    new_user_input[pname] = pvalue
+#             if not self.errors.get(pname):
+#                 try:
+#                     if float(time_parts[0]) == 1:
+#                         pvalue = pvalue.replace('s', '')
+#                     new_user_input[pname] = pvalue
 
-                except ValueError:
-                    self.errors[pname] = "not_numeric"
-                    self.errors_user_input[pname] = user_input[pname]
+#                 except ValueError:
+#                     self.errors[pname] = "not_numeric"
+#                     self.errors_user_input[pname] = user_input[pname]
 
-        else:
-            new_user_input[pname] = pvalue
+#         else:
+#             new_user_input[pname] = pvalue
 
-    return new_user_input
+#     return new_user_input
 
 #-------------------------------------------------------------------------------------------
-def parm_with_example_text(config_parameter, input_select_list_KEY_TEXT):
-    '''
-    The input_select_list for the parameter has an example text '(Example: exampletext)'
-    as part of list of options display for user selection. The exampletext is not part
-    of the configuration parameter. Dydle through the input_select_list and determine which
-    one should be the default value.
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def parm_with_example_text(config_parameter, input_select_list_KEY_TEXT):
+#     '''
+#     The input_select_list for the parameter has an example text '(Example: exampletext)'
+#     as part of list of options display for user selection. The exampletext is not part
+#     of the configuration parameter. Dydle through the input_select_list and determine which
+#     one should be the default value.
 
-    Return:
-        default - The input_select item to be used for the default value
-    '''
-    for isli_with_example in input_select_list_KEY_TEXT:
-        if isli_with_example.startswith(Gb.conf_general[config_parameter]):
-            return isli_with_example
+#     Return:
+#         default - The input_select item to be used for the default value
+#     '''
+#     for isli_with_example in input_select_list_KEY_TEXT:
+#         if isli_with_example.startswith(Gb.conf_general[config_parameter]):
+#             return isli_with_example
 
-    return input_select_list_KEY_TEXT[0]
+#     return input_select_list_KEY_TEXT[0]
 
 #--------------------------------------------------------------------
 def default_action_text(action_item, action_OPTIONS=None):
@@ -455,15 +460,16 @@ def default_action_text(action_item, action_OPTIONS=None):
         return ACTION_LIST_OPTIONS.get(action_item, 'UNKNOWN ACTION - Unknown Action')
 
 #--------------------------------------------------------------------
-def discard_changes(user_input):
-    '''
-    See if user_input 'action_item' item has a 'discard_change' option
-    selected. Discard changes is the last item in the list.
-    '''
-    if user_input:
-        return (user_input.get('action_item') == default_action_text('cancel_goto_menu'))
-    else:
-        return False
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def discard_changes(user_input):
+#     '''
+#     See if user_input 'action_item' item has a 'discard_change' option
+#     selected. Discard changes is the last item in the list.
+#     '''
+#     if user_input:
+#         return (user_input.get('action_item') == default_action_text('cancel_goto_menu'))
+#     else:
+#         return False
 
 #--------------------------------------------------------------------
 def log_step_info(self, user_input, action_item=None, subtitle=''):

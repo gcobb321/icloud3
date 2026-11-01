@@ -28,8 +28,9 @@ _LOGGER = logging.getLogger(f"icloud3")
 #   .STORAGE/ICLOUD3.RESTORE_STATE FILE ROUTINES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_load_icloud3_restore_state_file():
-    return await Gb.hass.async_add_executor_job(load_icloud3_restore_state_file)
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# async def async_load_icloud3_restore_state_file():
+#     return await Gb.hass.async_add_executor_job(load_icloud3_restore_state_file)
 
 
 def load_icloud3_restore_state_file():
@@ -85,8 +86,9 @@ def build_initial_restore_state_file_structure():
     Gb.restore_state_devices = Gb.restore_state_file_data['devices']
 
 #-------------------------------------------------------------------------------------------
-def clear_devices():
-    Gb.restore_state_devices = {}
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def clear_devices():
+#     Gb.restore_state_devices = {}
 
 #-------------------------------------------------------------------------------------------
 def read_icloud3_restore_state_file():

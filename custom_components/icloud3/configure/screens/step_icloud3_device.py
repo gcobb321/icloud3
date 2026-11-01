@@ -1161,13 +1161,14 @@ class OptionsFlow_iCloud3Device_Steps:
         self.update_config_file_tracking(force_config_update=True)
 
 #-------------------------------------------------------------------------------------------
-    def _check_inactive_devices(self):
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _check_inactive_devices(self):
 
-        inactive_list = [conf_device[CONF_IC3_DEVICENAME]
-                            for conf_device in Gb.conf_devices
-                            if conf_device[CONF_TRACKING_MODE] == INACTIVE]
+    #     inactive_list = [conf_device[CONF_IC3_DEVICENAME]
+    #                         for conf_device in Gb.conf_devices
+    #                         if conf_device[CONF_TRACKING_MODE] == INACTIVE]
 
-        return inactive_list != [] or self.inactive_devices_key_text.get('keep_inactive', False)
+    #     return inactive_list != [] or self.inactive_devices_key_text.get('keep_inactive', False)
 
 #-------------------------------------------------------------------------------------------
     def set_inactive_devices_header_msg(self):

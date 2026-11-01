@@ -617,18 +617,19 @@ class AppleAcctManager(object):
         return Gb.conf_apple_accounts[0][CONF_APPLE_ACCT] == self.apple_id
 
 #----------------------------------------------------------------------------
-    def setup_new_apple_account_session(self):
-        '''
-        Initialize the session file and authenticate the apple account access. This
-        will force Apple to display a new Authentication code
-        '''
-        self.session_data       = {}
-        self.session_data_token = {}
-        self.session_token      = ''
-        self.session_id         = ''
-        self.trust_token        = ''
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def setup_new_apple_account_session(self):
+    #     '''
+    #     Initialize the session file and authenticate the apple account access. This
+    #     will force Apple to display a new Authentication code
+    #     '''
+    #     self.session_data       = {}
+    #     self.session_data_token = {}
+    #     self.session_token      = ''
+    #     self.session_id         = ''
+    #     self.trust_token        = ''
 
-        self.authenticate()
+    #     self.authenticate()
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -831,58 +832,59 @@ class AppleAcctManager(object):
         return False
 
 #----------------------------------------------------------------------------
-    def authenticate_with_password(self):
-        '''
-        Sign into Apple account with password. This can be called by:
-            - the verify_apple_id_password fct in ValidateAppleAcctUPW
-            - the authenticate fct in AppleAcctManager
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def authenticate_with_password(self):
+    #     '''
+    #     Sign into Apple account with password. This can be called by:
+    #         - the verify_apple_id_password fct in ValidateAppleAcctUPW
+    #         - the authenticate fct in AppleAcctManager
 
-        Return:
-            True - Successful login
-            False - Invalid Password or other error
-        '''
-        log_info_msg(f"{self.apple_user}, Authenticate with Password")
-        post_greenbar_msg(f"Apple Acct > {self.apple_user}, Auth with Password")
+    #     Return:
+    #         True - Successful login
+    #         False - Invalid Password or other error
+    #     '''
+    #     log_info_msg(f"{self.apple_user}, Authenticate with Password")
+    #     post_greenbar_msg(f"Apple Acct > {self.apple_user}, Auth with Password")
 
-        headers = self.get_auth_headers()
+    #     headers = self.get_auth_headers()
 
-        url = f"{self.AUTH_ENDPOINT}/signin"
-        params = {"isRememberMeEnabled": "true"}
-        login_data = {  "accountName": self.apple_id,
-                        "password": self.password,
-                        "rememberMe": True,
-                        "trustTokens": []}
+    #     url = f"{self.AUTH_ENDPOINT}/signin"
+    #     params = {"isRememberMeEnabled": "true"}
+    #     login_data = {  "accountName": self.apple_id,
+    #                     "password": self.password,
+    #                     "rememberMe": True,
+    #                     "trustTokens": []}
 
-        if self.session_data.get("trust_token"):
-            login_data["trustTokens"] = [self.session_data.get("trust_token")]
+    #     if self.session_data.get("trust_token"):
+    #         login_data["trustTokens"] = [self.session_data.get("trust_token")]
 
-        try:
-            self.data = icloud_io.post(self, url, params=params, data=login_data,
-                                                    headers=headers,)
+    #     try:
+    #         self.data = icloud_io.post(self, url, params=params, data=login_data,
+    #                                                 headers=headers,)
 
-            self.response_code_pw = self.response_code
-            self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
+    #         self.response_code_pw = self.response_code
+    #         self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
 
-            self._handle_accept_terms_of_use(login_data)
-            if self.terms_of_use_update_needed:
-                return False
+    #         self._handle_accept_terms_of_use(login_data)
+    #         if self.terms_of_use_update_needed:
+    #             return False
 
-            return ('session_token' in self.session_data)
+    #         return ('session_token' in self.session_data)
 
-        except AppleAcctAPIResponseException as err:
-            log_debug_msg(  f"{self.apple_user}, "
-                            f"Authenticate with password > Failed, Password is not valid, "
-                            f"Error-{err}")     #, 2fa Needed-{self.is_reauth_needed}")
-            raise AppleAcctFailedLoginException()
+    #     except AppleAcctAPIResponseException as err:
+    #         log_debug_msg(  f"{self.apple_user}, "
+    #                         f"Authenticate with password > Failed, Password is not valid, "
+    #                         f"Error-{err}")     #, 2fa Needed-{self.is_reauth_needed}")
+    #         raise AppleAcctFailedLoginException()
 
-        except Exception as err:
-            log_debug_msg(  f"{self.apple_user}, "
-                            f"Authenticate with password > Failed, "
-                            f"Other Error, {err}")
-            log_exception(err)
-            return False
+    #     except Exception as err:
+    #         log_debug_msg(  f"{self.apple_user}, "
+    #                         f"Authenticate with password > Failed, "
+    #                         f"Other Error, {err}")
+    #         log_exception(err)
+    #         return False
 
-        return False
+    #     return False
 
 #----------------------------------------------------------------------------
     def authenticate_with_password_srp(self, apple_id=None, password=None, srp_wait=True):
@@ -1308,47 +1310,48 @@ class AppleAcctManager(object):
         return False
 
 #----------------------------------------------------------------------------
-    def is_session_trusted_auth_check(self):
-        '''
-        Re-trigger the 2FA push notification popup on all trusted devices
-        WITHOUT deleting session/cookie files or re-doing password authentication.
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def is_session_trusted_auth_check(self):
+    #     '''
+    #     Re-trigger the 2FA push notification popup on all trusted devices
+    #     WITHOUT deleting session/cookie files or re-doing password authentication.
 
-        This works by GETting /appleauth/auth with the existing session headers.
-        Apple re-dispatches the push to all trusted devices if the session is
-        still in a pending-2FA-challenge state.
+    #     This works by GETting /appleauth/auth with the existing session headers.
+    #     Apple re-dispatches the push to all trusted devices if the session is
+    #     still in a pending-2FA-challenge state.
 
-        Returns:
-            True  - Session has expired; full re-auth needed
-            False - Push re-sent, session still valid, phone numbers re-captured
-        '''
-        headers = self.get_auth_headers()
-        url     = f"{self.AUTH_ENDPOINT}/auth"
+    #     Returns:
+    #         True  - Session has expired; full re-auth needed
+    #         False - Push re-sent, session still valid, phone numbers re-captured
+    #     '''
+    #     headers = self.get_auth_headers()
+    #     url     = f"{self.AUTH_ENDPOINT}/auth"
 
-        try:
-            log_info_msg(f"{self.apple_user}, Check Session Trust")
+    #     try:
+    #         log_info_msg(f"{self.apple_user}, Check Session Trust")
 
-            data = icloud_io.get(self, url, headers=headers)
+    #         data = icloud_io.get(self, url, headers=headers)
 
-            # Get trusted phone numbers and hwkeys
-            if self.response_code in (200, 409):
-                self.get_trusted_devices()
-                log_debug_msg(f"{self.apple_user}, Session Trust Valid ({self.response_code}))")
-                return True
+    #         # Get trusted phone numbers and hwkeys
+    #         if self.response_code in (200, 409):
+    #             self.get_trusted_devices()
+    #             log_debug_msg(f"{self.apple_user}, Session Trust Valid ({self.response_code}))")
+    #             return True
 
-            log_debug_msg(  f"{self.apple_user}, Session Trust Invalid ({self.response_code})")
-            return False
+    #         log_debug_msg(  f"{self.apple_user}, Session Trust Invalid ({self.response_code})")
+    #         return False
 
-        except AppleAcctAPIResponseException as err:
-            # 403/404 means session is fully expired — need fresh login
-            if self.response_code in (403, 404):
-                log_warning_msg(f"{self.apple_user}, Session Trust Expired ({self.response_code})")
-            else:
-                log_warning_msg(f"{self.apple_user}, Session Trust Error ({self.response_code})")
+    #     except AppleAcctAPIResponseException as err:
+    #         # 403/404 means session is fully expired — need fresh login
+    #         if self.response_code in (403, 404):
+    #             log_warning_msg(f"{self.apple_user}, Session Trust Expired ({self.response_code})")
+    #         else:
+    #             log_warning_msg(f"{self.apple_user}, Session Trust Error ({self.response_code})")
 
-        except Exception as err:
-            log_exception(err)
+    #     except Exception as err:
+    #         log_exception(err)
 
-        return True
+    #     return True
 
 #----------------------------------------------------------------------------
     def is_session_still_trusted(self):
@@ -1903,8 +1906,9 @@ class AppleAcctManager(object):
         '''Returns True if the session is trusted.'''
         return self.data.get("hsaTrustedBrowser", False)
 
-    def new_log_in_needed(self, apple_id):
-        return apple_id != self.apple_id
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def new_log_in_needed(self, apple_id):
+    #     return apple_id != self.apple_id
 
     @property
     def aadevice_dnames(self):
@@ -1915,15 +1919,16 @@ class AppleAcctManager(object):
         return aadevice_dnames
 
 #----------------------------------------------------------------------------
-    def _get_webservice_url(self, ws_key):
-        '''Get webservice URL, raise an exception if not exists.'''
-        try:
-            if self.webservices.get(ws_key) is None:
-                return None
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _get_webservice_url(self, ws_key):
+    #     '''Get webservice URL, raise an exception if not exists.'''
+    #     try:
+    #         if self.webservices.get(ws_key) is None:
+    #             return None
 
-            return self.webservices[ws_key]["url"]
-        except:
-            return None
+    #         return self.webservices[ws_key]["url"]
+    #     except:
+    #         return None
 
 #----------------------------------------------------------------------------
     def update_token_pw_valid_reauth_data(self):
@@ -2305,21 +2310,22 @@ class AppleAcctManager(object):
             log_exception(err)
 
 #----------------------------------------------------------------------------
-    def untrust_session(self):
-        '''
-        Initialize the session file and authenticate the apple account access. This
-        will force Apple to display a new Authentication code
-        '''
-        if secs_since(self.srp_upw_valid_secs) < SRP_SIGNIN_TOKEN_INFO_MAX_AGE_SECS:
-            return
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def untrust_session(self):
+    #     '''
+    #     Initialize the session file and authenticate the apple account access. This
+    #     will force Apple to display a new Authentication code
+    #     '''
+    #     if secs_since(self.srp_upw_valid_secs) < SRP_SIGNIN_TOKEN_INFO_MAX_AGE_SECS:
+    #         return
 
-        self.session_data['session_token'] = ''
-        self.session_data['trust_token']   = ''
-        self.session_token = ''
-        self.trust_token   = ''
+    #     self.session_data['session_token'] = ''
+    #     self.session_data['trust_token']   = ''
+    #     self.session_token = ''
+    #     self.trust_token   = ''
 
-        self.delete_trust_cookie()
-        self.clear_srp_signin_session()
+    #     self.delete_trust_cookie()
+    #     self.clear_srp_signin_session()
 
 #----------------------------------------------------------------------------
     def untrust_session_and_authenticate(self):
@@ -2567,9 +2573,10 @@ class AppleAcctManager(object):
         return data
 
 #----------------------------------------------------------------------------
-    @staticmethod
-    def _log_pw(password):
-        return f"{password[:4]}{DOTS}{password[4:]}"
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # @staticmethod
+    # def _log_pw(password):
+    #     return f"{password[:4]}{DOTS}{password[4:]}"
 
 #----------------------------------------------------------------------------
     def __repr__(self):
@@ -2619,16 +2626,18 @@ class AppleAcct2FARequiredException(AppleAcctException):
     pass
 
 #----------------------------------------------------------------------------
-class AppleAcct2SARequiredException(AppleAcctException):
-    """iCloud 2SA required exception."""
-    def __init__(self, apple_id):
-        message = f"Two-step authentication required for account: {apple_id}"
-        super().__init__(message)
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# class AppleAcct2SARequiredException(AppleAcctException):
+#     """iCloud 2SA required exception."""
+#     def __init__(self, apple_id):
+#         message = f"Two-step authentication required for account: {apple_id}"
+#         super().__init__(message)
 
 #----------------------------------------------------------------------------
-class AppleAcctNoStoredPasswordAvailableException(AppleAcctException):
-    '''iCloud no stored password exception.'''
-    pass
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# class AppleAcctNoStoredPasswordAvailableException(AppleAcctException):
+#     '''iCloud no stored password exception.'''
+#     pass
 
 #----------------------------------------------------------------------------
 class AppleAcctNoDevicesException(AppleAcctException):

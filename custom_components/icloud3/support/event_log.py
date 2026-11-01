@@ -83,7 +83,7 @@ class EventLog(object):
         self.display_text_as         = {}
         self.event_recds             = []   # Device event recds
         self.startup_event_save_recd_flag = True
-        self.startup_event_recds     = []   # All Event recds during startup
+        self.startup_event_recds     = []  # All Event recds during startup
         self.event_recds_max_cnt     = EVENT_RECDS_MAX_CNT_BASE
 
         self.fnames_by_devicename    = {'Setup': 'Waiting for HA to Finish Loading'}
@@ -390,7 +390,8 @@ class EventLog(object):
 
         evlog_alert_type = event_text[:3]
         if (self.startup_event_save_recd_flag
-                or evlog_alert_type in [EVLOG_NOTICE, EVLOG_ERROR, EVLOG_WARNING]
+                or evlog_alert_type in [EVLOG_ATTENTION, EVLOG_NOTICE,
+                                        EVLOG_ERROR, EVLOG_WARNING]
                 or evlog_alert_type == EVLOG_ALERT and instr(event_text, '> Old') is False):
             pass
         else:
@@ -586,18 +587,19 @@ class EventLog(object):
         self.last_refresh_secs = time_now_secs()
 
 #------------------------------------------------------
-    def alert_attr_filter(self, alert_msg=None):
-        if alert_msg is None:
-            alert_msg = self.greenbar_alert_msg
-        if alert_msg == '':
-            return ''
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def alert_attr_filter(self, alert_msg=None):
+    #     if alert_msg is None:
+    #         alert_msg = self.greenbar_alert_msg
+    #     if alert_msg == '':
+    #         return ''
 
-        alert_msg = alert_msg.replace(NBSP2, ' ')
-        alert_msg = alert_msg.replace(NBSP3, ' ')
-        alert_msg = alert_msg.replace(NBSP4, ' ')
-        alert_msg = alert_msg.replace(CRLF, NL)
+    #     alert_msg = alert_msg.replace(NBSP2, ' ')
+    #     alert_msg = alert_msg.replace(NBSP3, ' ')
+    #     alert_msg = alert_msg.replace(NBSP4, ' ')
+    #     alert_msg = alert_msg.replace(CRLF, NL)
 
-        return alert_msg
+    #     return alert_msg
 
 #------------------------------------------------------
     def _add_recd_to_event_recds(self, event_recd):
@@ -629,14 +631,20 @@ class EventLog(object):
         self.event_recds.insert(0, event_recd)
 
 #------------------------------------------------------
+    def start_logging_startup_events(self):
+        if self.startup_event_save_recd_flag is False:
+            self.startup_event_recds = []
+            self.startup_event_save_recd_flag = True
+
+#------------------------------------------------------
+    def stop_logging_startup_events(self):
+        self.startup_event_save_recd_flag = False
+
+#------------------------------------------------------
     def _save_startup_log_recd(self, Device, event_recd):
         # Add the startup and alert events to a non-clearable table (reset on a restart)
 
         event_text = event_recd[ELR_TEXT]
-
-
-        if instr(event_text, 'ICLOUD3 IS RELOADING'):
-            self.startup_event_recds = {}
 
         if Device:
             if event_text.startswith(EVLOG_UPDATE_END):
@@ -654,7 +662,6 @@ class EventLog(object):
                     event_text = event_text[3:]
                 event_text=(f"{ Device.fname} > {event_text}")
                 event_recd = [event_recd[ELR_DEVICENAME], event_recd[ELR_TIME], event_text]
-
 
         self.startup_event_recds.insert(0, event_recd)
 
@@ -1113,22 +1120,23 @@ class EventLog(object):
         return text
 
 #--------------------------------------------------------------------
-    @staticmethod
-    def uncompress_evlog_recd_special_characters(recd):
-        '''
-        The evlog records may have a compressed character that is expanded in
-        icloud3-event-log-card.js. It is used to reduce space in the
-        sensor.icloud3-event_log entity.
-        '''
-        if recd is None:
-            return recd
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # @staticmethod
+    # def uncompress_evlog_recd_special_characters(recd):
+    #     '''
+    #     The evlog records may have a compressed character that is expanded in
+    #     icloud3-event-log-card.js. It is used to reduce space in the
+    #     sensor.icloud3-event_log entity.
+    #     '''
+    #     if recd is None:
+    #         return recd
 
-        recd = recd.replace('⣇', "")
-        recd = recd.replace('⠈', " ")
-        recd = recd.replace('⠉', "  ")
-        recd = recd.replace('⠋', "   ")
-        recd = recd.replace('⠛', "    ")
-        recd = recd.replace('⠟', "     ")
-        recd = recd.replace('⠿', "      ")
+    #     recd = recd.replace('⣇', "")
+    #     recd = recd.replace('⠈', " ")
+    #     recd = recd.replace('⠉', "  ")
+    #     recd = recd.replace('⠋', "   ")
+    #     recd = recd.replace('⠛', "    ")
+    #     recd = recd.replace('⠟', "     ")
+    #     recd = recd.replace('⠿', "      ")
 
-        return recd
+    #     return recd

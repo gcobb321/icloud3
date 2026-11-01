@@ -57,6 +57,7 @@ class OptionsFlow_AppleAccount_Steps:
         self.add_apple_acct_flag        = False
         self.apple_id                   = ''
         self.password                   = ''
+        self.AppleAcct                  = None
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #              APPLE ACCOUNTS
@@ -988,11 +989,12 @@ class OptionsFlow_AppleAccount_Steps:
                             f'/{conf_device[CONF_IC3_DEVICENAME]=}')
 
 #--------------------------------------------------------------------
-    def _unpack_ui_import_apple_devices(self, user_input):
-        if user_input is None: return None
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _unpack_ui_import_apple_devices(self, user_input):
+    #     if user_input is None: return None
 
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                                    'account_selected',
-                                                    self.apple_acct_items_by_apple_id)
+    #     user_input = utils_cf.option_text_to_parm(user_input,
+    #                                                 'account_selected',
+    #                                                 self.apple_acct_items_by_apple_id)
 
-        return user_input
+    #     return user_input

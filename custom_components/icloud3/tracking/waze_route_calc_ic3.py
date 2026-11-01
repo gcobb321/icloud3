@@ -227,6 +227,12 @@ class WazeRouteCalculator(object):
                                     f"Time-{route_time:0.2f}min, "
                                     f"Distance-{route_distance:0.2f}km")
 
+                # An empty route (0min/0km) is not a route. Treat it like a Waze error so
+                # it is not cached or used as the device being in the zone.
+                if route_distance == 0:
+                    self.waze_error_msg = 'No route returned (0km)'
+                    return -1, -1
+
                 return route_time, route_distance
 
             return -1, -1

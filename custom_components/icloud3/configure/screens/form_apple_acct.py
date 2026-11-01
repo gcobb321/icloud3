@@ -16,7 +16,6 @@ from ..                     import utils_cf
 from ..                     import selection_lists as lists
 from ...apple_acct          import apple_acct_support_cf as aascf
 from ..const_form_lists     import *
-from ...mobile_app          import mobapp_interface
 
 from homeassistant.helpers  import (selector,
                                     entity_registry as er,
@@ -69,10 +68,6 @@ def form_apple_accounts(self):
     default_item = self.apple_acct_items_by_apple_id.get(default_key)
     if default_item not in self.apple_acct_items_displayed:
         default_item = self.apple_acct_items_displayed[0]
-
-    if instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP):
-        if is_empty(Gb.devicenames_x_mobapp_dnames):
-            mobapp_interface.get_mobile_app_integration_device_info()
 
     return vol.Schema({
         vol.Optional('data_source_apple_acct',

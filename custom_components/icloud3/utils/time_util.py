@@ -633,9 +633,6 @@ def calculate_time_zone_offset():
         if local_zone_offset.startswith("-"):
             local_zone_offset_secs = -1*local_zone_offset_secs
 
-        if local_zone_offset.startswith("-"):
-            local_zone_offset_secs = -1*local_zone_offset_secs
-
         Gb.time_zone_offset_str  = local_zone_offset
         Gb.time_zone_offset_secs = local_zone_offset_secs
 

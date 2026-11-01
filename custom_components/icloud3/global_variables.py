@@ -76,10 +76,12 @@ class GlobalVariables(object):
     # displayed (support/analytics.py > async_get_version_downloads)
     github_version                  = ''    # Latest version released on GitHub
     github_published_date           = ''    # Date that version was released
-    github_icloud3_downloads        = 0     # Downloads of that version, gcobb321/icloud3
-    github_beta_downloads           = 0     # Downloads of that version, gcobb321/icloud3_v3 (beta)
-    github_icloud3_total            = 0     # Downloads of all versions, gcobb321/icloud3
-    github_beta_total               = 0     # Downloads of all versions, gcobb321/icloud3_v3 (beta)
+    github_icloud3_downloads        = 0     # Downloads of that version
+    github_beta_version             = ''    # Latest beta (prerelease), only if newer than the release
+    github_beta_published_date      = ''    # Date that beta was published
+    github_beta_downloads           = 0     # Downloads of that beta
+    github_icloud3_total            = 0     # Downloads of all released versions
+    github_beta_total               = 0     # Downloads of all beta versions
     github_versions_cnt             = 0     # Number of versions with download counts
     github_downloads_date           = ''    # Date the counts above were retrieved
 
@@ -579,7 +581,6 @@ class GlobalVariables(object):
 
     # Miscellenous variables
     broadcast_msg        = ''
-    broadcast_info_msg   = None
 
 
     #<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>

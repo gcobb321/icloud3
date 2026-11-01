@@ -175,20 +175,21 @@ class iCloud_AppleAcctDevice():
         return self.device_data['fmlyShare']
 
 #......................................................................
-    def _find_conf_device_devicename(self, field, field_value):
-        '''
-        Cycle through the conf_devices and return the ic3_devicename that matches
-        the requested field/field_value
-        '''
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _find_conf_device_devicename(self, field, field_value):
+    #     '''
+    #     Cycle through the conf_devices and return the ic3_devicename that matches
+    #     the requested field/field_value
+    #     '''
 
-        idx = -1
-        for conf_device in Gb.conf_devices:
-            idx += 1
-            if (conf_device[CONF_APPLE_ACCT] == self.AppleAcct.apple_id
-                    and conf_device[field] == field_value):
-                return conf_device[CONF_IC3_DEVICENAME], idx
+    #     idx = -1
+    #     for conf_device in Gb.conf_devices:
+    #         idx += 1
+    #         if (conf_device[CONF_APPLE_ACCT] == self.AppleAcct.apple_id
+    #                 and conf_device[field] == field_value):
+    #             return conf_device[CONF_IC3_DEVICENAME], idx
 
-        return '', -1
+    #     return '', -1
 
 #----------------------------------------------------------------------
     @staticmethod
@@ -378,7 +379,9 @@ class iCloud_AppleAcctDevice():
 #----------------------------------------------------------------------------
     def save_new_device_data(self, new_device_data):
         '''Update the device data.'''
-        new_device_data[CONF_IC3_DEVICENAME] = self.Device.devicename
+        # The Device may not be linked to this AADev yet (Gb.Devices_by_icloud_device_id
+        # is set but AADev.Device is not). Do not stop the update loop for the Apple Acct.
+        new_device_data[CONF_IC3_DEVICENAME] = self.Device.devicename if self.Device else self.ic3_devicename
         new_device_data['Device']            = self.Device
         new_device_data['dname']             = self.dname
 

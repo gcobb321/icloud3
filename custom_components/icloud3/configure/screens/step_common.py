@@ -5,7 +5,7 @@ from ...const_config        import (CONF_APPLE_ACCT, CONF_PASSWORD, CONF_VERSION
                                     CONF_APPLE_ACCOUNTS, CONF_DEVICES, CONF_PARAMETER_FLOAT,
                                     CF_GENERAL, )
 from ...utils.utils         import (isnot_empty, list_add, encode_password, decode_password, )
-from ...utils.messaging     import (log_exception, post_event, )
+from ...utils.messaging     import (log_exception, post_event, _log, )
 
 from ...startup             import config_file
 from ...startup             import start_ic3
@@ -79,7 +79,10 @@ class OptionsFlow_Common_Steps:
 
         Parametters:
             self.confirm_action = {
-                    'action_desc': TOOL_LIST[acton_item],
+                    'action_desc': None,
+                    'action_items': TOOL_LIST[acton_item],
+                    'no_func': self.confirm_test_no,
+                    'no_func_async': self.async_confirm_test_no,
                     'yes_func': self.confirm_test_yes,
                     'yes_func_async': self.async_confirm_test_yes,
                     'return_to_func_async': self.async_step_tools,
@@ -94,8 +97,9 @@ class OptionsFlow_Common_Steps:
 
         if user_input is None or 'action_items' not in user_input:
             try:
+                action_items = self.confirm_action.get('action_items')
                 return self.async_show_form(step_id='confirm_action',
-                                        data_schema=forms.form_confirm_action(self),
+                                        data_schema=forms.form_confirm_action(self, action_items=action_items),
                                         errors=self.errors)
             except Exception as err:
                 log_exception(err)
@@ -103,25 +107,38 @@ class OptionsFlow_Common_Steps:
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
         utils_cf.log_step_info(self, user_input, action_item)
 
-        if action_item == 'confirm_action_no':
-            self.errors = {'base': 'action_cancelled'}
-            return await self.confirm_action['return_to_func_async'](errors=self.errors)
+        # The action function can set self.errors if it was not completed, it is
+        # displayed instead of the 'action_completed' message
+        if action_item == 'goto_previous':
+            pass
 
-        if action_item == 'confirm_action_yes':
-            self.config_file_commit_updates = True
-            list_add(self.config_parms_update_control, 'restart')
+        elif action_item.startswith('confirm_action_no'):
+            if self.confirm_action.get('no_func') is not None:
+                self.errors = {}
+                self.confirm_action['no_func']()
+                self.errors = self.errors or {'base': 'action_completed'}
+                self.confirm_action['no_func'] = None
 
-            if self.confirm_action['yes_func'] is not None:
+            elif self.confirm_action.get('no_func_async') is not None:
+                self.errors = {}
+                await self.confirm_action['no_func_async']()
+                self.errors = self.errors or {'base': 'action_completed'}
+                self.confirm_action['no_func_async'] = None
+
+        elif action_item.startswith('confirm_action_yes'):
+            if self.confirm_action.get('yes_func') is not None:
+                self.errors = {}
                 self.confirm_action['yes_func']()
-                self.errors = {'base': 'action_completed'}
+                self.errors = self.errors or {'base': 'action_completed'}
                 self.confirm_action['yes_func'] = None
 
-            elif self.confirm_action['yes_func_async'] is not None:
+            elif self.confirm_action.get('yes_func_async') is not None:
+                self.errors = {}
                 await self.confirm_action['yes_func_async']()
-                self.errors = {'base': 'action_completed'}
+                self.errors = self.errors or {'base': 'action_completed'}
                 self.confirm_action['yes_func_async'] = None
 
-            if self.confirm_action['return_to_next_yes_func_async']:
+            if self.confirm_action.get('return_to_next_yes_func_async'):
                 return await self.confirm_action['return_to_next_yes_func_async'](errors=self.errors)
 
         return await self.confirm_action['return_to_func_async'](errors=self.errors)

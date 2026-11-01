@@ -386,21 +386,22 @@ def get_conf_device(devicename):
     return Gb.conf_devices[idx]
 
 #-------------------------------------------------------------------------------------------
-async def async_load_icloud3_ha_config_yaml(ha_config_yaml):
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# async def async_load_icloud3_ha_config_yaml(ha_config_yaml):
 
-    Gb.ha_config_yaml_icloud3_platform = {}
-    if ha_config_yaml == '':
-        return
+#     Gb.ha_config_yaml_icloud3_platform = {}
+#     if ha_config_yaml == '':
+#         return
 
-    ha_config_yaml_devtrkr_platforms = ordereddict_to_dict(ha_config_yaml)['device_tracker']
+#     ha_config_yaml_devtrkr_platforms = ordereddict_to_dict(ha_config_yaml)['device_tracker']
 
-    ic3_ha_config_yaml = {}
-    for ha_config_yaml_platform in ha_config_yaml_devtrkr_platforms:
-        if ha_config_yaml_platform['platform'] == 'icloud3':
-            ic3_ha_config_yaml = ha_config_yaml_platform.copy()
-            break
+#     ic3_ha_config_yaml = {}
+#     for ha_config_yaml_platform in ha_config_yaml_devtrkr_platforms:
+#         if ha_config_yaml_platform['platform'] == 'icloud3':
+#             ic3_ha_config_yaml = ha_config_yaml_platform.copy()
+#             break
 
-    Gb.ha_config_yaml_icloud3_platform = ordereddict_to_dict(ic3_ha_config_yaml)
+#     Gb.ha_config_yaml_icloud3_platform = ordereddict_to_dict(ic3_ha_config_yaml)
 
 #--------------------------------------------------------------------
 def build_log_file_filters():
@@ -522,36 +523,38 @@ def conf_apple_acct(idx_or_apple_id):
 
 
 #--------------------------------------------------------------------
-def apple_acct_apple_id_password(idx):
-    '''
-    Extract and return the Apple Account apple_id & password
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def apple_acct_apple_id_password(idx):
+#     '''
+#     Extract and return the Apple Account apple_id & password
 
-    Note: idx = -1 when adding a new apple_id
-    '''
-    if idx < 0 or idx > (len(Gb.conf_apple_accounts)-1):
-        return ('', '', '', True)
+#     Note: idx = -1 when adding a new apple_id
+#     '''
+#     if idx < 0 or idx > (len(Gb.conf_apple_accounts)-1):
+#         return ('', '', '', True)
 
-    try:
-        return (Gb.conf_apple_accounts[idx][CONF_APPLE_ACCT],
-            decode_password(Gb.conf_apple_accounts[idx][CONF_PASSWORD]),
-            Gb.conf_apple_accounts[idx][CONF_LOCATE_ALL])
-    except:
-        return ('', '', '' , True)
+#     try:
+#         return (Gb.conf_apple_accounts[idx][CONF_APPLE_ACCT],
+#             decode_password(Gb.conf_apple_accounts[idx][CONF_PASSWORD]),
+#             Gb.conf_apple_accounts[idx][CONF_LOCATE_ALL])
+#     except:
+#         return ('', '', '' , True)
 
 #--------------------------------------------------------------------
-def apple_acct_password_for_apple_id(apple_id):
-    '''
-    Extract and return the Apple Account password for a apple_id
-    '''
-    if apple_id is None:
-        return ''
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def apple_acct_password_for_apple_id(apple_id):
+#     '''
+#     Extract and return the Apple Account password for a apple_id
+#     '''
+#     if apple_id is None:
+#         return ''
 
-    try:
-        return [apple_acct[CONF_PASSWORD]
-                                for apple_acct in Gb.conf_apple_accounts
-                                if apple_acct[CONF_APPLE_ACCT] == apple_id][0]
-    except:
-        return ''
+#     try:
+#         return [apple_acct[CONF_PASSWORD]
+#                                 for apple_acct in Gb.conf_apple_accounts
+#                                 if apple_acct[CONF_APPLE_ACCT] == apple_id][0]
+#     except:
+#         return ''
 
 #-------------------------------------------------------------------------------------------
 def device_cnts():
@@ -979,17 +982,18 @@ def _verify_device_parameters_values():
     return update_configuration_flag
 
 #--------------------------------------------------------------------
-def _convert_hhmmss_to_minutes(conf_group):
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def _convert_hhmmss_to_minutes(conf_group):
 
-    time_fields = {pname: _hhmmss_to_minutes(pvalue)
-                            for pname, pvalue in conf_group.items()
-                            if (pname in CONF_PARAMETER_TIME_STR
-                                    and instr(str(pvalue), ':'))}
-    if time_fields != {}:
-        conf_group.update(time_fields)
-        return True
+#     time_fields = {pname: _hhmmss_to_minutes(pvalue)
+#                             for pname, pvalue in conf_group.items()
+#                             if (pname in CONF_PARAMETER_TIME_STR
+#                                     and instr(str(pvalue), ':'))}
+#     if time_fields != {}:
+#         conf_group.update(time_fields)
+#         return True
 
-    return False
+#     return False
 
 def _hhmmss_to_minutes(hhmmss):
         hhmmss_parts = hhmmss.split(':')
@@ -1028,17 +1032,18 @@ def _update_sensors():
         return True
 
 #-----------------------------------------------------------
-def _update_device_sensors():
-    '''
-    Update Gb.conf_device_sensors with new fields
-    '''
-    if (CF_DEVICE_SENSORS not in Gb.conf_data
-            or is_empty(Gb.conf_device_sensors)
-            or CONF_EXCLUDED_SENSORS not in Gb.conf_device_sensors):
-        Gb.conf_device_sensors = DEFAULT_DEVICE_SENSORS_CONF.copy()
-        return True
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def _update_device_sensors():
+#     '''
+#     Update Gb.conf_device_sensors with new fields
+#     '''
+#     if (CF_DEVICE_SENSORS not in Gb.conf_data
+#             or is_empty(Gb.conf_device_sensors)
+#             or CONF_EXCLUDED_SENSORS not in Gb.conf_device_sensors):
+#         Gb.conf_device_sensors = DEFAULT_DEVICE_SENSORS_CONF.copy()
+#         return True
 
-    return False
+#     return False
 
 #-------------------------------------------------------------------
 def _update_tracking_parameters():

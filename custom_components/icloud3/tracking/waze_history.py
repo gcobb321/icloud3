@@ -5,7 +5,7 @@ from ..const_config     import (CONF_TRACK_FROM_ZONES, )
 from ..const_char       import (CRLF_DOT, CRLF, RARROW2, )
 
 from ..utils.utils      import (list_to_str, zone_dname,)
-from ..utils.messaging  import (broadcast_info_msg, format_filename,
+from ..utils.messaging  import (format_filename,
                                 post_event, post_alert, post_internal_error, post_monitor_msg,
                                 post_greenbar_msg,
                                 refresh_event_log, log_info_msg, log_error_msg, log_exception,
@@ -426,7 +426,7 @@ class WazeRouteHistory(object):
                                     in the zones table and the zone time/dist values need to be
                                     recalculated. Get the info from Waze and do not update the db.
         '''
-        if self.connection is None: return
+        if self.connection is None: return (0, 0, 0)
 
         try:
             zone_id = Gb.wazehist_zone_id.get(from_zone, 0)

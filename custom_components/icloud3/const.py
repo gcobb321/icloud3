@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 VERSION                         = '3.8.0'
-VERSION_BETA                    = '2'
+VERSION_BETA                    = '3'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 PLATFORMS                       = ['sensor', 'device_tracker', 'button', 'text']

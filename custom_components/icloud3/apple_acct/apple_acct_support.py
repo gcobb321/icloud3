@@ -408,35 +408,36 @@ def clear_repair_issue_aa_terms_of_use(AppleAcct):
     AppleAcct.terms_of_use_repair_issue_posted = False
 
 #--------------------------------------------------------------------
-def check_all_devices_online_status():
-    '''
-    See if all the devices are 'pending'. If so, the devices are probably in airplane mode.
-    Set the time and display a message
-    '''
-    any_device_online_flag = False
-    for Device in Gb.Devices_by_devicename_tracked.values():
-        if Device.is_online:
-            Device.offline_secs = 0
-            Device.pending_secs = 0
-            any_device_online_flag = True
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def check_all_devices_online_status():
+#     '''
+#     See if all the devices are 'pending'. If so, the devices are probably in airplane mode.
+#     Set the time and display a message
+#     '''
+#     any_device_online_flag = False
+#     for Device in Gb.Devices_by_devicename_tracked.values():
+#         if Device.is_online:
+#             Device.offline_secs = 0
+#             Device.pending_secs = 0
+#             any_device_online_flag = True
 
-        elif Device.is_offline:
-            if Device.offline_secs == 0:
-                Device.offline_secs = Gb.this_update_secs
-            post_event(Device,
-                        f"Device Offline and not available > "
-                        f"OfflineSince-{format_time_age(Device.offline_secs)}")
+#         elif Device.is_offline:
+#             if Device.offline_secs == 0:
+#                 Device.offline_secs = Gb.this_update_secs
+#             post_event(Device,
+#                         f"Device Offline and not available > "
+#                         f"OfflineSince-{format_time_age(Device.offline_secs)}")
 
-        elif Device.is_pending:
-            if Device.pending_secs == 0:
-                Device.pending_secs = Gb.this_update_secs
-            post_event(Device,
-                        f"Device status is Pending/Unknown > "
-                        f"PendingSince-{format_time_age(Device.pending_secs)}")
+#         elif Device.is_pending:
+#             if Device.pending_secs == 0:
+#                 Device.pending_secs = Gb.this_update_secs
+#             post_event(Device,
+#                         f"Device status is Pending/Unknown > "
+#                         f"PendingSince-{format_time_age(Device.pending_secs)}")
 
-    if any_device_online_flag == False:
-        post_event( f"All Devices are offline or have a pending status. "
-                    f"They may be in AirPlane Mode and not available")
+#     if any_device_online_flag == False:
+#         post_event( f"All Devices are offline or have a pending status. "
+#                     f"They may be in AirPlane Mode and not available")
 
 #--------------------------------------------------------------------
 def new_2fa_authentication_code_requested(AppleAcct, initial_setup=False):

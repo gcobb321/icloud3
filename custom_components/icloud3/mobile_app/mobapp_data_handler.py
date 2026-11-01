@@ -367,17 +367,18 @@ def check_mobapp_state_trigger_change(Device):
             log_exception(err)
 
 #--------------------------------------------------------------------
-def new_mobapp_data_data_available(Device, after_secs):
-    if Device.is_mobapp_monitored:
-        return False
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def new_mobapp_data_data_available(Device, after_secs):
+#     if Device.is_mobapp_monitored:
+#         return False
 
-    device_trkr_attrs = get_mobapp_device_trkr_entity_attrs(Device)
-    if device_trkr_attrs is None:
-        return False
+#     device_trkr_attrs = get_mobapp_device_trkr_entity_attrs(Device)
+#     if device_trkr_attrs is None:
+#         return False
 
-    entity_id = Device.mobapp[TRIGGER]
-    mobapp_data_trigger_secs = entity_io.get_last_changed_time(entity_id)
-    return mobapp_data_trigger_secs > after_secs
+#     entity_id = Device.mobapp[TRIGGER]
+#     mobapp_data_trigger_secs = entity_io.get_last_changed_time(entity_id)
+#     return mobapp_data_trigger_secs > after_secs
 
 #--------------------------------------------------------------------
 def _display_mobapp_msg(Device, mobapp_msg):
@@ -748,40 +749,42 @@ def verify_device_in_ha_mobile_app_config():
     return unverified_devices_list
 
 #--------------------------------------------------------------------
-def x_unverified_devices_mobapp_handler():
-    '''
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def x_unverified_devices_mobapp_handler():
+#     '''
 
-    Retry Device Mobile App verification
-    '''
-    Gb.device_mobapp_verify_retry_cnt += 1
-    build_mobapp_integration_device_tables()
-    unverified_devices_list = verify_device_in_ha_mobile_app_config()
+#     Retry Device Mobile App verification
+#     '''
+#     Gb.device_mobapp_verify_retry_cnt += 1
+#     build_mobapp_integration_device_tables()
+#     unverified_devices_list = verify_device_in_ha_mobile_app_config()
 
-    if Gb.device_mobapp_verify_retry_needed is False:
-        post_event("All Devices monitoring the Mobile App Integration have been verified")
-    else:
-        event_msg =(f"{EVLOG_ALERT}MOBILE APP DEVICES NOT VERIFIED (#{Gb.device_mobapp_verify_retry_cnt}) > "
-                    f"Some Devices are not verified as as available in the HA "
-                    f"Mobile App Integration, "
-                    f"Devices-{list_to_str(unverified_devices_list)}, ")
-        if Gb.device_mobapp_verify_retry_cnt < 5:
-            event_msg += "Will retry in 5-mins"
-        else:
-            Gb.device_mobapp_verify_retry_needed = False
-            event_msg += "Max retries have been done. Devices will not monitor the Mobile App devices"
-        post_event(event_msg)
+#     if Gb.device_mobapp_verify_retry_needed is False:
+#         post_event("All Devices monitoring the Mobile App Integration have been verified")
+#     else:
+#         event_msg =(f"{EVLOG_ALERT}MOBILE APP DEVICES NOT VERIFIED (#{Gb.device_mobapp_verify_retry_cnt}) > "
+#                     f"Some Devices are not verified as as available in the HA "
+#                     f"Mobile App Integration, "
+#                     f"Devices-{list_to_str(unverified_devices_list)}, ")
+#         if Gb.device_mobapp_verify_retry_cnt < 5:
+#             event_msg += "Will retry in 5-mins"
+#         else:
+#             Gb.device_mobapp_verify_retry_needed = False
+#             event_msg += "Max retries have been done. Devices will not monitor the Mobile App devices"
+#         post_event(event_msg)
 
 #--------------------------------------------------------------------
-def unverified_devices_mobapp_list():
-    '''
-    Returns a list of devices that are unverified that are monitoring the mobapp
-    '''
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def unverified_devices_mobapp_list():
+#     '''
+#     Returns a list of devices that are unverified that are monitoring the mobapp
+#     '''
 
-    unverified_devices_list = []
-    for conf_device in Gb.conf_devices:
-            Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
-            if (Device.is_mobapp_monitored is False
-                    and conf_device[CONF_MOBILE_APP_DEVICE] != 'None'):
-                list_add(unverified_devices_list, Device.fname)
+#     unverified_devices_list = []
+#     for conf_device in Gb.conf_devices:
+#             Device = Gb.Devices_by_devicename[conf_device[CONF_IC3_DEVICENAME]]
+#             if (Device.is_mobapp_monitored is False
+#                     and conf_device[CONF_MOBILE_APP_DEVICE] != 'None'):
+#                 list_add(unverified_devices_list, Device.fname)
 
-    return unverified_devices_list
+#     return unverified_devices_list

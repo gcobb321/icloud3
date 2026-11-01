@@ -619,23 +619,24 @@ class iCloud3_DeviceTracker(TrackerEntity):
         return sensor_value
 
 #-------------------------------------------------------------------------------------------
-    def _get_attribute_value(self, attribute):
-        '''
-        Get the attribute value from Device's attributes
-        '''
-        try:
-            if self.Device is None:
-                return 0
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _get_attribute_value(self, attribute):
+    #     '''
+    #     Get the attribute value from Device's attributes
+    #     '''
+    #     try:
+    #         if self.Device is None:
+    #             return 0
 
-            attr_value = self.Device.attrs.get(attribute, None)
+    #         attr_value = self.Device.attrs.get(attribute, None)
 
-            if attr_value is None or attr_value.strip() == '' or attr_value == NOT_SET:
-                attr_value = 0
+    #         if attr_value is None or attr_value.strip() == '' or attr_value == NOT_SET:
+    #             attr_value = 0
 
-        except:
-            attr_value = 0
+    #     except:
+    #         attr_value = 0
 
-        return attr_value
+    #     return attr_value
 
 #-------------------------------------------------------------------------------------------
     def update_entity_attribute(self, new_fname=None, area_id=None, removing_device=False):
@@ -758,8 +759,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
         device_tracker.lillian_ipad_lillian_ipad_lillian_ipad --> device_tracker.lillian_ipad
         '''
 
-        if er_util.is_entity_available(self.entity_id_base) is False:
-            er_util.remove_sensor(self.entity_id_base)
+        if er_util.free_entity_id(self.entity_id_base) is False:
+            return
 
         er_util.change_entity_id(self.ha_entity_id, self.entity_id_base)
 

@@ -104,8 +104,9 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
 
 
-    def form_msg(self):
-        return f"Form-{self.step_id}, Errors-{self.errors}"
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def form_msg(self):
+    #     return f"Form-{self.step_id}, Errors-{self.errors}"
 
 #----------------------------------------------------------------------
     @staticmethod

@@ -556,48 +556,50 @@ class iCloudSession(Session):
         raise api_error
 
     #--------------------------------------------------------------------
-    @staticmethod
-    def _log_debug_msg(title, display_data):
-        ''' Display debug data fields '''
-        try:
-            log_debug_msg(f"{title} – {display_data}")
-        except:
-            log_debug_msg(f"{title} – None")
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # @staticmethod
+    # def _log_debug_msg(title, display_data):
+    #     ''' Display debug data fields '''
+    #     try:
+    #         log_debug_msg(f"{title} – {display_data}")
+    #     except:
+    #         log_debug_msg(f"{title} – None")
 
     #--------------------------------------------------------------------
-    def _shrink_items(self, prefiltered_dict):
-        '''
-        Obscure account name and password in apple aadevdata
-        '''
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _shrink_items(self, prefiltered_dict):
+    #     '''
+    #     Obscure account name and password in apple aadevdata
+    #     '''
 
-        if (prefiltered_dict is None
-                or type(prefiltered_dict) is not dict
-                or 'data' not in prefiltered_dict
-                or type(prefiltered_dict['data']) is not dict):
-            return prefiltered_dict
+    #     if (prefiltered_dict is None
+    #             or type(prefiltered_dict) is not dict
+    #             or 'data' not in prefiltered_dict
+    #             or type(prefiltered_dict['data']) is not dict):
+    #         return prefiltered_dict
 
-        try:
-            filtered_dict    = prefiltered_dict.copy()
-            prefiltered_data = prefiltered_dict['data']
-            filtered_data    = prefiltered_data.copy()
+    #     try:
+    #         filtered_dict    = prefiltered_dict.copy()
+    #         prefiltered_data = prefiltered_dict['data']
+    #         filtered_data    = prefiltered_data.copy()
 
-            if 'trustTokens'   in prefiltered_data:
-                filtered_data['trustTokens'] = self._shrink(prefiltered_data['trustTokens'])
-            if 'trustToken'    in prefiltered_data:
-                filtered_data['trustToken'] = self._shrink(prefiltered_data['trustToken'])
-            if 'dsWebAuthToken' in prefiltered_data:
-                filtered_data['dsWebAuthToken'] = self._shrink(prefiltered_data['dsWebAuthToken'])
-            if 'a' in prefiltered_data:
-                filtered_data['a'] = self._shrink(prefiltered_data['a'])
+    #         if 'trustTokens'   in prefiltered_data:
+    #             filtered_data['trustTokens'] = self._shrink(prefiltered_data['trustTokens'])
+    #         if 'trustToken'    in prefiltered_data:
+    #             filtered_data['trustToken'] = self._shrink(prefiltered_data['trustToken'])
+    #         if 'dsWebAuthToken' in prefiltered_data:
+    #             filtered_data['dsWebAuthToken'] = self._shrink(prefiltered_data['dsWebAuthToken'])
+    #         if 'a' in prefiltered_data:
+    #             filtered_data['a'] = self._shrink(prefiltered_data['a'])
 
-            filtered_dict['data'] = filtered_data
+    #         filtered_dict['data'] = filtered_data
 
-            return filtered_dict
+    #         return filtered_dict
 
-        except Exception as err:
-            pass
+    #     except Exception as err:
+    #         pass
 
-        return prefiltered_dict
+    #     return prefiltered_dict
 
     @property
     def apple_user(self):
@@ -657,16 +659,18 @@ class AppleAcct2FARequiredException(AppleAcctException):
     pass
 
 #––––––––––––––––––––––––––––––––––––––
-class AppleAcct2SARequiredException(AppleAcctException):
-    """iCloud 2SA required exception."""
-    def __init__(self, apple_id):
-        message = f"Two-step authentication required for account: {apple_id}"
-        super().__init__(message)
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# class AppleAcct2SARequiredException(AppleAcctException):
+#     """iCloud 2SA required exception."""
+#     def __init__(self, apple_id):
+#         message = f"Two-step authentication required for account: {apple_id}"
+#         super().__init__(message)
 
 #––––––––––––––––––––––––––––––––––––––
-class AppleAcctNoStoredPasswordAvailableException(AppleAcctException):
-    '''iCloud no stored password exception.'''
-    pass
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# class AppleAcctNoStoredPasswordAvailableException(AppleAcctException):
+#     '''iCloud no stored password exception.'''
+#     pass
 
 #––––––––––––––––––––––––––––––––––––––
 class AppleAcctNoDevicesException(AppleAcctException):

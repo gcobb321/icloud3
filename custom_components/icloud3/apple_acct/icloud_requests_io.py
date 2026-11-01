@@ -81,8 +81,9 @@ def put(AppleAcct, url, **kwargs):
     return data
 
 #--------------------------------------------------------------------
-def update_headers(AppleAcct, **kwargs):
-    return AppleAcct.iCloudSession.headers.update(kwargs)
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def update_headers(AppleAcct, **kwargs):
+#     return AppleAcct.iCloudSession.headers.update(kwargs)
 
 #--------------------------------------------------------------------
 def new_session(AppleAcct, **kwargs):
@@ -295,144 +296,146 @@ def request_timed_out(current_time):
 #            HTTPX & REQUESTS URL UTILITIES
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_httpx_request(url, **kwargs): #headers=None):
-    '''
-    Set up and request data from a url using the httpx requests process.
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# async def async_httpx_request(url, **kwargs): #headers=None):
+#     '''
+#     Set up and request data from a url using the httpx requests process.
 
-    Returns:
-        - data dictionary with the returned json data, the url and status_code
-        - error dictionary with the url, error and status_code if a connection or other error
-            occurred
-    '''
+#     Returns:
+#         - data dictionary with the returned json data, the url and status_code
+#         - error dictionary with the url, error and status_code if a connection or other error
+#             occurred
+#     '''
 
-    try:
-        error = 'InternetError-'
-        code  = 104
-        ok    = False
+#     try:
+#         error = 'InternetError-'
+#         code  = 104
+#         ok    = False
 
-        data = {}
-        data['code'] = code
-        data['ok']   = ok
+#         data = {}
+#         data['code'] = code
+#         data['ok']   = ok
 
-        try:
-            if 'headers' in kwargs:
-                httpx = create_async_httpx_client(headers=kwargs['headers'])
-            else:
-                httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
+#         try:
+#             if 'headers' in kwargs:
+#                 httpx = create_async_httpx_client(headers=kwargs['headers'])
+#             else:
+#                 httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
 
-            log_request_data('Request HTTPX', 'get', url, kwargs, '')
+#             log_request_data('Request HTTPX', 'get', url, kwargs, '')
 
-            if 'data' in kwargs:
-                response = await httpx.post(url, **kwargs)
-            else:
-                response = await httpx.get(url, **kwargs)
+#             if 'data' in kwargs:
+#                 response = await httpx.post(url, **kwargs)
+#             else:
+#                 response = await httpx.get(url, **kwargs)
 
-            try:
-                data = response.json()
-            except Exception as err:
-                pass
+#             try:
+#                 data = response.json()
+#             except Exception as err:
+#                 pass
 
-            log_request_data('Response HTTPX', 'get', url, kwargs, '')
+#             log_request_data('Response HTTPX', 'get', url, kwargs, '')
 
-            code = response.status_code
-            ok   = True
-            error = ''
+#             code = response.status_code
+#             ok   = True
+#             error = ''
 
-        except HTTPStatusError:
-            error = 'ClientError'
-            code  = 400
-        except (ConnectTimeout) as err:
-            error += 'ConnectTimeout'
-            code   = 104
-        except (ConnectionError) as err:
-            error += 'ConnectionError'
-            code   = 105
-        except (HTTPError) as err:
-            error += 'HTTPError'
-            code   = 500
-        except Exception as err:
-            log_exception(err)
-            error += 'Other'
-            code   = 500
+#         except HTTPStatusError:
+#             error = 'ClientError'
+#             code  = 400
+#         except (ConnectTimeout) as err:
+#             error += 'ConnectTimeout'
+#             code   = 104
+#         except (ConnectionError) as err:
+#             error += 'ConnectionError'
+#             code   = 105
+#         except (HTTPError) as err:
+#             error += 'HTTPError'
+#             code   = 500
+#         except Exception as err:
+#             log_exception(err)
+#             error += 'Other'
+#             code   = 500
 
-    except Exception as err:
-        log_exception(err)
-        error = 'OverAll'
-        code  = -99
+#     except Exception as err:
+#         log_exception(err)
+#         error = 'OverAll'
+#         code  = -99
 
-    data['code']  = code
-    data['ok']    = ok
-    data['url']   = url
-    data['error'] = error
+#     data['code']  = code
+#     data['ok']    = ok
+#     data['url']   = url
+#     data['error'] = error
 
-    return data
+#     return data
 
 #--------------------------------------------------------------------
-def httpx_request(url, headers=None, **kwargs):
-    '''
-    Set up and request data from a url using the httpx requests process.
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def httpx_request(url, headers=None, **kwargs):
+#     '''
+#     Set up and request data from a url using the httpx requests process.
 
-    Returns:
-        - data dictionary with the returned json data, the url and status_code
-        - error dictionary with the url, error and status_code if a connection or other error
-            occurred
-    '''
+#     Returns:
+#         - data dictionary with the returned json data, the url and status_code
+#         - error dictionary with the url, error and status_code if a connection or other error
+#             occurred
+#     '''
 
-    try:
-        error = 'InternetError-'
-        code  = 104
-        ok    = False
+#     try:
+#         error = 'InternetError-'
+#         code  = 104
+#         ok    = False
 
-        data = {}
-        data['code'] = code
-        data['ok']   = ok
+#         data = {}
+#         data['code'] = code
+#         data['ok']   = ok
 
-        try:
-            if headers is None:
-                httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
+#         try:
+#             if headers is None:
+#                 httpx = httpx_client.get_async_client(Gb.hass, verify_ssl=False)
 
-            else:
-                httpx = create_async_httpx_client(headers=headers, **kwargs)
+#             else:
+#                 httpx = create_async_httpx_client(headers=headers, **kwargs)
 
-            response = httpx.get(url)
+#             response = httpx.get(url)
 
-            try:
-                data = response.json()
-            except Exception as err:
-                pass
+#             try:
+#                 data = response.json()
+#             except Exception as err:
+#                 pass
 
-            code = response.status_code
-            ok   = True
-            error = ''
+#             code = response.status_code
+#             ok   = True
+#             error = ''
 
-        except HTTPStatusError:
-            error = 'ClientError'
-            code  = 400
-        except (ConnectTimeout) as err:
-            error += 'ConnectTimeout'
-            code   = 104
-        except (ConnectionError) as err:
-            error += 'ConnectionError'
-            code   = 105
-        except (HTTPError) as err:
-            error += 'HTTPError'
-            code   = 500
-        except Exception as err:
-            log_exception(err)
-            error += 'Other'
-            code   = 500
+#         except HTTPStatusError:
+#             error = 'ClientError'
+#             code  = 400
+#         except (ConnectTimeout) as err:
+#             error += 'ConnectTimeout'
+#             code   = 104
+#         except (ConnectionError) as err:
+#             error += 'ConnectionError'
+#             code   = 105
+#         except (HTTPError) as err:
+#             error += 'HTTPError'
+#             code   = 500
+#         except Exception as err:
+#             log_exception(err)
+#             error += 'Other'
+#             code   = 500
 
-    except Exception as err:
-        log_exception(err)
-        error = 'OverAll'
-        code  = -99
+#     except Exception as err:
+#         log_exception(err)
+#         error = 'OverAll'
+#         code  = -99
 
-    data['code']  = code
-    data['ok']    = ok
-    data['url']   = url
-    data['error'] = error
+#     data['code']  = code
+#     data['ok']    = ok
+#     data['url']   = url
+#     data['error'] = error
 
-    return data
+#     return data
 
 #............................................................................
 def create_async_httpx_client(headers=None):

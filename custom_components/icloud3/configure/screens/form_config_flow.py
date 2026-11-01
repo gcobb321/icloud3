@@ -111,14 +111,19 @@ def form_menu(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             CONFIRM ACTION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_confirm_action(self):
+def form_confirm_action(self, action_items=None):
     '''
     confirm_action form uses information in the self.confirm_action{}
     '''
 
     try:
-        actions_list = CONFIRM_ACTIONS.copy()
-        actions_list_default = 'confirm_action_no'
+        if action_items is None:
+            actions_list = CONFIRM_ACTIONS.copy()
+            actions_list_default = len(actions_list) - 1    # LAST ITEM
+        else:
+            actions_list = action_items
+            actions_list_default = self.confirm_action.get('action_items_default') or 0
+
         action_desc = self.confirm_action.get('action_desc') or \
                     'Do you want to perform the selected action?'
 
@@ -128,7 +133,7 @@ def form_confirm_action(self):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=[action_desc], mode='list')),
             vol.Required('action_items',
-                    default=utils_cf.default_action_text(actions_list_default)):
+                    default=actions_list[actions_list_default]):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=actions_list, mode='list')),
             })
@@ -139,25 +144,26 @@ def form_confirm_action(self):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             EXIT ICLOUD3 CONFIGURE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_exit_icloud3_configure_settings(self):
-    self.actions_list = EXIT_ICLOUD3_CONFIGURE_SETTINGS.copy()
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def form_exit_icloud3_configure_settings(self):
+#     self.actions_list = EXIT_ICLOUD3_CONFIGURE_SETTINGS.copy()
 
-    device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
-    if inactive_device_cnt == 0:
-        self.actions_list['review_inactive_devices'].pop()
-    else:
-        inactive_devices = [conf_device[CONF_IC3_DEVICENAME]
-                    for conf_device in Gb.conf_devices
-                    if conf_device[CONF_TRACKING_MODE] == INACTIVE]
+#     device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
+#     if inactive_device_cnt == 0:
+#         self.actions_list['review_inactive_devices'].pop()
+#     else:
+#         inactive_devices = [conf_device[CONF_IC3_DEVICENAME]
+#                     for conf_device in Gb.conf_devices
+#                     if conf_device[CONF_TRACKING_MODE] == INACTIVE]
 
-        # self.actions_list['review_inactive_devices'].replace(
-        self.actions_list[0] = \
-            self.actions_list[0].replace(
-                    '^add-text^', list_to_str(inactive_devices))
+#         # self.actions_list['review_inactive_devices'].replace(
+#         self.actions_list[0] = \
+#             self.actions_list[0].replace(
+#                     '^add-text^', list_to_str(inactive_devices))
 
-    return vol.Schema({
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text('exit')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+#     return vol.Schema({
+#         vol.Required('action_items',
+#                     default=utils_cf.default_action_text('exit')):
+#                     selector.SelectSelector(selector.SelectSelectorConfig(
+#                         options=self.actions_list, mode='list')),
+#         })

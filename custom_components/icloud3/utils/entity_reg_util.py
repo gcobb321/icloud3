@@ -577,15 +577,8 @@ def repair_entity_id_before_add(platform, unique_id, entity_id_base):
         if current_entity_id is None or current_entity_id == entity_id_base:
             return False
 
-        # Free up the wanted entity_id. HA rejects the rename if it is taken by another
-        # entity in the registry or if it is still in hass.states. Both are cleared here
-        # rather than with `remove_sensor` - that clears hass.states with a
-        # fire-and-forget executor job that will not have finished before the rename.
-        if entity_reg.async_get(entity_id_base):
-            entity_reg.async_remove(entity_id_base)
-
-        if Gb.hass.states.async_available(entity_id_base) is False:
-            Gb.hass.states.async_remove(entity_id_base)
+        if free_entity_id(entity_id_base) is False:
+            return False
 
         entity_reg.async_update_entity(current_entity_id, new_entity_id=entity_id_base)
 
@@ -623,12 +616,37 @@ def update_entity(entity_id, **kwargs):
         return False
 
 #................................................................................
-def is_entity_available(entity_id):
+def free_entity_id(entity_id):
+    '''
+    Free up an entity_id so another entity can be renamed to it (_2 suffix repair).
+    HA rejects the rename if the entity_id is taken by another entity in the registry
+    or if it is still in hass.states, so both are cleared.
+
+    This is done here rather than with `remove_sensor` - that clears hass.states with a
+    fire-and-forget executor job that will not have finished before the rename.
+    Must be called from the event loop.
+
+    Returns False if the entity_id belongs to another integration (it is not removed)
+    or could not be freed. The caller should not do the rename.
+    '''
     try:
         entity_reg = er.async_get(Gb.hass)
-        entity_reg._entity_id_available(entity_id, None)
-    except:
+        RegEntry = entity_reg.async_get(entity_id)
+        if RegEntry:
+            if RegEntry.platform != DOMAIN:
+                log_info_msg(   f"Entity Registry Repair > {entity_id} belongs to "
+                                f"{RegEntry.platform}, not removed")
+                return False
+            entity_reg.async_remove(entity_id)
+
+        if Gb.hass.states.async_available(entity_id) is False:
+            Gb.hass.states.async_remove(entity_id)
+
         return True
+
+    except Exception as err:
+        log_exception(err)
+        return False
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1135,6 +1153,22 @@ def _is_icloud3_entity_item(entity_data):
             and entity_data.entity_id.split('.')[0] not in [PLATFORM_BUTTON, PLATFORM_TEXT])
 
 #--------------------------------------------------------------------
+def is_sensor_entity_id_suffix_error(entity_id):
+    '''
+    Return True if the sensor entity_id has an HA-added numeric extension (sensor.……_distance_2).
+
+    A zone name can also end in '_x' or '_2' (zone.terminal_x, zone.tes_2), so an
+    entity_id iCloud3 expects is not a suffix error.
+    '''
+    if entity_id[-2:-1] != '_' or entity_id[-1:].isdigit() is False:
+        return False
+
+    expected_entity_ids = [Sensor.entity_id_base
+                                for Sensor in Gb.Sensors_by_devicename_sensor.values()]
+
+    return entity_id not in expected_entity_ids
+
+#--------------------------------------------------------------------
 def _get_entity_status(scan_active_items, RegData):
 
     if ('disabled' in Gb.entity_reg_items_by_status
@@ -1147,8 +1181,8 @@ def _get_entity_status(scan_active_items, RegData):
         return  'deleted_sensors'
     if RegData.config_entry_id != Gb.config_entry_id:
         return 'orphaned'
-    if (RegData.entity_id[-2:-1] == '_'
-            and RegData.entity_id.startswith(PLATFORM_SENSOR)):
+    if (RegData.entity_id.startswith(PLATFORM_SENSOR)
+            and is_sensor_entity_id_suffix_error(RegData.entity_id)):
         return 'suffix_error'
 
     if RegData.devicename in Gb.inactive_fname_by_devicename:
@@ -1329,7 +1363,12 @@ def _get_device_status(scan_active_items, RegData):
         return  'deleted_devices'
     if RegData.config_entry_id != Gb.config_entry_id:
         return 'orphaned'
-    if RegData.devicename[-2:-1] == '_':
+    # A devicename can also end in '_x' or '_2' (ipad_x, gary_iphone_2), so a configured
+    # devicename is not a suffix error
+    if (RegData.devicename[-2:-1] == '_'
+            and RegData.devicename[-1:].isdigit()
+            and RegData.devicename not in [conf_device[CONF_IC3_DEVICENAME]
+                                                for conf_device in Gb.conf_devices]):
         return 'suffix_error'
     if RegData.devicename in Gb.inactive_fname_by_devicename:
         return 'inactive'

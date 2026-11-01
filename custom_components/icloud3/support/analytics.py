@@ -197,8 +197,10 @@ async def async_get_version_downloads():
     Gb.github_version               = response.get('version', '')
     Gb.github_published_date        = response.get('published_date', '')[:10]
     Gb.github_icloud3_downloads     = response.get('icloud3_downloads', 0) or 0
-    Gb.github_beta_downloads        = response.get('beta_downloads', 0) or 0
-    Gb.github_icloud3_total         = response.get('icloud3_total', 0) or 0
+    Gb.github_beta_version          = response.get('beta_version', '')
+    Gb.github_beta_published_date   = response.get('beta_published_date', '')[:10]
+    Gb.github_beta_downloads        = response.get('beta_version_downloads', 0) or 0
+    Gb.github_icloud3_total        = response.get('icloud3_total', 0) or 0
     Gb.github_beta_total            = response.get('beta_total', 0) or 0
     Gb.analytics_installs           = response.get('analytics_installs', 0) or 0
     Gb.github_versions_cnt          = response.get('versions', 0) or 0
@@ -211,26 +213,38 @@ async def async_get_version_downloads():
 #-------------------------------------------------------------------------------------------
 def format_version_downloads_msg():
     '''
-    The GitHub download counts displayed on the Analytics screens
+    The GitHub download counts displayed on the Analytics screens, as a markdown table
 
-        v3.7.5, Downloads-13,389, Analytics-2, Released-9/8/2026
-        v3.7.5, Downloads-13,389, Analytics-700 (5.23%), Released-9/8/2026
+        |         | Version   | Released   | Downloads | Analytics Users |
+        |:--------|:----------|:-----------|:----------|:----------------|
+        | Release | v3.7.7    | 10/20/2026 | 16,230    | 446 (3%)        |
+        | Beta    | v3.8.0-b2 | 10/27/2026 | 568       |                 |
+
+    The beta row is only included when it is newer than the release. Analytics Users is the
+    total for all versions, so it is on the release row only.
     '''
     if Gb.github_version == '':
         return 'The GitHub download counts are not available'
 
-    downloads = Gb.github_icloud3_downloads + Gb.github_beta_downloads
+    downloads = Gb.github_icloud3_downloads
+    analytics_users = f"{Gb.analytics_installs:,}"
 
-    downloads_msg = (f"v{Gb.github_version} "
-                    f"({_format_release_date(Gb.github_published_date)}), "
-                    f"Downloads-{downloads:,}, "
-                    f"AnalyticsUsers-{Gb.analytics_installs:,}")
-
-    # Portion of the downloads that enabled analytics. It is not displayed below 1% - a
-    # fraction of a percent says nothing and reads like an error
+    # Portion of the downloads that enabled analytics, as a whole number like the Downloads
+    # report. Not displayed when it rounds to 0% - it reads like an error
     if downloads > 0:
-        analytics_pct = 100.0 * Gb.analytics_installs / downloads
-        downloads_msg += f" ({analytics_pct:.2f}%)" if analytics_pct >= 1 else ""
+        analytics_pct = round(100.0 * Gb.analytics_installs / downloads)
+        analytics_users += f" ({analytics_pct}%)" if analytics_pct >= 1 else ""
+
+    downloads_msg = ("| | Version | Released | Downloads | Analytics Users |\n"
+                    "|:---|:---|:---|:---|:---|\n"
+                    f"| Release | v{Gb.github_version} "
+                    f"| {_format_release_date(Gb.github_published_date)} "
+                    f"| {downloads:,} | {analytics_users} |")
+
+    if Gb.github_beta_version:
+        downloads_msg += (f"\n| Beta | v{Gb.github_beta_version} "
+                        f"| {_format_release_date(Gb.github_beta_published_date)} "
+                        f"| {Gb.github_beta_downloads:,} | |")
 
     return downloads_msg
 

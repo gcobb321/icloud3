@@ -9,6 +9,10 @@ messaging.post_repair_issue when Submit is selected in Settings > Repairs.
                                   Configure Update Apple Account screen for the account
     iCloud3AnalyticsRepairFlow  - fix_action 'analytics_approval'. Submit enables sending
                                   the iCloud3 Analytics data, the X disables it
+    iCloud3SwitchRepositoryRepairFlow
+                                - fix_action 'switch_repository'. Submit switches the
+                                  HACS/Marketplace installation from the iCloud3 Beta
+                                  repository to the iCloud3 repository
 '''
 
 import voluptuous as vol
@@ -23,11 +27,12 @@ from .const_config      import (CONF_DATA_SOURCE, CONF_ANALYTICS_ENABLED, CONF_A
 from .utils.utils       import (is_empty, )
 from .utils.messaging   import (repair_fix_handlers, remove_open_repair_issue,
                                 FIX_ACTION_UPDATE_DEVICE, FIX_ACTION_UPDATE_APPLE_ACCT,
-                                FIX_ACTION_ANALYTICS_APPROVAL,
+                                FIX_ACTION_ANALYTICS_APPROVAL, FIX_ACTION_SWITCH_REPOSITORY,
                                 post_event, log_exception, )
 
 from .startup                                   import config_file
 from .support                                   import analytics
+from .support                                   import marketplace as mp
 from .apple_acct                                import apple_acct_support as aas
 from .configure                                 import selection_lists as lists
 from .configure.screens.step_common             import OptionsFlow_Common_Steps
@@ -390,6 +395,44 @@ class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+class iCloud3SwitchRepositoryRepairFlow(ConfirmRepairFlow):
+    '''
+    iCloud3 was installed from the iCloud3 Beta repository (gcobb321/icloud3_v3) in
+    HACS or the Marketplace. Submit switches the installation to the iCloud3 repository
+    (gcobb321/icloud3) with its Pre-release switch on. The files and the iCloud3 config
+    entry are not changed.
+        - Switched     - The issue is removed
+        - Not switched - The fix_flow.abort text with the manual steps is displayed,
+                         the issue stays in Repairs
+
+    It runs in the event loop, the HACS/Marketplace objects are not thread safe.
+    '''
+    async def async_step_confirm(self, user_input=None):
+        if user_input is None:
+            return await super().async_step_confirm()
+
+        try:
+            abort_reason = await mp.async_switch_to_icloud3_repository()
+        except Exception as err:
+            log_exception(err)
+            abort_reason = 'fix_action_failed'
+
+        issue = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
+        placeholders = issue.translation_placeholders if issue else None
+
+        if abort_reason:
+            return self.async_abort(reason=abort_reason, description_placeholders=placeholders)
+
+        remove_open_repair_issue(self.issue_id)
+        post_event(f"HA Repairs > Fixed, {self.issue_id}")
+
+        return self.async_create_entry(
+                        data={},
+                        description='default',
+                        description_placeholders=placeholders)
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_create_fix_flow(hass: HomeAssistant, issue_id: str, data) -> RepairsFlow:
     fix_action = (data or {}).get('fix_action')
     if fix_action == FIX_ACTION_UPDATE_DEVICE:
@@ -398,5 +441,7 @@ async def async_create_fix_flow(hass: HomeAssistant, issue_id: str, data) -> Rep
         return iCloud3AppleAcctRepairFlow()
     if fix_action == FIX_ACTION_ANALYTICS_APPROVAL:
         return iCloud3AnalyticsRepairFlow()
+    if fix_action == FIX_ACTION_SWITCH_REPOSITORY:
+        return iCloud3SwitchRepositoryRepairFlow()
 
     return iCloud3RepairFlow()

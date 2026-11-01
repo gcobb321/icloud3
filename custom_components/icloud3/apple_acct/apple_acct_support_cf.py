@@ -269,13 +269,14 @@ def create_AppleAcctManager_config_flow(apple_id, password, apple_server_locatio
     return AppleAcct
 
 #--------------------------------------------------------------------
-@staticmethod
-def create_AADevices_config_flow(AppleAcct):
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# @staticmethod
+# def create_AADevices_config_flow(AppleAcct):
 
-    _AADevices = AppleAcct.create_AADevices_object(config_flow_login=True)
+#     _AADevices = AppleAcct.create_AADevices_object(config_flow_login=True)
 
-    start_ic3.dump_startup_lists_to_log()
-    return _AADevices
+#     start_ic3.dump_startup_lists_to_log()
+#     return _AADevices
 
 
 #..............................................................................................
@@ -352,14 +353,15 @@ def any_conf_devices_for_apple_acct(ui_apple_id):
     return isnot_empty(existing_devices)
 
 #--------------------------------------------------------------------
-def any_apple_accts_not_used():
-    aa_list = list(Gb.AppleAcct_by_apple_id.keys())
-    aa_used = [conf_device[CONF_APPLE_ACCT]
-                            for conf_device in Gb.conf_devices]
-    aa_unused = [apple_id   for apple_id in aa_list
-                            if apple_id not in aa_used]
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def any_apple_accts_not_used():
+#     aa_list = list(Gb.AppleAcct_by_apple_id.keys())
+#     aa_used = [conf_device[CONF_APPLE_ACCT]
+#                             for conf_device in Gb.conf_devices]
+#     aa_unused = [apple_id   for apple_id in aa_list
+#                             if apple_id not in aa_used]
 
-    return isnot_empty(aa_unused)
+#     return isnot_empty(aa_unused)
 
 #--------------------------------------------------------------------
 # def delete_AppleAcct_trust_cookie(AppleAcct):
@@ -367,37 +369,38 @@ def any_apple_accts_not_used():
 #     AppleAcct.iCloudSession.cookies.save()
 
 #--------------------------------------------------------------------
-async def async_delete_icloud_session_file(AppleAcct, apple_id):
-    '''
-    Delete the cookies and session files as part of the reset_session
-    and request_auth_code. This is called from config_flow/step_reauth
-    and pyicloud_reset_session
-    '''
-    if AppleAcct:
-        cookies_filename = AppleAcct.cookies_filename
-        session_filename = AppleAcct.session_filename
-        AppleAcct.delete_cookie_and_session_files()
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# async def async_delete_icloud_session_file(AppleAcct, apple_id):
+#     '''
+#     Delete the cookies and session files as part of the reset_session
+#     and request_auth_code. This is called from config_flow/step_reauth
+#     and pyicloud_reset_session
+#     '''
+#     if AppleAcct:
+#         cookies_filename = AppleAcct.cookies_filename
+#         session_filename = AppleAcct.session_filename
+#         AppleAcct.delete_cookie_and_session_files()
 
-        apple_id_msg = AppleAcct.account_owner
+#         apple_id_msg = AppleAcct.account_owner
 
-    elif AppleAcct is None:
-        cookies_base = "".join([c for c in apple_id if match(r"\w", c)])
-        cookies_filename = path.join(Gb.icloud_cookies_directory, f"{cookies_base}.cookies")
-        session_filename = path.join(Gb.icloud_cookies_directory, f"{cookies_base}.session")
-        await file_io.async_delete_file(cookies_filename)
-        await file_io.async_delete_file(session_filename)
+#     elif AppleAcct is None:
+#         cookies_base = "".join([c for c in apple_id if match(r"\w", c)])
+#         cookies_filename = path.join(Gb.icloud_cookies_directory, f"{cookies_base}.cookies")
+#         session_filename = path.join(Gb.icloud_cookies_directory, f"{cookies_base}.session")
+#         await file_io.async_delete_file(cookies_filename)
+#         await file_io.async_delete_file(session_filename)
 
-        apple_id_msg = apple_user(apple_id)
+#         apple_id_msg = apple_user(apple_id)
 
-    elif AppleAcct not in Gb.AppleAcct_by_apple_id:
-        return
+#     elif AppleAcct not in Gb.AppleAcct_by_apple_id:
+#         return
 
-    post_event( f"{EVLOG_NOTICE}Apple Acct > {apple_id_msg}, "
-                f"Resetting iCloud Session Files")
-    log_info_msg(   f"Apple Acct > {apple_id_msg}, "
-                    f"Deleting Session Files ({Gb.icloud_cookies_directory})"
-                    f"{CRLF_DOT}Cookies ({cookies_filename})"
-                    f"{CRLF_DOT}Session ({session_filename})")
+#     post_event( f"{EVLOG_NOTICE}Apple Acct > {apple_id_msg}, "
+#                 f"Resetting iCloud Session Files")
+#     log_info_msg(   f"Apple Acct > {apple_id_msg}, "
+#                     f"Deleting Session Files ({Gb.icloud_cookies_directory})"
+#                     f"{CRLF_DOT}Cookies ({cookies_filename})"
+#                     f"{CRLF_DOT}Session ({session_filename})")
 
 #--------------------------------------------------------------------
 def is_apple_acct_logged_into(apple_id):
@@ -554,63 +557,66 @@ def is_asp_password(ui_password):
                 and ui_password[14:15] == '-')
 
 #--------------------------------------------------------------------
-def login_err_msg(AppleAcct, apple_id):
-    ipv6_info = Gb.InternetError.ha_system_network_ipv6_info()
-    if ipv6_info:
-        err_msg = 'apple_acct_login_error_ipv6'
-    elif Gb.internet_error:
-        err_msg = 'internet_error'
-    elif AppleAcct and AppleAcct.response_code_pw == 503:
-        err_msg = 'apple_acct_login_error_503'
-    elif Gb.upw_valid_by_apple_id.get(apple_id, None) is False:
-        err_msg = 'apple_acct_inupw_valid'
-    else:
-        err_msg = 'apple_acct_login_error_other'
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def login_err_msg(AppleAcct, apple_id):
+#     ipv6_info = Gb.InternetError.ha_system_network_ipv6_info()
+#     if ipv6_info:
+#         err_msg = 'apple_acct_login_error_ipv6'
+#     elif Gb.internet_error:
+#         err_msg = 'internet_error'
+#     elif AppleAcct and AppleAcct.response_code_pw == 503:
+#         err_msg = 'apple_acct_login_error_503'
+#     elif Gb.upw_valid_by_apple_id.get(apple_id, None) is False:
+#         err_msg = 'apple_acct_inupw_valid'
+#     else:
+#         err_msg = 'apple_acct_login_error_other'
 
-    return err_msg
+#     return err_msg
 
 #--------------------------------------------------------------------
-async def async_delete_icloud_session_requests_file(apple_id=None):
-    '''
-    Delete the cookies and session files as part of the reset_session and request_Authentication_code
-    This is called from config_flow/setp_reauth and pyicloud_reset_session
-    '''
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# async def async_delete_icloud_session_requests_file(apple_id=None):
+#     '''
+#     Delete the cookies and session files as part of the reset_session and request_Authentication_code
+#     This is called from config_flow/setp_reauth and pyicloud_reset_session
+#     '''
 
-    if apple_id is None:
-        return
+#     if apple_id is None:
+#         return
 
-    post_event(f"{EVLOG_NOTICE}Configure Apple Acct > Resetting Cookie/Session Files")
-    cookie_directory  = Gb.icloud_cookies_directory
-    cookie_filename   = "".join([c for c in apple_id if match(r"\w", c)])
+#     post_event(f"{EVLOG_NOTICE}Configure Apple Acct > Resetting Cookie/Session Files")
+#     cookie_directory  = Gb.icloud_cookies_directory
+#     cookie_filename   = "".join([c for c in apple_id if match(r"\w", c)])
 
-    delete_msg =  f"Apple Acct > Deleting Session Files > ({cookie_directory})"
+#     delete_msg =  f"Apple Acct > Deleting Session Files > ({cookie_directory})"
 
-    delete_msg += f"{CRLF_DOT}Session ({cookie_filename}.session)"
-    await file_io.async_delete_file_with_msg(
-                    'Apple Acct Session', cookie_directory, f"{cookie_filename}.session", delete_old_sv_file=True)
+#     delete_msg += f"{CRLF_DOT}Session ({cookie_filename}.session)"
+#     await file_io.async_delete_file_with_msg(
+#                     'Apple Acct Session', cookie_directory, f"{cookie_filename}.session", delete_old_sv_file=True)
 
-    post_monitor_msg(delete_msg)
+#     post_monitor_msg(delete_msg)
 
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            HARDWARE KEY AUTHENTICATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-async def async_get_hwkey_names(self, AppleAcct=None):
-    '''
-    Retrieve HwKey names from Apple and update conf_auth_methods.
-    Runs AppleAcct.get_hwkey_names() in executor (not in event loop).
-    '''
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# async def async_get_hwkey_names(self, AppleAcct=None):
+#     '''
+#     Retrieve HwKey names from Apple and update conf_auth_methods.
+#     Runs AppleAcct.get_hwkey_names() in executor (not in event loop).
+#     '''
 
-    _AppleAcct_list = Gb.AppleAcct_by_apple_id.values() if AppleAcct is None else [AppleAcct]
-    for _AppleAcct in _AppleAcct_list:
-        try:
-            await Gb.hass.async_add_executor_job(_AppleAcct.get_hwkey_names)
+#     _AppleAcct_list = Gb.AppleAcct_by_apple_id.values() if AppleAcct is None else [AppleAcct]
+#     for _AppleAcct in _AppleAcct_list:
+#         try:
+#             await Gb.hass.async_add_executor_job(_AppleAcct.get_hwkey_names)
 
-        except Exception as err:
-            log_exception(err)
+#         except Exception as err:
+#             log_exception(err)
 
-    return
+#     return
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -734,18 +740,19 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
     return sorted_aa_devices_to_add
 
 # ---------------------------------------------------------------------------
-def aadevice_conf( aadevice_dname, device_id,
-                            model, raw_model, model_display_name):
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def aadevice_conf( aadevice_dname, device_id,
+#                             model, raw_model, model_display_name):
 
-    aadev_info = {}
-    aadev_info[CONF_AADEV_NAME]  = aadevice_dname
-    aadev_info[CONF_AADEV_DEVICE_ID]   = device_id
-    aadev_info[CONF_DEVICE_TYPE]        = model.lower() if model in DEVICE_TYPES else 'iphone'
-    aadev_info[CONF_RAW_MODEL]          = raw_model
-    aadev_info[CONF_MODEL]              = model
-    aadev_info[CONF_MODEL_DISPLAY_NAME] = model_display_name
+#     aadev_info = {}
+#     aadev_info[CONF_AADEV_NAME]  = aadevice_dname
+#     aadev_info[CONF_AADEV_DEVICE_ID]   = device_id
+#     aadev_info[CONF_DEVICE_TYPE]        = model.lower() if model in DEVICE_TYPES else 'iphone'
+#     aadev_info[CONF_RAW_MODEL]          = raw_model
+#     aadev_info[CONF_MODEL]              = model
+#     aadev_info[CONF_MODEL_DISPLAY_NAME] = model_display_name
 
-    return aadev_info
+#     return aadev_info
 # ---------------------------------------------------------------------------
 def _make_unique_ic3_devicename(existing_devicenames, ic3_devicename):
     '''

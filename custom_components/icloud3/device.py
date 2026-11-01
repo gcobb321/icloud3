@@ -28,7 +28,7 @@ from .const             import (DEVICE_TRACKER, DEVICE_TRACKER_DOT,
                                 FROM_ZONE,
                                 BATTERY_SOURCE, BATTERY_LEVEL, BATTERY_LEVEL_LOW,
                                 BATTERY_ICLOUD, BATTERY_MOBAPP, BATTERY_LATEST,
-                                BATTERY_STATUS_CODES, BATTERY_STATUS_FNAME, BATTERY_UPDATE_TIME,
+                                BATTERY_STATUS_CODES, BATTERY_UPDATE_TIME,
                                 BATTERY_CHARGING, BATTERY_CHARGING_DESC, BATTERY_LEVEL_LOW,
                                 CHARGING_CHARGED, CHARGING_CHARGING,
                                 CHARGING_UNKNOWN, CHARGING_LOW, CHARGING_NOTCHARGING,
@@ -606,16 +606,17 @@ class iCloud3_Device(TrackerEntity):
             log_exception(err)
 
 #------------------------------------------------------------------------------
-    def _extract_devicename(self, device_field):
-        # The xxx_device field will contain a '>' if it is a valid devicename that will be used
-        if instr(device_field, '>'):
-            device_name = device_field.split(' >')[0].strip()
-        elif device_field.startswith('Select'):
-            device_name = ''
-        else:
-            device_name = device_field
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def _extract_devicename(self, device_field):
+    #     # The xxx_device field will contain a '>' if it is a valid devicename that will be used
+    #     if instr(device_field, '>'):
+    #         device_name = device_field.split(' >')[0].strip()
+    #     elif device_field.startswith('Select'):
+    #         device_name = ''
+    #     else:
+    #         device_name = device_field
 
-        return device_name
+    #     return device_name
 
 #------------------------------------------------------------------------------
     def initialize_non_tracking_config_fields(self, conf_device):
@@ -903,25 +904,26 @@ class iCloud3_Device(TrackerEntity):
             pass
 
 #--------------------------------------------------------------------
-    def update_conf_device_fields(self, updated_fields: dict):
-        '''
-        Update the Gb.conf_device parameters for the device. This is used to update
-        the device configuration from modules other than config_flow.
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def update_conf_device_fields(self, updated_fields: dict):
+    #     '''
+    #     Update the Gb.conf_device parameters for the device. This is used to update
+    #     the device configuration from modules other than config_flow.
 
-        updated_fields - Dictionary of the fields to be updated
-                            {CONF_TRACKING_MODE: INACTIVE, parm2: value2}
+    #     updated_fields - Dictionary of the fields to be updated
+    #                         {CONF_TRACKING_MODE: INACTIVE, parm2: value2}
 
-        1. entity_reg_utils - Update the tracking mode to inactive
-        '''
+    #     1. entity_reg_utils - Update the tracking mode to inactive
+    #     '''
 
-        self.conf_device.update(updated_fields)
+    #     self.conf_device.update(updated_fields)
 
-        idx = Gb.conf_devices_idx_by_devicename[self.devicename]
-        Gb.conf_devices[idx] = self.conf_device
-        log_info_msg(   f"{self.devicename} > Update Configuration, "
-                        f"Parameters-{updated_fields}")
+    #     idx = Gb.conf_devices_idx_by_devicename[self.devicename]
+    #     Gb.conf_devices[idx] = self.conf_device
+    #     log_info_msg(   f"{self.devicename} > Update Configuration, "
+    #                     f"Parameters-{updated_fields}")
 
-        config_file.write_icloud3_configuration_file()
+    #     config_file.write_icloud3_configuration_file()
 
 #--------------------------------------------------------------------
     @property
@@ -978,8 +980,9 @@ class iCloud3_Device(TrackerEntity):
         else:
             return f", {TRACKING_MODE_DN[self.tracking_mode]}"
 
-    def is_statzone_name(self, zone_name):
-        return zone_name in Gb.StatZones_by_zone
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def is_statzone_name(self, zone_name):
+    #     return zone_name in Gb.StatZones_by_zone
 
     @property
     def AADev_icloud(self):
@@ -1094,7 +1097,6 @@ class iCloud3_Device(TrackerEntity):
     @property
     def format_battery_status(self):
         return self.dev_data_battery_status
-        return f"{BATTERY_STATUS_FNAME.get(self.dev_data_battery_status, self.dev_data_battery_status.title())}"
 
     @property
     def format_battery_status_source(self):
@@ -1124,7 +1126,7 @@ class iCloud3_Device(TrackerEntity):
 
     @property
     def is_dev_data_source_ICLOUD(self):
-        return self.is_dev_data_source_ICLOUD
+        return self.dev_data_source == ICLOUD
 
     @property
     def is_dev_data_source_MOBAPP(self):
@@ -1159,35 +1161,36 @@ class iCloud3_Device(TrackerEntity):
     def isnot_disabled(self):
         return self.devicename not in Gb.ha_disabled_by_by_devicename
 
-    def monitor_evlog_display_event_msg(self, event_text):
-        '''
-        ----> Keeping this test to filter monitored device records
-        ----> filters the unwanted events but it causes a problem
-        ----> changing the EvLog display from one monitored device to another
-        ----> The display will not refresh to display the newly selected
-        ---> device without first selecting a tracked device.
-        '''
-        try:
-            if self.is_monitored is False:
-                return True
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def monitor_evlog_display_event_msg(self, event_text):
+    #     '''
+    #     ----> Keeping this test to filter monitored device records
+    #     ----> filters the unwanted events but it causes a problem
+    #     ----> changing the EvLog display from one monitored device to another
+    #     ----> The display will not refresh to display the newly selected
+    #     ---> device without first selecting a tracked device.
+    #     '''
+    #     try:
+    #         if self.is_monitored is False:
+    #             return True
 
-            if event_text[:3] in EVLOG_UPDATE_BARS:
-                return False
+    #         if event_text[:3] in EVLOG_UPDATE_BARS:
+    #             return False
 
-            if (instr(event_text, 'Battery')
-                    or instr(event_text, 'Near Devices')):
-                return True
+    #         if (instr(event_text, 'Battery')
+    #                 or instr(event_text, 'Near Devices')):
+    #             return True
 
-            if event_text.startswith('^'):
-                return True
+    #         if event_text.startswith('^'):
+    #             return True
 
-            if 'md_location_senors' in Gb.conf_sensors[CONF_SENSORS_MONITORED_DEVICES]:
-                return True
+    #         if 'md_location_senors' in Gb.conf_sensors[CONF_SENSORS_MONITORED_DEVICES]:
+    #             return True
 
-        except Exception as err:
-            log_exception(err)
+    #     except Exception as err:
+    #         log_exception(err)
 
-        return False
+    #     return False
 
     @property
     def is_online(self):
@@ -1798,8 +1801,9 @@ class iCloud3_Device(TrackerEntity):
         distance = 0.0 if distance < .00002 else distance
         return distance
 
-    def Distance_m(self, Device_or_Zone):
-        return self.distance_m(Device_or_Zone.latitude, Device_or_Zone.longitude)
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def Distance_m(self, Device_or_Zone):
+    #     return self.distance_m(Device_or_Zone.latitude, Device_or_Zone.longitude)
 
     def Distance_km(self, Device_or_Zone):
         return self.distance_km(Device_or_Zone.latitude, Device_or_Zone.longitude)
@@ -2237,8 +2241,12 @@ class iCloud3_Device(TrackerEntity):
         try:
             battery_level_attrs = entity_io.get_attributes(self.mobapp[BATTERY_LEVEL])
 
-            if (battery_level_attrs[STATE] == self.mobapp_battery_level
-                    and battery_level_attrs[BATTERY_CHARGING] == self.mobapp_battery_charging):
+            try:
+                if (battery_level_attrs[STATE] == self.mobapp_battery_level
+                        and battery_level_attrs[BATTERY_CHARGING] == self.mobapp_battery_charging):
+                    return False
+
+            except Exception as err:
                 return False
 
             self.mobapp_battery_level       = battery_level_attrs[STATE]
@@ -2248,7 +2256,7 @@ class iCloud3_Device(TrackerEntity):
                                                         battery_level_attrs[LAST_CHANGED_SECS])
 
         except Exception as err:
-            log_exception(err)
+            # log_exception(err)
             return False
 
         log_debug_msg(f"MOBAPP {self.devicename} > MobApp Battery > "
@@ -2685,7 +2693,6 @@ class iCloud3_Device(TrackerEntity):
         Return:
             Message text
         '''
-        Gb.broadcast_info_msg = None
 
         if info_msg is None:
             info_msg = self.info_msg

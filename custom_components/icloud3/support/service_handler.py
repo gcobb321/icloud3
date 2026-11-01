@@ -511,8 +511,9 @@ def handle_action_log_level(action_option, change_conf_log_level=True):
     log_level_fname = new_log_level.replace('-', ' ').title()
     post_event(f"Log Level Change > New Level: {log_level_fname}")
 
-def _on_off_text(condition):
-    return 'On' if condition else 'Off'
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def _on_off_text(condition):
+#     return 'On' if condition else 'Off'
 
 #--------------------------------------------------------------------
 def _handle_action_device_location_mobapp(Device):

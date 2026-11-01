@@ -512,28 +512,29 @@ class OptionsFlow_Reauth_Steps:
         return True
 
 #------------------------------------------------------------------------------
-    async def _finish_auth_success(self, AppleAcct):
-        '''
-        Shared success handler called by HWKEY, PUSH, and TEXT after
-        successful auth.
-        '''
-        AppleAcct.was_auth_code_requested     = False
-        AppleAcct.was_ha_auth_code_alert_sent = False
-        if (is_empty(AppleAcct.device_id_by_aadev_dname)
-                or (AppleAcct.terms_of_use_update_needed and AppleAcct.terms_of_use_accepted)):
-            await aascf.async_finish_authentication_and_data_refresh(self)
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # async def _finish_auth_success(self, AppleAcct):
+    #     '''
+    #     Shared success handler called by HWKEY, PUSH, and TEXT after
+    #     successful auth.
+    #     '''
+    #     AppleAcct.was_auth_code_requested     = False
+    #     AppleAcct.was_ha_auth_code_alert_sent = False
+    #     if (is_empty(AppleAcct.device_id_by_aadev_dname)
+    #             or (AppleAcct.terms_of_use_update_needed and AppleAcct.terms_of_use_accepted)):
+    #         await aascf.async_finish_authentication_and_data_refresh(self)
 
-        await lists.build_icloud_device_selection_list(self)
-        lists.build_apple_accounts_auth_list(self)
+    #     await lists.build_icloud_device_selection_list(self)
+    #     lists.build_apple_accounts_auth_list(self)
 
-        if AppleAcct.is_auth_method_HWKEY:
-            self.errors[AUTH_CODE] = 'hwkey_auth_succeeded'
-        else:
-            self.errors[AUTH_CODE] = 'auth_code_accepted'
+    #     if AppleAcct.is_auth_method_HWKEY:
+    #         self.errors[AUTH_CODE] = 'hwkey_auth_succeeded'
+    #     else:
+    #         self.errors[AUTH_CODE] = 'auth_code_accepted'
 
-        Gb.EvLog.clear_greenbar_msg()
-        Gb.is_force_icloud_update = True
-        update_alert_sensor(Source=AppleAcct, error='auth_needed', clear=True)
+    #     Gb.EvLog.clear_greenbar_msg()
+    #     Gb.is_force_icloud_update = True
+    #     update_alert_sensor(Source=AppleAcct, error='auth_needed', clear=True)
 
 #------------------------------------------------------------------------------
     def _finish_auth_status_msg(self, AppleAcct, auth_successful):
@@ -564,18 +565,19 @@ class OptionsFlow_Reauth_Steps:
         return display_msg, evlog_msg
 
 #------------------------------------------------------------------------------
-    async def _exit_reauth_screen_handler(self):
-        '''Go to the next screen or back to the menu'''
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # async def _exit_reauth_screen_handler(self):
+    #     '''Go to the next screen or back to the menu'''
 
-        match self.menu_item:
-            case 'reauth':
-                return await self.async_step_menu()
-            case 'rtn_apple_accounts':
-                return await self.async_step_apple_accounts()
-            case 'config_flow_reauth' | 'exit_ha_reconfigure_reauth':
-                return self.ha_reconfigure_reauth_exit()
+    #     match self.menu_item:
+    #         case 'reauth':
+    #             return await self.async_step_menu()
+    #         case 'rtn_apple_accounts':
+    #             return await self.async_step_apple_accounts()
+    #         case 'config_flow_reauth' | 'exit_ha_reconfigure_reauth':
+    #             return self.ha_reconfigure_reauth_exit()
 
-        return await self.async_step_menu()
+    #     return await self.async_step_menu()
 
 #--------------------------------------------------------------------
     def get_AppleAcct_reauth_needed(self, reauth_apple_id=None):

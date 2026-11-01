@@ -70,7 +70,7 @@ from ..utils.utils          import (instr, is_empty, isnot_empty, yes_no, circle
                                     is_statzone, isnot_statzone, apple_user, apple_user_dev,
                                     list_to_str, list_add, list_del, list_keys, list_sort,
                                     dict_del, dict_sort, dict_reverse_sort, )
-from ..utils.messaging      import (broadcast_info_msg, add_log_file_filter,
+from ..utils.messaging      import (add_log_file_filter,
                                     post_event, post_alert, post_greenbar_msg, post_dotted_line,
                                     post_error_msg, post_monitor_msg, update_alert_sensor,
                                     post_repair_issue, clear_repair_issue, clear_repair_issues,
@@ -539,7 +539,6 @@ def ha_startup_completed(dummy_parameter):
     if Gb.is_icloud3_startup_inprocess or Gb.conf_data_source_MOBAPP is False:
         return
 
-    mobapp_interface.get_mobile_app_integration_device_info(ha_started_check=True)
     mobapp_interface.setup_notify_service_name_for_mobapp_devices()
 
 #------------------------------------------------------------------------------
@@ -548,8 +547,9 @@ def ha_stopping(dummy_parameter):
     Gb.EvLog.display_user_message("HA Shutting Down")
 
 #------------------------------------------------------------------------------
-def ha_restart(dummp_parameter):
-    Gb.hass.services.call("homeassistant", "restart")
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def ha_restart(dummp_parameter):
+#     Gb.hass.services.call("homeassistant", "restart")
 
 #------------------------------------------------------------------------------
 #
@@ -725,7 +725,7 @@ def set_waze_conf_parameters():
 
     if Gb.WazeHist:
         if Gb.waze_history_database_used and Gb.WazeHist.connection is None:
-            Gb.WazeHist.open_waze_history_database(Gb.wazehist_database_filename)
+            Gb.WazeHist.open_waze_history_database()
         if Gb.waze_history_database_used is False and Gb.WazeHist.connection:
             Gb.WazeHist.close_waze_history_database()
 
@@ -782,9 +782,10 @@ def set_zone_display_as():
 #   starts or is restarted before the config_ic3.yaml parameter file is processed
 #
 #------------------------------------------------------------------------------
-def load_ha_config_parameters(ha_config_yaml_and_defaults):
-    Gb.config_parm_initial_load = {k:v for k, v in ha_config_yaml_and_defaults.items()}
-    reinitialize_config_parameters()
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def load_ha_config_parameters(ha_config_yaml_and_defaults):
+#     Gb.config_parm_initial_load = {k:v for k, v in ha_config_yaml_and_defaults.items()}
+#     reinitialize_config_parameters()
 
 def reinitialize_config_parameters():
     Gb.config_parm = Gb.config_parm_initial_load.copy()
@@ -1215,13 +1216,14 @@ def create_Waze_object():
 #   operating mode (icloud, mobapp)
 #
 #------------------------------------------------------------------------------
-def setup_validate_apple_accts_upw():
-    return
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def setup_validate_apple_accts_upw():
+#     return
 
-    if Gb.ValidateAppleAcctUPW is None:
-        Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-        Gb.upw_valid_by_apple_id = {}
-        Gb.upw_code_by_apple_id = {}
+#     if Gb.ValidateAppleAcctUPW is None:
+#         Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
+#         Gb.upw_valid_by_apple_id = {}
+#         Gb.upw_code_by_apple_id = {}
 
 #------------------------------------------------------------------------------
 def create_Devices_object():
@@ -1258,7 +1260,6 @@ def create_Devices_object():
                 continue
 
             Gb.conf_icloud_dnames.append(aadev_name)
-            broadcast_info_msg(f"Setting up Device > {devicename}")
 
             # Do not set up inactive device or one disabled in HA
             if devicename in Gb.ha_disabled_by_by_devicename:
@@ -1272,6 +1273,7 @@ def create_Devices_object():
                 post_event( f"{INACTIVE_SYMB}{conf_device[CONF_FNAME]} ({devicename}) > "
                             f"{DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}, "
                             f"{do_not_track_reason}"
+                            f"{CRLF_SP5_DOT}Apple Account-{apple_user(apple_id)}"
                             f"{CRLF_SP5_DOT}Apple Device-{aadev_name} ({conf_device[CONF_MODEL_DISPLAY_NAME]})"
                             f"{CRLF_SP5_DOT}MobApp Entity-{conf_device[CONF_MOBILE_APP_DEVICE]}")
                 continue
@@ -1842,6 +1844,10 @@ def _get_conf_devices_apple_did_not_locate(AppleAcct):
         device_id  = conf_device[CONF_AADEV_DEVICE_ID]
         aadev_name = conf_device[CONF_AADEV_NAME]
 
+        # Inactive and HA disabled devices are not set up (no Device)
+        if devicename not in Gb.Devices_by_devicename:
+            continue
+
         if (aadev_name not in aadev_names
                 and device_id not in AppleAcct.AADev_by_device_id):
             missing_aadev_devices[devicename] = aadev_name
@@ -1867,7 +1873,6 @@ def _verify_conf_apple_device_parameters(AppleAcct):
         try:
             conf_device_id  = conf_device[CONF_AADEV_DEVICE_ID]
             conf_aadev_name = conf_device[CONF_AADEV_NAME]
-            broadcast_info_msg(f"Verifying Apple Device > {conf_aadev_name}")
 
             # Get Device specified in config file using the device_id
             AADev = AppleAcct.AADev_by_device_id.get(conf_device_id)
@@ -2272,7 +2277,6 @@ def _match_AppleAcct_devices_to_Device(AppleAcct, retry_match_devicenames=None):
         if retry_match_devicenames and devicename not in retry_match_devicenames:
             continue
 
-        broadcast_info_msg(f"Matching Apple Device > {conf_aadev_name}")
 
         AADev = AppleAcct.AADev_by_device_id.get(device_id)
 
@@ -2507,7 +2511,6 @@ def _set_device_data_source(AppleAcct):
     Cycle through the devices and change the iCloud data source to MobApp
     if there is a problem with the iCloud setup and the MobApp is available
     '''
-    broadcast_info_msg(f"Stage 3 > Set up device data source")
 
     try:
         if Gb.Devices_by_devicename == {}:
@@ -2515,7 +2518,6 @@ def _set_device_data_source(AppleAcct):
 
         for devicename, Device in Gb.Devices_by_devicename.items():
             data_source = None
-            broadcast_info_msg(f"Determine Device Tracking Method >{devicename}")
 
             if Device.icloud_device_id:
                 device_id = Device.icloud_device_id
@@ -2669,7 +2671,6 @@ def setup_tracked_devices_for_mobapp():
 
     Gb.devicenames_x_mobapp_dnames = {}
     for devicename, Device in Gb.Devices_by_devicename.items():
-        broadcast_info_msg(f"Set up Mobile App Devices > {devicename}")
 
         conf_mobapp_dname = Device.mobapp[DEVICE_TRACKER].replace(DEVICE_TRACKER_DOT, '')
         Gb.devicenames_x_mobapp_dnames[devicename] = None
@@ -2944,20 +2945,21 @@ def _scan_for_for_mobapp_device(devicename, Device, conf_mobapp_dname):
     return None
 
 #--------------------------------------------------------------------
-def log_debug_stage_4_results():
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def log_debug_stage_4_results():
 
-    # if Gb.is_log_level_debug:
-    #     log_debug_msg(f"{Gb.Devices=}")
-    #     log_debug_msg(f"{Gb.Devices_by_devicename=}")
-    #     log_debug_msg(f"{Gb.conf_devicenames=}")
-    #     log_debug_msg(f"{Gb.conf_icloud_dnames=}")
-    #     self.devices_not_set_up          = []
-    #     self.device_id_by_aadev_dname   = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
-    #     self.aadev_dname_by_device_id   = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
-    #     self.device_info_by_aadev_dname = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
-    #     self.device_model_info_by_aadev_dname  = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
-    #     self.dup_icloud_dname_cnt
-    return
+#     # if Gb.is_log_level_debug:
+#     #     log_debug_msg(f"{Gb.Devices=}")
+#     #     log_debug_msg(f"{Gb.Devices_by_devicename=}")
+#     #     log_debug_msg(f"{Gb.conf_devicenames=}")
+#     #     log_debug_msg(f"{Gb.conf_icloud_dnames=}")
+#     #     self.devices_not_set_up          = []
+#     #     self.device_id_by_aadev_dname   = {}       # Example: {'Gary-iPhone': 'n6ofM9CX4j...'}
+#     #     self.aadev_dname_by_device_id   = {}       # Example: {'n6ofM9CX4j...': 'Gary-iPhone14'}
+#     #     self.device_info_by_aadev_dname = {}       # Example: {'Gary-iPhone': 'Gary-iPhone (iPhone 14 Pro (iPhone15,2)'}
+#     #     self.device_model_info_by_aadev_dname  = {}       # {'Gary-iPhone': [raw_model,model,model_display_name]}
+#     #     self.dup_icloud_dname_cnt
+#     return
 
 #--------------------------------------------------------------------
 def set_devices_verified_status():
@@ -3256,7 +3258,6 @@ def display_object_lists():
     '''
     Display the object list values
     '''
-    broadcast_info_msg(f"Logging Initial Monitor Info")
     monitor_msg = (f"StatZones-{list_to_str(Gb.StatZones_by_zone.keys())}")
     post_monitor_msg(monitor_msg)
 
@@ -3319,20 +3320,22 @@ def display_platform_operating_mode_msg():
     post_event(alert_msg)
 
 #------------------------------------------------------------------------------
-def post_restart_icloud3_complete_msg():
-    post_event(f"{EVLOG_ATTENTION}Initializing {Gb.icloud3_version_msg} > Complete")
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def post_restart_icloud3_complete_msg():
+#     post_event(f"{EVLOG_ATTENTION}Initializing {Gb.icloud3_version_msg} > Complete")
 
-    Gb.EvLog.update_event_log_display("")
+#     Gb.EvLog.update_event_log_display("")
 
 #------------------------------------------------------------------------------
-def dump_gb_dictionaries_to_icloud_log():
-    pass
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def dump_gb_dictionaries_to_icloud_log():
+#     pass
 
-    Gb.startup_lists['Gb.Devices_by_devicename_tracked']   = Gb.Devices_by_devicename_tracked
-    Gb.startup_lists['Gb.Devices_by_devicename_monitored'] = Gb.Devices_by_devicename_monitored
-    Gb.startup_lists['Gb.devicenames_by_mobapp_dname']  = Gb.devicenames_by_mobapp_dname
-    Gb.startup_lists['Gb.mobile_app_device_fnames']  = Gb.mobile_app_device_fnames
-    Gb.startup_lists['Gb.mobapp_fnames_by_mobapp_id'] = Gb.mobapp_fnames_by_mobapp_id
-    Gb.startup_lists['Gb.mobapp_ids_by_mobapp_fname'] = Gb.mobapp_ids_by_mobapp_fname
-    Gb.startup_lists['Gb.mobapp_fnames_disabled']    = Gb.mobapp_fnames_disabled
-    Gb.startup_lists['Gb.model_display_name_by_raw_model']    = Gb.model_display_name_by_raw_model
+#     Gb.startup_lists['Gb.Devices_by_devicename_tracked']   = Gb.Devices_by_devicename_tracked
+#     Gb.startup_lists['Gb.Devices_by_devicename_monitored'] = Gb.Devices_by_devicename_monitored
+#     Gb.startup_lists['Gb.devicenames_by_mobapp_dname']  = Gb.devicenames_by_mobapp_dname
+#     Gb.startup_lists['Gb.mobile_app_device_fnames']  = Gb.mobile_app_device_fnames
+#     Gb.startup_lists['Gb.mobapp_fnames_by_mobapp_id'] = Gb.mobapp_fnames_by_mobapp_id
+#     Gb.startup_lists['Gb.mobapp_ids_by_mobapp_fname'] = Gb.mobapp_ids_by_mobapp_fname
+#     Gb.startup_lists['Gb.mobapp_fnames_disabled']    = Gb.mobapp_fnames_disabled
+#     Gb.startup_lists['Gb.model_display_name_by_raw_model']    = Gb.model_display_name_by_raw_model
