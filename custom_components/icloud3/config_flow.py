@@ -101,7 +101,9 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         lists.initialize_lists(self)
         self.initialize_reauth_variables()
 
-        Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+        # Used for the OptionsFlow support functions. It is not the handler of an
+        # iCloud3 Configure window, that one is created by async_get_options_flow.
+        self.OptFlow = iCloud3_OptionsFlowHandler()
 
 
     # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
@@ -115,9 +117,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         '''
         Create the options flow handler for iCloud3. This is called when the iCloud3 > Configure
         is selected on the Devices & Services screen, not when HA or iCloud3 is loaded
+
+        A new handler is created for each Configure window. HA stores the window's flow_id,
+        context and current screen on the handler so two open windows can not share one.
+        Gb.OptionsFlowHandler is the last one opened (used by the entity registry listeners).
         '''
-        if Gb.OptionsFlowHandler is None:
-            Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+        Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         return Gb.OptionsFlowHandler
 
 #----------------------------------------------------------------------
@@ -141,7 +146,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
         self.handler = 'icloud3' from domain name in manifest.json
         '''
-        _OptFlow = Gb.OptionsFlowHandler
+        _OptFlow = self.OptFlow
         disabled_by = added_datetime = None
 
         try:
@@ -241,9 +246,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 #                        SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def initialize_step(self, step_id, user_input=None, errors=None):
-        user_input, action_item = Gb.OptionsFlowHandler.initialize_step(step_id, user_input, errors)
+        user_input, action_item = self.OptFlow.initialize_step(step_id, user_input, errors)
 
         return user_input, action_item
+
+    def update_config_file_tracking(self, user_input=None, force_config_update=None):
+        self.OptFlow.update_config_file_tracking(user_input, force_config_update)
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
@@ -313,7 +321,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
     def __init__(self):
         self.is_from_config_flow_handler    = False
-        self.is_initialize_options_required = True
 
         self.initialize_options()
 
@@ -322,7 +329,9 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
     def initialize_options(self):
         Gb.trace_prefix                     = 'CONFIG'
-        self.is_initialize_options_required = False
+        # Gb.is_config_flow_open for this Configure window only, the Gb one is reset
+        # when any window is closed
+        self.is_config_flow_open            = False
 
         # Variables shared by all of the step_... modules (step_common)
         self.initialize_common_variables()
@@ -370,9 +379,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 #            INIT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_init(self, user_input=None):
-        if self.is_initialize_options_required:
-            self.initialize_options()
-
         self.errors = {}
         self.header_msg = None
         self.config_file_commit_updates = False
@@ -438,7 +444,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
         await self.async_write_icloud3_configuration_file()
 
         Gb.trace_prefix = 'CONFIG'
-        Gb.is_config_flow_open = True
+        Gb.is_config_flow_open   = True
+        self.is_config_flow_open = True
 
         if Gb.internet_error:
             self.header_msg = 'internet_error'
@@ -554,12 +561,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
                     dialog so nothing can be displayed. Run the exit tasks and return.
 
         HA calls async_remove (--> flow_closed) whenever the flow is torn down, which
-        happens on a normal EXIT as well as on an 'X' click. Gb.is_config_flow_open is
+        happens on a normal EXIT as well as on an 'X' click. self.is_config_flow_open is
         reset by exit_configure_settings_final_tasks and keeps that second pass from
-        running all of the exit tasks again.
+        running all of the exit tasks again. It is not Gb.is_config_flow_open so closing
+        another Configure window does not skip this window's exit tasks.
         '''
 
-        if Gb.is_config_flow_open is False:
+        if self.is_config_flow_open is False:
             return None
 
         device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
@@ -576,10 +584,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def exit_configure_settings_final_tasks(self, exit_by_x_click=False):
         self.step_id = 'Exit Configure Settings'
-        Gb.is_config_flow_open = False
-        # The handler is the Gb.OptionsFlowHandler singleton, reinitialize it when the
-        # next Configure session starts (async_step_init)
-        self.is_initialize_options_required = True
+        Gb.is_config_flow_open   = False
+        self.is_config_flow_open = False
         utils_cf.log_step_info(self, f'XClick-{exit_by_x_click}, UpdateParms-{Gb.config_parms_update_control}', 'start')
 
         # If the initial config file was just installed, set it to 'has been reviewed'
