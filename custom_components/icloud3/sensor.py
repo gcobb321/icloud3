@@ -742,8 +742,9 @@ class DeviceSensor_Base():
     @property
     def fname_entity_name(self):
         '''Sensor friendly name (devicename) '''
-        return f"{self.sensor_fname}"
-        # return f"{self.sensor_fname} ({self.entity_name})"
+        # The excluded sensors list item. Startup and config_file use the
+        # (devicename_sensor) part to find the sensor.
+        return f"{self.sensor_fname} ({self.entity_name})"
 
     @property
     def has_entity_name(self):
