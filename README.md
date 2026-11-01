@@ -42,29 +42,7 @@ There are 4 major parts to the iCloud3 custom component that are used to configu
 - Introduces the many features and components of iCloud3
 - Highlights the configuration screens and parameters
 - Provides example screens, automations and scripts
-- The User Guide is quite extensive and can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
-
-
------
-### Installing iCloud3 Beta/Prelease Version from HACS
-
-This Beta/Prelease version can be installed from HACS after it has been set up as a Custom Repository. Follow the instructions below:
-
-#### Add the iCloud3 Beta/Prerelease Version Custom Repository to HACS
-
-1. Open HACS
-2. Select the 3-dots in the upper-right corner, then select *Custom Repositories*.
-3. Enter the following values in the fields displayed:
-   - Repository: `gcobb321/icloud3_v3`
-   - Category: `Integration`
-4. Select **Add**
-
-#### After the custom repository has been added to HACS:
-
-1. Search for and select the **iCloud3 Apple Device Tracker - Beta/Prerelease Version** item on the main HACS screen.
-2. Select **+Download** and follow the normal steps for installing an integration using HACS.
-
-iCloud3 is available on HACS. Installation instructions are in the Users Guide  [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/1_installing)
+- The User Guide is quite extensive and can be found [here](https://gcobb321.github.io/icloud3_docs/#/)
 
 
 
@@ -73,7 +51,7 @@ iCloud3 is available on HACS. Installation instructions are in the Users Guide  
 
 The steps needed to get going have been automated to make it as simple as possible. You install the iC, Add Apple Account, Authenticate Apple Account Sign-in, Import Apple Devices, Build iCloud3 Dashboard, End Configure Sessions and start tracking your devices.
 
-![](https://gcobb321.github.io/icloud3_v3_docs/screens/apple_acct/apple-acct-auth-import-devices-steps.png)
+![](https://gcobb321.github.io/icloud3_docs/screens/apple_acct/apple-acct-auth-import-devices-steps.png)
 
 1. Add the iCloud3 Integration on the *HA Devices & services > +Add Integration*, Select *iCloud3 Apple Device Tracker*
 2. Select the Configure Gear icon on the iCloud3 Integration screen.
@@ -81,12 +59,12 @@ The steps needed to get going have been automated to make it as simple as possib
 4. On the *Authenticate Apple Account Sign-in* screen, follow the instructions to enter the 6-digit authentication code or start the security key authentication process.
 5. On the *Import Apple Devices* screen, the device information downloaded in step 3 is used to create iCloud3 devices. 
 6. On *iCloud3 Devices* screen, review and update any device configuration information you want to change (Name, Picture, Mobile App assignment, etc.)
-7. Exit the *iCloud3 Configure Session* and the *iCloud3 Dashboard* is built with your devices. It is added to the *HA Sidebar* and displayed as a cloud (<img src="https://github.com/gcobb321/icloud3_v3_docs/blob/main/docs/images2/cloud-icon-42x42.png?raw=true" width="20" height="16">). 
+7. Exit the *iCloud3 Configure Session* and the *iCloud3 Dashboard* is built with your devices. It is added to the *HA Sidebar* and displayed as a cloud (<img src="https://github.com/gcobb321/icloud3_docs/blob/main/docs/images2/cloud-icon-42x42.png?raw=true" width="20" height="16">). 
 8. Display the *iCloud3 Dashboard*. If all went well, you should see your devices and the Event Log.
 
-![](https://gcobb321.github.io/icloud3_v3_docs/screens/dashboard-allinfo-summary.png)
+![](https://gcobb321.github.io/icloud3_docs/screens/dashboard-allinfo-summary.png)
 
-> Go [here](https://gcobb321.github.io/icloud3_v3_docs/#/chapters/1_installing?id=configure-icloud3-for-the-first-time) for a deep dive into this process in the iCloud3 documentation.
+> Go [here](https://gcobb321.github.io/icloud3_docs/#/chapters/1_installing?id=configure-icloud3-for-the-first-time) for a deep dive into this process in the iCloud3 documentation.
 
 -----
 ### iCloud3 Highlights
@@ -142,7 +120,7 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 
 ### Important Links
 
-- **iCloud3 User Guide** -The User Guide is quite extensive and can be found [here](https://gcobb321.github.io/icloud3_v3_docs/#/)
+- **iCloud3 User Guide** -The User Guide is quite extensive and can be found [here](https://gcobb321.github.io/icloud3_docs/#/)
 
 - **iCloud3 GitHub Repository** - The primary GitHub Repository is [here](https://github.com/gcobb321/icloud3)
 
@@ -150,7 +128,7 @@ Although Home Assistant has it's own official iCloud component, iCloud3 goes far
 
   
 
-<a href="https://www.buymeacoffee.com/gcobb321" target="_blank"><img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button.png"/></a>
+<a href="https://www.buymeacoffee.com/gcobb321" target="_blank"><img src="https://gcobb321.github.io/icloud3_docs/images/buymeacoffee-docs-button.png"/></a>
 
 
 -----

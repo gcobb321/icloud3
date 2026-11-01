@@ -1,11 +1,11 @@
 {
   "domain": "icloud3",
-  "name": "iCloud3 Beta",
+  "name": "iCloud3",
   "after_dependencies": ["lovelace", "recorder", "ios", "zone", "mobile_app"],
   "codeowners": ["@gcobb321"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://gcobb321.github.io/icloud3_v3_docs/#/",
+  "documentation": "https://gcobb321.github.io/icloud3_docs/#/",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/gcobb321/icloud3/issues",
   "loggers": ["icloud3"],
