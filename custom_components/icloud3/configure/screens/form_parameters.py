@@ -134,7 +134,7 @@ def form_tracking_parameters(self):
         vol.Optional(CONF_TFZ_TRACKING_MAX_DISTANCE,
                     default=Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=1, max=100, unit_of_measurement='Km')),
+                        min=1, max=100, unit_of_measurement='km')),
         vol.Optional(CONF_TRAVEL_TIME_FACTOR,
                     default=utils_cf.option_parm_to_text(self, CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
                     selector.SelectSelector(selector.SelectSelectorConfig(

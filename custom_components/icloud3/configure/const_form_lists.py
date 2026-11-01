@@ -364,7 +364,7 @@ APPLE_SERVER_LOCATION_OPTIONS = {
         '.cn,BD09':  'CHINA - The Apple Server is located in China (BD09 → WGS84)'
         }
 DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS = {
-        'reassign_devices': 'REASSIGN DEVICES → Search for another Apple Account with this device device and reassign it to that Apple Account. Set it to  Inactive if one is not found',
+        'reassign_devices': 'REASSIGN DEVICES → Search for another Apple Account with this device and reassign it to that Apple Account. Set it to Inactive if one is not found',
         'delete_devices':   'DELETE DEVICES → Delete all devices that are using this Apple Account',
         'set_devices_inactive': 'SET DEVICES TO INACTIVE →  Set the devices using this Apple Account to Inactive. They will be assigned to another Apple Account later'
         }
@@ -419,7 +419,7 @@ TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT = {
         .25:  'Shortest Interval Time - 1/4 TravelTime (¼ × 8 mins = Next Locate in 2m)',
         .33:  'Shorter Interval Time - 1/3 TravelTime (⅓ × 8 mins = Next Locate in 2m40s)',
         .50:  'Half Way (Default) - 1/2 TravelTime (½ × 8 mins = Next Locate in 4m)',
-        .66:  'Longer Interval Time - 2/3 TravelTime (⅔ × 8 mins = Next Locate in 5m20s',
+        .66:  'Longer Interval Time - 2/3 TravelTime (⅔ × 8 mins = Next Locate in 5m20s)',
         .75:  'Longest Interval Time - 3/4 TravelTime (¾ × 8 mins = Next Locate in 6m)'
         }
 DISPLAY_ZONE_FORMAT_OPTIONS = {}
