@@ -1173,29 +1173,19 @@ class OptionsFlow_iCloud3Device_Steps:
 #-------------------------------------------------------------------------------------------
     def set_inactive_devices_header_msg(self):
         '''
-        Display the All/Most/Some Devices are Inactive message by setting the header message key.
+        Set the header message key of the Devices screen when no Apple Account or no
+        devices are set up. All inactive devices are shown by the Review inactive devices row.
 
-        Return none, few, some, most, all based on the number of inactive devices
+        Return the header message key, '' if none
         '''
-
-        self.header_msg     = ''
-        if self.menu_item == 'exit_no_inactive_check':
-            return ''
-
-        device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
+        self.header_msg = ''
+        device_cnt, _, _ = config_file.device_cnts()
 
         if (instr(self.data_source, ICLOUD)
                 and self._is_apple_acct_setup() is False):
             self.header_msg = 'apple_acct_not_set_up'
 
         elif device_cnt == 0:
-            if self.step_id not in ['device_list', 'update_device']:
-                self.header_msg = 'inactive_no_devices'
-
-        elif device_cnt == inactive_device_cnt:
-            self.header_msg = f'inactive_all_devices'
-
-        if self.header_msg:
-            errors = {'base': self.header_msg}
+            self.header_msg = 'no_devices_set_up'
 
         return self.header_msg

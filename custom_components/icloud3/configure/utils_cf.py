@@ -1,7 +1,7 @@
 
 
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (DEVICE_TYPE_DN, )
+from ..const             import (DOMAIN, DEVICE_TYPE_DN, )
 from ..const_config      import (CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_PARAMETER_TIME_STR,
                                  CONF_PARAMETER_FLOAT, CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                  CONF_PASSWORD, )
@@ -11,13 +11,65 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, log_stack, )
 
-from .const_form_lists   import (MENU_0_ITEMS, MENU_1_ITEMS,
-                                ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
+from .const_form_lists   import (ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
+from homeassistant.helpers import translation
 
 VALID_ERROR_MSG = [ 'conf_updated',
                     'internet_error',
                     'internet_error_no_change']
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#                      CONFIGURE TEXT (strings.json)
+#
+#   HA translates the labels of the strings.json keys. The text the Configure screens
+#   build (menu rows, option lists with names, messages with values) uses the strings.json
+#   selector.cf_text.options.[key] texts. They are loaded once in the HA language when a
+#   Configure, Repairs or Reauth flow starts. The flow context does not include the user
+#   so the language of the user's profile is not known.
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+_cf_texts = {'language': None, 'texts': {}}
+
+async def async_load_texts():
+    '''
+    Load the selector and options strings of the HA language, English is used for the
+    strings that are not translated
+    '''
+    language = Gb.hass.config.language
+    if _cf_texts['language'] == language:
+        return
+
+    texts = {}
+    for lang in dict.fromkeys(['en', language]):
+        for category in ['selector', 'options']:
+            texts.update(await translation.async_get_translations(
+                                    Gb.hass, lang, category, [DOMAIN]))
+
+    _cf_texts['texts']    = texts
+    _cf_texts['language'] = language
+
+def tr_path(path, **placeholders):
+    '''
+    The text of the strings.json path ('options.error.not_numeric') with the {placeholders}
+    replaced. The path is returned when it is not found.
+    '''
+    text = _cf_texts['texts'].get(f"component.{DOMAIN}.{path}")
+    if text is None:
+        return path
+    for placeholder, value in placeholders.items():
+        text = text.replace(f"{{{placeholder}}}", str(value))
+    return text
+
+def tr(key, **placeholders):
+    '''
+    The selector.cf_text.options.[key] text
+    '''
+    return tr_path(f"selector.cf_text.options.{key}", **placeholders)
+
+def has_tr(key):
+    return f"component.{DOMAIN}.selector.cf_text.options.{key}" in _cf_texts['texts']
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -88,6 +140,49 @@ def set_header_msg(self):
         return self.errors
 
     return {}
+
+#--------------------------------------------------------------------
+async def async_options_error_msgs(msg_keys):
+    '''
+    Return the options.error messages (strings.json) of the msg_keys in the HA language
+    '''
+    if is_empty(msg_keys):
+        return []
+
+    await async_load_texts()
+
+    return [tr_path(f"options.error.{msg_key}") if f"component.{DOMAIN}.options.error.{msg_key}"
+                    in _cf_texts['texts'] else msg_key
+                for msg_key in msg_keys]
+
+#--------------------------------------------------------------------
+async def async_header_msgs(self, msg_keys):
+    '''
+    Return the messages displayed at the top of a menu. The 'conf_updated' message names
+    the item that was saved (self.saved_item, a selector.cf_text.options.saved_[key] key or
+    a name) when it is known and says when the changes are applied if iCloud3 is restarted
+    when Configure closes. self.header_placeholders are inserted into the messages.
+    '''
+    saved_item = getattr(self, 'saved_item', '')
+    if has_tr(f"saved_{saved_item}"):
+        saved_item = tr(f"saved_{saved_item}")
+    if 'conf_updated' in msg_keys:
+        conf_updated_key = 'conf_updated_item' if saved_item else 'conf_updated'
+        if 'restart' in getattr(self, 'config_parms_update_control', []):
+            conf_updated_key += '_restart'
+        msg_keys = [conf_updated_key if msg_key == 'conf_updated' else msg_key
+                        for msg_key in msg_keys]
+
+    placeholders = {'saved_item': saved_item, **(getattr(self, 'header_placeholders', None) or {})}
+    msgs = []
+    for msg in await async_options_error_msgs(msg_keys):
+        for placeholder, value in placeholders.items():
+            msg = msg.replace(f"{{{placeholder}}}", str(value))
+        msgs.append(msg)
+    self.saved_item = ''
+    self.header_placeholders = {}
+
+    return msgs
 
 #--------------------------------------------------------------------
 def strip_spaces(user_input, parm_list=[]):

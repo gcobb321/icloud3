@@ -25,50 +25,46 @@ DATA_ENTRY_ALERT_CHAR = '⛔'
 DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 #----------------------------------------------------------------------------------------
-MENU_0 = {
-        'apple_accounts':       'APPLE ACCOUNTS → Add, Change Delete and List Apple Accounts, Import Apple Devices into iCloud3',
-        'reauth':               'AUTHENTICATE APPLE ACCT SIGN-IN → Authenticate Apple Account access, Request a new Auth Code, Change Authentication Method',
-        'device_list':          'ICLOUD3 DEVICES → Add, Change, Delete and List Tracked and Monitored Devices, Import Apple Devices into iCloud3',
-        'sensors':              'SENSORS → Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors',
-        'dashboard_builder':    'DASHBOARD BUILDER → Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates',
-        'away_time_zone':       'AWAY TIME ZONE → Change the time displayed in the Event Log to the local time when away from Home',
-        'tools':                'TOOLS → Log Level, Beta Download, Cleanup HA Registry Files,  Clear Device Data Source Parms, Apple Acct Cookies & iCloud3 Config File',
-}
-MENU_0_ACTIONS = {
-        'menu_1':               '➤ MENU #2 (PARAMETERS) → Tracking, Display Settings, Display Text As, Waze Route Service, Special Zones, iCloud3 Analytics',
-        'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
-}
-
-MENU_1 = {
-        'tracking_parameters':  'TRACKING PARAMETERS →  Enable/disable the Mobile App data source, Configure how device location data is verified and displayed',
-        'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS → Specify how tracking results are displayed in the Event Log, sensors and device_tracker entities',
-        'display_text_as':      'DISPLAY TEXT AS → Event Log Text Replacement',
-        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY → Specify how the Waze Route Server is used and enable the Waze Tracking History Database',
-        'special_zones':        'SPECIAL ZONES → Configure special zone handling - Delay zone enter triggers, Set up Stationary Zones for non-moving devices, Override the Home zone',
-        'inzone_intervals':     'INZONE INTERVALS → Change the Default inZone Intervals for various device types used when adding a new device',
-        'analytics':            'ICLOUD3 ANALYTICS → Enable Sending Analytics Data to the iCloud3 Analytics Database',
-}
-MENU_1_ACTIONS = {
-        'menu_0':               '➤ MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
-        'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
+#   Configure Menus - HA native menus (async_show_menu)
+#
+#   MENU_TREE - The menu step_id and the menu options displayed on it. A menu option is:
+#       - menu_xxx  - Another menu, displayed by async_step_menu_xxx
+#       - open_xxx  - A configure screen, opened by async_step_open_xxx --> open_menu_item(xxx)
+#       - main_menu - Return to the main menu
+#   The option labels are in strings.json options.step.[menu step_id].menu_options
+MAIN_MENU = 'menu'
+MENU_TREE = {
+        'menu':             ['open_apple_accounts', 'open_device_list', 'menu_tracking',
+                                'menu_display', 'menu_sensors', 'menu_system', ],
+        'menu_tracking':    ['open_tracking_parameters', 'open_special_zones', 'open_waze',
+                                'open_inzone_intervals', 'main_menu', ],
+        'menu_display':     ['open_format_settings', 'open_display_text_as', 'open_away_time_zone',
+                                'main_menu', ],
+        'menu_sensors':     ['open_sensors', 'open_exclude_sensors',
+                                'open_dashboard_builder', 'main_menu', ],
+        'menu_system':      ['open_tools', 'open_analytics', 'open_analytics_reports',
+                                'main_menu', ],
 }
 
-# Set up menu lists now so they do not have to be created every time a menu is displayed
-MENU_0_ITEMS = list(MENU_0.values())
-MENU_1_ITEMS = list(MENU_1.values())
-MENU_0_ACTION_ITEMS = list(MENU_0_ACTIONS.values())
-MENU_1_ACTION_ITEMS = list(MENU_1_ACTIONS.values())
+# Menu items (configure screens) on the menus and the Needs attention items displayed
+# at the top of the main menu (form_config_flow.build_needs_attention)
+MENU_ITEMS = [  'apple_accounts', 'device_list', 'inzone_intervals',
+                'tracking_parameters', 'special_zones', 'waze',
+                'format_settings', 'display_text_as', 'away_time_zone',
+                'sensors', 'exclude_sensors', 'dashboard_builder',
+                'tools', 'analytics', 'analytics_reports', ]
+MENU_ACTION_NEEDED_ITEMS = [
+                'action_terms_of_use', 'action_reauth', 'action_login_failed',
+                'action_add_apple_acct', 'action_no_data_source', 'action_add_devices',
+                'action_review_inactive', 'action_review_inactive_some', 'action_analytics', ]
 
-MENU_KEYS_BY_TITLE =      {item_value.split(' →')[0]: item_key for item_key, item_value in MENU_0.items()}
-MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_0_ACTIONS.items()})
-MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1.items()})
-MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1_ACTIONS.items()})
+# Warning symbol displayed in the Configure screen text (text presentation, not the emoji)
+CF_ALERT = '⚠︎ '
 
-MENU_EXIT_ITEMS = {
-        'exit':                       '➤ EXIT → End the iCloud3 Configure Session',
-        'exit_update_dashboards':     '➤ EXIT → End the iCloud3 Configure Session. Update the Dashboards and Restart',
-        'exit_add_dev_trkrs_sensors': '➤ EXIT → End the iCloud3 Configure Session. Add new devices and sensors, Update the Dashboards and Restart'
-}
+#----------------------------------------------------------------------------------------
+
+
+
 ACTION_LIST_OPTIONS = {
         'rtn_device_list':          '➤ RETURN → ICLOUD3 DEVICES → Return to the screen showing the Tracked and Monitored devices',
         'rtn_update_device':        '➤ RETURN → UPDATE ICLOUD3 DEVICE → Return to Update iCloud3 Device screen',
@@ -271,11 +267,6 @@ REVIEW_INACTIVE_DEVICES = [
         # ACTION_LIST_OPTIONS['rtn_device_list']]
         # ACTION_LIST_OPTIONS['menu']]
         # ACTION_LIST_OPTIONS['exit'],
-
-EXIT_ICLOUD3_CONFIGURE_SETTINGS = [
-        ACTION_LIST_OPTIONS['review_inactive_devices'],
-        ACTION_LIST_OPTIONS['menu'],
-        ACTION_LIST_OPTIONS['exit']]
 
 CONFIRM_ACTIONS = [
         ACTION_LIST_OPTIONS['confirm_action_yes'],
