@@ -832,7 +832,8 @@ class OptionsFlow_AppleAccount_Steps:
                 icloud_dname = conf_device[CONF_AADEV_NAME]
                 other_apple_acct = [AppleAcct.apple_id
                                         for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items()
-                                        if icloud_dname in AppleAcct.device_id_by_aadev_dname]
+                                        if (apple_id != conf_apple_id
+                                            and icloud_dname in AppleAcct.device_id_by_aadev_dname)]
                 if other_apple_acct == []:
                     conf_device[CONF_APPLE_ACCT] = ''
                     conf_device[CONF_TRACKING_MODE] = INACTIVE
