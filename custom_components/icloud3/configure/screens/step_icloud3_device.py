@@ -524,18 +524,20 @@ class OptionsFlow_iCloud3Device_Steps:
             mobapp_dname = user_input[CONF_MOBILE_APP_DEVICE]
             if mobapp_dname in Gb.device_info_by_mobapp_dname:
                 _device_type = Gb.device_info_by_mobapp_dname[mobapp_dname][2].lower() # ipad6,3 --> ipad
-                for device_type, device_type_fname in DEVICE_TYPE_DNS.items():
-                    if _device_type.startswith(device_type):
+                for dev_type in DEVICE_TYPE_DNS:
+                    if _device_type.startswith(dev_type):
+                        device_type = dev_type
                         break
 
         # Get device_type from ic3_devicename
         if device_type == '':
             ic3_devicename = user_input[CONF_IC3_DEVICENAME].lower()
             ic3_fname = user_input[CONF_FNAME].lower()
-            for device_type, device_type_fname in DEVICE_TYPE_DNS.items():
-                if device_type == MAC:
+            for dev_type in DEVICE_TYPE_DNS:
+                if dev_type == MAC:
                     continue
-                if instr(ic3_devicename, device_type) or instr(ic3_fname.lower(), device_type):
+                if instr(ic3_devicename, dev_type) or instr(ic3_fname.lower(), dev_type):
+                    device_type = dev_type
                     break
 
         if device_type == '':
