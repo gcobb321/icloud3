@@ -344,7 +344,7 @@ def initialize_global_variables():
     Gb.max_interval_secs            = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     Gb.offline_interval_secs        = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     Gb.exit_zone_interval_secs      = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
-    Gb.mobapp_alive_interval_secs   = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
+    Gb.mobapp_alive_interval_secs   = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 60
     Gb.travel_time_factor           = DEFAULT_GENERAL_CONF[CONF_TRAVEL_TIME_FACTOR]
     Gb.is_track_from_base_zone_used = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_BASE_ZONE_USED]
     Gb.track_from_base_zone         = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_BASE_ZONE]
@@ -429,7 +429,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.max_interval_secs            = Gb.conf_general[CONF_MAX_INTERVAL] * 60
         Gb.exit_zone_interval_secs      = Gb.conf_general[CONF_EXIT_ZONE_INTERVAL] * 60
         Gb.offline_interval_secs        = Gb.conf_general[CONF_OFFLINE_INTERVAL] * 60
-        Gb.mobapp_alive_interval_secs   = Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
+        Gb.mobapp_alive_interval_secs   = Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL] * 60
         Gb.travel_time_factor           = Gb.conf_general[CONF_TRAVEL_TIME_FACTOR]
         Gb.passthru_zone_interval_secs  = Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] * 60
         Gb.is_passthru_zone_used        = (14400 > Gb.passthru_zone_interval_secs > 0)   # time > 0 and < 4 hrs

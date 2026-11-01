@@ -335,6 +335,7 @@ class iCloud3_Device(TrackerEntity):
         self.mobapp_request_loc_cnt        = 0
         self.mobapp_request_loc_sent_secs  = 0    # Used for tracking in 5-sec loop when the data source is mobapp
         self.mobapp_request_sensor_update_secs = 0
+        self.mobapp_alive_check_secs       = 0    # Last time an alive check location request was made
 
         # MobApp state variables
         self.mobapp_data_gps_accuracy      = 0

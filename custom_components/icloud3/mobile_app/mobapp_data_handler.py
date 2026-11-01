@@ -450,10 +450,12 @@ def check_if_mobapp_is_alive(Device):
             return
 
         # Send a location request if the mobapp data is more than 'alive Interval'
-        # and the check for request sent > 1 hr ago. Only send once an hour.
-        if (secs_since(Device.mobapp_request_loc_first_secs) % Gb.mobapp_alive_interval_secs == 0
-                and secs_since(Device.mobapp_data_secs) > Gb.mobapp_alive_interval_secs
-                and secs_since(Device.mobapp_data_trigger_secs) > Gb.mobapp_alive_interval_secs):
+        # old. Only send once every 'alive interval'.
+        if (secs_since(Device.mobapp_data_secs) > Gb.mobapp_alive_interval_secs
+                and secs_since(Device.mobapp_data_trigger_secs) > Gb.mobapp_alive_interval_secs
+                and (Device.mobapp_alive_check_secs == 0
+                    or secs_since(Device.mobapp_alive_check_secs) >= Gb.mobapp_alive_interval_secs)):
+            Device.mobapp_alive_check_secs = Gb.this_update_secs
             mobapp_interface.request_location(Device, is_alive_check=True)
 
             return

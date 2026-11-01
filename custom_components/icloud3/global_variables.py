@@ -453,7 +453,7 @@ class GlobalVariables(object):
     max_interval_secs               = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     offline_interval_secs           = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     exit_zone_interval_secs         = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
-    mobapp_alive_interval_secs      = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
+    mobapp_alive_interval_secs      = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 60
     old_location_threshold          = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_THRESHOLD] * 60
     old_location_adjustment         = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_ADJUSTMENT] * 60
     passthru_zone_interval_secs     = DEFAULT_GENERAL_CONF[CONF_PASSTHRU_ZONE_TIME] * 60
