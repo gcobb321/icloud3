@@ -542,7 +542,8 @@ class OptionsFlow_iCloud3Device_Steps:
             device_type = IPHONE
 
         user_input[CONF_DEVICE_TYPE]       = device_type
-        if user_input[CONF_TRACKING_MODE] != INACTIVE:
+        # Use the device type's tracking mode only if the form's default was not changed
+        if user_input[CONF_TRACKING_MODE] == DEFAULT_DEVICE_CONF[CONF_TRACKING_MODE]:
             user_input[CONF_TRACKING_MODE] = DEVICE_TYPE_TRACKING_MODE(device_type)
 
         inzone_interval_item =  NO_MOBAPP if user_input[CONF_MOBILE_APP_DEVICE] == 'None' else \
