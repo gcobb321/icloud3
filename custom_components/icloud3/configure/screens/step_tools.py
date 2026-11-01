@@ -183,6 +183,10 @@ class OptionsFlow_Tools_Steps:
         Gb.conf_general = DEFAULT_GENERAL_CONF.copy()
         Gb.log_level    = Gb.conf_general[CONF_LOG_LEVEL]
 
+        # The confirm screen does not save the config file or restart iCloud3
+        self.config_file_commit_updates = True
+        list_add(self.config_parms_update_control, 'restart')
+
 #------------------------------------------------------------------------------------------
     def reset_icloud3_config_file_tracking_general(self):
 
