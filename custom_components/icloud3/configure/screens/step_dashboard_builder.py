@@ -62,6 +62,7 @@ class OptionsFlow_DashboardBuilder_Steps:
     #            DASHBOARD BUILDER
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_dashboard_builder(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         self.step_id = 'dashboard_builder'
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 

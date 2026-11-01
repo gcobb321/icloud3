@@ -59,6 +59,9 @@ import voluptuous as vol
 #            AWAY TIME ZONE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_away_time_zone(self):
+    zone_2_used = (Gb.conf_general[CONF_AWAY_TIME_ZONE_2_OFFSET] != 0
+                    and Gb.conf_general[CONF_AWAY_TIME_ZONE_2_DEVICES] != ['none'])
+
     schema = {
         vol.Required(CONF_AWAY_TIME_ZONE_1_DEVICES,
                     default=Gb.conf_general[CONF_AWAY_TIME_ZONE_1_DEVICES]):
@@ -78,7 +81,12 @@ def form_away_time_zone(self):
 
         }
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('zone_1_section', [CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES], True),
+            ('zone_2_section', [CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES],
+                                    zone_2_used),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self)))
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -133,7 +141,16 @@ def form_tracking_parameters(self):
 
         }
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('data_sources_section', ['data_source'], True),
+            ('location_accuracy_section', [CONF_GPS_ACCURACY_THRESHOLD, CONF_DISCARD_POOR_GPS_INZONE,
+                                    CONF_OLD_LOCATION_THRESHOLD], False),
+            ('intervals_section', [CONF_MAX_INTERVAL, CONF_EXIT_ZONE_INTERVAL, CONF_OFFLINE_INTERVAL,
+                                    CONF_TRAVEL_TIME_FACTOR], False),
+            (ADVANCED_SECTION, [CONF_OLD_LOCATION_ADJUSTMENT, CONF_MOBAPP_ALIVE_INTERVAL,
+                                    CONF_DISTANCE_BETWEEN_DEVICES, CONF_TFZ_TRACKING_MAX_DISTANCE], False),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self)))
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -170,7 +187,13 @@ def form_format_settings(self):
 
         }
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('units_time_section', [CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT], True),
+            ('zone_names_section', [CONF_DISPLAY_ZONE_FORMAT, CONF_DEVICE_TRACKER_STATE_SOURCE], False),
+            ('event_log_section', [CONF_DISPLAY_GPS_LAT_LONG], False),
+            (ADVANCED_SECTION, [CONF_EVLOG_CARD_DIRECTORY, CONF_EVLOG_BTNCONFIG_URL], False),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self)))
 
 
 #-------------------------------------------------------------------------------------------
@@ -319,7 +342,12 @@ def form_inzone_intervals(self):
 
         }
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('phones_watches_section', [IPHONE, WATCH, WATCH_WIFI], True),
+            ('tablets_macs_section', [IPAD, IPAD_CELL, MAC], False),
+            ('special_section', [NO_MOBAPP, OTHER], False),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self)))
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            WAZE MAIN
@@ -355,7 +383,14 @@ def form_waze_main(self):
 
         }
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('route_service_section', [CONF_WAZE_USED, CONF_WAZE_SERVER, CONF_WAZE_REALTIME,
+                                    CONF_WAZE_MIN_DISTANCE, CONF_WAZE_MAX_DISTANCE], True),
+            ('history_database_section', [CONF_WAZE_HISTORY_DATABASE_USED, CONF_WAZE_HISTORY_MAX_DISTANCE,
+                                    CONF_WAZE_HISTORY_TRACK_DIRECTION],
+                                    Gb.conf_general[CONF_WAZE_HISTORY_DATABASE_USED]),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self)))
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -406,6 +441,14 @@ def form_special_zones(self):
 
             }
 
-        return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self))})
+        return utils_cf.sectioned_schema(self, schema, [
+                ('stat_zone_section', ['stat_zone_header', CONF_STAT_ZONE_FNAME, CONF_STAT_ZONE_STILL_TIME,
+                                    CONF_STAT_ZONE_INZONE_INTERVAL], True),
+                ('enter_zone_delay_section', ['passthru_zone_header', CONF_PASSTHRU_ZONE_TIME],
+                                    pass_thru_zone_used),
+                ('home_zone_override_section', [CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE,
+                                    CONF_TRACK_FROM_HOME_ZONE], track_from_base_zone_used),
+                ],
+                utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self)))
     except Exception as err:
         log_exception(err)

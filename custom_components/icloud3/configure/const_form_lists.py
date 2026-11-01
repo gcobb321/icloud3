@@ -71,6 +71,10 @@ MENU_ACTION_NEEDED_ITEMS = [
                 'action_terms_of_use', 'action_reauth', 'action_login_failed',
                 'action_add_apple_acct', 'action_no_data_source', 'action_add_devices',
                 'action_review_inactive', 'action_review_inactive_some', 'action_analytics', ]
+
+# The keys of the form sections (data_entry_flow.section, utils_cf.sectioned_schema) end
+# with SECTION_SUFFIX
+SECTION_SUFFIX   = '_section'
 ADVANCED_SECTION = 'advanced_section'
 
 # Warning symbol displayed in the Configure screen text (text presentation, not the emoji)

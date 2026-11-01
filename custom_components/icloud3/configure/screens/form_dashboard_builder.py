@@ -59,4 +59,8 @@ def form_dashboard_builder(self, user_input=None):
 
         }
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'build_dashboard', 'cancel_goto_menu', utils_cf.menu_name(self))})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('dashboard_section', ['selected_dashboard'], True),
+            ('main_view_section', ['main_view_style', 'main_view_devices'], False),
+            ],
+            utils_cf.submit_back_field(self, 'build_dashboard', 'cancel_goto_menu', utils_cf.menu_name(self)))

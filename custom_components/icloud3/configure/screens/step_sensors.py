@@ -52,6 +52,7 @@ class OptionsFlow_Sensors_Steps:
         self.step_id = 'sensors'
         self.errors = errors or {}
         await self.async_write_icloud3_configuration_file()
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
         user_input = self._add_always_created_sensors(user_input)
 

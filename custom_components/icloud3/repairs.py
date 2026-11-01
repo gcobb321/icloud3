@@ -18,7 +18,7 @@ messaging.post_repair_issue when Submit is selected in Settings > Repairs.
 import voluptuous as vol
 
 from homeassistant.components.repairs import ConfirmRepairFlow, RepairsFlow
-from homeassistant.core               import HomeAssistant
+from homeassistant.core               import HomeAssistant, callback
 from homeassistant.helpers            import issue_registry as ir
 
 from .global_variables  import GlobalVariables as Gb
@@ -120,6 +120,13 @@ class iCloud3ConfigRepairFlow(ConfirmRepairFlow, OptionsFlow_Common_Steps,
         self.menu_item   = self.menu_item_return
         self.data_source = Gb.conf_tracking.get(CONF_DATA_SOURCE, '') if Gb.conf_tracking else ''
         self.repair_item = ''           # devicename or apple_id being repaired, for the Event Log
+
+#..............................................................................
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
 
 #..............................................................................
     async def async_step_confirm(self, user_input=None):

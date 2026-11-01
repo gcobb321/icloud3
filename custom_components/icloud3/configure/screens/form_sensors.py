@@ -72,7 +72,17 @@ def form_sensors(self, user_input=None):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.excluded_sensors, mode='list', multiple=True))
 
-    return vol.Schema({**schema, **utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self), other_actions={'select_default_sensors': utils_cf.tr('select_default_sensors')})})
+    return utils_cf.sectioned_schema(self, schema, [
+            ('device_section', [CONF_SENSORS_DEVICE], True),
+            ('location_update_section', [CONF_SENSORS_TRACKING_UPDATE], False),
+            ('time_section', [CONF_SENSORS_TRACKING_TIME], False),
+            ('distance_section', [CONF_SENSORS_TRACKING_DISTANCE], False),
+            ('zone_section', [CONF_SENSORS_ZONE], False),
+            ('monitored_devices_section', [CONF_SENSORS_MONITORED_DEVICES], False),
+            ('other_section', [CONF_SENSORS_OTHER, CONF_SENSORS_TRACKING_OTHER, CONF_EXCLUDED_SENSORS], False),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self),
+                    other_actions={'select_default_sensors': utils_cf.tr('select_default_sensors')}))
 
 def _selectable_sensors(sensor_group, sensors):
     '''

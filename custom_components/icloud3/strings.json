@@ -276,6 +276,10 @@
       "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code.",
       "conf_updated_restart": "✓ Saved · close Configure (✕) to apply",
       "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
+      "section_error_1": "{section_error_1}",
+      "section_error_2": "{section_error_2}",
+      "section_error_3": "{section_error_3}",
+      "section_error_4": "{section_error_4}",
       "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
       "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
       "deleted_device_sensors": "✓ Deleted {devices} and {sensors} from HA",
@@ -676,13 +680,31 @@
         "title": "iCloud3 Dashboard Builder",
         "description": "This screen will create and update iCloud3 Dashboards for tracked devices (up to 4) with different styles and views. The Dashboards can then be customized using the HA Dashboard tools or used as-is.\n\n{db_icons}\n\n{header_msg}",
         "data": {
-          "form_action": "Action",
-          "selected_dashboard": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ICLOUD3 DASHBOARDS",
-          "main_view_style": "MAIN VIEW STYLE FORMAT - How the device information should be presented",
-          "main_view_devices": "MAIN VIEW DEVICES - Devices to display on the Main view screen"
+          "form_action": "Action"
         },
-        "data_description": {
-          "selected_dashboard": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ \nCREATE/UPDATE DASHBOARD SPECIFICATIONS - The Style Format & Devices fields below specify how the Dashboard's Main View screen will be constructed when a dashboard is created or updated"
+        "sections": {
+          "dashboard_section": {
+            "name": "Dashboard",
+            "description": "The dashboard to create or update",
+            "data": {
+              "selected_dashboard": "Dashboard"
+            },
+            "data_description": {
+              "selected_dashboard": "Select a dashboard to update or create a new one"
+            }
+          },
+          "main_view_section": {
+            "name": "Main view",
+            "description": "How the main view of the dashboard is built",
+            "data": {
+              "main_view_style": "Main view style",
+              "main_view_devices": "Main view devices"
+            },
+            "data_description": {
+              "main_view_style": "How the device information is presented",
+              "main_view_devices": "The devices shown on the main view"
+            }
+          }
         }
       },
 
@@ -762,16 +784,69 @@
         "description": "Many sensors are used to display tracking results and other information for a device.\n\n This screen is used to select the sensors that should be created.",
         "data": {
           "form_action": "Action",
-          "monitored_devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MONITORED DEVICE SENSORS - Select the type of sensors to create for a Monitored Device",
-          "device": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DEVICE SENSORS - Device status and information",
-          "tracking_update": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ LOCATION UPDATE SENSORS - Device location update times",
-          "tracking_time": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TIME SENSORS - Device tracking timers",
-          "tracking_distance": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ DISTANCE SENSORS - Device tracking distances",
-          "track_from_zones": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TRACK FROM MULTIPLE ZONE SENSORS - Used when tracking from more than one zone (not needed for tracking only from the Home zone)",
-          "tracking_other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER TRACKING SENSORS - Not normally used but available",
-          "zone": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ZONE SENSORS - Device zone status and information",
-          "other": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ OTHER SENSORS - Sensors not in the above areas",
-          "excluded_sensors": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EXCLUDED SENSORS - Sensors that will not be created when iCloud3 starts"
+          "track_from_zones": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ TRACK FROM MULTIPLE ZONE SENSORS - Used when tracking from more than one zone (not needed for tracking only from the Home zone)"
+        },
+        "sections": {
+          "device_section": {
+            "name": "Device",
+            "description": "Device status and information. Always created: _badge, _battery, _battery_status",
+            "data": {
+              "device": "Sensors"
+            },
+            "data_description": {}
+          },
+          "location_update_section": {
+            "name": "Location update",
+            "description": "When the location was and will be updated. Always created: _next_update",
+            "data": {
+              "tracking_update": "Sensors"
+            },
+            "data_description": {}
+          },
+          "time_section": {
+            "name": "Time",
+            "description": "Travel and arrival times. Always created: _travel_time, _arrival_time",
+            "data": {
+              "tracking_time": "Sensors"
+            },
+            "data_description": {}
+          },
+          "distance_section": {
+            "name": "Distance",
+            "description": "Distances to the zones. Always created: _home_distance",
+            "data": {
+              "tracking_distance": "Sensors"
+            },
+            "data_description": {}
+          },
+          "zone_section": {
+            "name": "Zone",
+            "description": "The zone the device is in",
+            "data": {
+              "zone": "Sensors"
+            },
+            "data_description": {}
+          },
+          "monitored_devices_section": {
+            "name": "Monitored devices",
+            "description": "The sensors of the monitored devices. Always created: _badge, _battery, _battery_status",
+            "data": {
+              "monitored_devices": "Sensors"
+            },
+            "data_description": {}
+          },
+          "other_section": {
+            "name": "Other",
+            "description": "Sensors few installations need, and the sensors excluded for specific devices",
+            "data": {
+              "other": "Other sensors",
+              "tracking_other": "Other tracking sensors",
+              "excluded_sensors": "Excluded sensors"
+            },
+            "data_description": {
+              "excluded_sensors": "Sensors of specific devices that are not created, uncheck one to create it again"
+            }
+          }
         }
       },
 
@@ -792,11 +867,33 @@
         "title": "Display Location Time Zone when Away",
         "description": "The time displayed in the Event Log and Sensors show the time an event took place using the Home 'time zone' from your Home Assistant computer.  When you are away from Home and in another time zone, your tracking events are still based on the time at your Home 'time zone', not time in your current location.\n\nThis screen lets you display time events using your current location's time zone.",
         "data": {
-          "form_action": "Action",
-          "away_time_zone_1_devices": "Devices in Away Time Zone #1",
-          "away_time_zone_1_offset": "Time & Time Zone Adjustment at Current Location #1",
-          "away_time_zone_2_devices": "Devices in Away Time Zone #2",
-          "away_time_zone_2_offset": "Time & Time Zone Adjustment at Current Location #2"
+          "form_action": "Action"
+        },
+        "sections": {
+          "zone_1_section": {
+            "name": "Away time zone 1",
+            "description": "The local time and the devices in this time zone",
+            "data": {
+              "away_time_zone_1_offset": "Local time",
+              "away_time_zone_1_devices": "Devices"
+            },
+            "data_description": {
+              "away_time_zone_1_offset": "The current time where these devices are",
+              "away_time_zone_1_devices": "The devices in this time zone"
+            }
+          },
+          "zone_2_section": {
+            "name": "Away time zone 2",
+            "description": "A second time zone for other devices",
+            "data": {
+              "away_time_zone_2_offset": "Local time",
+              "away_time_zone_2_devices": "Devices"
+            },
+            "data_description": {
+              "away_time_zone_2_offset": "The current time where these devices are",
+              "away_time_zone_2_devices": "The devices in this time zone"
+            }
+          }
         },
         "data_description": {
           "time_zone_1_offset": "PRIMARY DEVICES & LOCATION TIME - Devices and the current location time when away and in another time zone",
@@ -809,33 +906,65 @@
         "title": "Tracking Parameters",
         "description": "Many parameters are used when tracking a device and displaying the results. These include how poor GPS Accuracy should be handled, various polling interval values and zone distances used to set the time to locate the device. They are customized on this screen.",
         "data": {
-          "form_action": "Action",
-          "data_source": "GPS LOCATION AND ZONE TRIGGER DATA SOURCES ",
-          "discard_poor_gps_inzone": "DISCARD POOR RESULTS",
-          "gps_accuracy_threshold": "GPS ACCURACY THRESHOLD",
-          "old_location_threshold": "OLD LOCATION THRESHOLD",
-          "old_location_adjustment": "OLD LOCATION ADJUSTMENT",
-          "distance_between_devices": "USE LOCATION RESULTS FROM A NEAR-BY DEVICE",
-          "max_interval": "MAXIMUM INTERVAL",
-          "exit_zone_interval": "EXIT ZONE INTERVAL",
-          "mobapp_alive_interval": "REQUEST MOBILE APP LOCATION INTERVAL",
-          "tfz_tracking_max_distance": "TRACK-FROM-ZONE DISPLAY DISTANCE",
-          "offline_interval": "DEVICE OFFLINE INTERVAL",
-          "travel_time_factor": "TRAVEL TIME INTERVAL AND NEXT LOCATION UPDATE MULTIPLIER"
+          "form_action": "Action"
         },
-        "data_description": {
-          "data_source": "Source of Location data and Zone Enter/Exit triggers used to track iCloud3 devices",
-          "discard_poor_gps_inzone": "Discard Location Updates with Poor GPS Accuracy when in a Zone",
-          "old_location_threshold": "Locations older than this value will be discarded",
-          "old_location_adjustment": "Add this to the time that determines if a location is old",
-          "distance_between_devices": "When tracking results are updated, any nearby devices are identified. When tracking results for those devices are updated, the tracking results of the one originally updated can be used instead. This improves performance since the Waze route time and distance are not requested again",
-          "gps_accuracy_threshold": "Locations with GPS Accuracy above this value will be discarded",
-          "tfz_tracking_max_distance": "Normally the Home zone's time and distance data is displayed on the Device's device_tracker and sensor entities. Display the Track-from-Zone instead when the Device is within this distance of the Track-from-Zone",
-          "max_interval": "The maximum time between location requests",
-          "exit_zone_interval": "The time to the first location request after exiting a zone",
-          "mobapp_alive_interval": "Send a location request to the Mobile App if there has been no contact after this amount of time. This will check to see if the Mobile App is responding to location requests or is asleep and not running.",
-          "offline_interval": "Location request interval when offline (Airplane mode, dead cell area, etc.)",
-          "travel_time_factor": "This is used to calculate the Interval and Next Location Time when going towards Home. A smaller value will reduce the interval time and increase the location requests, a larger value will increase the interval and reduce the location requests."
+        "sections": {
+          "data_sources_section": {
+            "name": "Data sources",
+            "description": "Where the location data and the zone enter/exit triggers come from",
+            "data": {
+              "data_source": "Data sources"
+            },
+            "data_description": {
+              "data_source": "Apple Accounts locate the devices, the Mobile App also sends the zone enter and exit triggers"
+            }
+          },
+          "location_accuracy_section": {
+            "name": "Location accuracy",
+            "description": "When a location is too inaccurate or too old to use",
+            "data": {
+              "gps_accuracy_threshold": "GPS accuracy threshold",
+              "discard_poor_gps_inzone": "Discard inaccurate locations in a zone",
+              "old_location_threshold": "Old location threshold"
+            },
+            "data_description": {
+              "gps_accuracy_threshold": "Locations less accurate than this are discarded",
+              "discard_poor_gps_inzone": "Also discard them while the device is in a zone",
+              "old_location_threshold": "Upper limit (max 60 min) before a location is treated as old and requested again"
+            }
+          },
+          "intervals_section": {
+            "name": "Intervals",
+            "description": "The time between location requests",
+            "data": {
+              "max_interval": "Maximum interval",
+              "exit_zone_interval": "Exit zone interval",
+              "offline_interval": "Offline interval",
+              "travel_time_factor": "Travel time factor"
+            },
+            "data_description": {
+              "max_interval": "The longest time between location requests",
+              "exit_zone_interval": "The time to the first location request after leaving a zone",
+              "offline_interval": "The interval while the device is offline (airplane mode, no cell service)",
+              "travel_time_factor": "Part of the travel time to Home used as the next interval, smaller means more location requests"
+            }
+          },
+          "advanced_section": {
+            "name": "Advanced",
+            "description": "Rarely needed settings, best left at their defaults",
+            "data": {
+              "old_location_adjustment": "Old location adjustment",
+              "mobapp_alive_interval": "Mobile App check interval",
+              "distance_between_devices": "Use the results of a nearby device",
+              "tfz_tracking_max_distance": "Track from zone display distance"
+            },
+            "data_description": {
+              "old_location_adjustment": "Added to the time that decides if a location is old",
+              "mobapp_alive_interval": "Request a Mobile App location when it has not reported for this long",
+              "distance_between_devices": "Reuse the tracking results of a nearby device instead of requesting the Waze route again",
+              "tfz_tracking_max_distance": "Show the track from zone instead of Home on the entities within this distance"
+            }
+          }
         }
       },
 
@@ -845,21 +974,60 @@
         "description": "This screen specifies how tracking results and other information is displayed in the Event Log, sensors and device_tracker entities",
         "data": {
           "form_action": "Action",
-          "display_zone_format": "EVENT LOG ZONE DISPLAY NAME - How the Zone name is displayed in sensors and the Event Log",
-          "device_tracker_state_source": "DEVICE TRACKER STATE VALUE - How the device's device_tracker entity state value is determined",
-          "time_format": "TIME FORMAT - How time fields are displayed in sensors and in the Event Log",
-          "unit_of_measurement": "UNIT OF MEASUREMENT - How distance fields are displayed in sensors and in the Event Log",
           "display_gps_lat_long2": "DISPLAY GPS COORDINATES - Display the GPS (Latitude, Longitude/±Accuracy) or only the GPS (/±Accuracy) in the Event Log",
-          "display_gps_lat_long": "DISPLAY GPS COORDINATES - Display GPS-(22.32771, -76.33073/±35m) instead of GPS-/±35m in the Event Log",
           "evlog_header": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ EVENT LOG SYSTEM OVERRIDES",
-          "picture_www_dirs": "PICTURE DIRECTORY FILTER - Select the directories containingg Device image files (.png, .jpg)",
-          "event_log_card_directory": "EVENT LOG CARD LOVELACE RESOURCES DIRECTORY - Event Log custom card .js file directory",
-          "event_log_btnconfig_url": "EVENT LOG CONFIGURE BUTTON (GEAR) URL > Special URL that display's the HA Configure Settings screen"
+          "picture_www_dirs": "PICTURE DIRECTORY FILTER - Select the directories containingg Device image files (.png, .jpg)"
         },
         "data_description": {
-          "picture_www_dirs": "iCloud3 scans the /www for all picture files (.png, .jpg) to build a table for selecting the picture for a device. The picture can be hard to find if you have many image files in many directories. Specify the directories with your device image files here",
-          "device_tracker_state_source": "HA uses the device's gps coordinates to determine the zone. The gps accuracy is not considered so the zone may be exited when the gps wanders out of the zone. iCloud3 does consider the gps accuracy and will not exit the zone when this occurs. iCloud3 will display the Zone's Friendly Name or zone name displayed on the Event Log",
-          "event_log_btnconfig_url": "Normally, this is blank and iCloud3 will determine the URL for it's Configure Settings screen. However, if there is a problem caused by running HA in a virtual environment, docker or on another device and the actual URL can not be detemined, a 404 not found error may be encountered. If that happens, select it the normal way (HA Devices & Services > Integration > iCloud3 > Configure Settings gear) and copy the URL from the browser into this field."
+          "picture_www_dirs": "iCloud3 scans the /www for all picture files (.png, .jpg) to build a table for selecting the picture for a device. The picture can be hard to find if you have many image files in many directories. Specify the directories with your device image files here"
+        },
+        "sections": {
+          "units_time_section": {
+            "name": "Units & time",
+            "description": "Distance units and time format",
+            "data": {
+              "unit_of_measurement": "Unit of measurement",
+              "time_format": "Time format"
+            },
+            "data_description": {
+              "unit_of_measurement": "Distances in the sensors and the Event Log",
+              "time_format": "Times in the sensors and the Event Log"
+            }
+          },
+          "zone_names_section": {
+            "name": "Zone names",
+            "description": "How zone names are shown in the sensors, device_tracker entities and the Event Log",
+            "data": {
+              "display_zone_format": "Zone display name",
+              "device_tracker_state_source": "Device tracker state"
+            },
+            "data_description": {
+              "display_zone_format": "How zone names are shown in the sensors and the Event Log",
+              "device_tracker_state_source": "The zone name used as the device_tracker state"
+            }
+          },
+          "event_log_section": {
+            "name": "Event Log",
+            "description": "Show the GPS coordinates of a location in its Event Log messages",
+            "data": {
+              "display_gps_lat_long": "Show GPS coordinates"
+            },
+            "data_description": {
+              "display_gps_lat_long": "GPS-(22.32771, -76.33073/±35m) instead of GPS-/±35m"
+            }
+          },
+          "advanced_section": {
+            "name": "Advanced",
+            "description": "The Event Log card files, rarely needed, best left at their defaults",
+            "data": {
+              "event_log_card_directory": "Event Log card directory",
+              "event_log_btnconfig_url": "Event Log configure button URL"
+            },
+            "data_description": {
+              "event_log_card_directory": "The directory with the Event Log card file (event-log-card.js)",
+              "event_log_btnconfig_url": "Leave blank, enter the Configure URL only if the Event Log button gives a 404 error"
+            }
+          }
         }
       },
 
@@ -891,17 +1059,51 @@
         "description": "An inZone interval is the time between location requests when the Device is in a zone.\n\n This screen is used to set the default values for different types of devices. This value is assigned to a device when it is added.\n\nNote: The inZone Interval can be set to a different value on the Update Device screen for each device.\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
         "data": {
           "form_action": "Action",
-          "iphone": "iPhones (default=120 min)",
-          "watch": "Apple Watches (default=15 min)",
-          "watch_wifi": "Apple Watches with WiFi (default=15 min)",
-          "ipad": " iPads (default=120 min)",
-          "ipad_cell": "iPads with Cell Service (default=120 min)",
-          "mac": "Apple Macs (default=120 min)",
-          "airpods": "AirPods (AirPods are not tracked)(default=120 min)",
-          "no_mobapp": "Mobile App is not installed on the tracked device (default=15 min)",
-          "other": "Any other type of device being tracked (default=120 min)"
+          "airpods": "AirPods (AirPods are not tracked)(default=120 min)"
         },
         "data_description": {
+        },
+        "sections": {
+          "phones_watches_section": {
+            "name": "Phones & watches",
+            "description": "iPhones and Apple Watches",
+            "data": {
+              "iphone": "iPhones",
+              "watch": "Apple Watches (cellular)",
+              "watch_wifi": "Apple Watches (Wi-Fi only)"
+            },
+            "data_description": {
+              "iphone": "Default: 120 min",
+              "watch": "Default: 15 min",
+              "watch_wifi": "Default: 15 min"
+            }
+          },
+          "tablets_macs_section": {
+            "name": "Tablets & Macs",
+            "description": "iPads and Macs",
+            "data": {
+              "ipad": "iPads (Wi-Fi only)",
+              "ipad_cell": "iPads (cellular)",
+              "mac": "Apple Macs"
+            },
+            "data_description": {
+              "ipad": "Default: 120 min",
+              "ipad_cell": "Default: 120 min",
+              "mac": "Default: 120 min"
+            }
+          },
+          "special_section": {
+            "name": "Special",
+            "description": "Devices without the Mobile App, monitored and other devices",
+            "data": {
+              "no_mobapp": "Devices without the Mobile App",
+              "other": "Monitored and other devices"
+            },
+            "data_description": {
+              "no_mobapp": "Default: 15 min",
+              "other": "Default: 120 min"
+            }
+          }
         }
       },
 
@@ -909,20 +1111,41 @@
       "waze_main": {
         "title": "Waze - Route Service Travel Time/Distance",
         "data": {
-          "form_action": "Action",
-          "waze_used": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ WAZE ROUTE SERVICE",
-          "waze_region": "ROUTE SERVER LOCATION - Location of the Waze Route Server for your area",
-          "waze_realtime": "USE REAL TIME DATA - Waze should consider traffic delays when determining travel time",
-          "waze_min_distance": "WAZE MINIMUM DISTANCE",
-          "waze_max_distance": "WAZE MAXIMUM DISTANCE",
-          "waze_history_database_used": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ WAZE HISTORY DATABASE",
-          "waze_history_track_direction": "GENERAL TRAVEL DIRECTION - Used to display 'Map Trace Lines' between saved locations",
-          "waze_history_max_distance": "HISTORY MAX DISTANCE"
+          "form_action": "Action"
         },
-        "data_description": {
-          "waze_min_distance": "Use the Waze Route Service when the zone distance is greater than this value",
-          "waze_max_distance": "Do not use the Waze Route Service when the zone distance is greater than than this value",
-          "waze_history_max_distance": "Do not save the Waze travel time & distance to the Waze History Database if the distance is greater than this value"
+        "sections": {
+          "route_service_section": {
+            "name": "Route service",
+            "description": "Travel time and distance from the Waze route service",
+            "data": {
+              "waze_used": "Use the Waze route service",
+              "waze_region": "Route server location",
+              "waze_realtime": "Use real time data",
+              "waze_min_distance": "Minimum distance",
+              "waze_max_distance": "Maximum distance"
+            },
+            "data_description": {
+              "waze_used": "Get the travel time and distance to the zones from Waze",
+              "waze_region": "The Waze server for your area",
+              "waze_realtime": "Include traffic delays in the travel time",
+              "waze_min_distance": "Use Waze only when the zone is farther away than this",
+              "waze_max_distance": "Do not use Waze when the zone is farther away than this"
+            }
+          },
+          "history_database_section": {
+            "name": "History database",
+            "description": "Save the Waze results and reuse them at the same location",
+            "data": {
+              "waze_history_database_used": "Use the history database",
+              "waze_history_max_distance": "Maximum distance",
+              "waze_history_track_direction": "General travel direction"
+            },
+            "data_description": {
+              "waze_history_database_used": "Save and reuse the Waze travel time and distance of visited locations",
+              "waze_history_max_distance": "Do not save the results of locations farther away than this",
+              "waze_history_track_direction": "Used to draw the map trace lines between the saved locations"
+            }
+          }
         }
       },
 
@@ -931,22 +1154,51 @@
         "title": "Special Zones",
         "description": "This screen is used to configure:\n&nbsp;&nbsp;• Stationary Zones - Created when the device is in the same location for a short\n&nbsp;&nbsp;&nbsp;&nbsp;period of time\n&nbsp;&nbsp;• Enter Zone Delay Time - Delay processing a Zone Enter Trigger\n&nbsp;&nbsp;• A temporary “home” zone at another location",
         "data": {
-          "form_action": "Action",
-          "stat_zone_header":     "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ STATIONARY ZONE",
-          "stat_zone_fname":      "FRIENDLY NAME BASE - Name to display when in a Stationary Zone (StatZone)",
-          "stat_zone_still_time": "NO MOVEMENT TIME",
-          "stat_zone_inzone_interval": "INZONE INTERVAL",
-          "passthru_zone_header": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ENTER ZONE DELAY",
-          "passthru_zone_time":   "ENTER ZONE DELAY TIME",
-          "track_from_base_zone_used": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ PRIMARY TRACK-FROM-HOME ZONE OVERRIDE",
-          "track_from_base_zone": "TRACK FROM ZONE - Use this zone instead of Home for tracking results for all devices. Global setting",
-          "track_from_home_zone": "TRACK FROM HOME ZONE - Keep tracking from the Home zone when the Primary Track From Zone is not Home"
+          "form_action": "Action"
         },
-        "data_description": {
-          "passthru_zone_time": "Delay processing an Enter Zone Trigger that you may be driving through and not actually entering",
-          "stat_zone_still_time": "Time at the same location before moving into a Stationary Zone",
-          "stat_zone_inzone_interval": "Time interval between location requests when in a Stationary Zone",
-          "stat_zone_fname": "Display this value in the Event Log, device_tracker, travel direction and zone entities when the device is in a Stationary Zone. iCloud3 assigns a number to the Stationary Zone. Use the wildcard character '#' to display this value in the Stationary Zone's name (StatZon1, StatZon2, etc). Note: A 7-letter name leaves room for the name and number to be displayed on iPhone screens without being truncated."
+        "sections": {
+          "stat_zone_section": {
+            "name": "Stationary zones",
+            "description": "A temporary zone for a device that is not moving",
+            "data": {
+              "stat_zone_header": "Use Stationary zones",
+              "stat_zone_fname": "Name",
+              "stat_zone_still_time": "No movement time",
+              "stat_zone_inzone_interval": "inZone interval"
+            },
+            "data_description": {
+              "stat_zone_header": "Create a Stationary zone when a device stays in one place",
+              "stat_zone_fname": "Shown when in a Stationary zone, # is replaced by its number (StatZon# → StatZon1, StatZon2)",
+              "stat_zone_still_time": "Time at the same location before the Stationary zone is created",
+              "stat_zone_inzone_interval": "Time between location requests in a Stationary zone"
+            }
+          },
+          "enter_zone_delay_section": {
+            "name": "Enter zone delay",
+            "description": "Ignore the zones you only drive through",
+            "data": {
+              "passthru_zone_header": "Delay zone enter triggers",
+              "passthru_zone_time": "Delay time"
+            },
+            "data_description": {
+              "passthru_zone_header": "Wait before an enter zone trigger is processed",
+              "passthru_zone_time": "A zone that is left within this time is not entered"
+            }
+          },
+          "home_zone_override_section": {
+            "name": "Home zone override (all devices)",
+            "description": "Track from another zone instead of Home for all devices",
+            "data": {
+              "track_from_base_zone_used": "Override the Home zone",
+              "track_from_base_zone": "Zone used instead of Home",
+              "track_from_home_zone": "Keep tracking from Home"
+            },
+            "data_description": {
+              "track_from_base_zone_used": "Track all devices from another zone instead of Home",
+              "track_from_base_zone": "For example a vacation house or a second home",
+              "track_from_home_zone": "Also track from Home, only applies when the override zone is not Home"
+            }
+          }
         }
       },
 

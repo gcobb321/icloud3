@@ -106,6 +106,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         # iCloud3 Configure window, that one is created by async_get_options_flow.
         self.OptFlow = iCloud3_OptionsFlowHandler()
 
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
+
 
     # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
     # def form_msg(self):
@@ -372,6 +378,12 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
     def async_remove(self) -> None:
         """HA calls this (sync @callback) when the user clicks 'X' to close the options flow."""
         self.flow_closed()
+
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
 
     def flow_closed(self) -> None:
         """

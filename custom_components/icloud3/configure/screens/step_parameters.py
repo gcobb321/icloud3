@@ -66,6 +66,7 @@ class OptionsFlow_Parameters_Steps:
 #            AWAY TIME ZONE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_away_time_zone(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('away_time_zone', user_input, errors)
 
         lists.build_away_time_zone_devices_list(self)
@@ -165,6 +166,7 @@ class OptionsFlow_Parameters_Steps:
 #            TRACKING PARAMETERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_tracking_parameters(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('tracking_parameters', user_input, errors)
 
         if user_input is None:
@@ -206,6 +208,7 @@ class OptionsFlow_Parameters_Steps:
 #              FORMAT SETTINGS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_format_settings(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('format_settings', user_input, errors)
 
         if user_input is None:
@@ -278,6 +281,7 @@ class OptionsFlow_Parameters_Steps:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_inzone_intervals(self, user_input=None, errors=None):
         self.step_id = 'inzone_intervals'
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('inzone_intervals', user_input, errors)
 
         if user_input is None:
@@ -334,6 +338,7 @@ class OptionsFlow_Parameters_Steps:
 #            WAZE MAIN
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_waze_main(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('waze_main', user_input, errors)
 
         if user_input is None:
@@ -388,6 +393,7 @@ class OptionsFlow_Parameters_Steps:
 #            SPECIAL ZONES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_special_zones(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('special_zones', user_input, errors)
         await lists.build_zone_selection_list(self)
 

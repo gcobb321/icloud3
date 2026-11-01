@@ -11,13 +11,14 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, log_stack, )
 
-from .const_form_lists   import (FORM_ACTION, FORM_ACTION_SAVES_DATA,
+from .const_form_lists   import (SECTION_SUFFIX, FORM_ACTION, FORM_ACTION_SAVES_DATA,
                                 ACTION_LIST_ITEMS_KEY_BY_TEXT, ACTION_LIST_OPTIONS,
                                 UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 from homeassistant.helpers import translation, selector
 import voluptuous as vol
 import re
 import json
+from homeassistant.data_entry_flow import section
 
 VALID_ERROR_MSG = [ 'conf_updated',
                     'internet_error',
@@ -830,6 +831,148 @@ def form_action_field(self, actions, default_action):
 
 def destination_name(destination):
     return tr(f"dest_{destination}") if has_tr(f"dest_{destination}") else destination
+
+#--------------------------------------------------------------------
+def sectioned_schema(self, schema, sections, form_action=None):
+    '''
+    Build a form with collapsible sections (data_entry_flow.section) from the flat
+    schema of all of its fields. The step flattens the section-nested user_input
+    with flatten_sections before using it.
+
+    Parameters:
+        schema - {vol marker: selector} of the fields
+        sections - [(section_key, [field names], expanded)]. The section_key ends with
+                SECTION_SUFFIX. The fields that are not in a section are displayed above
+                the sections, a field that is not in the schema is skipped.
+        form_action - The Submit/Back field (submit_back_field), displayed last
+
+    HA displays the errors of the top level fields only. The error of a field in a
+    section is displayed at the top of the section and the section is expanded.
+    The section default holds its field defaults. HA fills in a section that was not
+    submitted with them.
+
+    self.section_redisplay_input - {field name: value} of the section fields that were
+            submitted when the form is displayed again after an error. They are displayed
+            instead of the defaults this time.
+    '''
+    errors = self.errors if isinstance(self.errors, dict) else {}
+    redisplay_input = self.__dict__.pop('section_redisplay_input', None) or {}
+    schema = {(type(marker)(str(marker), default=redisplay_input[str(marker)])
+                    if str(marker) in redisplay_input else marker): value
+                for marker, value in schema.items()}
+    markers_by_name = {str(marker): marker for marker in schema}
+    section_field_names = [name for _key, names, _expanded in sections for name in names]
+
+    form_schema = {marker: value for marker, value in schema.items()
+                                 if str(marker) not in section_field_names}
+
+    for section_key, names, expanded in sections:
+        section_schema = {markers_by_name[name]: schema[markers_by_name[name]]
+                                for name in names if name in markers_by_name}
+        if is_empty(section_schema):
+            continue
+
+        section_errors = [(name, errors.pop(name)) for name in names if name in errors]
+        if section_errors:
+            errors.setdefault(section_key, _section_error(self, section_key, section_errors))
+            expanded = True
+
+        section_defaults = {str(marker): marker.default()
+                                for marker in section_schema
+                                if marker.default is not vol.UNDEFINED}
+        section_schema = {marker: (_RangeNumberSelector(value.config)
+                                        if type(value) is selector.NumberSelector else value)
+                                for marker, value in section_schema.items()}
+        form_schema[vol.Optional(section_key, default=section_defaults)] = \
+                section(vol.Schema(section_schema), {'collapsed': not expanded})
+
+    form_schema.update(form_action or {})
+
+    return vol.Schema(form_schema)
+
+#.....................................................................
+def _section_error(self, section_key, section_errors):
+    '''
+    HA displays one error at the top of a section. It names the fields with an error:
+    'Fixed interval: Enter a number'. The text is a description placeholder of the
+    section_error_[n] error key (async_show_form adds self.form_placeholders).
+    '''
+    step_id = getattr(self, 'step_id', '')
+    field_errors = []
+    for name, error_key in section_errors:
+        field_label = tr_path(f"options.step.{step_id}.sections.{section_key}.data.{name}")
+        if field_label.startswith('options.'):
+            field_label = name
+        error_text = tr_path(f"options.error.{error_key}", **(getattr(self, 'errors_info_msg', None) or {}))
+        field_errors.append(f"{field_label}: {error_key if error_text.startswith('options.') else error_text}")
+
+    if not hasattr(self, 'form_placeholders') or self.form_placeholders is None:
+        self.form_placeholders = {}
+    error_no = len([key for key in self.form_placeholders if key.startswith('section_error_')]) + 1
+    self.form_placeholders[f"section_error_{error_no}"] = ' · '.join(field_errors)
+
+    return f"section_error_{error_no}"
+
+#.....................................................................
+class _RangeNumberSelector(selector.NumberSelector):
+    '''
+    HA can not map a validation error of a field in a section to the field and displays
+    the raw validation message. A number outside the field's range is set to the
+    minimum or maximum instead.
+    '''
+    def __call__(self, data):
+        try:
+            value = float(data)
+        except (TypeError, ValueError):
+            return super().__call__(data)
+
+        if self.config.get('min') is not None and value < self.config['min']:
+            value = float(self.config['min'])
+        if self.config.get('max') is not None and value > self.config['max']:
+            value = float(self.config['max'])
+
+        return super().__call__(value)
+
+#--------------------------------------------------------------------
+def show_form_placeholders(self, description_placeholders):
+    '''
+    The description_placeholders of a form with the self.form_placeholders (section
+    error texts) and the self.header_placeholders (header message) added. They are used once.
+    '''
+    form_placeholders = {**(self.__dict__.pop('header_placeholders', None) or {}),
+                         **(self.__dict__.pop('form_placeholders', None) or {})}
+    if not form_placeholders:
+        return description_placeholders
+    return {**form_placeholders, **(description_placeholders or {})}
+
+#--------------------------------------------------------------------
+def flatten_sections(user_input):
+    '''
+    Move the fields of the sections (sectioned_schema) to the top level of the user_input.
+    The number fields (NumberSelector) return a float, a whole number is changed to an int.
+    '''
+    if not user_input:
+        return user_input
+
+    for section_key in [key for key, value in user_input.items()
+                            if key.endswith(SECTION_SUFFIX) and isinstance(value, dict)]:
+        user_input.update(user_input.pop(section_key))
+
+    for pname, pvalue in user_input.items():
+        if isinstance(pvalue, float) and pvalue.is_integer():
+            user_input[pname] = int(pvalue)
+
+    return user_input
+
+#--------------------------------------------------------------------
+def section_fields_input(user_input):
+    '''
+    The {field name: value} of the section fields in the section-nested user_input
+    '''
+    return {pname: (pvalue.copy() if isinstance(pvalue, list) else pvalue)
+                for key, section_input in (user_input or {}).items()
+                if key.endswith(SECTION_SUFFIX) and isinstance(section_input, dict)
+                for pname, pvalue in section_input.items()}
 
 #--------------------------------------------------------------------
 def menu_name(self):
