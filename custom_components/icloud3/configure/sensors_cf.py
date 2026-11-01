@@ -97,7 +97,7 @@ def remove_sensors_from_excluded_sensors_list(sensors_to_remove):
         return
 
     for devicename_sensor in sensors_to_remove:
-        er_util.remove_Sensor_and_clear_dicts(devicename_sensor)
+        er_util.remove_Sensor_and_clear_dicts(f"{PLATFORM_SENSOR}.{devicename_sensor}")
 
 #-------------------------------------------------------------------------------------------
 def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_dashboards=True):
