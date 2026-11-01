@@ -48,7 +48,6 @@ import voluptuous as vol
 #       - form_inzone_intervals
 #       - form_waze_main
 #       - form_special_zones
-#       - form_display_text_as
 #       - form_display_text_as_update
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

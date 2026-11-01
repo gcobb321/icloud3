@@ -269,3 +269,4 @@ class OptionsFlow_Sensors_Steps:
         self.sensors_fname_list.extend(self.excluded_sensors)
         self.sensors_fname_list = list(set(self.sensors_fname_list))
         self.sensors_fname_list.sort()
+

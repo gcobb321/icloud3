@@ -2,7 +2,7 @@
 
 from ..global_variables  import GlobalVariables as Gb
 from ..const             import (DOMAIN, DEVICE_TYPE_DN, )
-from ..const_config      import (CONF_UNIT_OF_MEASUREMENT, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_PARAMETER_TIME_STR,
+from ..const_config      import (CONF_UNIT_OF_MEASUREMENT, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
                                  CONF_PARAMETER_FLOAT, CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                  CONF_PASSWORD, )
 
@@ -11,13 +11,15 @@ from ..utils.utils     import (instr, is_number, is_empty, isnot_empty,
 from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                 _log, _evlog, log_stack, )
 
-from .const_form_lists   import (SECTION_SUFFIX, FORM_ACTION, FORM_ACTION_SAVES_DATA,
+from .const_form_lists   import (FORM_ACTION,
+                                FORM_ACTION_SAVES_DATA, SECTION_SUFFIX,
                                 DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
+
 from homeassistant.helpers import translation, selector
-import voluptuous as vol
-import re
-import json
 from homeassistant.data_entry_flow import section
+import json
+import re
+import voluptuous as vol
 
 VALID_ERROR_MSG = [ 'conf_updated',
                     'internet_error',
@@ -188,50 +190,6 @@ def any_errors(self):
 
 def no_errors(self):
     return not any_errors(self)
-
-#--------------------------------------------------------------------
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def menu_text_to_item(self, user_input, selection_list):
-#     '''
-#     Convert the text of the menu item selected to it's key name.
-
-#     selection_list - Field name in user_input to use:
-#         ''menu_item' 'menu_action_item'
-#     '''
-
-#     if user_input is None:
-#         return None, None
-
-#     selected_text = None
-#     if selection_list in user_input:
-#         selected_text = user_input[selection_list]
-#         selected_text_len = 35 if len(selected_text) > 35 else len(selected_text)
-
-#         # selected_text contains the 'exit_xxx key', not the displayed menu text
-#         if selected_text.startswith('exit_'):
-#             user_input['menu_items'] = selected_text
-#             return user_input, selected_text
-
-#         # selected_text contains the displayed menu text
-#         elif selected_text.startswith('EXIT'):
-#             user_input['menu_items'] = 'exit'
-#             return user_input, 'exit'
-
-#         elif selected_text.startswith('MENU'):
-#             user_input['menu_items'] = 'menu'
-#             return user_input, 'menu'
-
-#         menu_items = MENU_0_ITEMS if self.menu_page_no == 0 else MENU_1_ITEMS
-#         menu_item = [k  for k, v in menu_items.items()
-#                         if v.startswith(selected_text[:selected_text_len])][0]
-
-#         user_input.pop(selection_list)
-#     else:
-#         menu_item = self.menu_item_selected
-
-#     user_input['menu_items'] = menu_item
-
-#     return user_input, menu_item
 
 #--------------------------------------------------------------------
 def set_header_msg(self):
@@ -556,10 +514,6 @@ def _stored_parm_value(self, pname, conf_device):
         return conf_device_parms[pname]
     return Gb.conf_general.get(pname)
 
-#-------------------------------------------------------------------------------------------
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def key_text_to_text_list(key_text):
-#     return [text for text in key_text.values()]
 
 #-------------------------------------------------------------------------------------------
 def option_text_to_parm(user_input, pname, option_list_key_text):
@@ -670,19 +624,6 @@ def km_fields_from_ui(user_input, pnames):
     return user_input
 
 #-------------------------------------------------------------------------------------------
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def convert_field_str_to_numeric(user_input):
-#     '''
-#     Config_flow chokes with malformed input errors when a field is numeric. To avoid this,
-#     the field's default value is always a string. This converts it back to a float.
-#     '''
-#     for pname, pvalue in user_input.items():
-#         if pname in CONF_PARAMETER_FLOAT:
-#             user_input[pname] = float(pvalue)
-
-#     return user_input
-
-#-------------------------------------------------------------------------------------------
 def validate_numeric_field(self, user_input):
     '''
     Cycle through the user_input fields and, if numeric, validate it
@@ -702,6 +643,70 @@ def validate_numeric_field(self, user_input):
             self.errors_user_input[pname] = pvalue
 
     return user_input
+
+#-------------------------------------------------------------------------------------------
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def validate_time_str(self, user_input):
+#     '''
+#     Cycle through the each of the parameters. If it is a time string, check it's
+#     value and sec/min/hrs entry
+#     '''
+#     new_user_input = {}
+
+#     for pname, pvalue in user_input.items():
+#         if pname in CONF_PARAMETER_TIME_STR:
+#             time_parts  = (f"{pvalue} mins").split(' ')
+
+#             if time_parts[0].strip() == '':
+#                 self.errors[pname] = "required_field"
+#                 self.errors_user_input[pname] = ''
+#                 continue
+#             elif is_number(str(time_parts[0])) is False:
+#                 self.errors[pname] = "not_numeric"
+#                 self.errors_user_input[pname] = user_input[pname]
+#                 continue
+
+#             if instr(time_parts[1], 'm'):
+#                 pvalue = f"{time_parts[0]} mins"
+#             elif instr(time_parts[1], 'h'):
+#                 pvalue = f"{time_parts[0]} hrs"
+#             elif instr(time_parts[1], 's'):
+#                 pvalue = f"{time_parts[0]} secs"
+#             else:
+#                 pvalue = f"{time_parts[0]} mins"
+
+#             if not self.errors.get(pname):
+#                 try:
+#                     if float(time_parts[0]) == 1:
+#                         pvalue = pvalue.replace('s', '')
+#                     new_user_input[pname] = pvalue
+
+#                 except ValueError:
+#                     self.errors[pname] = "not_numeric"
+#                     self.errors_user_input[pname] = user_input[pname]
+
+#         else:
+#             new_user_input[pname] = pvalue
+
+#     return new_user_input
+
+#-------------------------------------------------------------------------------------------
+# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+# def parm_with_example_text(config_parameter, input_select_list_KEY_TEXT):
+#     '''
+#     The input_select_list for the parameter has an example text '(Example: exampletext)'
+#     as part of list of options display for user selection. The exampletext is not part
+#     of the configuration parameter. Dydle through the input_select_list and determine which
+#     one should be the default value.
+
+#     Return:
+#         default - The input_select item to be used for the default value
+#     '''
+#     for isli_with_example in input_select_list_KEY_TEXT:
+#         if isli_with_example.startswith(Gb.conf_general[config_parameter]):
+#             return isli_with_example
+
+#     return input_select_list_KEY_TEXT[0]
 
 #--------------------------------------------------------------------
 def submit_back_field(self, submit_action, back_action, destination, submit_destination=None,
@@ -921,84 +926,7 @@ def menu_name(self):
     menu_id = getattr(self, 'menu_id', '') or 'menu'
     return menu_id if has_tr(f"dest_{menu_id}") else 'menu'
 
-#-------------------------------------------------------------------------------------------
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def validate_time_str(self, user_input):
-#     '''
-#     Cycle through the each of the parameters. If it is a time string, check it's
-#     value and sec/min/hrs entry
-#     '''
-#     new_user_input = {}
-
-#     for pname, pvalue in user_input.items():
-#         if pname in CONF_PARAMETER_TIME_STR:
-#             time_parts  = (f"{pvalue} mins").split(' ')
-
-#             if time_parts[0].strip() == '':
-#                 self.errors[pname] = "required_field"
-#                 self.errors_user_input[pname] = ''
-#                 continue
-#             elif is_number(str(time_parts[0])) is False:
-#                 self.errors[pname] = "not_numeric"
-#                 self.errors_user_input[pname] = user_input[pname]
-#                 continue
-
-#             if instr(time_parts[1], 'm'):
-#                 pvalue = f"{time_parts[0]} mins"
-#             elif instr(time_parts[1], 'h'):
-#                 pvalue = f"{time_parts[0]} hrs"
-#             elif instr(time_parts[1], 's'):
-#                 pvalue = f"{time_parts[0]} secs"
-#             else:
-#                 pvalue = f"{time_parts[0]} mins"
-
-#             if not self.errors.get(pname):
-#                 try:
-#                     if float(time_parts[0]) == 1:
-#                         pvalue = pvalue.replace('s', '')
-#                     new_user_input[pname] = pvalue
-
-#                 except ValueError:
-#                     self.errors[pname] = "not_numeric"
-#                     self.errors_user_input[pname] = user_input[pname]
-
-#         else:
-#             new_user_input[pname] = pvalue
-
-#     return new_user_input
-
-#-------------------------------------------------------------------------------------------
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def parm_with_example_text(config_parameter, input_select_list_KEY_TEXT):
-#     '''
-#     The input_select_list for the parameter has an example text '(Example: exampletext)'
-#     as part of list of options display for user selection. The exampletext is not part
-#     of the configuration parameter. Dydle through the input_select_list and determine which
-#     one should be the default value.
-
-#     Return:
-#         default - The input_select item to be used for the default value
-#     '''
-#     for isli_with_example in input_select_list_KEY_TEXT:
-#         if isli_with_example.startswith(Gb.conf_general[config_parameter]):
-#             return isli_with_example
-
-#     return input_select_list_KEY_TEXT[0]
-
 #--------------------------------------------------------------------
-
-#--------------------------------------------------------------------
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def discard_changes(user_input):
-#     '''
-#     See if user_input 'action_item' item has a 'discard_change' option
-#     selected. Discard changes is the last item in the list.
-#     '''
-#     if user_input:
-#         return (user_input.get('action_item') == default_action_text('cancel_goto_menu'))
-#     else:
-#         return False
-
 #--------------------------------------------------------------------
 def log_step_info(self, user_input, action_item=None, subtitle=''):
 

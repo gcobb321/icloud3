@@ -1,33 +1,32 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...const               import (DEVICE_TYPES_TRACK_MONITOR, MONITOR, TRACK, INACTIVE, )
-from ...const_config        import (CONF_AADEV_NAME, CONF_APPLE_ACCT, CONF_DEVICE_TYPE, CONF_FNAME, CONF_MOBILE_APP_DEVICE, CONF_VERSION, CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, )
+from ...const               import (TRACK, MONITOR, INACTIVE, DEVICE_TYPES_TRACK_MONITOR, )
+from ...const_config        import (CONF_VERSION, CONF_APPLE_ACCT, CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE,
+                                    CONF_TRACKING_MODE, CONF_FNAME, CONF_IC3_DEVICENAME, CONF_DEVICE_TYPE, )
 
-from ...utils.utils         import (apple_user, list_to_str, list_add, list_del, isnot_empty,
-                                    dict_value_to_list, )
+from ...utils.utils         import (list_add, list_del, isnot_empty,
+                                    dict_value_to_list, apple_user, )
 from ...utils.messaging     import (_log, log_info_msg, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
 from ...startup             import config_file
 from ..                     import utils_cf
+from .                      import form_apple_acct
 from ..const_form_lists     import *
+from ...apple_acct          import apple_acct_support_cf as aascf
 
 from homeassistant.helpers  import (entity_registry as er,
                                     device_registry as dr,)
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from .                      import form_apple_acct
-from ...apple_acct          import apple_acct_support_cf as aascf
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #     GENERAL CONFIG FLOW FORMS
 #
 #       - form_config_option_user
-#       - form_menu
-#       - form_confirm_action
-#       - exit_icloud3_configure
+#       - menu_options
 #       - form_restart_ha
 #       - form_restart_ha_reload_icloud3
 #
@@ -176,36 +175,3 @@ def menu_status_line(self):
         status_items.append(_cnt_text('status_needs_attention', needs_attention_cnt))
 
     return ' · '.join(status_items)
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#             MENU
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#             EXIT ICLOUD3 CONFIGURE
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-# def form_exit_icloud3_configure_settings(self):
-#     self.actions_list = EXIT_ICLOUD3_CONFIGURE_SETTINGS.copy()
-
-#     device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
-#     if inactive_device_cnt == 0:
-#         self.actions_list['review_inactive_devices'].pop()
-#     else:
-#         inactive_devices = [conf_device[CONF_IC3_DEVICENAME]
-#                     for conf_device in Gb.conf_devices
-#                     if conf_device[CONF_TRACKING_MODE] == INACTIVE]
-
-#         # self.actions_list['review_inactive_devices'].replace(
-#         self.actions_list[0] = \
-#             self.actions_list[0].replace(
-#                     '^add-text^', list_to_str(inactive_devices))
-
-#     return vol.Schema({
-#         vol.Required('action_items',
-#                     default=utils_cf.default_action_text('exit')):
-#                     selector.SelectSelector(selector.SelectSelectorConfig(
-#                         options=self.actions_list, mode='list')),
-#         })

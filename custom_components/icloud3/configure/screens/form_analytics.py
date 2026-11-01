@@ -9,7 +9,6 @@ from ...utils.utils         import (list_to_str, list_add, list_del,
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
-from ..const_form_lists     import *
 from ...utils               import entity_reg_util as er_util
 
 from ...support             import analytics

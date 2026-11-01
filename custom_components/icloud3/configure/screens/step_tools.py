@@ -2,9 +2,9 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (PLATFORM_DEVICE_TRACKER, )
-from ...const_config        import (CONF_APPLE_ACCT, CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFAULT_GENERAL_CONF,
+from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFAULT_GENERAL_CONF,
                                     DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE,
-                                    DEFAULT_DEVICE_MOBAPP_DATA_SOURCE, DEFAULT_TRACKING_CONF, )
+                                    DEFAULT_DEVICE_MOBAPP_DATA_SOURCE, DEFAULT_TRACKING_CONF, CONF_APPLE_ACCT, )
 
 from ...utils.utils         import (is_empty, isnot_empty, list_to_str, list_del, list_add, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
@@ -21,6 +21,7 @@ from .                      import form_config_flow as forms_cf
 from ..                     import sensors_cf
 from ..                     import utils_cf
 from ..const_form_lists     import *
+
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -220,12 +221,6 @@ class OptionsFlow_Tools_Steps:
 
         Gb.conf_general = DEFAULT_GENERAL_CONF.copy()
         Gb.log_level    = Gb.conf_general[CONF_LOG_LEVEL]
-
-#------------------------------------------------------------------------------------------
-    def reset_icloud3_config_file_tracking_general(self):
-
-        self.reset_icloud3_config_file_tracking()
-        self.reset_icloud3_config_file_general()
 
 #------------------------------------------------------------------------------------------
     async def async_delete_all_apple_cookie_files(self):

@@ -34,7 +34,8 @@ from .startup                                   import config_file
 from .support                                   import analytics
 from .support                                   import marketplace as mp
 from .apple_acct                                import apple_acct_support as aas
-from .configure                                 import selection_lists as lists, utils_cf
+from .configure                                 import selection_lists as lists
+from .configure                                 import utils_cf
 from .configure.screens.step_common             import OptionsFlow_Common_Steps
 from .configure.screens.step_apple_acct         import OptionsFlow_AppleAccount_Steps
 from .configure.screens.step_reauth             import OptionsFlow_Reauth_Steps
@@ -128,7 +129,6 @@ class iCloud3ConfigRepairFlow(ConfirmRepairFlow, OptionsFlow_Common_Steps,
                                                 self, kwargs.get('description_placeholders'))
         return super().async_show_form(**kwargs)
 
-#..............................................................................
     async def async_step_confirm(self, user_input=None):
         await utils_cf.async_load_texts()
         if user_input is None:
@@ -221,6 +221,7 @@ class iCloud3DeviceRepairFlow(iCloud3ConfigRepairFlow):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 REPAIR_ACTION_UPDATE_APPLE_ACCT = 'update_apple_acct'
 REPAIR_ACTION_UPDATE_DEVICE     = 'update_device'
+# The labels are the strings.json selector.repair_action options
 APPLE_ACCT_REPAIR_ACTION_OPTIONS = [REPAIR_ACTION_UPDATE_APPLE_ACCT, REPAIR_ACTION_UPDATE_DEVICE]
 
 class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
@@ -349,6 +350,7 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# The labels are the strings.json selector.analytics_approval options
 ANALYTICS_APPROVAL_OPTIONS = ['enable', 'disable']
 
 class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):

@@ -34,24 +34,15 @@ import voluptuous as vol
 #
 #     ICLOUD3 DEVICE FORMS
 #
-#           - form_device_list
-#           - form_add_device
+#           - device_list_menu_options
+#           - change_device_order_menu_options
 #           - form_update_device
 #           - form_update_other_device_parameters
-#           - form_change_device_order
 #           - form_picture_dir_filter
 #           - form_review_inactive_devices
 #           - form_import_apple_devices
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            DEVICE LIST
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-#................................................................................................
-
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -117,7 +108,6 @@ def device_list_menu_options(self):
 
     return menu_options, placeholders
 
-
 #................................................................................................
 def devicenames_by_apple_acct(devicenames):
     '''
@@ -177,6 +167,7 @@ def _device_item_fname(device_item):
         return f"{fname} ({status})"
     return fname
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DEVICE HEADING
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -205,6 +196,7 @@ def device_heading(self):
             'device_info': device_info}
 
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           CHANGE DEVICE ORDER
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -223,7 +215,6 @@ def change_device_order_menu_options(self):
     menu_options['change_device_order_back'] = None
 
     return menu_options
-
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -253,10 +244,7 @@ def other_device_parameters_summary(self):
 
     return ' · '.join(summary_parts)
 
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            UPDATE DEVICE
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#................................................................................................
 def form_update_device(self):
     self.errors = self.errors or {}
 
@@ -502,11 +490,6 @@ def form_picture_dir_filter(self):
                         'add_device' if self.add_device_flag else 'the_device'),})
 
     return vol.Schema(schema)
-
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#           CHANGE DEVICE ORDER
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

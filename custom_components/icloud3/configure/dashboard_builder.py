@@ -1020,7 +1020,8 @@ async def _add_dashboard_to_lovelace_dashboards(self, dbname):
                                         "lovelace/dashboards",
                                         "dashboard",
                                         STORAGE_DASHBOARD_CREATE_FIELDS,
-                                        STORAGE_DASHBOARD_UPDATE_FIELDS, )
+                                        STORAGE_DASHBOARD_UPDATE_FIELDS,
+                                        )
     dashboard_collection_ws.async_setup(Gb.hass)
 
     log_debug_msg(f"Added Dashboard to Lovelace > {title}/{dbname}")

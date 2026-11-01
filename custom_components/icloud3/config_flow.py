@@ -36,6 +36,7 @@ from .configure.screens     import form_reauth          as forms_reauth
 from .configure             import utils_cf
 from .configure             import dashboard_builder as dbb
 from .configure             import selection_lists as lists
+from .apple_acct            import apple_acct_support_cf as aascf
 
 from .configure.const_form_lists      import *
 from .configure.screens.step_common           import OptionsFlow_Common_Steps
@@ -60,7 +61,6 @@ from homeassistant.core             import callback, HomeAssistant
 
 import homeassistant.util.dt as dt_util
 import voluptuous as vol
-from .apple_acct            import apple_acct_support_cf as aascf
 
 CONFIG_UPDATE_COMPLETE_MSG = 'iCloud3 Configuration Update Complete'
 
@@ -106,16 +106,16 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         # iCloud3 Configure window, that one is created by async_get_options_flow.
         self.OptFlow = iCloud3_OptionsFlowHandler()
 
+
+    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
+    # def form_msg(self):
+    #     return f"Form-{self.step_id}, Errors-{self.errors}"
+
     @callback
     def async_show_form(self, **kwargs):
         kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
                                                 self, kwargs.get('description_placeholders'))
         return super().async_show_form(**kwargs)
-
-
-    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-    # def form_msg(self):
-    #     return f"Form-{self.step_id}, Errors-{self.errors}"
 
 #----------------------------------------------------------------------
     @staticmethod
@@ -311,7 +311,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 #   TOOLS CONFIG FLOW (cfs_tools)
 #        - async_step_tools
 #        - async_step_tools_entity_registry_cleanup
-#        - async_step_exit_icloud3_configure
 #
 #   PARAMETERSFLOW STEPS (cfs_parameters)
 #       - async_step_away_time_zone
@@ -489,8 +488,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            MENU
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-#...............................................................................
     async def async_step_menu(self, user_input=None, errors=None):
         '''
         Display the menu the configure screen was opened from. The step_... screens
@@ -640,8 +637,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
         return await self.async_step_menu()
 
-#-------------------------------------------------------------------------------------------
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            EXIT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -698,8 +693,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
         self.apply_config_updates_on_last_close()
 
         utils_cf.log_step_info(self, '', 'end')
-
-#-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):

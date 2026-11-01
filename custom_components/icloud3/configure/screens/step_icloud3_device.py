@@ -7,8 +7,7 @@ from ...const               import (DOMAIN,
                                     MOBAPP, NO_MOBAPP,
                                     TRACK, MONITOR, INACTIVE, OTHER,
                                     DEVICE_TRACKER, )
-from ...const_config        import (CONF_APPLE_ACCT,
-                                    CONF_DATA_SOURCE, CONF_TRACK_FROM_ZONES,
+from ...const_config        import (CONF_APPLE_ACCT, CONF_DATA_SOURCE, CONF_TRACK_FROM_ZONES,
                                     CONF_TRACK_FROM_BASE_ZONE, CONF_LOG_ZONES, CONF_PICTURE,
                                     CONF_DEVICE_TYPE, CONF_INZONE_INTERVALS, CONF_RAW_MODEL,
                                     CONF_MODEL, CONF_MODEL_DISPLAY_NAME, CONF_AADEV_DEVICE_ID,
@@ -1215,16 +1214,6 @@ class OptionsFlow_iCloud3Device_Steps:
         self.saved_item = 'tracking_modes'
         list_add(self.config_parms_update_control, 'restart')
         self.update_config_file_tracking(force_config_update=True)
-
-#-------------------------------------------------------------------------------------------
-    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-    # def _check_inactive_devices(self):
-
-    #     inactive_list = [conf_device[CONF_IC3_DEVICENAME]
-    #                         for conf_device in Gb.conf_devices
-    #                         if conf_device[CONF_TRACKING_MODE] == INACTIVE]
-
-    #     return inactive_list != [] or self.inactive_devices_key_text.get('keep_inactive', False)
 
 #-------------------------------------------------------------------------------------------
     def set_inactive_devices_header_msg(self):

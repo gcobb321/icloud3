@@ -26,19 +26,13 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           ICLOUD3 APPLE ACCOUNT CONFIG FLOW FORMS
 #
-#           - form_apple_accounts
+#           - apple_accounts_menu_options
+#           - apple_acct_heading
 #           - form_update_apple_acct
 #           - form_delete_apple_acct
 #           - form_other_apple_acct_parameters
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#              APPLE ACCOUNTS LIST
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-#................................................................................................
-
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #              APPLE ACCOUNTS LIST
@@ -95,6 +89,7 @@ def _split_list_item(list_item):
     name, _, info = list_item.partition(RARROW)
     return name.strip(), info.strip()
 
+
 #................................................................................................
 def apple_acct_status(apple_id, with_device_cnt=True):
     '''
@@ -122,7 +117,6 @@ def apple_acct_status(apple_id, with_device_cnt=True):
         return f"{utils_cf.tr('aa_status_logged_in')}{_dot(devices_tracked)}"
 
     return utils_cf.tr('aa_status_not_logged_in')
-
 
 def _dot(text):
     return f" · {text}" if text else ''
@@ -181,6 +175,7 @@ def _apple_acct_info(apple_id, import_hint=True):
 
     return acct_info
 
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            OTHER APPLE PARAMETERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -232,10 +227,7 @@ def reauth_action_label_key(self):
         return 'action_auth_options_sign_in_first'
     return 'action_auth_options'
 
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#            APPLE USERNAME PASSWORD
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#................................................................................................
 def form_update_apple_acct(self):
     lists.build_apple_accounts_list(self)
 

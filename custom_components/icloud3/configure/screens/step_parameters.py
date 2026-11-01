@@ -2,12 +2,14 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (MONITOR, INACTIVE, )
-from ...const_config        import (CONF_TFZ_TRACKING_MAX_DISTANCE, CONF_WAZE_HISTORY_MAX_DISTANCE, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE, CONF_DISPLAY_TEXT_AS,
+from ...const_config        import (CONF_DISPLAY_TEXT_AS,
                                     CONF_IC3_DEVICENAME, CONF_FNAME, CONF_DATA_SOURCE,
                                     CONF_TRACKING_MODE, CONF_AWAY_TIME_ZONE_1_OFFSET,
                                     CONF_AWAY_TIME_ZONE_1_DEVICES, CONF_AWAY_TIME_ZONE_2_OFFSET,
                                     CONF_AWAY_TIME_ZONE_2_DEVICES, CONF_EVLOG_BTNCONFIG_URL,
                                     CONF_TRACK_FROM_BASE_ZONE_USED, CONF_TRACK_FROM_BASE_ZONE,
+                                    CONF_TFZ_TRACKING_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE,
+                                    CONF_WAZE_MAX_DISTANCE, CONF_WAZE_HISTORY_MAX_DISTANCE,
                                     CONF_TRACK_FROM_HOME_ZONE, CONF_INZONE_INTERVALS,
                                     CONF_UNIT_OF_MEASUREMENT, CONF_TIME_FORMAT,
                                     CONF_TRAVEL_TIME_FACTOR, CONF_PASSTHRU_ZONE_TIME,

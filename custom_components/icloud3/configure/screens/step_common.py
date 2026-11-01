@@ -5,7 +5,7 @@ from ...const_config        import (CONF_APPLE_ACCT, CONF_PASSWORD, CONF_VERSION
                                     CONF_APPLE_ACCOUNTS, CONF_DEVICES, CONF_PARAMETER_FLOAT,
                                     CF_GENERAL, )
 from ...utils.utils         import (isnot_empty, list_add, encode_password, decode_password, )
-from ...utils.messaging     import (post_event, _log, )
+from ...utils.messaging     import (post_event, )
 
 from ...startup             import config_file
 from ...startup             import start_ic3

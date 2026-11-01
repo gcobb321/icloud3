@@ -19,7 +19,7 @@ from .                      import form_reauth as forms
 from .                      import form_config_flow as forms_cf
 from ..                     import utils_cf
 from ..                     import selection_lists as lists
-from ..const_form_lists     import (FORM_ACTION)
+from ..const_form_lists     import (FORM_ACTION, )
 
 # The actions that leave the authentication screen (form_reauth.reauth_back_action)
 REAUTH_BACK_ACTIONS = ['exit_ha_reconfigure_reauth', 'config_flow_reauth', 'rtn_apple_accounts',
@@ -652,21 +652,6 @@ class OptionsFlow_Reauth_Steps:
                 evlog_msg   = f"Invalid Authentication Code"
 
         return display_msg, evlog_msg
-
-#------------------------------------------------------------------------------
-    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-    # async def _exit_reauth_screen_handler(self):
-    #     '''Go to the next screen or back to the menu'''
-
-    #     match self.menu_item:
-    #         case 'reauth':
-    #             return await self.async_step_menu()
-    #         case 'rtn_apple_accounts':
-    #             return await self.async_step_apple_accounts()
-    #         case 'config_flow_reauth' | 'exit_ha_reconfigure_reauth':
-    #             return self.ha_reconfigure_reauth_exit()
-
-    #     return await self.async_step_menu()
 
 #--------------------------------------------------------------------
     def get_AppleAcct_reauth_needed(self, reauth_apple_id=None):

@@ -16,7 +16,6 @@ from ...apple_acct          import apple_acct_support_cf as aascf
 from homeassistant.helpers  import selector
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.helpers.selector import (TextSelector, TextSelectorConfig,)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -243,7 +242,6 @@ def form_reauth_change_auth_method(self):
                     'goto_previous':       _back_to_reauth_label(self)},
                     'save'),
         })
-                        # options=dict_value_to_list(self.apple_acct_auth_items_by_apple_id),
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

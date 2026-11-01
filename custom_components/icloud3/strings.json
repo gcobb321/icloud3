@@ -289,7 +289,7 @@
 
       "action_completed": "✓ Done",
       "action_cancelled": "Cancelled, nothing was changed",
-      "restart_ha":"Home Assistant needs to be restarted to continue",
+      "restart_ha": "Home Assistant needs to be restarted to continue",
       "excluded_sensors_ha_restart": "✓ Saved. The excluded sensors are not created after the next HA restart",
 
       "fix_entity_name_complete": "The sensor entity names were corrected",
@@ -442,26 +442,6 @@
           "open_analytics_reports": "Reports from the iCloud3 Analytics database"
         }
       },
-
-
-      "xrestart_ha": {
-        "title": "Restart Home Assistant",
-        "description": "Restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING"
-      },
-
-
-      "xrestart_ha_ic3_load_error": {
-        "title": "iCloud3 Load Error",
-        "description": "iCloud3 did not load and initialize when HA started. Reload iCloud3 again or restart HA"
-      },
-
-
-      "xrestart_ha_reload_icloud3": {
-        "title": "Reload iCloud3, Restart Home Assistant",
-        "description": "Reload and reinitialize the iCloud3 Integration or restart Home Assistant\n\nTHE ICLOUD3 DASHBOARD SCREEN MUST BE REFRESHED AFTER RESTARTING"
-      },
-
-
       "confirm_action": {
         "title": "Confirm",
         "description": "{action_desc}",
@@ -470,8 +450,6 @@
           "confirm_action_yes": "✓ Yes, continue"
         }
       },
-
-
       "apple_accounts": {
         "title": "Apple Accounts",
         "description": "Apple Accounts provide the location data of the devices. Select an account to change or delete it.\n\n{header_msg}",
@@ -607,8 +585,6 @@
           "auth_code": "The code shown on your Apple device after signing in to apple.com"
         }
       },
-
-
       "device_list": {
         "title": "Devices",
         "description": "Select a device to change or delete it.\n\n{header_msg}",
@@ -897,8 +873,6 @@
           }
         }
       },
-
-
       "tools": {
         "title": "iCloud3 system › Tools",
         "description": "Change the log level, turn beta versions on or off, clean up the HA entity registry, restart iCloud3 or reset parts of the configuration.\n\n{header_msg}",
@@ -1261,8 +1235,7 @@
         "data": {
           "form_action": "Action"
         },
-        "data_description": {
-        },
+        "data_description": {},
         "sections": {
           "phones_watches_section": {
             "name": "Phones & watches",

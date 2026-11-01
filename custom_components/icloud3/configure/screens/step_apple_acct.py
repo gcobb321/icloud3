@@ -7,8 +7,8 @@ from ...const_config        import (PUSH, TEXT, TEXT_1, TEXT_2, HWKEY, CONF_APPL
                                     CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                     CONF_TRACKING_MODE, DEFAULT_APPLE_ACCOUNT_CONF,
                                     DEFAULT_DEVICE_CONF, )
-from ...utils.utils         import (apple_user, instr, is_empty, isnot_empty, list_add,
-                                    encode_password, decode_password, )
+from ...utils.utils         import (instr, is_empty, isnot_empty, list_add,
+                                    encode_password, decode_password, apple_user, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,
                                     add_log_file_filter,)
@@ -37,7 +37,6 @@ APPLE_REJECTED_UPW_CODES = [401, 403]
 #           ICLOUD3 APPLE ACCOUNT CONFIG FLOW STEPS
 #
 #           - async_step_apple_accounts
-#           - ACTION_LIST_OPTIONS['apple_accounts'],
 #           - async_step_delete_apple_acct
 #           - async_step_other_apple_acct_parameters
 #
@@ -995,14 +994,3 @@ def _open_apple_accounts_acct_step(slot):
 for _slot in range(APPLE_ACCT_LIST_PAGE_SIZE):
     setattr(OptionsFlow_AppleAccount_Steps, f"async_step_apple_accounts_acct_{_slot}",
             _open_apple_accounts_acct_step(_slot))
-
-#--------------------------------------------------------------------
-    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-    # def _unpack_ui_import_apple_devices(self, user_input):
-    #     if user_input is None: return None
-
-    #     user_input = utils_cf.option_text_to_parm(user_input,
-    #                                                 'account_selected',
-    #                                                 self.apple_acct_items_by_apple_id)
-
-    #     return user_input
