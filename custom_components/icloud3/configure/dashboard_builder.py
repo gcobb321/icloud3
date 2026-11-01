@@ -116,10 +116,10 @@ async def create_dashboard(self):
     try:
         await _add_dashboard_to_lovelace_dashboards(self, dbname)
 
-        await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_json)
-        await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_json)
+        write_ok  = await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_json)
+        update_ok = await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_json)
 
-        self.errors['base'] = 'dashboard_created'
+        self.errors['base'] = 'dashboard_created' if write_ok and update_ok else 'dashboard_error'
         log_debug_msg(f"Created Dashboard-{self.dbname}, Devices-{self.ui_main_view_dnames}")
 
     except Exception as err:
@@ -138,10 +138,10 @@ async def update_dashboard(self):
         updated_db_layout_dict = await _prepare_selected_from_master_dashboard(self,
                                                     dbname, current_db_layout_dict)
 
-        await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_dict)
-        await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_dict)
+        write_ok  = await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_dict)
+        update_ok = await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_dict)
 
-        self.errors['base'] = 'dashboard_updated'
+        self.errors['base'] = 'dashboard_updated' if write_ok and update_ok else 'dashboard_error'
         log_debug_msg(f"Updated Dashboard-{self.dbname}, Devices-{self.ui_main_view_dnames}")
 
     except Exception as err:
@@ -603,6 +603,8 @@ async def _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict
 
     - Update the dashboard layout
     - Add the dashboard to the HA panel if creating a new dashboard
+
+    Return True when the dashboard was updated
     '''
 
     # If dashboard_dict is actual a json_str, convert it to a dict
@@ -611,7 +613,7 @@ async def _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict
             dashboard_dict = file_io.json_str_to_dict(dashboard_dict)
 
         if dashboard_dict == {} or dashboard_dict is None:
-            return
+            return False
 
         Dashboard       = self.ic3db_Dashboards_by_dbname[dbname]
         dashboard_data  = dashboard_dict[DATA][CONFIG]
@@ -621,12 +623,10 @@ async def _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict
 
         Dashboard._config_updated()
 
-        self.errors['base'] = 'dashboard_updated'
-
     except Exception as err:
         log_exception(err)
-        return
-    return
+        return False
+    return True
 
 #............................................................................................
 def _replace_json_text_items(self, dashboard_str):
@@ -923,17 +923,18 @@ async def _write_lovelace_dashboard_layout_file(self, dbname, dashboard_dict_or_
 
     When adding a new Dashboard, dashboard_json will start with '{"view":'
     When updating a Dashboard, dashboard_json will start with '{"config":'
+
+    Return True when the file was written
     '''
     if type(dashboard_dict_or_json_str) is dict:
         dashboard_dict_or_json_str = file_io.dict_to_json_str(dashboard_dict_or_json_str)
         if dashboard_dict_or_json_str == '':
-            self.errors['base'] = 'dashboard_error'
-            return
+            return False
 
     filename = f"{Gb.ha_storage_directory}/lovelace.{dbname.replace('-', '_')}"
-    await file_io.async_write_file(filename, dashboard_dict_or_json_str)
-
     log_debug_msg(f"Updating {filename}")
+
+    return await file_io.async_write_file(filename, dashboard_dict_or_json_str) is True
 
 
 #-------------------------------------------------------------------------------------------
