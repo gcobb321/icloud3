@@ -4,8 +4,7 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (NOT_HOME_ZONES, EVLOG_NOTICE, EVLOG_ALERT, EVLOG_ERROR,
                                 IPHONE_DN, IPHONE, IPAD, WATCH, MAC, AIRPODS, ICLOUD, OTHER, HOME, FAMSHR, AUTH_CODE,
                                 DEVICE_TYPES, DEVICE_TYPE_DN, DEVICE_TYPE_DNS, DEVICE_TRACKER_DOT,
-                                TRACK, MONITOR, INACTIVE, TRACKING_MODE_DN, TRACKING_MODES,
-                                TRACKING_MODE_DN, )
+                                TRACK, MONITOR, INACTIVE, TRACKING_MODES, )
 from ..const_config     import (CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCT, CONF_AUTH_METHODS,
                                 CURRENT, PUSH, TEXT, TEXT_1, TEXT_2, HWKEY, CONF_APPLE_ACCT,
                                 CONF_PASSWORD, CONF_DEVICES, CONF_SETUP_ICLOUD_SESSION_EARLY,
@@ -17,7 +16,7 @@ from ..const_config     import (CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCT, CONF_AUTH_
                                 CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_MODEL_DISPLAY_NAME,
                                 CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL, )
 from ..const_char       import (RARROW, CRLF_DOT, DOT, HDOT, CIRCLE_STAR, RED_X,
-                                GREEN_ALERT, RED_ALERT, YELLOW_WARNING, AASEP, )
+                                GREEN_ALERT, YELLOW_WARNING, AASEP, )
 
 from ..utils.time_util  import (secs_since, time_now, )
 from ..utils.utils      import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
@@ -28,8 +27,7 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_
                                 _log, _evlog, )
 
 from ..apple_acct       import apple_acct_support_cf as aascf
-from .const_form_lists  import (CF_ALERT, PICTURE_DIR_FILTER, NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, AWAY_FROM_ZONE_OPTIONS,
-                                PICTURE_NONE_KEY_TEXT,)
+from .const_form_lists  import (CF_ALERT, PICTURE_DIR_FILTER, )
 from ..startup          import config_file
 from ..utils            import file_io
 from .                  import utils_cf
@@ -45,9 +43,8 @@ def initialize_lists(self):
     self.icloud_list_text_by_fname2     = {}
 
     # mobile_app device_tracker info used in devices form for mobapp selection
-    self.mobapp_list_text_by_entity_id  = MOBAPP_DEVICE_NONE_OPTIONS.copy()
+    self.mobapp_list_text_by_entity_id  = {}
     self.picture_by_filename            = {}
-    self.picture_by_filename_base       = PICTURE_NONE_KEY_TEXT.copy()
     self.zone_name_key_text             = {}
     self.www_directory_list             = []         # www directories for the picture directory filter
 
@@ -113,17 +110,17 @@ def _build_aa_text_line(self, AppleAcct, apple_id):
 
     aa_text = ''
     if AppleAcct.is_reauth_needed:
-        aa_text += f"{RED_ALERT}AUTH NEEDED, "
+        aa_text += f"{CF_ALERT}{utils_cf.tr('auth_needed')} · "
     elif AppleAcct.terms_of_use_update_needed:
-        aa_text += f"{RED_ALERT}TERMS-OF-USE APPROVAL NEEDED, "
+        aa_text += f"{CF_ALERT}{utils_cf.tr('auth_terms_of_use_needed')} · "
     elif AppleAcct.auth_failed_503:
-        aa_text += f"{RED_ALERT}APPLE REFUSED RQST-503, "
+        aa_text += f"{CF_ALERT}{utils_cf.tr('aa_status_503')} · "
     elif (tracked_cnt+untracked_cnt) == 0:
-        aa_text += f"{RED_ALERT}LOGIN FAILED ({upw_code}), "
+        aa_text += f"{CF_ALERT}{utils_cf.tr('aa_status_login_failed_code', code=upw_code)} · "
 
-    aa_text += (f"{tracked_cnt} of "
-                f"{tracked_cnt+untracked_cnt} Devices Tracked "
-                f"({tracked_devices})")
+    aa_text += devices_tracked_text(tracked_cnt, tracked_cnt+untracked_cnt)
+    if tracked_devices:
+        aa_text += f" ({tracked_devices})"
     return aa_text
 
 def devices_tracked_text(tracked_cnt, device_cnt):
@@ -484,7 +481,6 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
             selected_device_apple_acct = conf_device[CONF_APPLE_ACCT]
             selected_device_aadev_name  = conf_device[CONF_AADEV_NAME]
 
-    longest_line_len = 60
     aa_idx = 0
     for conf_apple_account in Gb.conf_apple_accounts:
         apple_id = conf_apple_account[CONF_APPLE_ACCT]
@@ -502,22 +498,18 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
                 get_icloud_devices_list_avail_used_this(
                         aa_idx, AppleAcct, AppleAcct.account_owner, selected_devicename)
 
-        if longest_aa_line_len > 75: longest_line_len = 60
 
         # Available devices
         devices_cnt  = len(devices_used) + len(devices_available) + len(this_device)
         assigned_cnt = len(devices_used) + len(this_device)
 
         #🍏 ⛔ 🍎
-        available_line = (f"{'…'*6} {AppleAcct.account_owner} "
-                                    f"({AppleAcct.apple_user}), "
-                                    f"{assigned_cnt} of {devices_cnt} Assigned)")
-        end_dots_len = longest_line_len-len(available_line)+10
-        apple_id_hdr_available = {  f"{aa_idx_dots}hdr":
-                                    f"{available_line.upper()}{'…'*end_dots_len}"}
+        apple_id_hdr_available = {f"{aa_idx_dots}hdr": _list_hdr('aadev_list_acct_hdr',
+                                    owner=AppleAcct.account_owner, user=AppleAcct.apple_user,
+                                    assigned=assigned_cnt, total=devices_cnt)}
 
         if devices_available == {}:
-            devices_available ={f".nodev": " ⊘ All Apple account devices are assigned"}
+            devices_available ={f".nodev": f" ⊘ {utils_cf.tr('aadev_list_all_assigned')}"}
 
         all_devices_available.update(apple_id_hdr_available)
         all_devices_available.update(devices_available)
@@ -528,22 +520,19 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
     # This device item line
     if isnot_empty(all_devices_this_device):
         self.icloud_list_text_by_fname2.update(all_devices_this_device)
-        self.icloud_list_text_by_fname2.update({'.dashes': f"{'…'*(longest_line_len+3)}"})
 
-    self.icloud_list_text_by_fname2.update(NONE_FAMSHR_DICT_KEY_TEXT)
+    self.icloud_list_text_by_fname2.update({'None': utils_cf.tr('aadev_none')})
 
     if isnot_empty(all_devices_available):
         self.icloud_list_text_by_fname2.update(all_devices_available)
 
     if 1==1 or isnot_empty(all_devices_used):
-        self.icloud_list_text_by_fname2.update({".assigned":
-                        f"{'…'*6} ALREADY ASSIGNED {'…'*(longest_line_len-19)}"})
+        self.icloud_list_text_by_fname2.update({".assigned": _list_hdr('aadev_list_assigned_hdr')})
 
         self.icloud_list_text_by_fname2.update(dict_sort_values(all_devices_used))
 
     if isnot_empty(all_devices_not_available):
-        self.icloud_list_text_by_fname2.update({".notavail":
-                        f"{'…'*6} NOT AVAILABLE {'…'*(longest_line_len-15)}"})
+        self.icloud_list_text_by_fname2.update({".notavail": _list_hdr('aadev_list_not_available_hdr')})
 
         self.icloud_list_text_by_fname2.update(dict_sort_values(all_devices_not_available))
 
@@ -854,29 +843,27 @@ def build_away_time_zone_hours_list(self):
             elif ap_hh >= 13: ap_hh -= 12; ap = 'a'
 
         if Gb.time_format_12_hour:
-            time_str = f"{ap_hh:}{time_hhmmss[2:]}{ap}"
+            time_str = f"{ap_hh:}{time_hhmmss[2:5]}{ap}"
         else:
-            time_str = f"{away_hh:02}{time_hhmmss[2:]}"
+            time_str = f"{away_hh:02}{time_hhmmss[2:5]}"
 
         if away_hh == ha_time:
-            time_str = f"Home Time Zone"
-        elif hh < ha_time:
-            time_str += f" (-{abs(hh-ha_time):} hours)"
+            time_str = utils_cf.tr('away_time_zone_home')
         else:
-            time_str += f" (+{abs(ha_time-hh):} hours)"
+            time_str = utils_cf.tr('away_time_zone_hours', time=time_str, hours=f"{hh-ha_time:+}")
         self.away_time_zone_hours_key_text[hh-ha_time] = time_str
 
 #-------------------------------------------------------------------------------------------
 def build_away_time_zone_devices_list(self):
 
-    self.away_time_zone_devices_key_text = AWAY_FROM_ZONE_OPTIONS.copy()
+    self.away_time_zone_devices_key_text = {'none': utils_cf.tr('away_time_zone_not_used'),
+                                            'all':  utils_cf.tr('away_time_zone_all_devices')}
     self.away_time_zone_devices_key_text.update(devices_selection_list())
 
 #-------------------------------------------------------------------------------------------
 def build_log_level_devices_list(self):
 
-    self.log_level_devices_key_text = {
-            'all': 'All Devices - Log RawData for all devices'}
+    self.log_level_devices_key_text = {'all': utils_cf.tr('log_level_all_devices')}
     self.log_level_devices_key_text.update(devices_selection_list())
 
 #-------------------------------------------------------------------------------------------
@@ -888,10 +875,12 @@ def _list_hdr(key, **placeholders):
 
 #-------------------------------------------------------------------------------------------
 def devices_selection_list():
+    status_key = {TRACK: 'dev_status_tracked', MONITOR: 'dev_status_monitored',
+                    INACTIVE: 'dev_status_inactive'}
     return {conf_device[CONF_IC3_DEVICENAME]: (
                     f"{conf_device[CONF_FNAME]} "
                     f"({DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}), "
-                    f"{TRACKING_MODE_DN[conf_device[CONF_TRACKING_MODE]]}")
+                    f"{utils_cf.tr(status_key.get(conf_device[CONF_TRACKING_MODE], 'dev_status_tracked'))}")
                 for conf_device in Gb.conf_devices
                 if conf_device[CONF_IC3_DEVICENAME] in Gb.Devices_by_devicename}
 

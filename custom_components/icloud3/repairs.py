@@ -221,12 +221,7 @@ class iCloud3DeviceRepairFlow(iCloud3ConfigRepairFlow):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 REPAIR_ACTION_UPDATE_APPLE_ACCT = 'update_apple_acct'
 REPAIR_ACTION_UPDATE_DEVICE     = 'update_device'
-APPLE_ACCT_REPAIR_ACTION_OPTIONS = {
-        REPAIR_ACTION_UPDATE_APPLE_ACCT:
-                'UPDATE APPLE ACCOUNT > Add/Update this Apple Account',
-        REPAIR_ACTION_UPDATE_DEVICE:
-                'UPDATE ICLOUD3 DEVICE > Display the Update iCloud3 Device screen to '
-                'select the correct Apple Account'}
+APPLE_ACCT_REPAIR_ACTION_OPTIONS = [REPAIR_ACTION_UPDATE_APPLE_ACCT, REPAIR_ACTION_UPDATE_DEVICE]
 
 class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
     '''
@@ -263,7 +258,7 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
         await utils_cf.async_load_texts()
         if user_input is None:
             repair_action_options = self._repair_action_options()
-            self.repair_action    = next(iter(repair_action_options))
+            self.repair_action    = repair_action_options[0]
 
             # Only one action, Submit does it without a selection
             if len(repair_action_options) == 1:
@@ -273,7 +268,9 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
                                         data_schema=vol.Schema({
                                             vol.Required('repair_action',
                                                     default=self.repair_action):
-                                                    vol.In(repair_action_options)}),
+                                                    utils_cf.select(repair_action_options,
+                                                            translation_key='repair_action',
+                                                            mode='list')}),
                                         description_placeholders=self._issue_placeholders())
 
         self.repair_action = user_input.get('repair_action', self.repair_action)
@@ -289,12 +286,10 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
         if (is_empty(Gb.conf_apple_ids)
                 or not any(Device.isnot_inactive
                                 for Device in Gb.Devices_by_apple_id.get(apple_id, []))):
-            return {REPAIR_ACTION_UPDATE_APPLE_ACCT:
-                        APPLE_ACCT_REPAIR_ACTION_OPTIONS[REPAIR_ACTION_UPDATE_APPLE_ACCT]}
+            return [REPAIR_ACTION_UPDATE_APPLE_ACCT]
 
         if (self.data or {}).get('apple_acct_status') == 'not_found':
-            return {REPAIR_ACTION_UPDATE_DEVICE:
-                        APPLE_ACCT_REPAIR_ACTION_OPTIONS[REPAIR_ACTION_UPDATE_DEVICE]}
+            return [REPAIR_ACTION_UPDATE_DEVICE]
 
         return APPLE_ACCT_REPAIR_ACTION_OPTIONS
 
@@ -354,9 +349,7 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-ANALYTICS_APPROVAL_OPTIONS = {
-        'enable':  'ENABLE > Send the iCloud3 Analytics data',
-        'disable': 'DISABLE > Do not send the iCloud3 Analytics data'}
+ANALYTICS_APPROVAL_OPTIONS = ['enable', 'disable']
 
 class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):
     '''
@@ -372,16 +365,18 @@ class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):
         await utils_cf.async_load_texts()
         if user_input is None:
             json_payload = await analytics.async_build_json_payload()
-            json_payload['uuid'] = 'HA Installation ID'
+            json_payload['uuid'] = utils_cf.tr('analytics_uuid')
             await analytics.async_get_version_downloads()
 
             return self.async_show_form(step_id='confirm',
                                         data_schema=vol.Schema({
                                             vol.Required('analytics_approval'):
-                                                    vol.In(ANALYTICS_APPROVAL_OPTIONS)}),
+                                                    utils_cf.select(ANALYTICS_APPROVAL_OPTIONS,
+                                                            translation_key='analytics_approval',
+                                                            mode='list')}),
                                         description_placeholders={
-                                                'json_payload': str(json_payload),
-                                                'downloads': analytics.format_version_downloads_msg()})
+                                                'json_payload': utils_cf.json_code_block(json_payload),
+                                                'downloads': utils_cf.version_downloads_msg()})
 
         analytics_enabled = user_input.get('analytics_approval') == 'enable'
         await self._async_update_analytics_enabled(analytics_enabled)

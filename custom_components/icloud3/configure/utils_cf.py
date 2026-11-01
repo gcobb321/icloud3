@@ -12,7 +12,7 @@ from ..utils.messaging import (log_exception, log_debug_msg, log_info_msg, add_l
                                 _log, _evlog, log_stack, )
 
 from .const_form_lists   import (SECTION_SUFFIX, FORM_ACTION, FORM_ACTION_SAVES_DATA,
-                                UNKNOWN_DEVICE_TEXT, DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
+                                DATA_ENTRY_ALERT, DATA_ENTRY_ALERT_CHAR, )
 from homeassistant.helpers import translation, selector
 import voluptuous as vol
 import re
@@ -575,13 +575,6 @@ def option_text_to_parm(user_input, pname, option_list_key_text):
         return user_input
 
     pvalue_text = user_input[pname]
-
-    try:
-        # Handle special text added to the end of the key_list
-        pvalue_text = pvalue_text.replace(UNKNOWN_DEVICE_TEXT, '')
-    except:
-        pass
-
     pvalue_key = [k for  k, v in option_list_key_text.items() if v == pvalue_text]
     pvalue_key = pvalue_key[0] if pvalue_key else pvalue_text
 
