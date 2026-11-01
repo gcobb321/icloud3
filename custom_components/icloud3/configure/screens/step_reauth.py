@@ -50,6 +50,11 @@ class OptionsFlow_Reauth_Steps:
         AppleAcct = None
 
         if len(Gb.conf_apple_accounts) == 0:
+            # The HA reauth dialog has no Menu. It can still be open after the last
+            # Apple Account was deleted.
+            if self.menu_item == 'config_flow_reauth':
+                return self.async_abort(reason='reauth_apple_acct_unused')
+
             self.header_msg = 'apple_acct_not_set_up'
             return await self.async_step_menu()
 

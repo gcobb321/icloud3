@@ -97,6 +97,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         self.conf_apple_acct                = {}
         self.aa_idx                         = 0
         self.is_reauth_needed            = False
+        self.config_parms_update_control    = []     # Accepting the Terms of Use adds 'restart'
 
         lists.initialize_lists(self)
         self.initialize_reauth_variables()

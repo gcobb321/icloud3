@@ -49,6 +49,8 @@
       "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
       "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
+      "apple_acct_inupw_valid": "❌ Invalid Username or Password",
+      "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
       "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Apple Acct screen)",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
@@ -115,6 +117,21 @@
             "auth_code": "AUTHENTICATION CODE - Authentication Code just received by logging into your Apple Account",
           "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
           }
+      },
+
+
+      "user_auth_dashboard": {
+        "title": "Build User Authentication Dashboard Card",
+        "description": "Create the text/button entity raw_yaml code for authenticating Apple Account signin from an HA Dashboard",
+        "data": {
+          "include_acct": "INCLUDE - Build raw_yaml code for these Apple Accounts",
+          "display_mode": "DISPLAY MODE - How the raw_yaml code should displayed on the Dashboard",
+          "raw_yaml_code": " Copy the code below and paste it into a Dashboard Card raw_yaml edit field",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        },
+        "data_description": {
+          "raw_yaml_code": "• COPY - Click the raw_yaml code above, press Ctrl+A/⌘+A (select), then Ctrl+C/⌘+C (copy)\n• DASHBOARD - Go to the Dashboard, select *Edit Dashboard > +Add Card*. Select *Manual* at the bottom of the card list\n• MANUAL CARD - Select all of the text already in the Manual card (probably *type: ' '* ) on the left\n• PASTE - Press Ctrl+V/⌘+V (paste) to replace it with this code, then *Save*, then *Done*"
+        }
       },
 
 
@@ -205,6 +222,7 @@
       "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
       "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
       "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
+      "text_or_hwkey_none": "❌ No Trusted Phone Numbers or Security Keys were found in the Apple Account",
       "hwkey_names_none": "❌ No Security Keys were found in the Apple Account",
       "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
       "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
@@ -1190,6 +1208,19 @@
               "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
             }
           },
+          "user_auth_dashboard": {
+            "title": "Build User Authentication Dashboard Card",
+            "description": "Create the text/button entity raw_yaml code for authenticating Apple Account signin from an HA Dashboard",
+            "data": {
+              "include_acct": "INCLUDE - Build raw_yaml code for these Apple Accounts",
+              "display_mode": "DISPLAY MODE - How the raw_yaml code should displayed on the Dashboard",
+              "raw_yaml_code": " Copy the code below and paste it into a Dashboard Card raw_yaml edit field",
+              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+            },
+            "data_description": {
+              "raw_yaml_code": "• COPY - Click the raw_yaml code above, press Ctrl+A/⌘+A (select), then Ctrl+C/⌘+C (copy)\n• DASHBOARD - Go to the Dashboard, select *Edit Dashboard > +Add Card*. Select *Manual* at the bottom of the card list\n• MANUAL CARD - Select all of the text already in the Manual card (probably *type: ' '* ) on the left\n• PASTE - Press Ctrl+V/⌘+V (paste) to replace it with this code, then *Save*, then *Done*"
+            }
+          },
 
           "update_device": {
             "title": "Update iCloud3 Device",
@@ -1280,9 +1311,11 @@
           "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
           "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
           "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
+          "auth_code_invalid_text": "❌ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
           "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
           "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
+          "text_or_hwkey_none": "❌ No Trusted Phone Numbers or Security Keys were found in the Apple Account",
           "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
           "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
           "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
