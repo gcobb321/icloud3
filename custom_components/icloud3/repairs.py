@@ -18,7 +18,7 @@ messaging.post_repair_issue when Submit is selected in Settings > Repairs.
 import voluptuous as vol
 
 from homeassistant.components.repairs import ConfirmRepairFlow, RepairsFlow
-from homeassistant.core               import HomeAssistant
+from homeassistant.core               import HomeAssistant, callback
 from homeassistant.helpers            import issue_registry as ir
 
 from .global_variables  import GlobalVariables as Gb
@@ -34,7 +34,7 @@ from .startup                                   import config_file
 from .support                                   import analytics
 from .support                                   import marketplace as mp
 from .apple_acct                                import apple_acct_support as aas
-from .configure                                 import selection_lists as lists
+from .configure                                 import selection_lists as lists, utils_cf
 from .configure.screens.step_common             import OptionsFlow_Common_Steps
 from .configure.screens.step_apple_acct         import OptionsFlow_AppleAccount_Steps
 from .configure.screens.step_reauth             import OptionsFlow_Reauth_Steps
@@ -122,7 +122,15 @@ class iCloud3ConfigRepairFlow(ConfirmRepairFlow, OptionsFlow_Common_Steps,
         self.repair_item = ''           # devicename or apple_id being repaired, for the Event Log
 
 #..............................................................................
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
+
+#..............................................................................
     async def async_step_confirm(self, user_input=None):
+        await utils_cf.async_load_texts()
         if user_input is None:
             return await super().async_step_confirm()
 
@@ -161,7 +169,7 @@ class iCloud3ConfigRepairFlow(ConfirmRepairFlow, OptionsFlow_Common_Steps,
     async def async_step_menu(self, user_input=None, errors=None):
         return await self._async_finish_repair()
 
-    async def exit_configure_settings_final_tasks(self, exit_by_x_click=False):
+    async def exit_configure_settings_final_tasks(self):
         return await self._async_finish_repair()
 
 #..............................................................................
@@ -213,12 +221,7 @@ class iCloud3DeviceRepairFlow(iCloud3ConfigRepairFlow):
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 REPAIR_ACTION_UPDATE_APPLE_ACCT = 'update_apple_acct'
 REPAIR_ACTION_UPDATE_DEVICE     = 'update_device'
-APPLE_ACCT_REPAIR_ACTION_OPTIONS = {
-        REPAIR_ACTION_UPDATE_APPLE_ACCT:
-                'UPDATE APPLE ACCOUNT > Add/Update this Apple Account',
-        REPAIR_ACTION_UPDATE_DEVICE:
-                'UPDATE ICLOUD3 DEVICE > Display the Update iCloud3 Device screen to '
-                'select the correct Apple Account'}
+APPLE_ACCT_REPAIR_ACTION_OPTIONS = [REPAIR_ACTION_UPDATE_APPLE_ACCT, REPAIR_ACTION_UPDATE_DEVICE]
 
 class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
     '''
@@ -252,9 +255,10 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
 
 #..............................................................................
     async def async_step_confirm(self, user_input=None):
+        await utils_cf.async_load_texts()
         if user_input is None:
             repair_action_options = self._repair_action_options()
-            self.repair_action    = next(iter(repair_action_options))
+            self.repair_action    = repair_action_options[0]
 
             # Only one action, Submit does it without a selection
             if len(repair_action_options) == 1:
@@ -264,7 +268,9 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
                                         data_schema=vol.Schema({
                                             vol.Required('repair_action',
                                                     default=self.repair_action):
-                                                    vol.In(repair_action_options)}),
+                                                    utils_cf.select(repair_action_options,
+                                                            translation_key='repair_action',
+                                                            mode='list')}),
                                         description_placeholders=self._issue_placeholders())
 
         self.repair_action = user_input.get('repair_action', self.repair_action)
@@ -280,12 +286,10 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
         if (is_empty(Gb.conf_apple_ids)
                 or not any(Device.isnot_inactive
                                 for Device in Gb.Devices_by_apple_id.get(apple_id, []))):
-            return {REPAIR_ACTION_UPDATE_APPLE_ACCT:
-                        APPLE_ACCT_REPAIR_ACTION_OPTIONS[REPAIR_ACTION_UPDATE_APPLE_ACCT]}
+            return [REPAIR_ACTION_UPDATE_APPLE_ACCT]
 
         if (self.data or {}).get('apple_acct_status') == 'not_found':
-            return {REPAIR_ACTION_UPDATE_DEVICE:
-                        APPLE_ACCT_REPAIR_ACTION_OPTIONS[REPAIR_ACTION_UPDATE_DEVICE]}
+            return [REPAIR_ACTION_UPDATE_DEVICE]
 
         return APPLE_ACCT_REPAIR_ACTION_OPTIONS
 
@@ -345,9 +349,7 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-ANALYTICS_APPROVAL_OPTIONS = {
-        'enable':  'ENABLE > Send the iCloud3 Analytics data',
-        'disable': 'DISABLE > Do not send the iCloud3 Analytics data'}
+ANALYTICS_APPROVAL_OPTIONS = ['enable', 'disable']
 
 class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):
     '''
@@ -360,18 +362,21 @@ class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):
                     outside the dialog can not be told apart (both delete the flow).
     '''
     async def async_step_confirm(self, user_input=None):
+        await utils_cf.async_load_texts()
         if user_input is None:
             json_payload = await analytics.async_build_json_payload()
-            json_payload['uuid'] = 'HA Installation ID'
+            json_payload['uuid'] = utils_cf.tr('analytics_uuid')
             await analytics.async_get_version_downloads()
 
             return self.async_show_form(step_id='confirm',
                                         data_schema=vol.Schema({
                                             vol.Required('analytics_approval'):
-                                                    vol.In(ANALYTICS_APPROVAL_OPTIONS)}),
+                                                    utils_cf.select(ANALYTICS_APPROVAL_OPTIONS,
+                                                            translation_key='analytics_approval',
+                                                            mode='list')}),
                                         description_placeholders={
-                                                'json_payload': str(json_payload),
-                                                'downloads': analytics.format_version_downloads_msg()})
+                                                'json_payload': utils_cf.json_code_block(json_payload),
+                                                'downloads': utils_cf.version_downloads_msg()})
 
         analytics_enabled = user_input.get('analytics_approval') == 'enable'
         await self._async_update_analytics_enabled(analytics_enabled)

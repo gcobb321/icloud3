@@ -60,6 +60,7 @@ from homeassistant.core             import callback, HomeAssistant
 
 import homeassistant.util.dt as dt_util
 import voluptuous as vol
+from .apple_acct            import apple_acct_support_cf as aascf
 
 CONFIG_UPDATE_COMPLETE_MSG = 'iCloud3 Configuration Update Complete'
 
@@ -101,7 +102,15 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         lists.initialize_lists(self)
         self.initialize_reauth_variables()
 
-        Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+        # Used for the OptionsFlow support functions. It is not the handler of an
+        # iCloud3 Configure window, that one is created by async_get_options_flow.
+        self.OptFlow = iCloud3_OptionsFlowHandler()
+
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
 
 
     # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
@@ -115,9 +124,13 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
         '''
         Create the options flow handler for iCloud3. This is called when the iCloud3 > Configure
         is selected on the Devices & Services screen, not when HA or iCloud3 is loaded
+
+        A new handler is created for each Configure window. HA stores the window's flow_id,
+        context and current screen on the handler so two open windows can not share one.
+        Gb.OptionsFlowHandler is the last one opened, Gb.OptionsFlowHandlers_open has the
+        handlers of all open windows (used by the entity registry listeners).
         '''
-        if Gb.OptionsFlowHandler is None:
-            Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
+        Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         return Gb.OptionsFlowHandler
 
 #----------------------------------------------------------------------
@@ -141,7 +154,7 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
         self.handler = 'icloud3' from domain name in manifest.json
         '''
-        _OptFlow = Gb.OptionsFlowHandler
+        _OptFlow = self.OptFlow
         disabled_by = added_datetime = None
 
         try:
@@ -241,9 +254,12 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 #                        SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def initialize_step(self, step_id, user_input=None, errors=None):
-        user_input, action_item = Gb.OptionsFlowHandler.initialize_step(step_id, user_input, errors)
+        user_input, action_item = self.OptFlow.initialize_step(step_id, user_input, errors)
 
         return user_input, action_item
+
+    def update_config_file_tracking(self, user_input=None, force_config_update=None):
+        self.OptFlow.update_config_file_tracking(user_input, force_config_update)
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
@@ -313,7 +329,6 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
     def __init__(self):
         self.is_from_config_flow_handler    = False
-        self.is_initialize_options_required = True
 
         self.initialize_options()
 
@@ -322,15 +337,20 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
     def initialize_options(self):
         Gb.trace_prefix                     = 'CONFIG'
-        self.is_initialize_options_required = False
+        # Gb.is_config_flow_open for this Configure window only, the Gb one stays set
+        # until the last open window is closed (set_config_flow_open)
+        self.is_config_flow_open            = False
 
         # Variables shared by all of the step_... modules (step_common)
         self.initialize_common_variables()
 
         # OptionsFlow Menu and Exit screens
-        self.menu_item_selected             = ['device_list', 'tracking_parameters']
-        self.menu_page_no                   = 0     # Menu currently displayed
-        self.exit_msg                       = ''    # Summary of what was updated, displayed on the Exit screen
+        self.menu_id                        = MAIN_MENU # Menu the configure screens return to
+        self.needs_attention                = []    # Needs attention items of the main menu
+        self.needs_attention_placeholders   = {}
+        self.needs_attention_terms_apple_id = ''    # Apple Acct opened by the Terms of Use item
+        self.needs_attention_reauth_apple_id = ''   # Apple Acct opened by the Reauth item
+        self.needs_attention_devicename     = ''    # Device opened by the No data source item
 
         # Selection lists and the variables used by only one step_... module. Each
         # step class initializes its own so it can be used outside this handler.
@@ -359,25 +379,69 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
         """HA calls this (sync @callback) when the user clicks 'X' to close the options flow."""
         self.flow_closed()
 
-    def flow_closed(self) -> None:
-        """Called when the user dismisses the options flow with 'X'."""
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
 
-        if isnot_empty(self.config_parms_update_control):
-            Gb.hass.async_create_task(self.exit_configure_tasks(exit_by_x_click=True))
+    def flow_closed(self) -> None:
+        """
+        Called when the user closes the options flow with 'X'. This ends the Configure session.
+        The exit tasks save the changes and restart or reload iCloud3, they are only run when
+        something was changed.
+        """
+        if (isnot_empty(self.config_parms_update_control)
+                or self.create_device_tracker_sensor_enities_on_exit
+                or self.rebuild_ic3db_dashboards
+                or Gb.conf_profile.get(CONF_VERSION, 1) <= 0):
+            Gb.hass.async_create_task(self.exit_configure_tasks())
+        else:
+            self.set_config_flow_open(False)
+            self.apply_config_updates_on_last_close()
+
+    def set_config_flow_open(self, is_open):
+        '''
+        Gb.is_config_flow_open is True while any Configure window is open. Closing one
+        window does not reset it for the other ones.
+        '''
+        self.is_config_flow_open = is_open
+        if is_open:
+            Gb.OptionsFlowHandlers_open.add(self)
+        else:
+            Gb.OptionsFlowHandlers_open.discard(self)
+        Gb.is_config_flow_open = len(Gb.OptionsFlowHandlers_open) > 0
+
+    def apply_config_updates_on_last_close(self):
+        '''
+        The changes saved in the Configure windows are applied (iCloud3 is restarted or
+        reloaded) when the last open window is closed, not under another open window.
+        '''
+        if Gb.is_config_flow_open or is_empty(Gb.config_parms_update_control_pending):
+            return
+
+        list_add(Gb.config_parms_update_control, Gb.config_parms_update_control_pending)
+        Gb.config_parms_update_control_pending = []
+
+        # If the polling loop has not been set up, set the restart flag to trigger a restart when
+        # no devices are being updated will not run. There were probably no devices to track
+        # when first loaded and a direct restart must be done.
+        if Gb.polling_5_sec_loop_running is False:
+            Gb.config_parms_update_control = []
+            service_handler.reload_icloud3()
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            INIT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_init(self, user_input=None):
-        if self.is_initialize_options_required:
-            self.initialize_options()
+        await utils_cf.async_load_texts()
 
         self.errors = {}
         self.header_msg = None
         self.config_file_commit_updates = False
-        if Gb.AppleAcct_reauth_needed:
-            self.menu_item_selected[0] = 'reauth'
+        self.menu_id = MAIN_MENU
+        self.set_config_flow_open(True)
 
         # If the initial config file was just installed:
         #   - Add 'local.icloud3.event-log-card.js to the Lovelace Resources
@@ -425,162 +489,185 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            MENU
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_menu_0(self, user_input=None, errors=None):
-        return await self.async_step_menu(user_input, errors)
-
-    async def async_step_menu_1(self, user_input=None, errors=None):
-        return await self.async_step_menu(user_input, errors)
 
 #...............................................................................
     async def async_step_menu(self, user_input=None, errors=None):
-        self.step_id = 'menu'
-        self.errors = errors or {}
+        '''
+        Display the menu the configure screen was opened from. The step_... screens
+        return here when they are done.
+        '''
+        return await self.async_show_configure_menu(self.menu_id, errors)
+
+    async def async_step_main_menu(self, user_input=None, errors=None):
+        return await self.async_show_configure_menu(MAIN_MENU, errors)
+
+    async def async_step_menu_tracking(self, user_input=None, errors=None):
+        return await self.async_show_configure_menu('menu_tracking', errors)
+
+    async def async_step_menu_display(self, user_input=None, errors=None):
+        return await self.async_show_configure_menu('menu_display', errors)
+
+    async def async_step_menu_sensors(self, user_input=None, errors=None):
+        return await self.async_show_configure_menu('menu_sensors', errors)
+
+    async def async_step_menu_system(self, user_input=None, errors=None):
+        return await self.async_show_configure_menu('menu_system', errors)
+
+#...............................................................................
+    async def async_show_configure_menu(self, menu_id, errors=None):
+        self.step_id   = menu_id
+        self.menu_id   = menu_id
+        self.menu_item = ''
+        self.errors    = errors or {}
         await self.async_write_icloud3_configuration_file()
 
         Gb.trace_prefix = 'CONFIG'
-        Gb.is_config_flow_open = True
-
-        if Gb.internet_error:
-            self.header_msg = 'internet_error'
-
-        elif Gb.conf_data_source_ICLOUD:
-            if is_empty(Gb.conf_apple_accounts):
-                # self.header_msg = 'apple_acct_not_set_up'
-                pass
-            elif self.is_reauth_needed:
-                self.header_msg ='auth_code_needed'
-
-        else:
-            for AppleAcct in Gb.AppleAcct_by_apple_id.values():
-                if AppleAcct.terms_of_use_update_needed:
-                    self.header_msg ='apple_acct_terms_of_use_update_needed'
-                    break
-
-        self.set_inactive_devices_header_msg()
-        self.set_analytics_menu_msg()
-        utils_cf.set_header_msg(self)
-
-        if user_input is None:
-            menu_form = f"menu_{self.menu_page_no}"
-            return self.async_show_form(step_id=menu_form,
-                                        data_schema=forms.form_menu(self),
-                                        errors=self.errors,
-                                        last_step=False)
-
-        menu_title     = user_input.get('menu_items', '').split(' →')[0]
-        self.menu_item = MENU_KEYS_BY_TITLE[menu_title]
-        action_title   = user_input.get('action_items', '').split(' →')[0]
-        action_item    = MENU_KEYS_BY_TITLE.get(action_title)
-
-        match action_item:
-            case  '' | None:
-                action_item = None
-            case 'menu_0':
-                self.menu_item_selected[1] = self.menu_item
-                self.menu_page_no = 0
-            case 'menu_1':
-                self.menu_item_selected[0] = self.menu_item
-                self.menu_page_no = 1
-            case 'analytics':
-                return await self.async_step_analytics()
-            case 'exit':
-                return await self.exit_configure_tasks()
+        self.set_config_flow_open(True)
 
         utils_cf.log_step_info(self, '')
 
-        if action_item is not None:
-            pass
-        elif self.menu_item == '':
-            pass
-        elif self.menu_item == 'apple_accounts':
-            return await self.async_step_apple_accounts()
-        elif self.menu_item == 'reauth':
-            return await self.async_step_reauth()
-        elif self.menu_item == 'device_list':
-            return await self.async_step_device_list()
-        elif self.menu_item == 'sensors':
-            return await self.async_step_sensors()
-        elif self.menu_item == 'dashboard_builder':
-            return await self.async_step_dashboard_builder()
-        elif self.menu_item == 'tools':
-            return await self.async_step_tools()
-        elif self.menu_item == 'away_time_zone':
-            return await self.async_step_away_time_zone()
-        elif self.menu_item == 'format_settings':
-            return await self.async_step_format_settings()
-        elif self.menu_item == 'display_text_as':
-            return await self.async_step_display_text_as()
-        elif self.menu_item == 'tracking_parameters':
-            return await self.async_step_tracking_parameters()
-        elif self.menu_item == 'inzone_intervals':
-            return await self.async_step_inzone_intervals()
-        elif self.menu_item == 'waze':
-            return await self.async_step_waze_main()
-        elif self.menu_item == 'special_zones':
-            return await self.async_step_special_zones()
-        elif self.menu_item == 'analytics':
-            if Gb.analytics_enabled:
+        placeholders = {'header_msg': await self.async_menu_header_msg()}
+        if menu_id == MAIN_MENU:
+            forms.build_needs_attention(self)
+            placeholders['status_line'] = forms.menu_status_line(self)
+            placeholders.update(self.needs_attention_placeholders)
+            if self.config_parms_update_control and placeholders['header_msg'] == '':
+                placeholders['header_msg'] = utils_cf.tr('changes_pending')
+
+        return self.async_show_menu(step_id=menu_id,
+                            menu_options=forms.menu_options(self, menu_id),
+                            description_placeholders=placeholders)
+
+#...............................................................................
+    async def async_menu_header_msg(self):
+        '''
+        The messages displayed at the top of the menu. Menus can not display errors so the
+        update results and alerts are displayed in the menu description.
+        '''
+        msg_keys = []
+        if self.errors.get('base'):
+            msg_keys.append(self.errors['base'])
+
+        if Gb.internet_error:
+            msg_keys.append('internet_error')
+
+        self.header_msg = None
+        msgs = await utils_cf.async_header_msgs(self, list(dict.fromkeys(msg_keys)))
+
+        return '\n\n'.join(msgs)
+
+#...............................................................................
+    async def open_menu_item(self, menu_item):
+        '''
+        Open the configure screen of the menu item selected on a menu. The screens use
+        self.menu_item to determine the screen to return to.
+        '''
+        self.menu_item = menu_item
+        utils_cf.log_step_info(self, '')
+
+        match menu_item:
+            case 'apple_accounts':
+                return await self.async_step_apple_accounts()
+            case 'device_list':
+                return await self.async_step_device_list()
+            case 'inzone_intervals':
+                return await self.async_step_inzone_intervals()
+            case 'tracking_parameters':
+                return await self.async_step_tracking_parameters()
+            case 'special_zones':
+                return await self.async_step_special_zones()
+            case 'waze':
+                return await self.async_step_waze_main()
+            case 'format_settings':
+                return await self.async_step_format_settings()
+            case 'display_text_as':
+                return await self.async_step_display_text_as()
+            case 'away_time_zone':
+                return await self.async_step_away_time_zone()
+            case 'sensors':
+                return await self.async_step_sensors()
+            case 'exclude_sensors':
+                return await self.async_step_exclude_sensors()
+            case 'dashboard_builder':
+                return await self.async_step_dashboard_builder()
+            case 'tools':
+                return await self.async_step_tools()
+            case 'analytics':
+                return await self.async_step_analytics()
+            case 'analytics_reports':
+                # Refresh the report list when the screen is opened to pick up
+                # reports that have been added, renamed or reordered.
+                self.analytic_reports_by_name = {}
                 return await self.async_step_analytics_reports()
-            else:
+
+            # Needs attention items at the top of the main menu
+            case 'action_terms_of_use':
+                self.menu_item = 'reauth'
+                return await self.async_step_reauth(reauth_apple_id=self.needs_attention_terms_apple_id)
+            case 'action_reauth':
+                self.menu_item = 'reauth'
+                return await self.async_step_reauth(
+                            reauth_apple_id=self.needs_attention_reauth_apple_id or aascf.reauth_needed_apple_id())
+            case 'action_no_data_source':
+                self.menu_item = 'device_list'
+                if self._get_conf_device_selected(
+                        {CONF_IC3_DEVICENAME: self.needs_attention_devicename}):
+                    return await self.async_open_update_device_screen(self.needs_attention_devicename)
+                return await self.async_step_device_list()
+            case 'action_login_failed':
+                self.menu_item = 'apple_accounts'
+                login_failed_apple_ids = aascf.login_failed_apple_ids()
+                if login_failed_apple_ids and self._select_apple_acct(login_failed_apple_ids[0]):
+                    return await self.async_step_update_apple_acct()
+                return await self.async_step_apple_accounts()
+            case 'action_add_apple_acct':
+                self.menu_item = 'apple_accounts'
+                self.add_apple_acct_flag = True
+                self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
+                return await self.async_step_update_apple_acct()
+            case 'action_add_devices':
+                # Import the Apple Account devices, add one if there are none to import
+                self.menu_item = 'device_list'
+                if Gb.use_data_source_ICLOUD and isnot_empty(Gb.AppleAcct_by_apple_id):
+                    return await self.async_step_import_apple_devices()
+                return await self.async_step_device_list_add()
+            case 'action_review_inactive' | 'action_review_inactive_some':
+                self.menu_item = 'device_list'
+                return await self.async_step_review_inactive_devices()
+            case 'action_analytics':
+                self.menu_item = 'analytics'
                 return await self.async_step_analytics()
 
-        self.set_inactive_devices_header_msg()
-        utils_cf.set_header_msg(self)
-
-        menu_form = f"menu_{self.menu_page_no}"
-        return self.async_show_form(step_id=menu_form,
-                            data_schema=forms.form_menu(self),
-                            errors=self.errors,
-                            last_step=False)
+        return await self.async_step_menu()
 
 #-------------------------------------------------------------------------------------------
-    def set_analytics_menu_msg(self):
-
-        if Gb.analytics_enabled is None:
-            self.errors['action_items'] = 'analytics_enable_needed'
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            EXIT
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def exit_configure_tasks(self, exit_by_x_click=False):
+    async def exit_configure_tasks(self):
         '''
-        Handle all Exit Configure cleanup and processing. This is the single entry point
-        for exiting and is called when EXIT is selected on the menu or the 'X' is clicked.
+        Handle all Exit Configure cleanup and processing. The Configure session ends when
+        the 'X' is clicked. HA has already closed the dialog so nothing can be displayed.
 
-        exit_by_x_click parameter:
-            = False - EXIT was selected on the menu. Run the exit tasks, then display the
-                    'exit_icloud3_configure_settings' screen summarizing what was updated.
-            = True  - The 'X' was clicked. HA has already closed the Configure Settings
-                    dialog so nothing can be displayed. Run the exit tasks and return.
-
-        HA calls async_remove (--> flow_closed) whenever the flow is torn down, which
-        happens on a normal EXIT as well as on an 'X' click. Gb.is_config_flow_open is
-        reset by exit_configure_settings_final_tasks and keeps that second pass from
-        running all of the exit tasks again.
+        HA calls async_remove (--> flow_closed) whenever the flow is torn down.
+        self.is_config_flow_open is reset by exit_configure_settings_final_tasks and keeps a
+        second pass from running all of the exit tasks again. It is not Gb.is_config_flow_open
+        so closing another Configure window does not skip this window's exit tasks.
         '''
-
-        if Gb.is_config_flow_open is False:
+        if self.is_config_flow_open is False:
             return None
 
-        device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
-
-        # The Review Inactive Devices screen can not be displayed if the dialog is closed
-        if exit_by_x_click is False and inactive_pct > .5:
-            return await self.async_step_review_inactive_devices()
-
-        return await self.exit_configure_settings_final_tasks(exit_by_x_click)
+        return await self.exit_configure_settings_final_tasks()
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #             EXIT ICLOUD3 CONFIGURE SETTINGS INACTIVE DEVICE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def exit_configure_settings_final_tasks(self, exit_by_x_click=False):
+    async def exit_configure_settings_final_tasks(self):
         self.step_id = 'Exit Configure Settings'
-        Gb.is_config_flow_open = False
-        # The handler is the Gb.OptionsFlowHandler singleton, reinitialize it when the
-        # next Configure session starts (async_step_init)
-        self.is_initialize_options_required = True
-        utils_cf.log_step_info(self, f'XClick-{exit_by_x_click}, UpdateParms-{Gb.config_parms_update_control}', 'start')
+        self.set_config_flow_open(False)
+        utils_cf.log_step_info(self, f'UpdateParms-{Gb.config_parms_update_control}', 'start')
 
         # If the initial config file was just installed, set it to 'has been reviewed'
         if Gb.conf_profile[CONF_VERSION] <= 0:
@@ -589,16 +676,11 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
             user_input = {CONF_VERSION: 1}
             self.update_config_file_tracking(user_input, force_config_update=True)
 
-        self.exit_msg = "### iCloud3 Configure Session is Ending"
-        self.exit_msg += '\n'
-
         if self.create_device_tracker_sensor_enities_on_exit:
             self.create_device_tracker_sensor_enities_on_exit = False
             await config_file.async_build_conf_device_sensors_from_conf_sensors()
             await ic3_device_tracker.async_create_Device_Tracker_objects()
-            self.exit_msg += f"* Devices have been added ({Gb.device_trackers_cnt})\n"
             await ic3_sensor.async_create_Sensor_objects()
-            self.exit_msg += f"* Sensors have been added ({Gb.sensors_cnt})\n"
             self.rebuild_ic3db_dashboards = True
             list_add(self.config_parms_update_control, 'restart')
 
@@ -607,58 +689,32 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
                 ic3_sensor.log_sensors_added_deleted('ADDED', devicename)
                 ic3_sensor.log_sensors_added_deleted('REMOVED', devicename)
 
-        if 'devices' in self.config_parms_update_control:
-            self.exit_msg += "* Devices & Sensors have been updated\n"
-        if 'general' in self.config_parms_update_control:
-            self.exit_msg += "* The Parameters have been updated\n"
-
         # Update the *ic3db- dashboard views when devices have been added or deleted
         if self.rebuild_ic3db_dashboards:
             await dbb.update_ic3db_dashboards_new_deleted_devices(self)
             self.rebuild_ic3db_dashboards = False
-            self.exit_msg += (  f"* The iCloud3 Dashboards have been updated "
-                                f"({self.dbf_dashboard_icons_msg})\n")
 
-        if 'restart' in self.config_parms_update_control:
-            self.exit_msg += "* iCloud3 has been Restarted\n"
-
-        Gb.config_parms_update_control = self.config_parms_update_control.copy()
-
-        # If the polling loop has not been set up, set the restart flag to trigger a restart when
-        # no devices are being updated will not run. There were probably no devices to track
-        # when first loaded and a direct restart must be done.
-        if Gb.polling_5_sec_loop_running is False:
-            Gb.config_parms_update_control = []
-            service_handler.reload_icloud3()
+        list_add(Gb.config_parms_update_control_pending, self.config_parms_update_control)
+        self.apply_config_updates_on_last_close()
 
         utils_cf.log_step_info(self, '', 'end')
 
-        # data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
-
-        if exit_by_x_click:
-            return None
-
-        return self.async_step_exit_icloud3_configure_settings()
-
 #-------------------------------------------------------------------------------------------
-    def async_step_exit_icloud3_configure_settings(self):
-        '''
-        Display the final screen containing the exit_msg summary of everything that was
-        updated when the Configure Settings handler was exited.
-
-        This is an 'abort' step rather than a form so it is the last screen displayed.
-        Clicking CLOSE (or the 'X') ends the Configure Settings dialog immediately.
-        Nothing needs to be saved in the config entry - all of the iCloud3 configuration
-        parameters are stored in the iCloud3 configuration file.
-        '''
-        self.step_id = 'Exit Configure Settings'
-
-        utils_cf.log_step_info(self, f'UpdateParms-{Gb.config_parms_update_control}', 'to ha')
-
-
-        return self.async_abort(reason='config_update_complete',
-                            description_placeholders={'exit_msg': self.exit_msg or ''})
 
 #-------------------------------------------------------------------------------------------
     def __repr__(self):
             return 'OptionsFlow'
+
+
+#-------------------------------------------------------------------------------------------
+#   HA runs the async_step_[option] step when a menu option is selected. Add the
+#   async_step_open_[menu item] steps that open the configure screens.
+def _open_menu_item_step(menu_item):
+    async def async_step_open_menu_item(self, user_input=None):
+        return await self.open_menu_item(menu_item)
+
+    return async_step_open_menu_item
+
+for _menu_item in MENU_ITEMS + MENU_ACTION_NEEDED_ITEMS:
+    setattr(iCloud3_OptionsFlowHandler, f"async_step_open_{_menu_item}",
+            _open_menu_item_step(_menu_item))

@@ -511,7 +511,7 @@ def _extract_saved_main_view_layout_info(dashboard_str):
         main_view_length     = main_view_info[2]
 
 
-    if main_view_style not in DASHBOARD_MAIN_VIEW_STYLES: main_view_style  = RESULT_SUMMARY
+    if main_view_style not in DASHBOARD_MAIN_VIEW_STYLE_OPTIONS: main_view_style  = RESULT_SUMMARY
     if is_empty(main_view_dnames): main_view_dnames = [ALL_DEVICES]
     main_view_length = int(main_view_length) if is_number(main_view_length) else 0
 
@@ -729,7 +729,7 @@ async def build_existing_dashboards_selection_list(self):
     self.dbf_dashboard_icons_msg = ''
     # dashboard_icons_msg = []
     if is_empty(self.ic3db_Dashboards_by_dbname):
-        self.dbf_dashboard_key_text[ADD] = (f"➤ CREATE A NEW ICLOUD3 DASHBOARD")
+        self.dbf_dashboard_key_text[ADD] = f"＋ {utils.tr('dashboard_create')}"
         return
 
 
@@ -750,12 +750,12 @@ async def build_existing_dashboards_selection_list(self):
         main_view_devices  = _strip_device_type(main_view_devices)
 
         if is_empty(main_view_devices):
-            main_view_devices_msg = 'None'
+            main_view_devices_msg = utils.tr('none')
         else:
             main_view_devices_msg = list_to_str(main_view_devices)
 
         main_view_style = self.main_view_info_style_by_dbname[_dbname]
-        main_view_style_msg = DASHBOARD_MAIN_VIEW_STYLES[main_view_style]
+        main_view_style_msg = utils.tr(f"dashboard_style_{main_view_style.replace('-', '_')}")
 
         dashboard_msg =(f"{_Dashboard.config[TITLE]} > "
                         f"{main_view_style_msg} "
@@ -764,9 +764,9 @@ async def build_existing_dashboards_selection_list(self):
 
         self.dbf_dashboard_key_text[_dbname] = dashboard_msg
 
-    self.dbf_dashboard_icons_msg = f"Dashboard Icons: {build_dashboard_icons_msg(self)}"
+    self.dbf_dashboard_icons_msg = utils.tr('dashboard_icons', icons=build_dashboard_icons_msg(self))
 
-    self.dbf_dashboard_key_text[ADD] = (f"➤ CREATE A NEW ICLOUD3 DASHBOARD")
+    self.dbf_dashboard_key_text[ADD] = f"＋ {utils.tr('dashboard_create')}"
 
 #-------------------------------------------------------------------------------------------
 def build_dashboard_icons_msg(self):
@@ -1020,8 +1020,7 @@ async def _add_dashboard_to_lovelace_dashboards(self, dbname):
                                         "lovelace/dashboards",
                                         "dashboard",
                                         STORAGE_DASHBOARD_CREATE_FIELDS,
-                                        STORAGE_DASHBOARD_UPDATE_FIELDS,
-                                        )
+                                        STORAGE_DASHBOARD_UPDATE_FIELDS, )
     dashboard_collection_ws.async_setup(Gb.hass)
 
     log_debug_msg(f"Added Dashboard to Lovelace > {title}/{dbname}")
