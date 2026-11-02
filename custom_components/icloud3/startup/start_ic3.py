@@ -2917,7 +2917,7 @@ def _scan_for_for_mobapp_device(devicename, Device, conf_mobapp_dname):
 
     Gb.startup_lists['_.matched_mobapp_devices'] = matched_mobapp_devices
 
-    if TEST.SCAN_FOR_DUPLICATE:
+    if TEST.SCAN_FOR_DUPLICATES:
         matched_mobapp_devices = [f'{scanfor_mobapp_dname}_TEST-1',f'{scanfor_mobapp_dname}_TEST-2',]
 
     if len(matched_mobapp_devices) == 1:
