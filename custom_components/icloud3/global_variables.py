@@ -122,6 +122,7 @@ class GlobalVariables(object):
     config_entry_id                 = None
     ConfigFlowHandler               = None
     OptionsFlowHandler              = None  # OptionsFlowHandler (config_flow)
+    OptionsFlowHandlers_open        = set() # OptionsFlowHandler of every open Configure window
 
     EvLog                           = None   # Event Log
     EvLogSensor                     = None   # Event Log Sensor
@@ -447,6 +448,8 @@ class GlobalVariables(object):
     # It indicates the type of change and if a restart is required to load device or sensor changes.
     # Items in the set are 'tracking', 'devices', 'profile', 'sensors', 'general', 'restart'
     config_parms_update_control     = []
+    # The changes of a closed Configure window waiting for the other open windows to close
+    config_parms_update_control_pending = []
 
     is_waze_dist_method_used        = True
     is_force_icloud_update          = False
