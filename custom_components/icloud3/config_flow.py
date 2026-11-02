@@ -120,7 +120,8 @@ class iCloud3_ConfigFlow(config_entries.ConfigFlow, FlowHandler,
 
         A new handler is created for each Configure window. HA stores the window's flow_id,
         context and current screen on the handler so two open windows can not share one.
-        Gb.OptionsFlowHandler is the last one opened (used by the entity registry listeners).
+        Gb.OptionsFlowHandler is the last one opened, Gb.OptionsFlowHandlers_open has the
+        handlers of all open windows (used by the entity registry listeners).
         '''
         Gb.OptionsFlowHandler = iCloud3_OptionsFlowHandler()
         return Gb.OptionsFlowHandler
@@ -329,8 +330,8 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
     def initialize_options(self):
         Gb.trace_prefix                     = 'CONFIG'
-        # Gb.is_config_flow_open for this Configure window only, the Gb one is reset
-        # when any window is closed
+        # Gb.is_config_flow_open for this Configure window only, the Gb one stays set
+        # until the last open window is closed (set_config_flow_open)
         self.is_config_flow_open            = False
 
         # Variables shared by all of the step_... modules (step_common)
@@ -373,6 +374,39 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 
         if isnot_empty(self.config_parms_update_control):
             Gb.hass.async_create_task(self.exit_configure_tasks(exit_by_x_click=True))
+        else:
+            self.set_config_flow_open(False)
+            self.apply_config_updates_on_last_close()
+
+    def set_config_flow_open(self, is_open):
+        '''
+        Gb.is_config_flow_open is True while any Configure window is open. Closing one
+        window does not reset it for the other ones.
+        '''
+        self.is_config_flow_open = is_open
+        if is_open:
+            Gb.OptionsFlowHandlers_open.add(self)
+        else:
+            Gb.OptionsFlowHandlers_open.discard(self)
+        Gb.is_config_flow_open = len(Gb.OptionsFlowHandlers_open) > 0
+
+    def apply_config_updates_on_last_close(self):
+        '''
+        The changes saved in the Configure windows are applied (iCloud3 is restarted or
+        reloaded) when the last open window is closed, not under another open window.
+        '''
+        if Gb.is_config_flow_open or is_empty(Gb.config_parms_update_control_pending):
+            return
+
+        list_add(Gb.config_parms_update_control, Gb.config_parms_update_control_pending)
+        Gb.config_parms_update_control_pending = []
+
+        # If the polling loop has not been set up, set the restart flag to trigger a restart when
+        # no devices are being updated will not run. There were probably no devices to track
+        # when first loaded and a direct restart must be done.
+        if Gb.polling_5_sec_loop_running is False:
+            Gb.config_parms_update_control = []
+            service_handler.reload_icloud3()
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -444,8 +478,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
         await self.async_write_icloud3_configuration_file()
 
         Gb.trace_prefix = 'CONFIG'
-        Gb.is_config_flow_open   = True
-        self.is_config_flow_open = True
+        self.set_config_flow_open(True)
 
         if Gb.internet_error:
             self.header_msg = 'internet_error'
@@ -584,8 +617,7 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def exit_configure_settings_final_tasks(self, exit_by_x_click=False):
         self.step_id = 'Exit Configure Settings'
-        Gb.is_config_flow_open   = False
-        self.is_config_flow_open = False
+        self.set_config_flow_open(False)
         utils_cf.log_step_info(self, f'XClick-{exit_by_x_click}, UpdateParms-{Gb.config_parms_update_control}', 'start')
 
         # If the initial config file was just installed, set it to 'has been reviewed'
@@ -625,17 +657,13 @@ class iCloud3_OptionsFlowHandler(config_entries.OptionsFlow, OptionsFlow_Common_
             self.exit_msg += (  f"* The iCloud3 Dashboards have been updated "
                                 f"({self.dbf_dashboard_icons_msg})\n")
 
-        if 'restart' in self.config_parms_update_control:
+        if Gb.is_config_flow_open and isnot_empty(self.config_parms_update_control):
+            self.exit_msg += "* The changes are applied when the other Configure window is closed\n"
+        elif 'restart' in self.config_parms_update_control:
             self.exit_msg += "* iCloud3 has been Restarted\n"
 
-        Gb.config_parms_update_control = self.config_parms_update_control.copy()
-
-        # If the polling loop has not been set up, set the restart flag to trigger a restart when
-        # no devices are being updated will not run. There were probably no devices to track
-        # when first loaded and a direct restart must be done.
-        if Gb.polling_5_sec_loop_running is False:
-            Gb.config_parms_update_control = []
-            service_handler.reload_icloud3()
+        list_add(Gb.config_parms_update_control_pending, self.config_parms_update_control)
+        self.apply_config_updates_on_last_close()
 
         utils_cf.log_step_info(self, '', 'end')
 
