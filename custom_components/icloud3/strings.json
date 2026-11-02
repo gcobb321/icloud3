@@ -8,8 +8,6 @@
       "_comment.form.1b": "data_schema=forms.form_dashboard_builder(self),",
       "_comment.form.1c": "     description_placeholders={'min': '1', 'max': '10'},",
       "_comment.form.1d": "     errors=self.errors)",
-
-      "config_update_complete": "✅ iCloud3 configuration updated successfully",
       "already_configured": "iCloud3 Configure screens are used to add Devices and change various settings.\n\nClose this screen, then select the Gear icon (⚙️) below. \n\nIf you are deleting and then reinstalling the iCloud3 integration, delete iCloud3, then restart HA to clear HA's caches. After HA restarts, readd the iCloud3 integration. Your previous configuration files are not deleted and will be used when iCloud3 reloads.",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud3, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3.\n\nIf you are deleting and then reinstalling, restart HA first and then reinstall iCloud3",
       "login_error": "The Apple account is not log into",
@@ -140,7 +138,6 @@
 
   "options": {
     "abort": {
-      "config_update_complete": "{exit_msg}",
       "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
@@ -155,6 +152,7 @@
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "conf_updated_item": "✓ Saved: {saved_item}",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
 
       "apple_acct_logging_into": "Logging into Apple Account",
@@ -266,11 +264,8 @@
       "not_found_directory": "The directory was not found",
       "not_found_file": "The file was not found",
 
-      "action_completed": "Requested Action has been completed",
-      "action_cancelled": "Requested Action has been cancelled",
-      "prerelease_repo_not_installed": "Beta versions were not changed, iCloud3 was not installed from HACS/Marketplace",
-      "prerelease_switch_not_found": "Beta versions were not changed, the iCloud3 Pre-release switch was not found in HACS/Marketplace",
-      "prerelease_switch_failed": "Beta versions were not changed, an error occurred. See the icloud3.log file",
+      "action_completed": "✓ Done",
+      "action_cancelled": "Cancelled, nothing was changed",
       "restart_ha":"Home Assistant needs to be restarted to continue",
       "excluded_sensors_ha_restart": "✅ Excluded Sensors will not be created on next HA restart",
 
@@ -284,38 +279,127 @@
       "dashboard_name_used": "This Dashboard Name is assigned to another Dashboard",
       "dashboard_main_2_devices": "Only 2 Devices can be selected for the Main view screen",
       "dashboard_error": "An error occurred updating the Dashboard",
-      "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code."
+      "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code.",
+      "conf_updated_restart": "✓ Saved · close Configure (✕) to apply",
+      "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
+      "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
+      "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+      "action_failed": "⚠︎ The action failed, see the iCloud3 log file",
+      "prerelease_repo_not_installed": "Not changed: iCloud3 wasn't installed from HACS or the Marketplace.",
+      "prerelease_switch_not_found": "Not changed: the iCloud3 Pre-release switch wasn't found in HACS or the Marketplace.",
+      "prerelease_switch_failed": "Not changed: an error occurred. See icloud3.log.",
+      "beta_version_on_done": "✓ Beta versions are on. The next beta is offered on the iCloud3 update entity.",
+      "beta_version_off_done": "✓ Beta versions are off. Only releases are offered."
     },
 
 
     "step": {
       "menu": {
-        "title": "Configure Devices & Sensors",
-        "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ MENU SELECTIONS",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS",
-          "xmenu_items":   "───┤\u00A0MENU\u00A0OPTIONS\u00A0├─────────────────────────────────────",
-          "xaction_items": "───┤\u00A0ACTION\u00A0COMMANDS\u00A0├─────────────────────────────────"
+        "title": "iCloud3 Configure",
+        "description": "{status_line}\n\n{header_msg}",
+        "menu_options": {
+          "open_action_terms_of_use": "⚠︎ Needs attention: Accept Apple's new Terms of Use ({terms_acct})",
+          "open_action_reauth": "⚠︎ Needs attention: Authenticate the Apple Account sign-in ({reauth_acct})",
+          "open_action_login_failed": "⚠︎ Needs attention: Apple Account sign-in failed ({login_failed_acct})",
+          "open_action_add_apple_acct": "⚠︎ Needs attention: Add an Apple Account",
+          "open_action_no_data_source": "⚠︎ Needs attention: {no_source_device} has no data source",
+          "open_action_add_devices": "⚠︎ Needs attention: Add the devices to track",
+          "open_action_review_inactive": "⚠︎ Needs attention: All devices are inactive, set them to Track",
+          "open_action_review_inactive_some": "⚠︎ Needs attention: Inactive devices aren't located ({inactive_cnt})",
+          "open_action_analytics": "Choose whether to share iCloud3 Analytics",
+          "open_apple_accounts": "Apple Accounts",
+          "open_device_list": "Devices",
+          "menu_tracking": "Tracking & zones",
+          "menu_display": "Display",
+          "menu_sensors": "Sensors & dashboards",
+          "menu_system": "iCloud3 system"
+        },
+        "menu_option_descriptions": {
+          "open_action_terms_of_use": "Apple stopped sending location data for {terms_acct} until the terms are accepted",
+          "open_action_reauth": "Apple is waiting for an authentication code",
+          "open_action_login_failed": "{login_failed_status}",
+          "open_action_add_apple_acct": "Apple Accounts provide the location data for the devices",
+          "open_action_no_data_source": "Select its Apple Account device or Mobile App device so it can be located",
+          "open_action_add_devices": "No devices are set up yet",
+          "open_action_review_inactive": "Inactive devices are not located or tracked",
+          "open_action_review_inactive_some": "Set the ones that should be located to Track",
+          "open_action_analytics": "See the data that would be sent, then enable or disable sending it",
+          "open_apple_accounts": "Add, change, delete and authenticate the Apple Accounts",
+          "open_device_list": "Add, change, import, delete and reorder the tracked and monitored devices",
+          "menu_tracking": "Data sources, location accuracy, intervals, special zones and Waze",
+          "menu_display": "How tracking results are shown in the Event Log, sensors and device_tracker entities",
+          "menu_sensors": "The sensors created for each device, the iCloud3 Dashboards",
+          "menu_system": "Log level, beta downloads, restart, cleanup and reset tools, iCloud3 Analytics"
         }
       },
 
 
-      "menu_0": {
-        "title": "Configure Devices & Sensors",
-        "xdescription": "This menu contains items related to Apple Accounts, Tracked Devices, Apple Authentication, Sensors, iCloud3 Dashboard and Maintenance Tools",
-        "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ "
+      "menu_tracking": {
+        "title": "Tracking & zones",
+        "description": "{header_msg}",
+        "menu_options": {
+          "open_tracking_parameters": "Tracking parameters",
+          "open_special_zones": "Special zones",
+          "open_waze": "Waze route distance, time & history",
+          "open_inzone_intervals": "Default intervals for new devices",
+          "main_menu": "◀ Main menu"
+        },
+        "menu_option_descriptions": {
+          "open_tracking_parameters": "Data sources, location accuracy and the time between location requests",
+          "open_special_zones": "Stationary zones, a delay for zone enter triggers and the Home zone override (all devices)",
+          "open_waze": "The Waze route service and the Waze history database",
+          "open_inzone_intervals": "The inZone interval given to a device when it is added"
         }
       },
 
 
-      "menu_1": {
-        "title": "Configure Parameters",
-        "xdescription": "This menu contains items related to configuring how iCloud3 should track devices and how the results should be reported",
-        "data": {
-          "menu_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ "
+      "menu_display": {
+        "title": "Display",
+        "description": "{header_msg}",
+        "menu_options": {
+          "open_format_settings": "Units, zone names & Event Log",
+          "open_display_text_as": "Hide private text in the Event Log",
+          "open_away_time_zone": "Away time zone",
+          "main_menu": "◀ Main menu"
+        },
+        "menu_option_descriptions": {
+          "open_format_settings": "Units, time format, zone names and the Event Log",
+          "open_display_text_as": "Replace private text, such as an email address, in the Event Log",
+          "open_away_time_zone": "Show the local time for devices that are away in another time zone"
+        }
+      },
+
+
+      "menu_sensors": {
+        "title": "Sensors & dashboards",
+        "description": "{header_msg}",
+        "menu_options": {
+          "open_sensors": "Sensors",
+          "open_exclude_sensors": "Exclude sensors",
+          "open_dashboard_builder": "Dashboard builder",
+          "main_menu": "◀ Main menu"
+        },
+        "menu_option_descriptions": {
+          "open_sensors": "The sensors created for each device",
+          "open_exclude_sensors": "Sensors of specific devices that are not created",
+          "open_dashboard_builder": "Create an iCloud3 dashboard from prebuilt layouts"
+        }
+      },
+
+
+      "menu_system": {
+        "title": "iCloud3 system",
+        "description": "{header_msg}",
+        "menu_options": {
+          "open_tools": "Tools",
+          "open_analytics": "iCloud3 Analytics",
+          "open_analytics_reports": "iCloud3 Analytics reports",
+          "main_menu": "◀ Main menu"
+        },
+        "menu_option_descriptions": {
+          "open_tools": "Log level, beta downloads, entity registry cleanup, restart and reset tools",
+          "open_analytics": "Choose whether the iCloud3 usage counts are sent to iCloud3 Analytics",
+          "open_analytics_reports": "Reports from the iCloud3 Analytics database"
         }
       },
 
@@ -348,10 +432,11 @@
 
 
       "confirm_action": {
-        "title": "Confirm Selected Action",
-        "data": {
-          "action_desc": "REQUESTED ACTION",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+        "title": "Confirm",
+        "description": "{action_desc}",
+        "menu_options": {
+          "confirm_action_no": "◀ No, cancel",
+          "confirm_action_yes": "✓ Yes, continue"
         }
       },
 
@@ -617,13 +702,40 @@
 
 
       "tools": {
-        "title": "Tools",
-        "description": "Tools can be used update the iCloud3 configuration files to correct errors, reset the configuration their default values, reload iCloud3, restart Home Assistant, etc.",
-        "data": {
-          "tools": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ APPLE ACCOUNT TOOLS",
-          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+        "title": "iCloud3 system › Tools",
+        "description": "Change the log level, turn beta versions on or off, clean up the HA entity registry, restart iCloud3 or reset parts of the configuration.\n\n{header_msg}",
+        "menu_options": {
+          "tools_log_level": "Change the log level",
+          "tools_beta_version": "Beta versions",
+          "tools_cleanup_entity_registry": "✕ Clean up the HA entity registry",
+          "tools_restart_icloud3": "Restart iCloud3",
+          "tools_reset_data_source": "✕ Clear the data sources of all devices",
+          "tools_reset_tracking": "✕ Remove all Apple Accounts & devices",
+          "tools_reset_general": "↻ Reset all settings to defaults (Apple Accounts and devices are kept)",
+          "tools_del_apple_acct_cookies": "✕ Delete the Apple Account sign-in files (cookies)",
+          "tools_del_icloud3_config_files": "✕ Factory reset: delete all iCloud3 configuration files",
+          "tools_back": "◀ iCloud3 system"
         },
-        "data_description": {
+        "menu_option_descriptions": {
+          "tools_log_level": "Info, Debug or Rawdata",
+          "tools_beta_version": "Turn the iCloud3 Pre-release switch in HACS or the Marketplace on or off",
+          "tools_cleanup_entity_registry": "Find and delete unused iCloud3 devices and sensors",
+          "tools_restart_icloud3": "Reload the current version of iCloud3",
+          "tools_reset_data_source": "Clear the Apple Account and Mobile App device of every device",
+          "tools_reset_tracking": "Remove all Apple Accounts and devices, the other settings are kept",
+          "tools_reset_general": "Set the general parameters to their default values",
+          "tools_del_apple_acct_cookies": "Delete the Apple Account cookie and session files, tracking pauses until iCloud3 restarts",
+          "tools_del_icloud3_config_files": "Deletes all Apple Accounts, devices and settings, iCloud3 starts as newly installed",
+          "tools_back": "Return to the menu"
+        }
+      },
+      "beta_version": {
+        "title": "iCloud3 system › Tools › Beta versions",
+        "description": "iCloud3 beta versions are pre-releases in the iCloud3 repository. While the Pre-release switch is on, {store} also offers them on the iCloud3 update entity.\n\nNow: {state}",
+        "menu_options": {
+          "beta_version_on": "✓ Get beta versions (Pre-release switch on)",
+          "beta_version_off": "Get releases only (Pre-release switch off)",
+          "beta_version_back": "◀ Back to Tools"
         }
       },
 
@@ -1044,6 +1156,7 @@
           "unknown_action": "Selected Action could not be identified",
           "update_aborted": "Update aborted, an error was detected in one of the data fields",
           "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+          "conf_updated_item": "✓ Saved: {saved_item}",
 
           "apple_acct_logged_into": "Logged into the Apple Account",
           "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
@@ -1108,8 +1221,13 @@
 
           "fixed_interval_invalid_range": "The 'Fixed Interval' must be 0 (not used) or >= 3 (> 5 recommended)",
 
-          "action_completed": "Requested Action has been completed",
-          "action_cancelled": "Requested Action has been cancelled"
+          "action_completed": "✓ Done",
+          "action_cancelled": "Cancelled, nothing was changed",
+          "conf_updated_restart": "✓ Saved · close Configure (✕) to apply",
+          "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
+          "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
+          "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account",
+          "action_failed": "⚠︎ The action failed, see the iCloud3 log file"
         },
         "abort": {
           "fix_action_not_available": "iCloud3 can not make this change right now. It may still be starting. Try again after iCloud3 has finished starting.",
@@ -1252,6 +1370,7 @@
           "unknown_action": "Selected Action could not be identified",
           "update_aborted": "Update aborted, an error was detected in one of the data fields",
           "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+          "conf_updated_item": "✓ Saved: {saved_item}",
           "apple_acct_logged_into": "Logged into the Apple Account",
           "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
           "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
@@ -1304,8 +1423,12 @@
           "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
           "internet_error_no_change": "Internet Connection Error > iCloud3 cannot connect to the Internet. Actions requiring access to the Apple account are not available.",
           "fixed_interval_invalid_range": "The 'Fixed Interval' must be 0 (not used) or >= 3 (> 5 recommended)",
-          "action_completed": "Requested Action has been completed",
-          "action_cancelled": "Requested Action has been cancelled"
+          "action_completed": "✓ Done",
+          "action_cancelled": "Cancelled, nothing was changed",
+          "conf_updated_restart": "✓ Saved · close Configure (✕) to apply",
+          "conf_updated_item_restart": "✓ Saved: {saved_item} · close Configure (✕) to apply",
+          "no_devices_set_up": "No devices are set up. Select Devices ▸ ＋ Import devices from the Apple Accounts, or ＋ Add a new device.",
+          "text_or_hwkey_none": "⚠︎ No trusted phone numbers or security keys were found in the Apple Account"
         },
         "abort": {
           "fix_action_not_available": "iCloud3 can not make this change right now. It may still be starting. Try again after iCloud3 has finished starting.",
@@ -1483,6 +1606,78 @@
           "name": "Sounds",
           "description": "If a sound is to be played along with message"
         }
+      }
+    }
+  },
+  "selector": {
+    "cf_text": {
+      "options": {
+        "saved_inzone_intervals": "Default intervals for new devices",
+        "saved_tracking_parameters": "Tracking parameters",
+        "saved_special_zones": "Special zones",
+        "saved_waze": "Waze route distance, time & history",
+        "saved_format_settings": "Units, zone names & Event Log",
+        "saved_display_text_as": "Hide private text in the Event Log",
+        "saved_away_time_zone": "Away time zone",
+        "saved_sensors": "Sensors",
+        "saved_exclude_sensors": "Excluded sensors",
+        "saved_analytics": "iCloud3 Analytics",
+        "saved_tools": "Log level",
+        "saved_log_level": "Log level",
+        "saved_device_order": "Device order",
+        "saved_tracking_modes": "Tracking modes",
+        "beta_version_store_unknown": "HACS or the Marketplace",
+        "beta_version_state_unknown": "unknown, the iCloud3 Pre-release switch wasn't found in HACS or the Marketplace",
+        "beta_version_state_off": "off",
+        "beta_version_state_on": "on",
+        "auth_terms_of_use_needed": "Terms of Use need accepting",
+        "auth_needed": "Authentication needed",
+        "status_apple_accts_one": "{cnt} Apple Account",
+        "status_apple_accts_other": "{cnt} Apple Accounts",
+        "status_tracked_one": "{cnt} device tracked",
+        "status_tracked_other": "{cnt} devices tracked",
+        "status_monitored_one": "{cnt} monitored",
+        "status_monitored_other": "{cnt} monitored",
+        "status_needs_attention_one": "{cnt} needs attention",
+        "status_needs_attention_other": "{cnt} need attention",
+        "confirm_default": "Do you want to perform the selected action?",
+        "confirm_restart_icloud3": "Restart iCloud3 now?",
+        "confirm_yes_restart_icloud3": "✓ Yes, restart iCloud3",
+        "confirm_no_restart_icloud3": "◀ No, cancel",
+        "confirm_reset_data_source": "Clear the Apple Account and Mobile App device selections of {devices}?",
+        "confirm_yes_reset_data_source": "✕ Yes, clear them",
+        "confirm_no_reset_data_source": "◀ No, keep them",
+        "confirm_reset_tracking": "Remove {apple_accts} and {devices}? The other settings are kept.",
+        "confirm_yes_reset_tracking": "✕ Yes, remove them",
+        "confirm_no_reset_tracking": "◀ No, keep them",
+        "confirm_reset_general": "Reset all settings to their default values? The Apple Accounts and devices are kept.",
+        "confirm_yes_reset_general": "↻ Yes, reset them",
+        "confirm_no_reset_general": "◀ No, keep them",
+        "confirm_del_apple_acct_cookies": "Delete the cookie and session files of {apple_accts}? Tracking pauses until iCloud3 restarts and the accounts may need to be authenticated again.",
+        "confirm_yes_del_apple_acct_cookies": "✕ Yes, delete them",
+        "confirm_no_del_apple_acct_cookies": "◀ No, keep them",
+        "confirm_del_icloud3_config_files": "Factory reset: delete all iCloud3 configuration files? {apple_accts}, {devices} and all settings are deleted.",
+        "confirm_yes_del_icloud3_config_files": "✕ Yes, delete them",
+        "confirm_no_del_icloud3_config_files": "◀ No, keep them",
+        "confirm_delete_device": "Delete {device} ({devicename}) and its {sensors}?",
+        "confirm_yes_delete_device": "✕ Yes, delete {device}",
+        "confirm_no_delete_device": "◀ No, keep it",
+        "aa_status_503": "Sign-in failed, Apple refused the request (503)",
+        "aa_status_login_failed": "Sign-in failed",
+        "aa_status_login_failed_retrying": "Sign-in failed, retrying",
+        "aa_status_logged_in": "Signed in",
+        "aa_status_not_logged_in": "Not signed in",
+        "aa_devices_tracked_one": "{tracked} of {total} device tracked",
+        "aa_devices_tracked_other": "{tracked} of {total} devices tracked",
+        "cnt_devices_one": "{cnt} device",
+        "cnt_devices_other": "{cnt} devices",
+        "changes_pending": "Changes are applied when you close Configure (✕).",
+        "confirm_cleanup_active_devices": "The sensors of the tracked devices {devices} are deleted from HA and created again.{other_groups} Continue?",
+        "confirm_yes_cleanup_active_devices": "✕ Yes, delete and create them again",
+        "confirm_no_cleanup_active_devices": "◀ No, keep them",
+        "cnt_apple_accts_one": "{cnt} Apple Account",
+        "cnt_apple_accts_other": "{cnt} Apple Accounts",
+        "confirm_cleanup_other_groups": "The items checked in the other groups are deleted too: {groups}."
       }
     }
   }

@@ -419,6 +419,43 @@ def is_apple_acct_logged_into(apple_id):
             and Gb.upw_valid_by_apple_id.get(apple_id, False) is True)
 
 #--------------------------------------------------------------------
+def is_apple_acct_login_failed(apple_id):
+    '''
+    The Apple Acct login failed (invalid or changed password, Apple refused it, not
+    logged into). An account waiting for an authentication code has not failed.
+    '''
+    AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+
+    if AppleAcct is not None and AppleAcct.is_reauth_needed:
+        return False
+
+    return (apple_id in Gb.AppleAcct_error_by_apple_id
+            or Gb.upw_valid_by_apple_id.get(apple_id) is False
+            or AppleAcct is None
+            or AppleAcct.login_successful is False)
+
+def login_failed_apple_ids():
+    return [conf_apple_acct[CONF_APPLE_ACCT]
+                    for conf_apple_acct in Gb.conf_apple_accounts
+                    if (conf_apple_acct[CONF_APPLE_ACCT] != ''
+                        and is_apple_acct_login_failed(conf_apple_acct[CONF_APPLE_ACCT]))]
+
+def reauth_needed_apple_id():
+    '''
+    The first Apple Acct waiting for an authentication code, '' if none
+    '''
+    for conf_apple_acct in Gb.conf_apple_accounts:
+        AppleAcct = Gb.AppleAcct_by_apple_id.get(conf_apple_acct[CONF_APPLE_ACCT])
+        if AppleAcct is not None and AppleAcct.is_reauth_needed:
+            return AppleAcct.apple_id
+
+    # The global is also set to the account displayed on the Authenticate screen
+    if Gb.AppleAcct_reauth_needed is not None and Gb.AppleAcct_reauth_needed.is_reauth_needed:
+        return Gb.AppleAcct_reauth_needed.apple_id
+
+    return ''
+
+#--------------------------------------------------------------------
 def _apple_acct_filenames(apple_id):
     '''
     The .cookies, .session and .tpw files AppleAcctManager uses for the apple_id

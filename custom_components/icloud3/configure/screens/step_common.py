@@ -5,12 +5,11 @@ from ...const_config        import (CONF_APPLE_ACCT, CONF_PASSWORD, CONF_VERSION
                                     CONF_APPLE_ACCOUNTS, CONF_DEVICES, CONF_PARAMETER_FLOAT,
                                     CF_GENERAL, )
 from ...utils.utils         import (isnot_empty, list_add, encode_password, decode_password, )
-from ...utils.messaging     import (log_exception, post_event, _log, )
+from ...utils.messaging     import (post_event, _log, )
 
 from ...startup             import config_file
 from ...startup             import start_ic3
 
-from .                      import form_config_flow as forms
 from ..                     import utils_cf
 
 
@@ -75,14 +74,13 @@ class OptionsFlow_Common_Steps:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_confirm_action(self, user_input=None, errors=None):
         '''
-        Confirm an action - This will display a screen containing the action_items.
+        Confirm an action - Display the action_desc with the Yes and No menu rows.
 
         Parametters:
             self.confirm_action = {
-                    'action_desc': None,
-                    'action_items': TOOL_LIST[acton_item],
-                    'no_func': self.confirm_test_no,
-                    'no_func_async': self.async_confirm_test_no,
+                    'action_desc': 'Delete Gary (gary_iphone) and its sensors?',
+                    'yes_label': '✕ Yes, delete Gary',     (None = strings.json label)
+                    'no_label': '◀ No, keep it',            (None = strings.json label)
                     'yes_func': self.confirm_test_yes,
                     'yes_func_async': self.async_confirm_test_yes,
                     'return_to_func_async': self.async_step_tools,
@@ -95,51 +93,47 @@ class OptionsFlow_Common_Steps:
 
         utils_cf.log_step_info(self, user_input)
 
-        if user_input is None or 'action_items' not in user_input:
-            try:
-                action_items = self.confirm_action.get('action_items')
-                return self.async_show_form(step_id='confirm_action',
-                                        data_schema=forms.form_confirm_action(self, action_items=action_items),
-                                        errors=self.errors)
-            except Exception as err:
-                log_exception(err)
+        action_desc = self.confirm_action.get('action_desc') or utils_cf.tr('confirm_default')
 
-        user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-        utils_cf.log_step_info(self, user_input, action_item)
+        menu_options = {'confirm_action_no':  self.confirm_action.get('no_label'),
+                        'confirm_action_yes': self.confirm_action.get('yes_label')}
 
-        # The action function can set self.errors if it was not completed, it is
-        # displayed instead of the 'action_completed' message
-        if action_item == 'goto_previous':
-            pass
+        return await utils_cf.async_show_list_menu(self, 'confirm_action', menu_options,
+                                    placeholders={'action_desc': action_desc})
 
-        elif action_item.startswith('confirm_action_no'):
-            if self.confirm_action.get('no_func') is not None:
-                self.errors = {}
-                self.confirm_action['no_func']()
-                self.errors = self.errors or {'base': 'action_completed'}
-                self.confirm_action['no_func'] = None
+#...........................................................
+    async def async_step_confirm_action_no(self, user_input=None):
+        utils_cf.log_step_info(self, user_input, 'confirm_action_no')
 
-            elif self.confirm_action.get('no_func_async') is not None:
-                self.errors = {}
-                await self.confirm_action['no_func_async']()
-                self.errors = self.errors or {'base': 'action_completed'}
-                self.confirm_action['no_func_async'] = None
+        self.errors = {'base': 'action_cancelled'}
+        return await self.confirm_action['return_to_func_async'](errors=self.errors)
 
-        elif action_item.startswith('confirm_action_yes'):
-            if self.confirm_action.get('yes_func') is not None:
-                self.errors = {}
-                self.confirm_action['yes_func']()
-                self.errors = self.errors or {'base': 'action_completed'}
-                self.confirm_action['yes_func'] = None
+    async def async_step_confirm_action_yes(self, user_input=None):
+        utils_cf.log_step_info(self, user_input, 'confirm_action_yes')
 
-            elif self.confirm_action.get('yes_func_async') is not None:
-                self.errors = {}
-                await self.confirm_action['yes_func_async']()
-                self.errors = self.errors or {'base': 'action_completed'}
-                self.confirm_action['yes_func_async'] = None
+        # The destructive tools and the device delete change the configuration, it is saved and
+        # iCloud3 is restarted when Configure is closed. Other actions set commit_restart False.
+        if self.confirm_action.get('commit_restart', True):
+            self.config_file_commit_updates = True
+            list_add(self.config_parms_update_control, 'restart')
 
-            if self.confirm_action.get('return_to_next_yes_func_async'):
-                return await self.confirm_action['return_to_next_yes_func_async'](errors=self.errors)
+        # A yes function returns False when it failed, other return values are a success. It
+        # can also set self.errors, that message is displayed instead of the done message.
+        done_msg = self.confirm_action.get('done_msg') or 'action_completed'
+        self.errors = {}
+        if self.confirm_action['yes_func'] is not None:
+            done_ok = self.confirm_action['yes_func']() is not False
+            self.errors = self.errors or {'base': done_msg if done_ok else 'action_failed'}
+            self.confirm_action['yes_func'] = None
+
+        elif self.confirm_action.get('yes_func_async') is not None:
+            done_ok = await self.confirm_action['yes_func_async']() is not False
+            self.errors = self.errors or {'base': done_msg if done_ok else 'action_failed'}
+            self.confirm_action['yes_func_async'] = None
+        self.header_placeholders = self.confirm_action.get('done_placeholders') or {}
+
+        if self.confirm_action['return_to_next_yes_func_async']:
+            return await self.confirm_action['return_to_next_yes_func_async'](errors=self.errors)
 
         return await self.confirm_action['return_to_func_async'](errors=self.errors)
 
