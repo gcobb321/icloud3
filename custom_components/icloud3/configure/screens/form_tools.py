@@ -7,7 +7,7 @@ from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, CONF
 from ...const_char          import (DOTS, )
 
 from ...utils.utils         import (list_to_str, list_add, list_del,
-                                    is_empty, dict_value_to_list, six_item_dict, )
+                                    is_empty, six_item_dict, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -32,32 +32,10 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
-
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#           TOOLS
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_tools(self, user_input):
-    self.actions_list = TOOL_LIST_ITEMS.copy()
-    if user_input is None:
-        default_action = 'log_level'
-    else:
-        default_action = 'menu'
-
-    return vol.Schema({
-        vol.Required('action_items',
-                    default=TOOL_LIST[default_action]):
-                    selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
-        })
-
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           LOG LEVEL
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_log_level(self):
-    self.actions_list = LOG_LEVEL.copy()
-    default_action = 'save_menu'
-
     lists.build_log_level_devices_list(self)
     if Gb.conf_general[CONF_LOG_LEVEL_DEVICES] != 'all':
         Gb.conf_general[CONF_LOG_LEVEL_DEVICES] = [
@@ -68,17 +46,13 @@ def form_log_level(self):
 
     return vol.Schema({
         vol.Optional(CONF_LOG_LEVEL,
-                    default=utils_cf.option_parm_to_text(self, CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(LOG_LEVEL_OPTIONS), mode='dropdown')),
+                    default=utils_cf.option_parm_key(self, CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)):
+                    utils_cf.select(LOG_LEVEL_OPTIONS, translation_key='log_level', mode='dropdown'),
         vol.Required(CONF_LOG_LEVEL_DEVICES,
                     default=Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
                     cv.multi_select(six_item_dict(self.log_level_devices_key_text)),
 
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+        **utils_cf.submit_back_field(self, 'save_menu', 'cancel_goto_menu', 'tools'),
         })
 
 
@@ -86,17 +60,7 @@ def form_log_level(self):
 #           CLEANUP E#NTITY REGISTRY
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_cleanup_entity_registry(self, user_input=None):
-    self.actions_list = []
-
-    check_item  = 'check_none' if self.tools_entity_reg_check_all else 'check_all'
-    show_sensor = 'show_some_sensors' if self.tools_cleanup_er_sensor_all  else 'show_all_sensors'
-
-    self.actions_list.append(ACTION_LIST_OPTIONS[check_item])
-    self.actions_list.append(ACTION_LIST_OPTIONS[show_sensor])
-    self.actions_list.extend(CLEANUP_ENTITY_REGISTRY)
-
     if user_input is None:
-        self.repair_entity_show_check_all = False
         er_util.scan_entity_reg_for_icloud3_items()
 
     # Build the base form_entities that will be displaed on the form
@@ -125,11 +89,11 @@ def form_cleanup_entity_registry(self, user_input=None):
 
             if (sensors_str.startswith('.dr:')
                     and len(device_sensors) == 1):
-                device_or_sensor = 'Device'
+                device_or_sensor = utils_cf.tr('er_device')
             else:
-                device_or_sensor = 'Sensors'
+                device_or_sensor = utils_cf.tr('er_sensors')
 
-            devicename_msg =  ( f"{hdr_bar} {devicename.upper()} > "
+            devicename_msg =  ( f"{hdr_bar} {devicename} · "
                                 f"{len(device_sensors)} {device_or_sensor} ({sensors_str})")
 
             item = {'value': devicename, 'label': devicename_msg}
@@ -152,10 +116,14 @@ def form_cleanup_entity_registry(self, user_input=None):
                         multiple=True,
                         mode='list'))})
 
+    # Select all and Show the sensor lists redisplay the screen
+    other_actions = {
+            'select_all': utils_cf.tr('action_select_all'),
+            'toggle_sensor_lists': utils_cf.tr('action_show_short_sensor_lists'
+                                                if self.tools_cleanup_er_sensor_all else
+                                            'action_show_full_sensor_lists')}
     schema.update({
-        vol.Required('action_items',
-                default=utils_cf.default_action_text('delete_device_sensors')):
-                selector.SelectSelector(selector.SelectSelectorConfig(
-                    options=utils_cf.actions_list(self), mode='list')),})
+        **utils_cf.submit_back_field(self, 'delete_device_sensors', 'goto_previous', 'tools',
+                                        other_actions=other_actions),})
 
     return vol.Schema(schema)

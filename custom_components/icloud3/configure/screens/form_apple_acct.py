@@ -109,6 +109,38 @@ def _build_apple_accts_displayed_over_5(self):
     list_add(self.apple_acct_items_displayed, account_owners_next_page)
 
 
+#................................................................................................
+def apple_acct_status(apple_id, with_device_cnt=True):
+    '''
+    The login status and tracked device count of an Apple Account displayed below its
+    name (Logged in · 2 of 10 devices tracked)
+    '''
+    AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+    error_AppleAcct = Gb.AppleAcct_error_by_apple_id.get(apple_id)
+    tracked_cnt, _, untracked_cnt, _ = lists.tracked_untracked_form_msg(apple_id)
+    devices_tracked = lists.devices_tracked_text(tracked_cnt, tracked_cnt + untracked_cnt)
+    if with_device_cnt is False:
+        devices_tracked = ''
+
+    if AppleAcct and AppleAcct.is_reauth_needed:
+        return f"{CF_ALERT}{utils_cf.tr('auth_needed')}{_dot(devices_tracked)}"
+    if AppleAcct and AppleAcct.terms_of_use_update_needed:
+        return f"{CF_ALERT}{utils_cf.tr('auth_terms_of_use_needed')}{_dot(devices_tracked)}"
+    if AppleAcct and AppleAcct.auth_failed_503:
+        return f"{CF_ALERT}{utils_cf.tr('aa_status_503')}"
+    if error_AppleAcct:
+        return CF_ALERT + utils_cf.tr('aa_status_login_failed_retrying'
+                                if error_AppleAcct.error_next_retry_secs > 0 else
+                            'aa_status_login_failed')
+    if aascf.is_apple_acct_logged_into(apple_id):
+        return f"{utils_cf.tr('aa_status_logged_in')}{_dot(devices_tracked)}"
+
+    return utils_cf.tr('aa_status_not_logged_in')
+
+
+def _dot(text):
+    return f" · {text}" if text else ''
+
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            OTHER APPLE PARAMETERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
