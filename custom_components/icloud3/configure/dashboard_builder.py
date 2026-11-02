@@ -733,15 +733,17 @@ async def build_existing_dashboards_selection_list(self):
         return
 
 
-    ll_dashboards_file_configs = await _read_lovelace_dashboards_file()
-    ll_dashboards_file_configs_str = str(ll_dashboards_file_configs)
+    # A deleted dashboard stays in hass.data until HA is restarted, so only keep the
+    # ones that are still in the .storage/lovelace_dashboards file
+    ll_dashboards_file_dbnames = [config['url_path']
+                                    for config in await _read_lovelace_dashboards_file()]
+    self.ic3db_Dashboards_by_dbname = {_dbname: _Dashboard
+                    for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items()
+                    if _dbname in ll_dashboards_file_dbnames}
 
     await _load_dashboard_layout_files(self)
 
     for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items():
-        if instr(ll_dashboards_file_configs_str, _dbname) is False:
-            continue
-
         self.AllDashboards_by_dbname[_dbname] = _Dashboard
 
         await _get_main_view_devicenames(self, _dbname, _Dashboard)
@@ -776,9 +778,6 @@ def build_dashboard_icons_msg(self):
 
     Dashboard Icons: <mdi:icon> iCloud3
     '''
-    if is_empty(self.ic3db_Dashboards_by_dbname):
-        load_ic3db_dashboards_from_ha_data(self)
-
     _dashboard_icons_msg = []
     for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items():
         _db_icon = _Dashboard.config.get('icon') or _icon(_dbname)
