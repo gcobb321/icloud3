@@ -18,7 +18,7 @@ messaging.post_repair_issue when Submit is selected in Settings > Repairs.
 import voluptuous as vol
 
 from homeassistant.components.repairs import ConfirmRepairFlow, RepairsFlow
-from homeassistant.core               import HomeAssistant
+from homeassistant.core               import HomeAssistant, callback
 from homeassistant.helpers            import issue_registry as ir
 
 from .global_variables  import GlobalVariables as Gb
@@ -34,7 +34,7 @@ from .startup                                   import config_file
 from .support                                   import analytics
 from .support                                   import marketplace as mp
 from .apple_acct                                import apple_acct_support as aas
-from .configure                                 import selection_lists as lists
+from .configure                                 import selection_lists as lists, utils_cf
 from .configure.screens.step_common             import OptionsFlow_Common_Steps
 from .configure.screens.step_apple_acct         import OptionsFlow_AppleAccount_Steps
 from .configure.screens.step_reauth             import OptionsFlow_Reauth_Steps
@@ -122,7 +122,15 @@ class iCloud3ConfigRepairFlow(ConfirmRepairFlow, OptionsFlow_Common_Steps,
         self.repair_item = ''           # devicename or apple_id being repaired, for the Event Log
 
 #..............................................................................
+    @callback
+    def async_show_form(self, **kwargs):
+        kwargs['description_placeholders'] = utils_cf.show_form_placeholders(
+                                                self, kwargs.get('description_placeholders'))
+        return super().async_show_form(**kwargs)
+
+#..............................................................................
     async def async_step_confirm(self, user_input=None):
+        await utils_cf.async_load_texts()
         if user_input is None:
             return await super().async_step_confirm()
 
@@ -161,7 +169,7 @@ class iCloud3ConfigRepairFlow(ConfirmRepairFlow, OptionsFlow_Common_Steps,
     async def async_step_menu(self, user_input=None, errors=None):
         return await self._async_finish_repair()
 
-    async def exit_configure_settings_final_tasks(self, exit_by_x_click=False):
+    async def exit_configure_settings_final_tasks(self):
         return await self._async_finish_repair()
 
 #..............................................................................
@@ -252,6 +260,7 @@ class iCloud3AppleAcctRepairFlow(iCloud3ConfigRepairFlow):
 
 #..............................................................................
     async def async_step_confirm(self, user_input=None):
+        await utils_cf.async_load_texts()
         if user_input is None:
             repair_action_options = self._repair_action_options()
             self.repair_action    = next(iter(repair_action_options))
@@ -360,6 +369,7 @@ class iCloud3AnalyticsRepairFlow(ConfirmRepairFlow):
                     outside the dialog can not be told apart (both delete the flow).
     '''
     async def async_step_confirm(self, user_input=None):
+        await utils_cf.async_load_texts()
         if user_input is None:
             json_payload = await analytics.async_build_json_payload()
             json_payload['uuid'] = 'HA Installation ID'

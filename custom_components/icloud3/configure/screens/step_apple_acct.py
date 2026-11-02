@@ -7,7 +7,7 @@ from ...const_config        import (PUSH, TEXT, TEXT_1, TEXT_2, HWKEY, CONF_APPL
                                     CONF_SERVER_LOCATION, CONF_SERVER_LOCATION_NEEDED,
                                     CONF_TRACKING_MODE, DEFAULT_APPLE_ACCOUNT_CONF,
                                     DEFAULT_DEVICE_CONF, )
-from ...utils.utils         import (instr, is_empty, isnot_empty, list_to_str, list_add,
+from ...utils.utils         import (apple_user, instr, is_empty, isnot_empty, list_add,
                                     encode_password, decode_password, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,
@@ -50,9 +50,7 @@ class OptionsFlow_AppleAccount_Steps:
         Initialize the variables used by the Apple Account screens. Called from the
         flow handler's initialize_options (the mixin's __init__ would never be run).
         '''
-        self.apple_acct_items_list      = []  # List of the apple_accts in the Gb.conf_tracking[apple_accts] parameter
-        self.apple_acct_items_displayed = []  # List of the apple_accts displayed on the device_list form
-        self.aa_page_item               = ['', '', '', '', '']  # Apple acct apple_id last displayed on each page
+        self.apple_acct_items_displayed = []  # The apple_ids displayed on the apple_accounts menu page
         self.aa_page_no                 = 0   # apple_accts List form page number, starting with 0
         self.add_apple_acct_flag        = False
         self.apple_id                   = ''
@@ -64,8 +62,8 @@ class OptionsFlow_AppleAccount_Steps:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_apple_accounts(self, user_input=None, errors=None):
         '''
-        Updata Data Sources form enables/disables finddev and mobile app data sources and
-        adds/updates/removes an Apple account using the Update Username/Password screen
+        Display the Apple Accounts, Add Apple Account and Back as menu rows. Selecting an
+        Apple Account opens the Apple Account menu.
         '''
         self.step_id = 'apple_accounts'
         self.errors = errors or utils_cf.set_header_msg(self) or {}
@@ -74,113 +72,91 @@ class OptionsFlow_AppleAccount_Steps:
         await self.async_write_icloud3_configuration_file()
 
         self.add_apple_acct_flag = False
-        self.actions_list_default = ''
-        action_item = ''
 
         if Gb.internet_error:
             self.errors['base'] = 'internet_error'
 
-        user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-
-        # No Apple Accts, default to Add, this will transfer to update_apple-acct below
+        # No Apple Accts, open the Add Apple Account screen
         if self._is_apple_acct_setup() is False:
-            # self.errors['apple_accts'] = 'apple_acct_not_set_up'
-            user_input = {'apple_accts': '➤ ADD'}
+            return await self.async_step_apple_accounts_add()
 
-        elif isnot_empty(Gb.conf_apple_accounts):
+        if isnot_empty(Gb.conf_apple_accounts):
             self._enable_data_source_ICLOUD()
 
-        if user_input is None:
-            self.actions_list_default = 'update_apple_acct'
-            return self.async_show_form(step_id='apple_accounts',
-                                        data_schema=forms.form_apple_accounts(self),
-                                        errors=self.errors)
+        menu_options, placeholders = forms.apple_accounts_menu_options(self)
+        utils_cf.log_step_info(self, user_input)
 
-        self._enable_data_source_ICLOUD()
-        utils_cf.log_step_info(self, user_input, action_item)
+        return await utils_cf.async_show_list_menu(self, 'apple_accounts', menu_options,
+                                placeholders=placeholders)
 
-        #.......................................................................
-        match action_item:
-            case 'menu':
-                self._initialize_self_AppleAcct_fields_from_Gb()
-                return await self.async_step_menu()
-
-            case 'import_apple_devices':
-                return await self.async_step_import_apple_devices()
-
-        #.......................................................................
-        # Set add or display next page now since they are not in apple_acct_items_by_idx
-        if user_input['apple_accts'].startswith('➤ ADD'):
-            self.add_apple_acct_flag = True
-            action_item = 'update_apple_acct'
-            self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
-            return await self.async_step_update_apple_acct(user_input=None)
-
-        if user_input['apple_accts'].startswith('➤ OTHER'):
-            self.aa_page_no += 1
-            if self.aa_page_no > int(len(self.apple_acct_items_list)/5):
-                self.aa_page_no = 0
-            return await self.async_step_apple_accounts()
-
-        # Display the Confirm Actions form which will execute the remove_apple.. function
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                'apple_accts', self.apple_acct_items_by_apple_id)
-
-        ui_apple_id = user_input['apple_accts']
-        self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(ui_apple_id)
-
-        utils_cf.log_step_info(self, user_input, action_item)
-
-        if action_item == 'other_apple_acct_parameters':
-            return await self.async_step_other_apple_acct_parameters(user_input)
-
-        if action_item == 'delete_apple_acct':
-            # Drop the tracked/untracked part from the current heading (user_input['account_selected'])
-            # Ex: account_selected = 'GaryCobb (gcobb321) -> 4 of 7 iCloud Devices Tracked, Tracked-(Gary-iPad ..'
-            confirm_action_form_hdr = ( f"Delete Apple Account - {user_input['apple_accts']}")
-            if self.AppleAcct:
-                confirm_action_form_hdr += f", Devices-{list_to_str(self.AppleAcct.aadevice_dnames)}"
-            self.multi_form_user_input = user_input.copy()
-
-            return await self.async_step_delete_apple_acct(user_input=user_input)
-
-        if self.aa_idx < 0:
-            conf_apple_acct_apple_ids = [apple_acct[CONF_APPLE_ACCT]
-                                        for apple_acct in Gb.conf_apple_accounts]
-            log_info_msg(   f"Error > {ui_apple_id}, Username not found in Apple accts device list, "
-                            f"Valid Accts-{list_to_str(conf_apple_acct_apple_ids)}")
-
-
-        # if (self.apple_id != user_input.get('apple_accts', self.apple_id)
-        #         and action_item == 'save'):
-        #     action_item = 'update_apple_acct'
-
-        self.apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
-        self.password = self.conf_apple_acct[CONF_PASSWORD]
-        self.AppleAcct = Gb.AppleAcct_by_apple_id.get(self.apple_id)
-
-        if Gb.is_log_level_debug:
-            log_user_input = user_input.copy()
-            utils_cf.log_step_info(self, user_input, action_item)
-
-        if action_item == 'update_apple_acct':
-            self.aa_page_item[self.aa_page_no] = self.conf_apple_acct[CONF_APPLE_ACCT]
+#...........................................................
+    async def open_apple_accounts_acct(self, slot):
+        if (slot < len(self.apple_acct_items_displayed)
+                and self._select_apple_acct(self.apple_acct_items_displayed[slot])):
+            self.add_apple_acct_flag = False
             return await self.async_step_update_apple_acct()
 
-        # An Apple Acct can only be authenticated if it is valid and logged into
-        if action_item == 'authenticate_apple_acct':
-            if aascf.is_apple_acct_logged_into(self.apple_id):
-                return await self.async_step_reauth(reauth_apple_id=self.apple_id)
-            self.errors['apple_accts'] = 'apple_acct_not_logged_into'
+        return await self.async_step_apple_accounts()
 
-        if self.errors == {}:
-            if action_item == 'add_change_apple_acct':
-                return await self.async_step_menu()
+    async def async_step_apple_accounts_next_page(self, user_input=None):
+        self.aa_page_no += 1
+        return await self.async_step_apple_accounts()
 
-        self.step_id = 'apple_accounts'
-        return self.async_show_form(step_id='apple_accounts',
-                            data_schema=forms.form_apple_accounts(self),
-                            errors=self.errors)
+    async def async_step_apple_accounts_add(self, user_input=None):
+        self._enable_data_source_ICLOUD()
+        self.add_apple_acct_flag = True
+        self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
+        return await self.async_step_update_apple_acct(user_input=None)
+
+    async def async_step_apple_accounts_back(self, user_input=None):
+        self._initialize_self_AppleAcct_fields_from_Gb()
+        return await self.async_step_menu()
+
+#...........................................................
+    def _select_apple_acct(self, apple_id):
+        '''
+        Set the Apple Account being updated
+
+        Return:
+            False = The apple_id is not in the iCloud3 configuration
+        '''
+        # conf_apple_acct returns the first account if the apple_id is not found
+        if apple_id not in [conf_apple_acct[CONF_APPLE_ACCT]
+                                    for conf_apple_acct in Gb.conf_apple_accounts]:
+            return False
+
+        self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(apple_id)
+        self.apple_id        = self.conf_apple_acct[CONF_APPLE_ACCT]
+        self.password        = self.conf_apple_acct[CONF_PASSWORD]
+        self.AppleAcct       = Gb.AppleAcct_by_apple_id.get(self.apple_id)
+        return True
+
+    def _stop_login_retry(self):
+        AppleAcct = Gb.AppleAcct_by_apple_id.get(self.apple_id)
+        if AppleAcct is None:
+            return
+
+        AppleAcct.error_retry_cnt = 0
+        AppleAcct.error_next_retry_secs = 0
+        post_alert(f"Apple Acct > {AppleAcct.apple_user}, Retry Login Canceled")
+
+    async def _async_reauthenticate_apple_acct(self):
+        '''
+        Open the Authenticate screen of the Apple Account selected on the Apple Accounts
+        list: accept Apple's new Terms of Use, enter the code Apple is waiting for, or,
+        while signed in, change how the code is sent, request a code and build the
+        Dashboard card. One that is not signed in redisplays the Update Apple Account
+        screen with the reason.
+        '''
+        apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
+        AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+        if (AppleAcct is not None
+                and (AppleAcct.is_reauth_needed or AppleAcct.terms_of_use_update_needed
+                        or aascf.is_apple_acct_logged_into(apple_id))):
+            return await self.async_step_reauth(reauth_apple_id=apple_id)
+
+        return await self.async_step_update_apple_acct(
+                                errors={'base': 'apple_acct_not_logged_into'})
 
 #...........................................................
     def _enable_data_source_ICLOUD(self, disable=False):
@@ -225,11 +201,12 @@ class OptionsFlow_AppleAccount_Steps:
         self.errors = errors or utils_cf.set_header_msg(self) or {}
         self.multi_form_user_input = {}
         self.errors_user_input = user_input or {}
-        self.actions_list_default = ''
         action_item = ''
         await self.async_write_icloud3_configuration_file()
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
+        user_input = utils_cf.flatten_sections(user_input)
+        other_parms_saved = False
 
         utils_cf.log_step_info(self, user_input, action_item)
 
@@ -242,18 +219,23 @@ class OptionsFlow_AppleAccount_Steps:
 
             # exit_repair - Opened from HA Repairs, async_step_apple_accounts ends the repair
             case 'cancel_goto_previous' | 'rtn_apple_accounts' | 'exit_repair':
-                self.apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
-                self.password = decode_password(self.conf_apple_acct[CONF_PASSWORD])
-                self.AppleAcct = Gb.AppleAcct_by_apple_id.get(self.apple_id)
+                # The Add form's account is empty, keep the account that was selected before
+                if self.add_apple_acct_flag is False:
+                    self.apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
+                    self.password = decode_password(self.conf_apple_acct[CONF_PASSWORD])
+                    self.AppleAcct = Gb.AppleAcct_by_apple_id.get(self.apple_id)
                 return await self.async_step_apple_accounts(user_input=None)
 
+            # The Update Apple Account screen actions. They discard the entered data.
+            case 'authenticate_apple_acct' if self.is_repair_flow is False:
+                return await self._async_reauthenticate_apple_acct()
+
+            case 'delete_apple_acct' if self.is_repair_flow is False:
+                return await self.async_step_delete_apple_acct()
+
             case 'stop_login_retry':
-                AppleAcct = Gb.AppleAcct_by_apple_id.get(self.apple_id)
-                if AppleAcct:
-                    AppleAcct.error_retry_cnt = 0
-                    AppleAcct.error_next_retry_secs = 0
+                self._stop_login_retry()
                 user_input = None
-                post_alert(f"Apple Acct > {AppleAcct.apple_user}, Retry Login Canceled")
                 self.errors['base'] = 'conf_updated'
                 return await self.async_step_update_apple_acct(
                                                 user_input=user_input, errors=self.errors)
@@ -267,10 +249,12 @@ class OptionsFlow_AppleAccount_Steps:
                                 'account_selected', self.apple_acct_items_by_apple_id)
         user_input = utils_cf.strip_spaces(user_input, [CONF_APPLE_ACCT, CONF_PASSWORD])
         if CONF_SERVER_LOCATION in user_input:
-            user_input = utils_cf.option_text_to_parm(user_input,
+            user_input = utils_cf.select_value(user_input,
                                     CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)
-        else:
+        elif self.add_apple_acct_flag or self.is_repair_flow:
             user_input[CONF_SERVER_LOCATION] = 'usa'
+        else:
+            user_input[CONF_SERVER_LOCATION] = self.conf_apple_acct[CONF_SERVER_LOCATION]
 
         if action_item == 'other_apple_acct_parameters':
             return await self.async_step_other_apple_acct_parameters(user_input)
@@ -332,6 +316,18 @@ class OptionsFlow_AppleAccount_Steps:
             self.errors[CONF_APPLE_ACCT] = 'apple_acct_apple_id_inuse_error'
             action_item = ''
 
+        # An Apple server location other than USA is also displayed on the Update Apple
+        # Account screen opened from HA Repairs. The Server Location Needed parameter is
+        # saved on its own, it is not an Apple Account field.
+        if (action_item == 'save_log_into_apple_acct'
+                and user_input[CONF_SERVER_LOCATION] != 'usa'):
+            if Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED] is False:
+                Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED] = True
+                self.update_config_file_tracking(force_config_update=True)
+                self.header_msg = 'conf_updated'
+                self.saved_item = conf_apple_id
+                other_parms_saved = True
+
         # Saving a logged into account with no changes, nothing to do. Saving an acct
         # whose login failed without changes retries the login.
         if (action_item == 'save_log_into_apple_acct'
@@ -341,6 +337,8 @@ class OptionsFlow_AppleAccount_Steps:
                 and user_input[CONF_LOCATE_ALL] == conf_locate_all
                 and user_input[CONF_SERVER_LOCATION] == self.conf_apple_acct[CONF_SERVER_LOCATION]
                 and aascf.is_apple_acct_logged_into(ui_apple_id)):
+            if other_parms_saved:
+                return await self.async_step_apple_accounts(user_input=None)
             self.errors['base'] = 'apple_acct_no_changes'
             action_item = ''
 
@@ -354,11 +352,6 @@ class OptionsFlow_AppleAccount_Steps:
 
         # Display the Confirm Actions form which will execute the remove_apple.. function
         if action_item == 'delete_apple_acct':
-            # Drop the tracked/untracked part from the current heading (user_input['account_selected'])
-            # Ex: account_selected = 'GaryCobb (gcobb321) -> 4 of 7 iCloud Devices Tracked, Tracked-(Gary-iPad ..'
-            confirm_action_form_hdr = ( f"Delete Apple Account - {user_input['account_selected']}")
-            if self.AppleAcct:
-                confirm_action_form_hdr += f", Devices-{list_to_str(self.AppleAcct.aadevice_dnames)}"
             self.multi_form_user_input = user_input.copy()
 
             return await self.async_step_delete_apple_acct(user_input=user_input)
@@ -373,8 +366,7 @@ class OptionsFlow_AppleAccount_Steps:
         other_fields_changed   = False
         login_verifies_upw     = False
         saved_conf_apple_accts = None
-        apple_id_items_text    = self.apple_acct_items_by_apple_id.get(ui_apple_id, NOT_LOGGED_IN)
-        aa_not_logged_into     = instr(apple_id_items_text, NOT_LOGGED_IN)
+        aa_not_logged_into     = ui_apple_id not in self.apple_acct_items_by_apple_id
 
         if action_item == 'save_log_into_apple_acct':
             # Apple acct login info changed, validate it without logging in
@@ -395,6 +387,7 @@ class OptionsFlow_AppleAccount_Steps:
                 if aa_login_info_changed:
                     saved_conf_apple_accts = self._save_conf_apple_accts()
                 self._update_conf_apple_acct(self.aa_idx, user_input)
+                self.saved_item = ui_apple_id
                 await self.async_write_icloud3_configuration_file()
 
                 # Changed login info is not kept until the login is successful. The
@@ -422,7 +415,6 @@ class OptionsFlow_AppleAccount_Steps:
                 Gb.upw_valid_by_apple_id[ui_apple_id] = upw_valid
 
                 if upw_valid is False:
-                    self.actions_list_default = 'add_change_apple_acct'
                     self.errors['base'] = ''
                     self.errors[CONF_APPLE_ACCT] = self._login_error_msg('apple_acct_inupw_valid')
 
@@ -469,6 +461,7 @@ class OptionsFlow_AppleAccount_Steps:
         # The changed login info was saved and the login was successful
         if saved_conf_apple_accts:
             self.header_msg = 'conf_updated'
+            self.saved_item = ui_apple_id
 
         AppleAcct = self.AppleAcct = Gb.AppleAcct_by_apple_id.get(ui_apple_id)
 
@@ -494,7 +487,7 @@ class OptionsFlow_AppleAccount_Steps:
         if AppleAcct.is_reauth_needed:
             # self.aa_reauth_apple_id = self.apple_id
             user_input = {  'account_selected': self.apple_id,
-                            'action_items': 'request_auth_code'}
+                            FORM_ACTION: 'request_auth_code'}
             return await self.async_step_reauth(
                             user_input=user_input, reauth_apple_id=self.apple_id)
 
@@ -518,16 +511,8 @@ class OptionsFlow_AppleAccount_Steps:
             - The Update Apple Account form
             - None = The apple_id is not in the iCloud3 configuration
         '''
-        # conf_apple_acct returns the first account if the apple_id is not found
-        if apple_id not in [conf_apple_acct[CONF_APPLE_ACCT]
-                                    for conf_apple_acct in Gb.conf_apple_accounts]:
+        if self._select_apple_acct(apple_id) is False:
             return None
-
-        self.conf_apple_acct, self.aa_idx = config_file.conf_apple_acct(apple_id)
-        self.apple_id        = self.conf_apple_acct[CONF_APPLE_ACCT]
-        self.password        = self.conf_apple_acct[CONF_PASSWORD]
-        self.AppleAcct       = Gb.AppleAcct_by_apple_id.get(self.apple_id)
-        self.aa_page_item[self.aa_page_no] = self.apple_id
 
         return await self.async_step_update_apple_acct()
 
@@ -574,7 +559,8 @@ class OptionsFlow_AppleAccount_Steps:
         self.errors = {}
         return self.async_show_form(step_id='update_apple_acct',
                         data_schema=forms.form_update_apple_acct(self),
-                        errors=errors)
+                        errors=errors,
+                        description_placeholders=forms.apple_acct_heading(self))
 
 #...........................................................................................
     @staticmethod
@@ -631,7 +617,6 @@ class OptionsFlow_AppleAccount_Steps:
                 'conf_apple_acct':     copy.deepcopy(self.conf_apple_acct),
                 'aa_idx':              self.aa_idx,
                 'aa_page_no':          self.aa_page_no,
-                'aa_page_item':        copy.deepcopy(self.aa_page_item),
                 'add_apple_acct_flag': self.add_apple_acct_flag, }
 
 #...........................................................................................
@@ -645,7 +630,6 @@ class OptionsFlow_AppleAccount_Steps:
         self.conf_apple_acct      = saved['conf_apple_acct']
         self.aa_idx               = saved['aa_idx']
         self.aa_page_no           = saved['aa_page_no']
-        self.aa_page_item         = saved['aa_page_item']
         self.add_apple_acct_flag  = saved['add_apple_acct_flag']
 
         self.update_config_file_tracking(force_config_update=True)
@@ -721,21 +705,18 @@ class OptionsFlow_AppleAccount_Steps:
             self.conf_apple_acct = DEFAULT_APPLE_ACCOUNT_CONF.copy()
             self.aa_idx = aa_idx - 1
             if self.aa_idx < 0: self.aa_idx = 0
-            self.aa_page_item[self.aa_page_no] = ''
 
         # Add a new account
         elif self.add_apple_acct_flag or aa_idx < 0:
             Gb.conf_apple_accounts.append(self.conf_apple_acct)
             self.aa_idx = len(Gb.conf_apple_accounts) - 1
-            self.aa_page_no = int(self.aa_idx / 5)
-            self.aa_page_item[self.aa_page_no] = self.conf_apple_acct[CONF_APPLE_ACCT]
+            self.aa_page_no = self.aa_idx // APPLE_ACCT_LIST_PAGE_SIZE
 
         # Set the account being updated to the new value
         else:
             Gb.conf_apple_accounts[aa_idx] = self.conf_apple_acct
             self.aa_idx = aa_idx
-            self.aa_page_no = int(self.aa_idx / 5)
-            self.aa_page_item[self.aa_page_no] = self.conf_apple_acct[CONF_APPLE_ACCT]
+            self.aa_page_no = self.aa_idx // APPLE_ACCT_LIST_PAGE_SIZE
 
         max_aa_idx = len(Gb.conf_apple_accounts) - 1
         if self.aa_idx > max_aa_idx:
@@ -772,14 +753,15 @@ class OptionsFlow_AppleAccount_Steps:
         self.errors_user_input = {}
 
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-        user_input = utils_cf.option_text_to_parm(user_input,
+        user_input = utils_cf.select_value(user_input,
                                 'device_action', DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS)
         utils_cf.log_step_info(self, user_input, action_item)
 
         if user_input is None or action_item is None:
             return self.async_show_form(step_id='delete_apple_acct',
                                         data_schema=forms.form_delete_apple_acct(self),
-                                        errors=self.errors)
+                                        errors=self.errors,
+                                        description_placeholders=forms.apple_acct_heading(self, import_hint=False))
 
         if action_item == 'cancel_goto_previous':
             return await self.async_step_update_apple_acct()
@@ -793,7 +775,8 @@ class OptionsFlow_AppleAccount_Steps:
         await aascf.async_delete_apple_acct_files(delete_apple_id)
 
         list_add(self.config_parms_update_control, ['tracking', 'restart'])
-        self.header_msg = 'action_completed'
+        self.header_msg = 'deleted_apple_acct'
+        self.header_placeholders = {'apple_acct': apple_user(delete_apple_id)}
 
         return await self.async_step_apple_accounts()
 
@@ -832,7 +815,8 @@ class OptionsFlow_AppleAccount_Steps:
                 icloud_dname = conf_device[CONF_AADEV_NAME]
                 other_apple_acct = [AppleAcct.apple_id
                                         for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items()
-                                        if icloud_dname in AppleAcct.device_id_by_aadev_dname]
+                                        if (apple_id != conf_apple_id
+                                            and icloud_dname in AppleAcct.device_id_by_aadev_dname)]
                 if other_apple_acct == []:
                     conf_device[CONF_APPLE_ACCT] = ''
                     conf_device[CONF_TRACKING_MODE] = INACTIVE
@@ -857,13 +841,16 @@ class OptionsFlow_AppleAccount_Steps:
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
         save_user_input = None
 
-        user_input = utils_cf.option_text_to_parm(user_input,
+        user_input = utils_cf.select_value(user_input,
                                     CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)
         utils_cf.log_step_info(self, user_input, action_item)
 
-        if user_input[CONF_SERVER_LOCATION] != 'usa':
+        # Opened from the Apple Account menu (no user_input) or from the Update Apple
+        # Account screen opened from HA Repairs (its user_input, no action_item)
+        if user_input is None:
+            action_item = None
+        elif user_input[CONF_SERVER_LOCATION] != 'usa':
             user_input[CONF_SERVER_LOCATION_NEEDED] = True
-
 
         #.......................................................................
         match action_item:
@@ -871,15 +858,15 @@ class OptionsFlow_AppleAccount_Steps:
                 save_user_input = user_input
 
             case 'rtn_update_apple_acct':
-                return await self.async_step_update_apple_acct(
-                                            user_input=save_user_input, errors=self.errors)
+                return await self._rtn_from_other_apple_acct_parameters(save_user_input)
 
             case 'save':
                 Gb.conf_tracking[CONF_SERVER_LOCATION_NEEDED] = user_input[CONF_SERVER_LOCATION_NEEDED]
                 self.conf_apple_acct[CONF_SERVER_LOCATION]    = user_input[CONF_SERVER_LOCATION]
                 self.update_config_file_tracking(user_input, force_config_update=True)
-                return await self.async_step_update_apple_acct(
-                                            user_input=save_user_input, errors=self.errors)
+                self.header_msg = 'conf_updated'
+                self.saved_item = self.conf_apple_acct[CONF_APPLE_ACCT]
+                return await self._rtn_from_other_apple_acct_parameters(save_user_input)
 
         #.......................................................................
         if utils_cf.any_errors(self):
@@ -887,7 +874,13 @@ class OptionsFlow_AppleAccount_Steps:
 
         return self.async_show_form(step_id='other_apple_acct_parameters',
                         data_schema=forms.form_other_apple_acct_parameters(self),
-                        errors=self.errors)
+                        errors=self.errors,
+                        description_placeholders=forms.apple_acct_heading(self))
+
+#...........................................................
+    async def _rtn_from_other_apple_acct_parameters(self, user_input):
+        return await self.async_step_update_apple_acct(
+                                        user_input=user_input, errors=self.errors)
 
 
 
@@ -929,7 +922,7 @@ class OptionsFlow_AppleAccount_Steps:
         if (user_input is None or self.errors):
             forms_schema = forms.form_import_apple_devices(self)
             if is_empty(self.imported_aa_ic3_conf_devices):
-                self.errors['action_items'] = 'import_aa_no_devices_avail'
+                self.errors['base'] = 'import_aa_no_devices_avail'
 
             return self.async_show_form(step_id='import_apple_devices',
                         data_schema=forms_schema,
@@ -940,13 +933,13 @@ class OptionsFlow_AppleAccount_Steps:
             await self._add_imported_devices(user_input)
             if self.menu_item in ['apple_accounts', 'device_list']:
                 self.menu_item = 'device_list'
-                return await self.async_step_device_list()
+                return await self.async_step_device_list(errors=self.errors)
 
         utils_cf.log_step_info(self, user_input, action_item)
 
         forms_schema = forms.form_import_apple_devices(self)
         if is_empty(self.imported_aa_ic3_conf_devices):
-                self.errors['action_items'] = 'import_aa_no_devices_avail'
+                self.errors['base'] = 'import_aa_no_devices_avail'
 
         return self.async_show_form(step_id='import_apple_devices',
                             data_schema=forms_schema,
@@ -963,7 +956,8 @@ class OptionsFlow_AppleAccount_Steps:
         if is_empty(imported_aadevices_keys):
             return
 
-        self.errors['base'] = 'conf_updated'
+        self.errors['base'] = 'added_devices'
+        self.header_placeholders = {'devices': utils_cf.tr_cnt('cnt_devices', len(imported_aadevices_keys))}
 
         for imported_aadevices_key in imported_aadevices_keys:
             self.conf_device = DEFAULT_DEVICE_CONF.copy()
@@ -987,6 +981,20 @@ class OptionsFlow_AppleAccount_Steps:
             log_info_msg(f'Add Imported Apple Device-({imported_aadevices_key}), '
                             f'Device-{conf_device[CONF_FNAME]=}, '
                             f'/{conf_device[CONF_IC3_DEVICENAME]=}')
+
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   The Apple Account rows on the Apple Accounts menu (apple_accounts) are menu options.
+#   HA opens a menu option's async_step_[option] function so one is created for each row.
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _open_apple_accounts_acct_step(slot):
+    async def async_step_apple_accounts_acct(self, user_input=None):
+        return await self.open_apple_accounts_acct(slot)
+    return async_step_apple_accounts_acct
+
+for _slot in range(APPLE_ACCT_LIST_PAGE_SIZE):
+    setattr(OptionsFlow_AppleAccount_Steps, f"async_step_apple_accounts_acct_{_slot}",
+            _open_apple_accounts_acct_step(_slot))
 
 #--------------------------------------------------------------------
     # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0

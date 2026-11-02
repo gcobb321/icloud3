@@ -15,7 +15,6 @@ from ..                     import utils_cf
 from ..const_form_lists     import *
 
 from homeassistant.helpers  import selector
-import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
 
@@ -33,104 +32,107 @@ import voluptuous as vol
 #            SENSORS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_sensors(self, user_input=None):
-    self.actions_list = SENSORS_ACTIONS.copy()
-
     self.set_default_sensors(Gb.conf_sensors)
     sensors = user_input if user_input is not None else Gb.conf_sensors.copy()
-    sensors[CONF_EXCLUDED_SENSORS] = self.excluded_sensors
 
     if HOME_DISTANCE not in Gb.conf_sensors[CONF_SENSORS_TRACKING_DISTANCE]:
         Gb.conf_sensors[CONF_SENSORS_TRACKING_DISTANCE].append(HOME_DISTANCE)
 
-    return vol.Schema({
+    schema = {
         vol.Required(CONF_SENSORS_DEVICE,
-                    default=sensors[CONF_SENSORS_DEVICE]):
-                    cv.multi_select(CONF_SENSORS_DEVICE_KEY_TEXT),
+                    default=_selectable_sensors(CONF_SENSORS_DEVICE, sensors[CONF_SENSORS_DEVICE])):
+                    utils_cf.select(_selectable_sensors(CONF_SENSORS_DEVICE, CONF_SENSORS_DEVICE_KEY_TEXT), translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_TRACKING_UPDATE,
-                    default=sensors[CONF_SENSORS_TRACKING_UPDATE]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT),
+                    default=_selectable_sensors(CONF_SENSORS_TRACKING_UPDATE, sensors[CONF_SENSORS_TRACKING_UPDATE])):
+                    utils_cf.select(_selectable_sensors(CONF_SENSORS_TRACKING_UPDATE, CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT), translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_TRACKING_TIME,
-                    default=sensors[CONF_SENSORS_TRACKING_TIME]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_TIME_KEY_TEXT),
+                    default=_selectable_sensors(CONF_SENSORS_TRACKING_TIME, sensors[CONF_SENSORS_TRACKING_TIME])):
+                    utils_cf.select(_selectable_sensors(CONF_SENSORS_TRACKING_TIME, CONF_SENSORS_TRACKING_TIME_KEY_TEXT), translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_TRACKING_DISTANCE,
-                    default=sensors[CONF_SENSORS_TRACKING_DISTANCE]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT),
+                    default=_selectable_sensors(CONF_SENSORS_TRACKING_DISTANCE, sensors[CONF_SENSORS_TRACKING_DISTANCE])):
+                    utils_cf.select(_selectable_sensors(CONF_SENSORS_TRACKING_DISTANCE, CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT), translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_ZONE,
                     default=sensors[CONF_SENSORS_ZONE]):
-                    cv.multi_select(CONF_SENSORS_ZONE_KEY_TEXT),
+                    utils_cf.select(CONF_SENSORS_ZONE_KEY_TEXT, translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_OTHER,
                     default=sensors[CONF_SENSORS_OTHER]):
-                    cv.multi_select(CONF_SENSORS_OTHER_KEY_TEXT),
+                    utils_cf.select(CONF_SENSORS_OTHER_KEY_TEXT, translation_key='sensor', mode='list', multiple=True),
         # vol.Required(CONF_SENSORS_TRACK_FROM_ZONES,
         #             default=sensors[CONF_SENSORS_TRACK_FROM_ZONES]):
-        #             cv.multi_select(CONF_SENSORS_TRACK_FROM_ZONES_KEY_TEXT),
+        #             utils_cf.select(CONF_SENSORS_TRACK_FROM_ZONES_KEY_TEXT, translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_MONITORED_DEVICES,
-                    default=sensors[CONF_SENSORS_MONITORED_DEVICES]):
-                    cv.multi_select(CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT),
+                    default=_selectable_sensors(CONF_SENSORS_MONITORED_DEVICES, sensors[CONF_SENSORS_MONITORED_DEVICES])):
+                    utils_cf.select(_selectable_sensors(CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT), translation_key='sensor', mode='list', multiple=True),
         vol.Required(CONF_SENSORS_TRACKING_OTHER,
                     default=sensors[CONF_SENSORS_TRACKING_OTHER]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_OTHER_KEY_TEXT),
-        vol.Optional(CONF_EXCLUDED_SENSORS,
-                    default=self.excluded_sensors):
+                    utils_cf.select(CONF_SENSORS_TRACKING_OTHER_KEY_TEXT, translation_key='sensor', mode='list', multiple=True),
+        }
+    if self.excluded_sensors:
+        schema[vol.Optional(CONF_EXCLUDED_SENSORS, default=self.excluded_sensors)] = \
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.excluded_sensors,
-                        mode='list', multiple=True)),
+                        options=self.excluded_sensors, mode='list', multiple=True))
 
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+    return utils_cf.sectioned_schema(self, schema, [
+            ('device_section', [CONF_SENSORS_DEVICE], True),
+            ('location_update_section', [CONF_SENSORS_TRACKING_UPDATE], False),
+            ('time_section', [CONF_SENSORS_TRACKING_TIME], False),
+            ('distance_section', [CONF_SENSORS_TRACKING_DISTANCE], False),
+            ('zone_section', [CONF_SENSORS_ZONE], False),
+            ('monitored_devices_section', [CONF_SENSORS_MONITORED_DEVICES], False),
+            ('other_section', [CONF_SENSORS_OTHER, CONF_SENSORS_TRACKING_OTHER, CONF_EXCLUDED_SENSORS], False),
+            ],
+            utils_cf.submit_back_field(self, 'save', 'cancel_goto_menu', utils_cf.menu_name(self),
+                    other_actions={'select_default_sensors': utils_cf.tr('select_default_sensors')}))
+
+def _selectable_sensors(sensor_group, sensors):
+    '''
+    The sensors (list or {sensor: text}) without the ones that are always created. They
+    are added when the sensors are saved (set_default_sensors).
+    '''
+    always_created = ALWAYS_CREATED_SENSORS.get(sensor_group, [])
+    if isinstance(sensors, dict):
+        return {sensor: text for sensor, text in sensors.items() if sensor not in always_created}
+    return [sensor for sensor in sensors if sensor not in always_created]
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            EXCLUDE SENSORS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_exclude_sensors(self):
-    self.actions_list = SENSORS_EXCLUDE_ACTIONS_.copy()
+    '''
+    The Excluded sensors and Sensors fields are only on the form when they have sensors,
+    the description says why they are not.
 
-    if self.sensors_list_filter == '?':
-        default_action_item = 'filter_sensors'
-        filtered_sensors_fname_list = [f"None Displayed - Enter a Filter or `all` \
-                        to display all sensors ({len(self.sensors_fname_list)} Sensors)"]
-        filtered_sensors_list_default = []
+    Return:
+        The form schema and the description placeholders
+    '''
+    sensors_filter = self.sensors_list_filter
+    if sensors_filter == '':
+        filtered_sensors_fname_list = []
+        filter_msg = utils_cf.tr('exclude_sensors_enter_filter', count=len(self.sensors_fname_list))
     else:
-        default_action_item = 'update_sensor_list'
-        self.sensors_list_filter.replace('?', '')
-        if self.sensors_list_filter.lower() == 'all':
-            filtered_sensors_fname_list = [sensor_fname
+        filtered_sensors_fname_list = sorted({sensor_fname
                             for sensor_fname in self.sensors_fname_list
-                            if sensor_fname not in self.excluded_sensors]
-        else:
-            filtered_sensors_fname_list = list(set([sensor_fname
-                            for sensor_fname in self.sensors_fname_list
-                            if ((instr(sensor_fname.lower(), self.sensors_list_filter)
-                                and sensor_fname not in self.excluded_sensors))]))
+                            if ((sensors_filter == 'all' or instr(sensor_fname.lower(), sensors_filter))
+                                and sensor_fname not in self.excluded_sensors)})
+        filter_msg = ('' if filtered_sensors_fname_list else
+                        utils_cf.tr('exclude_sensors_none_found', filter=sensors_filter))
 
-        filtered_sensors_list_default = list(set([sensor_fname
-                            for sensor_fname in filtered_sensors_fname_list
-                            if sensor_fname in self.excluded_sensors]))
+    excluded_msg = '' if self.excluded_sensors else utils_cf.tr('exclude_sensors_none_excluded')
 
-        filtered_sensors_fname_list.sort()
-        if filtered_sensors_fname_list == []:
-            default_action_item = 'filter_sensors'
-            filtered_sensors_fname_list = [f"No Sensors found containing \
-                                                '{self.sensors_list_filter}'"]
-
-    return vol.Schema({
-        vol.Optional(CONF_EXCLUDED_SENSORS,
-                    default=self.excluded_sensors):
+    schema = {}
+    if self.excluded_sensors:
+        schema[vol.Optional(CONF_EXCLUDED_SENSORS, default=self.excluded_sensors)] = \
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.excluded_sensors, mode='list', multiple=True)),
-        vol.Optional('filter',
-                    default=self.sensors_list_filter):
-                    selector.TextSelector(),
-        vol.Optional('filtered_sensors',
-                    default=filtered_sensors_list_default):
+                        options=self.excluded_sensors, mode='list', multiple=True))
+    schema[vol.Optional('filter', default=sensors_filter)] = selector.TextSelector()
+    if filtered_sensors_fname_list:
+        schema[vol.Optional('filtered_sensors', default=[])] = \
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=filtered_sensors_fname_list, mode='list', multiple=True)),
+                        options=filtered_sensors_fname_list, mode='list', multiple=True))
+    schema.update(utils_cf.submit_back_field(self, 'update_sensor_list', 'cancel_goto_menu',
+                    utils_cf.menu_name(self),
+                    other_actions={'save_excluded_sensors':
+                        utils_cf.tr('action_save_excluded_sensors',
+                            dest=utils_cf.destination_name(utils_cf.menu_name(self)))}))
 
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text(default_action_item)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=self.actions_list, mode='list')),
-        })
+    return vol.Schema(schema), {'excluded_msg': excluded_msg, 'filter_msg': filter_msg}

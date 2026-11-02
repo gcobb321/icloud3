@@ -2,7 +2,7 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (MONITOR, INACTIVE, )
-from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_DISPLAY_TEXT_AS,
+from ...const_config        import (CONF_TFZ_TRACKING_MAX_DISTANCE, CONF_WAZE_HISTORY_MAX_DISTANCE, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_MIN_DISTANCE, CONF_DISPLAY_TEXT_AS,
                                     CONF_IC3_DEVICENAME, CONF_FNAME, CONF_DATA_SOURCE,
                                     CONF_TRACKING_MODE, CONF_AWAY_TIME_ZONE_1_OFFSET,
                                     CONF_AWAY_TIME_ZONE_1_DEVICES, CONF_AWAY_TIME_ZONE_2_OFFSET,
@@ -58,15 +58,13 @@ class OptionsFlow_Parameters_Steps:
         '''
         # Variables used for the display_text_as update
         self.dta_selected_idx               = UNSELECTED_IDX # Current conf index being updated
-        self.dta_selected_idx_page          = [0, 5]    # Selected idx to display on each page
-        self.dta_page_no                    = 0         # Current page being displayed
         self.dta_working_copy               = {0: '', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '',}
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            AWAY TIME ZONE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_away_time_zone(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_away_time_zone(user_input)
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('away_time_zone', user_input, errors)
 
         lists.build_away_time_zone_devices_list(self)
@@ -79,6 +77,8 @@ class OptionsFlow_Parameters_Steps:
 
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
+
+        user_input = self._unpack_ui_away_time_zone(user_input)
 
         user_input = self._update_away_time_zone_changes(user_input)
 
@@ -164,7 +164,7 @@ class OptionsFlow_Parameters_Steps:
 #            TRACKING PARAMETERS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_tracking_parameters(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_tracking_parameters(user_input)
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('tracking_parameters', user_input, errors)
 
         if user_input is None:
@@ -175,8 +175,10 @@ class OptionsFlow_Parameters_Steps:
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
+        user_input = self._unpack_ui_tracking_parameters(user_input)
+
         if utils_cf.no_errors(self):
-            user_input = utils_cf.option_text_to_parm(user_input,
+            user_input = utils_cf.select_value(user_input,
                                                                 CONF_DATA_SOURCE,
                                                                 DATA_SOURCE_OPTIONS)
 
@@ -191,7 +193,9 @@ class OptionsFlow_Parameters_Steps:
     def _unpack_ui_tracking_parameters(self, user_input):
         if user_input is None: return None
 
-        user_input = utils_cf.option_text_to_parm( user_input,
+        user_input = utils_cf.km_fields_from_ui(user_input, [CONF_TFZ_TRACKING_MAX_DISTANCE])
+
+        user_input = utils_cf.select_value( user_input,
                                                 CONF_TRAVEL_TIME_FACTOR,
                                                 TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)
 
@@ -202,7 +206,7 @@ class OptionsFlow_Parameters_Steps:
 #              FORMAT SETTINGS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_format_settings(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_format_settings(user_input)
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('format_settings', user_input, errors)
 
         if user_input is None:
@@ -214,11 +218,10 @@ class OptionsFlow_Parameters_Steps:
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
-        if utils_cf.no_errors(self):
-            Gb.picture_www_dirs = Gb.conf_profile[CONF_PICTURE_WWW_DIRS].copy()
-            self.picture_by_filename = {}
-            await lists.build_picture_filename_selection_list(self)
+        user_input = self._unpack_ui_format_settings(user_input)
 
+        if utils_cf.no_errors(self):
+            self._apply_format_settings_changes(user_input)
             self.update_config_file(CF_GENERAL, user_input, action_item)
             return await self.async_step_menu()
 
@@ -229,30 +232,27 @@ class OptionsFlow_Parameters_Steps:
 
 #-------------------------------------------------------------------------------------------
     def _unpack_ui_format_settings(self, user_input):
-        '''
-        The display_zone_format may contain '(Example: ...). If so, strip it off.
-        '''
-        # DISPLAY_ZONE_FORMAT_OPTIONS.update(DISPLAY_ZONE_FORMAT_OPTIONS_BASE)
-        # self._set_example_zone_name()
-        display_zone_format_options = forms.build_display_zone_format_options(self)
-
         if user_input is None: return None
 
-        user_input = utils_cf.option_text_to_parm( user_input,
-                                                CONF_DISPLAY_ZONE_FORMAT,
-                                                display_zone_format_options)
-        user_input = utils_cf.option_text_to_parm( user_input,
+        user_input = utils_cf.select_value( user_input,
                                                 CONF_DEVICE_TRACKER_STATE_SOURCE,
                                                 DEVICE_TRACKER_STATE_SOURCE_OPTIONS)
-        user_input = utils_cf.option_text_to_parm( user_input,
+        user_input = utils_cf.select_value( user_input,
                                                 CONF_UNIT_OF_MEASUREMENT,
                                                 UNIT_OF_MEASUREMENT_OPTIONS)
-        user_input = utils_cf.option_text_to_parm(user_input,
+        user_input = utils_cf.select_value(user_input,
                                                 CONF_TIME_FORMAT,
                                                 TIME_FORMAT_OPTIONS)
 
         user_input = utils_cf.strip_spaces(user_input, [CONF_EVLOG_BTNCONFIG_URL])
 
+        return user_input
+
+#-------------------------------------------------------------------------------------------
+    def _apply_format_settings_changes(self, user_input):
+        '''
+        The zone name and time format changes that are used before Configure closes
+        '''
         if (Gb.display_zone_format != user_input[CONF_DISPLAY_ZONE_FORMAT]):
             list_add(self.config_parms_update_control, 'special_zone')
 
@@ -261,17 +261,15 @@ class OptionsFlow_Parameters_Steps:
             Gb.time_format_12_hour = user_input[CONF_TIME_FORMAT].startswith('12')
             Gb.time_format_24_hour = not Gb.time_format_12_hour
 
-        return user_input
-
 #-------------------------------------------------------------------------------------------
     @staticmethod
     def _format_device_text_hdr(conf_device):
         device_text = ( f"{conf_device[CONF_FNAME]} "
                         f"({conf_device[CONF_IC3_DEVICENAME]})")
         if conf_device[CONF_TRACKING_MODE] == MONITOR:
-            device_text += ", 🅜 MONITOR"
+            device_text += f", {utils_cf.tr('dev_status_monitored')}"
         elif conf_device[CONF_TRACKING_MODE] == INACTIVE:
-            device_text += ", ✪ INACTIVE"
+            device_text += f", {utils_cf.tr('dev_status_inactive')}"
 
         return device_text
 
@@ -281,7 +279,7 @@ class OptionsFlow_Parameters_Steps:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_inzone_intervals(self, user_input=None, errors=None):
         self.step_id = 'inzone_intervals'
-        user_input = self._unpack_ui_inzone_intervals(user_input)
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('inzone_intervals', user_input, errors)
 
         if user_input is None:
@@ -291,6 +289,8 @@ class OptionsFlow_Parameters_Steps:
 
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
+
+        user_input = self._unpack_ui_inzone_intervals(user_input)
 
         if utils_cf.no_errors(self):
             self.update_config_file(CF_GENERAL, user_input, action_item)
@@ -336,7 +336,7 @@ class OptionsFlow_Parameters_Steps:
 #            WAZE MAIN
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_waze_main(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_waze_main(user_input)
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('waze_main', user_input, errors)
 
         if user_input is None:
@@ -346,6 +346,8 @@ class OptionsFlow_Parameters_Steps:
 
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
+
+        user_input = self._unpack_ui_waze_main(user_input)
 
         if utils_cf.no_errors(self):
             self.update_config_file(CF_GENERAL, user_input, action_item)
@@ -363,18 +365,21 @@ class OptionsFlow_Parameters_Steps:
         '''
         if user_input is None: return None
 
-        user_input = utils_cf.option_text_to_parm( user_input,
+        user_input = utils_cf.km_fields_from_ui(user_input,
+                            [CONF_WAZE_MIN_DISTANCE, CONF_WAZE_MAX_DISTANCE, CONF_WAZE_HISTORY_MAX_DISTANCE])
+
+        user_input = utils_cf.select_value( user_input,
                                                 CONF_WAZE_SERVER,
                                                 WAZE_SERVER_OPTIONS)
         user_input = utils_cf.validate_numeric_field(self, user_input)
-        user_input = utils_cf.option_text_to_parm( user_input,
+        user_input = utils_cf.select_value( user_input,
                                                 CONF_WAZE_HISTORY_TRACK_DIRECTION,
                                                 WAZE_HISTORY_TRACK_DIRECTION_OPTIONS)
 
         user_input = utils_cf.validate_numeric_field(self, user_input)
 
-        user_input[CONF_WAZE_USED] = False if user_input[CONF_WAZE_USED] == [] else True
-        user_input[CONF_WAZE_HISTORY_DATABASE_USED] = False if user_input[CONF_WAZE_HISTORY_DATABASE_USED] == [] else True
+        user_input[CONF_WAZE_USED] = bool(user_input[CONF_WAZE_USED])
+        user_input[CONF_WAZE_HISTORY_DATABASE_USED] = bool(user_input[CONF_WAZE_HISTORY_DATABASE_USED])
 
         # If Waze Used changes, also change the History DB used
         if user_input[CONF_WAZE_USED] != Gb.conf_general[CONF_WAZE_USED]:
@@ -386,7 +391,7 @@ class OptionsFlow_Parameters_Steps:
 #            SPECIAL ZONES
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_special_zones(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_special_zones(user_input)
+        user_input = utils_cf.flatten_sections(user_input)
         user_input, action_item = self.initialize_step('special_zones', user_input, errors)
         await lists.build_zone_selection_list(self)
 
@@ -398,7 +403,13 @@ class OptionsFlow_Parameters_Steps:
         if action_item == 'cancel_goto_menu':
             return await self.async_step_menu()
 
+        user_input = self._unpack_ui_special_zones(user_input)
+
         if utils_cf.no_errors(self):
+            if (user_input[CONF_TRACK_FROM_BASE_ZONE_USED] != Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
+                    or user_input[CONF_TRACK_FROM_BASE_ZONE] != Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE]
+                    or user_input[CONF_TRACK_FROM_HOME_ZONE] != Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
+                list_add(self.config_parms_update_control, 'restart')
             self.update_config_file(CF_GENERAL, user_input, action_item)
             return await self.async_step_menu()
 
@@ -421,28 +432,19 @@ class OptionsFlow_Parameters_Steps:
         if user_input is None: return None
 
         user_input = utils_cf.validate_numeric_field(self, user_input)
-        user_input = utils_cf.option_text_to_parm( user_input,
-                                                CONF_TRACK_FROM_BASE_ZONE,
-                                                self.zone_name_key_text)
-        user_input[CONF_TRACK_FROM_BASE_ZONE_USED] = (user_input[CONF_TRACK_FROM_BASE_ZONE_USED] != [])
+        user_input = utils_cf.zones_from_ui(self, user_input, [CONF_TRACK_FROM_BASE_ZONE], Gb.conf_general)
+        user_input[CONF_TRACK_FROM_BASE_ZONE_USED] = bool(user_input[CONF_TRACK_FROM_BASE_ZONE_USED])
 
         if 'passthru_zone_header' in user_input:
-            if user_input['passthru_zone_header'] == []:
+            if not user_input['passthru_zone_header']:
                 user_input[CONF_PASSTHRU_ZONE_TIME] = 0
-            elif (user_input['passthru_zone_header'] != []
-                    and user_input[CONF_PASSTHRU_ZONE_TIME] == 0):
+            elif user_input[CONF_PASSTHRU_ZONE_TIME] == 0:
                 user_input[CONF_PASSTHRU_ZONE_TIME] = DEFAULT_GENERAL_CONF[CONF_PASSTHRU_ZONE_TIME]
 
-        if (user_input[CONF_TRACK_FROM_BASE_ZONE_USED] != Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE_USED]
-                or user_input[CONF_TRACK_FROM_BASE_ZONE] != Gb.conf_general[CONF_TRACK_FROM_BASE_ZONE]
-                or user_input[CONF_TRACK_FROM_HOME_ZONE] != Gb.conf_general[CONF_TRACK_FROM_HOME_ZONE]):
-            list_add(self.config_parms_update_control, 'restart')
-
         if 'stat_zone_header' in user_input:
-            if user_input['stat_zone_header'] == []:
+            if not user_input['stat_zone_header']:
                 user_input[CONF_STAT_ZONE_STILL_TIME] = 0
-            elif (user_input['stat_zone_header'] != []
-                    and user_input[CONF_STAT_ZONE_STILL_TIME] == 0):
+            elif user_input[CONF_STAT_ZONE_STILL_TIME] == 0:
                 user_input[CONF_STAT_ZONE_STILL_TIME] = DEFAULT_GENERAL_CONF[CONF_STAT_ZONE_STILL_TIME]
 
         return user_input
@@ -451,85 +453,98 @@ class OptionsFlow_Parameters_Steps:
 #            DISPLAY TEXT AS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_display_text_as(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_tracking_parameters(user_input)
-        user_input, action_item = self.initialize_step('display_text_as', user_input, errors)
+        '''
+        Display the text replacement items that are set up as menu rows (original → displayed)
+        and an Add row when an item is free. Selecting a row opens the Update screen. The
+        changes are saved to the configuration by the Save row.
+        '''
+        self.step_id = 'display_text_as'
+        self.errors = errors or {}
+        self.errors_user_input = {}
 
-        if user_input is None:
-            if (self.dta_selected_idx == UNSELECTED_IDX):
-                self.dta_selected_idx = 0
-                self.dta_selected_idx_page = [0, 5]
-                self.dta_page_no = 0
-                idx = UNSELECTED_IDX
-                for dta_text in Gb.conf_general[CONF_DISPLAY_TEXT_AS]:
-                    idx += 1
-                    self.dta_working_copy[idx] = dta_text
-            return self.async_show_form(step_id='display_text_as',
-                                        data_schema=forms.form_display_text_as(self),
-                                        errors=self.errors)
+        if self.dta_selected_idx == UNSELECTED_IDX:
+            self.dta_selected_idx = 0
+            for idx, dta_text in enumerate(Gb.conf_general[CONF_DISPLAY_TEXT_AS]):
+                self.dta_working_copy[idx] = dta_text
 
-        user_input = utils_cf.option_text_to_parm( user_input,
-                                                CONF_DISPLAY_TEXT_AS,
-                                                self.dta_working_copy)
-        self.dta_selected_idx = int(user_input[CONF_DISPLAY_TEXT_AS])
-        self.dta_selected_idx_page[self.dta_page_no] = self.dta_selected_idx
-        utils_cf.log_step_info(self, user_input, action_item)
+        utils_cf.log_step_info(self, user_input)
 
-        if action_item == 'next_page_items':
-            self.dta_page_no = 1 if self.dta_page_no == 0 else 0
+        menu_options = {f"display_text_as_item_{idx}": dta_text.replace('>', '→')
+                            for idx, dta_text in self.dta_working_copy.items()
+                            if instr(dta_text, '>')}
+        if any(instr(dta_text, '>') is False for dta_text in self.dta_working_copy.values()):
+            menu_options['display_text_as_add'] = None
+        menu_options['display_text_as_save'] = None
+        menu_options['display_text_as_back'] = None
+
+        return await utils_cf.async_show_list_menu(self, 'display_text_as', menu_options)
+
+#...........................................................
+    async def open_display_text_as_item(self, idx):
+        self.dta_selected_idx = idx
+        return await self.async_step_display_text_as_update()
+
+    async def async_step_display_text_as_add(self, user_input=None):
+        free_idxs = [idx    for idx, dta_text in self.dta_working_copy.items()
+                            if instr(dta_text, '>') is False]
+        if free_idxs == []:
             return await self.async_step_display_text_as()
+        return await self.open_display_text_as_item(free_idxs[0])
 
-        elif action_item == 'select_text_as':
-            return await self.async_step_display_text_as_update(user_input)
+    async def async_step_display_text_as_save(self, user_input=None):
+        idx = UNSELECTED_IDX
+        dta_working_copy_list = DEFAULT_GENERAL_CONF[CONF_DISPLAY_TEXT_AS].copy()
+        for temp_dta_text in self.dta_working_copy.values():
+            if instr(temp_dta_text,'>'):
+                idx += 1
+                dta_working_copy_list[idx] = temp_dta_text
 
-        elif action_item == 'menu':
-            self.dta_selected_idx = UNSELECTED_IDX
-            return await self.async_step_menu()
+        self.dta_selected_idx = UNSELECTED_IDX
+        self.update_config_file(CF_GENERAL, {CONF_DISPLAY_TEXT_AS: dta_working_copy_list}, 'save')
+        return await self.async_step_menu()
 
-        if action_item == 'save' and utils_cf.no_errors(self):
-            idx = self.dta_selected_idx = UNSELECTED_IDX
-            dta_working_copy_list = DEFAULT_GENERAL_CONF[CONF_DISPLAY_TEXT_AS].copy()
-            for temp_dta_text in self.dta_working_copy.values():
-                if instr(temp_dta_text,'>'):
-                    idx += 1
-                    dta_working_copy_list[idx] = temp_dta_text
-
-            user_input[CONF_DISPLAY_TEXT_AS] = dta_working_copy_list
-            self.update_config_file(CF_GENERAL, user_input, action_item)
-            return await self.async_step_menu()
-
-        return self.async_show_form(step_id='display_text_as',
-                        data_schema=forms.form_display_text_as(self),
-                        errors=self.errors)
+    async def async_step_display_text_as_back(self, user_input=None):
+        self.dta_selected_idx = UNSELECTED_IDX
+        return await self.async_step_menu()
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            DISPLAY TEXT AS UPDATE
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_display_text_as_update(self, user_input=None, errors=None):
-        user_input = self._unpack_ui_tracking_parameters(user_input)
+        '''
+        Update the selected text replacement item. Saving it with both fields empty clears it.
+        '''
         user_input, action_item = self.initialize_step('display_text_as_update', user_input, errors)
-        # utils_cf.log_step_info(self, user_input, action_item)
 
         if user_input is None:
             return self.async_show_form(step_id='display_text_as_update',
-                            data_schema=forms.form_tracking_parameters(self),
+                            data_schema=forms.form_display_text_as_update(self),
                             errors=self.errors)
 
         if action_item == 'update_text_as':
-            text_from = user_input['text_from'].strip()
-            text_to   = user_input['text_to'].strip()
+            text_from = user_input.get('text_from', '').strip()
+            text_to   = user_input.get('text_to', '').strip()
             if text_from and text_to:
                 self.dta_working_copy[self.dta_selected_idx] = f"{text_from} > {text_to}"
             else:
-                self.dta_working_copy[self.dta_selected_idx] = f"#{self.dta_selected_idx + 1}"
+                action_item = 'delete_text_as'
 
-            return await self.async_step_display_text_as()
-
-        if action_item == 'clear_text_as':
+        if action_item == 'delete_text_as':
             self.dta_working_copy[self.dta_selected_idx] = f"#{self.dta_selected_idx + 1}"
 
-            return await self.async_step_display_text_as()
+        return await self.async_step_display_text_as()
 
-        return self.async_show_form(step_id='display_text_as_update',
-                        data_schema=forms.form_display_text_as_update(self),
-                        errors=self.errors)
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#   The text replacement items on the Display Text As menu are menu options. HA opens
+#   a menu option's async_step_[option] function so one is created for each item.
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _open_display_text_as_item_step(idx):
+    async def async_step_display_text_as_item(self, user_input=None):
+        return await self.open_display_text_as_item(idx)
+    return async_step_display_text_as_item
+
+for _idx in range(DISPLAY_TEXT_AS_ITEM_CNT):
+    setattr(OptionsFlow_Parameters_Steps, f"async_step_display_text_as_item_{_idx}",
+            _open_display_text_as_item_step(_idx))
