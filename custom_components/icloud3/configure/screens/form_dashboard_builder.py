@@ -26,39 +26,41 @@ import voluptuous as vol
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #           DASHBOARD BUILDER FORM
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def form_dashboard_builder(self):
+def form_dashboard_builder(self, user_input=None):
+    '''
+    user_input - The values entered on the form, they are displayed again (rebuild not confirmed)
+    '''
+    user_input = user_input or {}
     dbname = self.ui_selected_dbname
-    self.actions_list = []
-    default_action = 'create_dashboard'
-    self.actions_list.append(ACTION_LIST_OPTIONS['create_dashboard'])
-    self.actions_list.append(ACTION_LIST_OPTIONS['cancel_goto_menu'])
 
     # Set default dashboard to current dashboard, the previous dashboard or 'add'
     default_dbname = self.dbf_dashboard_key_text[dbname]
 
-    default_main_view_style = DASHBOARD_MAIN_VIEW_STYLE_OPTIONS[RESULT_SUMMARY]
+    default_main_view_style = user_input.get('main_view_style', utils_cf.option_value(RESULT_SUMMARY))
 
-    self.dbf_main_view_devices_key_text = {}
-    self.dbf_main_view_devices_key_text.update(DASHBOARD_MAIN_VIEW_DEVICES_BASE)
+    self.dbf_main_view_devices_key_text = {ALL_DEVICES:    utils_cf.tr('dashboard_all_devices'),
+                                           IPHONE_FIRST_2: utils_cf.tr('dashboard_first_2_iphones')}
     self.dbf_main_view_devices_key_text.update(lists.devices_selection_list())
 
     self.ui_main_view_dnames = [ALL_DEVICES]
 
-    return vol.Schema({
+    schema = {
         vol.Required('selected_dashboard',
                     default=default_dbname):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(self.dbf_dashboard_key_text), mode='list')),
         vol.Required('main_view_style',
                     default=default_main_view_style):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DASHBOARD_MAIN_VIEW_STYLE_OPTIONS), mode='dropdown')),
+                    utils_cf.select(DASHBOARD_MAIN_VIEW_STYLE_OPTIONS,
+                                    translation_key='dashboard_main_view_style'),
         vol.Required('main_view_devices',
-                    default=self.ui_main_view_dnames):
+                    default=user_input.get('main_view_devices', self.ui_main_view_dnames)):
                     cv.multi_select(six_item_dict(self.dbf_main_view_devices_key_text)),
 
-        vol.Required('action_items',
-                    default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
-        })
+        }
+
+    return utils_cf.sectioned_schema(self, schema, [
+            ('dashboard_section', ['selected_dashboard'], True),
+            ('main_view_section', ['main_view_style', 'main_view_devices'], False),
+            ],
+            utils_cf.submit_back_field(self, 'build_dashboard', 'cancel_goto_menu', utils_cf.menu_name(self)))

@@ -47,6 +47,7 @@ class OptionsFlow_DashboardBuilder_Steps:
         self.ui_main_view_dnames         = []    # Devices to be inserted into the dashboard layout
         self.dbf_dashboard_key_text      = {}    # db form device selection dictionary
         self.dbf_dashboard_icons_msg     = ''    # db form '<ha-icon..> title, ...' reference line
+        self.dbf_user_input              = {}    # db form values, displayed again when a rebuild is not confirmed
 
         # Main View Info from the main_view_info_str on the Events Log view
         # These items are loaded when the ic3db dashboards are loaded. They are used to set ui_xxx values when
@@ -61,22 +62,20 @@ class OptionsFlow_DashboardBuilder_Steps:
     #            DASHBOARD BUILDER
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_dashboard_builder(self, user_input=None, errors=None):
+        user_input = utils_cf.flatten_sections(user_input)
         self.step_id = 'dashboard_builder'
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-
 
         await dbb.build_existing_dashboards_selection_list(self)
         dbb.select_available_dashboard(self)
         utils_cf.log_step_info(self, user_input, action_item)
 
         if user_input is None:
-            return self.async_show_form(step_id='dashboard_builder',
-                                        data_schema=forms.form_dashboard_builder(self),
-                                        description_placeholders={'db_icons': self.dbf_dashboard_icons_msg},
-                                        errors=self.errors)
+            return self._show_dashboard_builder_form()
 
+        self.dbf_user_input = dict(user_input)
         user_input = utils_cf.option_text_to_parm(user_input, 'selected_dashboard', self.dbf_dashboard_key_text)
-        user_input = utils_cf.option_text_to_parm(user_input, 'main_view_style', DASHBOARD_MAIN_VIEW_STYLE_OPTIONS)
+        user_input = utils_cf.select_value(user_input, 'main_view_style', DASHBOARD_MAIN_VIEW_STYLE_OPTIONS)
 
         utils_cf.log_step_info(self, user_input, action_item)
 
@@ -84,8 +83,6 @@ class OptionsFlow_DashboardBuilder_Steps:
             return await self.async_step_menu()
 
         self.ui_selected_dbname = user_input.get('selected_dashboard', ADD)
-        if self.ui_selected_dbname == ADD:
-            action_item = 'create_dashboard'
 
         self.ui_main_view_style  = user_input['main_view_style']
         self.ui_main_view_dnames = [devicename
@@ -93,23 +90,67 @@ class OptionsFlow_DashboardBuilder_Steps:
                                         if devicename.startswith('.') is False]
         self.errors = {}
         self._validate_dashboard_user_input(action_item, user_input)
-        if utils_cf.any_errors(self):
-            action_item = ''
 
-        user_input['action_item'] = action_item
+        if self.ui_selected_dbname == ADD:
+            await self._async_build_dashboard()
+            return await self._async_step_dashboard_builder_built()
 
+        self.confirm_action = {
+            'action_desc': utils_cf.tr('confirm_rebuild_dashboard',
+                                        dashboard=self._dashboard_title(self.ui_selected_dbname)),
+            'yes_label': utils_cf.tr('confirm_yes_rebuild_dashboard'),
+            'no_label': utils_cf.tr('confirm_no_rebuild_dashboard'),
+            'yes_func': None,
+            'yes_func_async': self._async_build_dashboard,
+            'done_msg': 'dashboard_error',
+            'commit_restart': False,
+            'return_to_func_async': self._async_step_dashboard_builder_kept,
+            'return_to_next_yes_func_async': self._async_step_dashboard_builder_built}
+
+        return await self.async_step_confirm_action()
+
+#-------------------------------------------------------------------------------------------
+    async def _async_build_dashboard(self):
+        self.errors = {}
         if self.ui_selected_dbname == ADD:
             await dbb.create_dashboard(self)
         else:
             await dbb.update_dashboard(self)
 
+    async def _async_step_dashboard_builder_built(self, errors=None):
+        '''
+        Redisplay the builder after a build. The success message is a status line in
+        the description, other messages are errors.
+        '''
+        built_msg = {'dashboard_created': 'dashboard_built',
+                     'dashboard_updated': 'dashboard_rebuilt'}.get(self.errors.get('base'))
+        if built_msg:
+            self.errors = {}
+
         await dbb.build_existing_dashboards_selection_list(self)
         dbb.select_available_dashboard(self)
 
-        return self.async_show_form(step_id= 'dashboard_builder',
-                            data_schema=forms.form_dashboard_builder(self),
-                            description_placeholders={'db_icons': self.dbf_dashboard_icons_msg},
-                            errors=self.errors)
+        header_msg = utils_cf.tr(built_msg, dashboard=self._dashboard_title(self.dbname)) if built_msg else ''
+        return self._show_dashboard_builder_form(header_msg=header_msg)
+
+    async def _async_step_dashboard_builder_kept(self, errors=None):
+        '''
+        Redisplay the builder with the entered values after the rebuild was not confirmed
+        '''
+        self.errors = {}
+        return self._show_dashboard_builder_form(user_input=self.dbf_user_input)
+
+    def _show_dashboard_builder_form(self, user_input=None, header_msg=''):
+        self.step_id = 'dashboard_builder'
+        return self.async_show_form(step_id='dashboard_builder',
+                                    data_schema=forms.form_dashboard_builder(self, user_input),
+                                    description_placeholders={'db_icons': self.dbf_dashboard_icons_msg,
+                                                              'header_msg': header_msg},
+                                    errors=self.errors)
+
+    def _dashboard_title(self, dbname):
+        Dashboard = self.ic3db_Dashboards_by_dbname.get(dbname)
+        return Dashboard.config.get(TITLE, dbname) if Dashboard else dbname
 
 # #-------------------------------------------------------------------------------------------
     def _validate_dashboard_user_input(self, action_item, user_input):

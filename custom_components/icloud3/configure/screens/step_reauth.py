@@ -788,7 +788,7 @@ class OptionsFlow_Reauth_Steps:
         '''
         self.AppleAcct.update_auth_method(auth_method)
 
-        Gb.OptionsFlowHandler.update_config_file_tracking(force_config_update=True)
+        self.update_config_file_tracking(force_config_update=True)
         await config_file.async_write_icloud3_configuration_file()
 
 

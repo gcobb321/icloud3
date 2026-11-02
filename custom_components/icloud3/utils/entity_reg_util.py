@@ -30,6 +30,16 @@ from homeassistant.helpers          import entity_registry as er, device_registr
 #    Entity State and Attributes functions
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def is_config_flow_deleting_device():
+    '''
+    A Configure window is deleting a device or an Apple Account's devices. Any of the
+    open windows can be the one deleting it, not only the last one opened.
+    '''
+    return any(getattr(OptFlow, 'is_deleting_device', False)
+                    for OptFlow in [Gb.OptionsFlowHandler, *Gb.OptionsFlowHandlers_open]
+                    if OptFlow is not None)
+
+#-------------------------------------------------------------------------------------------
 @callback
 def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData):
     '''
@@ -77,7 +87,7 @@ def async_handle_update_device_registry(event: dr.EventDeviceRegistryUpdatedData
                         f"Device-{devicename}")
 
         # Being deleted by iCloud3 Config Flow, cancel listener handler
-        if (Gb.OptionsFlowHandler and Gb.OptionsFlowHandler.is_deleting_device):
+        if is_config_flow_deleting_device():
             log_debug_msg('Update Device Reg Handler > Ignored, Config Flow is deleting the device')
             return
 
@@ -184,7 +194,7 @@ def async_handle_update_entity_registry(event: er.EventEntityRegistryUpdatedData
         log_info_msg(f'Sensor Entity Registry ({entity_id}), {action.title()}')
 
         # Being deleted by iCloud3, ignore event
-        if Gb.OptionsFlowHandler and Gb.OptionsFlowHandler.is_deleting_device:
+        if is_config_flow_deleting_device():
             return
 
         if action == "update":
