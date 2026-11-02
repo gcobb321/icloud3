@@ -1,0 +1,33 @@
+name: Developer checks
+
+# Only when started by hand: Actions > Developer checks > Run workflow.
+# See tests/README.md.
+on:
+  workflow_dispatch:
+    inputs:
+      offline_tests:
+        description: "Also run the offline Configure tests (about 10 minutes)"
+        type: boolean
+        default: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install pyflakes
+      - run: python tests/check_configure.py
+
+  offline-tests:
+    if: ${{ inputs.offline_tests }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install pytest-homeassistant-custom-component==0.13.375 srp "fido2>=1.1.3" curl_cffi
+      - run: pytest tests/
