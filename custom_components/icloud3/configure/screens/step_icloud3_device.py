@@ -928,7 +928,7 @@ class OptionsFlow_iCloud3Device_Steps:
 
         if utils_cf.any_errors(self):
             self.errors['base'] = 'update_aborted'
-            return self.async_show_form(step_id='async_step_update_other_device_parameters',
+            return self.async_show_form(step_id='update_other_device_parameters',
                             data_schema=forms.form_update_other_device_parameters(self),
                             errors=self.errors)
 
