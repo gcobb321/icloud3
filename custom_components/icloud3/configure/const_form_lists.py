@@ -1,7 +1,7 @@
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (NAME, WAZE_SERVERS_FNAME, )
-from ..const_config         import (BATTERY, )
+from ..const                import (NAME, )
+from ..const_config         import (ARRIVAL_TIME, HOME_DISTANCE, NEXT_UPDATE, TRAVEL_TIME, BATTERY, )
 
 #----------------------------------------------------------------------------------------
 # Dashboard constants
@@ -19,56 +19,67 @@ TITLE          = 'title'
 PATH           = 'path'
 ADD            = 'add'
 IC3DB          = 'ic3db-'
+
+# Form field of the Submit/Back choice displayed at the end of the forms (utils_cf.submit_back_field).
+# The labels are the strings.json selector.cf_text.options submit_[action], back_[action],
+# back_discard and back texts, {dest} is a dest_[key] text.
+FORM_ACTION = 'form_action'
+# Forms whose Submit action saves the entered data. Back discards it.
+FORM_ACTION_SAVES_DATA = ['save', 'save_menu', 'save_log_into_apple_acct', 'update_text_as',
+                            'update_sensor_list', 'update_tracking_mode']
+
+# The Tools that display the Confirm Action screen. The question and the Yes/No rows are the
+# strings.json selector.cf_text.options confirm_[tool], confirm_yes_[tool] and
+# confirm_no_[tool] texts
+TOOL_CONFIRM_ITEMS = [  'restart_icloud3', 'reset_data_source', 'reset_tracking', 'reset_general',
+                        'del_apple_acct_cookies', 'del_icloud3_config_files', ]
 NOT_LOGGED_IN  = 'NOT LOGGED IN'
 
 DATA_ENTRY_ALERT_CHAR = '⛔'
 DATA_ENTRY_ALERT      = f"      {DATA_ENTRY_ALERT_CHAR} "
 
 #----------------------------------------------------------------------------------------
-MENU_0 = {
-        'apple_accounts':       'APPLE ACCOUNTS → Add, Change Delete and List Apple Accounts, Import Apple Devices into iCloud3',
-        'reauth':               'AUTHENTICATE APPLE ACCT SIGN-IN → Authenticate Apple Account access, Request a new Auth Code, Change Authentication Method',
-        'device_list':          'ICLOUD3 DEVICES → Add, Change, Delete and List Tracked and Monitored Devices, Import Apple Devices into iCloud3',
-        'sensors':              'SENSORS → Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors',
-        'dashboard_builder':    'DASHBOARD BUILDER → Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates',
-        'away_time_zone':       'AWAY TIME ZONE → Change the time displayed in the Event Log to the local time when away from Home',
-        'tools':                'TOOLS → Log Level, Beta Download, Cleanup HA Registry Files,  Clear Device Data Source Parms, Apple Acct Cookies & iCloud3 Config File',
-}
-MENU_0_ACTIONS = {
-        'menu_1':               '➤ MENU #2 (PARAMETERS) → Tracking, Display Settings, Display Text As, Waze Route Service, Special Zones, iCloud3 Analytics',
-        'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
-}
-
-MENU_1 = {
-        'tracking_parameters':  'TRACKING PARAMETERS →  Enable/disable the Mobile App data source, Configure how device location data is verified and displayed',
-        'format_settings':      'DISPLAY SETTINGS & OTHER PARAMETERS → Specify how tracking results are displayed in the Event Log, sensors and device_tracker entities',
-        'display_text_as':      'DISPLAY TEXT AS → Event Log Text Replacement',
-        'waze':                 'WAZE ROUTE DISTANCE, TIME & HISTORY → Specify how the Waze Route Server is used and enable the Waze Tracking History Database',
-        'special_zones':        'SPECIAL ZONES → Configure special zone handling - Delay zone enter triggers, Set up Stationary Zones for non-moving devices, Override the Home zone',
-        'inzone_intervals':     'INZONE INTERVALS → Change the Default inZone Intervals for various device types used when adding a new device',
-        'analytics':            'ICLOUD3 ANALYTICS → Enable Sending Analytics Data to the iCloud3 Analytics Database',
-}
-MENU_1_ACTIONS = {
-        'menu_0':               '➤ MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
-        'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
+#   Configure Menus - HA native menus (async_show_menu)
+#
+#   MENU_TREE - The menu step_id and the menu options displayed on it. A menu option is:
+#       - menu_xxx  - Another menu, displayed by async_step_menu_xxx
+#       - open_xxx  - A configure screen, opened by async_step_open_xxx --> open_menu_item(xxx)
+#       - main_menu - Return to the main menu
+#   The option labels are in strings.json options.step.[menu step_id].menu_options
+MAIN_MENU = 'menu'
+MENU_TREE = {
+        'menu':             ['open_apple_accounts', 'open_device_list', 'menu_tracking',
+                                'menu_display', 'menu_sensors', 'menu_system', ],
+        'menu_tracking':    ['open_tracking_parameters', 'open_special_zones', 'open_waze',
+                                'open_inzone_intervals', 'main_menu', ],
+        'menu_display':     ['open_format_settings', 'open_display_text_as', 'open_away_time_zone',
+                                'main_menu', ],
+        'menu_sensors':     ['open_sensors', 'open_exclude_sensors',
+                                'open_dashboard_builder', 'main_menu', ],
+        'menu_system':      ['open_tools', 'open_analytics', 'open_analytics_reports',
+                                'main_menu', ],
 }
 
-# Set up menu lists now so they do not have to be created every time a menu is displayed
-MENU_0_ITEMS = list(MENU_0.values())
-MENU_1_ITEMS = list(MENU_1.values())
-MENU_0_ACTION_ITEMS = list(MENU_0_ACTIONS.values())
-MENU_1_ACTION_ITEMS = list(MENU_1_ACTIONS.values())
+# Menu items (configure screens) on the menus and the Needs attention items displayed
+# at the top of the main menu (form_config_flow.build_needs_attention)
+MENU_ITEMS = [  'apple_accounts', 'device_list', 'inzone_intervals',
+                'tracking_parameters', 'special_zones', 'waze',
+                'format_settings', 'display_text_as', 'away_time_zone',
+                'sensors', 'exclude_sensors', 'dashboard_builder',
+                'tools', 'analytics', 'analytics_reports', ]
+MENU_ACTION_NEEDED_ITEMS = [
+                'action_terms_of_use', 'action_reauth', 'action_login_failed',
+                'action_add_apple_acct', 'action_no_data_source', 'action_add_devices',
+                'action_review_inactive', 'action_review_inactive_some', 'action_analytics', ]
+ADVANCED_SECTION = 'advanced_section'
 
-MENU_KEYS_BY_TITLE =      {item_value.split(' →')[0]: item_key for item_key, item_value in MENU_0.items()}
-MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_0_ACTIONS.items()})
-MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1.items()})
-MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1_ACTIONS.items()})
+# Warning symbol displayed in the Configure screen text (text presentation, not the emoji)
+CF_ALERT = '⚠︎ '
 
-MENU_EXIT_ITEMS = {
-        'exit':                       '➤ EXIT → End the iCloud3 Configure Session',
-        'exit_update_dashboards':     '➤ EXIT → End the iCloud3 Configure Session. Update the Dashboards and Restart',
-        'exit_add_dev_trkrs_sensors': '➤ EXIT → End the iCloud3 Configure Session. Add new devices and sensors, Update the Dashboards and Restart'
-}
+#----------------------------------------------------------------------------------------
+
+
+
 ACTION_LIST_OPTIONS = {
         'rtn_device_list':          '➤ RETURN → ICLOUD3 DEVICES → Return to the screen showing the Tracked and Monitored devices',
         'rtn_update_device':        '➤ RETURN → UPDATE ICLOUD3 DEVICE → Return to Update iCloud3 Device screen',
@@ -182,6 +193,12 @@ APPLE_ACCOUNT_USERNAME_ACTION_LIST_IDX = 0     # Index number of the Action list
 APPLE_ACCOUNTS_MULTI_HDR = {'apple_acct_hdr': '═════════ Additional Apple Accounts ═════════'}
 UNSELECTED_IDX = -1
 
+#------------------------–--------------------------------------------------------------
+# Tools menu (step_id tools) options. The labels are in strings.json options.step.tools.menu_options
+TOOL_ITEMS = [  'log_level', 'beta_version', 'cleanup_entity_registry', 'restart_icloud3',
+                'reset_data_source', 'reset_tracking', 'reset_general', 'del_apple_acct_cookies',
+                'del_icloud3_config_files', ]
+
 # Action List Items for all screens
 ACTION_LIST_ITEMS_SAVE_MENU = [
         ACTION_LIST_OPTIONS['save'],
@@ -256,15 +273,6 @@ CHANGE_DEVICE_ORDER = [
         ACTION_LIST_OPTIONS['save'],
         ACTION_LIST_OPTIONS['rtn_device_list']
 ]
-SENSORS_ACTIONS = [
-        ACTION_LIST_OPTIONS['exclude_sensors'],
-        ACTION_LIST_OPTIONS['set_to_default_sensors'],
-        ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['menu']]
-SENSORS_EXCLUDE_ACTIONS_= [
-        ACTION_LIST_OPTIONS['filter_sensors'],
-        ACTION_LIST_OPTIONS['update_sensor_list'],
-        ACTION_LIST_OPTIONS['return_to_sensor_screen']]
 
 REVIEW_INACTIVE_DEVICES = [
         ACTION_LIST_OPTIONS['update_tracking_mode']]
@@ -272,18 +280,6 @@ REVIEW_INACTIVE_DEVICES = [
         # ACTION_LIST_OPTIONS['menu']]
         # ACTION_LIST_OPTIONS['exit'],
 
-EXIT_ICLOUD3_CONFIGURE_SETTINGS = [
-        ACTION_LIST_OPTIONS['review_inactive_devices'],
-        ACTION_LIST_OPTIONS['menu'],
-        ACTION_LIST_OPTIONS['exit']]
-
-CONFIRM_ACTIONS = [
-        ACTION_LIST_OPTIONS['confirm_action_yes'],
-        ACTION_LIST_OPTIONS['confirm_action_no']]
-CONFIRM_ACTIONS_BETA_VERSION = [
-        ACTION_LIST_OPTIONS['confirm_action_yes_enable_beta'],
-        ACTION_LIST_OPTIONS['confirm_action_no_disable_beta'],
-        ACTION_LIST_OPTIONS['goto_previous']]
 
 # marketplace.async_set_icloud3_prerelease_switch return value --> options error key
 PRERELEASE_SWITCH_ERRORS = {
@@ -291,58 +287,7 @@ PRERELEASE_SWITCH_ERRORS = {
         'switch_not_found':   'prerelease_switch_not_found',
         'fix_action_failed':  'prerelease_switch_failed'}
 
-DASHBOARD_BUILDER_ACTIONS = [
-        ACTION_LIST_OPTIONS['create_dashboard'],
-        ACTION_LIST_OPTIONS['cancel_goto_menu']]
-
-ANALYTICS_ACTIONS = [
-        ACTION_LIST_OPTIONS['send_analytics_data'],
-        ACTION_LIST_OPTIONS['analytics_reports']]
-
-ANALYTICS_REPORTS_ACTIONS = [
-        ACTION_LIST_OPTIONS['run_report'],
-        ACTION_LIST_OPTIONS['analytics'],
-        ACTION_LIST_OPTIONS['menu']]
-
-CLEANUP_ENTITY_REGISTRY = [
-        # ACTION_LIST_OPTIONS['check_all'],
-        # ACTION_LIST_OPTIONS['check_none'],
-        # ACTION_LIST_OPTIONS['show_all_sensors'],
-        # ACTION_LIST_OPTIONS['show_some_sensors'],
-        ACTION_LIST_OPTIONS['delete_device_sensors'],
-        ACTION_LIST_OPTIONS['goto_previous']]
-
 #------------------------–--------------------------------------------------------------
-TOOL_LIST = {
-        'log_level':                 'CHANGE THE LOG LEVEL → Change the current log level (info, debug, rawdata)',
-        'beta_version':              'ICLOUD3 BETA VERSION → Enable/Disable iCloud3 Beta Downloads from the HA Marketplace',
-        'cleanup_entity_registry':   'CLEANUP HA ENTITY REGISTRY → Extract and Delete iCloud3  Entity Registry Devices and Sensors',
-        'restart_icloud3':           'RESTART ICLOUD3 → Restart iCloud3 Now (Reloads the current version of iCloud3)',
-        'reset_data_source':         'CLEAR DEVICE’S DATA SOURCE SELECTIONS → Erase the `Apple Acct Device` and `Mobile App Device` selection fields for all iCloud3 devices (Update iCloud3 Device screen)',
-        'reset_tracking':            'REMOVE ALL APPLE ACCTS & DEVICES → Erase all Apple Accts (Apple Acct and Mobile App screen) and Erase all Devices (iCloud3 Devices screen)',
-        'reset_general':             'RESET GENERAL CONFIGURATION PARAMETERS → Set the `General Parameters` to their default value (Other Parameter Menu screens). Sensors are reset on the Sensors screen.',
-        'del_apple_acct_cookies':    'DELETE ALL APPLE/ICLOUD COOKIE FILES → Delete Apple Acct Cookie & Session files in the ‘.storage/icloud3.apple_acct’ directory, Restart HA',
-        'del_icloud3_config_files':  'DELETE ALL ICLOUD3 CONFIGURATION FILES → Delete the iCloud3  Configuration files in the ‘.storage/icloud3’ directory. Apple Accts will be reverified.',
-        'menu':                      ACTION_LIST_OPTIONS['menu']
-}
-TOOL_LIST_ITEMS = [
-        TOOL_LIST['log_level'],
-        TOOL_LIST['beta_version'],
-        TOOL_LIST['cleanup_entity_registry'],
-        TOOL_LIST['restart_icloud3'],
-        TOOL_LIST['reset_data_source'],
-        TOOL_LIST['reset_tracking'],
-        TOOL_LIST['reset_general'],
-        TOOL_LIST['del_apple_acct_cookies'],
-        TOOL_LIST['del_icloud3_config_files'],
-        ACTION_LIST_OPTIONS['menu'],
-]
-
-LOG_LEVEL = [
-        ACTION_LIST_OPTIONS['save_menu'],
-        ACTION_LIST_OPTIONS['menu'],
-]
-TOOL_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in TOOL_LIST.items()}
 
 #------------------------–--------------------------------------------------------------
 #   Parameter List Selections Items
@@ -374,10 +319,7 @@ MOBAPP_DEVICE_NONE_OPTIONS = {
 PICTURE_NONE_KEY_TEXT = {
         'None': '📱 Icon - Display the Device’s Icon instead of a picture'
         }
-DASHBOARD_MAIN_VIEW_STYLE_OPTIONS = {
-        'result-summary': 'Result Summary - Show Arrival Time, Distance Travel Time, Battery Info',
-        'track-details':  'Tracking Details - Show all results of a location update',
-        }
+DASHBOARD_MAIN_VIEW_STYLE_OPTIONS = [RESULT_SUMMARY, TRACK_DETAILS]
 DASHBOARD_MAIN_VIEW_STYLES = {
         'result-summary': 'Result Summary',
         'track-details':  'Tracking Details',
@@ -397,64 +339,34 @@ AWAY_FROM_ZONE_OPTIONS = {
         'none': 'Not used',
         'all': 'All are Away and in the same Time Zone',
 }
-DATA_SOURCE_OPTIONS = {
-        'iCloud,MobApp': 'ICLOUD & MOBILE APP → Request data from iCloud and the Mobile App',
-        'iCloud':        'ICLOUD ONLY → Mobile App is not used',
-        'MobApp':        'MOBILE APP ONLY → iCloud Location Services is not used'
-}
+DATA_SOURCE_OPTIONS = ['iCloud,MobApp', 'iCloud', 'MobApp']
 TRACKING_MODE_OPTIONS = {
         'track':    'Track - Request Location and track the device',
         'monitor':  'Monitor - Report location only when another tracked device is updated',
         'inactive': 'INACTIVE - Device is inactive and will not be tracked'
         }
-UNIT_OF_MEASUREMENT_OPTIONS = {
-        'mi':       'Imperial (mi, ft)',
-        'km':       'Metric (km, m)'
-        }
-TIME_FORMAT_OPTIONS = {
-        '12-hour':  '12-hour Time Format (9:05:30a, 4:40:15p)',
-        '24-hour':  '24-hour Time Format (09:05:30, 16:40:15)'
-        }
-TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT = {
-        .25:  'Shortest Interval Time - 1/4 TravelTime (¼ × 8 mins = Next Locate in 2m)',
-        .33:  'Shorter Interval Time - 1/3 TravelTime (⅓ × 8 mins = Next Locate in 2m40s)',
-        .50:  'Half Way (Default) - 1/2 TravelTime (½ × 8 mins = Next Locate in 4m)',
-        .66:  'Longer Interval Time - 2/3 TravelTime (⅔ × 8 mins = Next Locate in 5m20s',
-        .75:  'Longest Interval Time - 3/4 TravelTime (¾ × 8 mins = Next Locate in 6m)'
-        }
+UNIT_OF_MEASUREMENT_OPTIONS = ['mi', 'km']
+TIME_FORMAT_OPTIONS = ['12-hour', '24-hour']
+TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT = [.25, .33, .50, .66, .75]
 DISPLAY_ZONE_FORMAT_OPTIONS = {}
-DISPLAY_ZONE_FORMAT_OPTIONS_BASE = {
-        'fname':    'HA Zone Friendly Name (Home, Away, TheShores) → PREFERRED',
-        'zone':     'HA Zone entity_id (home, not_home, the_shores)',
-        'name':     'iCloud3 reformated Zone entity_id (zone.the_shores → TheShores)',
-        'title':    'iCloud3 reformated Zone entity_id (zone.the_shores → The Shores)'
-        }
-DEVICE_TRACKER_STATE_SOURCE_OPTIONS = {
-        'ic3_evlog': 'iCloud3 Zone - EventLog Zone Display Name (GPS+accuracy) → PREFERRED',
-        'ic3_fname': 'iCloud3 Zone - Zone Friendly Name (GPS+accuracy)',
-        'ha_gps':    'HA Zone - GPS coordinates will determine the zone (except Stationary Zones)'
-        }
-LOG_LEVEL_OPTIONS = {
-        'info':     'Info - Log General Information and Event Log messages',
-        'debug':    'Debug - Info + Other Internal Tracking Monitors',
-        'debug-ha': 'Debug (HALog) - Also add log records to the `home-assistant.log` file',
-        'debug-auto-reset': 'Debug (AutoReset) - Debug logging that resets to Info at midnight',
-        'rawdata':  'Rawdata - Debug + Device Data (filtered) received from iCloud Location Servers',
-        'rawdata-auto-reset':  'Rawdata (AutoReset) - RawData logging that resets to Info at midnight',
-        'unfiltered':  'Rawdata (Unfiltered) - Device Data fields (everything) received from iCloud Location Servers',
-        }
+DISPLAY_ZONE_FORMAT_OPTIONS_BASE = ['fname', 'zone', 'name', 'title']
+DEVICE_TRACKER_STATE_SOURCE_OPTIONS = ['ic3_evlog', 'ic3_fname', 'ha_gps']
+LOG_LEVEL_OPTIONS = ['info', 'debug', 'debug-ha', 'debug-auto-reset', 'rawdata', 'rawdata-auto-reset',
+        'unfiltered']
 DISTANCE_METHOD_OPTIONS = {
         'waze':     'Waze - Waze Route Service provides travel time & distance information',
         'calc':     'Calc - Distance is calculated using a `straight line` formula'
         }
-WAZE_SERVER_OPTIONS = {
-        'us':       WAZE_SERVERS_FNAME['us'],
-        'il':       WAZE_SERVERS_FNAME['il'],
-        'row':      WAZE_SERVERS_FNAME['row']
-        }
-WAZE_HISTORY_TRACK_DIRECTION_OPTIONS = {
-        'north_south':      'North-South - You generally travel in North-to-South direction',
-        'east_west':        'East-West - You generally travel in East-West direction'
+WAZE_SERVER_OPTIONS = ['us', 'il', 'row']
+WAZE_HISTORY_TRACK_DIRECTION_OPTIONS = ['north_south', 'east_west']
+# The sensors that are always created. They are not on the Sensors screen, the section
+# descriptions name them.
+ALWAYS_CREATED_SENSORS = {
+        'device':               ['badge', BATTERY],
+        'tracking_update':      [NEXT_UPDATE],
+        'tracking_time':        [TRAVEL_TIME, ARRIVAL_TIME],
+        'tracking_distance':    [HOME_DISTANCE],
+        'monitored_devices':    ['md_badge', 'md_battery'],
         }
 USER_AUTH_RAW_YAML_DISPLAY_MODE = {
         'always':           'Always display the text/button entities on the Dashboard',
@@ -467,58 +379,20 @@ CONF_SENSORS_DEFAULT = {
         'home_distance':    '_home_distance → Distance to the Home zone (ALWAYS CREATED)',
         'next_update':      '_next_update → Next time the location will be updated (ALWAYS CREATED)',
         }
-CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT = {
-        'md_badge':         '_badge → Badge sensor - A badge showing the Zone Name or distance from the Home zone. Attributes include location related information',
-        'md_battery':       '_battery, battery_status → Create Battery (65%) and Battery Status (Charging, Low, etc) sensors (ALWAYS CREATED)',
-        'md_location_sensors': 'Location related sensors → Name, zone, distance, travel_time, etc. (_name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update)',
-        }
-CONF_SENSORS_DEVICE_KEY_TEXT = {
-        NAME:               '_name → iCloud3 Device Name',
-        'badge':            '_badge → A badge showing the Zone Name or distance from the Home zone',
-        BATTERY:            '_battery, _battery_status → Create Battery Level (65%) and Battery Status (Charging, Low, etc) sensors (ALWAYS CREATED)',
-        'info':             '_info → An information message containing status, alerts and errors related to device location updates, data accuracy, etc',
-        }
-CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT = {
-        'interval':         '_interval → Time between location requests',
-        'last_update':      '_last_update → Last time the location was updated',
-        'next_update':      '_next_update → Next time the location will be updated (ALWAYS CREATED)',
-        'last_located':     '_last_located → Last time the was located using iCloud or Mobile App location',
-        }
-CONF_SENSORS_TRACKING_TIME_KEY_TEXT = {
-        'travel_time':      '_travel_time → Waze Travel time to Home or closest Track-from-Zone zone (ALWAYS CREATED)',
-        'travel_time_min':  '_travel_time_min → Waze Travel time to Home or closest Track-from-Zone zone in minutes',
-        'travel_time_hhmm': '_travel_time_hhmm → Waze Travel time to a Zone in hours:minutes',
-        'arrival_time':     '_arrival_time → Home Zone arrival time based on Waze Travel time (ALWAYS CREATED)',
-        }
-CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT = {
-        'home_distance':    '_home_distance → Distance to the Home zone (ALWAYS CREATED)',
-        'zone_distance':    '_zone_distance → Distance to the Home or closest Track-from-Zone zone',
-        'dir_of_travel':    '_dir_of_travel → Direction of Travel for the Home zone or closest Track-from-Zone zone (Towards, AwayFrom, inZone, etc)',
-        'moved_distance':   '_moved_distance → Distance moved from the last location',
-        }
+CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT = ['md_badge', 'md_battery', 'md_location_sensors']
+CONF_SENSORS_DEVICE_KEY_TEXT = [NAME, 'badge', BATTERY, 'info']
+CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT = ['interval', 'last_update', 'next_update', 'last_located']
+CONF_SENSORS_TRACKING_TIME_KEY_TEXT = ['travel_time', 'travel_time_min', 'travel_time_hhmm', 'arrival_time']
+CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT = ['home_distance', 'zone_distance', 'dir_of_travel', 'moved_distance']
 CONF_SENSORS_TRACK_FROM_ZONES_KEY_TEXT = {
         'general_sensors':  'Include General Sensors (_zone_info)',
         'time_sensors':     'Include Travel Time Sensors (_travel_time, _travel_time_mins, _travel_time_hhmm, _arrival_time',
         'distance_sensors': 'Include Zone Distance Sensors (_zone_distance, _distance, _dir_of_travel)',
         }
 CONF_SENSORS_TRACK_FROM_ZONES_KEYS = ['general_sensors', 'time_sensors', 'distance_sensors']
-CONF_SENSORS_TRACKING_OTHER_KEY_TEXT = {
-        'trigger':          '_trigger → Last action that triggered a location update',
-        'waze_distance':    '_waze_distance → Waze distance from a TrackFrom zone',
-        'calc_distance':    '_calc_distance → Calculated straight line distance from a TrackFrom zone',
-        }
-CONF_SENSORS_ZONE_KEY_TEXT = {
-        'zone_fname':       '_zone_fname → HA Zone Name (`Home`, `The Shores`) → From: HA Config → Areas & Zones → Zones → Name field',
-        'zone':             '_zone → HA Zone entity_id (`home`, `the_shores`)',
-        'zone_name':        '_zone_name → Reformat the Zone entity_id, capitalize and remove `_’s (`Home`, `TheShores`)',
-        'zone_datetime':    '_zone_datetime → The time the Device entered the Zone',
-        'last_zone':        '_last_zone_[...] → Create the same sensors for the device’s last HA Zone',
-        }
-CONF_SENSORS_OTHER_KEY_TEXT = {
-        'gps_accuracy':     '_gps_accuracy → GPS acuracy of the last location coordinates',
-        'vertical_accuracy':'_vertical_accuracy → Vertical (Elevation) Accuracy',
-        'altitude':         '_altitude → Altitude/Elevation',
-        }
+CONF_SENSORS_TRACKING_OTHER_KEY_TEXT = ['trigger', 'waze_distance', 'calc_distance']
+CONF_SENSORS_ZONE_KEY_TEXT = ['zone_fname', 'zone', 'zone_name', 'zone_datetime', 'last_zone']
+CONF_SENSORS_OTHER_KEY_TEXT = ['gps_accuracy', 'vertical_accuracy', 'altitude']
 
 ACTIONS_SCREEN_OPTIONS = {
         "divider1":         "═════════════ ICLOUD3 CONTROL ACTIONS ══════════════",

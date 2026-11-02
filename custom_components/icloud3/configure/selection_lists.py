@@ -32,6 +32,7 @@ from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OP
                                 REAUTH_AUTH_METHODS, PICTURE_NONE_KEY_TEXT,)
 from ..startup          import config_file
 from ..utils            import file_io
+from .                  import utils_cf
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -124,6 +125,13 @@ def _build_aa_text_line(self, AppleAcct, apple_id):
                 f"{tracked_cnt+untracked_cnt} Devices Tracked "
                 f"({tracked_devices})")
     return aa_text
+
+def devices_tracked_text(tracked_cnt, device_cnt):
+    '''
+    2 of 5 devices tracked
+    '''
+    return utils_cf.tr(f"aa_devices_tracked_{'one' if device_cnt == 1 else 'other'}",
+                        tracked=tracked_cnt, total=device_cnt)
 
 #--------------------------------------------------------------------
 def build_apple_accounts_auth_list(self):
