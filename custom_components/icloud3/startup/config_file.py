@@ -732,6 +732,9 @@ def get_excluded_sensors():
 
     devicename_sensors = []
     for fname_devicename_sensor in Gb.conf_sensors[CONF_EXCLUDED_SENSORS]:
+        # 'None' is the placeholder item older versions saved when no sensors were excluded
+        if fname_devicename_sensor == 'None':
+            continue
         devicename_sensor = get_excluded_sensor_devicename_sensor(fname_devicename_sensor)
         list_add(devicename_sensors, devicename_sensor)
 

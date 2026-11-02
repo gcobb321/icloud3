@@ -19,7 +19,18 @@ from .                      import form_reauth as forms
 from .                      import form_config_flow as forms_cf
 from ..                     import utils_cf
 from ..                     import selection_lists as lists
-from ..const_form_lists     import (USER_AUTH_RAW_YAML_DISPLAY_MODE)
+from ..const_form_lists     import (FORM_ACTION, )
+
+# The actions that leave the authentication screen (form_reauth.reauth_back_action)
+REAUTH_BACK_ACTIONS = ['exit_ha_reconfigure_reauth', 'config_flow_reauth', 'rtn_apple_accounts',
+                        'rtn_update_apple_acct', 'menu', 'reauth']
+
+# The messages displayed in the description of the authentication screen. They report
+# a result or what to do next, they are not errors.
+REAUTH_STATUS_MSGS = ['conf_updated', 'auth_code_accepted', 'hwkey_auth_succeeded',
+                        'auth_code_requested', 'hwkey_waiting_for_keypress',
+                        'auth_code_another_auth_needed', 'apple_acct_terms_update_accepted',
+                        'hwkey_names_refreshed', ]
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -41,15 +52,29 @@ class OptionsFlow_Reauth_Steps:
         class and the mixin's __init__ would never be run.
         '''
         self.is_reauth_initialized          = False  # The reauth step has been initialized by _initialize_config_flow_reauth
+        self.reauth_apple_id                = ''     # The Apple Acct displayed on the authentication screen
+        # Accepting the Terms of Use records a restart. The HA reauth ConfigFlow does not
+        # run initialize_common_variables.
+        if hasattr(self, 'config_parms_update_control') is False:
+            self.config_parms_update_control = []
 
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #            REAUTH
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     async def async_step_reauth(self, user_input=None, errors=None, reauth_apple_id='',):
-
+        '''
+        The authentication screen of an Apple Account (async_show_reauth_screen) and the
+        actions of its reauth form. It is opened for an account (reauth_apple_id), the
+        form's actions are for the account displayed on it (self.reauth_apple_id).
+        '''
+        await utils_cf.async_load_texts()
         AppleAcct = None
 
         if len(Gb.conf_apple_accounts) == 0:
+            # The HA reauth ConfigFlow has no menu, its notification can still be open after
+            # the last Apple Account was deleted
+            if hasattr(self, 'async_step_menu') is False:
+                return self.ha_reconfigure_reauth_exit()
             self.header_msg = 'apple_acct_not_set_up'
             return await self.async_step_menu()
 
@@ -58,45 +83,49 @@ class OptionsFlow_Reauth_Steps:
             self.errors = errors or utils_cf.set_header_msg(self) or {}
             self.errors_user_input = {}
             self.errors_info_msg = None
-            if self.errors.get('base', '') == 'auth_code_accepted':
-                self.errors[AUTH_CODE] = self.errors.pop('base')
 
             user_input, action_item = utils_cf.action_text_to_item(self, user_input)
-
-            if user_input:
-                user_input = self._unpack_ui_reauth(user_input)
-                AppleAcct, reauth_apple_id = \
-                        self.get_AppleAcct_reauth_needed(user_input.get('account_selected'))
-                self.AppleAcct = AppleAcct
-                lists.build_aa_auth_methods_list(self, AppleAcct)
-
-            utils_cf.log_step_info(self, user_input, action_item, 'ENTER')
 
             # Set up the reauthentication process based on the entry point - iCloud3_ConfigFlow
             # from the HA notifications or iCloud3_OptionsFlow from the iCloud3 Menu or the
             # Apple Account screen.
             #   ConfigFlow  - Initialize on the first pass ('is_reauth_initialized' is False).
+            #                 HA passes the config entry data, it is not a form submit.
             #                 The ConfigFlow is exited (_exit_reauth_screen_handler) when reauth is done.
-            #   OptionsFlow - The calling step added it's step_id to the 'return_to_step_id' list
-            #                 before branching here. It is removed and redisplayed when reauth is done.
+            #   OptionsFlow - The Back action returns to the screen it was opened from
+            #                 (reauth_back_action)
             if self.menu_item == 'config_flow_reauth':
                 if self.is_reauth_initialized is False:
                     await self._initialize_config_flow_reauth()
                     user_input = None
+                    reauth_apple_id = self.AppleAcct.apple_id if self.AppleAcct else ''
 
             elif user_input is None:
                 await self.async_write_icloud3_configuration_file()
 
+            # A submitted form (or an action started for the account) is for the account
+            # displayed on the screen
+            if user_input is not None:
+                user_input = self._unpack_ui_reauth(user_input)
+                reauth_apple_id = (user_input.pop('account_selected', None)
+                                        or reauth_apple_id or self.reauth_apple_id)
+
+            if Gb.AppleAcct_by_apple_id:
+                AppleAcct, reauth_apple_id = self.get_AppleAcct_reauth_needed(
+                                reauth_apple_id if reauth_apple_id in Gb.AppleAcct_by_apple_id else None)
+                self.AppleAcct = AppleAcct
+                lists.build_aa_auth_methods_list(self, AppleAcct)
+
+            utils_cf.log_step_info(self, user_input, action_item, 'ENTER')
+
             if Gb.internet_error:
                 self.errors['base'] = 'internet_error_no_change'
 
-            elif self.AppleAcct is None:
-                self.errors['account_selected'] = 'apple_acct_not_logged_into'
+            elif AppleAcct is None:
+                self.errors['base'] = 'apple_acct_not_logged_into'
 
             if user_input is None or (self.errors and action_item is None):
-                return self.async_show_form(step_id='reauth',
-                            data_schema=forms.form_reauth(self, reauth_apple_id=reauth_apple_id),
-                            errors=self.errors)
+                return await self.async_show_reauth_screen(reauth_apple_id)
 
         except Exception as err:
             log_exception(err)
@@ -107,25 +136,23 @@ class OptionsFlow_Reauth_Steps:
 
             utils_cf.log_step_info(self, user_input, action_item, 'ENTER')
 
-            # AppleAcct is None if the selected account was not found. Redisplay the form,
+            # The Back actions do not need the account
+            if action_item in REAUTH_BACK_ACTIONS:
+                return await self.async_reauth_back(action_item)
+
+            # AppleAcct is None if the account was not found. Redisplay the screen,
             # reentering the step would look it up again and fail in a loop.
             if AppleAcct is None:
-                self.errors['account_selected'] = 'reauth_apple_acct_unknown'
-                self.errors[AUTH_CODE] = ''
-                return self.async_show_form(step_id='reauth',
-                            data_schema=forms.form_reauth(self),
-                            errors=self.errors)
+                self.errors['base'] = 'reauth_apple_acct_unknown'
+                return await self.async_show_reauth_screen()
 
             # An Apple Acct can only be authenticated if it is valid and logged into
             if ((action_item in ['request_auth_code', 'send_auth_code',
                                     'auth_code_from_applecom_login']
                         or ui_auth_code != '')
                     and aascf.is_apple_acct_logged_into(AppleAcct.apple_id) is False):
-                self.errors['account_selected'] = 'apple_acct_not_logged_into'
-                self.errors[AUTH_CODE] = ''
-                return self.async_show_form(step_id='reauth',
-                            data_schema=forms.form_reauth(self, reauth_apple_id=AppleAcct.apple_id),
-                            errors=self.errors)
+                self.errors['base'] = 'apple_acct_not_logged_into'
+                return await self.async_show_reauth_screen(AppleAcct.apple_id)
 
             #.......................................................................
             self._set_or_reset_ha_orange_reauth_button()
@@ -135,22 +162,7 @@ class OptionsFlow_Reauth_Steps:
                         return await self.async_step_reauth_code_from_applecom_login()
 
                 case 'change_auth_method':
-                    return await self.async_step_reauth_change_auth_method(reauth_apple_id=reauth_apple_id)
-
-                case 'user_auth_dashboard':
-                    return await self.async_step_user_auth_dashboard()
-
-                case 'exit_ha_reconfigure_reauth':
-                    return self.ha_reconfigure_reauth_exit()
-
-                case 'reauth' | 'menu':
-                    return await self.async_step_menu()
-
-                case 'rtn_apple_accounts':
-                    return await self.async_step_apple_accounts()
-
-                case 'config_flow_reauth' | 'exit_ha_reconfigure_reauth':
-                    return self.ha_reconfigure_reauth_exit()
+                    return await self.async_step_reauth_change_auth_method()
 
             #.......................................................................
             if AppleAcct.is_auth_method_PUSH or AppleAcct.is_auth_method_TEXT:
@@ -167,18 +179,13 @@ class OptionsFlow_Reauth_Steps:
                 elif (action_item == 'send_auth_code'
                         and ui_auth_code != ''):
                     self.errors[AUTH_CODE] = 'auth_code_invalid'
-                    return self.async_show_form(step_id='reauth',
-                                data_schema=forms.form_reauth(self, reauth_apple_id=AppleAcct.apple_id),
-                                errors=self.errors)
+                    return await self.async_show_reauth_screen(AppleAcct.apple_id)
 
-            if (Gb.internet_error and action_item != 'menu'):
+            if Gb.internet_error:
                 self.errors['base'] = 'internet_error_no_change'
-                user_input = None
-                return await self.async_step_reauth(user_input=user_input, errors=self.errors)
+                return await self.async_show_reauth_screen(AppleAcct.apple_id)
 
             await self.check_terms_of_use(AppleAcct, action_item, user_input)
-
-            self.errors['account_selected'] = ''
 
             #.......................................................................
             try:
@@ -197,7 +204,7 @@ class OptionsFlow_Reauth_Steps:
                                         f"Result-{is_hwkey_key_available}")
                         if is_hwkey_key_available is False:
                             self.errors[AUTH_CODE] = 'hwkey_auth_not_avail'
-                            return await self.async_step_reauth(user_input=user_input, errors=self.errors)
+                            return await self.async_show_reauth_screen(AppleAcct.apple_id)
 
                     # Request the auth code or tell user to click Auth button on screen
                     await self.request_auth_code_or_trigger_hwkey_keypress(AppleAcct)
@@ -210,6 +217,8 @@ class OptionsFlow_Reauth_Steps:
 
                     if AppleAcct.is_auth_method_TEXT:
                         auth_msg_method = f"{auth_msg_method[:4]}{auth_method}"
+                    auth_msg_method = lists.build_aa_auth_methods_list(self, AppleAcct).get(
+                                            AppleAcct.current_auth_method, auth_msg_method)
 
                     post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
                                 f"Requested a new Auth Code, {auth_method}")
@@ -231,18 +240,14 @@ class OptionsFlow_Reauth_Steps:
                         self.errors[AUTH_CODE] = 'auth_code_requested'
 
                     elif AppleAcct.is_auth_method_HWKEY:
-                        user_input[AUTH_CODE] = f"Security Key used for Authentication ({AppleAcct.HwKey.hwkey_device})"
                         self.errors[AUTH_CODE] = 'hwkey_waiting_for_keypress'
 
-                    # return await self.async_step_reauth(user_input=user_input, errors=self.errors)
-                    return self.async_show_form(step_id='reauth',
-                                data_schema=forms.form_reauth(self, user_input=user_input,
-                                                                reauth_apple_id=AppleAcct.apple_id),
-                                errors=self.errors,
-                                description_placeholders={'auth_method': auth_msg_method})
+                    self.header_placeholders = {'auth_method': auth_msg_method}
+                    return await self.async_show_reauth_screen(AppleAcct.apple_id)
 
             except Exception as err:
                 log_exception(err)
+                self.errors[AUTH_CODE] = 'auth_code_request_error'
 
             #.......................................................................
             # Handle a request new code or or sent the code to Apple actions
@@ -251,52 +256,142 @@ class OptionsFlow_Reauth_Steps:
                     auth_successful = await self.send_auth_code_or_assert_hwkey_keypress(AppleAcct, ui_auth_code)
 
                     if auth_successful is False:
-                        return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(self, reauth_apple_id=AppleAcct.apple_id),
-                                    errors=self.errors,
-                                    description_placeholders=self.errors_info_msg)
+                        return await self.async_show_reauth_screen(AppleAcct.apple_id)
 
-                    if self.is_another_auth_code_needed() is False:
-                        self._reset_ha_orange_reauth_button()
+                    next_step = await self._async_auth_code_accepted_next_step(AppleAcct)
+                    if next_step is not None:
+                        return next_step
 
-                        # Called from ConfigFlow Class via the Orange HA Reauth button
-                        # All done, return to HA
-                        if self.menu_item == 'config_flow_reauth':
-                            return self.ha_reconfigure_reauth_exit()
-
-                        self.errors['base'] = self.header_msg = 'auth_code_accepted'
-                        # Display import_apple_devices screen if auth is done and that is
-                        # the screen to display next. Not done from HA Repairs.
-                        if (aascf.any_conf_devices_for_apple_acct(AppleAcct.apple_id) is False
-                                and getattr(self, 'is_repair_flow', False) is False):
-                            return await self.async_step_import_apple_devices()
-
-                        match self.menu_item:
-                            case 'reauth':
-                                # self.errors[AUTH_CODE] = 'auth_code_accepted'
-                                return await self.async_step_reauth()
-                            case 'apple_accounts':
-                                return await self.async_step_apple_accounts()
-                            case 'config_flow_reauth' | 'exit_ha_reconfigure_reauth':
-                                return self.ha_reconfigure_reauth_exit()
-                            case _:
-                                return await self.async_step_menu()
+                    # Another Apple Account needs a code, display it
+                    reauth_apple_id = self.get_AppleAcct_reauth_needed()[1]
 
             except Exception as err:
                 log_exception(err)
+                self.errors[AUTH_CODE] = 'auth_code_send_error'
 
             utils_cf.log_step_info(self, user_input, action_item, 'SEND')
 
-            if user_input and 'account_selected' in user_input:
-                reauth_apple_id = user_input['account_selected']
-
-            return self.async_show_form(step_id='reauth',
-                            data_schema=forms.form_reauth(self, reauth_apple_id=reauth_apple_id),
-                            errors=self.errors,
-                            description_placeholders=self.errors_info_msg)
+            return await self.async_show_reauth_screen(reauth_apple_id)
 
         except Exception as err:
             log_exception(err)
+
+#--------------------------------------------------------------------
+    async def async_show_reauth_screen(self, reauth_apple_id=None):
+        '''
+        Display the authentication screen of the Apple Account (reauth_apple_id, the first
+        one Apple is waiting for a code for if it is not set):
+            - Apple is waiting for a code or the Terms of Use need accepting - The reauth
+                form with the code field
+            - Otherwise - The Authentication options menu (reauth_options)
+
+        The status messages in self.errors (REAUTH_STATUS_MSGS) are displayed in the
+        description, the other ones are errors. A menu displays all of them in the
+        description.
+        '''
+        await utils_cf.async_load_texts()
+        lists.build_apple_accounts_auth_list(self)
+
+        AppleAcct = None
+        if Gb.AppleAcct_by_apple_id:
+            AppleAcct, reauth_apple_id = self.get_AppleAcct_reauth_needed(
+                        reauth_apple_id if reauth_apple_id in Gb.AppleAcct_by_apple_id else None)
+            lists.build_aa_auth_methods_list(self, AppleAcct)
+        self.AppleAcct       = AppleAcct
+        self.reauth_apple_id = reauth_apple_id or ''
+
+        is_form   = forms.is_reauth_form_needed(AppleAcct)
+        errors    = {key: msg for key, msg in (self.errors or {}).items() if msg}
+        msg_keys  = [msg for msg in errors.values()
+                            if msg in REAUTH_STATUS_MSGS or is_form is False]
+        errors    = {key: msg for key, msg in errors.items() if msg not in msg_keys}
+        errors_info_msg = getattr(self, 'errors_info_msg', None) or {}
+        self.header_placeholders = {**(getattr(self, 'header_placeholders', None) or {}),
+                                    **errors_info_msg}
+        header_msg = '\n\n'.join(await utils_cf.async_header_msgs(self, list(dict.fromkeys(msg_keys))))
+        placeholders = forms.reauth_heading(self, AppleAcct)
+
+        if is_form:
+            self.step_id = 'reauth'
+            data_schema  = forms.form_reauth(self, AppleAcct)
+            # A security key has no code field, its errors are displayed at the top
+            if AUTH_CODE in errors and AUTH_CODE not in [str(marker) for marker in data_schema.schema]:
+                errors['base'] = errors.pop(AUTH_CODE)
+            self.errors = errors
+            return self.async_show_form(step_id='reauth',
+                        data_schema=data_schema,
+                        errors=errors,
+                        description_placeholders={**placeholders,
+                                                  **errors_info_msg,
+                                                  'header_msg': header_msg})
+
+        self.step_id = 'reauth_options'
+        self.errors  = {}
+        menu_options, menu_placeholders = forms.reauth_options_menu_options(self, AppleAcct)
+        return await utils_cf.async_show_list_menu(self, 'reauth_options', menu_options,
+                        header_msg=header_msg,
+                        placeholders={**placeholders, **menu_placeholders})
+
+#--------------------------------------------------------------------
+    async def async_step_reauth_options(self, user_input=None):
+        return await self.async_show_reauth_screen(self.reauth_apple_id)
+
+    async def async_step_reauth_options_request_code(self, user_input=None):
+        '''Request a new code (start the security key authentication) for the account'''
+        return await self.async_step_reauth(user_input={FORM_ACTION: 'request_auth_code'},
+                                            reauth_apple_id=self.reauth_apple_id)
+
+    async def async_step_reauth_options_back(self, user_input=None):
+        return await self.async_reauth_back(forms.reauth_back_action(self)[0])
+
+#--------------------------------------------------------------------
+    async def async_reauth_back(self, back_action):
+        '''
+        Leave the authentication screen for the screen it was opened from
+        (forms.reauth_back_action)
+        '''
+        match back_action:
+            case 'exit_ha_reconfigure_reauth' | 'config_flow_reauth':
+                return self.ha_reconfigure_reauth_exit()
+            case 'rtn_apple_accounts':
+                return await self.async_step_apple_accounts()
+            case 'rtn_update_apple_acct':
+                if self._select_apple_acct(self.reauth_apple_id):
+                    return await self.async_step_update_apple_acct()
+                return await self.async_step_apple_accounts()
+
+        return await self.async_step_menu()
+
+#--------------------------------------------------------------------
+    async def _async_auth_code_accepted_next_step(self, AppleAcct):
+        '''
+        The screen displayed after the code of AppleAcct was accepted. None if another
+        Apple Account needs a code, the Authenticate screen is redisplayed for it.
+        '''
+        if self.is_another_auth_code_needed():
+            return None
+
+        self._reset_ha_orange_reauth_button()
+
+        # Called from ConfigFlow Class via the Orange HA Reauth button
+        # All done, return to HA
+        if self.menu_item == 'config_flow_reauth':
+            return self.ha_reconfigure_reauth_exit()
+
+        self.errors['base'] = self.header_msg = 'auth_code_accepted'
+        # Display import_apple_devices screen if auth is done and that is
+        # the screen to display next. Not done from HA Repairs.
+        if (aascf.any_conf_devices_for_apple_acct(AppleAcct.apple_id) is False
+                and getattr(self, 'is_repair_flow', False) is False):
+            return await self.async_step_import_apple_devices()
+
+        # Opened from the main menu's Authenticate row, the menu displays the message
+        # and no longer has the row
+        match self.menu_item:
+            case 'apple_accounts':
+                return await self.async_step_apple_accounts()
+            case _:
+                return await self.async_step_menu(errors={'base': self.errors['base']})
 
 #--------------------------------------------------------------------
     def _unpack_ui_reauth(self, user_input):
@@ -304,12 +399,6 @@ class OptionsFlow_Reauth_Steps:
 
         if 'terms_of_use' not in user_input: user_input['terms_of_use'] = False
         user_input = utils_cf.strip_spaces(user_input, [AUTH_CODE])
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                                'account_selected',
-                                                self.apple_acct_auth_items_by_apple_id)
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                                'auth_method',
-                                                self.aa_auth_methods_by_auth_method)
 
         return user_input
 
@@ -481,7 +570,7 @@ class OptionsFlow_Reauth_Steps:
 
         except Exception as err:
             log_exception(err)
-
+            self.errors[AUTH_CODE] = 'auth_code_send_error'
             return False
 
         # Refresh the device list if the apple acct is being setup for the first time
@@ -505,9 +594,9 @@ class OptionsFlow_Reauth_Steps:
         update_alert_sensor(Source=AppleAcct, error='auth_needed', clear=True)
 
         if self.is_another_auth_code_needed():
-            self.errors['action_items'] = 'auth_code_another_auth_needed'
+            self.errors[FORM_ACTION] = 'auth_code_another_auth_needed'
         else:
-            self.errors['action_items'] = ''
+            self.errors.pop(FORM_ACTION, None)
 
         return True
 
@@ -564,21 +653,6 @@ class OptionsFlow_Reauth_Steps:
 
         return display_msg, evlog_msg
 
-#------------------------------------------------------------------------------
-    # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
-    # async def _exit_reauth_screen_handler(self):
-    #     '''Go to the next screen or back to the menu'''
-
-    #     match self.menu_item:
-    #         case 'reauth':
-    #             return await self.async_step_menu()
-    #         case 'rtn_apple_accounts':
-    #             return await self.async_step_apple_accounts()
-    #         case 'config_flow_reauth' | 'exit_ha_reconfigure_reauth':
-    #             return self.ha_reconfigure_reauth_exit()
-
-    #     return await self.async_step_menu()
-
 #--------------------------------------------------------------------
     def get_AppleAcct_reauth_needed(self, reauth_apple_id=None):
         '''
@@ -588,8 +662,11 @@ class OptionsFlow_Reauth_Steps:
             - or the first Apple Acct and apple_id
         '''
         if reauth_apple_id:
-            AppleAcct = Gb.AppleAcct_reauth_needed = \
-                        Gb.AppleAcct_by_apple_id[reauth_apple_id]
+            AppleAcct = Gb.AppleAcct_by_apple_id[reauth_apple_id]
+            # Only an account waiting for a code is the one needing reauthentication, the
+            # global is used for the HA reauth button and the main menu Authenticate row
+            if AppleAcct.is_reauth_needed or AppleAcct.terms_of_use_update_needed:
+                Gb.AppleAcct_reauth_needed = AppleAcct
             return AppleAcct, AppleAcct.apple_id
 
         if Gb.AppleAcct_reauth_needed and Gb.AppleAcct_reauth_needed.is_reauth_needed:
@@ -699,9 +776,14 @@ class OptionsFlow_Reauth_Steps:
             if auth_successful is False:
                 return await self.async_step_reauth_code_from_applecom_login(errors=self.errors)
 
-        return self.async_show_form(step_id='reauth',
-                                    data_schema=forms.form_reauth(self),
-                                    errors=self.errors)
+            next_step = await self._async_auth_code_accepted_next_step(self.AppleAcct)
+            if next_step is not None:
+                return next_step
+
+            # Another Apple Account needs a code, display it
+            return await self.async_show_reauth_screen(self.get_AppleAcct_reauth_needed()[1])
+
+        return await self.async_show_reauth_screen(self.reauth_apple_id)
 
 #---------------------------------------------------------------------------------------------------
     async def async_send_applecom_login_auth_code(self, user_input=None, errors=None):
@@ -719,9 +801,13 @@ class OptionsFlow_Reauth_Steps:
         if (ui_auth_code == ''
                 or len(ui_auth_code) != 6
                 or is_number(ui_auth_code) is False):
-            return user_input
+            self.errors[AUTH_CODE] = 'auth_code_invalid'
+            return False
 
-        await Gb.hass.async_add_executor_job(self.AppleAcct.untrust_session_and_authenticate)
+        # The apple.com code is a trusted device code, it is validated like the popup code.
+        # A live 2fa challenge is used, signing in again would send another popup.
+        if AppleAcct.is_2fa_challenge_session_live is False:
+            await Gb.hass.async_add_executor_job(AppleAcct.untrust_session_and_authenticate)
         auth_successful = await self.send_auth_code_or_assert_hwkey_keypress(AppleAcct, ui_auth_code, force_PUSH=True)
 
         return auth_successful
@@ -730,29 +816,28 @@ class OptionsFlow_Reauth_Steps:
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #            CHANGE AUTH METHOD
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth_change_auth_method(self,
-                        user_input=None, errors=None, reauth_apple_id=None):
-
+    async def async_step_reauth_change_auth_method(self, user_input=None, errors=None):
+        '''
+        Change how the code of the Apple Account displayed on the authentication screen
+        (self.AppleAcct) is sent
+        '''
         self.step_id = 'reauth_change_auth_method'
         self.errors = errors or {}
         self.errors_user_input = {}
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 
+        AppleAcct = self.AppleAcct
+        if AppleAcct is None:
+            return await self.async_show_reauth_screen(self.reauth_apple_id)
+
         if user_input:
             user_input = self._unpack_ui_reauth(user_input)
-            # reauth_apple_id = reauth_apple_id or user_input['account_selected']
-            AppleAcct, reauth_apple_id = \
-                        self.get_AppleAcct_reauth_needed(user_input.get('account_selected'))
             lists.build_aa_auth_methods_list(self, AppleAcct)
 
             utils_cf.log_step_info(self, user_input, action_item)
 
-        AppleAcct = self.AppleAcct
         if user_input is None:
-            return self.async_show_form(step_id='reauth_change_auth_method',
-                        data_schema=forms.form_reauth_change_auth_method(self, reauth_apple_id),
-                        errors=self.errors,
-                        last_step=True)
+            return self._show_change_auth_method_form()
 
 
         if action_item == 'refresh_hwkey_names':
@@ -769,17 +854,21 @@ class OptionsFlow_Reauth_Steps:
                     and AppleAcct.hwkey_names == ''):
                 self.errors['base'] = 'text_or_hwkey_none'
 
-            return self.async_show_form(step_id='reauth_change_auth_method',
-                        data_schema=forms.form_reauth_change_auth_method(self, reauth_apple_id),
+            return self._show_change_auth_method_form()
+
+        if action_item == 'save':
+            await self.update_auth_method(user_input.get('auth_method', ''))
+            self.errors = {'base': 'conf_updated'}
+            self.saved_item = 'auth_method'
+
+        return await self.async_show_reauth_screen(AppleAcct.apple_id)
+
+    def _show_change_auth_method_form(self):
+        return self.async_show_form(step_id='reauth_change_auth_method',
+                        data_schema=forms.form_reauth_change_auth_method(self),
                         errors=self.errors,
+                        description_placeholders=forms.reauth_heading(self, self.AppleAcct),
                         last_step=True)
-
-        auth_method = user_input.get('auth_method', '')
-        await self.update_auth_method(auth_method)
-
-        return self.async_show_form(step_id='reauth',
-                        data_schema=forms.form_reauth(self, reauth_apple_id=reauth_apple_id),
-                        errors=self.errors)
 
 #------------------------------------------------------------------------------
     async def update_auth_method(self, auth_method):
@@ -788,7 +877,7 @@ class OptionsFlow_Reauth_Steps:
         '''
         self.AppleAcct.update_auth_method(auth_method)
 
-        Gb.OptionsFlowHandler.update_config_file_tracking(force_config_update=True)
+        self.update_config_file_tracking(force_config_update=True)
         await config_file.async_write_icloud3_configuration_file()
 
 
@@ -809,10 +898,7 @@ class OptionsFlow_Reauth_Steps:
         utils_cf.log_step_info(self, user_input, action_item)
 
         if action_item == 'goto_previous':
-            return self.async_show_form(step_id='reauth',
-                        data_schema=forms.form_reauth(self),
-                        errors=self.errors,
-                        last_step=True)
+            return await self.async_show_reauth_screen(self.reauth_apple_id)
 
         if user_input is None:
             user_input = {'include_acct': 'all_accts', 'display_mode': 'always'}
@@ -822,6 +908,8 @@ class OptionsFlow_Reauth_Steps:
                         errors=self.errors,
                         last_step=True)
 
+        # One Apple Account, the card is for it (the form has no Apple Account field)
+        user_input.setdefault('include_acct', 'all_accts')
         user_input = self._build_raw_yaml_code(user_input)
 
         return self.async_show_form(step_id='user_auth_dashboard',
@@ -833,16 +921,6 @@ class OptionsFlow_Reauth_Steps:
     def _unpack_user_auth_dashboard(self, user_input):
         if user_input is None: return
 
-
-        if user_input['include_acct'].startswith("All"):
-            user_input['include_acct'] = 'all_accts'
-        else:
-            user_input = utils_cf.option_text_to_parm(user_input,
-                                                'include_acct',
-                                                self.apple_acct_auth_items_by_apple_id)
-        user_input = utils_cf.option_text_to_parm(user_input,
-                                                'display_mode',
-                                                USER_AUTH_RAW_YAML_DISPLAY_MODE)
 
         return user_input
 
