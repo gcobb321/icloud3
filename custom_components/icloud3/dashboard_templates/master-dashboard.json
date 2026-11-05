@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.ic3db_template_master",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Main",
+          "path": "main",
+          "type": "sections",
+          "max_columns": 2,
+          "icon": "",
+          "cards": [],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Template-Main-View",
+                  "heading_style": "subtitle"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "custom:icloud3-event-log-card"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Other Devices",
+          "path": "other-devices",
+          "type": "sections",
+          "max_columns": 2,
+          "icon": "",
+          "cards": [],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Template-Other-View",
+                  "heading_style": "subtitle"
+                }
+              ],
+              "column_span": 2
+            }
+          ]
+        },
+        {
+          "title": "*All Info",
+          "path": "ic3db-tracking",
+          "type": "sections",
+          "max_columns": 2,
+          "cards": [],
+          "header": {
+            "card": {
+              "type": "markdown",
+              "text_only": true,
+              "content": "device-group-content"
+            },
+            "layout": "start",
+            "badges_position": "bottom"
+          },
+          "sections": [
+            {
+              "type": "heading",
+              "icon": "mdi:select-group",
+              "heading": "Template-Tracking",
+              "heading_style": "subtitle"
+            }
+          ]
+        },
+        {
+          "title": "*Track Results",
+          "path": "ic3db-summary",
+          "type": "sections",
+          "max_columns": 2,
+          "header": {
+            "card": {
+              "type": "markdown",
+              "text_only": true,
+              "content": "summary-content"
+            },
+            "layout": "start",
+            "badges_position": "bottom"
+          },
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Template-Trk-Results-Group",
+                  "heading_style": "subtitle"
+                }
+              ],
+              "column_span": 2
+            }
+          ]
+        },
+        {
+          "title": "*Badge, Battery",
+          "path": "ic3db-badge-battery",
+          "type": "sections",
+          "max_columns": 2,
+          "header": {
+            "card": {
+              "type": "markdown",
+              "text_only": true,
+              "content": "badge-battery-content"
+            },
+            "layout": "start",
+            "badges_position": "bottom"
+          },
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Template-Badge-Battery",
+                  "heading_style": "subtitle"
+                }
+              ],
+              "column_span": 2
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "<br><h3>Device Badge Sensors</h3>"
+                },
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Template-Badge",
+                  "heading_style": "subtitle"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "<br><h3>Device Battery Sensors</h3>"
+                },
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Template-Battery",
+                  "heading_style": "subtitle"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Event Log",
+          "path": "event-log",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "custom:icloud3-event-log-card"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Main-View-Template-Style: ",
+                  "heading_style": "subtitle"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Main (Backup)",
+          "path": "main-backup",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "icon": "mdi:select-group",
+                  "heading": "Main Screen - Before Last Recreate Action",
+                  "heading_style": "subtitle"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

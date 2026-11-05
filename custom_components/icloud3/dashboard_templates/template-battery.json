@@ -1,0 +1,18 @@
+[
+  {
+    "type": "vertical-stack",
+    "cards": [
+      {
+        "type": "tile",
+        "entity": "sensor.^devicename_battery",
+        "name": "^fname",
+        "features_position": "bottom",
+        "vertical": false
+      }
+    ],
+    "grid_options": {
+      "columns": 4,
+      "rows": "auto"
+    }
+  }
+]

@@ -1,0 +1,172 @@
+[
+  {
+    "type": "grid",
+    "cards": [
+      {
+        "type": "markdown",
+        "text_only": true,
+        "content": "<h4><br>🀫 Combined Group (results+status+info) → ^fname</h4>"
+      },
+      {
+        "type": "vertical-stack",
+        "cards": [
+          {
+            "type": "glance",
+            "entities": [
+              {
+                "entity": "device_tracker.^devicename",
+                "name": "^fname"
+              },
+              {
+                "entity": "sensor.^devicename_arrival_time",
+                "name": "Arrive"
+              },
+              {
+                "entity": "sensor.^devicename_home_distance",
+                "name": "Distance"
+              },
+              {
+                "entity": "sensor.^devicename_travel_time",
+                "name": "TravTime"
+              },
+              {
+                "entity": "sensor.^devicename_next_update",
+                "name": "NextUpdt"
+              }
+            ],
+            "state_color": false
+          },
+          {
+            "type": "glance",
+            "entities": [
+              {
+                "entity": "sensor.^devicename_battery",
+                "name": "Battery"
+              },
+              {
+                "entity": "sensor.^devicename_interval",
+                "name": "Interval"
+              },
+              {
+                "entity": "sensor.^devicename_moved_distance",
+                "name": "Moved"
+              },
+              {
+                "entity": "sensor.^devicename_last_located",
+                "name": "Located"
+              },
+              {
+                "entity": "sensor.^devicename_last_update",
+                "name": "LastUpdt"
+              }
+            ]
+          },
+          {
+            "type": "entities",
+            "entities": [
+              {
+                "entity": "sensor.^devicename_info"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "markdown",
+        "text_only": true,
+        "content": "<h4><br>[Ⲷ] Separate Groups (results, status, info) → ^fname</h4>"
+      },
+      {
+        "type": "horizontal-stack",
+        "cards": [
+          {
+            "type": "vertical-stack",
+            "cards": [
+              {
+                "type": "glance",
+                "entities": [
+                  {
+                    "entity": "device_tracker.^devicename",
+                    "name": "^fname"
+                  },
+                  {
+                    "entity": "sensor.^devicename_arrival_time",
+                    "name": "Arrive"
+                  },
+                  {
+                    "entity": "sensor.^devicename_home_distance",
+                    "name": "Distance"
+                  },
+                  {
+                    "entity": "sensor.^devicename_travel_time",
+                    "name": "TravTime"
+                  },
+                  {
+                    "entity": "sensor.^devicename_next_update",
+                    "name": "NextUpdt"
+                  }
+                ],
+                "state_color": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "horizontal-stack",
+        "cards": [
+          {
+            "type": "vertical-stack",
+            "cards": [
+              {
+                "type": "glance",
+                "entities": [
+                  {
+                    "entity": "sensor.^devicename_battery",
+                    "name": "Battery"
+                  },
+                  {
+                    "entity": "sensor.^devicename_interval",
+                    "name": "Interval"
+                  },
+                  {
+                    "entity": "sensor.^devicename_moved_distance",
+                    "name": "Moved"
+                  },
+                  {
+                    "entity": "sensor.^devicename_last_located",
+                    "name": "Located"
+                  },
+                  {
+                    "entity": "sensor.^devicename_last_update",
+                    "name": "LastUpdt"
+                  }
+                ],
+                "state_color": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "horizontal-stack",
+        "cards": [
+          {
+            "type": "vertical-stack",
+            "cards": [
+              {
+                "type": "entities",
+                "entities": [
+                  {
+                    "entity": "sensor.^devicename_info"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "column_span": 1
+  }
+]
