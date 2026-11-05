@@ -353,7 +353,7 @@ def post_monitor_msg(devicename_or_Device, event_msg='+'):
 
 #-------------------------------------------------------------------------------------------
 def refresh_event_log(devicename='', show_one_screen=False):
-    Gb.EvLog.update_event_log_display(devicename='', show_one_screen=False)
+    Gb.EvLog.update_event_log_display(devicename=devicename, show_one_screen=show_one_screen)
 
 #-------------------------------------------------------------------------------------------
 def post_greenbar_msg(Device_or_greenbar_msg, greenbar_msg='+'):
@@ -659,7 +659,7 @@ def post_repair_issue(  issue_id, alert_key, title, alert_msg,
 
         data = {'devicename': devicename,
                 'apple_id':   apple_id,
-                'alert_key ': alert_key,
+                'alert_key':  alert_key,
                 'fix_action': fix_action}
         data.update(fix_data or {})
 
@@ -1450,10 +1450,10 @@ def _resolve_module_name_log_msg(module_name, log_msg):
 def internal_error_msg(err_text, msg_text=''):
 
     stack    = inspect.stack()
-    caller   = inspect.getframeinfo(stack()[1][0])
+    caller   = inspect.getframeinfo(stack[1][0])
     filename = os.path.basename(caller.filename).split('.')[0][:14]
     try:
-        parent = inspect.getframeinfo(stack()[2][0])
+        parent = inspect.getframeinfo(stack[2][0])
         parent_lineno = parent.lineno
     except:
         parent_lineno = ''
@@ -1501,7 +1501,7 @@ def post_internal_error(err_text, traceback_format_exec_obj='+'):
     log_error_msg(tb_err_msg)
 
     # rc9 Reworked message extraction due to Python code change
-    err_lines = tb_err_msg.split('{NL4}')
+    err_lines = tb_err_msg.split(NL)
     err_error_msg = err_code = err_file_line_module = ""
     err_lines.reverse()
 
@@ -1522,7 +1522,7 @@ def post_internal_error(err_text, traceback_format_exec_obj='+'):
             err_file_line_module = err_line.replace(Gb.icloud3_directory, '')
 
     try:
-        err_msg =  (f"{CRLF_DOT}File.. > {err_file_line_module})"
+        err_msg =  (f"{CRLF_DOT}File.. > {err_file_line_module}"
                     f"{CRLF_DOT}Code > {err_code}"
                     f"{CRLF_DOT}Error. > {err_error_msg}")
 

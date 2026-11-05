@@ -193,7 +193,7 @@ def secs_to(secs):
     return round(secs - time_now_secs())
 
 def mins_to(secs):
-    return round(secs_since(secs)/60)
+    return round(secs_to(secs)/60)
 
 #--------------------------------------------------------------------
 def secs_to_days(secs):

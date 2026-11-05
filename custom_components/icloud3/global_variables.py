@@ -169,6 +169,7 @@ class GlobalVariables(object):
 
     upw_valid_by_apple_id            = {}  # True/False-The apple_id/password validation status
     upw_code_by_apple_id             = {}  # Status code for initial upw validation
+    upw_decode_error_apple_ids       = set()  # The config file password can not be decoded (config_file.decode_all_passwords)
 
     conf_apple_ids                   = []  # List of Apple Acct apple_ids in config
     AppleAcct_by_devicename          = {}  # AppleAcct object for each ic3 devicename
@@ -232,7 +233,7 @@ class GlobalVariables(object):
     name_x_devicename               = {}  # Device.name by devicename and devicename by Device.fname
     inactive_fname_by_devicename    = {}  # Devices with tracking_mode=inactive
     entity_reg_items_by_status      = {}  # Entity registry icloud3 devicename errors by (orphaned, disabled, deleted)
-                                            # Set in entity_io.scan_entity_reg_for_icloud3_items)
+                                            # Set in entity_reg_util.scan_entity_reg_for_icloud3_items)
 
     # HA device_tracker and sensor entity info
     DeviceTrackers_by_devicename    = {}  # HA device_tracker.[devicename] entity objects
@@ -303,7 +304,8 @@ class GlobalVariables(object):
     MobileApp_data                  = {}  # data dict from hass.data['mobile_app']
     MobileApp_device_fnames         = []  # fname = name_by_user or name in mobile_app device entry
     MobileApp_fnames_x_mobapp_id    = {}  # All mobapp_fnames by mobapp_deviceid (both ways)
-    MobileApp_fnames_disabled       = []
+    # UNUSED (11/01/2026) - replaced by mobapp_fnames_disabled, delete after v3.8.0
+    # MobileApp_fnames_disabled       = []
 
     Zones                           = []  # Zones object list
     Zones_by_zone                   = {}  # Zone object by zone name for HA Zones and iC3 Pseudo Zones
@@ -453,7 +455,7 @@ class GlobalVariables(object):
     max_interval_secs               = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     offline_interval_secs           = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     exit_zone_interval_secs         = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
-    mobapp_alive_interval_secs      = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
+    mobapp_alive_interval_secs      = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 60
     old_location_threshold          = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_THRESHOLD] * 60
     old_location_adjustment         = DEFAULT_GENERAL_CONF[CONF_OLD_LOCATION_ADJUSTMENT] * 60
     passthru_zone_interval_secs     = DEFAULT_GENERAL_CONF[CONF_PASSTHRU_ZONE_TIME] * 60

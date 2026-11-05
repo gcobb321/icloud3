@@ -49,6 +49,8 @@
       "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
       "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
+      "apple_acct_inupw_valid": "❌ Invalid Username or Password",
+      "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
       "apple_acct_terms_update_accepted": "✅ Apple Acct `Terms of Use` Update Accepted",
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Apple Acct screen)",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
@@ -141,6 +143,7 @@
   "options": {
     "abort": {
       "config_update_complete": "{exit_msg}",
+      "configure_already_open": "⛔ ICLOUD3 CONFIGURE IS ALREADY IN PROCESS\n\nSomeone else is using iCloud3 Configure in another browser window or on another device (opened at {opened_time}, last used at {last_used_time}). Only one Configure window can be used at a time.\n\nTry again later, after that window has been exited. If it was closed without exiting, Configure can be used again {idle_timeout_mins} minutes after it was last used.",
       "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
@@ -177,6 +180,7 @@
       "apple_acct_apple_id_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
       "apple_acct_not_available": "❌ Login Failed, Apple Account is not Available",
       "apple_acct_locked": "❌ Login Failed, Unknown Apple Account or the Account is Locked",
+      "apple_acct_locked_security": "❌ Login Failed, Apple has locked this Apple Account for security reasons. Go to https://iforgot.apple.com to unlock it or reset the password. Then save the Apple Account again to log into it.",
       "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
       "apple_acct_updated_login_error": "Apple Acct info was saved, An error occurred logging into the Apple Acct",
       "apple_acct_data_source_warning": "Warning: Apple Accts have been set up but are not used as a data source",
@@ -205,17 +209,19 @@
       "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
       "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
       "hwkey_names_refreshed": "✅ Security Key names refreshed from Apple",
+      "text_or_hwkey_none": "❌ No Trusted Phone Numbers or Security Keys were found in the Apple Account",
       "hwkey_names_none": "❌ No Security Keys were found in the Apple Account",
       "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
       "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
 
       "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
       "used_by_other_integration": "This name is already used by Integration {info_msg}",
+      "ha_disabled_no_rename": "Can not be changed while the device is disabled in HA",
       "already_assigned": "This selection is already assigned to another device",
       "mobapp_search_error": "WARNING: Search Failure - No Mobile App device that starts with the iCloud3 or Apple Acct devicename was found. Select 'None' or the device to be used.",
 
       "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-      "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED. TRACKING MODE CHANGES WILL ⛔ BE DISCARDED",
+      "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED OR ITS DEVICENAME OR NAME CAN ⛔ BE CHANGED. TRACKING MODE CHANGES WILL BE DISCARDED",
       "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
       "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
       "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
@@ -284,7 +290,12 @@
       "dashboard_name_used": "This Dashboard Name is assigned to another Dashboard",
       "dashboard_main_2_devices": "Only 2 Devices can be selected for the Main view screen",
       "dashboard_error": "An error occurred updating the Dashboard",
-      "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code."
+      "dashboard_json_error": "An error occurred creating the `lovelace.dashboard...` file. The dashboard code that was created is not valid json code.",
+      "dashboard_deleted": "✅ The Dashboard was deleted",
+      "dashboard_delete_select": "Select the Dashboard to be deleted",
+      "dashboard_delete_error": "An error occurred deleting the Dashboard",
+      "dashboard_monitored_not_added": "Monitored devices are not added to the Main view, only Tracked devices are. Not added: {monitored_devices}",
+      "dashboard_no_tracked_devices": "⛔ The Main view has no devices. Only Monitored devices were selected and they are not added to the Main view ({monitored_devices}). Select a Tracked device or All Devices"
     },
 
 
@@ -1062,6 +1073,7 @@
           "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
           "apple_acct_apple_id_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
           "apple_acct_locked": "❌ Login Failed, Unknown Apple Account or the Account is Locked",
+          "apple_acct_locked_security": "❌ Login Failed, Apple has locked this Apple Account for security reasons. Go to https://iforgot.apple.com to unlock it or reset the password. Then save the Apple Account again to log into it.",
           "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
           "apple_acct_updated_login_error": "Apple Acct info was saved, An error occurred logging into the Apple Acct",
           "apple_acct_not_set_up": "No Apple Accounts are set up. Add them on the `APPLE ACCOUNTS` screen (it is selected). Then click NEXT",
@@ -1085,9 +1097,10 @@
 
           "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
           "used_by_other_integration": "This name is already used by Integration {info_msg}",
+          "ha_disabled_no_rename": "Can not be changed while the device is disabled in HA",
 
           "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-          "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED. TRACKING MODE CHANGES WILL ⛔ BE DISCARDED",
+          "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED OR ITS DEVICENAME OR NAME ⛔ CHANGED. TRACKING MODE CHANGES WILL BE DISCARDED",
           "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
           "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Import Apple Account Devices` or `Add a New Device`, then select `Submit` to display the screen to add iCloud3 device_tracker entities.",
 
@@ -1190,6 +1203,19 @@
               "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
             }
           },
+          "user_auth_dashboard": {
+            "title": "Build User Authentication Dashboard Card",
+            "description": "Create the text/button entity raw_yaml code for authenticating Apple Account signin from an HA Dashboard",
+            "data": {
+              "include_acct": "INCLUDE - Build raw_yaml code for these Apple Accounts",
+              "display_mode": "DISPLAY MODE - How the raw_yaml code should displayed on the Dashboard",
+              "raw_yaml_code": " Copy the code below and paste it into a Dashboard Card raw_yaml edit field",
+              "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
+            },
+            "data_description": {
+              "raw_yaml_code": "• COPY - Click the raw_yaml code above, press Ctrl+A/⌘+A (select), then Ctrl+C/⌘+C (copy)\n• DASHBOARD - Go to the Dashboard, select *Edit Dashboard > +Add Card*. Select *Manual* at the bottom of the card list\n• MANUAL CARD - Select all of the text already in the Manual card (probably *type: ' '* ) on the left\n• PASTE - Press Ctrl+V/⌘+V (paste) to replace it with this code, then *Save*, then *Done*"
+            }
+          },
 
           "update_device": {
             "title": "Update iCloud3 Device",
@@ -1268,6 +1294,7 @@
           "reauth_apple_acct_unknown": "Apple account requesting Authentication Code is unknown",
           "apple_acct_apple_id_inuse_error": "Error: This Username is being used by another Data Source entry. This one cannot be changed to it until the other one is removed. Select the other one and STOP USING it first.",
           "apple_acct_locked": "❌ Login Failed, Unknown Apple Account or the Account is Locked",
+          "apple_acct_locked_security": "❌ Login Failed, Apple has locked this Apple Account for security reasons. Go to https://iforgot.apple.com to unlock it or reset the password. Then save the Apple Account again to log into it.",
           "apple_acct_not_logged_into": "The Apple Account is not logged into (Invalid Username or Password)",
           "apple_acct_updated_login_error": "Apple Acct info was saved, An error occurred logging into the Apple Acct",
           "apple_acct_not_set_up": "No Apple Accounts are set up. Add them on the `APPLE ACCOUNTS` screen (it is selected). Then click NEXT",
@@ -1280,15 +1307,18 @@
           "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
           "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
           "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
+          "auth_code_invalid_text": "❌ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
           "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
           "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
+          "text_or_hwkey_none": "❌ No Trusted Phone Numbers or Security Keys were found in the Apple Account",
           "hwkey_auth_not_avail": "❌ The Security Key is not inserted into the HA Server, insert and retry",
           "hwkey_auth_failed": "❌ Security Key authentication failed. Error: {info_msg}",
           "used_by_other_ic3_device": "This name is already used by another iCloud3 device {info_msg}",
           "used_by_other_integration": "This name is already used by Integration {info_msg}",
+          "ha_disabled_no_rename": "Can not be changed while the device is disabled in HA",
           "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-          "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED. TRACKING MODE CHANGES WILL ⛔ BE DISCARDED",
+          "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED OR ITS DEVICENAME OR NAME ⛔ CHANGED. TRACKING MODE CHANGES WILL BE DISCARDED",
           "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
           "inactive_no_devices": "No Devices have been set up. On the `Update Devices` screen, select `Import Apple Account Devices` or `Add a New Device`, then select `Submit` to display the screen to add iCloud3 device_tracker entities.",
           "required_field": "This parameter must be specified",

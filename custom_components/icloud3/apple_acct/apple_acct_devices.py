@@ -367,8 +367,16 @@ class iCloud_AppleAcctDevices():
                     log_hdr = ( f"{apple_user_dev(self.AppleAcct.apple_user, device_data_name)}/"
                                 f"{Device.devicename}, "
                                 f"{aadevdata_hdr_msg}, iCloud Data ")
-                    log_data(log_hdr, AADev.device_data,
-                                data_source='icloud', filter_id=self.AppleAcct.apple_id)
+
+                    if Gb.is_log_level_debug:
+                        debug_msg =(f"{Device.devicename}, "
+                                    f"LocationData-{AADev.device_data[LOCATION]}, "
+                                    f"Battery-{AADev.battery_level}/{AADev.battery_status}")
+                        log_debug_msg(debug_msg)
+
+                    elif Gb.is_log_level_rawdata:
+                        log_data(log_hdr, AADev.device_data,
+                                    data_source='icloud', filter_id=self.AppleAcct.apple_id)
 
                 if AADev.last_loc_time_gps == AADev.loc_time_gps:
                     last_loc_time_gps_msg = last_loc_time_msg = ''

@@ -12,7 +12,7 @@ from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug
 from ...startup             import config_file
 from ..                     import utils_cf
 from ..const_form_lists     import *
-from ...configure           import dashboard_builder as dbb
+from ..                     import dashboard_builder as dbb
 
 from homeassistant.helpers  import (selector,
                                     entity_registry as er,
@@ -90,11 +90,13 @@ def form_menu(self):
 
     if self.menu_page_no == 0:
         device_cnt, inactive_device_cnt, inactive_pct = config_file.device_cnts()
-        if (self.apple_id == '' or self.password == ''):
-            self.menu_item_selected[0] = 'apple_accounts'
+        if (self.apple_id == '' or self.password == ''
+                or len(Gb.conf_apple_accounts) == 0):
+            default_menu_item = MENU_0['apple_accounts']
+
         elif (self.apple_id and self.password
                 and (device_cnt == 0 or device_cnt == inactive_device_cnt)):
-            self.menu_item_selected[0] = 'device_list'
+            default_menu_item = MENU_0['device_list']
 
     return vol.Schema({
         vol.Optional("menu_items",

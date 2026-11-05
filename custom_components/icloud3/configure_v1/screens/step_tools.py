@@ -15,6 +15,7 @@ from ...support             import service_handler
 from ...support             import marketplace as mp
 from ...utils               import entity_reg_util as er_util
 from ...utils               import file_io
+from ...apple_acct          import apple_acct_support as aas
 
 from .                      import form_tools as forms
 from .                      import form_config_flow as forms_cf
@@ -172,16 +173,30 @@ class OptionsFlow_Tools_Steps:
 #------------------------------------------------------------------------------------------
     def reset_icloud3_config_file_tracking(self):
 
+        self.pause_all_tracking_until_restart()
         self._delete_all_devices()
+
+        # Remove the AppleAcct objects too. Otherwise the deleted Apple Accts are still in
+        # Gb.AppleAcct_by_apple_id and adding one again fails as a duplicate
+        for apple_id in list(Gb.AppleAcct_by_apple_id.keys()):
+            aas.delete_AppleAcct_Gb_variables_apple_id(apple_id)
+
         Gb.conf_apple_accounts = []
         Gb.conf_devices        = []
         Gb.conf_tracking       = DEFAULT_TRACKING_CONF.copy()
+
+        # The confirm screen does not save the config file or restart iCloud3
+        self.config_file_commit_updates = True
 
 #------------------------------------------------------------------------------------------
     def reset_icloud3_config_file_general(self):
 
         Gb.conf_general = DEFAULT_GENERAL_CONF.copy()
         Gb.log_level    = Gb.conf_general[CONF_LOG_LEVEL]
+
+        # The confirm screen does not save the config file or restart iCloud3
+        self.config_file_commit_updates = True
+        list_add(self.config_parms_update_control, 'restart')
 
 #------------------------------------------------------------------------------------------
     def reset_icloud3_config_file_tracking_general(self):
@@ -421,7 +436,7 @@ class OptionsFlow_Tools_Steps:
 
             _sensors = list(device_sensors.keys())
             _deleted_msg = (f"{_device_msg}"
-                            f"BaseName: sensor.{devicename}_",
+                            f"BaseName: sensor.{devicename}_, "
                             f"Count: {len(_sensors)}, "
                             f"Entities: {list_to_str(_sensors)}")
 

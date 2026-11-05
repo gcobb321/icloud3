@@ -59,7 +59,7 @@ from .utils.time_util   import (time_to_12hrtime, time_remove_am_pm, format_time
                                 adjust_time_hour_values, adjust_time_hour_value)
 from .utils.dist_util   import (km_to_mi, m_to_ft, m_to_um, set_precision, reformat_um, )
 
-# from .configure         import sensors_cf as config_sensors
+# from .configure_v1         import sensors_cf as config_sensors
 from .startup           import config_file
 from .startup           import start_ic3
 from .utils             import entity_io
@@ -742,8 +742,7 @@ class DeviceSensor_Base():
     @property
     def fname_entity_name(self):
         '''Sensor friendly name (devicename) '''
-        return f"{self.sensor_fname}"
-        # return f"{self.sensor_fname} ({self.entity_name})"
+        return f"{self.sensor_fname} ({self.entity_name})"
 
     @property
     def has_entity_name(self):

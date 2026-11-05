@@ -1,7 +1,7 @@
 
 
 from ...global_variables    import GlobalVariables as Gb
-from ...utils.utils         import (dict_value_to_list, six_item_dict, )
+from ...utils.utils         import (dict_value_to_list, six_item_dict, isnot_empty, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -31,6 +31,8 @@ def form_dashboard_builder(self):
     self.actions_list = []
     default_action = 'create_dashboard'
     self.actions_list.append(ACTION_LIST_OPTIONS['create_dashboard'])
+    if isnot_empty(self.ic3db_Dashboards_by_dbname):
+        self.actions_list.append(ACTION_LIST_OPTIONS['delete_dashboard'])
     self.actions_list.append(ACTION_LIST_OPTIONS['cancel_goto_menu'])
 
     # Set default dashboard to current dashboard, the previous dashboard or 'add'

@@ -97,7 +97,7 @@ def remove_sensors_from_excluded_sensors_list(sensors_to_remove):
         return
 
     for devicename_sensor in sensors_to_remove:
-        er_util.remove_Sensor_and_clear_dicts(devicename_sensor)
+        er_util.remove_Sensor_and_clear_dicts(f"{PLATFORM_SENSOR}.{devicename_sensor}")
 
 #-------------------------------------------------------------------------------------------
 def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_dashboards=True):
@@ -128,8 +128,9 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
             er_util.remove_from_active_and_deleted_entity_registry(Sensor.entity_id)
             er_util.clear_sensor_gb_dicts(Sensor.entity_id)
 
-    if devicename in Gb.DeviceTrackers_by_devicename:
-        DeviceTracker = Gb.DeviceTrackers_by_devicename[devicename]
+    # Inactive and HA disabled devices are in Gb.DeviceTrackers_by_devicename with a None value
+    DeviceTracker = Gb.DeviceTrackers_by_devicename.get(devicename)
+    if DeviceTracker:
         device_id = DeviceTracker.ha_device_id
         DeviceTracker.remove_device_tracker()
 
@@ -138,6 +139,15 @@ def remove_device_tracker_and_sensor_entities(self, devicename, rebuild_ic3db_da
         # when the device is removed below, where it is left as a deleted sensor that has to
         # be cleaned up on another pass. Delete it now with the device's other sensors.
         er_util.remove_from_active_and_deleted_entity_registry(DeviceTracker.ha_entity_id)
+
+        er_util.remove_device(device_id)
+        er_util.clear_device_gb_dicts(device_id)
+
+    # A device without a DeviceTracker can still have it's device registry item and
+    # entities from when it was tracked. Remove them with the device.
+    elif device_id := Gb.ha_device_id_x_devicename.get(devicename):
+        for entity_id in er_util.get_device_entity_ids(device_id):
+            er_util.remove_from_active_and_deleted_entity_registry(entity_id)
 
         er_util.remove_device(device_id)
         er_util.clear_device_gb_dicts(device_id)

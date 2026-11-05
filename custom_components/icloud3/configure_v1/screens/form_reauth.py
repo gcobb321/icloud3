@@ -47,7 +47,9 @@ def form_reauth(self, user_input=None, reauth_apple_id=''):
 
     is_reauth_needed           = AppleAcct.is_reauth_needed or self.is_another_auth_code_needed()
     was_auth_code_requested    = AppleAcct.was_auth_code_requested
-    terms_of_use_update_needed = AppleAcct.terms_of_use_update_needed
+    # Not accepted from the HA reauth button (ConfigFlow), the Repairs issue does that
+    terms_of_use_update_needed = (AppleAcct.terms_of_use_update_needed
+                                    and self.menu_item != 'config_flow_reauth')
 
 
     self.actions_list = []
@@ -55,7 +57,13 @@ def form_reauth(self, user_input=None, reauth_apple_id=''):
     if terms_of_use_update_needed:
         self.actions_list.append(ACTION_LIST_OPTIONS['accept_terms_of_use'])
         self.errors['base'] = 'apple_acct_terms_of_use_update_needed'
-    self.actions_list.extend(REAUTH_ACTIONS)
+
+    # The HA reauth button (ConfigFlow) only authenticates. The support items are on Configure
+    if self.menu_item == 'config_flow_reauth':
+        self.actions_list.extend([action for action in REAUTH_ACTIONS
+                                    if action != ACTION_LIST_OPTIONS['user_auth_dashboard']])
+    else:
+        self.actions_list.extend(REAUTH_ACTIONS)
 
     if self.menu_item =='config_flow_reauth':
         self.actions_list.append(ACTION_LIST_OPTIONS['exit_ha_reconfigure_reauth'])
@@ -172,6 +180,8 @@ def form_reauth_change_auth_method(self, account_selected=None):
                         options=self.actions_list, mode='list')),
         })
                         # options=dict_value_to_list(self.apple_acct_auth_items_by_apple_id),
+
+    return vol.Schema(schema)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

@@ -73,9 +73,8 @@ class OptionsFlow_Analytics_Steps:
                 return await self.async_step_menu()
 
             case 'analytics_reports':
-                # The OptionsFlowHandler is reused until HA restarts so the report list
-                # would be kept for the life of HA. Refresh it when the screen is opened
-                # to pick up reports that have been added, renamed or reordered.
+                # Refresh the report list when the screen is opened to pick up
+                # reports that have been added, renamed or reordered.
                 self.analytic_reports_by_name = {}
                 return await self.async_step_analytics_reports()
 
@@ -90,7 +89,7 @@ class OptionsFlow_Analytics_Steps:
                 else:
                     self.errors['base'] = 'analytics_not_sent'
 
-            case 'save':
+            case 'save_menu':
                 self.update_config_file(CF_GENERAL, user_input, action_item)
                 Gb.analytics_enabled = Gb.conf_general[CONF_ANALYTICS_ENABLED]
                 # The analytics_approval Repairs issue was answered here

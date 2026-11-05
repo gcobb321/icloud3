@@ -52,6 +52,7 @@ CONF_EVLOG_VERSION_RUNNING      = 'event_log_version_running'
 CONF_PICTURE_WWW_DIRS           = 'picture_www_dirs'
 CONF_SENSORS_HASH               = 'sensors_hash'
 CONF_FIRST_SEEN                 = 'first_seen'
+CONF_CONFIG_FLOW_VERSION        = 'config_flow_version'
 
 CONF_EXTERNAL_IP_ADDRESS        = 'external_ip_address'
 
@@ -66,6 +67,7 @@ DEFAULT_PROFILE_CONF = {
         CONF_EVLOG_CARD_DIRECTORY: EVLOG_CARD_WWW_DIRECTORY,
         CONF_EVLOG_CARD_PROGRAM: EVLOG_CARD_WWW_JS_PROG,
         CONF_EVLOG_BTNCONFIG_URL: '',
+        CONF_CONFIG_FLOW_VERSION: 1,
         CONF_PICTURE_WWW_DIRS: [],
         CONF_SENSORS_HASH: '',
 }

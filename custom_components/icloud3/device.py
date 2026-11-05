@@ -1266,7 +1266,7 @@ class iCloud3_Device(TrackerEntity):
             self.evlog_button_suffix_icon = ''
 
         elif remove_char:
-            self.evlog_button_suffix_icon.replace(char, '')
+            self.evlog_button_suffix_icon = self.evlog_button_suffix_icon.replace(char, '')
 
         elif char and instr(self.evlog_button_suffix_icon, char):
             return

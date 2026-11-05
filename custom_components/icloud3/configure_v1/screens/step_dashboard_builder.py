@@ -31,6 +31,7 @@ class OptionsFlow_DashboardBuilder_Steps:
         self.master_dashboard               = {}    # Master Dashboard dictionary (json str --> dict)
         self.dashboards                     = []    # List of dashboards (lovelace.icloud3_xxx files) in conig./storage)
         self.ic3db_Dashboards_by_dbname     = {}    # HA Dashboard by dashboard name for Dashboards with Device-x available
+        self.ic3db_no_layout_dbnames        = []    # ic3db Dashboards without a .storage/lovelace.ic3db_... layout file
         self.AllDashboards_by_dbname        = {}    # All HA Dashboard objects by dashboard name
         self.dbname                         = ''    # Dashboard  being created or updates
         self.Dashboard                      = None
@@ -47,6 +48,9 @@ class OptionsFlow_DashboardBuilder_Steps:
         self.ui_main_view_dnames         = []    # Devices to be inserted into the dashboard layout
         self.dbf_dashboard_key_text      = {}    # db form device selection dictionary
         self.dbf_dashboard_icons_msg     = ''    # db form '<ha-icon..> title, ...' reference line
+        self.dbf_monitored_devices_msg   = ''    # db form Monitored devices not added to the Main view
+        self.main_view_monitored_dnames  = []    # Selected Monitored devices not added to the Main view
+        self.main_view_trk_dnames        = []    # Tracked devices added to the Main view
 
         # Main View Info from the main_view_info_str on the Events Log view
         # These items are loaded when the ic3db dashboards are loaded. They are used to set ui_xxx values when
@@ -72,7 +76,7 @@ class OptionsFlow_DashboardBuilder_Steps:
         if user_input is None:
             return self.async_show_form(step_id='dashboard_builder',
                                         data_schema=forms.form_dashboard_builder(self),
-                                        description_placeholders={'db_icons': self.dbf_dashboard_icons_msg},
+                                        description_placeholders=self._dashboard_builder_placeholders(),
                                         errors=self.errors)
 
         user_input = utils_cf.option_text_to_parm(user_input, 'selected_dashboard', self.dbf_dashboard_key_text)
@@ -84,6 +88,17 @@ class OptionsFlow_DashboardBuilder_Steps:
             return await self.async_step_menu()
 
         self.ui_selected_dbname = user_input.get('selected_dashboard', ADD)
+
+        if action_item == 'delete_dashboard':
+            if self.ui_selected_dbname != ADD:
+                return await self._async_confirm_delete_dashboard()
+
+            self.errors = {'selected_dashboard': 'dashboard_delete_select'}
+            return self.async_show_form(step_id='dashboard_builder',
+                                        data_schema=forms.form_dashboard_builder(self),
+                                        description_placeholders=self._dashboard_builder_placeholders(),
+                                        errors=self.errors)
+
         if self.ui_selected_dbname == ADD:
             action_item = 'create_dashboard'
 
@@ -108,8 +123,48 @@ class OptionsFlow_DashboardBuilder_Steps:
 
         return self.async_show_form(step_id= 'dashboard_builder',
                             data_schema=forms.form_dashboard_builder(self),
-                            description_placeholders={'db_icons': self.dbf_dashboard_icons_msg},
+                            description_placeholders=self._dashboard_builder_placeholders(),
                             errors=self.errors)
+
+# #-------------------------------------------------------------------------------------------
+    def _dashboard_builder_placeholders(self):
+        '''
+        The Dashboard Builder screen's description and error message placeholders
+        '''
+        return {'db_icons': self.dbf_dashboard_icons_msg,
+                'monitored_devices': self.dbf_monitored_devices_msg}
+
+# #-------------------------------------------------------------------------------------------
+    async def _async_confirm_delete_dashboard(self):
+        '''
+        Display the Confirm Action screen for the dashboard selected on the Dashboard
+        Builder screen. Yes deletes it, both return to the Dashboard Builder screen.
+        '''
+        dbname = self.ui_selected_dbname
+        _Dashboard = self.ic3db_Dashboards_by_dbname.get(dbname)
+        title = _Dashboard.config.get(TITLE, dbname) if _Dashboard else dbname
+
+        self.confirm_action = {
+            'action_desc': (f"Delete Dashboard > {title} ({dbname}). The Dashboard and any "
+                            f"changes made to it are removed from HA"),
+            'yes_func_async': self._async_delete_dashboard,
+            'return_to_func_async': self.async_step_dashboard_builder}
+
+        return await self.async_step_confirm_action()
+
+    async def _async_delete_dashboard(self):
+        '''
+        Confirm Action Yes function. Delete the selected dashboard. Errors are displayed
+        on the Dashboard Builder screen.
+        '''
+        if await dbb.delete_dashboard(self, self.ui_selected_dbname):
+            self.errors = {'base': 'dashboard_deleted'}
+        else:
+            self.errors = {'base': 'dashboard_delete_error'}
+
+        # select_available_dashboard selects the first dashboard when no dashboard is selected
+        self.dbname = ''
+        self.ui_selected_dbname = ADD
 
 # #-------------------------------------------------------------------------------------------
     def _validate_dashboard_user_input(self, action_item, user_input):

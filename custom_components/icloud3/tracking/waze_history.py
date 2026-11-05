@@ -13,7 +13,7 @@ from ..utils.messaging  import (format_filename,
 from ..utils.time_util  import (datetime_now, format_timer, )
 from ..utils.dist_util  import (mi_to_km, gps_distance_km, format_dist_km,)
 
-from ..tracking.waze_route_calc_ic3 import WazeRouteCalculator, WRCError
+from ..tracking.waze_route_calc_ic3 import WazeRouteCalculator
 
 #--------------------------------------------------------------------
 import traceback
@@ -211,10 +211,9 @@ class WazeRouteHistory(object):
 
         try:
             self.lock       = threading.Lock()
-            self.lock.acquire(True)
-            self.connection = sqlite3.connect(self.wazehist_database, check_same_thread=False)
-            self.cursor     = self.connection.cursor()
-            self.lock.release()
+            with self.lock:
+                self.connection = sqlite3.connect(self.wazehist_database, check_same_thread=False)
+                self.cursor     = self.connection.cursor()
 
             self._sql(CREATE_ZONES_TABLE)
             self._sql(CREATE_LOCATIONS_TABLE)
@@ -234,10 +233,9 @@ class WazeRouteHistory(object):
         if self.connection is None: return
 
         try:
-            self.lock.acquire(True)
-            self.connection.commit()
-            self.connection.close()
-            self.lock.release()
+            with self.lock:
+                self.connection.commit()
+                self.connection.close()
 
         except:
             pass
@@ -249,20 +247,18 @@ class WazeRouteHistory(object):
     def _sql(self, sql, data=None, fetchone=False, fetchall=False):
         records = None
         try:
-            self.lock.acquire(True)
+            # 'with' releases the lock if the sql fails, otherwise all later calls hang
+            with self.lock:
+                if data:
+                    self.cursor.execute(sql, data)
+                else:
+                    self.cursor.execute(sql)
+                self.connection.commit()
 
-            if data:
-                self.cursor.execute(sql, data)
-            else:
-                self.cursor.execute(sql)
-            self.connection.commit()
-
-            if fetchone:
-                records = self.cursor.fetchone()
-            elif fetchall:
-                records = self.cursor.fetchall()
-
-            self.lock.release()
+                if fetchone:
+                    records = self.cursor.fetchone()
+                elif fetchall:
+                    records = self.cursor.fetchall()
 
             return records
 
@@ -699,6 +695,7 @@ class WazeRouteHistory(object):
         '''
         if self.connection is None: return
 
+        start_time = time.perf_counter()
 
         # Cycle through the zones. If the location change flag is set, cycle through the
         # Waze History Database for those zones and recalculate the time & distance.
@@ -720,7 +717,6 @@ class WazeRouteHistory(object):
             self.total_recd_cnt = self.total_recds_cnt = self.total_update_cnt = self.total_deleted_cnt = 0
 
             self.wazehist_recalculate_time_dist_running_flag = True
-            start_time = time.perf_counter()
             for zone, zone_id in Gb.wazehist_zone_id.items():
                 if self.wazehist_recalculate_time_dist_abort_flag:
                     break
@@ -895,9 +891,10 @@ class WazeRouteHistory(object):
                                                                     log_results_flag=False)
                 break
 
-            except WRCError as err:
-                retry_cnt += 1
+            # calc_route_info handles its own errors, this is a bad zone/wazehist location.
+            # Count it so the loop ends
             except Exception as err:
+                retry_cnt += 1
                 log_exception(err)
                 # post_internal_error('Update WazeHist Recd', traceback.format_exc)
 

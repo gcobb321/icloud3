@@ -344,7 +344,7 @@ def initialize_global_variables():
     Gb.max_interval_secs            = DEFAULT_GENERAL_CONF[CONF_MAX_INTERVAL] * 60
     Gb.offline_interval_secs        = DEFAULT_GENERAL_CONF[CONF_OFFLINE_INTERVAL] * 60
     Gb.exit_zone_interval_secs      = DEFAULT_GENERAL_CONF[CONF_EXIT_ZONE_INTERVAL] * 60
-    Gb.mobapp_alive_interval_secs   = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
+    Gb.mobapp_alive_interval_secs   = DEFAULT_GENERAL_CONF[CONF_MOBAPP_ALIVE_INTERVAL] * 60
     Gb.travel_time_factor           = DEFAULT_GENERAL_CONF[CONF_TRAVEL_TIME_FACTOR]
     Gb.is_track_from_base_zone_used = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_BASE_ZONE_USED]
     Gb.track_from_base_zone         = DEFAULT_GENERAL_CONF[CONF_TRACK_FROM_BASE_ZONE]
@@ -429,7 +429,7 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
         Gb.max_interval_secs            = Gb.conf_general[CONF_MAX_INTERVAL] * 60
         Gb.exit_zone_interval_secs      = Gb.conf_general[CONF_EXIT_ZONE_INTERVAL] * 60
         Gb.offline_interval_secs        = Gb.conf_general[CONF_OFFLINE_INTERVAL] * 60
-        Gb.mobapp_alive_interval_secs   = Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL] * 3600
+        Gb.mobapp_alive_interval_secs   = Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL] * 60
         Gb.travel_time_factor           = Gb.conf_general[CONF_TRAVEL_TIME_FACTOR]
         Gb.passthru_zone_interval_secs  = Gb.conf_general[CONF_PASSTHRU_ZONE_TIME] * 60
         Gb.is_passthru_zone_used        = (14400 > Gb.passthru_zone_interval_secs > 0)   # time > 0 and < 4 hrs
@@ -1496,7 +1496,7 @@ def log_into_apple_accounts():
         upw_valid = Gb.upw_valid_by_apple_id.get(apple_id, True)
         upw_code  = Gb.upw_code_by_apple_id.get(apple_id, 0)
 
-        if upw_valid is False and upw_code in [401, 401.1, 403, 421.1, 423, 503]:
+        if upw_valid is False and upw_code in [401, 401.1, 401.2, 403, 421.1, 423, 503]:
             post_event( f"{apple_user(apple_id)} > Not Setting up Apple Account"
                         f"{CRLF_DOT}Failed to validate Username/Password ({upw_code})")
             continue
@@ -1568,7 +1568,7 @@ def log_into_apple_accounts():
 
             setup_tracked_devices_for_icloud(AppleAcct)
 
-        post_event(f"{AppleAcct.apple_user} > Setting up Apple Account, Complete")
+        post_event(f"{apple_user(apple_id)} > Setting up Apple Account, Complete")
 
     Gb.startup_lists['Gb.AppleAcct_error_by_apple_id'] = Gb.AppleAcct_error_by_apple_id
 
@@ -1613,6 +1613,9 @@ def _check_apple_acct_status_issues(AppleAcct):
 
     locked_issue_id = aas.apple_acct_repair_issue_id(aas.REPAIR_ISSUE_ACCT_LOCKED, AppleAcct)
     if AppleAcct.account_locked:
+        # post_repair_issue does not update the alerts sensor (Event Log greenbar)
+        update_alert_sensor(Source=AppleAcct, error=aas.REPAIR_ISSUE_ACCT_LOCKED,
+                            alert_msg=f"{AppleAcct.apple_user} > Apple Acct is Locked")
         post_repair_issue(
                 issue_id   = locked_issue_id,
                 alert_key  = AppleAcct.apple_id,
@@ -1623,6 +1626,7 @@ def _check_apple_acct_status_issues(AppleAcct):
                 translation_placeholders = {'account': AppleAcct.apple_user})
     elif AppleAcct.is_authenticated:
         clear_repair_issue(locked_issue_id)
+        update_alert_sensor(Source=AppleAcct, error=aas.REPAIR_ISSUE_ACCT_LOCKED, clear=True)
 
 #............................................................................
 def repair_issue_fix_aa_terms_of_use(fix_data):
@@ -2459,7 +2463,7 @@ def _post_family_share_info(AppleAcct):
     devices_assigned_to_other_aa = [
                     f"{conf_device[CONF_AADEV_NAME]} ({apple_user(conf_device[CONF_APPLE_ACCT])})"
                     for conf_device in Gb.conf_devices
-                    if (conf_device[CONF_AADEV_NAME] in AppleAcct.device_id_by_aadev_dname.items()
+                    if (conf_device[CONF_AADEV_NAME] in AppleAcct.device_id_by_aadev_dname
                         and conf_device[CONF_APPLE_ACCT] != AppleAcct.apple_id)]
 
     list_sort(owner_icloud_dnames)
@@ -2742,7 +2746,7 @@ def setup_tracked_devices_for_mobapp():
         Gb.devicenames_x_mobapp_dnames[mobapp_fname] = devicename
 
         # device_tracker entity is disabled
-        if (mobapp_id in Gb.MobileApp_fnames_disabled
+        if (mobapp_id in Gb.mobapp_fnames_disabled
                 or TEST.MOBAPP_DISABLED):
             TEST.MOBAPP_DISABLED = False
             Device.set_button_prefix_icon(GREEN_ALERT)
@@ -2850,12 +2854,14 @@ def setup_tracked_devices_for_mobapp():
 
         except Exception as err:
             log_exception(err)
-            Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
             mobapp_fname = f"{mobapp_dname}{ERR_UNKNOWN}"
-            update_alert_sensor(Source=Device, error='unknown_mobapp',
-                                alert_msg=( f"{Device.fname} > Unknown Mobile App Device "
-                                            f"{mobapp_dname})"))
             mobapp_model = ''
+            # Device is None if the mobapp device is not assigned to an iCloud3 Device
+            if Device:
+                Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
+                update_alert_sensor(Source=Device, error='unknown_mobapp',
+                                    alert_msg=( f"{Device.fname} > Unknown Mobile App Device "
+                                                f"{mobapp_dname}"))
 
         crlf_sym = CRLF_X
         duplicate_msg = ' (DUPLICATE NAME)' if mobapp_fname in verified_mobapp_fnames else ''
@@ -2864,12 +2870,9 @@ def setup_tracked_devices_for_mobapp():
             status_msg = "Not Monitored"
 
             if mobapp_id in Gb.mobapp_fnames_disabled:
-                if Device:
-                    Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_DISABLED_HA
-                    status_msg += ERR_DISABLED_HA
-                    crlf_sym    = CRLF_RED_ALERT
-                else:
-                    status_msg += ERR_DISABLED_HA
+                Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_DISABLED_HA
+                status_msg += ERR_DISABLED_HA
+                crlf_sym    = CRLF_RED_ALERT
         else:
             crlf_sym = CRLF_HDOT
 
@@ -2886,8 +2889,8 @@ def setup_tracked_devices_for_mobapp():
             devices_not_assigned_msg += device_msg
 
     if devices_not_assigned_msg != '':
-        f"{CRLF_X}Not assigned to an iCloud3 Device: "
-        f"{devices_not_assigned_msg}"
+        devices_not_assigned_msg = (f"{CRLF_X}Not assigned to an iCloud3 Device: "
+                                    f"{devices_not_assigned_msg}")
 
     evlog_msg =(f"Mobile App Devices > "
                 f"{devices_monitored_cnt} of {len(Gb.conf_devices)} monitored"
@@ -2917,7 +2920,7 @@ def _scan_for_for_mobapp_device(devicename, Device, conf_mobapp_dname):
 
     Gb.startup_lists['_.matched_mobapp_devices'] = matched_mobapp_devices
 
-    if TEST.SCAN_FOR_DUPLICATE:
+    if TEST.SCAN_FOR_DUPLICATES:
         matched_mobapp_devices = [f'{scanfor_mobapp_dname}_TEST-1',f'{scanfor_mobapp_dname}_TEST-2',]
 
     if len(matched_mobapp_devices) == 1:

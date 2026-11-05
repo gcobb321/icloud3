@@ -8,7 +8,8 @@ from ...const_config        import (CONF_VERSION, CONF_APPLE_ACCT, CONF_PASSWORD
 from ...const_char          import (RARROW, )
 
 from ...utils.utils         import (instr, list_add, list_del, is_empty, isnot_empty,
-                                    decode_password, dict_value_to_list, )
+                                    decode_password, is_password_decode_error,
+                                    dict_value_to_list, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -175,6 +176,11 @@ def form_update_apple_acct(self):
     password   = decode_password(password)
     locate_all = errs_ui.get(CONF_LOCATE_ALL) or self.conf_apple_acct[CONF_LOCATE_ALL]
 
+    # A password that can not be decoded (config_file.decode_all_passwords) must be
+    # entered again. Do not display it or send it to Apple if Save is selected.
+    if is_password_decode_error(password):
+        password = ' '
+
     if (password.strip() == ''
             or self.add_apple_acct_flag
             or Gb.upw_valid_by_apple_id.get(apple_id, False) is False):
@@ -214,11 +220,16 @@ def form_update_apple_acct(self):
                     default=acct_info):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=[acct_info], mode='list')),
+        # suggested_value, not default. A cleared field is not in user_input and HA
+        # would fill in the default, the old (invalid) apple_id/password, it would
+        # not be a required field error.
         vol.Optional(CONF_APPLE_ACCT,
-                    default=apple_id):
+                    default='',
+                    description={'suggested_value': apple_id}):
                     selector.TextSelector(),
         vol.Optional(CONF_PASSWORD ,
-                    default=password):
+                    default='',
+                    description={'suggested_value': password}):
                     password_selector,
         })
 
@@ -251,10 +262,10 @@ def form_delete_apple_acct(self):
 
     apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
     apple_acct_info = self.apple_acct_items_by_apple_id[apple_id]
-    if (instr(apple_acct_info, '0 of')
-            or instr(apple_acct_info, '1 of 1')
-            or instr(apple_acct_info, 'Tracked-()')
-            or instr(apple_acct_info, NOT_LOGGED_IN)):
+    # The Apple Account's device counts are 0 when it is not logged into. Only default
+    # to deleting the devices when no iCloud3 device uses it.
+    devicenames, _ = lists.get_conf_device_names_by_apple_id(apple_id)
+    if is_empty(devicenames):
         default_device_action = 'delete_devices'
     else:
         default_device_action = 'reassign_devices'

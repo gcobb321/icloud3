@@ -80,7 +80,7 @@ def form_away_time_zone(self):
                         options=dict_value_to_list(self.away_time_zone_hours_key_text), mode='dropdown')),
 
         vol.Required('action_items',
-                    default=utils_cf.default_action_text('save')):
+                    default=utils_cf.default_action_text('save_menu')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -123,10 +123,10 @@ def form_tracking_parameters(self):
                     default=Gb.conf_general[CONF_EXIT_ZONE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
                         min=.5, max=10, step=.5, unit_of_measurement='minutes')),
-        vol.Optional(CONF_MOBAPP_ALIVE_INTERVAL,
-                    default=Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL]):
-                    selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=15, max=240, step=5, unit_of_measurement='minutes')),
+        # vol.Optional(CONF_MOBAPP_ALIVE_INTERVAL,
+        #             default=Gb.conf_general[CONF_MOBAPP_ALIVE_INTERVAL]):
+        #             selector.NumberSelector(selector.NumberSelectorConfig(
+        #                 min=15, max=240, step=5, unit_of_measurement='minutes')),
         vol.Optional(CONF_OFFLINE_INTERVAL,
                     default=Gb.conf_general[CONF_OFFLINE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
@@ -134,14 +134,14 @@ def form_tracking_parameters(self):
         vol.Optional(CONF_TFZ_TRACKING_MAX_DISTANCE,
                     default=Gb.conf_general[CONF_TFZ_TRACKING_MAX_DISTANCE]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
-                        min=1, max=100, unit_of_measurement='Km')),
+                        min=1, max=100, unit_of_measurement='km')),
         vol.Optional(CONF_TRAVEL_TIME_FACTOR,
                     default=utils_cf.option_parm_to_text(self, CONF_TRAVEL_TIME_FACTOR, TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=dict_value_to_list(TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT), mode='dropdown')),
 
         vol.Optional('action_items',
-                    default=utils_cf.default_action_text('save')):
+                    default=utils_cf.default_action_text('save_menu')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -197,7 +197,7 @@ def form_format_settings(self):
                     selector.TextSelector(),
 
         vol.Optional('action_items',
-                    default=utils_cf.default_action_text('save')):
+                    default=utils_cf.default_action_text('save_menu')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -331,7 +331,7 @@ def form_inzone_intervals(self):
                     selector.NumberSelector(selector.NumberSelectorConfig(
                         min=5, max=360, step=5, unit_of_measurement='minutes')),
         vol.Optional(IPAD,
-                    default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL]):
+                    default=Gb.conf_general[CONF_INZONE_INTERVALS][IPAD]):
                     selector.NumberSelector(selector.NumberSelectorConfig(
                         min=5, max=360, step=5, unit_of_measurement='minutes')),
         vol.Optional(IPAD_CELL,
@@ -356,7 +356,7 @@ def form_inzone_intervals(self):
                         min=5, max=360, step=5, unit_of_measurement='minutes')),
 
         vol.Optional('action_items',
-                    default=utils_cf.default_action_text('save')):
+                    default=utils_cf.default_action_text('save_menu')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -403,7 +403,7 @@ def form_waze_main(self):
                         options=dict_value_to_list(WAZE_HISTORY_TRACK_DIRECTION_OPTIONS), mode='dropdown')),
 
         vol.Required('action_items',
-                    default=utils_cf.default_action_text('save')):
+                    default=utils_cf.default_action_text('save_menu')):
                     selector.SelectSelector(selector.SelectSelectorConfig(
                         options=self.actions_list, mode='list')),
         })
@@ -461,7 +461,7 @@ def form_special_zones(self):
                         selector.BooleanSelector(),
 
             vol.Required('action_items',
-                        default=utils_cf.default_action_text('save')):
+                        default=utils_cf.default_action_text('save_menu')):
                         selector.SelectSelector(selector.SelectSelectorConfig(
                             options=self.actions_list, mode='list')),
             })

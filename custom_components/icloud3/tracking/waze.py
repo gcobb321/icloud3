@@ -17,7 +17,7 @@ from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer,  )
 from ..utils.dist_util  import (km_to_um, )
 
 from ..tracking.waze_history        import WazeRouteHistory as WazeHist
-from ..tracking.waze_route_calc_ic3 import WazeRouteCalculator, WRCError
+from ..tracking.waze_route_calc_ic3 import WazeRouteCalculator
 
 #--------------------------------------------------------------------
 import time

@@ -9,7 +9,7 @@ from ..const            import (ICLOUD3, DOMAIN,
 from ..const_config     import (CONF_SENSORS_HASH, CONF_VERSION, ZONE_DISTANCE, CONF_APPLE_ACCT,
                                 CONF_PASSWORD, CONF_LOCATE_ALL, CONF_SERVER_LOCATION, )
 from ..const_char       import (CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CRLF_RED_ALERT, NL,
-                                NL_DOT, LINK, GREEN_ALERT, RED_ALERT, CRLF_CHK, NBSP6, DOT, )
+                                NL_DOT, LINK, GREEN_ALERT, RED_ALERT, CRLF_CHK, NBSP6, DOT, GEAR_ICON, )
 
 from ..utils.utils      import (instr, is_empty, isnot_empty, yes_no, list_to_str, list_add, list_del,
                                 apple_user, is_running_in_event_loop, get_string_hash, )
@@ -128,8 +128,10 @@ def stage_2_prepare_configuration():
 
         if configuration_needed_msg:
             post_greenbar_msg('iCloud3 Configuration not set up')
-            post_alert(f"{configuration_needed_msg}{CRLF}"
-                        f"{more_info('configure_icloud3')}")
+            post_alert(f"{configuration_needed_msg}"
+                        f"{CRLF}Apple Accounts and Devices need to be added "
+                        f"on the iCloud3 Configure screens. Click the Gear icon "
+                        f"{GEAR_ICON} or go to HA Settings > Integrations > iCloud3.")
 
             Gb.EvLog.update_event_log_display("")
 
@@ -181,6 +183,7 @@ def stage_3_setup_configured_devices():
             aas.reset_AppleAcct_Gb_variables()
 
         aas.cleanup_unknown_AppleAcct_Gb_variables_apple_id()
+        aas.relink_AppleAcct_conf_apple_acct()
 
         if Gb.config_track_devices_change_flag:
             pass
@@ -335,8 +338,8 @@ def stage_6_initialization_complete():
         alert_msg = ''
         if alerts_by_alert_key := all_alerts_by_alert_key():
             for alert_key, msg in alerts_by_alert_key.items():
-                source   = alert_key_source(alert_key)
-                alert_msg += f"{CRLF_DOT}{source} > {msg}"
+                source = '' if instr(msg, ' > ') else f"{alert_key_source(alert_key)} > "
+                alert_msg += f"{CRLF_DOT}{source}{msg}"
 
             Gb.EvLog.alert_message = 'Startup Alerts and Notifications are available for review'
             post_alert( f"STARTUP ALERTS AND NOTIFICATIONS > "
@@ -361,8 +364,9 @@ def stage_7_initial_locate():
     if is_empty(Gb.AppleAcct_by_apple_id):
         return
 
-    if Gb.reinitialize_icloud_devices_flag and Gb.conf_icloud_device_cnt > 0:
-        return_code = reinitialize_icloud_devices()
+    # UNUSED (11/01/2026) - reinitialize_icloud_devices never ran, delete after v3.8.0
+    # if Gb.reinitialize_icloud_devices_flag and Gb.conf_icloud_device_cnt > 0:
+    #     return_code = reinitialize_icloud_devices()
 
     Gb.trace_prefix = '1stLOC'
 
@@ -413,37 +417,39 @@ def stage_7_initial_locate():
         Device.write_ha_device_tracker_state()
 
 #------------------------------------------------------------------
-def reinitialize_icloud_devices():
-    '''
-    Setup restarting iCloud3 if it has not already been done.
-
-    Return  - True - Continue with Initial Locate
-            - False - Restart failes
-    '''
-    try:
-        if Gb.AppleAcct is None:
-            return
-
-        Gb.reinitialize_icloud_devices_cnt += 1
-        if Gb.reinitialize_icloud_devices_cnt > 2:
-            return
-
-        Gb.is_icloud3_startup_inprocess = False
-        Gb.reinitialize_icloud_devices_flag = False
-        Gb.is_icloud3_initial_startup = False
-
-        alert_msg = f"{EVLOG_ALERT}"
-        if Gb.conf_data_source_ICLOUD:
-            unverified_devices = [devicename
-                        for devicename, Device in Gb.Devices_by_devicename.items() \
-                        if Device.was_verified is False]
-
-            alert_msg +=(f"UNVERIFIED DEVICES > One or more devices was not verified. "
-                        f"Apple Account access may be down, slow to respond or the internet may be down."
-                        f"{CRLF_DOT}Unverified Devices > {', '.join(unverified_devices)}")
-        post_event(alert_msg)
-
-    except Exception as err:
-        log_exception(err)
-
-    return
+# UNUSED (11/01/2026) - never ran, it was gated on the legacy Gb.AppleAcct (always None).
+# Commented out, delete after v3.8.0
+# def reinitialize_icloud_devices():
+#     '''
+#     Setup restarting iCloud3 if it has not already been done.
+#
+#     Return  - True - Continue with Initial Locate
+#             - False - Restart failes
+#     '''
+#     try:
+#         if Gb.AppleAcct is None:
+#             return
+#
+#         Gb.reinitialize_icloud_devices_cnt += 1
+#         if Gb.reinitialize_icloud_devices_cnt > 2:
+#             return
+#
+#         Gb.is_icloud3_startup_inprocess = False
+#         Gb.reinitialize_icloud_devices_flag = False
+#         Gb.is_icloud3_initial_startup = False
+#
+#         alert_msg = f"{EVLOG_ALERT}"
+#         if Gb.conf_data_source_ICLOUD:
+#             unverified_devices = [devicename
+#                         for devicename, Device in Gb.Devices_by_devicename.items() \
+#                         if Device.was_verified is False]
+#
+#             alert_msg +=(f"UNVERIFIED DEVICES > One or more devices was not verified. "
+#                         f"Apple Account access may be down, slow to respond or the internet may be down."
+#                         f"{CRLF_DOT}Unverified Devices > {', '.join(unverified_devices)}")
+#         post_event(alert_msg)
+#
+#     except Exception as err:
+#         log_exception(err)
+#
+#     return

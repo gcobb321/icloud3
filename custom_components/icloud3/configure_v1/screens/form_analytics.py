@@ -36,7 +36,7 @@ import voluptuous as vol
 def form_analytics(self, user_input):
     self.actions_list = ANALYTICS_ACTIONS.copy()
     self.actions_list.extend(ACTION_LIST_ITEMS_SAVE_MENU)
-    default_action = 'save'
+    default_action = 'save_menu'
 
     ah_default = [ANALYTICS_ENABLED_HDR] if Gb.analytics_enabled else []
     comment    = ' ' if Gb.conf_general[CONF_ANALYTICS_COMMENT].strip() == '' else \

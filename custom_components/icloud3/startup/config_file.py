@@ -43,7 +43,7 @@ from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_D
 from ..startup          import start_ic3
 from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dict, is_between,
                                 list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
-                                apple_user, )
+                                apple_user, is_password_decode_error, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
                                 log_debug_msg, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, today, )
@@ -510,6 +510,9 @@ def conf_apple_acct(idx_or_apple_id):
             for conf_apple_acct in Gb.conf_apple_accounts:
                 conf_apple_acct_idx += 1
                 if conf_apple_acct[CONF_APPLE_ACCT] == idx_or_apple_id:
+                    # Return the live item, not a copy - AppleAcct and the config_flow update
+                    # it in place. The in-memory passwords are already decoded
+                    # (decode_all_passwords), encode_all_passwords runs on the config file write.
                     conf_apple_acct[CONF_PASSWORD] = decode_password(conf_apple_acct[CONF_PASSWORD])
                     return (conf_apple_acct, conf_apple_acct_idx)
 
@@ -942,15 +945,16 @@ def _verify_apple_acct_parameters_values():
         conf_auth_methods = conf_apple_acct[CONF_AUTH_METHODS]
         current_method    = conf_auth_methods[CURRENT]
 
-
         if (current_method == 'text' and 'text_1' in conf_auth_methods):
             current_method = 'text_1'
-            update_configuration_flag = True
-        if current_method not in conf_auth_methods:
+        # 'push' is not an auth_methods key, it is always valid
+        if current_method != PUSH and current_method not in conf_auth_methods:
             current_method = PUSH
-            update_configuration_flag = True
-        if (current_method != HWKEY and conf_auth_methods[HWKEY] != ''):
+        if (current_method != HWKEY and conf_auth_methods.get(HWKEY, '') != ''):
             current_method = HWKEY
+
+        if current_method != conf_auth_methods[CURRENT]:
+            conf_auth_methods[CURRENT] = current_method
             update_configuration_flag = True
 
     return update_configuration_flag
@@ -1215,11 +1219,26 @@ def encode_all_passwords():
 
 #--------------------------------------------------------------------
 def decode_all_passwords():
+    '''
+    Decode the Apple Acct passwords into Gb.AppleAcct_password_by_apple_id.
+
+    A password that can not be decoded (the configuration file was edited or is
+    corrupted) is added to Gb.upw_decode_error_apple_ids. It is not sent to Apple,
+    ValidateAppleAcctUPW sets its upw code to 401.2, the Apple Acct is not logged
+    into and a Repairs issue is created so the password can be entered again.
+    '''
+    Gb.upw_decode_error_apple_ids = set()
 
     try:
         for apple_acct in Gb.conf_apple_accounts:
-            Gb.AppleAcct_password_by_apple_id[apple_acct[CONF_APPLE_ACCT]] = \
-                decode_password(apple_acct[CONF_PASSWORD])
+            apple_id = apple_acct[CONF_APPLE_ACCT]
+            password = apple_acct[CONF_PASSWORD]
+            Gb.AppleAcct_password_by_apple_id[apple_id] = decode_password(password)
+
+            if is_password_decode_error(password):
+                Gb.upw_decode_error_apple_ids.add(apple_id)
+                _LOGGER.error(  f"iCloud3: {apple_user(apple_id)}, The Apple Account password "
+                                f"in the iCloud3 configuration file can not be decoded")
 
     except Exception as err:
         _LOGGER.exception(err)
@@ -1257,7 +1276,9 @@ def base64_encode(password):
     # return encoded.rstrip("=")
 
     try:
-        password_bytes = password.encode('ascii')
+        # utf-8, not ascii, so a password with a non-ascii character is encoded. An
+        # ascii password encodes the same either way.
+        password_bytes = password.encode('utf-8')
         base64_bytes = base64.b64encode(password_bytes)
         return base64_bytes.decode('ascii')
 
@@ -1273,6 +1294,9 @@ def decode_password(password):
 
     Return:
         Decoded password
+        The encoded password unchanged if it can not be decoded (is_password_decode_error).
+        Stripping the '««»»' would turn it into a plain text password that is
+        encoded again as a different, valid looking one.
     '''
     try:
         # If the password in the configuration file is not encoded (no '««' or '»»')
@@ -1285,26 +1309,27 @@ def decode_password(password):
 
         # Decode password if it is encoded and has the '««password»»' format
         if (password.startswith('««') or password.endswith('»»')):
-            password = password.replace('«', '').replace('»', '')
-            return base64_decode(password)
+            return base64_decode(password.replace('«', '').replace('»', ''))
 
     except Exception as err:
-        _LOGGER.exception(err)
-        password = password.replace('«', '').replace('»', '')
+        # Corrupted, decode_all_passwords reports it
+        pass
 
     return password
 
 def base64_decode(string):
     """
     Decode the string via base64 decoder
+    validate=True - A character that is not base64 is an error, not skipped
+    utf-8         - See base64_encode, an ascii password decodes the same either way
     """
     # padding = 4 - (len(string) % 4)
     # string = string + ("=" * padding)
     # return base64.urlsafe_b64decode(string)
 
     base64_bytes = string.encode('ascii')
-    string_bytes = base64.b64decode(base64_bytes)
-    return string_bytes.decode('ascii')
+    string_bytes = base64.b64decode(base64_bytes, validate=True)
+    return string_bytes.decode('utf-8')
 
 #--------------------------------------------------------------------
 def count_lines_of_code(start_directory, total_file_lines=0, total_code_lines=0, begin_start=None):

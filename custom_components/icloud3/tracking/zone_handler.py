@@ -531,6 +531,7 @@ def ha_added_zone_entity_id(event):
 @callback
 def ha_removed_zone_entity_id(event):
     """Remove zone entity ID."""
+    zone = ''
     try:
         zone_entity_id = event.data['entity_id']
         zone = zone_entity_id.replace('zone.', '')
@@ -563,7 +564,7 @@ def ha_removed_zone_entity_id(event):
     except Exception as err:
         log_exception(err)
         Gb.was_icloud3_restart_requested = True
-        post_event( f"Zone Deleted Error > Zone-{Zone.dname},"
+        post_event( f"Zone Deleted Error > Zone-{zone},"
                     f"An error was encountered deleting the zone, "
                     f"iCloud3 will be restarted")
         return

@@ -124,6 +124,7 @@ HTTP_RESPONSE_CODES = {
     400: 'Invalid Authentication Code',
     401: 'Invalid Username/Password',
     401.1: 'Invalid Username',
+    401.2: 'Password can not be decoded',
     403: 'Access Denied, Unknown Apple Acct or Acct Locked',
     404: 'URL/Web Page not Found',
     409: 'Valid Username/Password',
@@ -135,7 +136,7 @@ HTTP_RESPONSE_CODES = {
     503: 'Apple has received too many PasswordSRP requests in a short time frame. Login attempts will be refused for several hours. Try again later. Google Apple return code 503 for more information.',
 }
 HTTP_RESPONSE_CODES_IDX = {str(code): code for code in HTTP_RESPONSE_CODES.keys()}
-APPLE_ACCT_INVALID_USERNAME_PASSWORD_CODES = [401, 401.1, 403, 421.1, 423, 503]
+APPLE_ACCT_INVALID_USERNAME_PASSWORD_CODES = [401, 401.1, 401.2, 403, 421.1, 423, 503]
 
 DEVICE_DATA_FILTER_OUT = [
     'features', 'scd',

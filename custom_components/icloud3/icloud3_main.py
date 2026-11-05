@@ -1459,8 +1459,8 @@ class iCloud3:
                 elif mins_since(Device.loc_data_secs) > 300:
                     age_hrs = int(mins_since(Device.loc_data_secs)/60)
                     poor_location_msg += f"{Device.fname} (> {age_hrs} hrs ago), "
-            if is_between(Device.dev_data_battery_level, 1, 19):
-                device_alert_msg = f"{Device.fname} > Low Battery ({Device.dev_data_battery_level}%)"
+                elif is_between(Device.dev_data_battery_level, 1, 19):
+                    device_alert_msg = f"{Device.fname} > Low Battery ({Device.dev_data_battery_level}%)"
 
             if device_alert_msg:
                 general_alert_msg += f"{GB_ITEM}{device_alert_msg}"
@@ -1567,9 +1567,10 @@ class iCloud3:
         # See if there is a new iCloud3 version on the HACS/Marketplace update entity
         mp.check_icloud3_update_available()
 
-        # Clean out lingering StatZone
-        Gb.StatZones_to_delete = [StatZone  for StatZone in Gb.StatZones
-                                            if StatZone.radius_m == STATZONE_RADIUS_1M]
+        # Clean out lingering StatZone, keep any already waiting to be deleted
+        for StatZone in Gb.StatZones:
+            if StatZone.radius_m == STATZONE_RADIUS_1M:
+                list_add(Gb.StatZones_to_delete, StatZone)
 
 #--------------------------------------------------------------------
     def _check_mobappp_location_request(self):

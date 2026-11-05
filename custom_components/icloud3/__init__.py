@@ -130,17 +130,24 @@ def setup_hass_icloud3_domain(hass, entry):
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 async def async_initialize_icloud3(hass, entry):
+
     Gb.operating_mode  = MODE_INTEGRATION
     start_ic3.initialize_directory_filenames()
 
     await async_open_ic3log_file_init()
+
+    startup_msg = f"Setting up {Gb.icloud3_version_msg}, Loading, Stage 1-3"
+    Gb.HALogger.info(startup_msg)
+    log_info_msg(startup_msg)
+
     await config_file.async_load_icloud3_configuration_file()
 
     Gb.EvLog                = EventLog()
     Gb.iCloud3              = iCloud3()
     Gb.InternetError        = InternetConnection_ErrorHandler()
     Gb.ValidateAppleAcctUPW = ValidateAppleAcctUPW()
-    post_event( f"{Gb.icloud3_attention_msg} > Initial Start-up")
+
+    post_event(f"{Gb.icloud3_attention_msg} > Initial Start-up")
 
     await async_create_device_tracker_sensor_platforms()
     Gb.is_icloud3_initial_startup = True
@@ -222,8 +229,9 @@ async def async_start_icloud3(dummy_parameter):
     Gb.icloud3_reload_requested = False
 
     try:
-        Gb.HALogger.info(f"Setting up {Gb.icloud3_version_msg}, {starting_msg}")
-        log_info_msg(f"Setting up {Gb.icloud3_version_msg}, {starting_msg}")
+        startup_msg = f"Setting up {Gb.icloud3_version_msg}, {starting_msg}, Stage 4-6"
+        Gb.HALogger.info(startup_msg)
+        log_info_msg(startup_msg)
 
         await async_create_devices_tracker_and_sensor_entities()
 

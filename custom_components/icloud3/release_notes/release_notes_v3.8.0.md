@@ -1,16 +1,16 @@
 ***Total downloads for v3.7.x - 17,447 (as of 11/1/2026).
 Number of coffee buyers - 169 (thanks again). If you appreciate my work and find iCloud3 useful, one cup would really be appreciated.***
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
-<img src="https://gcobb321.github.io/icloud3_v3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="35"></a>
+<img src="https://gcobb321.github.io/icloud3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
 
 ***Thanks***,
 ***Gary Cobb, aka geekstergary***
 
 -----
-## 🍎 iCloud3 v3.8.0 Beta 3 (10/25/2026)
+## 🍎 iCloud3 v3.8.0 Beta 4 (11/4/2026)
 
 ❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗
-## 🎉 Semi-Breaking Change
+### 🎉 New Feature - Semi-Breaking Change
 **Marketplace HA v2026.11**:
 Future iCloud3 beta versions will only be published as **pre-releases in the main iCloud3 repository** (`gcobb321/icloud3`). This beta/development repository (`gcobb321/icloud3_v3`) is being retired. This beta release is the last one that will be released there.
 
@@ -18,6 +18,9 @@ This prepares for Home Assistant 2026.11, where the built-in **Marketplace** int
 
 After installing and restarting HA, a Repair issue **iCloud3: Beta Versions are moving to the iCloud3 Repo**. Open that Repair Issue, read the notes and click **Submit**. A complete description of this is found at the end of these Release Notes.
 ❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗
+
+### 🎉 New Feature
+1. **Dashboard Builder** - iCloud3 dashboarads can now be deleted from the Dashboard Builder screen.
 
 ### 🐞 Bug Fixes
 1. **Mobile App Watch Battery** - Fixed a rare problem where an old (Series 7) Watch's *_battery_level* sensor was being assigned incorrectly to another device when the Watch's sensor name started with the other device's name.
@@ -33,6 +36,12 @@ After installing and restarting HA, a Repair issue **iCloud3: Beta Versions are 
 11. **All Devices 'Not in Apple Acct'** - If an Inactive device or a device disabled in HA was not in the Apple Account data, an error stopped the Apple Device setup. All of the devices in that Apple Account were then displayed as 'Not in Apple Acct' and were not tracked. Inactive and disabled devices are now skipped when checking for missing Apple devices. (@OldSmurf56)
 12. **Monitored Devices and Stationary Zones** - When a Stationary Zone was created near a monitored device, or removed while a monitored device was in it, the monitored device was not updated until its next normal update. It is now updated within a few seconds. (@Sinojen)
 13. **Mobile App Updates for Monitored Devices** - A Mobile App location update (launching the app, a manual update, entering or exiting a zone) was ignored for a monitored device. The device was only updated when its next update time was reached or it had moved more than 50m. A device located only by the Mobile App (no Apple Account) could go a long time without being updated. Monitored devices are now updated when the Mobile App sends a location update.
+14. **Exclude Sensors** - A sensor selected on the *Configure > Sensors > Exclude Sensors* screen was not removed when the Sensors screen was saved. The Sensors screen was displayed again with an error. The excluded sensor was also dropped from the list the next time iCloud3 was started and the sensor was created again. Excluded sensors are now removed when the Sensors screen is saved and stay excluded. (@CookieChief)
+15. **Add Device Tracking Mode** - When a device was added on the *Configure > Devices* screen, a Monitor tracking mode was changed back to the default for the device type (Track). The selected tracking mode is now kept. A device that is not an Apple device and is located only by the Mobile App now defaults to an iPhone that is tracked. (@CookieChief)
+16. **Tools > Reset General Parameters** - Selecting *YES* to reset the General Parameters did not save the reset parameters or restart iCloud3. They are now saved and iCloud3 is restarted. (@CookieChief)
+17. **Inactive or Disabled Devices** - Deleting an Apple Account, deleting the last device, removing all devices or renaming a device failed with an error when a device was Inactive or disabled in HA. These devices are now removed correctly. A device that is disabled in HA can no longer be renamed. Enable it first, then rename it. (@CookieChief)
+18. **HA Reauthenticate Dialog** - The Reauthenticate dialog that HA displays from *Settings > Devices & Services* failed with an error when the Terms of Use were displayed, and some of its text was missing. The Terms of Use are no longer displayed on that dialog (they are accepted on the Repair issue), and the missing text was added. Deleting the Apple Account that needed to be reauthenticated now also clears the reauthentication notice. (@CookieChief)
+19. **Deleted iCloud3 Dashboard** - If an iCloud3 dashboard was deleted on the *Settings > Dashboards* screen after the Dashboard Builder had created one, adding or deleting a device failed with an error when Configure was closed. The other dashboards were not updated and iCloud3 was not restarted until HA was restarted. Deleted (using HA) dashboards are now skipped, and a new dashboard no longer reuses a deleted dashboard's name. (@CookieChief)
 
 
 -----

@@ -341,8 +341,9 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
     alert_msg = ''
     if (new_2fa_authentication_code_requested(AppleAcct, initial_setup)
             and AppleAcct.was_ha_auth_code_alert_sent is False):
-        alert_msg = f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)})"
-        post_alert(f"{AppleAcct.apple_user_short} > {alert_msg}")
+        alert_msg =(f"{AppleAcct.apple_user_short} > "
+                    f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)})")
+        post_alert(alert_msg)
         update_alert_sensor(Source=AppleAcct, error='auth_needed', alert_msg=alert_msg)
 
         if Gb.AppleAcct_reauth_needed is None:
@@ -353,10 +354,6 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
     # during startup is handled by start_ic3._check_apple_acct_status_issues
     if AppleAcct.terms_of_use_update_needed:
         if AppleAcct.terms_of_use_repair_issue_posted is False:
-            alert_msg = ("Apple Acct > Accept `Terms of Use` needed "
-                            "(HA Repairs or Authenticate Apple Account Sign-in)")
-            post_alert(f"{AppleAcct.apple_user} > {alert_msg}")
-            log_warning_msg(f"{AppleAcct.apple_user} > {alert_msg}")
             post_repair_issue_aa_terms_of_use(AppleAcct)
 
     elif AppleAcct.terms_of_use_repair_issue_posted:
@@ -384,8 +381,17 @@ def apple_acct_repair_issue_id(issue, AppleAcct):
 def post_repair_issue_aa_terms_of_use(AppleAcct):
     '''
     Post the Repairs issue asking to accept Apple's Terms of Use. Submit runs
-    start_ic3.repair_issue_fix_aa_terms_of_use.
+    start_ic3.repair_issue_fix_aa_terms_of_use. The Event Log alert and the
+    sensor.icloud3_alerts entry (Event Log greenbar) are posted with it,
+    post_repair_issue does not update the alerts sensor.
     '''
+    alert_msg = ("Accept Apple `Terms of Use` needed "
+                    "(HA Repairs or Authenticate Apple Account Sign-in)")
+    post_alert(f"{AppleAcct.apple_user} > {alert_msg}")
+    log_warning_msg(f"{AppleAcct.apple_user} > {alert_msg}")
+    update_alert_sensor(Source=AppleAcct, error=REPAIR_ISSUE_TERMS_OF_USE,
+                        alert_msg=f"{AppleAcct.apple_user} > Accept Apple Terms of Use needed")
+
     issue_id = post_repair_issue(
                 issue_id   = apple_acct_repair_issue_id(REPAIR_ISSUE_TERMS_OF_USE, AppleAcct),
                 alert_key  = AppleAcct.apple_id,
@@ -404,6 +410,7 @@ def post_repair_issue_aa_terms_of_use(AppleAcct):
 #--------------------------------------------------------------------
 def clear_repair_issue_aa_terms_of_use(AppleAcct):
     clear_repair_issue(apple_acct_repair_issue_id(REPAIR_ISSUE_TERMS_OF_USE, AppleAcct))
+    update_alert_sensor(Source=AppleAcct, error=REPAIR_ISSUE_TERMS_OF_USE, clear=True)
 
     AppleAcct.terms_of_use_repair_issue_posted = False
 
@@ -531,6 +538,20 @@ def reset_AppleAcct_Gb_variables():
     config_file.decode_all_passwords()
 
 #--------------------------------------------------------------------
+def relink_AppleAcct_conf_apple_acct():
+    '''
+    On an iCloud3 restart (Gb.was_icloud3_reloaded) the configuration file is read
+    again, Gb.conf_apple_accounts has new conf_apple_acct items, and the AppleAcct
+    objects are reused. Point them to the new items. A change to the old item (auth
+    method, trusted devices) would not be saved in the configuration file.
+    '''
+    for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
+        conf_apple_acct, aa_idx = config_file.conf_apple_acct(apple_id)
+        if aa_idx >= 0:
+            AppleAcct.conf_apple_acct = conf_apple_acct
+            AppleAcct.aa_idx          = aa_idx
+
+#--------------------------------------------------------------------
 def cleanup_unknown_AppleAcct_Gb_variables_apple_id():
     '''
     Verify the Apple acct 'by_apple_id' dicts contain only real Apple accts.
@@ -586,7 +607,6 @@ def delete_AppleAcct_Gb_variables_apple_id(apple_id):
 
     dict_del(Gb.upw_valid_by_apple_id, apple_id)
     dict_del(Gb.upw_code_by_apple_id, apple_id)
-    dict_del(Gb.AppleAcct_by_devicename, apple_id)
     dict_del(Gb.AppleAcct_password_by_apple_id, apple_id)
     dict_del(Gb.AppleAcct_error_by_apple_id, apple_id)
     dict_del(Gb.iCloudSession_by_apple_id, apple_id)
@@ -598,6 +618,12 @@ def delete_AppleAcct_Gb_variables_apple_id(apple_id):
 
     AppleAcct = Gb.AppleAcct_by_apple_id.pop(apple_id, None)
     if AppleAcct:
+        list_del(Gb.AppleAccts, AppleAcct)
+
+        for devicename, _AppleAcct in list(Gb.AppleAcct_by_devicename.items()):
+            if _AppleAcct is AppleAcct:
+                Gb.AppleAcct_by_devicename.pop(devicename)
+
         if  Gb.AppleAcct_reauth_needed == AppleAcct:
             Gb.AppleAcct_reauth_needed = None
         del AppleAcct.iCloudSession

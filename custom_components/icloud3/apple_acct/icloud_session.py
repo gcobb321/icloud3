@@ -313,11 +313,18 @@ class iCloudSession(Session):
                 post_alert(f"Internet Connection Error > Test Started, Error Generated")
                 raise requests.exceptions.ConnectionError
 
-            response = Session.request(self, method, url, **kwargs)
+            # TEST CODE - Simulate Apple's locked Apple Acct response (ACCT_LOCKED_USERNAME)
+            if self._is_test_acct_locked(url):
+                response = self._test_acct_locked_response(url)
+            else:
+                response = Session.request(self, method, url, **kwargs)
 
             try:
                 self.data = data = response.json()
                 self.response = response
+
+                if response.ok is False:
+                    self._check_service_error_account_locked(data)
 
             except Exception as err:
                 self.data = data = {}
@@ -413,7 +420,7 @@ class iCloudSession(Session):
         if data and "webservices" in data:
             try:
                 self.AppleAcct.findme_url_root = data["webservices"]['findme']["url"]
-                self.AppleAcct._update_token_pw_file('findme_url', self.AppleAcct.findme_url_root)
+                self.AppleAcct._update_token_pw('findme_url', self.AppleAcct.findme_url_root)
             except:
                 pass
 
@@ -473,6 +480,65 @@ class iCloudSession(Session):
             self._raise_error(error_code, error_reason)
 
         return data
+
+    #--------------------------------------------------------------------
+    def _is_test_acct_locked(self, url):
+        '''
+        TEST CODE - TEST.ACCT_LOCKED_USERNAME is this Apple Acct and this is the Password
+        SRP signin/complete request. It is done once.
+        '''
+        if (TEST.ACCT_LOCKED_USERNAME is None
+                or url.endswith('signin/complete') is False
+                or TEST.ACCT_LOCKED_USERNAME not in (self.AppleAcct.apple_id,
+                                                    self.AppleAcct.apple_user)):
+            return False
+
+        TEST.ACCT_LOCKED_USERNAME = None
+        post_event( f"{EVLOG_ALERT}TEST > Apple Acct > {self.AppleAcct.apple_user}, "
+                    f"Apple Acct Locked (403, -20209) is simulated")
+        return True
+
+    @staticmethod
+    def _test_acct_locked_response(url):
+        '''
+        TEST CODE - Apple's signin/complete response for a locked Apple Acct
+        '''
+        response = requests.models.Response()
+        response.status_code = 403
+        response.reason      = 'Forbidden'
+        response.url         = url
+        response.encoding    = 'utf-8'
+        response.headers['Content-Type'] = 'application/json;charset=UTF-8'
+        response._content    = json.dumps({'serviceErrors': [{
+                'code': '-20209',
+                'message': ('This Apple Account has been locked for security reasons. '
+                            'Visit iForgot to reset your account (https://iforgot.apple.com).'),
+                'suppressDismissal': False}]}).encode('utf-8')
+
+        return response
+
+    #--------------------------------------------------------------------
+    def _check_service_error_account_locked(self, data):
+        '''
+        Apple returns the same 403 for an unknown Apple Acct and a locked one. A locked
+        one has a serviceError (signin/complete, code -20209):
+            'This Apple Account has been locked for security reasons. Visit iForgot
+            to reset your account (https://iforgot.apple.com).'
+        Set AppleAcct.account_locked so the locked message is displayed. It is reset
+        from the dsInfo 'locked' item on the next successful login.
+        '''
+        try:
+            if isinstance(data, dict) is False:
+                return
+
+            for service_error in data.get('serviceErrors', []):
+                if (str(service_error.get('code')) == '-20209'
+                        or 'locked' in str(service_error.get('message', '')).lower()):
+                    self.AppleAcct.account_locked = True
+                    return
+
+        except Exception as err:
+            log_exception(err)
 
     #--------------------------------------------------------------------
     @staticmethod

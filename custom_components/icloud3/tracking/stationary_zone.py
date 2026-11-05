@@ -367,7 +367,7 @@ def _get_statzone_radius(Device):
     If a Device's location is very close to another zone when it is going into a StatZone,
     create a small StatZone instead of one with a 100m radius. It is close if the
     distance to the zone's edge is less than the 1/2 of the CloseZoneRadius + gps accuracy.
-    The StatZone small radius  is CloseZoneRadius/4
+    The StatZone small radius  is CloseZoneRadius/2
     '''
 
     CloseZones = [Zone

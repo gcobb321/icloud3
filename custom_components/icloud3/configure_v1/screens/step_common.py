@@ -6,6 +6,7 @@ from ...const_config        import (CONF_APPLE_ACCT, CONF_PASSWORD, CONF_VERSION
                                     CF_GENERAL, )
 from ...utils.utils         import (isnot_empty, list_add, encode_password, decode_password, )
 from ...utils.messaging     import (log_exception, post_event, _log, )
+from ...utils.time_util     import (time_now_secs, )
 
 from ...startup             import config_file
 from ...startup             import start_ic3
@@ -28,6 +29,7 @@ from ..                     import utils_cf
 #       - update_config_file
 #       - _update_config_file_general
 #       - update_config_file_tracking
+#       - pause_all_tracking_until_restart
 #       - initialize_step
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -308,6 +310,20 @@ class OptionsFlow_Common_Steps:
             Gb.conf_tracking[CONF_DEVICES]        = Gb.conf_devices
             list_add(self.config_parms_update_control, ['tracking', 'restart'])
             self.config_file_commit_updates = True
+
+#-------------------------------------------------------------------------------------------
+    def pause_all_tracking_until_restart(self):
+        '''
+        Pause tracking for all Devices. This is done before Apple Accts are deleted.
+        The polling loop uses the Apple Acct dicts and objects that are being removed,
+        and is not set up again until iCloud3 restarts when Configure is closed.
+        '''
+        Gb.is_all_tracking_paused   = True
+        Gb.all_tracking_paused_secs = time_now_secs()
+        for Device in Gb.Devices_by_devicename.values():
+            Device.pause_tracking()
+
+        list_add(self.config_parms_update_control, ['tracking', 'restart'])
 
 
 #                        SUPPORT FUNCTIONS

@@ -9,7 +9,8 @@ from ..const                import (AIRPODS_DN, NONE_FNAME,
                                     LOCATION, TIMESTAMP, LOCATION_TIME, DATA_SOURCE, LATITUDE, LONGITUDE,
                                     ICLOUD_BATTERY_LEVEL, ICLOUD_BATTERY_STATUS, BATTERY_STATUS_CODES,
                                     BATTERY_LEVEL, BATTERY_LEVEL_LOW,
-                                    ICLOUD_DEVICE_STATUS, DEVICE_STATUS_CODES, )
+                                    ICLOUD_DEVICE_STATUS, DEVICE_STATUS_CODES,
+                                    UPW_INVALID_ERROR, UPW_ACCT_LOCKED_ERROR, )
 from ..const_config         import (BATTERY_STATUS, CONF_AUTH_METHODS, DEFAULT_AUTH_METHODS,
                                     TEXT_1, CONF_APPLE_ACCT, CONF_APPLE_ACCT, CONF_PASSWORD,
                                     CONF_MODEL_DISPLAY_NAME, CONF_RAW_MODEL, CONF_IC3_DEVICENAME,
@@ -46,7 +47,12 @@ import base64
 import logging
 LOGGER = logging.getLogger(f"icloud3.pyicloud_ic3")
 
-APPLE_ACCT_INVALID_USERNAME_PASSWORD_CODES = [401, 401.1, 403, 421.1, 423, 503]
+APPLE_ACCT_INVALID_USERNAME_PASSWORD_CODES = [401, 401.1, 401.2, 403, 421.1, 423, 503]
+
+# 401.2 - The config file password can not be decoded, it was not sent to Apple
+UPW_DECODE_ERROR_CODE  = 401.2
+# A Repairs issue opens Update Apple Account. 423 & 503 are Apple throttling, alert only.
+UPW_REPAIR_ISSUE_CODES = [401, 401.1, 401.2, 403, 421.1]
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -135,7 +141,14 @@ class ValidateAppleAcctUPW():
 
             upw_valid = Gb.upw_valid_by_apple_id.get(apple_id, False)
 
-            if upw_valid is False:
+            # The config file password can not be decoded (config_file.decode_all_passwords).
+            # It is not sent to Apple, a bad password counts toward Apple's lockout.
+            if apple_id in Gb.upw_decode_error_apple_ids:
+                upw_valid = False
+                self.response_code = UPW_DECODE_ERROR_CODE
+                self.method = 'Password Decode Error'
+
+            elif upw_valid is False:
                 upw_valid = self.validate_apple_id_password(apple_id, password)
 
             Gb.upw_valid_by_apple_id[apple_id] = upw_valid
@@ -147,14 +160,18 @@ class ValidateAppleAcctUPW():
                 crlf_symb = CRLF_CIRCLE_X
                 alert_msg = EVLOG_ALERT
 
-                if self.response_code == 503:
-                    reason_msg = "Apple Refused the Signin Request, Try again later"
+                if self.response_code in UPW_REPAIR_ISSUE_CODES:
+                    self._post_upw_invalid_repair_issue(apple_id)
+
                 else:
-                    reason_msg = "Invalid Username/Password"
-                error_msg =(f"{_apple_user} > Verification Failed, "
-                            f"{reason_msg} ({self.response_code})")
-                post_alert( f"{error_msg}")
-                update_alert_sensor(Source=apple_id, name=_apple_user, error='verif_failed', alert_msg=error_msg)
+                    if self.response_code == 503:
+                        reason_msg = "Apple Refused the Signin Request, Try again later"
+                    else:
+                        reason_msg = "Invalid Username/Password"
+                    error_msg =(f"{_apple_user} > Verification Failed, "
+                                f"{reason_msg} ({self.response_code})")
+                    post_alert( f"{error_msg}")
+                    update_alert_sensor(Source=apple_id, name=_apple_user, error='verif_failed', alert_msg=error_msg)
 
             results_msg += f"{crlf_symb}{_apple_user}, Valid-{yes_no(upw_valid)}, {self.method}"
 
@@ -163,6 +180,49 @@ class ValidateAppleAcctUPW():
 
         Gb.startup_lists['Gb.upw_valid_by_apple_id'] = Gb.upw_valid_by_apple_id
         Gb.startup_lists['Gb.upw_code_by_apple_id']  = Gb.upw_code_by_apple_id
+
+#----------------------------------------------------------------------------
+    def _post_upw_invalid_repair_issue(self, apple_id):
+        '''
+        The username/password is invalid or the password can not be decoded. Create the
+        Repairs issue that opens the Update Apple Account screen. It is removed when the
+        Apple Acct is logged into in Configure (apple_acct_support_cf) or is not posted
+        again on the next restart.
+        '''
+        _apple_user = apple_user(apple_id)
+        error       = UPW_INVALID_ERROR
+
+        if self.response_code == UPW_DECODE_ERROR_CODE:
+            error_item = 'Password Decode Error'
+            message    = ('The Apple Account password in the iCloud3 configuration file '
+                          'can not be decoded. The file may have been edited. The password '
+                          'was not sent to Apple. Enter the password again on the Update '
+                          'Apple Account screen.')
+        # Apple's serviceError -20209 (icloud_session._check_service_error_account_locked)
+        elif (self.response_code == 403
+                and self.AppleAcct
+                and self.AppleAcct.account_locked):
+            error      = UPW_ACCT_LOCKED_ERROR
+            error_item = f"{self.response_code}"
+            message    = ('Apple has locked this Apple Account for security reasons. Go to '
+                          'https://iforgot.apple.com to unlock it or reset the password. Then '
+                          'save the Apple Account again on the Update Apple Account screen.')
+        else:
+            error_item = f"Code-{self.response_code}"
+            message    = ('Apple did not accept the Apple Account username/password. Verify '
+                          'the username and password on the Update Apple Account screen.')
+
+        post_config_error(
+            Source      = apple_id,
+            source_name = _apple_user,
+            error       = error,
+            error_item  = error_item,
+            message     = ( f"{message}"
+                            f"{CRLF}{CRLF}iCloud Location data will not be used for this "
+                            f"Apple Account's devices until this is corrected."),
+            details     = f"{CRLF_DOT}Apple Acct: {_apple_user}",
+            fix_data    = {'apple_acct_status': 'invalid_upw'},
+            repair_step = 'update_apple_acct')
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

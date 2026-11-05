@@ -608,7 +608,7 @@ class OptionsFlow_Reauth_Steps:
 
 #------------------------------------------------------------------------------
     def is_another_auth_code_needed(self):
-        if is_empty(Gb.AppleAccts):
+        if is_empty(Gb.AppleAcct_by_apple_id):
             return False
 
         _AppleAcct, _ = self.get_AppleAcct_reauth_needed()
@@ -788,7 +788,7 @@ class OptionsFlow_Reauth_Steps:
         '''
         self.AppleAcct.update_auth_method(auth_method)
 
-        Gb.OptionsFlowHandler.update_config_file_tracking(force_config_update=True)
+        self.update_config_file_tracking(force_config_update=True)
         await config_file.async_write_icloud3_configuration_file()
 
 

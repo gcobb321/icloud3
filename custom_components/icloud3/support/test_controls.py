@@ -50,6 +50,8 @@ INTERNET_ERROR_AFTER_STARTUP = False
 #       2 or more names      - device_replaced_multiple
 
 NEWER_DEV_EXISTING_DEVICE_NAME        = None                     # Disable duplicate device test
+NEWER_DEV_SIMULATED_NEW_DEVICE_NAME   = None
+NEWER_DEV_SIMULATED_NEW_RAW_MODEL     = None
 # NEWER_DEV_EXISTING_DEVICE_NAME        = "Lillian's Apple Watch"    # Real device to copy
 # NEWER_DEV_SIMULATED_NEW_DEVICE_NAME   = "Lillian-Watch (Test)"     # device_replaced
 # NEWER_DEV_SIMULATED_NEW_DEVICE_NAME = [
@@ -76,6 +78,18 @@ MISSING_DEV_DEVICE_NAME = None                                 # Disable missing
 # the restart after Submit shows the issue was removed. None=Off
 TERMS_OF_USE_NEEDED_USERNAME = None
 # TERMS_OF_USE_NEEDED_USERNAME = 'geekstergary@'
+
+#--------------------------------------------------------------------
+# APPLE ACCT LOCKED
+#
+# Simulate Apple's 'This Apple Account has been locked for security reasons' response
+# (403, serviceError -20209) for this Apple Acct apple_id (full apple_id or apple_user).
+# The next Password SRP signin/complete request for it is not sent to Apple, the locked
+# response is returned instead (icloud_session._request). It is done once. A signin is
+# done when the Apple Acct is saved/logged into in Configure or validated at startup
+# after a password change. None=Off
+ACCT_LOCKED_USERNAME = None
+# ACCT_LOCKED_USERNAME = 'geekstergary@'
 
 #--------------------------------------------------------------------
 # Apple Account Errors
@@ -128,6 +142,9 @@ def test_controls_enabled_msg():
     if TERMS_OF_USE_NEEDED_USERNAME:
         test_controls_msg += (f"{CRLF_DOT}Terms of Use Needed, "
                                 f"{TERMS_OF_USE_NEEDED_USERNAME} (TERMS_OF_USE_NEEDED_USERNAME)")
+    if ACCT_LOCKED_USERNAME:
+        test_controls_msg += (f"{CRLF_DOT}Apple Acct Locked, "
+                                f"{ACCT_LOCKED_USERNAME} (ACCT_LOCKED_USERNAME)")
     if MOBAPP_DISABLED or MOBAPP_BATTERY_ENTITY_ERROR:
         test_controls_msg += f"{CRLF_DOT}Mobile App Error (MOBAPP_DISABLED/MOBAPP_BATTERY_ENTITY_ERROR)"
     if UPW_VIA_SRP_CHECK_INVALID:

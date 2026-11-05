@@ -480,7 +480,9 @@ def base64_encode(password):
     Encode the password via base64 encoder
     """
     try:
-        password_bytes = password.encode('ascii')
+        # utf-8, not ascii, so a password with a non-ascii character is encoded. An
+        # ascii password encodes the same either way.
+        password_bytes = password.encode('utf-8')
         base64_bytes = base64.b64encode(password_bytes)
         return base64_bytes.decode('ascii')
 
@@ -497,6 +499,9 @@ def decode_password(password):
 
     Return:
         Decoded password
+        The encoded password unchanged if it can not be decoded (is_password_decode_error).
+        Stripping the '««»»' would turn it into a plain text password that is
+        encoded again as a different, valid looking one.
     '''
     try:
         # If the password in the configuration file is not encoded (no '««' or '»»')
@@ -509,23 +514,38 @@ def decode_password(password):
 
         # Decode password if it is encoded and has the '««password»»' format
         if (password.startswith('««') or password.endswith('»»')):
-            password = password.replace('«', '').replace('»', '')
-            return base64_decode(password)
+            return base64_decode(password.replace('«', '').replace('»', ''))
 
     except Exception as err:
-        _LOGGER.exception(err)
-        password = password.replace('«', '').replace('»', '')
+        # Corrupted, config_file.decode_all_passwords reports it
+        pass
 
     return password
+
+def is_password_decode_error(password):
+    '''
+    The password is encoded ('««password»»') but can not be decoded. The configuration
+    file was edited or is corrupted.
+    '''
+    if (password.startswith('««') or password.endswith('»»')) is False:
+        return False
+
+    try:
+        base64_decode(password.replace('«', '').replace('»', ''))
+        return False
+    except Exception:
+        return True
 
 def base64_decode(string):
     """
     Decode the string via base64 decoder
+    validate=True - A character that is not base64 is an error, not skipped
+    utf-8         - See base64_encode, an ascii password decodes the same either way
     """
 
     base64_bytes = string.encode('ascii')
-    string_bytes = base64.b64decode(base64_bytes)
-    return string_bytes.decode('ascii')
+    string_bytes = base64.b64decode(base64_bytes, validate=True)
+    return string_bytes.decode('utf-8')
 
 #--------------------------------------------------------------------
 def is_running_in_event_loop():

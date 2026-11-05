@@ -35,8 +35,8 @@ MENU_0 = {
         'tools':                'TOOLS → Log Level, Beta Download, Cleanup HA Registry Files,  Clear Device Data Source Parms, Apple Acct Cookies & iCloud3 Config File',
 }
 MENU_0_ACTIONS = {
-        'menu_1':               '➤ MENU #2 (PARAMETERS) → Tracking, Display Settings, Display Text As, Waze Route Service, Special Zones, iCloud3 Analytics',
-        'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
+        'menu_1':               '◀\uFE0E MENU #2 (PARAMETERS) → Tracking, Display Settings, Display Text As, Waze Route Service, Special Zones, iCloud3 Analytics',
+        'exit':                 '◀\uFE0E EXIT → End the iCloud3 Configure Session',
 }
 
 MENU_1 = {
@@ -49,8 +49,8 @@ MENU_1 = {
         'analytics':            'ICLOUD3 ANALYTICS → Enable Sending Analytics Data to the iCloud3 Analytics Database',
 }
 MENU_1_ACTIONS = {
-        'menu_0':               '➤ MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
-        'exit':                 '➤ EXIT → End the iCloud3 Configure Session',
+        'menu_0':               '◀\uFE0E MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools',
+        'exit':                 '◀\uFE0E EXIT → End the iCloud3 Configure Session',
 }
 
 # Set up menu lists now so they do not have to be created every time a menu is displayed
@@ -65,27 +65,27 @@ MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, i
 MENU_KEYS_BY_TITLE.update({item_value.split(' →')[0]: item_key for item_key, item_value in MENU_1_ACTIONS.items()})
 
 MENU_EXIT_ITEMS = {
-        'exit':                       '➤ EXIT → End the iCloud3 Configure Session',
-        'exit_update_dashboards':     '➤ EXIT → End the iCloud3 Configure Session. Update the Dashboards and Restart',
-        'exit_add_dev_trkrs_sensors': '➤ EXIT → End the iCloud3 Configure Session. Add new devices and sensors, Update the Dashboards and Restart'
+        'exit':                       '◀\uFE0E EXIT → End the iCloud3 Configure Session',
+        'exit_update_dashboards':     '◀\uFE0E EXIT → End the iCloud3 Configure Session. Update the Dashboards and Restart',
+        'exit_add_dev_trkrs_sensors': '◀\uFE0E EXIT → End the iCloud3 Configure Session. Add new devices and sensors, Update the Dashboards and Restart'
 }
 ACTION_LIST_OPTIONS = {
-        'rtn_device_list':          '➤ RETURN → ICLOUD3 DEVICES → Return to the screen showing the Tracked and Monitored devices',
-        'rtn_update_device':        '➤ RETURN → UPDATE ICLOUD3 DEVICE → Return to Update iCloud3 Device screen',
-        'rtn_apple_accounts':       '➤ RETURN → APPLE ACCOUNTS → Return to the screen showing the Apple Accounts',
-        'rtn_update_apple_acct':    '➤ RETURN → UPDATE APPLE ACCOUNT → Return to the Update Apple Account screen',
-        'rtn_reauth':               '➤ RETURN → AUTHENTICATE APPLE ACCT SIGN-IN → Return to the screen that authenticates signing into the Apple Accounts',
-        'exit_ha_reconfigure_reauth':'➤ RETURN → HA ICLOUD3 CONFIGURE SCREEN → Close Authentication screen and return to HA',
+        'rtn_device_list':          '▶\uFE0E ICLOUD3 DEVICES → Display the iCloud3 Devices list screen',
+        'rtn_update_device':        '▶\uFE0E UPDATE ICLOUD3 DEVICE → Display the Update iCloud3 Device screen',
+        'rtn_apple_accounts':       '▶\uFE0E APPLE ACCOUNTS → Display the Apple Accounts list screen',
+        'rtn_update_apple_acct':    '▶\uFE0E UPDATE APPLE ACCOUNT → Display the Update Apple Account screen',
+        'rtn_reauth':               '▶\uFE0E AUTHENTICATE APPLE ACCT SIGN-IN → Display the Authenticate Apple Account screen',
+        'exit_ha_reconfigure_reauth':'◀\uFE0E RETURN → HA ICLOUD3 CONFIGURE SCREEN → Close the Authentication screen and return to HA',
 
-        'goto_previous':            '➤ RETURN → Return to the previous screen',
-        'cancel_goto_previous':     '➤ RETURN → Return to the previous screen. Cancel any unsaved changes',
-        'menu':                     '➤ MENU → Display the Menu screen',
-        'cancel_goto_menu':         '➤ MENU → Display the Menu screen. Cancel any unsaved changes',
-        'exit':                     '➤ EXIT → End the iCloud3 Configure Session, Return to HA',
-        'exit_repair':              '➤ EXIT → Return to the Repair Item. Cancel any unsaved changes',
-        'save':                     '➤ SAVE & RETURN → Update Configuration File, Return to the Previous screen',
-        'save_stay':                '➤ SAVE → Update Configuration File',
-        'save_menu':                '➤ SAVE & RETURN → Update Configuration File, Display the Menu screen',
+        'goto_previous':            '◀\uFE0E RETURN → Return to the previous screen',
+        'cancel_goto_previous':     '◀\uFE0E RETURN → Return to the previous screen. Do not save any changes',
+        'menu':                     '◀\uFE0E MENU → Display the Menu screen',
+        'cancel_goto_menu':         '◀\uFE0E MENU → Display the Menu screen. Do not save any changes',
+        'exit':                     '◀\uFE0E EXIT → End the iCloud3 Configure Session and return to HA',
+        'exit_repair':              '◀\uFE0E EXIT → Return to the Repair Item. Do not save any changes',
+        'save':                     '◀\uFE0E RETURN (SAVE CHANGES) → Update the Config File and return to the previous screen',
+        'save_stay':                'SAVE → Update Configuration File',
+        'save_menu':                '◀\uFE0E MENU (SAVE CHANGES) → Update Config File and display the Menu screen',
 
         'next_page_items':          'NEXT PAGE ITEMS → ^add-text^',
         'next_page':                'NEXT PAGE → Save changes. Display the next page',
@@ -105,7 +105,7 @@ ACTION_LIST_OPTIONS = {
         'send_auth_code':           'AUTHENTICATE → Send the Authentication Code back to Apple or Confirm the Security Key security code',
         'request_auth_code':        'REQUEST AUTHENTICATION CODE or SECURITY KEY KEYPRESS → Untrust the Apple Acct. Get a new Authentication code or Start the Hardware Key keypress Process',
         'change_auth_method':       'CHANGE AUTHENTICATION METHOD → Select a new method (Pop-up Window, Text Message, Security Key), Refresh Trusted Phone Numbers & Security Key names',
-        'user_auth_dashboard':     'BUILD USER AUTH DASHBOARD CARD → Show the Text/Button raw_yaml code needed to send an authentication code to Apple from a Dashboard',
+        'user_auth_dashboard':      'BUILD USER AUTH DASHBOARD CARD → Show the Text/Button raw_yaml code needed to send an authentication code to Apple from a Dashboard',
         'reset_trust_token_return': 'RESET TRUST TOKEN, RETURN TO ENTER & SEND THE CODE TO APPLE → Resets the Trust Token. Return to the Authenticate Apple Sign-in screen',
         'auth_code_from_applecom_login': 'APPLE DID NOT SEND A CODE (PUSH/TEXT), GET ONE FROM APPLE.COM → Sign into your Apple Acct, get a code, enter it here and send to Apple',
         'refresh_hwkey_names':      'REFRESH TRUSTED PHONE NUMBERS/SECURITY KEY NAMES → Get the Trusted Phone Numbers or the registered Security Key names from Apple',
@@ -121,7 +121,7 @@ ACTION_LIST_OPTIONS = {
         'import_apple_devices':     'IMPORT APPLE DEVICES → Create iCloud3 devices from the devices in the Apple Accounts',
         'add_imported_apple_devices': 'ADD IMPORTED APPLE DEVICES → Create iCloud3 device_tracker entities from imported Apple devices',
 
-        'update_tracking_mode':     '➤ SAVE → Update the  Tracking Mode of the selected devices, Tracked-iPhone/Watch devices, Monitorted-iPad/Mac devices‘',
+        'update_tracking_mode':     'SAVE → Update the  Tracking Mode of the selected devices, Tracked-iPhone/Watch devices, Monitorted-iPad/Mac devices‘',
 
         'restart_ha':               'RESTART HOME ASSISTANT → Restart HA & iCloud3',
         'restart_icloud3':          'RESTART ICLOUD3 → Restart iCloud3 Now',
@@ -130,8 +130,8 @@ ACTION_LIST_OPTIONS = {
         'restart_ic3_later':        'RESTART LATER → The configuration changes have been saved. Load the updated configuration the next time iCloud3 is started',
         'review_inactive_devices':  'REVIEW INACTIVE DEVICES → Some Devices are `Inactive‘ and will not be located or tracked ^add-text^',
 
-        'update_sensor_list':       'UPDATE LIST, SELECT MORE SENSORS → Update the Excluded Sensors List, Select more Sensors to Exclude',
-        'return_to_sensor_screen':  'UPDATE LIST, RETURN TO SENSOR SCREEN → Return to the Sensor screen with the updated Excluded Sensors list',
+        'update_sensor_list':       'SELECT MORE SENSORS (SAVE CHANGES) → Update the Excluded Sensors List, Select more Sensors to Exclude',
+        'return_to_sensor_screen':  '◀\uFE0E RETURN (SAVE CHANGES) → Return to the Sensor screen. Update the Excluded Sensors list',
         'show_all_sensors':         'DISPLAY SENSOR NAMES (ALL) → Display all of the device‘s sensors',
         'show_some_sensors':        'DISPLAY SENSOR NAMES (2-LINES) → Display the device‘s sensors that will fit on 2-lines',
         'check_all':                'CHECK ALL ITEMS → Select all items',
@@ -139,6 +139,7 @@ ACTION_LIST_OPTIONS = {
         'delete_device_sensors':    'DELETE SELECTED DEVICE SENSORS → Remove the selected device sensors from the HA Entity and Device Registry',
 
         'create_dashboard':         'CREATE/UPDATE A DASHBOARD → Erase and recreate an existing Dashboard, Create a new Dashboard',
+        'delete_dashboard':         'DELETE DASHBOARD → Delete the selected Dashboard and any changes made to it from HA',
 
         'select_text_as':           'SELECT → Update selected `Display Text As‘ field',
         'clear_text_as':            'CLEAR → Remove this `Display Text As‘ entry',
@@ -161,7 +162,7 @@ ACTION_LIST_OPTIONS = {
         'confirm_action_no_disable_beta':  'DISABLE BETA VERSION → Stop downloading Beta Versions from the HA Marketplace',
         'confirm_action_yes':       'YES → Complete the requested action',
         'confirm_action_no':        'NO  → Cancel the request',
-        'confirm_save':             '➤ SAVE THE CONFIGURATION CHANGES → Save any changes, Return to the Main Menu',
+        # 'confirm_save':             '◀\uFE0E MENU (SAVE CHANGES) → Update Config File and display the Menu screen',
 
         "divider1": "═══════════════════════════════════════",
         "divider2": "═══════════════════════════════════════",
@@ -184,7 +185,7 @@ UNSELECTED_IDX = -1
 
 # Action List Items for all screens
 ACTION_LIST_ITEMS_SAVE_MENU = [
-        ACTION_LIST_OPTIONS['save'],
+        ACTION_LIST_OPTIONS['save_menu'],
         ACTION_LIST_OPTIONS['menu']]
 
 APPLE_ACCOUNT_ACTIONS = [
@@ -203,7 +204,7 @@ APPLE_ACCOUNT_UPDATE_ACTIONS = [
         ACTION_LIST_OPTIONS['save_log_into_apple_acct'],
         ACTION_LIST_OPTIONS['authenticate_apple_acct'],
         ACTION_LIST_OPTIONS['other_apple_acct_parameters'],
-        ACTION_LIST_OPTIONS['rtn_apple_accounts']]
+        ACTION_LIST_OPTIONS['cancel_goto_previous']]
 APPLE_ACCOUNT_UPDATE_REPAIR_ACTIONS = [     # Update Apple Account screen opened from HA Repairs
         ACTION_LIST_OPTIONS['save_log_into_apple_acct'],
         ACTION_LIST_OPTIONS['authenticate_apple_acct'],
@@ -232,7 +233,7 @@ DEVICE_LIST_ACTIONS = [
         ACTION_LIST_OPTIONS['menu']]
 DEVICE_UPDATE_ACTIONS = [
         ACTION_LIST_OPTIONS['save'],
-        ACTION_LIST_OPTIONS['rtn_device_list'],
+        ACTION_LIST_OPTIONS['cancel_goto_previous'],
         ACTION_LIST_OPTIONS['menu']]
 DEVICE_UPDATE_REPAIR_ACTIONS = [            # Update Device screen opened from HA Repairs
         ACTION_LIST_OPTIONS['save'],
@@ -259,7 +260,7 @@ CHANGE_DEVICE_ORDER = [
 SENSORS_ACTIONS = [
         ACTION_LIST_OPTIONS['exclude_sensors'],
         ACTION_LIST_OPTIONS['set_to_default_sensors'],
-        ACTION_LIST_OPTIONS['save'],
+        ACTION_LIST_OPTIONS['save_menu'],
         ACTION_LIST_OPTIONS['menu']]
 SENSORS_EXCLUDE_ACTIONS_= [
         ACTION_LIST_OPTIONS['filter_sensors'],
@@ -346,10 +347,7 @@ TOOL_LIST_ITEMS_KEY_BY_TEXT = {text: key for key, text in TOOL_LIST.items()}
 
 #------------------------–--------------------------------------------------------------
 #   Parameter List Selections Items
-DATA_SOURCE_OPTIONS = {
-        'iCloud':   'APPLE ACCOUNT - Location data is provided for devices in the Family Sharing List',
-        'MobApp':   'HA MOBILE APP - Location data and zone enter/exit triggers from devices with the Mobile App'
-        }
+# DATA_SOURCE_OPTIONS is defined below with the 'iCloud,MobApp' option
 REAUTH_AUTH_METHODS = {
         'push':     'Authentication Code popup window',
         'text':     'Text Message to `……{method_info}`',
@@ -364,7 +362,7 @@ APPLE_SERVER_LOCATION_OPTIONS = {
         '.cn,BD09':  'CHINA - The Apple Server is located in China (BD09 → WGS84)'
         }
 DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS = {
-        'reassign_devices': 'REASSIGN DEVICES → Search for another Apple Account with this device device and reassign it to that Apple Account. Set it to  Inactive if one is not found',
+        'reassign_devices': 'REASSIGN DEVICES → Search for another Apple Account with this device and reassign it to that Apple Account. Set it to Inactive if one is not found',
         'delete_devices':   'DELETE DEVICES → Delete all devices that are using this Apple Account',
         'set_devices_inactive': 'SET DEVICES TO INACTIVE →  Set the devices using this Apple Account to Inactive. They will be assigned to another Apple Account later'
         }
@@ -419,7 +417,7 @@ TRAVEL_TIME_INTERVAL_MULTIPLIER_KEY_TEXT = {
         .25:  'Shortest Interval Time - 1/4 TravelTime (¼ × 8 mins = Next Locate in 2m)',
         .33:  'Shorter Interval Time - 1/3 TravelTime (⅓ × 8 mins = Next Locate in 2m40s)',
         .50:  'Half Way (Default) - 1/2 TravelTime (½ × 8 mins = Next Locate in 4m)',
-        .66:  'Longer Interval Time - 2/3 TravelTime (⅔ × 8 mins = Next Locate in 5m20s',
+        .66:  'Longer Interval Time - 2/3 TravelTime (⅔ × 8 mins = Next Locate in 5m20s)',
         .75:  'Longest Interval Time - 3/4 TravelTime (¾ × 8 mins = Next Locate in 6m)'
         }
 DISPLAY_ZONE_FORMAT_OPTIONS = {}
@@ -573,7 +571,7 @@ APPLE_ACCT_USED_HEADER = (
         'Request location data from the devices in the Apple Account’s Family Sharing List')
 RARELY_UPDATED_PARMS        = 'rarely_updated_parms'
 RARELY_UPDATED_PARMS_HEADER = (
-        "➤ RARELY USED PARAMETERS - Display inZone & Fixed Interval, Track-from-Zone and Track-from-Home Zone Override parameters the parameters")
+        "RARELY USED PARAMETERS - Display inZone & Fixed Interval, Track-from-Zone and Track-from-Home Zone Override parameters the parameters")
 WAZE_USED_HEADER = (
         "The Waze Route Service provides the travel time and distance information from your "
         "current location to the Home or another tracked from zone. This information is used to determine "

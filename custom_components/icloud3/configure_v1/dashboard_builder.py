@@ -2,14 +2,16 @@
 # from ...lovelace import dashboard
 from homeassistant.components.lovelace import dashboard
 from homeassistant.components.lovelace import _register_panel
-from homeassistant.components.lovelace.const import (LOVELACE_DATA,
+from homeassistant.components.lovelace.const import (LOVELACE_DATA, MODE_STORAGE,
                                                     STORAGE_DASHBOARD_CREATE_FIELDS,
                                                     STORAGE_DASHBOARD_UPDATE_FIELDS)
+from homeassistant.components import frontend
+from homeassistant.helpers    import collection
 
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (IPHONE_DN, DEVICE_TYPES, IPHONE,
                                     TRACK, INACTIVE)
-from ..const_config         import (CONF_IC3_DEVICENAME, CONF_TRACKING_MODE, CONF_DEVICE_TYPE, )
+from ..const_config         import (CONF_IC3_DEVICENAME, CONF_FNAME, CONF_TRACKING_MODE, CONF_DEVICE_TYPE, )
 
 from ..utils.utils          import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
                                     list_add, list_del, dict_value_to_list, six_item_list, six_item_dict, )
@@ -52,7 +54,8 @@ DASHBOARD_TEMPLATE_FILES = [
 ]
 
 MAIN_VIEW_STYLE_TEMPLATE = 'Main-View-Template-Style: '
-CONFIGURE_DASHBOARD_TEMPLATES_DIR = '/configure/dashboard_templates'
+# The templates are used by all Configure versions (icloud3/dashboard_templates)
+CONFIGURE_DASHBOARD_TEMPLATES_DIR = '/dashboard_templates'
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -116,10 +119,11 @@ async def create_dashboard(self):
     try:
         await _add_dashboard_to_lovelace_dashboards(self, dbname)
 
-        await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_json)
-        await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_json)
+        write_ok  = await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_json)
+        update_ok = await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_json)
 
-        self.errors['base'] = 'dashboard_created'
+        self.errors['base'] = 'dashboard_created' if write_ok and update_ok else 'dashboard_error'
+        _set_main_view_monitored_devices_error(self)
         log_debug_msg(f"Created Dashboard-{self.dbname}, Devices-{self.ui_main_view_dnames}")
 
     except Exception as err:
@@ -134,18 +138,46 @@ async def update_dashboard(self):
         return
 
     try:
-        current_db_layout_dict = file_io.json_str_to_dict(updated_db_layout_json)
-        updated_db_layout_dict = await _prepare_selected_from_master_dashboard(self,
-                                                    dbname, current_db_layout_dict)
+        # There is no layout to update, it is created from the templates
+        if dbname in self.ic3db_no_layout_dbnames:
+            updated_db_layout_dict = updated_db_layout_json
+            list_del(self.ic3db_no_layout_dbnames, dbname)
+        else:
+            current_db_layout_dict = file_io.json_str_to_dict(updated_db_layout_json)
+            updated_db_layout_dict = await _prepare_selected_from_master_dashboard(self,
+                                                        dbname, current_db_layout_dict)
 
-        await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_dict)
-        await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_dict)
+        write_ok  = await _write_lovelace_dashboard_layout_file(self, dbname, updated_db_layout_dict)
+        update_ok = await _update_lovelace_dashboard_layout_ha_data(self, dbname, updated_db_layout_dict)
 
-        self.errors['base'] = 'dashboard_updated'
+        self.errors['base'] = 'dashboard_updated' if write_ok and update_ok else 'dashboard_error'
+        _set_main_view_monitored_devices_error(self)
         log_debug_msg(f"Updated Dashboard-{self.dbname}, Devices-{self.ui_main_view_dnames}")
 
     except Exception as err:
         log_exception(err)
+
+#............................................................................................
+def _set_main_view_monitored_devices_error(self):
+    '''
+    Monitored devices selected for the Main view are not added to it, only Tracked devices
+    are. Display the devices that were not added on the Main View Devices field. The Main
+    view has no devices if only Monitored devices were selected.
+    '''
+    self.dbf_monitored_devices_msg = ''
+    if is_empty(self.main_view_monitored_dnames):
+        return
+
+    fnames_by_devicename = {conf_device[CONF_IC3_DEVICENAME]: conf_device[CONF_FNAME]
+                                    for conf_device in Gb.conf_devices}
+    self.dbf_monitored_devices_msg = list_to_str([
+                                    fnames_by_devicename.get(devicename, devicename)
+                                    for devicename in self.main_view_monitored_dnames])
+
+    if is_empty(self.main_view_trk_dnames):
+        self.errors['main_view_devices'] = 'dashboard_no_tracked_devices'
+    else:
+        self.errors['main_view_devices'] = 'dashboard_monitored_not_added'
 
 #............................................................................................
 async def _build_db_layout_json_from_templates(self, dbname):
@@ -169,13 +201,17 @@ async def _build_db_layout_json_from_templates(self, dbname):
 
 #............................................................................................
 def _get_next_dashboard_name(self):
+    '''
+    A dashboard deleted in HA stays in hass.data and its panel stays registered until
+    HA is restarted. Skip those names too or HA rejects the new one as already in use.
+    '''
+    used_dbnames = (list(self.AllDashboards_by_dbname)
+                    + list(Gb.hass.data[LOVELACE_DATA].dashboards))
+
     number_suffix = len(self.AllDashboards_by_dbname)
-    if number_suffix == 0:
-        return 'ic3db-icloud3'
+    url_path = 'ic3db-icloud3' if number_suffix == 0 else f"ic3db-icloud3-{number_suffix}"
 
-    url_path = f"ic3db-icloud3-{number_suffix}"
-
-    while url_path in self.AllDashboards_by_dbname:
+    while url_path in used_dbnames:
         number_suffix += 1
         url_path = f"ic3db-icloud3-{number_suffix}"
 
@@ -439,6 +475,13 @@ def _build_devices_str_main_view(self):
                                         and instr(device_info, IPHONE))]
         selected_devicenames = selected_devicenames[:2]
 
+    # Monitored devices are not added to the Main view, only Tracked devices are
+    self.main_view_monitored_dnames = []
+    if all_devices is False and devices_2_iphn is False:
+        self.main_view_monitored_dnames = [devicename
+                                    for devicename in selected_devicenames
+                                    if instr(active_devicenames[devicename], TRACK) is False]
+
     self.main_view_extracted_dnames_by_dbname[dbname] = selected_devicenames
 
     # Build dashboard 'summary-all/sel' screen for all or selected devices
@@ -471,6 +514,7 @@ def _build_devices_str_main_view(self):
         devices_str = ''
 
     self.main_view_created_length_by_dbname[dbname] = len(devices_str.replace(' ', ''))
+    self.main_view_trk_dnames = trk_results_devicenames
 
     return trk_results_devicenames, devices_str
 
@@ -603,6 +647,8 @@ async def _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict
 
     - Update the dashboard layout
     - Add the dashboard to the HA panel if creating a new dashboard
+
+    Return True when the dashboard was updated
     '''
 
     # If dashboard_dict is actual a json_str, convert it to a dict
@@ -611,7 +657,7 @@ async def _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict
             dashboard_dict = file_io.json_str_to_dict(dashboard_dict)
 
         if dashboard_dict == {} or dashboard_dict is None:
-            return
+            return False
 
         Dashboard       = self.ic3db_Dashboards_by_dbname[dbname]
         dashboard_data  = dashboard_dict[DATA][CONFIG]
@@ -621,12 +667,10 @@ async def _update_lovelace_dashboard_layout_ha_data(self, dbname, dashboard_dict
 
         Dashboard._config_updated()
 
-        self.errors['base'] = 'dashboard_updated'
-
     except Exception as err:
         log_exception(err)
-        return
-    return
+        return False
+    return True
 
 #............................................................................................
 def _replace_json_text_items(self, dashboard_str):
@@ -725,6 +769,14 @@ async def build_existing_dashboards_selection_list(self):
 
     load_ic3db_dashboards_from_ha_data(self)
 
+    # A deleted dashboard stays in hass.data until HA is restarted, so only keep the
+    # ones that are still in the .storage/lovelace_dashboards file
+    ll_dashboards_file_dbnames = [config['url_path']
+                                    for config in await _read_lovelace_dashboards_file()]
+    self.ic3db_Dashboards_by_dbname = {_dbname: _Dashboard
+                    for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items()
+                    if _dbname in ll_dashboards_file_dbnames}
+
     self.dbf_dashboard_key_text  = {}
     self.dbf_dashboard_icons_msg = ''
     # dashboard_icons_msg = []
@@ -732,16 +784,9 @@ async def build_existing_dashboards_selection_list(self):
         self.dbf_dashboard_key_text[ADD] = (f"➤ CREATE A NEW ICLOUD3 DASHBOARD")
         return
 
-
-    ll_dashboards_file_configs = await _read_lovelace_dashboards_file()
-    ll_dashboards_file_configs_str = str(ll_dashboards_file_configs)
-
     await _load_dashboard_layout_files(self)
 
     for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items():
-        if instr(ll_dashboards_file_configs_str, _dbname) is False:
-            continue
-
         self.AllDashboards_by_dbname[_dbname] = _Dashboard
 
         await _get_main_view_devicenames(self, _dbname, _Dashboard)
@@ -757,9 +802,13 @@ async def build_existing_dashboards_selection_list(self):
         main_view_style = self.main_view_info_style_by_dbname[_dbname]
         main_view_style_msg = DASHBOARD_MAIN_VIEW_STYLES[main_view_style]
 
-        dashboard_msg =(f"{_Dashboard.config[TITLE]} > "
-                        f"{main_view_style_msg} "
-                        f"({main_view_devices_msg})")
+        if _dbname in self.ic3db_no_layout_dbnames:
+            dashboard_msg =(f"{_Dashboard.config[TITLE]} > ⚠ NO DASHBOARD LAYOUT, "
+                            f"Create/Update rebuilds it, Delete removes the Dashboard")
+        else:
+            dashboard_msg =(f"{_Dashboard.config[TITLE]} > "
+                            f"{main_view_style_msg} "
+                            f"({main_view_devices_msg})")
 
 
         self.dbf_dashboard_key_text[_dbname] = dashboard_msg
@@ -776,9 +825,6 @@ def build_dashboard_icons_msg(self):
 
     Dashboard Icons: <mdi:icon> iCloud3
     '''
-    if is_empty(self.ic3db_Dashboards_by_dbname):
-        load_ic3db_dashboards_from_ha_data(self)
-
     _dashboard_icons_msg = []
     for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items():
         _db_icon = _Dashboard.config.get('icon') or _icon(_dbname)
@@ -814,14 +860,15 @@ async def _get_main_view_devicenames(self, dbname, _Dashboard):
     # dashboard_data_dict = await _read_dashboard_layout_file(dbname)
     dashboard_view_dict = _dashboard_layout_views(dbname)
 
-    main_view  = dashboard_view_dict[0]
-
     try:
+        main_view         = dashboard_view_dict[0]
         main_view_str     = str(main_view)
         devices_cards_str = str(main_view['sections'][0]['cards'])
 
     except Exception as err:
-        log_exception(err)
+        # The default style and devices are used for a dashboard without a layout
+        if dbname not in self.ic3db_no_layout_dbnames:
+            log_exception(err)
         main_view_str     = ''
         devices_cards_str = ''
 
@@ -886,12 +933,22 @@ async def _load_dashboard_layout_files(self):
     with the ic3db dashboard files layout view
     '''
 
+    self.ic3db_no_layout_dbnames = []
+
     for _dbname, _Dashboard in self.ic3db_Dashboards_by_dbname.items():
         if _Dashboard._data is None:
             dashboard_layout_dict = await _read_dashboard_layout_file(_dbname)
-            _Dashboard._data = {}
-            _Dashboard._data[CONFIG] = dashboard_layout_dict[DATA][CONFIG]
-            await _Dashboard.async_load(force=True)
+            dashboard_config = (dashboard_layout_dict or {}).get(DATA, {}).get(CONFIG)
+            if isnot_empty(dashboard_config):
+                _Dashboard._data = {CONFIG: dashboard_config}
+                await _Dashboard.async_load(force=True)
+
+        # The .storage/lovelace.ic3db_... layout file does not exist or has no views. It was
+        # deleted or never written. Create/Update rebuilds it from the templates.
+        if is_empty(_dashboard_layout_views(_dbname)):
+            self.ic3db_no_layout_dbnames.append(_dbname)
+            log_info_msg(f"Dashboard Layout not found > {_dbname}, "
+                        f"File-.storage/lovelace.{_dbname.replace('-', '_')}")
 
     return
 
@@ -923,17 +980,18 @@ async def _write_lovelace_dashboard_layout_file(self, dbname, dashboard_dict_or_
 
     When adding a new Dashboard, dashboard_json will start with '{"view":'
     When updating a Dashboard, dashboard_json will start with '{"config":'
+
+    Return True when the file was written
     '''
     if type(dashboard_dict_or_json_str) is dict:
         dashboard_dict_or_json_str = file_io.dict_to_json_str(dashboard_dict_or_json_str)
         if dashboard_dict_or_json_str == '':
-            self.errors['base'] = 'dashboard_error'
-            return
+            return False
 
     filename = f"{Gb.ha_storage_directory}/lovelace.{dbname.replace('-', '_')}"
-    await file_io.async_write_file(filename, dashboard_dict_or_json_str)
-
     log_debug_msg(f"Updating {filename}")
+
+    return await file_io.async_write_file(filename, dashboard_dict_or_json_str) is True
 
 
 #-------------------------------------------------------------------------------------------
@@ -987,34 +1045,103 @@ async def _add_dashboard_to_lovelace_dashboards(self, dbname):
         'url_path': dbname,
         }
 
-    # Add the new dashboard to the dashboard_collection
-    dashboards_collection = dashboard.DashboardsCollection(Gb.hass)
-    await dashboards_collection.async_load()
-
+    # Add the new dashboard to the dashboard_collection. The collection's listener registers
+    #   the dashboard in the HA Sidebar as a new panel, creates the new dashboard object
+    #   (LovelaceStorage) and adds it to the internal lovelace dashboard dictionary.
     # Add the new dashboard config to the '.storage/lovelace_dashboards' file. We also have to save the
     #   new config since the _create_item does a scheduled save and the dashboard selection screen
     #   is rebuilt before the lovelace_dashboards file save has actually been done.
-    # Register the dashboard in the HA Sidebar as a new panel
-    # Create a new dashboard object (LovelaceStorage)
-    # Add the new dashboard object to the internal lovelace dashboard dictionary
-
+    dashboards_collection = await _async_load_dashboards_collection()
     await dashboards_collection.async_create_item(db_collections_item)
 
     # Force lovelace_dashboards save since async_create_item does a delayed save. It will be updated
     # again in async_create_item
     await _add_dashboard_to_lovelace_dashboards_file(dbname, dashboard_config)
 
-    _register_panel(Gb.hass, url_path, "storage", dashboard_config, True)
-    Dashboard = dashboard.LovelaceStorage(Gb.hass, dashboard_config)
-    Gb.hass.data[LOVELACE_DATA].dashboards[dbname] = Dashboard
+    Dashboard = Gb.hass.data[LOVELACE_DATA].dashboards[dbname]
 
     self.Dashboard = Dashboard
     self.ic3db_Dashboards_by_dbname[dbname]    = Dashboard
     self.AllDashboards_by_dbname[dbname] = Dashboard
 
+    log_debug_msg(f"Added Dashboard to Lovelace > {title}/{dbname}")
+
+#-------------------------------------------------------------------------------------------
+async def delete_dashboard(self, dbname):
+    '''
+    Delete the dashboard from the Lovelace dashboard collection (.storage/lovelace_dashboards).
+    The collection's listener removes the Sidebar panel, the dashboard object in the internal
+    Lovelace tables and its .storage/lovelace.ic3db_... layout file.
+
+    The HA lovelace/dashboards websocket commands are set up to use the collection. Otherwise
+    HA's collection, which still has the deleted dashboard, would write it back to the
+    lovelace_dashboards file the next time a dashboard is changed on HA Settings > Dashboards.
+
+    Return True if the dashboard was deleted
+    '''
+    try:
+        dashboards_collection = await _async_load_dashboards_collection()
+
+        item_id = next((item_id for item_id, item in dashboards_collection.data.items()
+                                if item['url_path'] == dbname), None)
+        if item_id is not None:
+            await dashboards_collection.async_delete_item(item_id)
+        else:
+            await _async_dashboards_collection_changed(collection.CHANGE_REMOVED,
+                                                        dbname, {'url_path': dbname})
+
+        # Force lovelace_dashboards save since async_delete_item does a delayed save
+        await _remove_dashboard_from_lovelace_dashboards_file(dbname)
+
+        self.ic3db_Dashboards_by_dbname.pop(dbname, None)
+        self.AllDashboards_by_dbname.pop(dbname, None)
+        if self.Dashboard is not None and self.Dashboard.config.get('url_path') == dbname:
+            self.Dashboard = None
+
+        log_info_msg(f"Deleted Dashboard from Lovelace > {dbname}")
+        return True
+
+    except Exception as err:
+        log_exception(err)
+
+    return False
+
+#............................................................................................
+# The dashboard collection used to add or delete an iCloud3 dashboard. It is loaded once
+# and used until HA is restarted. Each collection writes its dashboards to the
+# .storage/lovelace_dashboards file 10-secs after a change (delayed save), so a second
+# collection would write its old copy over the changes made by the first one.
+_DashboardsCollection = None
+
+async def _async_load_dashboards_collection():
+    '''
+    HA's Lovelace dashboard collection can not be accessed. Load a new one from the
+    .storage/lovelace_dashboards file the first time an iCloud3 dashboard is added or
+    deleted and set up the HA lovelace/dashboards websocket commands to use it.
+    '''
+    global _DashboardsCollection
+
+    if _DashboardsCollection is not None:
+        return _DashboardsCollection
+
+    dashboards_collection = dashboard.DashboardsCollection(Gb.hass)
     await dashboards_collection.async_load()
 
-    # Send new dashboard_collection item to the frontend
+    # Added after the load, the load reports every existing dashboard as being added
+    dashboards_collection.async_add_listener(_async_dashboards_collection_changed)
+
+    _setup_dashboards_collection_websocket(dashboards_collection)
+    _DashboardsCollection = dashboards_collection
+
+    return dashboards_collection
+
+#............................................................................................
+def _setup_dashboards_collection_websocket(dashboards_collection):
+    '''
+    Set up the HA lovelace/dashboards websocket commands (list, create, update, delete)
+    to use the dashboards_collection instead of HA's collection. The frontend and HA
+    Settings > Dashboards then show and change the dashboards in this collection.
+    '''
     dashboard_collection_ws = dashboard.DashboardsCollectionWebSocket(
                                         dashboards_collection,
                                         "lovelace/dashboards",
@@ -1024,7 +1151,39 @@ async def _add_dashboard_to_lovelace_dashboards(self, dbname):
                                         )
     dashboard_collection_ws.async_setup(Gb.hass)
 
-    log_debug_msg(f"Added Dashboard to Lovelace > {title}/{dbname}")
+#............................................................................................
+async def _async_dashboards_collection_changed(change_type, item_id, item):
+    '''
+    Dashboard collection listener. It does what the HA lovelace storage_dashboard_changed
+    listener does for the HA collection. The lovelace/dashboards websocket commands use the
+    iCloud3 collection after a dashboard was added or deleted, so dashboards added, changed
+    or deleted on HA Settings > Dashboards are handled until HA is restarted.
+    '''
+    url_path   = item['url_path']
+    Dashboards = Gb.hass.data[LOVELACE_DATA].dashboards
+
+    if change_type == collection.CHANGE_REMOVED:
+        frontend.async_remove_panel(Gb.hass, url_path, warn_if_unknown=False)
+        Dashboard = Dashboards.pop(url_path, None)
+        if Dashboard is not None:
+            await Dashboard.async_delete()
+        return
+
+    if change_type == collection.CHANGE_ADDED:
+        if url_path in Dashboards:
+            log_info_msg(f"Dashboard not added, URL is used by another Dashboard > {url_path}")
+            return
+
+        Dashboards[url_path] = dashboard.LovelaceStorage(Gb.hass, item)
+        update = False
+    else:
+        Dashboards[url_path].config = item
+        update = True
+
+    try:
+        _register_panel(Gb.hass, url_path, MODE_STORAGE, item, update)
+    except ValueError:
+        log_info_msg(f"Dashboard panel was not registered > {url_path}")
 
 #............................................................................................
 def _icon(dbname):
@@ -1093,5 +1252,30 @@ async def _add_dashboard_to_lovelace_dashboards_file(dbname, dashboard_config):
 
     except Exception as err:
         log_exception(err)
+
+    return True
+
+#............................................................................................
+async def _remove_dashboard_from_lovelace_dashboards_file(dbname):
+    '''
+    Remove the dashboard's config from the /core/.storage/lovelace_dashboards file
+    '''
+    try:
+        lovelace_dashboards_file = f"{Gb.ha_storage_directory}/lovelace_dashboards"
+        lovelace_dashboards = await file_io.async_read_json_file(lovelace_dashboards_file)
+
+        items = [item   for item in lovelace_dashboards[DATA][ITEMS]
+                        if item['url_path'] != dbname]
+        if len(items) == len(lovelace_dashboards[DATA][ITEMS]):
+            return False
+
+        log_debug_msg(f"Updating {lovelace_dashboards_file}, Removed URL-{dbname}")
+        lovelace_dashboards[DATA][ITEMS] = items
+
+        await file_io.async_save_json_file(lovelace_dashboards_file, lovelace_dashboards)
+
+    except Exception as err:
+        log_exception(err)
+        return False
 
     return True

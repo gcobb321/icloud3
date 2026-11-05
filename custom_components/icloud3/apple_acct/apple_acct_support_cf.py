@@ -4,9 +4,11 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (DOMAIN, DEVICE_TRACKER,
                                 EVLOG_NOTICE, EVLOG_ERROR, EVLOG_ALERT,
                                 ICLOUD,
-                                IPHONE_DN, WATCH_DN, IPAD_DN, MAC_DN, DEVICE_TYPES, DEVICE_TYPE_TRACKING_MODE,
+                                IPHONE, IPHONE_DN, WATCH_DN, IPAD_DN, MAC_DN, DEVICE_TYPES, DEVICE_TYPE_DNS,
+                                DEVICE_TYPE_TRACKING_MODE,
                                 DEVICE_TYPE_PICTURE_FILENAMES, DEVICE_TYPE_ICONS,
-                                TRACK, MONITOR, INACTIVE, TRACKING_MODES, )
+                                TRACK, MONITOR, INACTIVE, TRACKING_MODES,
+                                UPW_INVALID_ERROR, UPW_ACCT_LOCKED_ERROR, )
 from ..const_config     import (CONF_DATA_SOURCE, CONF_APPLE_ACCT, CONF_APPLE_ACCT, CONF_PASSWORD,
                                 CONF_LOCATE_ALL, CONF_SERVER_LOCATION, CONF_IC3_DEVICENAME,
                                 CONF_FNAME, CONF_DEVICE_TYPE, CONF_AADEV_NAME,
@@ -20,7 +22,7 @@ from ..utils.utils      import (instr, isnot_empty,
                                 encode_password, decode_password, apple_user,
                                 is_running_in_event_loop, )
 from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_error_msg,
-                                update_alert_sensor,
+                                update_alert_sensor, clear_config_error,
                                 _log, log_exception, log_debug_msg, log_info_msg,
                                 add_log_file_filter, )
 from ..utils.time_util  import (time_now_secs, secs_to_hhmm, )
@@ -150,6 +152,12 @@ async def async_log_into_apple_account(self, user_input):
         self.password = password
         self.apple_server_location = apple_server_location
         Gb.upw_valid_by_apple_id[apple_id] = True
+
+        # The password was entered again, remove the invalid username/password or
+        # password decode error Repairs issue (ValidateAppleAcctUPW)
+        Gb.upw_decode_error_apple_ids.discard(apple_id)
+        clear_config_error(Source=apple_id, error=UPW_INVALID_ERROR)
+        clear_config_error(Source=apple_id, error=UPW_ACCT_LOCKED_ERROR)
         log_info_msg(f"Apple Acct > {apple_id}, Login successful, {self.AppleAcct}")
 
         start_ic3.dump_startup_lists_to_log()
@@ -210,6 +218,9 @@ async def async_log_into_apple_account(self, user_input):
         elif response_code == 401:
             Gb.AppleAcctLoggingInto.setup_error(401)
             self.errors[CONF_APPLE_ACCT] = 'apple_acct_inupw_valid'
+        elif response_code == 403 and Gb.AppleAcctLoggingInto.account_locked:
+            Gb.AppleAcctLoggingInto.setup_error(403, 'Apple Acct is Locked')
+            self.errors[CONF_APPLE_ACCT] = 'apple_acct_locked_security'
         elif response_code == 403:
             Gb.AppleAcctLoggingInto.setup_error(403)
             self.errors[CONF_APPLE_ACCT] = 'apple_acct_locked'
@@ -217,6 +228,9 @@ async def async_log_into_apple_account(self, user_input):
             Gb.AppleAcctLoggingInto.setup_error(response_code)
             self.errors['base'] = 'apple_acct_login_error_other'
         error_msg = HTTP_RESPONSE_CODES.get(response_code, 'Other Error')
+        if response_code == 403 and Gb.AppleAcctLoggingInto.account_locked:
+            error_msg = ('Apple Acct is Locked for security reasons, unlock it at '
+                         'https://iforgot.apple.com')
 
         post_error_msg( f"Apple Acct > {apple_id}, Login Failed, "
                         f"Error-{err}/{error_msg}, Code-{response_code}")
@@ -669,7 +683,6 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
 
         raw_model, model, model_display_name = \
                     AppleAcct.device_model_info_by_aadev_dname[aadevice_dname]
-
         AADev  = AppleAcct.AADev_by_device_id.get(device_id)
         first_name = AADev.owner_first_name if AADev else None
         aadev_name = AADev.name if AADev else aadevice_dname
@@ -692,19 +705,22 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         list_add(existing_fnames, ic3_fname)
 
         ic3_conf_device = {}
-        ic3_conf_device[CONF_IC3_DEVICENAME]     = ic3_devicename
-        ic3_conf_device[CONF_FNAME]              = ic3_fname
-        ic3_conf_device[CONF_APPLE_ACCT]      = AppleAcct.apple_id
-        ic3_conf_device[CONF_AADEV_NAME]  = aadevice_dname
+        ic3_conf_device[CONF_IC3_DEVICENAME] = ic3_devicename
+        ic3_conf_device[CONF_FNAME]          = ic3_fname
+        ic3_conf_device[CONF_APPLE_ACCT]     = AppleAcct.apple_id
+        ic3_conf_device[CONF_AADEV_NAME]     = aadevice_dname
         # ic3_conf_device.update(aadevice_conf( aadevice_dname, device_id,
         #                     model, raw_model, model_display_name))
+        # Set the same way as the Update Device screen (step_icloud3_device). The model is
+        # the modelDisplayName ('Apple Watch'), the AADev device_type is the deviceClass ('watch')
+        device_type = AADev.device_type if AADev and AADev.device_type in DEVICE_TYPE_DNS else IPHONE
+
         ic3_conf_device[CONF_AADEV_DEVICE_ID]   = device_id
-        ic3_conf_device[CONF_DEVICE_TYPE]        = model.lower() if model in DEVICE_TYPES else 'iphone'
+        ic3_conf_device[CONF_DEVICE_TYPE]        = device_type
         ic3_conf_device[CONF_RAW_MODEL]          = raw_model
         ic3_conf_device[CONF_MODEL]              = model
         ic3_conf_device[CONF_MODEL_DISPLAY_NAME] = model_display_name
         ic3_conf_device[CONF_MOBILE_APP_DEVICE]  = 'None'
-        device_type = model.lower()
         ic3_conf_device[CONF_TRACKING_MODE] = DEVICE_TYPE_TRACKING_MODE(device_type)
         ic3_conf_device[CONF_ICON] = DEVICE_TYPE_ICONS.get(device_type, 'mdi:account')
         if device_type in DEVICE_TYPE_PICTURE_FILENAMES:
@@ -729,8 +745,8 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         sk_tracking_mode = sk_device_type = 99
         if ic3_conf_device[CONF_TRACKING_MODE] in TRACKING_MODES:
             sk_tracking_mode = TRACKING_MODES.index(ic3_conf_device[CONF_TRACKING_MODE])
-        if model in DEVICE_TYPES:
-            sk_device_type = DEVICE_TYPES.index(model)
+        if device_type in DEVICE_TYPES:
+            sk_device_type = DEVICE_TYPES.index(device_type)
         sort_key = f"{sk_tracking_mode},{sk_device_type:02},{ic3_fname}"
 
         aa_devices_to_add[sort_key] = ic3_conf_device

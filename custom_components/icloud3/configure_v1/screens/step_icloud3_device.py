@@ -147,7 +147,7 @@ class OptionsFlow_iCloud3Device_Steps:
                 self.update_device_ha_sensor_entity = {}
                 return await self.async_step_menu()
 
-            case 'rtn_device_list':
+            case 'cancel_goto_previous':
                 return await self.async_step_device_list()
 
             case 'add_device':
@@ -263,8 +263,7 @@ class OptionsFlow_iCloud3Device_Steps:
             if len(Gb.conf_devices) <= 1:
                 return self._delete_all_devices()
 
-            if Gb.DeviceTrackers_by_devicename.get(devicename):
-                sensors_cf.remove_device_tracker_and_sensor_entities(self, devicename)
+            sensors_cf.remove_device_tracker_and_sensor_entities(self, devicename)
 
             self.dev_page_last_selected_devicename[self.dev_page_no] = ''
             Gb.conf_devices.pop(self.conf_device_idx)
@@ -482,7 +481,7 @@ class OptionsFlow_iCloud3Device_Steps:
 
         self.header_msg = 'conf_updated'
         if only_non_tracked_field_updated:
-            list_add(self.config_parms_update_control, ['devices', devicename])
+            list_add(self.config_parms_update_control, ['devices', ui_devicename])
         else:
             list_add(self.config_parms_update_control, ['tracking', 'restart'])
 
@@ -524,25 +523,28 @@ class OptionsFlow_iCloud3Device_Steps:
             mobapp_dname = user_input[CONF_MOBILE_APP_DEVICE]
             if mobapp_dname in Gb.device_info_by_mobapp_dname:
                 _device_type = Gb.device_info_by_mobapp_dname[mobapp_dname][2].lower() # ipad6,3 --> ipad
-                for device_type, device_type_fname in DEVICE_TYPE_DNS.items():
-                    if _device_type.startswith(device_type):
+                for dev_type in DEVICE_TYPE_DNS:
+                    if _device_type.startswith(dev_type):
+                        device_type = dev_type
                         break
 
         # Get device_type from ic3_devicename
         if device_type == '':
             ic3_devicename = user_input[CONF_IC3_DEVICENAME].lower()
             ic3_fname = user_input[CONF_FNAME].lower()
-            for device_type, device_type_fname in DEVICE_TYPE_DNS.items():
-                if device_type == MAC:
+            for dev_type in DEVICE_TYPE_DNS:
+                if dev_type == MAC:
                     continue
-                if instr(ic3_devicename, device_type) or instr(ic3_fname.lower(), device_type):
+                if instr(ic3_devicename, dev_type) or instr(ic3_fname, dev_type):
+                    device_type = dev_type
                     break
 
         if device_type == '':
             device_type = IPHONE
 
         user_input[CONF_DEVICE_TYPE]       = device_type
-        if user_input[CONF_TRACKING_MODE] != INACTIVE:
+        # Use the device type's tracking mode only if the form's default (Track) was not changed
+        if user_input[CONF_TRACKING_MODE] == DEFAULT_DEVICE_CONF[CONF_TRACKING_MODE]:
             user_input[CONF_TRACKING_MODE] = DEVICE_TYPE_TRACKING_MODE(device_type)
 
         inzone_interval_item =  NO_MOBAPP if user_input[CONF_MOBILE_APP_DEVICE] == 'None' else \
@@ -669,6 +671,18 @@ class OptionsFlow_iCloud3Device_Steps:
         if ui_fname == '':
             self.errors[CONF_FNAME] = 'required_field'
             return user_input
+
+        # Can not change the devicename or fname if the device is disabled in HA. The HA
+        # device registry item is the only record of it being disabled. Renaming the
+        # device removes it and the renamed device would be enabled.
+        if (self.add_device_flag is False
+                and self.conf_device[CONF_IC3_DEVICENAME] in Gb.ha_disabled_by_by_devicename):
+            if ui_devicename != self.conf_device[CONF_IC3_DEVICENAME]:
+                self.errors[CONF_IC3_DEVICENAME] = 'ha_disabled_no_rename'
+            if ui_fname != self.conf_device[CONF_FNAME]:
+                self.errors[CONF_FNAME] = 'ha_disabled_no_rename'
+            if CONF_IC3_DEVICENAME in self.errors or CONF_FNAME in self.errors:
+                return user_input
 
         err_devicename = err_fname = ''
         if ui_devicename != self.conf_device[CONF_IC3_DEVICENAME]:
@@ -891,6 +905,11 @@ class OptionsFlow_iCloud3Device_Steps:
             sensors_list = sensors_cf.build_all_sensors_list()
             self.create_device_tracker_sensor_enities_on_exit = True
 
+        # Any tracking mode change adds or removes the device on the dashboard views and
+        # the fname is the card name on those views
+        if (tracking_mode != new_tracking_mode
+                or CONF_FNAME in self.update_device_ha_sensor_entity):
+            self.rebuild_ic3db_dashboards = True
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            UPDATE OTHER DEVICE PARAMETERS
@@ -928,7 +947,7 @@ class OptionsFlow_iCloud3Device_Steps:
 
         if utils_cf.any_errors(self):
             self.errors['base'] = 'update_aborted'
-            return self.async_show_form(step_id='async_step_update_other_device_parameters',
+            return self.async_show_form(step_id='update_other_device_parameters',
                             data_schema=forms.form_update_other_device_parameters(self),
                             errors=self.errors)
 
@@ -936,6 +955,7 @@ class OptionsFlow_iCloud3Device_Steps:
             list_add(self.config_parms_update_control, ['devices', devicename])
             tfz_changed = (user_input[CONF_TRACK_FROM_ZONES] != self.conf_device[CONF_TRACK_FROM_ZONES])
             self.conf_device.update(user_input)
+            self.header_msg = 'conf_updated'
 
             if tfz_changed:
                 sensors_cf.update_track_from_zones_sensors(self, user_input)
@@ -993,6 +1013,10 @@ class OptionsFlow_iCloud3Device_Steps:
         track_from_zones.append(self.conf_device[CONF_TRACK_FROM_BASE_ZONE])
         list_add(track_from_zones, user_input[CONF_TRACK_FROM_BASE_ZONE])
         user_input[CONF_TRACK_FROM_ZONES] = track_from_zones
+
+        # NumberSelector always returns a float, the intervals are integer minutes
+        user_input[CONF_INZONE_INTERVAL] = int(user_input[CONF_INZONE_INTERVAL])
+        user_input[CONF_FIXED_INTERVAL]  = int(user_input[CONF_FIXED_INTERVAL])
 
         if is_between(user_input[CONF_FIXED_INTERVAL], 1, 2):
             user_input[CONF_FIXED_INTERVAL] = 3

@@ -328,7 +328,7 @@ class EventLog(object):
                     # Drop previous msg if it was an Update Started msg
                     for idx in range(0, 8):
                         if self.event_recds[idx][ELR_TEXT].startswith(EVLOG_UPDATE_START):
-                            self.event_recds[idx].pop()
+                            self.event_recds.pop(idx)
                             return
                         if self.is_monitor_recd(self.event_recds[idx]) is False:
                             break

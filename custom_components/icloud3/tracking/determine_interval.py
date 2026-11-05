@@ -350,8 +350,9 @@ def determine_interval(Device, FromZone):
 
     try:
         #Real close, final check to make sure interval_secs is not adjusted
-        if (interval_secs <= 60
-                or ((0 > Device.dev_data_battery_level >= 33) and interval_secs >= 120)):
+        # Removed (11/01/2026) the 'or ((0 > Device.dev_data_battery_level >= 33) and
+        # interval_secs >= 120)' battery clause, it could never be True
+        if interval_secs <= 60:
             interval_multiplier = 1
 
         interval_secs     = interval_secs * interval_multiplier
@@ -430,8 +431,8 @@ def determine_interval(Device, FromZone):
 
         if isin_zone_home and Device.is_tracked:
             Device.set_button_suffix_icon(HOME_ICON, add_char=True)
-        elif instr(Device.set_button_suffix_icon, HOME_ICON):
-            Device.set_button_suffix_icon()
+        elif instr(Device.evlog_button_suffix_icon, HOME_ICON):
+            Device.set_button_suffix_icon(HOME_ICON, remove_char=True)
 
         # Update all dates and other fields
         Device.loc_data_dist_moved_km = dist_moved_km

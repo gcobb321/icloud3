@@ -77,7 +77,7 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_away_time_zone(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'menu':
             return await self.async_step_menu()
 
         user_input = self._update_away_time_zone_changes(user_input)
@@ -172,7 +172,7 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_tracking_parameters(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'menu':
             return await self.async_step_menu()
 
         if utils_cf.no_errors(self):
@@ -211,7 +211,7 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_format_settings(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'menu':
             return await self.async_step_menu()
 
         if utils_cf.no_errors(self):
@@ -289,7 +289,7 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_inzone_intervals(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'menu':
             return await self.async_step_menu()
 
         if utils_cf.no_errors(self):
@@ -325,7 +325,7 @@ class OptionsFlow_Parameters_Steps:
 
         for pname, pvalue in user_input_copy.items():
             if (pname not in self.errors and pname in config_inzone_interval):
-                config_inzone_interval[pname] = pvalue
+                config_inzone_interval[pname] = int(pvalue)
                 user_input.pop(pname, '')
 
         user_input[CONF_INZONE_INTERVALS] = config_inzone_interval
@@ -344,7 +344,7 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_waze_main(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'menu':
             return await self.async_step_menu()
 
         if utils_cf.no_errors(self):
@@ -395,7 +395,7 @@ class OptionsFlow_Parameters_Steps:
                             data_schema=forms.form_special_zones(self),
                             errors=self.errors)
 
-        if action_item == 'cancel_goto_menu':
+        if action_item == 'menu':
             return await self.async_step_menu()
 
         if utils_cf.no_errors(self):
@@ -485,7 +485,7 @@ class OptionsFlow_Parameters_Steps:
             self.dta_selected_idx = UNSELECTED_IDX
             return await self.async_step_menu()
 
-        if action_item == 'save' and utils_cf.no_errors(self):
+        if action_item == 'save_menu' and utils_cf.no_errors(self):
             idx = self.dta_selected_idx = UNSELECTED_IDX
             dta_working_copy_list = DEFAULT_GENERAL_CONF[CONF_DISPLAY_TEXT_AS].copy()
             for temp_dta_text in self.dta_working_copy.values():

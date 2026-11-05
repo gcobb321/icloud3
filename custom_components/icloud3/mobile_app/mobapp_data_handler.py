@@ -22,7 +22,6 @@ from ..utils.time_util  import (secs_to_time, secs_since, secs_to_hhmm, time_now
                                     format_time_age, format_age,  )
 from ..utils.dist_util    import (format_dist_km, format_dist_m, )
 
-from ..mobile_app           import mobapp_interface
 from ..tracking             import stationary_zone as statzone
 from ..utils                import entity_io
 
@@ -301,7 +300,7 @@ def check_mobapp_state_trigger_change(Device):
         if (Device.mobapp_data_trigger == ENTER_ZONE
                 and is_statzone(Device.mobapp_data_state)
                 and Device.isin_statzone
-                and secs_since(Device.loc_data_secs <= 15)):
+                and secs_since(Device.loc_data_secs) <= 15):
             Device.mobapp_data_reject_reason = "Enter into StatZone just created"
 
         # Discard if already in the zone
@@ -331,7 +330,7 @@ def check_mobapp_state_trigger_change(Device):
         # No update needed if no location changes
         elif (Device.mobapp_data_state == Device.loc_data_zone      #Device.last_update_loc_zone
                 and f'{Device.mobapp_data_latitude:.5f}'  == f'{Device.loc_data_latitude:.5f}'
-                and f'{Device.mobapp_data_longitude:.5f}' == f'{Device.loc_data_longitude:.5f})'):
+                and f'{Device.mobapp_data_longitude:.5f}' == f'{Device.loc_data_longitude:.5f}'):
             Device.mobapp_data_reject_reason = "No Location Change"
 
         # MobApp location changed and State changed more than 5-secs after last locate
@@ -447,15 +446,6 @@ def check_if_mobapp_is_alive(Device):
         if (Device.is_mobapp_monitored is False
                 or Device.is_offline
                 or Device.mobapp[NOTIFY] == ''):
-            return
-
-        # Send a location request if the mobapp data is more than 'alive Interval'
-        # and the check for request sent > 1 hr ago. Only send once an hour.
-        if (secs_since(Device.mobapp_request_loc_first_secs) % Gb.mobapp_alive_interval_secs == 0
-                and secs_since(Device.mobapp_data_secs) > Gb.mobapp_alive_interval_secs
-                and secs_since(Device.mobapp_data_trigger_secs) > Gb.mobapp_alive_interval_secs):
-            mobapp_interface.request_location(Device, is_alive_check=True)
-
             return
 
         # No activity, display Alert msg in Event Log

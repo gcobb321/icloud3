@@ -209,7 +209,8 @@ def form_update_device(self):
 
     if Gb.internet_error:
             self.errors['base'] = 'internet_error'
-    elif self.errors != {}:
+    # Only field errors get the 'review' msg, a header msg (conf_updated) is already in 'base'
+    elif any(pname != 'base' for pname in self.errors):
         self.errors['base'] = 'unknown_value'
 
     if devicename in Gb.ha_disabled_by_by_devicename:

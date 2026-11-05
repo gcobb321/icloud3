@@ -93,7 +93,7 @@ class OptionsFlow_Sensors_Steps:
                 self.excluded_sensors = user_input[CONF_EXCLUDED_SENSORS]
                 return await self.async_step_exclude_sensors()
 
-            if action_item == 'save':
+            if action_item == 'save_menu':
                 (sensors_to_add, sensors_to_remove,
                 sensors_to_exclude, sensors_to_not_exclude) = \
                             sensors_cf.identify_new_and_removed_sensors(self, user_input)

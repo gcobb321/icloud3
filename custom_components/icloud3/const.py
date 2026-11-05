@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 VERSION                         = '3.8.0'
-VERSION_BETA                    = '3'
+VERSION_BETA                    = '4'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 PLATFORMS                       = ['sensor', 'device_tracker', 'button', 'text']
@@ -159,6 +159,9 @@ DEVICE_TYPES_TRACK_MONITOR = [
 DEVICE_TYPE_DEFAULT_TRACKING_MODE = {
         IPHONE: TRACK,
         WATCH: TRACK,
+        APPLE_WATCH: TRACK,
+        WATCH_WIFI: TRACK,
+        IPAD_CELL: TRACK,
         IPAD: MONITOR,
         MAC: MONITOR,
 }
@@ -399,6 +402,10 @@ ERR_UNKNOWN_AA      = " ⛔ UNKNOWN APPLE ACCT"
 ERR_UNKNOWN_MOBAPP  = " ⛔ UNKNOWN MOBAPP"
 ERR_ICLOUD_DISABLED = " 🔸 ICLOUD DISABLED"
 ERR_USERNAME_PW     = " ⛔ INVALID USERNAME/PW"
+# post_config_error error of an invalid username/password or a password decode error
+# (ValidateAppleAcctUPW), cleared when the Apple Acct is logged into in Configure
+UPW_INVALID_ERROR   = "Invalid Username/Password"
+UPW_ACCT_LOCKED_ERROR = "Apple Acct is Locked"      # 403, Apple serviceError -20209
 ERR_INACTIVE        = " 🔸 INACTIVE"
 ERR_DISABLED_HA     = " 🔸 DISABLED IN HA"
 ERR_NOT_AVAIL       = " 🔸 NOT AVAILABLE"

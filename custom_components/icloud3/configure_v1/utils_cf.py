@@ -189,8 +189,9 @@ def action_text_to_item(self, user_input):
                 action_item = action_item[0]
 
             else:
-                action_item = 'cancel_goto_menu'
-                self.base = 'unknown_action'
+                action_item = ''
+                if self.errors is None: self.errors = {}
+                self.errors['base'] = 'unknown_action'
 
         if action_item == 'cancel_goto_menu':
             self.header_msg = None
@@ -306,7 +307,7 @@ def option_parm_to_text(self, pname, option_list_key_text, conf_device=False):
         elif type(pvalue_key) is list:
             return [option_list_key_text[pvalue_key_item] for pvalue_key_item in pvalue_key]
 
-        return option_list_key_text.values()[0]
+        return list(option_list_key_text.values())[0]
 
     except Exception as err:
         log_exception(err)

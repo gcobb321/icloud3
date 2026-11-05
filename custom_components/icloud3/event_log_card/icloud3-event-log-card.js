@@ -1998,7 +1998,6 @@ class iCloud3EventLogCard extends HTMLElement {
         const title        = root.getElementById('title')
 
         var logs = hass.states['sensor.icloud3_event_log'].attributes['logs']
-        var startedTime = hass.states['sensor.icloud3_event_log'].attributes['started_time']
 
         /*
         The Evlog table has been built and displayed but Hass usually calls this routine a
@@ -2073,6 +2072,8 @@ class iCloud3EventLogCard extends HTMLElement {
                 var recdType = 'text'
                 var tTime = thisRecd[0].slice(1)
                 var tText = thisRecd[1].slice(0, -1)
+                //If displaying a table, the State & Interval can contain column titles
+                var txtTblFlag = tText.includes("¤s")
 
                 if (tText.startsWith("^t^")) {
                     tText = tText.slice(3)
@@ -2201,11 +2202,8 @@ class iCloud3EventLogCard extends HTMLElement {
                 tText = tText.replace(/⠟/g, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                 tText = tText.replace(/⠿/g, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
 
-                //If displaying a table, the State & Interval can contain column titles
                 var classTable = ''
-                var txtTblFlag = false
-                if (tText.includes("¤s")) {
-                    txtTblFlag = true
+                if (txtTblFlag) {
                     classTable = ' txtTblStyle'
                 }
 
@@ -2612,28 +2610,29 @@ class iCloud3EventLogCard extends HTMLElement {
     }
 
     //---------------------------------------------------------------------------
-    _issue_evlog_version_svc_call() {
-        /* Send an 'icloud3_action evlog_started' service call to iC3 to indicated the
-        event_log has started. If this does not happen within a minute of starting iC3,
-        an error message will be displayed indicating a restart is needed.
-        */
-        const root = this.shadowRoot
-        const hass = this._hass
-
-        if (this._versionSentFlag == true) {
-            return
-        }
-        if (this._version == this._latestVersion) {
-            this._versionSentFlag = true
-            return
-        } else {
-            this._versionSentFlag = false
-        }
-
-        this._hass.callService("icloud3", "action",
-                        {command: 'event_log_version ' + this._version})
-        this._versionSentFlag = true
-    }
+    // UNUSED (11/01/2026) - not called anywhere. Commented out, delete after v3.8.0
+    // _issue_evlog_version_svc_call() {
+    //     /* Send an 'icloud3_action evlog_started' service call to iC3 to indicated the
+    //     event_log has started. If this does not happen within a minute of starting iC3,
+    //     an error message will be displayed indicating a restart is needed.
+    //     */
+    //     const root = this.shadowRoot
+    //     const hass = this._hass
+    //
+    //     if (this._versionSentFlag == true) {
+    //         return
+    //     }
+    //     if (this._version == this._latestVersion) {
+    //         this._versionSentFlag = true
+    //         return
+    //     } else {
+    //         this._versionSentFlag = false
+    //     }
+    //
+    //     this._hass.callService("icloud3", "action",
+    //                     {command: 'event_log_version ' + this._version})
+    //     this._versionSentFlag = true
+    // }
 
     //---------------------------------------------------------------------------
     _btnRefreshHandler() {

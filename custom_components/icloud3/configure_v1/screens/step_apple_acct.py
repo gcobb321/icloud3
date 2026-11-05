@@ -84,7 +84,6 @@ class OptionsFlow_AppleAccount_Steps:
 
         # No Apple Accts, default to Add, this will transfer to update_apple-acct below
         if self._is_apple_acct_setup() is False:
-            # self.errors['apple_accts'] = 'apple_acct_not_set_up'
             user_input = {'apple_accts': '➤ ADD'}
 
         elif isnot_empty(Gb.conf_apple_accounts):
@@ -424,7 +423,10 @@ class OptionsFlow_AppleAccount_Steps:
                 if upw_valid is False:
                     self.actions_list_default = 'add_change_apple_acct'
                     self.errors['base'] = ''
-                    self.errors[CONF_APPLE_ACCT] = self._login_error_msg('apple_acct_inupw_valid')
+                    # The validation's AppleAcct has the error, not self.AppleAcct (the
+                    # logged into acct), it would always be the default msg
+                    self.errors[CONF_APPLE_ACCT] = self._login_error_msg('apple_acct_inupw_valid',
+                                                AppleAcct=Gb.ValidateAppleAcctUPW.AppleAcct)
 
                     # Apple rejected it, only keep an acct that could not be invalidated
                     # (throttled, no response). The entered data is still redisplayed.
@@ -672,6 +674,8 @@ class OptionsFlow_AppleAccount_Steps:
                 return 'apple_acct_login_error_503'
             if AppleAcct.response_code == 302:
                 return 'apple_acct_login_error_302'
+            if AppleAcct.response_code == 403 and AppleAcct.account_locked:
+                return 'apple_acct_locked_security'
             if AppleAcct.response_code == 403:
                 return 'apple_acct_locked'
             if AppleAcct.response_code == 401:
@@ -812,6 +816,8 @@ class OptionsFlow_AppleAccount_Steps:
         device_action = user_input['device_action']
         conf_apple_id = self.conf_apple_acct[CONF_APPLE_ACCT]
 
+        self.pause_all_tracking_until_restart()
+
         # Cycle thru config and get the apple_id being deleted. Delete or update it
         updated_conf_devices = []
         for conf_device in Gb.conf_devices:
@@ -832,7 +838,8 @@ class OptionsFlow_AppleAccount_Steps:
                 icloud_dname = conf_device[CONF_AADEV_NAME]
                 other_apple_acct = [AppleAcct.apple_id
                                         for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items()
-                                        if icloud_dname in AppleAcct.device_id_by_aadev_dname]
+                                        if (apple_id != conf_apple_id
+                                            and icloud_dname in AppleAcct.device_id_by_aadev_dname)]
                 if other_apple_acct == []:
                     conf_device[CONF_APPLE_ACCT] = ''
                     conf_device[CONF_TRACKING_MODE] = INACTIVE
@@ -843,8 +850,18 @@ class OptionsFlow_AppleAccount_Steps:
         Gb.conf_devices = updated_conf_devices
         self.update_config_file_tracking(user_input={}, force_config_update=True)
 
+        # Remove the HA orange Reauthenticate button if it was for this Apple Acct and no
+        # other Apple Acct needs it. It would open the reauth screen for a deleted account.
+        was_reauth_needed_apple_acct = (Gb.AppleAcct_reauth_needed is not None
+                                        and Gb.AppleAcct_reauth_needed.apple_id == conf_apple_id)
+
         aas.delete_AppleAcct_Gb_variables_apple_id(conf_apple_id)
         self._update_conf_apple_acct(self.aa_idx, user_input, remove_acct_flag=True)
+
+        if (was_reauth_needed_apple_acct
+                and any(AppleAcct.is_reauth_needed
+                            for AppleAcct in Gb.AppleAcct_by_apple_id.values()) is False):
+            self._reset_ha_orange_reauth_button()
 
         return user_input
 
