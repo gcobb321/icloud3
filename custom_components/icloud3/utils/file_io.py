@@ -240,7 +240,12 @@ def delete_file(filename):
         log_exception(err)
 
 def copy_file(from_dir_filename, to_directory):
-    shutil.copy(from_dir_filename, to_directory)
+    try:
+        os.chmod(to_directory, 0o644)
+    except OSError:
+        pass
+
+    shutil.copyfile(from_dir_filename, to_directory)
 
 def move_files(from_dir_filename, to_directory):
     shutil.move(from_dir_filename, to_directory)
