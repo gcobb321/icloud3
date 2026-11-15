@@ -41,7 +41,7 @@ import requests
 
 # from requests.exceptions    import ConnectionError
 
-from os                     import path, replace
+from os                     import path, replace, stat
 from tempfile               import TemporaryDirectory
 import inspect
 import json
@@ -147,6 +147,15 @@ app specific password notes
 # those hosts only. All other URLs remain unrestricted (IPv4/IPv6).
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def _file_version(filename):
+    """Identify a saved session file without reading its credentials."""
+    try:
+        info = stat(filename)
+    except FileNotFoundError:
+        return None
+    return info.st_ino, info.st_mtime_ns, info.st_size
+
+
 class _IPv4OnlyAdapter(adapters.HTTPAdapter):
     '''
     Forces IPv4-only DNS resolution for Apple authentication
@@ -255,18 +264,33 @@ class iCloudSession(Session):
                 retried=retried,
                 retry_cnt=retry_cnt)
 
-    def renew_trust_cookie(self, current_cookie, login_data):
+    def renew_trust_cookie(self, current_cookie):
         """Use the saved tokens to extend the existing web trust cookie."""
         account = self.AppleAcct
-        session_data = account.session_data.copy()
+        cookies = cast(PyiCloudCookieJar, self.cookies)
         try:
             # Keep challenge responses and their cookies out of the tracking session.
             with Session() as probe:
-                probe.headers.update(self.headers)
-                probe.cookies.update(self.cookies)
+                with cookies.transaction():
+                    if (self.cookies is not cookies or account.iCloudSession is not self
+                            or cookies.get_cookie(TRUST_COOKIE_NAME) is not current_cookie):
+                        return False
+                    login_data = account._token_login_data()
+                    if not login_data["dsWebAuthToken"] or not login_data["trustToken"]:
+                        return False
+                    session_data = account.session_data.copy()
+                    dsid = account.dsid
+                    params = account.params.copy()
+                    filename = account.cookies_filename
+                    session_filename = account.session_filename
+                    cookie_version = _file_version(filename)
+                    session_version = _file_version(session_filename)
+                    probe.headers.update(self.headers)
+                    probe.cookies.update(cookies)
+
                 response = probe.post(
                     f"{account.SETUP_ENDPOINT}/accountLogin",
-                    params=account.params.copy(),
+                    params=params,
                     json=login_data,
                     timeout=12,
                     allow_redirects=False,
@@ -284,7 +308,7 @@ class iCloudSession(Session):
                     or auth.get("hsaChallengeRequired") is not False
                     or not isinstance(ds_info, dict)
                     or not ds_info.get("dsid")
-                    or str(ds_info["dsid"]) != str(account.dsid)):
+                    or str(ds_info["dsid"]) != str(dsid)):
                 return False
 
             renewed = next(
@@ -299,19 +323,24 @@ class iCloudSession(Session):
                     or renewed.expires <= current_cookie.expires):
                 return False
 
-            filename = account.cookies_filename
-            with TemporaryDirectory(dir=path.dirname(filename)) as directory:
-                pending = PyiCloudCookieJar(filename=path.join(directory, "cookies"))
-                for cookie in self.cookies:
-                    pending.set_cookie(cookie)
-                pending.set_cookie(renewed)
-                pending.save()
-
-                if (account.session_data != session_data
-                        or self.cookies.get_cookie(TRUST_COOKIE_NAME) is not current_cookie):
+            # Another manager for this Apple Account can write the same files.
+            # Check the saved versions and commit while holding the writers' lock.
+            with cookies.transaction():
+                if (self.cookies is not cookies or account.iCloudSession is not self
+                        or account.session_data != session_data or account.dsid != dsid
+                        or cookies.get_cookie(TRUST_COOKIE_NAME) is not current_cookie
+                        or _file_version(filename) != cookie_version
+                        or _file_version(session_filename) != session_version):
                     return False
-                replace(pending.filename, filename)
-                self.cookies.set_cookie(renewed)
+
+                with TemporaryDirectory(dir=path.dirname(filename)) as directory:
+                    pending = PyiCloudCookieJar(filename=path.join(directory, "cookies"))
+                    for cookie in cookies:
+                        pending.set_cookie(cookie)
+                    pending.set_cookie(renewed)
+                    pending.save()
+                    replace(pending.filename, filename)
+                    cookies.set_cookie(renewed)
 
             return True
         except (OSError, ValueError, requests.RequestException):
@@ -465,22 +494,22 @@ class iCloudSession(Session):
                 and response.status_code in [401, 409]):
             return response.status_code
 
-        for header_key, session_arg in HEADER_DATA.items():
-            response_header_value = response.headers.get(header_key)
-            if response_header_value:
-                self.AppleAcct.session_data.update({session_arg: response_header_value})
+        cookies = cast(PyiCloudCookieJar, self.cookies)
+        with cookies.transaction():
+            for header_key, session_arg in HEADER_DATA.items():
+                response_header_value = response.headers.get(header_key)
+                if response_header_value:
+                    self.AppleAcct.session_data.update({session_arg: response_header_value})
 
-        # cookie variable reference - self.ookies._cookies['.apple.com']['/']['acn01'].expires
-        if self.AppleAcct.validate_aa_upw is False:
-            try:
-                cast(PyiCloudCookieJar, self.cookies).save()
-                log_debug_msg(f"Saved cookies data to file {self.AppleAcct.cookies_filename_short}")
+            if self.AppleAcct.validate_aa_upw is False:
+                try:
+                    cookies.save()
+                    log_debug_msg(f"Saved cookies data to file {self.AppleAcct.cookies_filename_short}")
+                except (OSError, ValueError) as err:
+                    log_warning_msg(f"Failed to save cookies data to file {self.AppleAcct.cookies_filename_short}, "
+                                    f"Error-{err}")
 
-            except (OSError, ValueError) as err:
-                log_warning_msg(f"Failed to saved cookies data to file {self.AppleAcct.cookies_filename_short}, "
-                                f"Error-{err}")
-
-            save_json_file(self.AppleAcct.session_filename, self.AppleAcct.session_data)
+                save_json_file(self.AppleAcct.session_filename, self.AppleAcct.session_data)
 
         if data and "webservices" in data:
             try:

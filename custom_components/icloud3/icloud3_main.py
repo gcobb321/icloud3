@@ -80,6 +80,7 @@ from .utils.dist_util   import (km_to_um, m_to_um_ft, )
 import time
 import traceback
 from re import match
+from threading import Lock
 import homeassistant.util.dt        as dt_util
 from   homeassistant.helpers.event  import (track_utc_time_change)
 
@@ -99,6 +100,7 @@ class iCloud3:
 
         Gb.polling_5_sec_loop_running      = False
         self.unsub_5sec_loop               = None   # track_utc_time_change cancel function
+        self._poll_lock                    = Lock()
         self.pyicloud_refresh_time         = {}     # Last time Pyicloud was refreshed for the trk method
         self.pyicloud_refresh_time[ICLOUD] = 0
         self.attributes_initialized_flag   = False
@@ -287,6 +289,15 @@ class iCloud3:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     def master_5sec_interval_handler(self, ha_timer_secs):
+        # HA can dispatch the next tick while a worker is still doing maintenance.
+        if not self._poll_lock.acquire(blocking=False):
+            return
+        try:
+            self._run_5sec_interval()
+        finally:
+            self._poll_lock.release()
+
+    def _run_5sec_interval(self):
         Gb.this_update_secs = time_now_secs()
         Gb.this_update_time = time_now()
 

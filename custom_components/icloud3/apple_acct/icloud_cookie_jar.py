@@ -5,7 +5,9 @@ from ..utils.messaging   import (_log, log_info_msg, log_exception, )
 from ..utils.rawdata_logging import (shrink_item, )
 from ..utils.time_util   import (secs_to_datetime, format_date_time)
 
+from contextlib import contextmanager
 from http.cookiejar import LWPCookieJar
+from threading import RLock
 from typing import Optional
 import time
 from datetime import datetime
@@ -13,6 +15,7 @@ from datetime import datetime
 from requests.cookies import RequestsCookieJar
 
 _FMIP_AUTH_COOKIE_NAME: str = "X-APPLE-WEBAUTH-FMIP"
+SESSION_FILES_LOCK = RLock()
 
 
 class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
@@ -29,6 +32,12 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
             return  # No-op if no filename is bound
         return resolved
 
+    @contextmanager
+    def transaction(self):
+        """Serialize file writers and cookie extraction during a session update."""
+        with SESSION_FILES_LOCK, self._cookies_lock:
+            yield
+
     def load(
         self,
         filename: Optional[str] = None,
@@ -39,22 +48,20 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
         resolved: Optional[str] = self._resolve_filename(filename)
         if not resolved:
             return  # No-op if no filename is bound
-        super().load(
-            filename=resolved,
-            ignore_discard=ignore_discard,
-            ignore_expires=ignore_expires,
-        )
-        # Clear any FMIP cookie regardless of domain/path to avoid stale auth.
-        cookies_to_clear: list[tuple[str, str, str]] = [
-            (cookie.domain, cookie.path, cookie.name)
-            for cookie in self
-            if cookie.name == _FMIP_AUTH_COOKIE_NAME
-        ]
-        for domain, path, name in cookies_to_clear:
-            try:
+        with self.transaction():
+            super().load(
+                filename=resolved,
+                ignore_discard=ignore_discard,
+                ignore_expires=ignore_expires,
+            )
+            # Clear any FMIP cookie regardless of domain/path to avoid stale auth.
+            cookies_to_clear = [
+                (cookie.domain, cookie.path, cookie.name)
+                for cookie in self
+                if cookie.name == _FMIP_AUTH_COOKIE_NAME
+            ]
+            for domain, path, name in cookies_to_clear:
                 self.clear(domain=domain, path=path, name=name)
-            except KeyError:
-                pass
 
     def save(
         self,
@@ -66,11 +73,12 @@ class PyiCloudCookieJar(RequestsCookieJar, LWPCookieJar):
         resolved: Optional[str] = self._resolve_filename(filename)
         if not resolved:
             return  # No-op if no filename is bound
-        super().save(
-            filename=resolved,
-            ignore_discard=ignore_discard,
-            ignore_expires=ignore_expires,
-        )
+        with self.transaction():
+            super().save(
+                filename=resolved,
+                ignore_discard=ignore_discard,
+                ignore_expires=ignore_expires,
+            )
 
     def list(self, selected_cookie=None):
         _log_msg = ''

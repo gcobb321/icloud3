@@ -1,6 +1,7 @@
 from copy import copy
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import Event, Thread
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -32,9 +33,15 @@ class TrustCookieRenewalTests(unittest.TestCase):
             params={"clientId": "client"},
             dsid="123",
             cookies_filename=self.filename,
+            cookies_filename_short="cookies",
+            session_filename=str(Path(directory) / "session.json"),
+            iCloudSession=self.transport,
+            validate_aa_upw=False,
         )
-        session_class = self.enterContext(patch.object(icloud_session, "Session"))
-        self.probe = session_class.return_value.__enter__.return_value
+        account = self.transport.AppleAcct
+        account._token_login_data = lambda: apple_acct.AppleAcctManager._token_login_data(account)
+        self.session_class = self.enterContext(patch.object(icloud_session, "Session"))
+        self.probe = self.session_class.return_value.__enter__.return_value
         self.probe.cookies = requests.cookies.RequestsCookieJar()
         self.response = self.probe.post.return_value
         self.response.status_code = 200
@@ -48,11 +55,12 @@ class TrustCookieRenewalTests(unittest.TestCase):
 
     def test_renewed_expiry_persists_for_the_existing_cookie(self):
         self.response.cookies.append(requests.cookies.create_cookie("unrelated", "value"))
-        self.assertTrue(self.transport.renew_trust_cookie(self.current, {"extended_login": True}))
+        self.assertTrue(self.transport.renew_trust_cookie(self.current))
         self.probe.post.assert_called_once()
         self.assertEqual(self.probe.post.call_args.args[0],
                          "https://setup.icloud.com/setup/ws/1/accountLogin")
         self.assertFalse(self.probe.post.call_args.kwargs["allow_redirects"])
+        self.assertEqual(self.probe.post.call_args.kwargs["json"]["dsWebAuthToken"], "web-token")
         self.assertEqual(list(self.transport.cookies), [self.renewed])
         saved = PyiCloudCookieJar(filename=self.filename)
         saved.load()
@@ -77,7 +85,7 @@ class TrustCookieRenewalTests(unittest.TestCase):
                 self.response.status_code = status
                 self.response.json.return_value = body
                 self.response.cookies = cookies
-                self.assertFalse(self.transport.renew_trust_cookie(self.current, {}))
+                self.assertFalse(self.transport.renew_trust_cookie(self.current))
                 self.assertEqual(list(self.transport.cookies), [self.current])
                 self.assertEqual(Path(self.filename).read_bytes(), self.original_file)
 
@@ -87,7 +95,7 @@ class TrustCookieRenewalTests(unittest.TestCase):
             return self.response
 
         self.probe.post.side_effect = sign_in
-        self.assertFalse(self.transport.renew_trust_cookie(self.current, {}))
+        self.assertFalse(self.transport.renew_trust_cookie(self.current))
         self.assertEqual(list(self.transport.cookies), [self.current])
         self.assertEqual(Path(self.filename).read_bytes(), self.original_file)
 
@@ -95,9 +103,81 @@ class TrustCookieRenewalTests(unittest.TestCase):
         with patch.object(icloud_session, "replace", side_effect=OSError), patch.object(
             icloud_session, "log_warning_msg"
         ):
-            self.assertFalse(self.transport.renew_trust_cookie(self.current, {}))
+            self.assertFalse(self.transport.renew_trust_cookie(self.current))
         self.assertEqual(list(self.transport.cookies), [self.current])
         self.assertEqual(Path(self.filename).read_bytes(), self.original_file)
+
+    def test_sign_in_at_file_replacement_keeps_the_newer_cookie(self):
+        account = self.transport.AppleAcct
+        jar = self.transport.cookies
+        newer = copy(self.renewed)
+        newer.value = "interactive-trust"
+        writer_ready = Event()
+        result = []
+
+        response = requests.Response()
+        response.status_code = 200
+        response.headers.update({
+            "Content-Type": "application/json",
+            "X-Apple-Session-Token": "interactive-token",
+        })
+        response._content = b"{}"
+
+        def complete_sign_in(*args, **kwargs):
+            # Simulate Requests extracting cookies before _request saves the response.
+            if jar._cookies_lock.acquire(blocking=False):
+                jar._cookies_lock.release()
+            else:
+                writer_ready.set()
+            jar.set_cookie(newer)
+            return response
+
+        def interactive_sign_in():
+            result.append(self.transport._request("POST", f"{account.SETUP_ENDPOINT}/accountLogin"))
+            writer_ready.set()
+
+        writer = Thread(target=interactive_sign_in, daemon=True)
+        replace = icloud_session.replace
+
+        def replace_while_sign_in_is_ready(source, destination):
+            writer.start()
+            self.assertTrue(writer_ready.wait(3))
+            return replace(source, destination)
+
+        self.session_class.request.side_effect = complete_sign_in
+        self.transport._is_test_acct_locked = Mock(return_value=False)
+        with patch.object(icloud_session, "replace", side_effect=replace_while_sign_in_is_ready), patch.object(
+            icloud_session, "log_request_data"
+        ), patch.object(icloud_session, "log_debug_msg"), patch.object(
+            icloud_session.Gb, "internet_error", False
+        ):
+            self.assertTrue(self.transport.renew_trust_cookie(self.current))
+            writer.join(3)
+            self.assertFalse(writer.is_alive())
+
+        self.assertEqual(result, [{}])
+        self.assertEqual(account.session_data["session_token"], "interactive-token")
+        self.assertIs(jar.get_cookie(TRUST_COOKIE_NAME), newer)
+        persisted = PyiCloudCookieJar(filename=self.filename)
+        persisted.load()
+        self.assertEqual(persisted.get_cookie(TRUST_COOKIE_NAME).value, newer.value)
+
+    def test_sign_in_from_another_client_wins_during_the_probe(self):
+        newer = copy(self.renewed)
+        newer.value = "other-client-trust"
+
+        def save_from_another_client(*args, **kwargs):
+            other = PyiCloudCookieJar(filename=self.filename)
+            other.set_cookie(newer)
+            other.save()
+            return self.response
+
+        self.probe.post.side_effect = save_from_another_client
+        self.assertFalse(self.transport.renew_trust_cookie(self.current))
+        persisted = PyiCloudCookieJar(filename=self.filename)
+        persisted.load()
+        self.assertEqual(persisted.get_cookie(TRUST_COOKIE_NAME).value, newer.value)
+        self.assertEqual(list(self.transport.cookies), [self.current])
 
     def test_daily_check_only_uses_a_live_near_expiry_cookie(self):
         account = object.__new__(apple_acct.AppleAcctManager)
@@ -121,6 +201,4 @@ class TrustCookieRenewalTests(unittest.TestCase):
 
             account.is_reauth_needed = False
             account.renew_trust_cookie_if_needed()
-            account.iCloudSession.renew_trust_cookie.assert_called_once_with(
-                self.current, account._token_login_data(),
-            )
+            account.iCloudSession.renew_trust_cookie.assert_called_once_with(self.current)

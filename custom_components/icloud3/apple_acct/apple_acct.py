@@ -42,7 +42,7 @@ from .apple_acct_devices    import iCloud_AppleAcctDevices
 from .srp_password          import SrpPassword
 from .icloud_hwkey          import iCloud_HwKey
 from .                      import icloud_requests_io  as icloud_io
-from .icloud_cookie_jar     import PyiCloudCookieJar
+from .icloud_cookie_jar     import PyiCloudCookieJar, SESSION_FILES_LOCK
 import http.cookiejar as cookielib
 
 #--------------------------------------------------------------------
@@ -323,7 +323,8 @@ class AppleAcctManager(object):
 
             add_log_file_filter(password)
 
-            self._setup_iCloudSession()
+            with SESSION_FILES_LOCK:
+                self._setup_iCloudSession()
             self._initialize_variables()
 
             # Lightweight Username/Password validation only. The session has been
@@ -346,8 +347,9 @@ class AppleAcctManager(object):
                 post_alert( f"Apple Acct > {self.apple_user}, "
                             f"Resetting cookie and session files, "
                             f"Retrying Authentication and data refresh")
-                self.delete_cookie_and_session_files()
-                self._setup_iCloudSession()
+                with SESSION_FILES_LOCK:
+                    self.delete_cookie_and_session_files()
+                    self._setup_iCloudSession()
                 self._initialize_variables()
                 self.authenticate_and_refresh_data()
 
@@ -1290,7 +1292,7 @@ class AppleAcctManager(object):
         if not 0 < remaining_secs <= 14 * 24 * 60 * 60:
             return
 
-        if self.iCloudSession.renew_trust_cookie(cookie, self._token_login_data()):
+        if self.iCloudSession.renew_trust_cookie(cookie):
             self.set_trust_token_expire_in_days()
             log_info_msg(f"{self.apple_user}, Web trust cookie renewed")
 
@@ -1724,14 +1726,16 @@ class AppleAcctManager(object):
 #----------------------------------------------------------------------------
     def delete_cookie_and_session_files(self):
 
-        file_io.delete_file(self.cookies_filename)
-        file_io.delete_file(self.session_filename)
+        cookies = self.iCloudSession.cookies
+        with cookies.transaction():
+            file_io.delete_file(self.cookies_filename)
+            file_io.delete_file(self.session_filename)
 
-        self.iCloudSession.cookies.clear()
-        self.iCloudSession.cookies.save()
+            cookies.clear()
+            cookies.save()
 
-        dict_del(self.token_pw_data, 'session_id')
-        dict_del(self.token_pw_data, 'session_token')
+            dict_del(self.token_pw_data, 'session_id')
+            dict_del(self.token_pw_data, 'session_token')
 
 #----------------------------------------------------------------------------
     def delete_trust_cookie(self):
@@ -1747,8 +1751,10 @@ class AppleAcctManager(object):
         if self.auth_methods.get(TEXT_1, '') == '':
             self.delete_cookie_and_session_files()
         else:
-            self.iCloudSession.cookies.delete('X-APPLE-WEBAUTH-HSA-TRUST')
-            self.iCloudSession.cookies.save()
+            cookies = self.iCloudSession.cookies
+            with cookies.transaction():
+                cookies.delete(TRUST_COOKIE_NAME)
+                cookies.save()
 
 #----------------------------------------------------------------------------
     '''
@@ -2307,20 +2313,23 @@ class AppleAcctManager(object):
         already read into session_data, so this has to be done separately.
         '''
         try:
-            self.scnt       = ''
-            self.session_id = ''
-            for session_data_item in self.SRP_SIGNIN_SESSION_DATA:
-                dict_del(self.session_data, session_data_item)
+            with SESSION_FILES_LOCK:
+                self.scnt       = ''
+                self.session_id = ''
+                for session_data_item in self.SRP_SIGNIN_SESSION_DATA:
+                    dict_del(self.session_data, session_data_item)
 
-            if self.iCloudSession is None:
-                return
+                if self.iCloudSession is None:
+                    return
 
-            cookies = self.iCloudSession.cookies
-            cleared_cookies = [ cookie_name
-                                for cookie_name in self.SRP_SIGNIN_SESSION_COOKIES
-                                if cookies.delete(cookie_name)]
-            if cleared_cookies:
-                cookies.save()
+                cookies = self.iCloudSession.cookies
+                with cookies.transaction():
+                    cleared_cookies = [
+                        cookie_name for cookie_name in self.SRP_SIGNIN_SESSION_COOKIES
+                        if cookies.delete(cookie_name)
+                    ]
+                    if cleared_cookies:
+                        cookies.save()
 
             log_debug_msg(  f"{self.apple_user}, Cleared SRP Signin Session, "
                             f"Cookies-{cleared_cookies}")
@@ -2353,17 +2362,16 @@ class AppleAcctManager(object):
         will force Apple to display a new Authentication code
         '''
 
-        self.session_data['session_token'] = ''
-        self.session_data['trust_token']   = ''
-        self.session_token = ''
-        self.trust_token   = ''
+        with SESSION_FILES_LOCK:
+            self.session_data['session_token'] = ''
+            self.session_data['trust_token']   = ''
+            self.session_token = ''
+            self.trust_token   = ''
 
-        self.delete_trust_cookie()
+            self.delete_trust_cookie()
 
-        # The password sign-in that follows must open a brand new idmsa signin
-        # session - the one identified by the current session_id/scnt/aasp is
-        # either spent or stuck at the 2FA step and Apple will refuse it (401)
-        self.clear_srp_signin_session()
+            # The password sign-in needs a new idmsa session.
+            self.clear_srp_signin_session()
 
         self.authenticate()
 
@@ -2398,13 +2406,14 @@ class AppleAcctManager(object):
         if is_empty(saved_session.get('trust_token')):
             return False
 
-        for key, value in saved_session.items():
-            if value is not None:
-                self.session_data[key] = value
-                self.token_pw_data[key] = value
+        with SESSION_FILES_LOCK:
+            for key, value in saved_session.items():
+                if value is not None:
+                    self.session_data[key] = value
+                    self.token_pw_data[key] = value
 
-        self.session_token = saved_session.get('session_token', '')
-        self.trust_token   = saved_session.get('trust_token', '')
+            self.session_token = saved_session.get('session_token', '')
+            self.trust_token   = saved_session.get('trust_token', '')
 
         login_successful = self._authenticate_with_token()
         self.is_reauth_needed = self._set_is_reauth_needed
