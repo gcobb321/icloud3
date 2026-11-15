@@ -748,11 +748,7 @@ class AppleAcctManager(object):
 
             if self.session_data.get("session_token"):
                 self.account_country_code = self.session_data.get("account_country", "")
-                login_data={"accountCountryCode": self.session_data.get("account_country"),
-                            "dsWebAuthToken": self.session_data.get("session_token"),
-                            "extended_login": True,
-                            "trustToken": self.session_data.get("trust_token", ""),
-                            "appName": "iCloud3"}
+                login_data = self._token_login_data()
             else:
                 # self.response_code = 421
                 log_debug_msg(  f"{self.apple_user}, "
@@ -765,6 +761,16 @@ class AppleAcctManager(object):
         login_successful = self.log_into_account(login_data)
 
         return login_successful
+
+#----------------------------------------------------------------------------
+    def _token_login_data(self):
+        return {
+            "accountCountryCode": self.session_data.get("account_country"),
+            "dsWebAuthToken": self.session_data.get("session_token"),
+            "extended_login": True,
+            "trustToken": self.session_data.get("trust_token", ""),
+            "appName": "iCloud3",
+        }
 
 #----------------------------------------------------------------------------
     def log_into_account(self, login_data):
@@ -1253,15 +1259,7 @@ class AppleAcctManager(object):
 
 #----------------------------------------------------------------------------
     def set_trust_token_expire_in_days(self):
-        '''
-        At 1:15am during the end-of-day processing,  update the trust_token_expire_in_days
-        value from the X-APPLE-WEBAUTH-HSA-TRUST cookie. When this reached 45-days,
-        reauthenticatta the Apple acct which creates a new cookie that expires in 90-days.
-        This should eliminate the need of the user getting the popup window that
-        with a new code.
-
-        This is run in authentication() and icloud_main.timer_tasks_midnight()
-        '''
+        """Update the recorded expiry of the Apple web trust cookie."""
         if (self.login_auth_method != "TrustToken"
                 or Gb.is_icloud3_startup_inprocess):
             self.list_cookies()
@@ -1275,6 +1273,26 @@ class AppleAcctManager(object):
         self.trust_token_expire_in_days = self.iCloudSession.cookies.expire_in_days()
 
         return self.trust_token_expire_in_days
+
+#----------------------------------------------------------------------------
+    def renew_trust_cookie_if_needed(self):
+        """Try to extend a still-trusted cookie during daily maintenance."""
+        if (self.validate_aa_upw or not self.is_authenticated or self.is_reauth_needed
+                or not self.session_data.get("session_token")
+                or not self.session_data.get("trust_token")):
+            return
+
+        cookie = self.iCloudSession.cookies.get_cookie(TRUST_COOKIE_NAME)
+        if cookie is None or cookie.expires is None:
+            return
+
+        remaining_secs = cookie.expires - time_now_secs()
+        if not 0 < remaining_secs <= 14 * 24 * 60 * 60:
+            return
+
+        if self.iCloudSession.renew_trust_cookie(cookie, self._token_login_data()):
+            self.set_trust_token_expire_in_days()
+            log_info_msg(f"{self.apple_user}, Web trust cookie renewed")
 
 #--------------------------------------------------------------------
     def _validate_token(self):

@@ -768,7 +768,7 @@ class iCloud3:
         #   - Reset daily counts
         #   - Compress the WazeHist database
         #   - Cycle the iCloud3 log files
-        #   - Set and check  Apple Acct trust token expire days. Reauth at day 45
+        #   - Refresh Apple web trust cookies approaching expiry
         if time_hh == 0 and time_mm == 15:
             self._timer_tasks_midnight()
 
@@ -1598,6 +1598,10 @@ class iCloud3:
         if instr(Gb.conf_general[CONF_LOG_LEVEL], 'auto-reset'):
             start_ic3.set_log_level('info')
             start_ic3.update_conf_file_log_level('info')
+
+        if Gb.use_data_source_ICLOUD and not Gb.internet_error:
+            for account in list(Gb.AppleAcct_by_apple_id.values()):
+                account.renew_trust_cookie_if_needed()
 
         aas.issue_reauth_in_days_alert_msg(evlog_msg=True)
 

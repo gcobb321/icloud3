@@ -19,7 +19,8 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (EVLOG_ALERT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4)
+from ..const                import (EVLOG_ALERT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4,
+                                    TRUST_COOKIE_NAME)
 from ..const_char           import (CRLF_DOT, )
 from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del,
 is_running_in_event_loop, )
@@ -40,7 +41,8 @@ import requests
 
 # from requests.exceptions    import ConnectionError
 
-from os                     import path
+from os                     import path, replace
+from tempfile               import TemporaryDirectory
 import inspect
 import json
 import socket       # ADDED: needed for AF_INET in _IPv4OnlyAdapter
@@ -252,6 +254,69 @@ class iCloudSession(Session):
                 json=json,
                 retried=retried,
                 retry_cnt=retry_cnt)
+
+    def renew_trust_cookie(self, current_cookie, login_data):
+        """Use the saved tokens to extend the existing web trust cookie."""
+        account = self.AppleAcct
+        session_data = account.session_data.copy()
+        try:
+            # Keep challenge responses and their cookies out of the tracking session.
+            with Session() as probe:
+                probe.headers.update(self.headers)
+                probe.cookies.update(self.cookies)
+                response = probe.post(
+                    f"{account.SETUP_ENDPOINT}/accountLogin",
+                    params=account.params.copy(),
+                    json=login_data,
+                    timeout=12,
+                    allow_redirects=False,
+                )
+            if response.status_code != 200:
+                return False
+
+            data = response.json()
+            if not isinstance(data, dict):
+                return False
+            auth = data.get("items", data)
+            ds_info = data.get("dsInfo")
+            if (not isinstance(auth, dict)
+                    or auth.get("hsaTrustedBrowser") is not True
+                    or auth.get("hsaChallengeRequired") is not False
+                    or not isinstance(ds_info, dict)
+                    or not ds_info.get("dsid")
+                    or str(ds_info["dsid"]) != str(account.dsid)):
+                return False
+
+            renewed = next(
+                (cookie for cookie in response.cookies
+                 if (cookie.name, cookie.domain, cookie.path)
+                 == (current_cookie.name, current_cookie.domain, current_cookie.path)),
+                None,
+            )
+            # Refresh the lifetime of the current cookie without mixing in new session tokens.
+            if (renewed is None or renewed.value != current_cookie.value
+                    or not renewed.secure or not renewed.expires
+                    or renewed.expires <= current_cookie.expires):
+                return False
+
+            filename = account.cookies_filename
+            with TemporaryDirectory(dir=path.dirname(filename)) as directory:
+                pending = PyiCloudCookieJar(filename=path.join(directory, "cookies"))
+                for cookie in self.cookies:
+                    pending.set_cookie(cookie)
+                pending.set_cookie(renewed)
+                pending.save()
+
+                if (account.session_data != session_data
+                        or self.cookies.get_cookie(TRUST_COOKIE_NAME) is not current_cookie):
+                    return False
+                replace(pending.filename, filename)
+                self.cookies.set_cookie(renewed)
+
+            return True
+        except (OSError, ValueError, requests.RequestException):
+            log_warning_msg("Unable to renew the Apple web trust cookie")
+            return False
 
     def _request(self, method, url, **kwargs, ):
 
