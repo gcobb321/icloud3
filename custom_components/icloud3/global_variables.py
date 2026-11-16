@@ -181,8 +181,6 @@ class GlobalVariables(object):
     upw_unfilter_items               = {}    # apple_id/pws that are filtered that need to be unfiltered (icloud3_alerts items)
     upw_hide_items                   = []    # apple_id/passwords that should be hidded instead of filtered
 
-    apple_ids_setup_error_retry_list  = []  # apple_ids that failed to set up in Stage 4 and need to be retried
-    devicenames_setup_error_retry_list= []  # devices that failed to set up in Stage 4 and need to be retried
     startup_alerts_by_source          = {}  # alerts during startup by devicename/apple_acct/mobapp device
 
     #polling_5_sec_loop_running = False
@@ -286,9 +284,13 @@ class GlobalVariables(object):
     mobile_app_device_fnames        = []  # fname = name_by_user or name in mobile_app device entry
     model_display_name_by_raw_model = {}
 
-    # From HA Entity Reg file - mobapp_interface.get_entity_registry_mobile_app_devices
+    # From HA Entity Registry - mobapp_interface.get_entity_registry_mobile_app_devices
     mobapp_id_by_mobapp_dname       = {}
     mobapp_dname_by_mobapp_id       = {}
+    mobapp_id_by_disabled_mobapp_dname = {}   # Disabled device_trackers, not in the selection list
+    mobapp_dname_by_webhook_id      = {}      # mobile_app config entry webhook_id, used for notify
+    disabled_sensors_by_mobapp_dname = {}     # {mobapp_dname: {'battery_level': sensor entity_id disabled in HA}}
+    mobapp_dnames_watchos           = []      # watchOS app, no last_update_trigger sensor or notify service
 
     device_info_by_mobapp_dname     = {}  # [mobapp_fname, raw_model, model, model_display_name]
                                             # ['Gary-iPhome (MobApp)','iPhone15,2', 'iPhone', 'iPhone 14 Pro']

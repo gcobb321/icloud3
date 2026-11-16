@@ -9,7 +9,6 @@ it is listed in the Event Log greenbar when it is enabled.
 from ..const_char import (RED_ALERT, CRLF_DOT, )
 
 DISABLE_UPW_FILTER = False # Disable filtering passwords in the icloud3.log file
-HWKEY_AUTH_ENABLED = True
 COUNT_LINES_OF_CODE = False
 
 #--------------------------------------------------------------------
@@ -89,10 +88,11 @@ TERMS_OF_USE_NEEDED_USERNAME = None
 # done when the Apple Acct is saved/logged into in Configure or validated at startup
 # after a password change. None=Off
 ACCT_LOCKED_USERNAME = None
-# ACCT_LOCKED_USERNAME = 'geekstergary@'
+# ACCT_LOCKED_USERNAME = 'geekstergary@gmail.com'
 
 #--------------------------------------------------------------------
-# Apple Account Errors
+# APPLE ACCOUNT ERRORS
+#
 APPLE_ACCT_ERROR = None
 # APPLE_ACCT_ERROR = 'UNKNOWN APPLE ACCT'
 
@@ -104,6 +104,21 @@ UPW_VIA_SRP_CHECK_INVALID = []
 # UPW_VIA_SRP_CHECK_INVALID = ['geekstergary@']
 
 #--------------------------------------------------------------------
+# Simulate the first signin/init of the Username/Password validation (validate_upw_via_srp)
+# returning 400 (-900007) for this Apple Acct (full apple_id or apple_user). The first init
+# is not sent, the retry is the real request. It is done once. None=Off
+SRP_INIT_400_USERNAME = None
+# SRP_INIT_400_USERNAME = 'geekstergary@'
+
+#--------------------------------------------------------------------
+# Simulate the startup Username/Password validation (validate_apple_id_password) ending
+# with 400 (-900007) for this Apple Acct (full apple_id or apple_user), before Method-0.
+# Nothing is sent to Apple. The startup login is still done (start_ic3.log_into_apple_accounts),
+# it is retried later if it fails. It is done once. None=Off
+UPW_VALIDATION_400_USERNAME = None
+# UPW_VALIDATION_400_USERNAME = 'geekstergary@'
+
+#--------------------------------------------------------------------
 # SRP SIGNIN MINIMUM INTERVAL
 #
 # Act as if a Password SRP signin/complete was just sent for this apple_user so the
@@ -113,11 +128,31 @@ UPW_VIA_SRP_CHECK_INVALID = []
 # Username/Password validation does not use the TokenPW match. None=Off
 SRP_SIGNIN_INTERVAL_USERNAME = None
 # SRP_SIGNIN_INTERVAL_USERNAME = 'geekstergary@'
+
 #--------------------------------------------------------------------
 # Mobile App Errors
+#
 MOBAPP_BATTERY_ENTITY_ERROR = False
 MOBAPP_DISABLED             = False
 SCAN_FOR_DUPLICATES         = False
+
+#--------------------------------------------------------------------
+# EVENT LOG TABLE SIZE
+#
+# Override the Event Log table's maximum record count (normally 2000 per track from
+# zone) so the table is shrunk every few minutes instead of every few days/weeks. This
+# tests the EvLog table shrink, grouping and event_recds_lock. 1/3 of the records are
+# deleted on each shrink (500 normally). It is set when the devices are set up in
+# Stage 4 (setup_event_log_trackable_device_info). None=Off
+EVLOG_MAX_RECDS = None
+# EVLOG_MAX_RECDS = 300
+
+#--------------------------------------------------------------------
+# MOBAPP NOTIFY MESSAGE
+#
+# Send a test message to all MobApp devices  in Startup Stage 7
+MOBAPP_NOTIFY_MSG = False
+
 
 
 #--------------------------------------------------------------------
@@ -129,8 +164,6 @@ def test_controls_enabled_msg():
     test_controls_msg = ''
     if DISABLE_UPW_FILTER:
         test_controls_msg += f"{CRLF_DOT}Password Log Filter Disabled (DISABLE_UPW_FILTER)"
-    if HWKEY_AUTH_ENABLED is False:
-        test_controls_msg += f"{CRLF_DOT}Hardware Key Auth Disabled (HWKEY_AUTH_ENABLED)"
     if INTERNET_ERROR or INTERNET_ERROR_AFTER_STARTUP:
         test_controls_msg += f"{CRLF_DOT}Internet Error (INTERNET_ERROR)"
     if NEWER_DEV_EXISTING_DEVICE_NAME:
@@ -150,9 +183,21 @@ def test_controls_enabled_msg():
     if UPW_VIA_SRP_CHECK_INVALID:
         test_controls_msg += (f"{CRLF_DOT}Test UPW SRP Invalid, "
                                 f"{UPW_VIA_SRP_CHECK_INVALID} (UPW_VIA_SRP_CHECK_INVALID:)")
+    if SRP_INIT_400_USERNAME:
+        test_controls_msg += (f"{CRLF_DOT}SRP signin/init 400 (-900007), "
+                                f"{SRP_INIT_400_USERNAME} (SRP_INIT_400_USERNAME)")
+    if UPW_VALIDATION_400_USERNAME:
+        test_controls_msg += (f"{CRLF_DOT}UPW Validation 400 (-900007), "
+                                f"{UPW_VALIDATION_400_USERNAME} (UPW_VALIDATION_400_USERNAME)")
     if SRP_SIGNIN_INTERVAL_USERNAME:
         test_controls_msg += (f"{CRLF_DOT}SRP Signin Interval Wait, "
                                 f"{SRP_SIGNIN_INTERVAL_USERNAME} (SRP_SIGNIN_INTERVAL_USERNAME)")
+    if MOBAPP_NOTIFY_MSG:
+        test_controls_msg += (f"{CRLF_DOT}MobApp Test Notify Msg, "
+                                f"{MOBAPP_NOTIFY_MSG} (MOBAPP_NOTIFY_MSG)")
+    if EVLOG_MAX_RECDS:
+        test_controls_msg += (f"{CRLF_DOT}Event Log Max Recds, "
+                                f"{EVLOG_MAX_RECDS} (EVLOG_MAX_RECDS)")
 
 
     if test_controls_msg == '':

@@ -19,15 +19,16 @@ used by iCloud3.
 '''
 
 from ..global_variables     import GlobalVariables as Gb
-from ..const                import (EVLOG_ALERT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4)
+from ..const                import (EVLOG_ALERT, APPLE_SERVER_ENDPOINT, APPLE_SERVER_ENDPOINT_IPv4,
+                                    HTTP_RESPONSE_CODES, )
 from ..const_char           import (CRLF_DOT, )
-from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del,
-is_running_in_event_loop, )
+from ..utils.utils          import (instr, is_empty, isnot_empty, list_add, list_del, list_to_str,
+                                    is_running_in_event_loop, )
 from ..utils.file_io        import (save_json_file, )
 from ..utils.time_util      import (time_now,  time_now_secs, secs_to_time, format_time_age, )
-from ..utils.messaging      import (_log, _evlog, post_event, post_alert, post_error_msg,
-log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
-log_exception, )
+from ..utils.messaging      import (_log, _evlog, post_event, post_alert, post_error_msg, post_rawdata,
+                                    log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
+                                    log_exception, )
 from ..utils.rawdata_logging import (log_request_data, )
 
 from .icloud_cookie_jar     import PyiCloudCookieJar
@@ -64,24 +65,6 @@ APPLE_ID_AUTH_CODE_INVALID_404 = 404
 AUTHENTICATION_NEEDED_421_450_500 = [421, 450, 500]
 AUTHENTICATION_NEEDED_450 = 450
 CONNECTION_ERROR_503 = 503
-
-HTTP_RESPONSE_CODES = {
-    0: 'Unknown Error',
-    200: 'Successful Response',
-    201: 'Device Offline',
-    204: 'Authentication Code Accepted',
-    302: 'Apple Server not Available (Connection Error)',
-    400: 'Invalid Authentication Code',
-    401: 'Invalid  Username/Password',
-    403: 'Authentication Code Requested',
-    404: 'Apple http Error, Web Page not Found',
-    421: 'Authentication Code May Be Needed',
-    450: 'Authentication Code May Be Needed',
-    500: 'Authentication Code May Be Needed',
-    503: 'Apple Server Refused Password Validation Request',
-    -2:  'Apple Server not Available (Connection Error)',
-    }
-HTTP_RESPONSE_CODES_IDX = {str(code): code for code in HTTP_RESPONSE_CODES.keys()}
 
 DEVICE_DATA_FILTER_OUT = [
     'features', 'scd',
@@ -313,6 +296,11 @@ class iCloudSession(Session):
                 post_alert(f"Internet Connection Error > Test Started, Error Generated")
                 raise requests.exceptions.ConnectionError
 
+            # A new SRP signin is starting. Clear the locked status from an earlier signin
+            # so it is set from this signin's response, not from before it was unlocked
+            if url.endswith('signin/init'):
+                self.AppleAcct.account_locked = False
+
             # TEST CODE - Simulate Apple's locked Apple Acct response (ACCT_LOCKED_USERNAME)
             if self._is_test_acct_locked(url):
                 response = self._test_acct_locked_response(url)
@@ -393,7 +381,21 @@ class iCloudSession(Session):
 
 
         log_request_data('Response', method, url, kwargs, self.AppleAcct, response)
-        #_log(f"{self.data=}")
+        # _log(f"{self.data=}")
+
+        # A 400 is used by Apple for several errors (signin/init -900007, wrong auth code
+        # -21669). Show Apple's serviceError code so the cause is in the log line
+        endpoint = url.split('/')[-1].split('?')[0]
+        service_error = ''
+        if response.ok is False:
+            try:
+                service_error = f" ({data['serviceErrors'][0]['code']})"
+            except Exception:
+                pass
+        post_rawdata(   f"{self.AppleAcct.apple_user} > AppleAcct, "
+                        f"{endpoint[:1].upper()}{endpoint[1:]}, "
+                        f"Code-{self.response_code}{service_error}, "
+                        f"{HTTP_RESPONSE_CODES.get(self.response_code, 'Unknown')}")
 
         # Validating the apple_id/password, code=409 is valid, code=401 is invalid
         if (url.startswith(APPLE_SERVER_ENDPOINT['auth_url'])
@@ -447,8 +449,24 @@ class iCloudSession(Session):
                         # If 421/450/503, retry sign in request
                         # srp_wait=False - Do not hold up the tracking loop waiting
                         # to send another Password SRP signin, skip it instead
-                        if retry_cnt <= 2:
+                        # A Configure login replaced this AppleAcct, the restart on exit uses
+                        # the new one. Signing in with this one would overwrite its session.
+                        if self.AppleAcct.is_replaced:
+                            log_debug_msg(f"{self.apple_user}, AppleAcct was replaced, "
+                                            f"Authentication not done (RetryCnt-{retry_cnt})")
+                            retry_cnt = 3
+
+                        elif retry_cnt <= 2:
                             self.AppleAcct.authenticate(refresh_session=True, srp_wait=False)
+
+                            # The token was refused and the Password SRP signin failed. Do not
+                            # send the request again. That runs another full signin a second
+                            # later and Apple answers it with a 503 (gee**2**ry@ 11/13 21:04).
+                            # The signin is retried later by the next refresh.
+                            if self.AppleAcct.login_successful is False:
+                                log_debug_msg(f"{self.apple_user}, Authentication Failed, "
+                                                f"Request not retried (RetryCnt-{retry_cnt})")
+                                retry_cnt = 3
 
                     except AppleAcctAPIResponseException:
                         log_debug_msg(f"{self.apple_user}, Authentication Failed")
@@ -525,7 +543,8 @@ class iCloudSession(Session):
             'This Apple Account has been locked for security reasons. Visit iForgot
             to reset your account (https://iforgot.apple.com).'
         Set AppleAcct.account_locked so the locked message is displayed. It is reset
-        from the dsInfo 'locked' item on the next successful login.
+        when the next SRP signin/init is sent and from the dsInfo 'locked' item on the
+        next successful login.
         '''
         try:
             if isinstance(data, dict) is False:

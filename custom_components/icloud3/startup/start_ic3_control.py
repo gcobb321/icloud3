@@ -14,7 +14,7 @@ from ..const_char       import (CRLF, CRLF_DOT, CRLF_HDOT, CRLF_LDOT, CRLF_X, CR
 from ..utils.utils      import (instr, is_empty, isnot_empty, yes_no, list_to_str, list_add, list_del,
                                 apple_user, is_running_in_event_loop, get_string_hash, )
 from ..utils.messaging  import (post_event, post_alert, post_error_msg, log_error_msg, update_alert_sensor, alert_key_source, all_alerts_by_alert_key,
-                                post_monitor_msg, post_internal_error, post_greenbar_msg, post_dotted_line,
+                                post_internal_error, post_greenbar_msg, post_dotted_line,
                                 write_ic3log_recd,
                                 log_debug_msg, log_warning_msg, log_info_msg, log_exception,
                                 _evlog, _log, more_info, format_filename,
@@ -76,8 +76,6 @@ def stage_1_setup_variables():
         start_ic3.display_platform_operating_mode_msg()
         start_ic3.check_ic3_event_log_file_version()
         start_ic3.copy_icloud3_theme_file()
-
-        post_monitor_msg(f"LocationInfo-{Gb.ha_location_info}")
 
         start_ic3.set_event_recds_max_cnt()
         start_ic3.define_tracking_control_fields()
@@ -236,20 +234,10 @@ def stage_4_setup_data_sources():
                     post_error_msg( f"{EVLOG_ERROR}Apple Account {AppleAcct.account_owner} "
                                     f"is Locked. Log onto www.icloud.com and unlock "
                                     f"your account to reauthorize location services.")
-                    # The alerts sensor is updated with the HA Repairs issue
-                    # (start_ic3._check_apple_acct_status_issues)
-
-            # Tell HA to generate reauth needed notification that will be handled
-            # handled in config_flow
-            if Gb.AppleAcct_reauth_needed:
-                try:
-                    Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
-
-                    Gb.AppleAcct_reauth_needed.was_ha_auth_code_alert_sent = True
-                    post_event( f"Apple Acct > {Gb.AppleAcct_reauth_needed.account_owner}, "
-                                f"Auth request submitted() to HA")
-                except Exception as err:
-                    log_exception(err)
+                # Tell HA to generate reauth needed notification that will be handled
+                # handled in config_flow
+                if AppleAcct.is_reauth_needed:
+                    aas.is_authentication_2fa_code_needed(AppleAcct, initial_setup=True)
 
         stage_title = f"Stage 4 > Connect to Mobile App Integration"
         log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
@@ -323,7 +311,7 @@ def stage_6_initialization_complete():
     stage_title = f'{ICLOUD3} Initialization Complete'
     log_info_msg(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
 
-
+    start_ic3.display_excluded_sensors()
     start_ic3.display_platform_operating_mode_msg()
     Gb.EvLog.display_user_message('')
 
@@ -333,7 +321,6 @@ def stage_6_initialization_complete():
         # Remove the configuration error Repairs issues that no longer exist
         clear_config_error_repair_issues()
 
-        start_ic3.display_object_lists()
         start_ic3.dump_startup_lists_to_log()
         alert_msg = ''
         if alerts_by_alert_key := all_alerts_by_alert_key():
@@ -358,6 +345,8 @@ def stage_7_initial_locate():
 
     This routine processes the new raw Apple data and set the initial location.
     '''
+    if TEST.MOBAPP_NOTIFY_MSG:
+        mobapp_interface.test_send_message_to_devices()
 
     # The restart will be requested if using Apple as a data source and no data was returned
     # from AppleAcct

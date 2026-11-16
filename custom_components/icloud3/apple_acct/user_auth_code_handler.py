@@ -405,7 +405,7 @@ async def async_user_auth_code_send(auth_key, auth_code):
         return
 
     try:
-        AppleAcct.was_ha_auth_code_alert_sent = False
+        AppleAcct.was_ha_display_orange_reauth_button_sent = False
         auth_successful = False
 
         if AppleAcct.is_auth_method_PUSH:
@@ -413,8 +413,9 @@ async def async_user_auth_code_send(auth_key, auth_code):
                                     AppleAcct.validate_2fa_push_popup_window_code,
                                     auth_code)
         else:
+            # A refused Text code is tried as the device popup window code
             auth_successful = await Gb.hass.async_add_executor_job(
-                                    AppleAcct.validate_2fa_text_code,
+                                    AppleAcct.validate_2fa_code,
                                     auth_code)
 
         log_info_msg(   f"{AppleAcct.account_owner} > Send Auth code (Dashboard), "
@@ -423,13 +424,13 @@ async def async_user_auth_code_send(auth_key, auth_code):
         if auth_successful is False:
             AppleAcct.was_auth_code_requested = True
             _post_auth_status(auth_key, AppleAcct, action, CODE_INVALID,
-                                'Invalid Authentication Code')
+                                'Invalid authentication code')
             return
 
         await _async_finish_auth_code_accepted(AppleAcct)
 
         _post_auth_status(auth_key, AppleAcct, action, CODE_ACCEPTED,
-                            'Authentication Code Accepted')
+                            'Authentication code accepted')
 
     except Exception as err:
         log_exception(err)

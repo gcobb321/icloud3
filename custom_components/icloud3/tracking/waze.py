@@ -14,7 +14,7 @@ from ..const_config     import (ZONE, )
 from ..utils.utils      import (instr, format_gps, )
 from ..utils.messaging  import (post_event, post_alert, post_internal_error, log_info_msg, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer,  )
-from ..utils.dist_util  import (km_to_um, )
+from ..utils.dist_util  import (km_to_um, gps_distance_km, gps_distance_m, )
 
 from ..tracking.waze_history        import WazeRouteHistory as WazeHist
 from ..tracking.waze_route_calc_ic3 import WazeRouteCalculator
@@ -36,6 +36,16 @@ RATE_LIMIT_PAUSE_SECS = [600, 1200, 1800, 3600]   # Pause for each consecutive 4
 # the request. A longitude degree is shorter (×cos(lat)) so it is within 11m too.
 WAZE_CACHE_GPS_TOLERANCE = 0.0001
 WAZE_CACHE_SECS          = 300      # Cached route expires after 5-mins (traffic changes)
+
+# Nearby device route. Devices traveling together are located 3-15 secs apart, which is
+# 25-150m at road speed, so their routes never match the 11m cache tolerance above. A
+# zone route requested by any device in the last 60-secs is used if its from gps is
+# within 150m and both devices are moving in the same direction (closer to or farther
+# from the zone). The time & distance are adjusted by the ratio of the straight line
+# distances to the zone.
+WAZE_NEARBY_ROUTE_M      = 150
+WAZE_NEARBY_ROUTE_SECS   = 60
+WAZE_NEARBY_DIR_KM       = .05      # Zone distance change < 50m is treated as not moving
 WAZE_STATUS_FNAME ={WAZE_USED: 'Used',
                     WAZE_NOT_USED: 'NotUsed',
                     WAZE_PAUSED: 'Paused',
@@ -50,7 +60,7 @@ class Waze(object):
                     waze_realtime, waze_region):
 
         self.waze_status                  = WAZE_USED
-        self.method                  = 'Waze'
+        self.method                       = 'Waze'
         self.is_waze_dist_method_used     = is_waze_dist_method_used
         self.waze_realtime                = waze_realtime
         self.waze_region                  = waze_region.upper()
@@ -73,7 +83,7 @@ class Waze(object):
         self.rate_limited_cnt              = 0       # Consecutive HTTP 429 pauses
 
         # Waze route cache [(expire secs, (from_lat, from_long, to_lat, to_long),
-        #                                                   route_time, route_dist_km)]
+        #                       route_time, route_dist_km, cached secs, devicename, dir_sign)]
         self.waze_cache = []
 
         try:
@@ -135,6 +145,9 @@ class Waze(object):
     @property
     def waze_status_fname(self):
         return WAZE_STATUS_FNAME.get(self.waze_status, 'Waze-Unknown')
+
+    def status_fname(self, waze_status):
+        return WAZE_STATUS_FNAME.get(waze_status, 'Unknown')
 
 
 ########################################################
@@ -244,18 +257,11 @@ class Waze(object):
                 if route_dist_km == 0:
                     route_time = 0
 
-                # Get distance moved since last update
-                if Device.loc_data_dist_moved_km < .5:
-                    dist_moved_km = Device.loc_data_dist_moved_km
-                else:
-                    last_status, last_time, dist_moved_km = \
-                                    self.get_waze_distance(
-                                                    Device, FromZone,
-                                                    Device.sensors[LATITUDE],
-                                                    Device.sensors[LONGITUDE],
-                                                    Device.loc_data_latitude,
-                                                    Device.loc_data_longitude,
-                                                    "moved")
+                # Distance moved since last update. The straight line distance is used
+                # (not a Waze route request) since it is only used for the moved sensor
+                # and the StatZone timer. A Waze request for each update while driving
+                # was ~40% of all requests and caused Waze HTTP 429 errors.
+                dist_moved_km = Device.loc_data_dist_moved_km
 
             except Exception as err:
                 post_internal_error('Waze Route Info', traceback.format_exc)
@@ -284,7 +290,7 @@ class Waze(object):
             #                     f"{wazehist_save_msg}")
             # post_event(Device, event_msg)
 
-            FromZone.waze_results = (WAZE_USED, route_time, route_dist_km, dist_moved_km)
+            FromZone.waze_results = (waze_status, route_time, route_dist_km, dist_moved_km)
 
             return FromZone.waze_results
 
@@ -383,14 +389,28 @@ class Waze(object):
                     self.no_route_msg_by_zone.pop(FromZone.from_zone, None)
                 return (WAZE_USED, route_time, route_dist_km)
 
+            # Use a route to the same zone requested by a device traveling with this one
+            dir_sign = self._zone_dir_sign(Device, route_gps) if route_from == ZONE else None
+            if dir_sign is not None:
+                nearby_route = self._get_waze_nearby_route(route_gps, dir_sign)
+                if nearby_route:
+                    route_time, route_dist_km, nearby_msg = nearby_route
+                    log_info_msg(f"Waze Results > Nearby Device Route ({nearby_msg}), "
+                                    f"GPS-({float(from_lat):0.5f}, {float(from_long):0.5f}) --> "
+                                    f"({float(to_lat):0.5f}, {float(to_long):0.5f}), "
+                                    f"Time-{route_time:0.2f}min, "
+                                    f"Distance-{route_dist_km:0.2f}km")
+                    self.no_route_msg_by_zone.pop(FromZone.from_zone, None)
+                    return (WAZE_USED, route_time, route_dist_km)
+
             retry_cnt = 0
             while retry_cnt < 3:
                 try:
                     retry_msg = '' if retry_cnt == 0 else (f" (#{retry_cnt})")
+                    retry_cnt += 1
 
                     route_time, route_dist_km = \
                             self.WazeRouteCalc.calc_route_info(from_lat, from_long, to_lat, to_long)
-                    retry_cnt += 1
 
                     # Waze is limiting requests (HTTP 429). Retrying only extends the
                     # block so pause Waze now instead of after 10 failed updates.
@@ -409,7 +429,8 @@ class Waze(object):
 
                     route_time    = round(route_time, 2)
                     route_dist_km = route_dist_km
-                    self._set_waze_cache(route_gps, route_time, route_dist_km)
+                    self._set_waze_cache(route_gps, route_time, route_dist_km,
+                                            Device.devicename, dir_sign)
 
                     self.internet_error_displayed = False
                     if route_from == ZONE:
@@ -417,9 +438,8 @@ class Waze(object):
                     return (WAZE_USED, route_time, route_dist_km)
 
                 except Exception as err:
-                    if retry_cnt > 3:
-                        log_msg = (f"Waze Alert #{retry_cnt}, Retrying, Type-{err}")
-                        log_info_msg(log_msg)
+                    log_msg = (f"Waze Alert #{retry_cnt}, Retrying, Type-{err}")
+                    log_info_msg(log_msg)
 
         except Exception as err:
             # log_exception(err)
@@ -437,7 +457,7 @@ class Waze(object):
         None if there is not one or it has expired
         '''
         secs_now = time_now_secs()
-        for expire_secs, cached_gps, route_time, route_dist_km in self.waze_cache:
+        for expire_secs, cached_gps, route_time, route_dist_km, *_ in self.waze_cache:
             if (expire_secs > secs_now
                     and all(abs(gps - cached) <= WAZE_CACHE_GPS_TOLERANCE
                                 for gps, cached in zip(route_gps, cached_gps))):
@@ -445,12 +465,84 @@ class Waze(object):
 
         return None
 
-    def _set_waze_cache(self, route_gps, route_time, route_dist_km):
+    def _get_waze_nearby_route(self, route_gps, dir_sign):
+        '''
+        Return the (route_time, route_dist_km, msg) of a zone route requested in the
+        last 60-secs whose to gps is the same zone, whose from gps is within 150m of
+        route_gps and whose device was moving in the same direction (dir_sign). The
+        time & distance are adjusted by the ratio of the straight line distances to
+        the zone. Return None if there is not one.
+        '''
+        secs_now = time_now_secs()
+        from_gps = route_gps[0:2]
+        to_gps   = route_gps[2:4]
+        best_route = None
+
+        for (expire_secs, cached_gps, route_time, route_dist_km,
+                cached_secs, devicename, cached_dir_sign) in self.waze_cache:
+            if (expire_secs <= secs_now
+                    or secs_now - cached_secs > WAZE_NEARBY_ROUTE_SECS
+                    or cached_dir_sign != dir_sign
+                    or route_dist_km <= 0
+                    or not all(abs(gps - cached) <= WAZE_CACHE_GPS_TOLERANCE
+                                for gps, cached in zip(to_gps, cached_gps[2:4]))):
+                continue
+
+            dist_apart_m = gps_distance_m(from_gps, cached_gps[0:2])
+            if (dist_apart_m > WAZE_NEARBY_ROUTE_M
+                    or (best_route and dist_apart_m >= best_route[0])):
+                continue
+
+            cached_zone_km = gps_distance_km(cached_gps[0:2], to_gps)
+            zone_km        = gps_distance_km(from_gps, to_gps)
+            if cached_zone_km <= 0 or zone_km <= 0:
+                continue
+
+            ratio = zone_km / cached_zone_km
+            best_route = (dist_apart_m,
+                            round(route_time * ratio, 2),
+                            route_dist_km * ratio,
+                            f"{devicename}/{dist_apart_m:0.0f}m/{secs_now - cached_secs}s")
+
+        if best_route is None:
+            return None
+
+        return best_route[1:]
+
+    def _zone_dir_sign(self, Device, route_gps):
+        '''
+        Direction of travel relative to the zone since the last update. Used to make sure
+        a nearby device route is not used by a device going the other way (other side of
+        a divided highway).
+
+        Return: 1 = moving away from the zone, -1 = moving towards the zone,
+                0 = not moving (< 50m), None = no last location
+        '''
+        try:
+            last_gps = (float(Device.sensors[LATITUDE]), float(Device.sensors[LONGITUDE]))
+            if last_gps[0] == 0 or last_gps[1] == 0:
+                return None
+
+            to_gps = route_gps[2:4]
+            zone_dist_change_km = (gps_distance_km(route_gps[0:2], to_gps)
+                                    - gps_distance_km(last_gps, to_gps))
+
+            if zone_dist_change_km > WAZE_NEARBY_DIR_KM:
+                return 1
+            if zone_dist_change_km < -WAZE_NEARBY_DIR_KM:
+                return -1
+            return 0
+
+        except Exception:
+            return None
+
+    def _set_waze_cache(self, route_gps, route_time, route_dist_km, devicename, dir_sign):
         ''' Add the route to the cache and remove expired routes '''
         secs_now = time_now_secs()
         self.waze_cache = [cache_entry for cache_entry in self.waze_cache
                                 if cache_entry[0] > secs_now]
-        self.waze_cache.append((secs_now + WAZE_CACHE_SECS, route_gps, route_time, route_dist_km))
+        self.waze_cache.append((secs_now + WAZE_CACHE_SECS, route_gps, route_time, route_dist_km,
+                                secs_now, devicename, dir_sign))
 
 #--------------------------------------------------------------------
     def _pause_waze_rate_limited(self):
@@ -510,12 +602,15 @@ class Waze(object):
                         f"Pausing Waze for {retry_interval/60}-mins, "
                         f"Retry at {secs_to_time(self.error_server_unavailable_secs)}")
 
+        # Pause with the server unavailable timer. The waze_status is reset on every
+        # update (determine_interval) so setting it to WAZE_PAUSED does not pause Waze.
         if self.error_server_unavailable_cnt > 40:
             self.error_server_unavailable_cnt = 0
-            self.error_server_unavailable_secs = 0
-            self.waze_status = WAZE_PAUSED
-            post_event( f"Waze Alert > "
-                        f"Waze has been paused after excessive errors")
+            self.error_server_unavailable_secs = time_now_secs() + 7200
+            post_event( f"{EVLOG_RED}Waze Alert > "
+                        f"Waze has been paused after excessive errors, "
+                        f"Pausing Waze for {format_timer(7200)}, "
+                        f"Retry at {secs_to_time(self.error_server_unavailable_secs)}")
 
 #--------------------------------------------------------------------
     def _set_waze_not_available_error(self, err):

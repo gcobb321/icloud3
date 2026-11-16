@@ -18,7 +18,7 @@ from ..utils.utils           import (instr, is_number, is_empty, isnot_empty, li
                                     encode_password, decode_password, )
 from ..utils.messaging       import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                     _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
-                                    post_event, post_alert, post_monitor_msg, post_greenbar_msg,
+                                    post_event, post_alert, post_greenbar_msg,
                                     update_alert_sensor, )
 from ..utils.time_util       import (time_now_secs, secs_to_time, )
 
@@ -61,9 +61,9 @@ from homeassistant.core             import callback, HomeAssistant
 import homeassistant.util.dt as dt_util
 import voluptuous as vol
 
-CONFIG_UPDATE_COMPLETE_MSG = 'iCloud3 Configuration Update Complete'
+CONFIG_ENTRY_TITLE = 'iCloud3'
 # A Configure window with no screen displayed for this long no longer blocks another one
-CONFIGURE_IDLE_TIMEOUT_SECS = 30*60
+from ..const                 import CONFIGURE_IDLE_TIMEOUT_SECS
 
 # #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -150,7 +150,6 @@ class iCloud3_ConfigFlow_v1(config_entries.ConfigFlow, FlowHandler,
 
         self.handler = 'icloud3' from domain name in manifest.json
         '''
-        _OptFlow = self.OptFlow
         disabled_by = added_datetime = None
 
         try:
@@ -190,23 +189,80 @@ class iCloud3_ConfigFlow_v1(config_entries.ConfigFlow, FlowHandler,
         _CF_LOGGER.info(f"Config_Flow Added Integration-{Gb.ha_device_id_x_devicename=}")
 
         if user_input is not None:
-            _CF_LOGGER.info(f"Added iCloud3 Integration")
+            return self._create_icloud3_config_entry()
 
-            if user_input.get('reset_tracking', False):
-                _CF_LOGGER.info(f"iCloud3 Reinstallation, Initialize Apple Accounts and Device Configuration")
-                _OptFlow.reset_icloud3_config_file_tracking()
-                await _OptFlow.delete_all_files_and_remove_directory(Gb.icloud_cookies_directory)
-
-                Gb.config_parms_update_control = ['tracking', 'restart']
-                await config_file.async_write_icloud3_configuration_file()
-
-            data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
-
-            return self.async_create_entry(title=CONFIG_UPDATE_COMPLETE_MSG, data=data)
+        # Reinstalling, the previous configuration was found. Display the Reinstall
+        # screen instead of the New Installation screen (Issue #729)
+        if self.is_previous_config_found():
+            return await self.async_step_user_reinstall()
 
         return self.async_show_form(step_id="user",
                                     data_schema=forms.form_config_option_user(self),
                                     errors=errors)
+
+#----------------------------------------------------------------------
+    @staticmethod
+    def is_previous_config_found():
+        '''
+        The configuration file was set up by a previous installation and has Apple
+        Accounts or Devices
+        '''
+        return (Gb.conf_profile.get(CONF_VERSION, 0) >= 1
+                    and (isnot_empty(Gb.conf_apple_accounts)
+                        or isnot_empty(Gb.conf_devices)))
+
+#----------------------------------------------------------------------
+    async def async_step_user_reinstall(self, user_input=None):
+        '''
+        iCloud3 is being added again and the previous configuration was found. The
+        screen describes what the previous configuration contains, what is deleted
+        and what is saved first.
+
+        KEEP   - Add the iCloud3 integration with the previous configuration (default)
+        DELETE - Save the configuration file to 'configuration_before_reset_<datetime>',
+                 delete the Apple Accts & Devices, then add the iCloud3 integration
+
+        The Apple Acct session/trust token files are not deleted. Adding the same Apple
+        Acct again signs in without a new verification code. They can be deleted with
+        Configure > Tools > Delete Apple Acct cookie files.
+        '''
+        self.step_id = 'user_reinstall'
+        self.errors = {}
+
+        user_input, action_item = utils_cf.action_text_to_item(self, user_input)
+
+        if action_item == 'reinstall_keep_config':
+            _CF_LOGGER.info(f"iCloud3 Reinstallation, Previous configuration kept")
+            return self._create_icloud3_config_entry()
+
+        if action_item == 'reinstall_reset_tracking':
+            reset_filename = await Gb.hass.async_add_executor_job(
+                                            config_file.save_config_file_before_reset)
+
+            # Do not remove anything if the configuration could not be saved
+            if reset_filename:
+                _CF_LOGGER.info(f"iCloud3 Reinstallation, Deleted Apple Accounts and Devices, "
+                                f"Configuration saved to-{reset_filename}")
+                self.OptFlow.reset_icloud3_config_file_tracking()
+
+                Gb.config_parms_update_control = ['tracking', 'restart']
+                await config_file.async_write_icloud3_configuration_file()
+
+                return self._create_icloud3_config_entry()
+
+            self.errors = {'base': 'reset_save_config_failed'}
+
+        return self.async_show_form(step_id='user_reinstall',
+                                    data_schema=forms.form_user_reinstall(self),
+                                    errors=self.errors)
+
+#----------------------------------------------------------------------
+    def _create_icloud3_config_entry(self):
+        _CF_LOGGER.info(f"Added iCloud3 Integration")
+
+        data = {'added': dt_util.now().strftime(DATETIME_FORMAT)[0:19]}
+
+        return self.async_create_entry(title=CONFIG_ENTRY_TITLE, data=data)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -444,6 +500,13 @@ class iCloud3_OptionsFlowHandler_v1(config_entries.OptionsFlow, OptionsFlow_Comm
                             'opened_time': secs_to_time(OtherOptFlow.opened_secs),
                             'last_used_time': secs_to_time(OtherOptFlow.last_activity_secs),
                             'idle_timeout_mins': str(CONFIGURE_IDLE_TIMEOUT_SECS // 60)})
+
+        # The configuration file was never loaded (iCloud3 did not finish starting), the
+        # profile 'version' is always there after it is loaded. The AppleAcct fields were
+        # not set and the screens can not be displayed (Issue #726)
+        if self.is_aborting_config_flow:
+            log_info_msg("iCloud3 Configure > Aborted, iCloud3 configuration file has not been loaded")
+            return self.async_abort(reason='icloud3_not_loaded')
 
         Gb.OptionsFlowHandler = self
 
@@ -722,6 +785,10 @@ class iCloud3_OptionsFlowHandler_v1(config_entries.OptionsFlow, OptionsFlow_Comm
                 Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
                 post_event( f"Apple Acct > {AppleAcct.account_owner}, "
                             f"Auth request submitted to HA")
+
+        # It was copied to Gb.config_parms_update_control. Clear it so this handler
+        # (Gb.OptionsFlowHandler, not reset on exit) does not still show a pending restart
+        self.config_parms_update_control = []
 
         utils_cf.log_step_info(self, '', 'end')
 

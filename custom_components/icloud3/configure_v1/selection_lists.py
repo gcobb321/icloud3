@@ -3,7 +3,7 @@
 from ..global_variables import GlobalVariables as Gb
 from ..const            import (EVLOG_NOTICE, EVLOG_ALERT, EVLOG_ERROR,
                                 IPHONE_DN, IPHONE, IPAD, WATCH, MAC, AIRPODS, ICLOUD, OTHER, HOME, FAMSHR, AUTH_CODE,
-                                DEVICE_TYPES, DEVICE_TYPE_DN, DEVICE_TYPE_DNS, DEVICE_TRACKER_DOT,
+                                DEVICE_TYPES, DEVICE_TYPE_NAME, DEVICE_TYPE_NAMES, DEVICE_TRACKER_DOT,
                                 TRACK, MONITOR, INACTIVE, TRACKING_MODE_DN, TRACKING_MODES,
                                 TRACKING_MODE_DN, )
 from ..const_config     import (CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCT, CONF_AUTH_METHODS,
@@ -29,7 +29,7 @@ from ..utils.messaging  import (log_exception, log_debug_msg, log_info_msg, add_
 
 from ..apple_acct       import apple_acct_support_cf as aascf
 from .const_form_lists  import (NONE_FAMSHR_DICT_KEY_TEXT, MOBAPP_DEVICE_NONE_OPTIONS, AWAY_FROM_ZONE_OPTIONS,
-                                REAUTH_AUTH_METHODS, PICTURE_NONE_KEY_TEXT,)
+                                REAUTH_AUTH_METHODS, PICTURE_NONE_KEY_TEXT, NOT_LOGGED_IN,)
 from ..startup          import config_file
 from ..utils            import file_io
 
@@ -94,9 +94,12 @@ def build_apple_accounts_list(self):
 
         if aa_idx == 0 and apple_id == '':
             break
-        elif AppleAcct is None or apple_id == '':
+        elif apple_id == '':
             continue
 
+        # An Apple Acct whose login failed (invalid username/password at startup)
+        # has no AppleAcct object. It is still listed so it can be selected and
+        # corrected on the Update Apple Acct screen.
         aa_text = _build_aa_text_line(self, AppleAcct, apple_id)
         self.apple_acct_items_by_apple_id[apple_id] = f"{apple_user(apple_id)}{RARROW}{aa_text}"
 
@@ -109,6 +112,19 @@ def _build_aa_text_line(self, AppleAcct, apple_id):
     tracked_cnt, tracked_devices, untracked_cnt, untracked_devices = tracked_untracked_form_msg(apple_id)
     upw_valid = Gb.upw_valid_by_apple_id.get(apple_id, False)
     upw_code  = Gb.upw_code_by_apple_id.get(apple_id, 200)
+
+    # Not logged into, the Apple Acct object was never created (login failed)
+    if AppleAcct is None:
+        devicenames, _ = get_conf_device_names_by_apple_id(apple_id)
+        if upw_valid is False and upw_code in [401, 401.1, 401.2, 403]:
+            aa_text = f"{RED_ALERT}INVALID APPLE_ID/PASSWORD ({upw_code}), "
+        # 400 (-900007) on signin/init - Apple rejected the request before the password was checked
+        elif upw_code in [400, 503]:
+            aa_text = f"{RED_ALERT}APPLE REFUSED RQST-{upw_code}, "
+        else:
+            aa_text = f"{RED_ALERT}LOGIN FAILED ({upw_code}), "
+        aa_text += f"{NOT_LOGGED_IN}, {len(devicenames)} iCloud3 Devices assigned"
+        return aa_text
 
     aa_text = ''
     if AppleAcct.is_reauth_needed:
@@ -338,6 +354,24 @@ def format_device_list_item(self, conf_device):
     return device_text
 
 #----------------------------------------------------------------------
+def is_apple_acct_setup(self):
+    '''
+    An Apple Acct is being set up or is in the configuration.
+
+    Used by the Options flow and the HA reauth Config flow (iCloud3_ConfigFlow_v1 only
+    has the Reauth steps, it does not have OptionsFlow_AppleAccount_Steps where
+    _is_apple_acct_setup was, AttributeError after an accepted reauth code 11/14).
+    '''
+    if getattr(self, 'apple_id', ''):
+        return True
+    elif is_empty(Gb.conf_apple_accounts):
+        return False
+    elif Gb.conf_apple_accounts[0].get(CONF_APPLE_ACCT, '') == '':
+        return False
+
+    return True
+
+#----------------------------------------------------------------------
 def format_apple_acct_device_info(self, conf_device):
     '''
     Format the aadev_name><apple_account field based on the device's
@@ -370,7 +404,7 @@ def format_apple_acct_device_info(self, conf_device):
         else:
             status_msg = f" {RED_ALERT}DEVICE NOT IN APPLE ACCT"
 
-    elif self._is_apple_acct_setup() is False:
+    elif is_apple_acct_setup(self) is False:
         apple_devices_list_key = apple_user_dev('NO.APPLE.ACCTS', aadev_name)
         status_msg = f" {RED_ALERT}NO APPLE ACCTS SET UP"
 
@@ -854,7 +888,7 @@ def build_log_level_devices_list(self):
 def devices_selection_list():
     return {conf_device[CONF_IC3_DEVICENAME]: (
                     f"{conf_device[CONF_FNAME]} "
-                    f"({DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}), "
+                    f"({DEVICE_TYPE_NAME(conf_device[CONF_DEVICE_TYPE])}), "
                     f"{TRACKING_MODE_DN[conf_device[CONF_TRACKING_MODE]]}")
                 for conf_device in Gb.conf_devices
                 if conf_device[CONF_IC3_DEVICENAME] in Gb.Devices_by_devicename}

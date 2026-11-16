@@ -24,7 +24,7 @@ from ..utils.utils          import (instr, yes_no, is_empty, isnot_empty, list_a
 from ..utils                import file_io
 from ..utils.time_util      import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                     secs_since, format_secs_since, format_age, format_time_age )
-from ..utils.messaging      import (post_event, post_alert, post_monitor_msg, post_error_msg,
+from ..utils.messaging      import (post_event, post_alert, post_error_msg,
                                     _evlog, _log, more_info, add_log_file_filter,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
                                     log_exception, alert_key_for, post_config_error,
@@ -164,7 +164,9 @@ class ValidateAppleAcctUPW():
                     self._post_upw_invalid_repair_issue(apple_id)
 
                 else:
-                    if self.response_code == 503:
+                    # 400 (-900007) on signin/init - Apple rejected the request before
+                    # the password was checked, it is not an invalid password
+                    if self.response_code in [400, 503]:
                         reason_msg = "Apple Refused the Signin Request, Try again later"
                     else:
                         reason_msg = "Invalid Username/Password"
@@ -268,6 +270,18 @@ class ValidateAppleAcctUPW():
         self.AppleAcct = self._create_AppleAcct_validate_upw(apple_id, password)
 
         if self.AppleAcct is None:
+            return False
+
+        # TEST CODE - Simulate the validation ending with a signin/init 400 (-900007).
+        # No request is sent, the startup login is done anyway (Issue #727)
+        if TEST.UPW_VALIDATION_400_USERNAME in (apple_id, self.apple_user):
+            TEST.UPW_VALIDATION_400_USERNAME = None
+            self.method = 'AuthSRP'
+            self.response_code = 400
+            # response_code is a read-only property of iCloudSession.response_code
+            self.AppleAcct.iCloudSession.response_code = 400
+            log_info_msg(f"{self.apple_user}, TEST > UPW_VALIDATION_400_USERNAME, "
+                            f"Username/Password validation not sent, Code-400 (-900007) simulated")
             return False
 
         # Method-0 > TokenPW file password match (NO request sent to Apple)
@@ -476,8 +490,12 @@ class ValidateAppleAcctUPW():
                 and getattr(self.AppleAcct, 'srp_signin_init_503', False)):
             self.response_code = 401.1
 
-        if self.response_code in [401, 401.1]:
+        # 401.1 - signin/init 503, the apple_id does not exist
+        # 401   - signin/complete rejected the username/password (-20101)
+        if self.response_code == 401.1:
             error_msg = ', Invalid apple_id'
+        elif self.response_code == 401:
+            error_msg = ', Invalid Username/Password'
         elif self.response_code == 503:
             error_msg = ', Apple Refused the Signin Request'
         log_debug_msg(  f"PasswordSRP Results > {self.apple_user}, Method-{self.method}, "

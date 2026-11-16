@@ -38,23 +38,26 @@ import voluptuous as vol
 #             USER - INITIAL ADD INTEGRATION
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def form_config_option_user(self):
-
-
-    if (Gb.conf_profile[CONF_VERSION] >=1
-            and (isnot_empty(Gb.conf_apple_accounts)
-                or isnot_empty(Gb.conf_devices))):
-        schema = {
-            vol.Required('reset_tracking', default=False): bool,
-            # vol.Required('reset_general', default=False): bool,
-        }
-    else:
-        schema = {}
-
-    schema.update({
+    '''
+    New installation, a previous configuration was not found. A reinstallation
+    uses form_user_reinstall.
+    '''
+    return vol.Schema({
         vol.Required('continue', default=True): bool
     })
 
-    return vol.Schema(schema)
+#..............................................................................
+def form_user_reinstall(self):
+    '''
+    Reinstallation, the previous configuration was found. Keep it (default) or
+    delete the Apple Accounts & Devices and start over.
+    '''
+    return vol.Schema({
+        vol.Required('action_items',
+                default=REINSTALL_ACTIONS[0]):
+                selector.SelectSelector(selector.SelectSelectorConfig(
+                    options=REINSTALL_ACTIONS, mode='list')),
+        })
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

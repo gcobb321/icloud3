@@ -27,7 +27,7 @@ class iCloud3EventLogCard extends HTMLElement {
 
     constructor() {
         super()
-        this._version        = "3.8.0"
+        this._version        = "3.8.1"
         this._latestVersion  = ''
         this._buttonCount    = 0
         this._thisButtonId   = ''
@@ -225,7 +225,7 @@ class iCloud3EventLogCard extends HTMLElement {
         btnAction.appendChild(btnActionOptEVL1)
 
         var btnActionOptEVL = document.createElement("option")
-        var btnActionOptEVLTxt = document.createTextNode("• Show Tracking Monitors")
+        var btnActionOptEVLTxt = document.createTextNode("• Show Apple Device RawData Traffic")
         btnActionOptEVL.setAttribute("value", "dev-log_level: monitor")
         btnActionOptEVL.setAttribute("id", "optMonitor")
         btnActionOptEVL.classList.add("btnActionOption")
@@ -514,13 +514,12 @@ class iCloud3EventLogCard extends HTMLElement {
 
             /* Color for special records */
             /* DarkGoldenRod, Fushia, DeepPink, OrangeRed, #e600e6 (firebrickish), MediumVioletRed */
-            .specColor1         {color: LightSeaGreen;  border-left: 2px solid firebrick;}
-            .specColor2         {color: BlueViolet; border-left: 2px solid BlueViolet;}
-            .specColor3         {color: OrangeRed;  border-left: 2px solid OrangeRed;}
-            .specColor4         {color: DeepPink;   border-left: 2px solid SeaGreen;}
-            .specColor5         {color: MediumVioletRed; border-left: 2px solid RoyalBlue;}
-            .specColor6         {color: Var(--dark-primary-color); border-left: 2px solid var(--dark-primary-color);}
-
+            .specColor1         {color: LightSeaGreen; font-weight: 400;}
+            .specColor2         {color: BlueViolet; font-weight: 400;}
+            .specColor3         {color: OrangeRed; font-weight: 400;}
+            .specColor4         {color: DeepPink; font-weight: 400;}
+            .specColor5         {color: MediumVioletRed; font-weight: 400;}
+            .specColor6         {color: var(--secondary-text-color); font-weight: 400;}
 
             .trigger            {color: var(--primary-text-color); font-weight: 300;}
             .normalText         {color: var(--primary-text-color);}
@@ -1459,11 +1458,12 @@ class iCloud3EventLogCard extends HTMLElement {
                     Refreshing the Mobile App:<br>\
                     1. Open the Mobile App on the iPhone or iPad<br>\
                     2. Select `HA Settings > Companion App`<br>\
-                    3. Select `Debugging`, then select `Reset frontend cache`<br>\
-                    4. Select the Back Arrow (<)` at the top left, then select `(X)` to go back to the Settings screen<br>\
-                    5. Pull the page down to refresh the screens. The spinning wheel is displayed for a few seconds<br>\
+                    3. Scroll to the bottom, then select `Debugging`<br>\
+                    4. Select `Delete cached entiti data`, then select `Delete Entity Data`<br>\
+                    5. Select the Back Arrow (<) at the top left, then select (X) to go back to the Settings screen<br>\
+                    5. Pull the page down to refresh the screens. The HA Logo is displayed for a few seconds<br>\
                     <hr>\
-                    Select `Refresh` (above `Actions`) to hide this Update Message\
+                    Go back to the iCloud3 Dashboard and this window will not be displayed. If it is, pull down to refresh the screen again\
                     <br>'
                 } else {
                     statusMsgPopup.innerHTML = '\
@@ -2876,9 +2876,9 @@ class iCloud3EventLogCard extends HTMLElement {
 
 
         if (logLevelDebug.includes("monitor")) {
-            optMonitor.text = "• Hide Tracking Monitors"
+            optMonitor.text = "• Hide Apple Device RawData Traffic"
         } else {
-            optMonitor.text = "• Show Tracking Monitors"
+            optMonitor.text = "• Show Apple Device RawData Traffic"
         }
         if (logLevelDebug.includes("debug")) {
             optDebug.text = "• Stop Debug Logging"

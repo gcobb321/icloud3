@@ -19,7 +19,7 @@ by various people to include:
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (EVLOG_NOTICE, EVLOG_ALERT,
                                     APPLE_SERVER_ENDPOINT, TRUST_COOKIE_NAME,
-                                    HIGH_INTEGER, )
+                                    HIGH_INTEGER, HTTP_RESPONSE_CODES, )
 from ..const_config         import (CONF_AUTH_METHODS, CURRENT, PUSH, TEXT, TEXT_1, TEXT_2, HWKEY,
                                     CONF_APPLE_ACCT, CONF_PASSWORD, AUTH_METHOD_FNAME, )
 from ..const_char           import (LINK, RLINK, LLINK, DOTS, RED_X, NL3, CRLF_DOT, CRLF_STAR,
@@ -31,7 +31,7 @@ from ..support              import test_controls as TEST
 from ..utils.time_util      import (time_now, time_now_secs, secs_to_time, s2t, apple_server_time,
                                     secs_since, secs_to_hhmm, next_min_mark_secs, format_date,
                                     format_secs_since, format_age, format_time_age )
-from ..utils.messaging      import (post_event, post_alert, post_alert, post_monitor_msg, post_error_msg,
+from ..utils.messaging      import (post_event, post_alert, post_alert, post_error_msg,
                                     post_greenbar_msg, update_alert_sensor,
                                     _evlog, _log, more_info, add_log_file_filter,
                                     log_info_msg, log_error_msg, log_debug_msg, log_warning_msg,
@@ -76,6 +76,13 @@ SRP_SIGNIN_TOKEN_INFO_MAX_AGE_SECS = 60
 # with a 503. A ~30-sec gap has been seen to work, this is not a published limit.
 SRP_SIGNIN_MIN_INTERVAL_SECS = 30
 
+# While an Auth Code is needed (is_reauth_needed), the tracking loop's reauth (Find My
+# 421/450/500) sends a Password SRP signin at most this often. The token login is still
+# tried on every request so tracking continues. A token refused again within minutes of
+# an SRP signin (no code entered for days) otherwise sends one every 30-secs at a 15-sec
+# interval and Apple throttles the account (-900007, 503) (Issue #728)
+REAUTH_NEEDED_SRP_MIN_INTERVAL_SECS = 900
+
 # How long the 2FA-pending (409) idmsa signin session is assumed to still
 # accept a verify/phone request. Reusing that session is what keeps a Text
 # code resend from making Apple push a new popup to every trusted device.
@@ -113,29 +120,6 @@ AUTHENTICATION_NEEDED_421_450_500 = [421, 450, 500]
 AUTHENTICATION_NEEDED_450 = 450
 CONNECTION_ERROR_503 = 503
 
-HTTP_RESPONSE_CODES = {
-    -4:  'Internet Connection Error',
-    -3:  'Apple PwSRP Initialization Failed',
-    -2:  'Server not Available',
-    200: 'Accepted',
-    201: 'Device Offline',
-    204: 'Authentication Code Accepted',
-    302: 'Server can not be accessed',
-    400: 'Invalid Authentication Code',
-    401: 'Invalid Username/Password',
-    401.1: 'Invalid Username',
-    401.2: 'Password can not be decoded',
-    403: 'Access Denied, Unknown Apple Acct or Acct Locked',
-    404: 'URL/Web Page not Found',
-    409: 'Valid Username/Password',
-    421: 'Trust Token Expired',
-    421.1: 'INVALID USERNAME/PASSWORD',
-    423: 'Too Many Auth Codes Requested, Retry Later',
-    450: 'Trust Token Reset',
-    500: 'Trust Token Expired',
-    503: 'Apple has received too many PasswordSRP requests in a short time frame. Login attempts will be refused for several hours. Try again later. Google Apple return code 503 for more information.',
-}
-HTTP_RESPONSE_CODES_IDX = {str(code): code for code in HTTP_RESPONSE_CODES.keys()}
 APPLE_ACCT_INVALID_USERNAME_PASSWORD_CODES = [401, 401.1, 401.2, 403, 421.1, 423, 503]
 
 DEVICE_DATA_FILTER_OUT = [
@@ -336,6 +320,14 @@ class AppleAcctManager(object):
             self.authenticate_and_refresh_data()
 
             Gb.AppleAcctLoggingInto = self    # Identifies a partial login that might have failed
+
+            # A Configure login (Update Apple Acct) or a startup login replaces an existing
+            # AppleAcct. The Devices still use the old one until iCloud3 restarts. It must not
+            # reauthenticate (refreshClient 450), it shares the cookie/session files.
+            Old_AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+            if Old_AppleAcct is not None and Old_AppleAcct is not self:
+                Old_AppleAcct.is_replaced = True
+
             Gb.AppleAcct_by_apple_id[apple_id] = self
             Gb.AppleAcct_password_by_apple_id[apple_id] = password
 
@@ -408,15 +400,21 @@ class AppleAcctManager(object):
                             "ckjsBuildVersion": "17DProjectDev77",
                             "clientId": self.client_id[5:],  }
 
-        self.was_ha_auth_code_alert_sent = False
+        self.was_ha_display_orange_reauth_button_sent = False
         self.last_refresh_secs           = time_now_secs()
         self.token_auth_cnt              = 0
         self.last_token_auth_secs        = 0
         self.password_auth_cnt           = 0
         self.last_password_auth_secs     = 0
+        self.srp_signin_sent             = False  # authenticate() sent a signin/init request
+        self.reauth_srp_skip_posted_secs = -1     # SRP time of the last 'skipped' Event Log msg
+        self.auth_code_reminder_cnt      = 0      # Auth Code needed reminders posted (aas.remind_auth_code_needed)
 
         self.response_code_pw            = 0
         self.login_successful            = False
+        self.is_replaced                 = False  # A new AppleAcct for this apple_id was logged into
+        self.login_retry_secs            = 0      # Signin failed, next retry time (aas.keep_apple_accts_alive)
+        self.login_retry_cnt             = 0
         self.login_successful_srp        = None   # None=SRP not done, True=OK, False=Failed
         self.auth_failed_503             = False
         self.is_authenticated            = False  # ICloud access has been authenticated via pw or token
@@ -652,6 +650,7 @@ class AppleAcctManager(object):
         self.login_successful_srp = None
         self.auth_failed_503      = False
         self.response_code_pw     = 0
+        self.srp_signin_sent      = False
 
         # Do not reset is_reauth_needed flag on a reauthenticate session
         # It may have been set on first authentication
@@ -679,10 +678,21 @@ class AppleAcctManager(object):
 
         if login_successful is False:
             self.login_auth_method = 'Password'
-            login_successful = self.authenticate_with_password_srp(srp_wait=srp_wait)
 
-            if login_successful is False:
+            # Waiting for an Auth Code, the tracking loop's Password SRP was sent recently
+            if self._is_reauth_needed_srp_too_soon(srp_wait):
                 self._set_srp_return_error_code()
+
+            else:
+                # The token was refused so a new password signin is needed. Drop the saved
+                # idmsa signin session (it may be spent or stuck at 2FA). The first signin/init
+                # then gets 400/-900007 along with a new session, and
+                # authenticate_with_password_srp retries the init once with it.
+                self.clear_srp_signin_session()
+                login_successful = self.authenticate_with_password_srp(srp_wait=srp_wait)
+
+                if login_successful is False:
+                    self._set_srp_return_error_code()
 
         #TESTCODE
         # login_successful = False
@@ -709,27 +719,29 @@ class AppleAcctManager(object):
 
         if login_successful:
             self.is_reauth_needed = self._set_is_reauth_needed
+            # A failed signin sets login_successful=False (_set_srp_return_error_code).
+            # Set it back when a later reauth (refreshClient 450 -> authenticate) works or
+            # the monitored acct refresh and the 450 retry still see the old failure
+            self.login_successful = True
 
         self._update_token_pw(CONF_PASSWORD, encode_password(self.token_password))
 
         # self.list_cookies()
 
-        time_between_token_auth    = format_age(self.last_token_auth_secs)
         time_between_password_auth = format_age(self.last_password_auth_secs)
         if instr(self.login_auth_method, 'Token'):
             self.token_auth_cnt += 1
             self.last_token_auth_secs = time_now_secs()
-        elif instr(self.login_auth_method, 'Password'):
+        # Only count a Password signin that was sent to Apple. One skipped by the
+        # SRP interval checks or that failed before the signin/init is not counted.
+        elif (instr(self.login_auth_method, 'Password')
+                and self.srp_signin_sent):
             self.password_auth_cnt += 1
             self.last_password_auth_secs = time_now_secs()
 
             post_event( f"{EVLOG_NOTICE}Apple Acct {self.login_auth_method} Auth > {self.account_owner}, "
                         f"#{self.password_auth_cnt} ({time_between_password_auth}), "
                         f"{CRLF_DOT}Apple Time-{apple_server_time()}")
-
-        post_monitor_msg(   f"Apple Acct {self.login_auth_method} Auth > {self.account_owner}, "
-                            f"TokenAuth-#{self.token_auth_cnt} ({time_between_token_auth}), "
-                            f"PasswordAuth-#{self.password_auth_cnt} ({time_between_password_auth})")
 
         self.is_authenticated = self.is_authenticated or login_successful
         if self.is_authenticated:
@@ -913,13 +925,35 @@ class AppleAcctManager(object):
         srp.no_username_in_x()
 
         try:
-            SrpPW   = SrpPassword(password)
-            SrpUser = srp.User(apple_id, SrpPW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
-            _, A = SrpUser.start_authentication()
-            A_bytes = base64.b64encode(A).decode()
+            # signin/init 400 with serviceError -900007 (cause undocumented). In every
+            # case that recovered (prod 11/12 05:56, dev 11/12 16:15), the sequence was
+            # Init 400 -> token accountLogin (421) -> Init 200. Repeating the init right
+            # away, even with the new scnt/session id from the 400, failed again (dev
+            # 11/13 17:23). So redo the token accountLogin first, then retry the init once.
+            for init_attempt in range(2):
+                SrpPW   = SrpPassword(password)
+                SrpUser = srp.User(apple_id, SrpPW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
+                _, A = SrpUser.start_authentication()
+                A_bytes = base64.b64encode(A).decode()
 
-            data = {'a': A_bytes}
-            data = self._srp_icloud_io_signin_init(apple_id, data)
+                data = {'a': A_bytes}
+                data = self._srp_icloud_io_signin_init(apple_id, data)
+
+                if Gb.internet_error:
+                    post_error_msg(f"{self.code_description(-4)} ({self.response_code})")
+                    return False
+
+                if (init_attempt == 0
+                        and self.response_code == 400
+                        and self._srp_service_error_code(data) == '-900007'):
+                    log_info_msg(f"{self.apple_user}, signin/init, Code-400 (-900007), "
+                                    f"Redo TrustToken accountLogin, then retry signin/init")
+                    # Token accepted this time - logged in without SRP, so
+                    # login_successful_srp stays False (it drives the 2fa logic)
+                    if self._authenticate_with_token():
+                        return True
+                    continue
+                break
 
             self.response_code_pw = self.response_code
             self.auth_failed_503  = self.auth_failed_503 or (self.response_code==503)
@@ -930,9 +964,7 @@ class AppleAcctManager(object):
             return False
 
         error_msg = ''
-        if Gb.internet_error:
-            error_msg = self.code_description(-4)
-        elif self.response_code in [403, 503]:
+        if self.response_code in [403, 503]:
             error_msg = self.code_description(self.response_code)
         elif 'salt' not in data:
             error_msg = self.code_description(-3)
@@ -957,6 +989,10 @@ class AppleAcctManager(object):
         # Step 3: client generates session key M1 and M2 with salt and b, sends to server
         SrpPW.set_encrypt_info(salt, iterations, key_length, protocol)
 
+        if Gb.internet_error:
+            post_error_msg(f"{self.code_description(-4)} ({self.response_code})")
+            return False
+
         if (SrpPW.salt is None
                 or SrpPW.error_reason is not None):
             post_error_msg(f"Password SRP Error, {SrpPW.error_reason}")
@@ -971,6 +1007,10 @@ class AppleAcctManager(object):
             data = {"c": c, "m1": m1, "m2": m2}
 
         data = self._srp_icloud_io_signin_complete(apple_id, data)
+
+        if Gb.internet_error:
+            post_error_msg(f"{self.code_description(-4)} ({self.response_code})")
+            return False
 
         self.response_code_pw = self.response_code
         self.auth_failed_503  = self.auth_failed_503 or (self.response_code==503)
@@ -990,12 +1030,26 @@ class AppleAcctManager(object):
         return True
 
 #............................................................................
+    @staticmethod
+    def _srp_service_error_code(data):
+        '''
+        Return Apple's first serviceErrors code ('-900007') from a response, or ''
+        '''
+        try:
+            return str(data['serviceErrors'][0]['code'])
+        except Exception:
+            return ''
+
+#............................................................................
     def _srp_icloud_io_signin_init(self, apple_id, data):
         '''
         Process the endpoint/signin/init request
         '''
 
         data.update({'protocols': ['s2k', 's2k_fo']})
+
+        # A Password signin was sent, authenticate() counts it (password_auth_cnt)
+        self.srp_signin_sent = True
 
         self.response_code_pw = self.response_code
         self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
@@ -1020,6 +1074,41 @@ class AppleAcctManager(object):
 
         self.response_code_pw = self.response_code
         self.auth_failed_503  = self.auth_failed_503 or self.response_code==503
+
+#............................................................................
+    def _is_reauth_needed_srp_too_soon(self, srp_wait):
+        '''
+        An Auth Code is needed and the tracking loop's reauth (srp_wait=False, Find My
+        421/450/500) wants to send a Password SRP signin less than
+        REAUTH_NEEDED_SRP_MIN_INTERVAL_SECS after the last one. Only the Auth Code clears
+        is_reauth_needed, repeating the signin does not. The token login was already tried.
+
+        Not checked for the startup login, Configure or the Auth Code screens (srp_wait=True).
+        The rule ends when the code is entered (is_reauth_needed=False).
+
+        Return:
+            True  - Skip the Password SRP signin
+            False - OK to send it
+        '''
+        if srp_wait or self.is_reauth_needed is False:
+            return False
+
+        last_secs = Gb.srp_signin_complete_secs_by_apple_id.get(self.apple_id, 0)
+        if last_secs == 0 or secs_since(last_secs) >= REAUTH_NEEDED_SRP_MIN_INTERVAL_SECS:
+            return False
+
+        next_secs = last_secs + REAUTH_NEEDED_SRP_MIN_INTERVAL_SECS
+        log_info_msg(   f"{self.apple_user}, Auth Code Needed, Password SRP Signin Skipped, "
+                        f"Last Signin-{format_age(last_secs)}, Next-{secs_to_time(next_secs)}")
+
+        # Post the Event Log msg once for each SRP signin, not on every 15-sec request
+        if self.reauth_srp_skip_posted_secs != last_secs:
+            self.reauth_srp_skip_posted_secs = last_secs
+            post_event( f"Apple Acct > {self.account_owner}, Auth Code Needed, "
+                        f"Password Signin Paused until {secs_to_time(next_secs)}, "
+                        f"Enter the Auth Code to resume")
+
+        return True
 
 #............................................................................
     def _wait_for_srp_signin_interval(self, apple_id, srp_wait=True):
@@ -1116,11 +1205,37 @@ class AppleAcctManager(object):
         srp.no_username_in_x()
 
         try:
-            SrpPW   = SrpPassword(password)
-            SrpUser = srp.User(apple_id, SrpPW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
-            _, A    = SrpUser.start_authentication()
+            # signin/init 400 with serviceError -900007 - Apple rejected the request
+            # before the password was checked. The 400 response gives the session a new
+            # scnt/session_id (kept in session_data, the aasp cookie in the transient
+            # cookie jar). Retry the init once with them (recovered this way on 11/13 18:33).
+            # The login's TrustToken accountLogin recovery can not be used here, a
+            # validate-only AppleAcct has no session token.
+            for init_attempt in range(2):
+                SrpPW   = SrpPassword(password)
+                SrpUser = srp.User(apple_id, SrpPW, hash_alg=srp.SHA256, ng_type=srp.NG_2048)
+                _, A    = SrpUser.start_authentication()
 
-            data = self._srp_icloud_io_signin_init(apple_id, {'a': base64.b64encode(A).decode()})
+                # TEST CODE - Simulate a signin/init 400 (-900007), the retry is the real init
+                if (init_attempt == 0
+                        and TEST.SRP_INIT_400_USERNAME in (self.apple_id, self.apple_user)):
+                    TEST.SRP_INIT_400_USERNAME = None
+                    # response_code is a read-only property of iCloudSession.response_code
+                    self.iCloudSession.response_code = 400
+                    data = {'serviceErrors': [{'code': '-900007'}]}
+                    log_info_msg(f"{self.apple_user}, TEST > SRP_INIT_400_USERNAME, "
+                                    f"signin/init not sent, Code-400 (-900007) simulated")
+                else:
+                    data = self._srp_icloud_io_signin_init(apple_id, {'a': base64.b64encode(A).decode()})
+
+                if (init_attempt == 0
+                        and Gb.internet_error is False
+                        and self.response_code == 400
+                        and self._srp_service_error_code(data) == '-900007'):
+                    log_info_msg(f"{self.apple_user}, Validate Username/Password, "
+                                    f"signin/init, Code-400 (-900007), Retry signin/init")
+                    continue
+                break
 
         except Exception as err:
             log_exception(err)
@@ -2080,6 +2195,45 @@ class AppleAcctManager(object):
         # Return true if 2fa code was successful
         return not self.is_reauth_needed
 
+#----------------------------------------------------------------------------
+    def validate_2fa_code(self, auth_code):
+        '''
+        Validate the auth code entered with the auth method being used (Push or Text).
+
+        Text auth method - The password SRP signin's 2fa challenge (409) also displays the
+        Apple device popup window code on the trusted devices before the Text code is sent.
+        That code goes to a different endpoint (verify/trusteddevice/securitycode) and is
+        always refused by the Text endpoint (verify/phone/securitycode, 400/-21669).
+        If the Text code is refused as incorrect and the challenge that sent the popup is
+        still live, send the same code once as the device popup window code.
+
+        Every refused code counts with Apple. A mistyped code is 2 wrong attempts here.
+
+        Return: True if the code was accepted
+        '''
+        if self.is_auth_method_PUSH:
+            return self.validate_2fa_push_popup_window_code(auth_code)
+
+        if self.validate_2fa_text_code(auth_code):
+            return True
+
+        service_error = self._srp_service_error_code(getattr(self.iCloudSession, 'data', {}))
+        if (self.response_code != 400
+                or service_error != '-21669'
+                or self.is_2fa_challenge_session_live is False):
+            return False
+
+        log_info_msg(   f"{self.apple_user}, Text Auth Code refused (400/-21669), "
+                        f"Trying it as the Apple device popup window code")
+
+        accepted = self.validate_2fa_push_popup_window_code(auth_code)
+
+        post_event( f"Apple Acct > {self.account_owner}, Text Auth Code refused, "
+                    f"Tried as the Apple device popup window code, "
+                    f"{'Accepted' if accepted else 'Refused'}")
+
+        return accepted
+
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #            TEXT MESSAGE AUTHENTICATION
@@ -2410,9 +2564,6 @@ class AppleAcctManager(object):
             get_trusted_devices. When None (a standalone caller), it is fetched
             here on the SRP 2FA-pending path.
         '''
-        if TEST.HWKEY_AUTH_ENABLED is False:
-            return False
-
         self.hwkey_names = self.auth_methods.get(HWKEY, '')
 
         # /appleauth/auth only returns keyNames when a fresh SRP sign-in has put

@@ -11,7 +11,7 @@ from ..const            import (ICLOUD3, DOMAIN,
                                 EVENT_RECDS_MAX_CNT_BASE, EVENT_RECDS_MAX_CNT_ZONE,
                                 UNKNOWN,
                                 ICLOUD, FAMSHR,
-                                DEVICE_TYPE_DN, DEVICE_TYPE_DNS,
+                                DEVICE_TYPE_NAME, DEVICE_TYPE_NAMES,
                                 IPHONE, IPAD, IPOD, WATCH, AIRPODS, MAC, IPAD_CELL, WATCH_WIFI, OTHER,
                                 IPHONE_DN, IPAD_DN, IPOD_DN, WATCH_DN, AIRPODS_DN, MAC_DN,
                                 MOBAPP, NO_MOBAPP, ICLOUD_DEVICE_STATUS, TIMESTAMP,
@@ -25,7 +25,7 @@ from ..const            import (ICLOUD3, DOMAIN,
                                 ERR_UNKNOWN_AA, ERR_UNKNOWN_MOBAPP, ERR_UNKNOWN,
                                 ERR_ICLOUD_DISABLED, ERR_NOT_AVAIL, ERR_NOT_IN_AA, ERR_NOT_IN_MOBAPP,
                                 ERR_NOT_USED, ERR_OFFLINE, ERR_NOT_DATA_SOURCE, ERR_NOT_CONFIG,
-                                ERR_DISABLED_HA, ERR_USERNAME_PW, ERR_INACTIVE, )
+                                ERR_DISABLED_HA, ERR_USERNAME_PW, ERR_APPLE_REFUSED, ERR_INACTIVE, )
 from ..const_config     import (TRIGGER, ZONE, BATTERY_STATUS, CONF_ENCODE_PASSWORD, CONF_VERSION,
                                 CONF_VERSION_INSTALL_DATE, CONF_EVLOG_CARD_DIRECTORY,
                                 CONF_EVLOG_CARD_PROGRAM, CONF_EVLOG_BTNCONFIG_URL,
@@ -55,14 +55,15 @@ from ..const_config     import (TRIGGER, ZONE, BATTERY_STATUS, CONF_ENCODE_PASSW
                                 CONF_TRACKING_MODE, CONF_INZONE_INTERVAL,
                                 CONF_AWAY_TIME_ZONE_1_OFFSET, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                 CONF_AWAY_TIME_ZONE_2_OFFSET, CONF_AWAY_TIME_ZONE_2_DEVICES,
-                                CONF_ZONE, CONF_NAME, CONF_ANALYTICS_ENABLED, DEFAULT_GENERAL_CONF,
+                                CONF_ZONE, CONF_NAME, CONF_ANALYTICS_ENABLED,
+                                CONF_EXCLUDED_SENSORS,DEFAULT_GENERAL_CONF,
                                 DEFAULT_TRACKING_CONF, )
 from ..const_char       import (CIRCLE_LETTERS_DARK, CRLF, CRLF_DOT, CRLF_CHK, CRLF_SP3_DOT, HDOT,
                                 CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK, CRLF_CIRCLE_X,
                                 CIRCLE_X, CRLF_SP3_HDOT, CRLF_INDENT, CRLF_X, CRLF_TAB, DOT,
                                 CRLF_SP8_HDOT, CRLF_SP8_DOT, CRLF_RED_X, RED_X, CRLF_RED_ALERT,
                                 CRLF_RED_ALERT2, RED_ALERT, CRLF_RED_MARK, CRLF_STAR, GREEN_ALERT,
-                                YELLOW_WARNING, INACTIVE_SYMB, RARROW, NBSP2, NBSP4, NBSP6,
+                                YELLOW_WARNING, INACTIVE_SYMB, RARROW, NBSP, NBSP2, NBSP4, NBSP6,
                                 CIRCLE_STAR, INFO_SEPARATOR, DASH_20, CHECK_MARK, )
 
 from ..utils                import entity_io
@@ -72,7 +73,7 @@ from ..utils.utils          import (instr, is_empty, isnot_empty, yes_no, circle
                                     dict_del, dict_sort, dict_reverse_sort, )
 from ..utils.messaging      import (add_log_file_filter,
                                     post_event, post_alert, post_greenbar_msg, post_dotted_line,
-                                    post_error_msg, post_monitor_msg, update_alert_sensor,
+                                    post_error_msg, update_alert_sensor,
                                     post_repair_issue, clear_repair_issue, clear_repair_issues,
                                     post_repair_issue_update_device,
                                     register_repair_fix_handler,
@@ -1256,7 +1257,7 @@ def create_Devices_object():
                 post_greenbar_msg(f"HA device_tracker entity id not configured for {aadev_name}")
                 post_alert( f"CONFIGURATION ALERT > The device_tracker entity id {devicename} "
                             f"has not been configured for {aadev_name} "
-                            f"({DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])})")
+                            f"({DEVICE_TYPE_NAME(conf_device[CONF_DEVICE_TYPE])})")
                 continue
 
             Gb.conf_icloud_dnames.append(aadev_name)
@@ -1271,7 +1272,7 @@ def create_Devices_object():
 
             if do_not_track_reason:
                 post_event( f"{INACTIVE_SYMB}{conf_device[CONF_FNAME]} ({devicename}) > "
-                            f"{DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}, "
+                            f"{DEVICE_TYPE_NAME(conf_device[CONF_DEVICE_TYPE])}, "
                             f"{do_not_track_reason}"
                             f"{CRLF_SP5_DOT}Apple Account-{apple_user(apple_id)}"
                             f"{CRLF_SP5_DOT}Apple Device-{aadev_name} ({conf_device[CONF_MODEL_DISPLAY_NAME]})"
@@ -1285,14 +1286,11 @@ def create_Devices_object():
 
             # Reinitialize or add device, preserve the Sensor object if reinitializing
             if devicename in old_Devices_by_devicename:
-                post_monitor_msg(f"INITIALIZE Device > {devicename}")
                 Device = old_Devices_by_devicename[devicename]
 
                 Device.__init__(devicename, conf_device)
 
             else:
-                post_monitor_msg(f"ADD Device > {devicename}")
-
                 Device = iCloud3_Device(devicename, conf_device)
 
             Gb.conf_devicenames.append(devicename)
@@ -1328,7 +1326,7 @@ def _display_stage3_event_log_device_info(Device):
         icloud_dev_msg = f"{Device.conf_icloud_dname} ({Device.model_display_name})" \
                             if Device.conf_icloud_dname else '✪ NONE'
 
-        mobapp_dev_msg = (Device.mobapp[DEVICE_TRACKER]) or '✪ NONE'
+        mobapp_dev_msg = Device.mobapp[DEVICE_TRACKER] if Device.is_mobapp_device_used else '✪ NONE'
 
         if ((apple_acct_msg == '✪ NONE' or icloud_dev_msg == '✪ NONE')
                 and mobapp_dev_msg == '✪ NONE'):
@@ -1466,7 +1464,12 @@ def validate_upw_all_apple_accts():
                     repair_step = 'update_device')
 
         elif Gb.upw_valid_by_apple_id.get(Device.conf_apple_acct_apple_id, False) is False:
-            Device.status_msg[CONF_APPLE_ACCT] = ERR_USERNAME_PW
+            # 400 (-900007 on signin/init) or 503 - Apple refused the request, it did
+            # not say the password was wrong (Issue #727)
+            if Gb.upw_code_by_apple_id.get(Device.conf_apple_acct_apple_id, 0) in [400, 503]:
+                Device.status_msg[CONF_APPLE_ACCT] = ERR_APPLE_REFUSED
+            else:
+                Device.status_msg[CONF_APPLE_ACCT] = ERR_USERNAME_PW
 
 #--------------------------------------------------------------------
 def log_into_apple_accounts():
@@ -1478,6 +1481,9 @@ def log_into_apple_accounts():
 
     if is_empty(Gb.conf_apple_ids):
         return False
+
+    # Remove the session files of Apple Accts no longer in the configuration
+    aascf.delete_orphaned_apple_acct_files()
 
     # Setup access to the Apple acct if is is not already setup or anything
     # has changed
@@ -1496,9 +1502,16 @@ def log_into_apple_accounts():
         upw_valid = Gb.upw_valid_by_apple_id.get(apple_id, True)
         upw_code  = Gb.upw_code_by_apple_id.get(apple_id, 0)
 
+        # 400 (-900007) on the validation's signin/init - Apple refused the request before
+        # the password was sent. Log in anyway, it uses the session/trust token first (no
+        # Password SRP). If it fails, the startup login retry (keep_apple_accts_alive)
+        # tries again later instead of the Apple Acct being down until HA is restarted.
+        # A 503 is not logged into, Apple refuses another signin right after one (Issue #727)
+        is_upw_refused_400 = (upw_valid is False and upw_code == 400)
+
         if upw_valid is False and upw_code in [401, 401.1, 401.2, 403, 421.1, 423, 503]:
             post_event( f"{apple_user(apple_id)} > Not Setting up Apple Account"
-                        f"{CRLF_DOT}Failed to validate Username/Password ({upw_code})")
+                        f"{CRLF_RED_ALERT}Failed to validate Username/Password ({upw_code})")
             continue
 
         post_event( f"{apple_user(apple_id)} > Setting up Apple Account")
@@ -1522,19 +1535,26 @@ def log_into_apple_accounts():
                 and AppleAcct.is_authenticated
                 and aas.is_authentication_2fa_code_needed(AppleAcct) is False
                 and Gb.AppleAcct_error_by_apple_id.get(apple_id, False) is False
-                and Gb.iCloudSession_by_apple_id.get(apple_id, None is not None)
+                and Gb.iCloudSession_by_apple_id.get(apple_id) is not None
                 and Gb.upw_valid_by_apple_id.get(apple_id, False)
                 and AppleAcct.login_successful is True
                 and AppleAcct.auth_failed_503 is False)
 
-        if Gb.upw_valid_by_apple_id.get(apple_id) is False:
+        if (Gb.upw_valid_by_apple_id.get(apple_id) is False
+                and is_upw_refused_400 is False):
             upw_code = Gb.upw_code_by_apple_id.get(apple_id, 200)
-            if upw_code == 503:
+            if upw_code in [400, 503]:
                 post_alert(f"Login Failed, Apple Refused the Signin Request, Try again later ({upw_code})")
+                if aas.is_ha_icloud_integration_using_apple_id(apple_id):
+                    post_alert(aas.HA_ICLOUD_INTEGRATION_503_MSG)
             else:
                 post_alert(f"Login Failed, Invalid Username/Password ({upw_code})")
 
         elif can_reuse_AppleAcct is False:
+            if is_upw_refused_400:
+                post_event( f"{apple_user(apple_id)} > Username/Password Verification was "
+                            f"refused by Apple (400), Logging in with the Apple Acct session")
+
             AppleAcct = aas.log_into_apple_account(
                                         apple_id,
                                         password,
@@ -1559,6 +1579,11 @@ def log_into_apple_accounts():
             _check_apple_acct_status_issues(AppleAcct)
 
         if AppleAcct and AppleAcct.login_successful:
+            # The login worked after the validation was refused (400). Apple accepted the
+            # Apple Acct, remove the validation error from it and its Devices
+            if is_upw_refused_400:
+                _clear_upw_refused_400(apple_id)
+
             if AppleAcct.is_authenticated:
                 reauth_in_days, reauth_msg = AppleAcct.get_next_reauth_in_days_info_msg()
                 AppleAcct.issue_reauth_in_days_alert_msg()
@@ -1583,6 +1608,21 @@ def log_into_apple_accounts():
         post_dotted_line()
 
     return True
+
+#------------------------------------------------------------------
+def _clear_upw_refused_400(apple_id):
+    '''
+    The Username/Password validation was refused by Apple (400, -900007 on signin/init)
+    but the login was successful. Mark the Apple Acct valid and remove the Apple Refused
+    Signin status from its Devices (validate_upw_all_apple_accts).
+    '''
+    Gb.upw_valid_by_apple_id[apple_id] = True
+    Gb.upw_code_by_apple_id[apple_id]  = 200
+
+    for Device in Gb.Devices:
+        if (Device.conf_apple_acct_apple_id == apple_id
+                and Device.status_msg.get(CONF_APPLE_ACCT) == ERR_APPLE_REFUSED):
+            Device.status_msg.pop(CONF_APPLE_ACCT, None)
 
 #------------------------------------------------------------------
 def _check_apple_acct_status_issues(AppleAcct):
@@ -1688,16 +1728,6 @@ def are_all_devices_verified(retry=False):
     unverified_devices = [Device.fname_devicename
                             for devicename, Device in Gb.Devices_by_devicename.items()
                             if Device.was_verified is False and Device.isnot_inactive]
-    unverified_device_apple_ids = [Device.conf_apple_acct_apple_id
-                            for devicename, Device in Gb.Devices_by_devicename.items()
-                            if (Device.was_verified is False
-                                    and Device.isnot_inactive)]
-
-    Gb.apple_ids_setup_error_retry_list   = list(set(unverified_device_apple_ids))
-    Gb.devicenames_setup_error_retry_list = list(set(unverified_devices))
-
-    Gb.startup_lists['_.apple_ids_setup_error_retry_list']   = Gb.apple_ids_setup_error_retry_list
-    Gb.startup_lists['_.devicenames_setup_error_retry_list'] = Gb.devicenames_setup_error_retry_list
 
     if is_empty(unverified_devices):
         return True
@@ -2498,7 +2528,7 @@ def _post_not_assigned_info(AppleAcct):
 
     devices_not_assigned_msg = ''
     for aadev_dname, AADev in devices_not_assigned.items():
-        aadev_msg = f", {RED_ALERT}{AADev.startup_msg}" if AADev.startup_msg else \
+        aadev_msg = f", {AADev.startup_msg}" if AADev.startup_msg else \
                     f", Located-{format_age(AADev.location_secs)} "
 
         devices_not_assigned_msg +=(f"{CRLF_DOT}{aadev_dname} "
@@ -2533,20 +2563,7 @@ def _set_device_data_source(AppleAcct):
             if (Device.is_mobapp_monitored and data_source is None):
                 data_source = MOBAPP
 
-            if data_source != MOBAPP:
-                info_msg = (f"Set AppleAcct Device Id > {Device.devicename}, "
-                            f"DataSource-{data_source}, "
-                            f"{CRLF}iCloud-({Device.device_id8_icloud}), "
-                            f"{Device.model_display_name}")
-                post_monitor_msg(info_msg)
-
             Device.primary_data_source = data_source
-
-        info_msg = ''
-        for _device_id, AADev in AppleAcct.AADev_by_device_id.items():
-            info_msg += (f"{AADev.name}/{_device_id[:8]}-{AADev.data_source}, ")
-        if info_msg == '': info_msg = 'None'
-        post_monitor_msg(f"AppleAcct Devices > {info_msg}")
 
     except Exception as err:
         log_exception(err)
@@ -2646,8 +2663,6 @@ def unknown_apple_acct_status(apple_id):
         log_exception(err)
         apple_acct_status = ''
 
-    post_monitor_msg(f"Unknown Apple Acct > {apple_user(apple_id)}, Status-{apple_acct_status or 'Unknown'}")
-
     return apple_acct_status
 
 
@@ -2679,7 +2694,7 @@ def setup_tracked_devices_for_mobapp():
         conf_mobapp_dname = Device.mobapp[DEVICE_TRACKER].replace(DEVICE_TRACKER_DOT, '')
         Gb.devicenames_x_mobapp_dnames[devicename] = None
 
-        if conf_mobapp_dname in ['', 'None']:
+        if Device.is_mobapp_device_used is False:
             Device.initialize_mobapp_device_tracker_entity_name()
             continue
 
@@ -2692,6 +2707,24 @@ def setup_tracked_devices_for_mobapp():
                 Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
 
+            elif conf_mobapp_dname in Gb.mobapp_id_by_disabled_mobapp_dname:
+                Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_DISABLED_HA
+                Device.set_button_prefix_icon(GREEN_ALERT)
+                Device.is_mobapp_device_unavailable = True
+
+                post_config_error(
+                    Source      = Device,
+                    source_name = Device.fname,
+                    error       = 'MobApp Device Disabled',
+                    error_item  = conf_mobapp_dname,
+                    message     = ( 'The Mobile App device_tracker assigned to the iCloud3 Device is '
+                                    'disabled in HA and will not be used for device tracking, zone '
+                                    'exit/enter monitoring and battery information. Enable it on the '
+                                    'HA Mobile App Integration screen or select another Mobile App device.'),
+                    details     = ( f"{CRLF_DOT}{Device.fname_devicename} > MobApp: "
+                                    f"device_tracker.{conf_mobapp_dname}"),
+                    repair_step = 'update_device')
+
             else:
                 repair_issue = True
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
@@ -2703,7 +2736,7 @@ def setup_tracked_devices_for_mobapp():
                 Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
             else:
-                repair_issue = True
+                # _scan_for_for_mobapp_device posted the 'ScanFor Device Failed' repair issue
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
                 Device.set_button_prefix_icon(YELLOW_WARNING)
 
@@ -2713,8 +2746,8 @@ def setup_tracked_devices_for_mobapp():
                 source_name = Device.fname,
                 error       = 'Unknown MobApp Device',
                 error_item  = conf_mobapp_dname,
-                message     = ( 'The Mobile App device assigned to the iCloud3 Device could ot be found '
-                                'in the HA Device Registry. Verify that the Mobile App device '
+                message     = ( 'The Mobile App device assigned to the iCloud3 Device could not be found '
+                                'in the HA Entity Registry. Verify that the Mobile App device '
                                 'is configured and was selected for this iCloud3 Device.'),
                 details     = ( f"{CRLF_DOT}{Device.fname_devicename} > MobApp: {conf_mobapp_dname}"),
                 repair_step = 'update_device')
@@ -2736,10 +2769,10 @@ def setup_tracked_devices_for_mobapp():
             mobapp_fname = f"{mobapp_dname.replace('_', ' ').title()}"
 
             # Fix device type (iphone --> Iphone --> iPhone)
-            for _device_type in DEVICE_TYPE_DNS.keys():
+            for _device_type in DEVICE_TYPE_NAMES.keys():
                 if instr(mobapp_fname, _device_type.title()):
                     mobapp_fname = mobapp_fname.replace(
-                            _device_type.title(), DEVICE_TYPE_DNS[_device_type])
+                            _device_type.title(), DEVICE_TYPE_NAMES[_device_type])
                     break
 
         Device.conf_mobapp_fname = mobapp_fname
@@ -2764,25 +2797,45 @@ def setup_tracked_devices_for_mobapp():
 
             continue
 
-        # Build errors message, can still use the Mobile App for zone changes but sensors are not monitored
-        if (Gb.last_updt_trig_by_mobapp_dname.get(mobapp_dname, '') == ''
-                or TEST.MOBAPP_BATTERY_ENTITY_ERROR
-                or instr(Gb.last_updt_trig_by_mobapp_dname.get(mobapp_dname, ''), 'DISABLED')
-                or Gb.battery_level_sensors_by_mobapp_dname.get(mobapp_dname, '') == ''
-                or instr(Gb.battery_level_sensors_by_mobapp_dname.get(mobapp_dname, ''), 'DISABLED')):
+        # The sensors were matched to the device_tracker by its mobile_app config entry
+        # (unique_id = <webhook_id>_<sensor_id>), not by name
+        trigger_entity   = Gb.last_updt_trig_by_mobapp_dname.get(mobapp_dname, '')
+        battery_entity   = Gb.battery_level_sensors_by_mobapp_dname.get(mobapp_dname, '')
+        disabled_sensors = Gb.disabled_sensors_by_mobapp_dname.get(mobapp_dname, {})
+
+        # Can still use the Mobile App for zone changes but the trigger is not monitored.
+        # The watchOS app does not have a trigger sensor so it is not an error.
+        is_watchos = mobapp_dname in Gb.mobapp_dnames_watchos
+        if ((trigger_entity == '' and is_watchos is False)
+                or TEST.MOBAPP_BATTERY_ENTITY_ERROR):
             TEST.MOBAPP_BATTERY_ENTITY_ERROR = False
             Device.set_button_prefix_icon(GREEN_ALERT)
+
+            if disabled_entity := disabled_sensors.get('last_update_trigger'):
+                cause_msg = ( f'is disabled in HA ({disabled_entity}). Enable it on the HA Mobile App '
+                              f'Integration screen for this device')
+            else:
+                cause_msg = 'was not found for this Mobile App device'
 
             post_config_error(
                 Source      = Device,
                 source_name = Device.fname,
                 error       = 'MobApp Sensor Unavailable',
                 error_item  = mobapp_dname,
-                message     = ( 'An assigned Mobile App device was found in the HA Device Registry '
-                                'but its battery sensors were not. The Mobile App device will be used '
-                                'for tracking only.'),
-                details     = ( f"{CRLF_DOT}{Device.fname_devicename} > MobApp: {mobapp_dname}"),
+                message     = ( f'The Last Update Trigger sensor {cause_msg}. '
+                                f'The Mobile App device will be used for tracking only.'),
+                details     = ( f"{CRLF_DOT}{Device.fname_devicename} > MobApp: {mobapp_dname}"
+                                f"{CRLF_DOT}Last Update Trigger: {disabled_entity or 'Not Found'}"),
                 repair_step = 'alert')
+
+        # The device_tracker battery_level attribute is used when the battery_level sensor is
+        # not available. It is only updated when the Mobile App sends a location update.
+        if battery_entity == '':
+            disabled_entity = disabled_sensors.get('battery_level')
+            cause_msg = f"Disabled in HA ({disabled_entity})" if disabled_entity else "Not Found"
+            post_event(Device,
+                        f"MobApp Battery Level Sensor > {cause_msg}, "
+                        f"Using device_tracker.{mobapp_dname} battery_level (updated with location)")
 
         verified_mobapp_fnames.append(mobapp_fname)
         Gb.mobapp_device_verified_cnt += 1
@@ -2818,14 +2871,18 @@ def setup_tracked_devices_for_mobapp():
                     config_file.write_icloud3_configuration_file()
                     break
 
-        # Setup mobapp entities with data or to be monitored
+        # Setup mobapp entities with data or to be monitored. The sensors are the full
+        # entity_id or '' if they were not found or are disabled. The device_tracker
+        # battery_level attribute is used if the battery_level sensor is not available.
         Gb.Devices_by_mobapp_dname[mobapp_dname] = Device
         Device.mobapp[DEVICE_TRACKER] = f"device_tracker.{mobapp_dname}"
-        Device.mobapp[TRIGGER]        = f"sensor.{Gb.last_updt_trig_by_mobapp_dname.get(mobapp_dname, '')}"
+        Device.mobapp[TRIGGER]        = trigger_entity
         Device.mobapp[BATTERY_LEVEL]  = Device.sensors['mobapp_sensor-battery_level'] = \
-                                        f"sensor.{Gb.battery_level_sensors_by_mobapp_dname.get(mobapp_dname, '')}"
+                                        battery_entity or f"device_tracker.{mobapp_dname}"
         Device.mobapp[BATTERY_STATUS] = Device.sensors['mobapp_sensor-battery_status'] = \
-                                        f"sensor.{Gb.battery_state_sensors_by_mobapp_dname.get(mobapp_dname, '')}"
+                                        Gb.battery_state_sensors_by_mobapp_dname.get(mobapp_dname, '')
+
+
 
         device_msg = (  f"{CRLF_CHK}{mobapp_fname}{RARROW}"
                         f"{Device.fname}/{devicename}")
@@ -2915,8 +2972,13 @@ def _scan_for_for_mobapp_device(devicename, Device, conf_mobapp_dname):
 
     scanfor_mobapp_dname = conf_mobapp_dname.replace('ScanFor: ', '')
 
-    matched_mobapp_devices = [k for k, v in Gb.mobapp_id_by_mobapp_dname.items()
-                    if k.startswith(scanfor_mobapp_dname) and v.startswith('DISABLED') is False]
+    matched_mobapp_devices = [mobapp_dname for mobapp_dname in Gb.mobapp_id_by_mobapp_dname.keys()
+                    if mobapp_dname.startswith(scanfor_mobapp_dname)]
+
+    # Disabled device_trackers are not used but are listed in the error msg
+    disabled_mobapp_devices = [f"{mobapp_dname} (Disabled in HA)"
+                    for mobapp_dname in Gb.mobapp_id_by_disabled_mobapp_dname.keys()
+                    if mobapp_dname.startswith(scanfor_mobapp_dname)]
 
     Gb.startup_lists['_.matched_mobapp_devices'] = matched_mobapp_devices
 
@@ -2928,7 +2990,7 @@ def _scan_for_for_mobapp_device(devicename, Device, conf_mobapp_dname):
 
     else:
         if is_empty(matched_mobapp_devices):
-            matched_mobapp_devices = ['No Devices']
+            matched_mobapp_devices = disabled_mobapp_devices or ['No Devices']
 
         post_config_error(
                 Source      = Device,
@@ -2998,6 +3060,18 @@ def identify_tracked_monitored_devices():
             Gb.Devices_by_devicename_tracked[devicename] = Device
         elif Device.is_monitored:
             Gb.Devices_by_devicename_monitored[devicename] = Device
+
+    # A monitored device makes no Apple request of its own, it uses the data refreshed by a
+    # tracked device in the same Apple Acct. If there are no tracked devices in its Apple Acct,
+    # it is only refreshed by the 30-min keep-alive (aas.keep_apple_accts_alive). The flag lets
+    # the monitored device retry sooner when it has no location (initial locate, Pending)
+    # (icloud3_main._retry_monitored_no_location).
+    tracked_apple_ids = {Device.conf_apple_acct_apple_id
+                            for Device in Gb.Devices_by_devicename_tracked.values()}
+    for Device in Gb.Devices_by_devicename_monitored.values():
+        Device.is_monitored_acct_refresh = (
+                            Device.conf_apple_acct_apple_id != ''
+                            and Device.conf_apple_acct_apple_id not in tracked_apple_ids)
 
     Gb.startup_lists['Gb.Devices_by_devicename_tracked']   = Gb.Devices_by_devicename_tracked
     Gb.startup_lists['Gb.Devices_by_devicename_monitored'] = Gb.Devices_by_devicename_monitored
@@ -3096,11 +3170,11 @@ def display_all_devices_config_info(selected_devicenames=None):
 
         if Device.is_tracked:
             tracking_mode += 'Tracked'
-            tracked_data_source = []
-            if Device.verified_ICLOUD: list_add(tracked_data_source, 'iCloud')
-            if Device.verified_MOBAPP: list_add(tracked_data_source, 'MobApp')
-            if tracked_data_source:
-                tracking_mode += f" ({list_to_str(tracked_data_source)})"
+            # tracked_data_source = []
+            # if Device.verified_ICLOUD: list_add(tracked_data_source, 'iCloud')
+            # if Device.verified_MOBAPP: list_add(tracked_data_source, 'MobApp')
+            # if tracked_data_source:
+            #     tracking_mode += f" ({list_to_str(tracked_data_source)})"
 
         elif Device.is_monitored:
             tracking_mode += 'Monitored'
@@ -3119,7 +3193,9 @@ def _build_apple_acct_info_section(devicename, Device):
     '''
     Build the Apple Account info portion of the device's configuration
     '''
-    evlog_msg =(f"{CRLF_DOT}Apple Acct Configuration: "
+
+    dot = CRLF_DOT if Device.verified_ICLOUD else CRLF_X
+    evlog_msg =(f"{dot}Apple Acct Configuration: "
                 f"{Device.status_msg.get(ICLOUD, '')}")
 
     # Device is not in configured Apple acct if it was not matched
@@ -3138,7 +3214,7 @@ def _build_apple_acct_info_section(devicename, Device):
         apple_owner = Device.AppleAcct.apple_id_account_owner
 
     if _apple_user == '' or apple_owner == '':
-        evlog_msg += f"{CRLF_HDOT}Acct Owner...: No Apple Device Assigned"
+        evlog_msg += f"{CRLF_HDOT}Acct Owner.........: No Apple Device Assigned"
         return evlog_msg
 
     elif Gb.use_data_source_ICLOUD is False:
@@ -3147,9 +3223,7 @@ def _build_apple_acct_info_section(devicename, Device):
     elif Device.AADev_icloud is None:
         apple_acct_msg = (f"{CRLF_RED_ALERT}DEVICE IS NOT CONFIGURED")
 
-    #evlog_msg += f"{CRLF_HDOT}Acct Owner...: {_apple_user}{apple_acct_msg}"
-    #evlog_msg += (  f"{CRLF_HDOT}Acct Owner...: {_apple_user}"
-    evlog_msg += (  f"{CRLF_HDOT}Acct Owner...: {apple_owner}"
+    evlog_msg += (  f"{CRLF_HDOT}Acct Owner.........: {apple_owner}"
                     f"{Device.status_msg.get(CONF_APPLE_ACCT, '')}")
 
     icloud_dname = Device.conf_icloud_dname
@@ -3170,14 +3244,15 @@ def _build_apple_acct_info_section(devicename, Device):
                                 f"Since-{format_time_age(timestamp)}")
             Device.offline_secs = timestamp
 
-    evlog_msg += f"{CRLF_HDOT}Device Name: {icloud_dname}{icloud_dname_msg}"
+    evlog_msg += f"{CRLF_HDOT}Device Name......: {icloud_dname}{icloud_dname_msg}"
 
     return evlog_msg
 
 #..............................................................................
 def _build_mobapp_info_section(devicename, Device):
 
-    evlog_msg = f"{CRLF_DOT}Mobile App Configuration: "
+    dot = CRLF_DOT if Device.verified_MOBAPP else CRLF_X
+    evlog_msg = f"{dot}Mobile App Configuration: "
 
     # MobApp set up for Device but MobApp data source disabled in config
     conf_device_msg = ha_device_msg = ''
@@ -3186,19 +3261,50 @@ def _build_mobapp_info_section(devicename, Device):
 
     # MobApp config entry is None, Not used
     if Device.conf_device[CONF_MOBILE_APP_DEVICE] == 'None':
-        evlog_msg += f"{CRLF_HDOT}MobApp Device: No MobApp Device Assigned"
+        evlog_msg += f"{CRLF_HDOT}MobApp Device..: No MobApp Device Assigned"
         return evlog_msg
 
-    conf_device_msg = Device.status_msg.get(CONF_MOBILE_APP_DEVICE, '')
-    trigger_entity  = Device.mobapp[TRIGGER][7:] or 'UNKNOWN'
-    bat_lev_entity  = Device.mobapp[BATTERY_LEVEL][7:] or 'UNKNOWN'
-    notify_entity   = Device.mobapp[NOTIFY] or 'WAITING FOR NOTIFY SVC TO START"'
+    conf_device_msg    = Device.status_msg.get(CONF_MOBILE_APP_DEVICE, '')
+    trigger_entity     = Device.mobapp[TRIGGER].replace('sensor.', '') or 'UNKNOWN'
+    bat_lev_entity     = Device.mobapp[BATTERY_LEVEL].replace('sensor.', '') or 'UNKNOWN'
+    bat_status_entity  = Device.mobapp[BATTERY_STATUS].replace('sensor.', '') or 'UNKNOWN'
+    bat_status_sensor  = f"{Device.devicename}_{BATTERY_STATUS}"
 
-    evlog_msg += (  f"{CRLF_HDOT}MobApp Device: {Device.conf_mobapp_fname}{ha_device_msg}"
-                    f"{CRLF_HDOT}Device Tracker..: {Device.mobapp[DEVICE_TRACKER]}{conf_device_msg}"
-                    f"{CRLF_HDOT}Action Trigger...: {trigger_entity}"
-                    f"{CRLF_HDOT}Battery Sensor..: {bat_lev_entity}"
-                    f"{CRLF_HDOT}Notifications.....: {notify_entity}")
+    # The sensors are '' if they were not found or are disabled in HA. The battery_level
+    # is then the device_tracker attribute and the charging status is from the battery icon
+    if Device.is_mobapp_device_used:
+        mobapp_dname     = Device.mobapp[DEVICE_TRACKER].replace('device_tracker.', '')
+        disabled_sensors = Gb.disabled_sensors_by_mobapp_dname.get(mobapp_dname, {})
+
+        is_bat_lev_dev_trkr = Device.mobapp[BATTERY_LEVEL].startswith('device_tracker.')
+        if is_bat_lev_dev_trkr:
+            bat_lev_entity += f"{CRLF}{NBSP*50} (battery_level attribute)"
+
+        if Device.mobapp[BATTERY_STATUS] == '':
+            bat_status_entity = (
+                    "Disabled in HA"      if 'battery_state' in disabled_sensors else
+                    "Not Found")
+            bat_status_entity += (
+                    " (Not available)"    if is_bat_lev_dev_trkr else
+                    " (Battery Level icon used)")
+
+        if Device.mobapp[TRIGGER] == '' and 'last_update_trigger' in disabled_sensors:
+            trigger_entity = 'Disabled in HA'
+
+    # The watchOS app does not have a trigger sensor or a notify service
+    if Device.is_mobapp_device_used and mobapp_dname in Gb.mobapp_dnames_watchos:
+        if Device.mobapp[TRIGGER] == '':
+            trigger_entity = 'Not available on a Watch'
+        notify_entity = Device.mobapp[NOTIFY] or 'Not available on a Watch'
+    else:
+        notify_entity = Device.mobapp[NOTIFY] or 'WAITING FOR NOTIFY SVC TO START'
+
+    evlog_msg += (  f"{CRLF_HDOT}MobApp Device..: {Device.conf_mobapp_fname}{ha_device_msg}"
+                    f"{CRLF_HDOT}Device Tracker....: {Device.mobapp[DEVICE_TRACKER]}{conf_device_msg}"
+                    f"{CRLF_HDOT}Action Trigger.....: {trigger_entity}"
+                    f"{CRLF_HDOT}Battery Level.......: {bat_lev_entity}"
+                    f"{CRLF_HDOT}Charging Status..: {bat_status_entity}"
+                    f"{CRLF_HDOT}Notifications........: {notify_entity}")
 
     return evlog_msg
 
@@ -3238,7 +3344,7 @@ def display_inactive_devices():
                                     if conf_device[CONF_TRACKING_MODE] == INACTIVE}
 
     inactive_devices_msg =[( f"{conf_device[CONF_FNAME]} ({conf_device[CONF_IC3_DEVICENAME]}), "
-                            f"{DEVICE_TYPE_DN(conf_device[CONF_DEVICE_TYPE])}")
+                            f"{DEVICE_TYPE_NAME(conf_device[CONF_DEVICE_TYPE])}")
                                     for conf_device in Gb.conf_devices
                                     if conf_device[CONF_TRACKING_MODE] == INACTIVE]
 
@@ -3256,24 +3362,14 @@ def display_inactive_devices():
         post_alert( f"ALL DEVICES ARE INACTIVE > "
                     f"{more_info('all_devices_inactive')}")
 
-#------------------------------------------------------------------------------
-def display_object_lists():
-    '''
-    Display the object list values
-    '''
-    monitor_msg = (f"StatZones-{list_to_str(Gb.StatZones_by_zone.keys())}")
-    post_monitor_msg(monitor_msg)
+#--------------------------------------------------------------------
+def display_excluded_sensors():
 
-    monitor_msg = (f"Devices-{list_to_str(Gb.Devices_by_devicename.keys())}")
-    post_monitor_msg(monitor_msg)
+    if isnot_empty(Gb.conf_sensors[CONF_EXCLUDED_SENSORS]):
+        post_event( f"Excluded Sensors:"
+                    f"{list_to_str(Gb.conf_sensors[CONF_EXCLUDED_SENSORS], CRLF_DOT)}")
 
-    for Device in Gb.Devices:
-        monitor_msg = (f"Device-{Device.devicename}, "
-                        f"FromZones-{list_to_str(Device.FromZones_by_zone.keys())}")
-        post_monitor_msg(monitor_msg)
-
-    monitor_msg = (f"Zones-{list_to_str(Gb.Zones_by_zone.keys())}")
-    post_monitor_msg(monitor_msg)
+    return
 
 #--------------------------------------------------------------------
 def dump_startup_lists_to_log(debug_log_title=None):

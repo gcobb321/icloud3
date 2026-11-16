@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 VERSION                         = '3.8.0'
-VERSION_BETA                    = '4'
+VERSION_BETA                    = '5'
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 PLATFORMS                       = ['sensor', 'device_tracker', 'button', 'text']
@@ -169,7 +169,7 @@ def DEVICE_TYPE_TRACKING_MODE(device_type):
         device_type_base = device_type.split('_')[0]
         return DEVICE_TYPE_DEFAULT_TRACKING_MODE.get(device_type_base, INACTIVE)
 
-DEVICE_TYPE_DNS = {
+DEVICE_TYPE_NAMES = {
         IPHONE: IPHONE_DN,
         WATCH: WATCH_DN_WIFI_CELL,
         WATCH_WIFI: WATCH_DN_WIFI,
@@ -183,8 +183,8 @@ DEVICE_TYPE_DNS = {
 DEVICE_TYPES_CELL_SVC = {
         IPHONE, WATCH, IPAD_CELL,
 }
-def DEVICE_TYPE_DN(device_type):
-        return DEVICE_TYPE_DNS.get(device_type, device_type)
+def DEVICE_TYPE_NAME(device_type):
+        return DEVICE_TYPE_NAMES.get(device_type, device_type)
 
 DEVICE_TYPE_PICTURE_FILENAMES = {
         IPHONE: "iphone.png",
@@ -248,6 +248,47 @@ APPLE_SERVER_ENDPOINT_IPv4 = {
         'auth':     'https://auth.apple.com'
 }
 
+HTTP_RESPONSE_CODES = {
+        0:   'Unknown error',
+        -4:  'Internet connection error',
+        -3:  'Apple PwSRP initialization failed',
+        -2:  'Server not available',
+        200: 'OK',
+        201: 'Device offline',
+        204: 'Authentication code accepted',
+        302: 'Server cannot be accessed',
+        400: 'Request rejected by Apple',
+        401: 'Invalid username/password',
+        401.1: 'Invalid username',
+        401.2: 'Password cannot be decoded',
+        403: 'Access denied, unknown Apple Acct or Acct locked',
+        404: 'URL/web page not found',
+        409: 'Valid username/password',
+        421: 'Reauth',
+        421.1: 'Invalid username/password',
+        423: 'Too many auth codes sent to this phone number, use a different trusted number',
+        450: 'Reauth',
+        500: 'Reauth',
+        503: 'Apple server refused password validation request',
+}
+
+# Apple Acct keep alive (apple_acct_support.keep_apple_accts_alive). Refresh every acct
+# at least every 30-mins so the session token stays valid (dead after 2-hrs on 11/13).
+# After a failed signin, retry the refresh/login after 15-mins, 30-mins, then every hour
+APPLE_ACCT_KEEPALIVE_SECS     = 1800
+APPLE_ACCT_LOGIN_RETRY_SECS   = [900, 1800, 3600]
+# A failed startup login is not retried for these, the user has to fix the acct (403 locked
+# or unknown acct, 423 too many codes). 401 (invalid password) is retried once
+APPLE_ACCT_LOGIN_NO_RETRY_CODES = [403, 423]
+# An Auth Code has been needed this long and was not entered. Post an HA log error and an
+# Event Log alert after 12-hrs, then every 24-hrs (aas.remind_auth_code_needed) (Issue #728)
+AUTH_CODE_NEEDED_FIRST_REMINDER_SECS = 12*3600     #43200
+AUTH_CODE_NEEDED_REMINDER_SECS       = 24*3600     #86400
+
+# A Configure window with no screen displayed for this long is treated as closed (another
+# window can take over, the Apple Acct keep alive is no longer held up by it)
+CONFIGURE_IDLE_TIMEOUT_SECS     = 30*60
+
 INTERNET_STATUS_PING_IPS = {
         'Google/P': '8.8.8.8',
         'Google/S': '8.8.4.4',
@@ -295,6 +336,7 @@ ICLOUD_LOCATION_DATA_ERROR   = False
 TRUST_TOKEN_EXPIRE_WARNING_DAYS = 88    #   Start warning user trust cookie will expire in x days
 CMD_RESET_PYICLOUD_SESSION   = 'reset_session'
 NEAR_DEVICE_DISTANCE         = 25       # Distance between nearby devices  (det_interval)
+MOBAPP_TRIGGER_MIN_MOVED_KM  = 1        # Signaled/Periodic before next update is discarded if moved less (mobapp_data_handler)
 PASS_THRU_ZONE_INTERVAL_SECS = 60       # Delay time before moving into a non-tracked zone to see if if just passing thru
 STATZONE_RADIUS_1M           = 1
 ICLOUD3_ERROR_MSG            = "ICLOUD3 ERROR-SEE EVENT LOG"
@@ -402,6 +444,7 @@ ERR_UNKNOWN_AA      = " ⛔ UNKNOWN APPLE ACCT"
 ERR_UNKNOWN_MOBAPP  = " ⛔ UNKNOWN MOBAPP"
 ERR_ICLOUD_DISABLED = " 🔸 ICLOUD DISABLED"
 ERR_USERNAME_PW     = " ⛔ INVALID USERNAME/PW"
+ERR_APPLE_REFUSED   = " ⛔ APPLE REFUSED SIGNIN"
 # post_config_error error of an invalid username/password or a password decode error
 # (ValidateAppleAcctUPW), cleared when the Apple Acct is logged into in Configure
 UPW_INVALID_ERROR   = "Invalid Username/Password"
@@ -473,6 +516,8 @@ CHARGING_LOW          = 1
 CHARGING_NOTCHARGING  = 2
 CHARGING_CHARGING     = 3
 CHARGING_CHARGED      = 4
+# MobApp battery_state sensor values: iOS-Charging, Not Charging, Full
+#   Android-charging, discharging, full, not_charging, unknown
 BATTERY_STATUS_CODES  = {
         'full': 'not charging',
         'charged': 'not charging',
@@ -480,6 +525,7 @@ BATTERY_STATUS_CODES  = {
         'notcharging': 'not charging',
         'not charging': 'not charging',
         'not_charging': 'not charging',
+        'discharging': 'not charging',
         'unknown': '',
         }
 BATTERY_STATUS_FNAME = {
@@ -513,7 +559,7 @@ ENTER_ZONE                = 'Enter Zone'
 EXIT_ZONE                 = 'Exit Zone'
 INITIAL                   = 'Initial'
 MANUAL                    = 'Manual'
-LAUNCH                    = "Launch",
+LAUNCH                    = "Launch"
 PERIODIC                  = "Periodic"
 SIGNIFICANT_LOC_CHANGE    = 'Significant Location Change'
 SIGNIFICANT_LOC_UPDATE    = 'Significant Location Update'

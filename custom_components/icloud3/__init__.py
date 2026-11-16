@@ -12,7 +12,7 @@ from .const_char        import (CRLF, RED_ALERT, )
 
 
 from .utils.messaging   import (_evlog, _log, async_open_ic3log_file_init,
-                                post_event, post_monitor_msg, post_greenbar_msg, post_alert,
+                                post_event, post_greenbar_msg, post_alert,
                                 log_info_msg, log_debug_msg, log_error_msg,
                                 log_exception_HA, log_exception, add_log_file_filter)
 from .utils.time_util   import (time_now_secs, time_now, secs_to, secs_since, secs_to_hhmm,
@@ -119,6 +119,12 @@ def setup_hass_icloud3_domain(hass, entry):
     Gb.hass.data[DOMAIN][entry.unique_id] = DOMAIN
     if entry.unique_id is None:
         Gb.hass.config_entries.async_update_entry(entry, unique_id=DOMAIN)
+
+    # Older installs were titled 'iCloud3 (Configuration) Update Complete'. HA uses the
+    # entry title in its reauth Repair ('Authentication expired for <title>') and on the
+    # integration card. Rename it unless the user changed it.
+    if 'Update Complete' in (entry.title or ''):
+        Gb.hass.config_entries.async_update_entry(entry, title='iCloud3')
 
     # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
     unsub_options_update_listener = entry.add_update_listener(options_update_listener)

@@ -139,11 +139,11 @@ def form_other_apple_acct_parameters(self):
 def form_update_apple_acct(self):
     lists.build_apple_accounts_list(self)
 
-    retry_login_AA = [AA    for AA in Gb.AppleAcct_error_by_apple_id.values()
-                            if AA.error_next_retry_secs > 0]
+    # A login retry is scheduled for this Apple Acct (aas.keep_apple_accts_alive)
+    retry_AppleAcct = Gb.AppleAcct_by_apple_id.get(self.conf_apple_acct[CONF_APPLE_ACCT])
 
     self.actions_list = []
-    if isnot_empty(retry_login_AA):
+    if retry_AppleAcct and retry_AppleAcct.login_retry_secs > 0:
         self.actions_list.append(ACTION_LIST_OPTIONS['stop_login_retry'])
 
     if self.is_repair_flow:

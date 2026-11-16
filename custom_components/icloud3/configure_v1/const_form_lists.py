@@ -162,6 +162,8 @@ ACTION_LIST_OPTIONS = {
         'confirm_action_no_disable_beta':  'DISABLE BETA VERSION → Stop downloading Beta Versions from the HA Marketplace',
         'confirm_action_yes':       'YES → Complete the requested action',
         'confirm_action_no':        'NO  → Cancel the request',
+        'reinstall_keep_config':    'KEEP THE PREVIOUS CONFIGURATION → Use the previous Apple Accounts, Devices and settings',
+        'reinstall_reset_tracking': 'DELETE & START OVER → Save the configuration file, then delete all Apple Accounts & Devices',
         # 'confirm_save':             '◀\uFE0E MENU (SAVE CHANGES) → Update Config File and display the Menu screen',
 
         "divider1": "═══════════════════════════════════════",
@@ -281,6 +283,9 @@ EXIT_ICLOUD3_CONFIGURE_SETTINGS = [
 CONFIRM_ACTIONS = [
         ACTION_LIST_OPTIONS['confirm_action_yes'],
         ACTION_LIST_OPTIONS['confirm_action_no']]
+REINSTALL_ACTIONS = [
+        ACTION_LIST_OPTIONS['reinstall_keep_config'],
+        ACTION_LIST_OPTIONS['reinstall_reset_tracking']]
 CONFIRM_ACTIONS_BETA_VERSION = [
         ACTION_LIST_OPTIONS['confirm_action_yes_enable_beta'],
         ACTION_LIST_OPTIONS['confirm_action_no_disable_beta'],

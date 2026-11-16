@@ -2,7 +2,7 @@
 
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (HOME, NONE,
-                                    DEVICE_TYPE_DN, DEVICE_TYPE_DNS, DEVICE_TYPES_TRACK_MONITOR, INACTIVE,
+                                    DEVICE_TYPE_NAME, DEVICE_TYPE_NAMES, DEVICE_TYPES_TRACK_MONITOR, INACTIVE,
                                     PICTURE_WWW_STANDARD_DIRS, )
 from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_APPLE_ACCT, CONF_APPLE_ACCT,
                                     CONF_TRACK_FROM_ZONES, CONF_LOG_ZONES,
@@ -136,7 +136,7 @@ def form_update_device(self):
     # Build Other Tracking Parameters values text
     log_zones_fnames = [zone_dname(zone) for zone in self.conf_device[CONF_LOG_ZONES] if zone.startswith('name') is False]
     tfz_fnames = [zone_dname(zone) for zone in self.conf_device[CONF_TRACK_FROM_ZONES]]
-    device_type_fname = DEVICE_TYPE_DN(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
+    device_type_fname = DEVICE_TYPE_NAME(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
     otp_msg =  (f"Type ({device_type_fname}), "
                 f"inZoneInterval ({format_timer(self.conf_device[CONF_INZONE_INTERVAL]*60)})")
     otp_msg += ", FixedInterval"
@@ -284,15 +284,15 @@ def form_update_other_device_parameters(self):
     log_zones_key_text.update(zone_name_key_text)
     log_zones_key_text.update(LOG_ZONES_KEY_TEXT)
 
-    device_type_fname = DEVICE_TYPE_DN(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
+    device_type_fname = DEVICE_TYPE_NAME(utils_cf.parm_or_device(self, CONF_DEVICE_TYPE))
     return vol.Schema({
             vol.Optional(CONF_FNAME,
                     default=utils_cf.parm_or_device(self, CONF_FNAME)):
                     selector.TextSelector(),
             vol.Optional(CONF_DEVICE_TYPE,
-                    default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TYPE, DEVICE_TYPE_DNS)):
+                    default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TYPE, DEVICE_TYPE_NAMES)):
                     selector.SelectSelector(selector.SelectSelectorConfig(
-                        options=dict_value_to_list(DEVICE_TYPE_DNS), mode='dropdown')),
+                        options=dict_value_to_list(DEVICE_TYPE_NAMES), mode='dropdown')),
             vol.Required(CONF_INZONE_INTERVAL,
                     default=self.conf_device[CONF_INZONE_INTERVAL]):
                     selector.NumberSelector(selector.NumberSelectorConfig(

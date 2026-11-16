@@ -219,6 +219,33 @@ def _reconstruct_conf_file():
     Gb.conf_file_data[CF_DATA]            = Gb.conf_data
 
 #--------------------------------------------------------------------
+def save_config_file_before_reset():
+    '''
+    Copy the configuration file to 'configuration_before_reset_<datetime>' before the
+    Apple Accounts and Devices are removed when iCloud3 is added again. The reset rewrites
+    'configuration' and the next startup rewrites 'configuration_backup' from it, so this
+    is the only copy that can be used to undo the reset (Issue #729).
+
+    Return:
+        The filename of the copy, '' if it could not be saved
+    '''
+    datetime = datetime_now().replace('-', '.').replace(':', '.').replace(' ', '-')
+    reset_filename = f"{Gb.icloud3_config_filename}_before_reset_{datetime}"
+
+    try:
+        if file_io.file_exists(Gb.icloud3_config_filename) is False:
+            return ''
+
+        file_io.copy_file(Gb.icloud3_config_filename, reset_filename)
+        log_info_msg(f"Configuration File > Saved before reset-{reset_filename}")
+        return reset_filename
+
+    except Exception as err:
+        log_exception(err)
+
+    return ''
+
+#--------------------------------------------------------------------
 def _restore_config_file_from_backup():
 
     datetime = datetime_now().replace('-', '.').replace(':', '.').replace(' ', '-')

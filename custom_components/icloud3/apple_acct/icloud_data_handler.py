@@ -1,19 +1,18 @@
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (HOME, NOT_SET, HHMMSS_ZERO,
+from ..const            import (HOME, NOT_SET, HHMMSS_ZERO, HTTP_RESPONSE_CODES,
                                     EVLOG_ALERT, EVLOG_ERROR,
                                     ICLOUD, MOBAPP,
                                     LATITUDE, LONGITUDE,
-                                    LOCATION, )
+                                    LOCATION, NOT_HOME_ZONES, )
 from ..const_char       import (CRLF, CRLF_DOT, RARROW, )
 
 from .                  import apple_acct_support as aas
-from .apple_acct        import (AppleAcctAPIResponseException, AppleAcct2FARequiredException,
-                                HTTP_RESPONSE_CODES, )
+from .apple_acct        import (AppleAcctAPIResponseException, AppleAcct2FARequiredException, )
 from ..startup          import start_ic3 as start_ic3
 from ..tracking         import determine_interval as det_interval
 from ..utils.utils      import (instr, is_statzone, list_to_str, list_add, list_del, )
-from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg, log_debug_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg, log_debug_msg,
                                 log_exception, _evlog, _log, )
 from ..utils.rawdata_logging import (log_data, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_timer, format_age, secs_since,)
@@ -31,7 +30,8 @@ def no_icloud_update_needed_tracking(Device):
 
     elif (Device.is_next_update_time_reached is False
             and Device.isin_zone
-            and Device.isnotin_statzone):
+            and Device.isnotin_statzone
+            and is_moved_in_zone(Device) is False):
         Device.icloud_no_update_reason = 'inZone & Next Update Time not Reached'
 
     elif Gb.use_data_source_ICLOUD is False:
@@ -41,6 +41,52 @@ def no_icloud_update_needed_tracking(Device):
         Device.icloud_no_update_reason = 'Device data from Mobile App'
 
     return (Device.icloud_no_update_reason != '')
+
+#----------------------------------------------------------------------------
+def is_moved_in_zone(Device):
+    '''
+    A tracked iCloud-only device (no MobApp exit triggers) is in a zone with a long inzone
+    interval (2-hrs). Newer iCloud data received since its last update (another device's
+    refresh, the Apple Acct keep alive) shows it left the zone. Update it now instead of at
+    the next update time.
+
+    Only a good GPS location outside the zone's radius + 1/2 the gps accuracy (the
+    zone_handler.select_zone in zone test) is used:
+        - Moving around inside the zone does not cause an update
+        - A poor location (WiFi off by 65m+) can not cause a false zone exit. It waits for
+            the next update time where the poor gps / discard poor gps inzone rules apply
+            (a false exit also forces 15-sec updates of the other non-MobApp devices in the
+            zone, zone_handler.request_update_devices_no_mobapp_same_zone_on_exit)
+    Done once for each new location (moved_in_zone_loc_secs) so a location rejected by
+    the update is not retried every 5-secs.
+    '''
+    try:
+        if (Device.is_data_source_ICLOUD is False
+                or Device.is_data_source_MOBAPP
+                or Device.sensor_zone in NOT_HOME_ZONES     # Zone at the last update
+                or Device.loc_data_latitude == 0.0
+                or Device.loc_data_secs <= Device.last_update_loc_secs
+                or Device.loc_data_secs == Device.moved_in_zone_loc_secs
+                or Device.is_gps_poor):
+            return False
+
+        if is_statzone(Device.sensor_zone):
+            Zone = Device.StatZone
+        else:
+            Zone = Gb.Zones_by_zone.get(Device.sensor_zone)
+        if Zone is None:
+            return False
+
+        dist_fm_zone_m = Zone.distance_m(Device.loc_data_latitude, Device.loc_data_longitude)
+        Device.moved_in_zone_m     = dist_fm_zone_m
+        Device.moved_in_zone_dname = Zone.dname
+
+        return (dist_fm_zone_m > Zone.radius_m + Device.loc_data_gps_accuracy / 2)
+
+    except Exception as err:
+        log_exception(err)
+
+    return False
 
 #----------------------------------------------------------------------------
 def no_icloud_update_needed_setup(Device):
@@ -91,6 +137,12 @@ def is_icloud_update_needed_general(Device):
         Device.is_outside_zone_no_exit_trigger = False
         Device.is_force_icloud_update = True
         Device.icloud_update_reason = "Verify Location"
+
+    elif is_moved_in_zone(Device):
+        Device.moved_in_zone_loc_secs = Device.loc_data_secs
+        Device.icloud_update_reason = (f"Outside {Device.moved_in_zone_dname} Zone, "
+                                        f"{Device.moved_in_zone_m:.0f}m "
+                                        f"(iCloud@{secs_to_time(Device.loc_data_secs)})")
 
     elif (Device.loc_data_secs < Device.last_update_loc_secs
             and Device.was_icloud_initial_locate_done):
@@ -206,9 +258,11 @@ def update_AADev_data(Device, results_msg_flag=True):
         if Device.icloud_device_id is None:
             return False
 
-        if aas.is_authentication_2fa_code_needed(Device.AppleAcct):
-            if aas.authenticate_icloud_account(Device.AppleAcct, called_from='data_handler') is False:
-                return False
+        # Post the Auth Code needed alert. Tracking continues while waiting for the code,
+        # the refresh's token login keeps the data coming. The authenticate call that was
+        # here never ran (the function returned None) and the function it called did
+        # not exist.
+        aas.is_authentication_2fa_code_needed(Device.AppleAcct)
 
         if is_AADev_data_useable(Device, results_msg_flag=False):
             return update_device_with_latest_raw_data(Device)
@@ -250,7 +304,7 @@ def update_AADev_data(Device, results_msg_flag=True):
     except (AppleAcct2FARequiredException, AppleAcctAPIResponseException) as err:
         try:
             _err_msg = HTTP_RESPONSE_CODES.get(Device.AppleAcct.Session.response_code,
-                            'Unknown Error')
+                            'Unknown error')
 
             Device.is_icloud_acct_error      = True
             Device.is_aadevdata_useable = False
@@ -438,10 +492,11 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                 other_times += f"MobApp-{_Device.mobapp_data_time_gps}"
 
             # Display location times for the selected device and all other data sources
-            # (icloud or mobapp). Display in Event log if the requesting device or a monitor
-            # msg if another device. Don't redisplay this msg if the data was just updated
-            # within the last 5-secs but running through this routine again.
-            if secs_since(_Device.loc_data_secs) <= _Device.old_loc_threshold_secs + 5:
+            # (icloud or mobapp). Display in Event log if the requesting device. Don't
+            # redisplay this msg if the data was just updated within the last 5-secs but
+            # running through this routine again.
+            if (requesting_device_flag
+                    and secs_since(_Device.loc_data_secs) <= _Device.old_loc_threshold_secs + 5):
                 event_msg =(f"Located > "
                             f"{_Device.dev_data_source}-"
                             f"{_Device.loc_data_time_gps} "
@@ -451,10 +506,7 @@ def update_device_with_latest_raw_data(Device, all_devices=False):
                 if _Device.is_offline:
                     event_msg += f", DeviceStatus-{_Device.device_status}"
 
-                if requesting_device_flag:
-                    post_event(_Device, event_msg)
-                else:
-                    post_monitor_msg(_Device, event_msg)
+                post_event(_Device, event_msg)
 
         #pyicloud_ic3_interface.display_authentication_msg(Device.AppleAcct)
         # pyicloud_ic3_interface.display_authentication_msg(Gb.AppleAcct)
@@ -509,10 +561,7 @@ def is_AADev_data_useable(Device, results_msg_flag=True):
     if is_useable_flag is False:
         event_msg += "Requesting New Location"
 
-    if results_msg_flag:
-        post_event(Device, event_msg)
-    else:
-        post_monitor_msg(Device.devicename, event_msg)
+    post_event(Device, event_msg)
     return is_useable_flag
 
 #----------------------------------------------------------------------------
@@ -613,9 +662,6 @@ def get_icloud_AADev_to_use(_Device):
             error_msg = 'Paused'
 
         if error_msg:
-            if Gb.is_log_level_debug:
-                event_msg =(f"Location data not updated > {error_msg}, Will Retry")
-                post_monitor_msg(_Device.devicename, event_msg)
             _AADev = None
 
         return _AADev

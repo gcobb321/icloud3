@@ -21,10 +21,11 @@ from ..const                import (HOME, HOME_FNAME, TOWARDS,
                                     EVLOG_GREEN, EVLOG_VIOLET, EVLOG_ORANGE, EVLOG_PINK, EVLOG_RED, EVLOG_BLUE, )
 from ..const_config         import (CONF_EVLOG_BTNCONFIG_URL, CONF_SENSORS_MONITORED_DEVICES, )
 from ..const_char           import (RED_X, RED_ALERT, GREEN_ALERT, CIRCLE_LETTERS_DARK,
-                                    CIRCLE_LETTERS_LITE, NL, NL_DOT, LDOT2, CRLF, CRLF_DOT,
-                                    CRLF_CHK, RARROW, DOT, LT, GT, DASH_50, NBSP, NBSP2, NBSP3,
+                                    CIRCLE_LETTERS_LITE, NL, DOT, HDOT, CRLF, CRLF_DOT,
+                                    CRLF_CHK, RARROW, LT, GT, DASH_50, NBSP, NBSP2, NBSP3,
                                     NBSP4, NBSP5, NBSP6, CLOCK_FACE, )
 
+from ..support            import test_controls as TEST
 from ..utils.utils        import (instr, circle_letter, is_empty, isnot_empty, list_to_str, )
 from ..utils.messaging    import (SP, log_exception, log_info_msg, log_warning_msg, _log, _evlog,
                                     filter_special_chars, format_header_box, )
@@ -33,6 +34,7 @@ from ..utils.time_util    import (time_to_12hrtime, datetime_now, time_now_secs,
 
 
 import time
+import threading
 import homeassistant.util.dt as dt_util
 
 
@@ -77,6 +79,9 @@ MONITORED_DEVICE_EVENT_FILTERS = [
 class EventLog(object):
     def __init__(self):
         self.hass = Gb.hass
+        # Events are posted from the HA event loop and executor threads. Reentrant
+        # since _shrink_event_recds posts an event while the table is locked.
+        self.event_recds_lock = threading.RLock()
         self.initialize()
 
     def initialize(self):
@@ -186,6 +191,8 @@ class EventLog(object):
             self.event_recds_max_cnt = EVENT_RECDS_MAX_CNT_BASE
             tfz_cnt = sum([len(Device.FromZones_by_zone) for Device in Gb.Devices])
             self.event_recds_max_cnt = EVENT_RECDS_MAX_CNT_ZONE*tfz_cnt
+            if TEST.EVLOG_MAX_RECDS:
+                self.event_recds_max_cnt = TEST.EVLOG_MAX_RECDS
 
             self.build_fnames_by_devicename()
             if self.fnames_by_devicename == {}:
@@ -314,24 +321,26 @@ class EventLog(object):
         # if a ^c^ start header is immediately follows an ^s^ header, the group is empty,
         # delete the ^s^ header and throw the current record (^c^ header) away.
         try:
-            if (devicename.startswith('*') is False and len(self.event_recds) > 8):
-                in_last_few_recds = [v for v in self.event_recds[:8] \
-                                        if (v[ELR_DEVICENAME] == devicename \
-                                            and v[ELR_TEXT] == event_text \
-                                            and v[ELR_TEXT].startswith(EVLOG_TRACE) is False
-                                            and instr(v[ELR_TEXT], 'Battery') is False)]
-                if in_last_few_recds != []:
-                    return
+            with self.event_recds_lock:
+                if (devicename.startswith('*') is False and len(self.event_recds) > 8):
+                    in_last_few_recds = [v for v in self.event_recds[:8] \
+                                            if (v[ELR_DEVICENAME] == devicename \
+                                                and v[ELR_TEXT] == event_text \
+                                                and v[ELR_TEXT].startswith(EVLOG_TRACE) is False
+                                                and instr(v[ELR_TEXT], 'Battery') is False)]
+                    if in_last_few_recds != []:
+                        return
 
-                # If this is an Update Completed msg
-                if event_text.startswith(EVLOG_UPDATE_END):
-                    # Drop previous msg if it was an Update Started msg
-                    for idx in range(0, 8):
-                        if self.event_recds[idx][ELR_TEXT].startswith(EVLOG_UPDATE_START):
-                            self.event_recds.pop(idx)
-                            return
-                        if self.is_monitor_recd(self.event_recds[idx]) is False:
-                            break
+                    # If this is an Update Completed msg
+                    if event_text.startswith(EVLOG_UPDATE_END):
+                        # Drop previous msg if it was this device's Update Started msg
+                        for idx in range(0, 8):
+                            if (self.event_recds[idx][ELR_TEXT].startswith(EVLOG_UPDATE_START)
+                                    and self.event_recds[idx][ELR_DEVICENAME] == devicename):
+                                self.event_recds.pop(idx)
+                                return
+                            if self.is_monitor_recd(self.event_recds[idx]) is False:
+                                break
         except Exception as err:
             log_exception(err)
             pass
@@ -605,30 +614,32 @@ class EventLog(object):
     def _add_recd_to_event_recds(self, event_recd):
         """Add the event recd into the event table"""
 
-        if self.event_recds is None:
-            self.event_recds = CONTROL_RECD
+        with self.event_recds_lock:
+            if self.event_recds is None:
+                self.event_recds = CONTROL_RECD
 
-        try:
-            if len(event_recd) != 3:
-                log_warning_msg(f"INVALID EVLOG RECD (SHORT)-{event_recd}")
-                return
-            elif event_recd[ELR_TEXT] == '':
-                log_warning_msg(f"INVALID EVLOG RECD (EMPTY TEXT)-{event_recd}")
-                return
+            try:
+                if len(event_recd) != 3:
+                    log_warning_msg(f"INVALID EVLOG RECD (SHORT)-{event_recd}")
+                    return
+                elif event_recd[ELR_TEXT] == '':
+                    log_warning_msg(f"INVALID EVLOG RECD (EMPTY TEXT)-{event_recd}")
+                    return
 
-            evl_table_recd_cnt = len(self.event_recds)
-            if evl_table_recd_cnt >= self.event_recds_max_cnt:
-                self.devicename_cnts = {}
-                for elr_recd in self.event_recds:
-                    self._update_event_recds_device_cnt(elr_recd)
+                evl_table_recd_cnt = len(self.event_recds)
+                if evl_table_recd_cnt >= self.event_recds_max_cnt:
+                    self.devicename_cnts = {}
+                    for elr_recd in self.event_recds:
+                        self._update_event_recds_device_cnt(elr_recd)
 
-                self._shrink_event_recds(500)
+                    # 500 unless the max is < 1500 (TEST.EVLOG_MAX_RECDS)
+                    self._shrink_event_recds(min(500, self.event_recds_max_cnt // 3))
 
-        except Exception as err:
-            log_exception(err)
-            pass
+            except Exception as err:
+                log_exception(err)
+                pass
 
-        self.event_recds.insert(0, event_recd)
+            self.event_recds.insert(0, event_recd)
 
 #------------------------------------------------------
     def start_logging_startup_events(self):
@@ -781,7 +792,8 @@ class EventLog(object):
         time_text_recds_str = str(time_text_recds)
 
         if Gb.is_evlog_trk_monitors_displayed:
-            time_text_recds_str = time_text_recds_str.replace(EVLOG_MONITOR, EVLOG_BLUE)
+            time_text_recds_str = time_text_recds_str.replace(
+                                            EVLOG_MONITOR, f"{EVLOG_BLUE}")
 
         return time_text_recds_str
 
@@ -849,7 +861,7 @@ class EventLog(object):
         Device = Gb.Devices_by_devicename.get(devicename)
         elr_devicename, elr_time, elr_text = el_recd
 
-        # Return all of the time/text items if 'Show Tracking Monitors' was selected in the EvLog
+        # Return all of the time/text items if 'Show Apple Device RawData Traffic' was selected in the EvLog
         if Gb.is_evlog_trk_monitors_displayed:
             return True
         # if instr(el_recd[ELR_TEXT], 'Acct Auth'):

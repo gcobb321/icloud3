@@ -26,7 +26,7 @@ from .const_char        import (RARROW, BLANK_SENSOR_FIELD, )
 
 from .utils.utils       import (instr, is_number, is_statzone, zone_dname, is_empty, list_to_str,
                                 is_running_in_event_loop, )
-from .utils.messaging   import (post_event, post_monitor_msg,
+from .utils.messaging   import (post_event,
                                 log_info_msg, log_debug_msg, log_error_msg, log_exception,
                                 log_exception_HA, log_info_msg_HA, log_stack, log_warning_msg_HA,
                                 _evlog, _log, )
@@ -114,14 +114,11 @@ async def async_create_Device_Tracker_objects():
                     or conf_device[CONF_TRACKING_MODE] == INACTIVE):
                 continue
 
-            if _DeviceTracker := Gb.DeviceTrackers_by_devicename.get(devicename):
-                post_monitor_msg(f"NOT ADDED DeviceTracker, Already Exists > "
-                                    f"{devicename}{RARROW}{_DeviceTracker}")
+            if Gb.DeviceTrackers_by_devicename.get(devicename):
                 continue
 
             DeviceTracker = iCloud3_DeviceTracker(devicename, conf_device)
 
-            post_monitor_msg(f"ADD DeviceTracker > {devicename}{RARROW}{DeviceTracker}")
             Gb.DeviceTrackers_by_devicename[devicename] = DeviceTracker
             DeviceTrackersToAdd.append(DeviceTracker)
 
@@ -148,7 +145,6 @@ async def async_create_Device_Tracker_objects():
                                         _DeviceTracker._attr_unique_id,
                                         _DeviceTracker.entity_id_base)
 
-            post_monitor_msg(f"ADD DeviceTrackers to HA-{len(DeviceTrackersToAdd)}")
             Gb.async_add_entities_device_tracker(DeviceTrackersToAdd, True)
 
             # HA created the device registry item for the new device_trackers, pick up
@@ -521,7 +517,7 @@ class iCloud3_DeviceTracker(TrackerEntity):
                     extra_attrs['apple_account'] = self.Device.AppleAcct.account_owner_apple_id
                 else:
                     extra_attrs['apple_account'] = 'None'
-                if self.Device.mobapp[DEVICE_TRACKER]:
+                if self.Device.is_mobapp_device_used:
                     extra_attrs['mobile_app'] = self.Device.mobapp[DEVICE_TRACKER]
                 else:
                     extra_attrs['mobile_app'] = 'None'

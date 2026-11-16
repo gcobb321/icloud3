@@ -33,7 +33,7 @@ from ..const_char       import (GEAR_ICON, YELLOW_WARNING, SNOW_FLAKE, CRLF, CRL
                                 RARROW, NL, NL3, NL4, NLSP4, NL3U, NL3D, NL3_DATA, NL4_DATA, NBSP,
                                 NBSP2, NBSP3, NBSP4, NBSP5, NBSP6, DOT, HDOT, CRLF_INDENT, LINK,
                                 DASH_50, DASH_DOTTED_50, TAB_11, RED_ALERT, RED_STOP, RED_CIRCLE,
-                                GREEN_ALERT, )
+                                GREEN_ALERT, CIRCLE_STAR, )
 from ..const_more_info      import more_info_text
 from .utils                 import (obscure_field, instr, is_empty, isnot_empty, apple_user, dict_sort, list_to_str, )
 #from .time_util             import (format_day_date_time_now, )
@@ -342,14 +342,12 @@ def post_error_msg(devicename_or_Device, event_msg="+"):
     log_error_msg(log_msg)
 
 #--------------------------------------------------------------------
-def post_monitor_msg(devicename_or_Device, event_msg='+'):
+def post_rawdata(event_msg):
     '''
-    Post the event message and display it in Event Log and HA log
-    when the config parameter "log_level: eventlog" is specified or
-    the Show Tracking Monitors was selected in Event Log > Actions
+    Post the device data location traffic message and display it in Event Log
     '''
-    devicename, event_msg = _resolve_devicename_log_msg(devicename_or_Device, event_msg)
-    post_event(devicename, f"{EVLOG_MONITOR}{event_msg}")
+    dot = DOT if instr(event_msg, '@') else HDOT
+    post_event(f"{EVLOG_MONITOR}{dot}{event_msg}")
 
 #-------------------------------------------------------------------------------------------
 def refresh_event_log(devicename='', show_one_screen=False):
@@ -364,7 +362,7 @@ def post_greenbar_msg(Device_or_greenbar_msg, greenbar_msg='+'):
         Device:
             If specified, display msg on this Device's EvLog screen only
             If not specified, display on all screens
-        greenbar_msg:
+        greenbar_msg
             Message to display -
     '''
     # See if the message is really in the Device parameter

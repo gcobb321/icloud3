@@ -1,10 +1,10 @@
 
 
 from ..global_variables import GlobalVariables as Gb
-from ..const            import (DOMAIN, DEVICE_TRACKER,
+from ..const            import (DOMAIN, DEVICE_TRACKER, HTTP_RESPONSE_CODES,
                                 EVLOG_NOTICE, EVLOG_ERROR, EVLOG_ALERT,
                                 ICLOUD,
-                                IPHONE, IPHONE_DN, WATCH_DN, IPAD_DN, MAC_DN, DEVICE_TYPES, DEVICE_TYPE_DNS,
+                                IPHONE, IPHONE_DN, WATCH_DN, IPAD_DN, MAC_DN, DEVICE_TYPES, DEVICE_TYPE_NAMES,
                                 DEVICE_TYPE_TRACKING_MODE,
                                 DEVICE_TYPE_PICTURE_FILENAMES, DEVICE_TYPE_ICONS,
                                 TRACK, MONITOR, INACTIVE, TRACKING_MODES,
@@ -17,18 +17,18 @@ from ..const_config     import (CONF_DATA_SOURCE, CONF_APPLE_ACCT, CONF_APPLE_AC
                                 CONF_MOBILE_APP_DEVICE, CONF_PICTURE, CONF_ICON, )
 from ..const_char       import (CRLF_DOT, )
 
-from ..utils.utils      import (instr, isnot_empty,
+from ..utils.utils      import (instr, is_empty, isnot_empty,
                                 list_add, list_del, dict_del, dict_sort,
                                 encode_password, decode_password, apple_user,
                                 is_running_in_event_loop, )
-from ..utils.messaging  import (post_event, post_alert, post_monitor_msg, post_error_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg,
                                 update_alert_sensor, clear_config_error,
                                 _log, log_exception, log_debug_msg, log_info_msg,
                                 add_log_file_filter, )
 from ..utils.time_util  import (time_now_secs, secs_to_hhmm, )
 
 
-from ..apple_acct.apple_acct import (AppleAcctManager, AppleAcctFailedLoginException, HTTP_RESPONSE_CODES)
+from ..apple_acct.apple_acct import (AppleAcctManager, AppleAcctFailedLoginException, )
 from .device_name_parser     import make_ic3_fname_from_aadevice_dname
 from .                       import apple_acct_support as aas
 from ..startup          import start_ic3
@@ -38,7 +38,7 @@ from ..utils            import entity_io
 #--------------------------------------------------------------------
 from homeassistant.util import slugify
 from re                 import match
-from os                 import path
+from os                 import path, listdir, remove
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -297,7 +297,7 @@ def create_AppleAcctManager_config_flow(apple_id, password, apple_server_locatio
 def clear_AppleAcct_auth_alerts():
     for apple_id, AppleAcct in Gb.AppleAcct_by_apple_id.items():
         if AppleAcct.is_reauth_needed:
-            AppleAcct.was_ha_auth_code_alert_sent = False
+            AppleAcct.was_ha_display_orange_reauth_button_sent = False
 
 #--------------------------------------------------------------------
 async def async_finish_authentication_and_data_refresh(caller_self):
@@ -458,6 +458,57 @@ async def async_delete_apple_acct_files(apple_id):
                     f"(.cookies, .session, .tpw)")
 
 #--------------------------------------------------------------------
+APPLE_ACCT_FILE_EXTS = ('.cookies', '.session', '.tpw')
+
+def delete_orphaned_apple_acct_files():
+    '''
+    Delete the .cookies, .session and .tpw files of Apple Accts that are not in the
+    configuration. Run at startup (start_ic3.log_into_apple_accounts).
+
+    Delete Apple Acct removes them (async_delete_apple_acct_files), but an acct removed
+    another way (config file edited, apple_id changed in Update Apple Acct, an older
+    version) leaves them behind. When it is added again, the stale session token makes
+    Configure validate the password with a Password SRP signin first, and the auth code
+    request has to wait 30-secs for a 2nd SRP signin (haprod 11/14 14:37). Without the
+    files it is logged into with one SRP signin.
+
+    The configured accts come from Gb.conf_apple_accounts (all of them), not
+    Gb.conf_apple_ids (only the ones that were validated).
+    '''
+    try:
+        directory = Gb.icloud_cookies_directory
+        if directory == '' or path.isdir(directory) is False:
+            return
+
+        conf_filename_bases = {"".join([c for c in conf_apple_acct[CONF_APPLE_ACCT]
+                                                if match(r"\w", c)]).lower()
+                                for conf_apple_acct in Gb.conf_apple_accounts
+                                if conf_apple_acct.get(CONF_APPLE_ACCT, '') != ''}
+
+        # No Apple Accts configured. Delete Apple Acct removed the last one's files
+        if is_empty(conf_filename_bases):
+            return
+
+        deleted_filenames = []
+        for filename in listdir(directory):
+            filename_base, file_ext = path.splitext(filename)
+            if (file_ext not in APPLE_ACCT_FILE_EXTS
+                    or filename_base.lower() in conf_filename_bases):
+                continue
+
+            full_filename = path.join(directory, filename)
+            if path.isfile(full_filename):
+                remove(full_filename)
+                deleted_filenames.append(filename)
+
+        if deleted_filenames:
+            log_info_msg(   f"Apple Acct > Deleted Session Files of Apple Accts not in the "
+                            f"configuration, {', '.join(sorted(deleted_filenames))}")
+
+    except Exception as err:
+        log_exception(err)
+
+#--------------------------------------------------------------------
 async def async_is_login_verifying_upw(apple_id):
     '''
     Determine if logging into the apple_id will verify the password itself, without
@@ -608,8 +659,6 @@ def is_asp_password(ui_password):
 #     await file_io.async_delete_file_with_msg(
 #                     'Apple Acct Session', cookie_directory, f"{cookie_filename}.session", delete_old_sv_file=True)
 
-#     post_monitor_msg(delete_msg)
-
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -713,7 +762,7 @@ def build_import_devices_config_from_aadevices(self, AppleAcct):
         #                     model, raw_model, model_display_name))
         # Set the same way as the Update Device screen (step_icloud3_device). The model is
         # the modelDisplayName ('Apple Watch'), the AADev device_type is the deviceClass ('watch')
-        device_type = AADev.device_type if AADev and AADev.device_type in DEVICE_TYPE_DNS else IPHONE
+        device_type = AADev.device_type if AADev and AADev.device_type in DEVICE_TYPE_NAMES else IPHONE
 
         ic3_conf_device[CONF_AADEV_DEVICE_ID]   = device_id
         ic3_conf_device[CONF_DEVICE_TYPE]        = device_type

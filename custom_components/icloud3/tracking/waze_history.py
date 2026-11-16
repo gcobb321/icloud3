@@ -6,7 +6,7 @@ from ..const_char       import (CRLF_DOT, CRLF, RARROW2, )
 
 from ..utils.utils      import (list_to_str, zone_dname,)
 from ..utils.messaging  import (format_filename,
-                                post_event, post_alert, post_internal_error, post_monitor_msg,
+                                post_event, post_alert, post_internal_error,
                                 post_greenbar_msg,
                                 refresh_event_log, log_info_msg, log_error_msg, log_exception,
                                 _evlog, _log, )
@@ -357,23 +357,6 @@ class WazeRouteHistory(object):
 
             record = self._sql(sql, fetchone=True)
 
-            try:
-                if table == 'locations':
-                    monitor_msg = ( f"Zone-{record[LOC_ZONE_ID]}, "
-                                    f"Time-{record[LOC_TIME]}, "
-                                    f"Dist-{record[LOC_DIST]}")
-                elif table == 'zones':
-                    monitor_msg = ( f"Zone-{record[ZON_ID]} "
-                                    f"({record[ZON_ZONE]})")
-            except:
-                monitor_msg = 'NoRecord'
-
-            if self.wazehist_recalculate_time_dist_running_flag is False:
-                post_monitor_msg(   Gb.devicename,
-                                    f"WazeHistDB > Get Record, "
-                                    f"Table-{table}, "
-                                    f"Criteria-{criteria}, "
-                                    f"{monitor_msg}")
             return record
 
         except:
@@ -397,11 +380,6 @@ class WazeRouteHistory(object):
                 sql += (f"ORDER BY {orderby} ")
 
             records = self._sql(sql, fetchall=True)
-
-            post_monitor_msg(   f"WazeHistDB > Get All Records, "
-                                f"Table-{table}, "
-                                f"Criteria-{criteria}, "
-                                f"RecdCnt-{len(records)}")
 
             return records
 
@@ -504,21 +482,6 @@ class WazeRouteHistory(object):
 
             self._update_record(UPDATE_LOCATION_USED, usage_data)
 
-            record = self._sql(sql, fetchone=True)
-            # self.lock.acquire(True)
-            # self.cursor.execute(sql)
-            # record = self.cursor.fetchone()
-            # self.lock.release()
-
-            if self.wazehist_recalculate_time_dist_running_flag is False:
-                post_monitor_msg(   Gb.devicename,
-                                    f"WazeHistDB > Update Usage Cnt, "
-                                    f"recdId={location_id}, "
-                                    f"Zone-{record[LOC_ZONE_ID]}, "
-                                    f"Time-{record[LOC_TIME]}, "
-                                    f"Dist-{record[LOC_DIST]}, "
-                                    f"Cnt-{cnt}")
-
         except:
             post_internal_error(traceback.format_exc)
 
@@ -617,9 +580,6 @@ class WazeRouteHistory(object):
                     zone_id   = self._add_record(ADD_ZONE_RECORD, zone_data)
                     Gb.wazehist_zone_id[from_zone] = zone_id
 
-                    post_monitor_msg(   f"WazeHistDB > Added zone, "
-                                        f"{from_zone}, "
-                                        f"zoneId-{zone_id}")
                     continue
 
                 # Fix the zone name if it different than the HA entity registry file. It was probably changed

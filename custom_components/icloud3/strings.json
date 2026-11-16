@@ -28,6 +28,7 @@
       "reauth_apple_acct_unused": "Apple account requesting Authentication Code is not used"
     },
     "error": {
+      "reset_save_config_failed": "❌ The configuration file could not be saved. Nothing was removed. Check the Home Assistant log for errors.",
       "invalid_path": "The path provided is not valid. Should be in the format `user/repo-name`",
 
       "auth_code_needed": "An Apple Account needs to be Authenticated",
@@ -37,7 +38,7 @@
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
       "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_invalid": "❌ The Auth Code was not correct. Reenter or request a new code",
-      "auth_code_invalid_text": "❌ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
+      "auth_code_invalid_text": "❌ The Auth Code was not correct. Reenter the Text Msg code or the Apple device popup window code, or request a new code",
       "auth_code_send_error": "❌ Failed to send the Authentication Code",
       "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
 
@@ -55,6 +56,7 @@
       "apple_acct_terms_of_use_update_needed": "An Apple Account requires `Terms of Use` approval (Auth Apple Acct screen)",
       "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
       "apple_acct_login_error_503": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request",
+      "apple_acct_login_error_503_ha_icloud": "Apple Acct Login Error 503, Invalid Username/Password or Server Refused/Rejected Request. The Home Assistant Apple iCloud integration is also signing into this Apple Account. Two integrations signing into the same account can contribute to Apple refusing signins (503) and to locked accounts. Consider disabling it.",
       "apple_acct_login_error_other": "❌ Login Error, Other Error or Apple server is not Available",
 
       "internet_error": "Internet Connection Error > iCloud3 cannot connect to the Internet",
@@ -69,13 +71,17 @@
       "user": {
         "data": {
           "continue": "CONTINUE > Select SUBMIT to complete the iCloud3 installation",
-          "reset_tracking": "PREVIOUS ICLOUD3 CONFIG WAS FOUND. DO YOU WANT TO REINITIALIZE THE APPLE ACCOUNTS & DEVICES?",
           "continue_restart_ha": "Select to continue iCloud3 installation. Then RESTART HOME ASSISTANT"
         },
         "description": "CONGRATULATIONS! The iCloud3 v3 Integration has been added to Home Assistant. The next step is to configure the devices you want to track.\n\nSelect SUBMIT below, then select CONFIGURE to configure iCloud3.\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\nThe iCloud3 User Guide will help you get started. Select the question mark (?) in the upper-right corner of this screen to open the “iCloud User Guide”. The following chapters will be helpful:\n&nbsp;&nbsp;• ICLOUD COMPONENTS - Provides an overview of the Device Tracker screen,\n&nbsp;&nbsp;&nbsp;&nbsp;the Event Logand the Configure screens that are used to set up iCloud3\n&nbsp;&nbsp;• APPLE ACCOUNT - Covers setting up and logging into your Apple Account.\n&nbsp;&nbsp;&nbsp;&nbsp;It will provide information about your devices including their location.\n&nbsp;&nbsp;• MOBILE APP INTEGRATION - Covers setting up and configuring the Mobile App. \n&nbsp;&nbsp;&nbsp;&nbsp;It will provide zone enter/exit triggers and location data.\n&nbsp;&nbsp;• EVENT LOG - Provides information on iCloud3 activities to include startup status, \n&nbsp;&nbsp;&nbsp;&nbsp;errors, alerts, device tracking results, battery information, shortcuts for\n&nbsp;&nbsp;&nbsp;&nbsp;configuring iCloud3 and Actions that can control iCloud3 operations.\n&nbsp;&nbsp;• DASHBOARD BUILDER - Builds an iCloud3 Dashboard showing Device\n&nbsp;&nbsp;&nbsp;&nbsp;Tracking Results and the Event log.\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n🕓 After you click Submit, be patient. HA will scan for your iCloud Devices. It may take up to 30-seconds to discover them all.",
-        "title": "iCloud3 v3 Integration Installer",
-        "data_description": {
-          "reset_tracking": "The iCloud3 Configuration has been previously set up and is normally used when adding the iCloud3 Integration again. Check this option if you want to remove the Apple account and Devices configuration and start over"
+        "title": "iCloud3 v3 Integration Installer"
+      },
+
+      "user_reinstall": {
+        "title": "iCloud3 v3 Integration Installer - Reinstall",
+        "description": "## PREVIOUS ICLOUD3 CONFIGURATION FOUND\n\niCloud3 was installed before and its configuration was found. It will be used when iCloud3 is added again unless you choose to start over.\n\n### The previous configuration contains\n- **Apple Accounts** - Username, password and sign-in options\n- **iCloud3 Devices** - The devices that are tracked or monitored and their settings\n- **Apple Account sign-in files** (`/config/.storage/icloud3.apple_acct`) - The session and trust token files that let iCloud3 sign in without a new verification code\n- **General settings, Sensors and the other Configure parameters**\n\n### KEEP THE PREVIOUS CONFIGURATION\n- iCloud3 starts with the previous Apple Accounts, Devices and settings\n\n### DELETE & START OVER\n- **Deleted** - All Apple Accounts and iCloud3 Devices. The data source (iCloud, Mobile App) and the Apple Account sign-in options are set back to their defaults\n- **Not changed** - The Apple Account sign-in files, General settings, Sensors and the other Configure parameters. The sign-in files can be deleted later with *Configure > Tools*\n- **Saved first** - The configuration file is copied to `/config/.storage/icloud3/configuration_before_reset_YYYY.MM.DD-hh.mm.ss`. If it can not be saved, nothing is deleted\n- **To undo** - Copy that file over `/config/.storage/icloud3/configuration`, then restart Home Assistant\n- **Next** - Select **CONFIGURE** on the iCloud3 integration, then add the Apple Accounts and Devices again\n\n🕓 After you select Submit, be patient. HA will scan for your iCloud Devices. It may take up to 30-seconds to discover them all.",
+        "data": {
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ ACTION COMMANDS"
         }
       },
 
@@ -144,6 +150,7 @@
     "abort": {
       "config_update_complete": "{exit_msg}",
       "configure_already_open": "⛔ ICLOUD3 CONFIGURE IS ALREADY IN PROCESS\n\nSomeone else is using iCloud3 Configure in another browser window or on another device (opened at {opened_time}, last used at {last_used_time}). Only one Configure window can be used at a time.\n\nTry again later, after that window has been exited. If it was closed without exiting, Configure can be used again {idle_timeout_mins} minutes after it was last used.",
+      "icloud3_not_loaded": "⛔ THE ICLOUD3 CONFIGURATION FILE HAS NOT BEEN LOADED\n\niCloud3 did not finish starting. Check the Home Assistant log for iCloud3 errors.\n\nRestart Home Assistant, then select CONFIGURE again.",
       "already_configured": "iCloud3 is already installed and can not be installed again. Select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "disabled": "iCloud3 is DISABLED and can not be installed again. Enable iCloud, then select CONFIGURE in the iCloud3 Integration entry to configure iCloud3",
       "ha_restarting": "Home Assistant is Restarting\n\nTHE ICLOUD3 SCREEN MUST BE REFRESHED AFTER RESTARTING",
@@ -168,6 +175,7 @@
       "apple_acct_inupw_valid": "❌ Invalid Username or Password",
       "apple_acct_invalid_format": "❌ Invalid Apple Account, it must be an email address or phone number",
       "apple_acct_login_error_503": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
+      "apple_acct_login_error_503_ha_icloud": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. The Home Assistant Apple iCloud integration is also signing into this Apple Account. Two integrations signing into the same account can contribute to Apple refusing signins (503) and to locked accounts. Consider disabling it. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
       "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
       "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
       "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
@@ -202,7 +210,7 @@
       "auth_code_cancelled": "The Apple Account authentication was cancelled",
       "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
       "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
-      "auth_code_invalid_text": "❌ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
+      "auth_code_invalid_text": "❌ The Auth Code was not correct. Reenter the Text Msg code or the Apple device popup window code, or request a new code",
       "auth_code_send_error": "❌ Failed to send the Authentication Code",
       "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
 
@@ -221,7 +229,7 @@
       "mobapp_search_error": "WARNING: Search Failure - No Mobile App device that starts with the iCloud3 or Apple Acct devicename was found. Select 'None' or the device to be used.",
 
       "inactive_device": "Device is INACTIVE. Change to `Track` to locate and track this device",
-      "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED OR ITS DEVICENAME OR NAME ⛔ CHANGED. TRACKING MODE CHANGES WILL BE DISCARDED",
+      "disabled_in_ha": "⛔ THIS DEVICE IS DISABLED IN HA SETTINGS. IT MUST BE ENABLED IN ⛔ HA BEFORE IT CAN BE TRACKED OR ITS DEVICENAME OR NAME CAN ⛔ BE CHANGED. TRACKING MODE CHANGES WILL BE DISCARDED",
       "inactive_all_devices": "❌ ALL DEVICES ARE INACTIVE. NOTHING WILL BE TRACKED ❌",
       "inactive_most_devices": "MOST Devices are INACTIVE and will not be located or tracked",
       "inactive_some_devices": "Some Devices are INACTIVE and will not be located or tracked",
@@ -1062,6 +1070,7 @@
           "apple_acct_inupw_valid": "❌ Invalid Username or Password",
           "apple_acct_invalid_format": "❌ Invalid Apple Account, it must be an email address or phone number",
           "apple_acct_login_error_503": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
+          "apple_acct_login_error_503_ha_icloud": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. The Home Assistant Apple iCloud integration is also signing into this Apple Account. Two integrations signing into the same account can contribute to Apple refusing signins (503) and to locked accounts. Consider disabling it. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
           "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
           "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
           "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
@@ -1284,6 +1293,7 @@
           "apple_acct_inupw_valid": "❌ Invalid Username or Password",
           "apple_acct_invalid_format": "❌ Invalid Apple Account, it must be an email address or phone number",
           "apple_acct_login_error_503": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
+          "apple_acct_login_error_503_ha_icloud": "Apple Acct Login Error 503, Apple Server Refused/Rejected Request. The Home Assistant Apple iCloud integration is also signing into this Apple Account. Two integrations signing into the same account can contribute to Apple refusing signins (503) and to locked accounts. Consider disabling it. Exit Configure screens to reset iCloud3 and Apple Accts. Then try again or retry later",
           "apple_acct_login_error_302": "❌ Login Failed, Apple server refused connection (Error 302)",
           "apple_acct_login_error_302_cn": "❌ Apple Server Error 302, Should be China but USA was selected",
           "apple_acct_login_error_302_usa": "❌ Apple Server Error 302, Should be USA but China was selected",
@@ -1307,7 +1317,7 @@
           "auth_code_accepted": "✅ The Authentication Code was accepted. Reauthentication is complete",
           "auth_code_another_auth_needed": "⛔ ANOTHER APPLE ACCOUNT NEEDS TO BE AUTHENTICATED",
           "auth_code_invalid": "❌ The Authentication Code was not correct. Reenter or request a new code",
-          "auth_code_invalid_text": "❌ The Auth Code was not correct. Enter the Text Msg code, not the Push Popup window code",
+          "auth_code_invalid_text": "❌ The Auth Code was not correct. Reenter the Text Msg code or the Apple device popup window code, or request a new code",
           "auth_code_requested_423": "Too many codes have been requested for that phone number. Use a different Trusted Phone Number or try again later",
           "hwkey_waiting_for_keypress": "⛔ ① SELECT AUTHENTICATE, ② TOUCH THE SECURITY KEY ⛔ ",
           "hwkey_auth_succeeded": "✅ Security Key authentication succeeded. Reauthentication is complete",
@@ -1389,13 +1399,13 @@
       }
     },
     "switch_repository": {
-      "title": "iCloud3: Switch to the iCloud3 Repository",
+      "title": "iCloud3: Beta versions are now iCloud3 Prereleases",
       "description": "{message}",
       "fix_flow": {
         "step": {
           "confirm": {
-            "title": "iCloud3: Switch to the iCloud3 Repository ({store})",
-            "description": "iCloud3 was installed from the *iCloud3 Beta* repository (gcobb321/icloud3_v3). That repository is no longer updated. The iCloud3 beta versions are now pre-releases in the *iCloud3* repository (gcobb321/icloud3).\n\nSelect **Submit** to switch your {store} installation to the iCloud3 repository with its *Pre-release* switch on so you continue to receive the beta versions.\n\n- Nothing is uninstalled or downloaded and Home Assistant does not need to be restarted\n- The iCloud3 configuration, devices and entities are not changed\n- The *iCloud3 Beta* update entity is replaced by the *iCloud3* update entity\n- Turn the iCloud3 *Pre-release* switch off later to only receive the production versions"
+            "title": "iCloud3: Beta versions are now iCloud3 Prereleases",
+            "description": "## The GitHub iCloud3_Beta Repo (gcobb321/icloud3_v3) is being moved to support {store} installation requirements\n\niCloud3 was installed from the *iCloud3 Beta* repository (gcobb321/icloud3_v3). That repository is no being longer updated. The iCloud3 Beta versions are now pre-releases in the *iCloud3* repository (gcobb321/icloud3).\n\n### Do this to set up {store} iCloud3 Beta  Installation Settings\nSelect **Submit** to switch your {store} installation to the iCloud3 repository with its *Pre-release* switch on so you continue to receive the beta versions.\n\n- Nothing is uninstalled or downloaded and Home Assistant does not need to be restarted\n- The iCloud3 configuration, devices and entities are not changed\n- The *iCloud3 Beta* update entity is replaced by the *iCloud3* update entity\n- Turn the iCloud3 *Pre-release* switch off later to only receive the production versions"
           }
         },
         "abort": {

@@ -239,8 +239,16 @@ def delete_file(filename):
     except Exception as err:
         log_exception(err)
 
-def copy_file(from_dir_filename, to_directory):
-    shutil.copy(from_dir_filename, to_directory)
+def copy_file(from_dir_filename, to_dir_filename):
+    # Copy contents only (not the source's mode bits); a read-only source (0444)
+    # would otherwise make the destination unwritable on the next copy
+    try:
+        if os.path.isfile(to_dir_filename):
+            os.chmod(to_dir_filename, 0o644)
+    except OSError:
+        pass
+
+    shutil.copyfile(from_dir_filename, to_dir_filename)
 
 def move_files(from_dir_filename, to_directory):
     shutil.move(from_dir_filename, to_directory)

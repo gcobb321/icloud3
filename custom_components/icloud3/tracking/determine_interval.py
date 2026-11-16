@@ -40,14 +40,14 @@ from ..const_config         import (ZONE, ZONE_INFO, ZONE_ENTER_SECS, ZONE_EXIT_
                                     DIR_OF_TRAVEL, MOVED_DISTANCE, LAST_LOCATED, LAST_UPDATE,
                                     NEXT_UPDATE, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                     CONF_AWAY_TIME_ZONE_2_DEVICES, CONF_SENSORS_MONITORED_DEVICES, )
-from ..const_char           import (LT, RED_X, RARROW, CRLF_DOT, CRLF, HOME_ICON,
+from ..const_char           import (LT, RED_X, RARROW, CRLF_DOT, CRLF, HOME_ICON, BATTERY_ICON, BATTERY_ICON_LOW,
                                     NEAR_DEVICE_USEABLE_SYM, )
 
 from ..utils.utils          import (instr, is_between, round_to_zero, is_zone, is_statzone, isnot_zone,
                                     zone_dname, list_add, list_to_str, )
 from ..utils.messaging      import (post_event, post_alert, post_error_msg,
                                     post_greenbar_msg, clear_greenbar_msg,
-                                    post_internal_error, post_monitor_msg, log_debug_msg,
+                                    post_internal_error, log_debug_msg,
                                     log_info_msg, log_info_msg_HA, log_exception, _evlog, _log, )
 from ..utils.rawdata_logging import (log_data, )
 from ..utils.time_util      import (secs_to_time, format_timer, format_time_age, format_secs_since,
@@ -448,9 +448,6 @@ def determine_interval(Device, FromZone):
         FromZone.dir_of_travel_awayfrom_override = dir_of_travel_awayfrom_override
         FromZone.update_dir_of_travel_history(dir_of_travel)
 
-        monitor_msg = f"DirHist-{FromZone.dir_of_travel_history[-40:]}"
-        post_monitor_msg(devicename, monitor_msg)
-
     except Exception as err:
         sensor_msg = post_internal_error('Update FromZone Times', traceback.format_exc)
 
@@ -475,10 +472,11 @@ def determine_interval(Device, FromZone):
 
     waze_time_msg = format_timer(waze_time_from_zone * 60)
 
+    max_dist_km = max(waze_dist_from_zone_km, calc_dist_from_zone_km)
     if (Device.is_location_gps_good
             and interval_secs > 60
-            and waze_dist_from_zone_km > FromZone.max_dist_km):
-        FromZone.max_dist_km = waze_dist_from_zone_km
+            and max_dist_km > FromZone.max_dist_km):
+        FromZone.max_dist_km = max_dist_km
 
     if Device.is_mobapp_monitored:
         # If monitored and the mobapp state is before the last update, reset it since
@@ -517,7 +515,8 @@ def determine_interval(Device, FromZone):
     sensors[WENT_3KM]             = Device.went_3km
     sensors[NEAR_DEVICE_USED]     = Device.near_device_used
 
-    #save for event log
+    #save for event log, Gb.Waze.waze_status is overwritten by the next FromZone
+    FromZone.waze_status       = Gb.Waze.waze_status
     if type(waze_time_msg) != str: waze_time_msg = ''
     FromZone.last_travel_time  = waze_time_msg
     FromZone.last_distance_km  = dist_from_zone_km
@@ -577,18 +576,32 @@ def post_tracking_results_info(Device):
     '''
     Device.last_update_msg_secs = time_now_secs()
 
+
     went3k_msg = '' if Device.loc_data_zone == HOME \
                     else f"{'✓' if Device.went_3km else '×'}Went3km, "
+
+    # range_msg needs km, sensors[ZONE_DISTANCE] is in the display um (mi)
+    # Waze is not called when in the Home zone (_get_distance_data sets waze_status to PAUSED)
+    # Use the Home zone's waze_status, Gb.Waze.waze_status is the last FromZone updated
+    FromZone_Home = Device.FromZone_Home
+    calc_dist_km = FromZone_Home.calc_dist_km
+    if Device.loc_data_zone == FromZone_Home.from_zone:
+        waze_msg = ''
+    elif FromZone_Home.waze_status == WAZE_OUT_OF_RANGE:
+        waze_msg = f"×Waze-{Gb.Waze.range_msg(calc_dist_km)}, "
+    elif FromZone_Home.waze_status == WAZE_USED:
+        waze_msg = f"✓Waze-inRange, "
+    else:
+        waze_msg = f"×Waze-{Gb.Waze.status_fname(FromZone_Home.waze_status)}, "
 
     event_msg =(f"Status > "
                 f"{zone_dname(Device.loc_data_zone)}, "
                 f"Moved-{km_to_um(Device.loc_data_dist_moved_km)}, "
+                f"{waze_msg}"
                 f"{went3k_msg}")
+
     if Device.is_statzone_timer_set and Device.is_tracked and Gb.is_statzone_used:
         event_msg += f"IntoStatZone-{secs_to_time(Device.statzone_timer)}, "
-
-    if Gb.Waze.waze_status == WAZE_OUT_OF_RANGE:
-        event_msg += f"WazeMsg-{Gb.Waze.range_msg(Device.sensors[ZONE_DISTANCE])}, "
 
     event_msg += (f"Trigger-{Device.trigger}")
 
@@ -618,7 +631,7 @@ def post_tracking_results_info(Device):
         if FromZone.zone_distance_str != '':
             event_msg += f"Dist-{FromZone.zone_distance_str}"
 
-        if Gb.is_log_level_debug and FromZone.interval_method and Device.is_tracked:
+        if FromZone.interval_method and Device.is_tracked:
             event_msg += f", Method-{FromZone.interval_method}"
 
     post_event(Device, event_msg)
@@ -645,7 +658,6 @@ def log_tracking_results(Device, FromZone):
                 f"LastEvLogMsg-{secs_to_time(Device.last_evlog_msg_secs)}, "
                 f"Method-{FromZone.interval_method}")
     log_info_msg(Device, log_msg)
-    # post_monitor_msg(Device, log_msg)
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -1370,8 +1382,6 @@ def copy_near_device_results(Device, FromZone):
     FromZone.dir_of_travel_awayfrom_override = \
             NearFromZone.dir_of_travel_awayfrom_override
     FromZone.update_dir_of_travel_history(NearFromZone.dir_of_travel)
-    monitor_msg = (f"DirHist-{FromZone.dir_of_travel_history[-40:]}")
-    post_monitor_msg(Device.devicename, monitor_msg)
 
     FromZone.sensors.update(NearFromZone.sensors)
 
@@ -1413,16 +1423,9 @@ def update_near_device_info(Device):
     Device.NearDevice           = None
     Device.near_device_distance = 0.0
     Device.near_device_checked_secs = time_now_secs()
-    device_time = secs_to_hhmm(Device.dist_to_other_devices_secs)
 
     Device.dist_apart_msg = _build_dist_apart_msg(Device, Device.dist_to_other_devices)
     Device.dist_apart_msg2 = _build_dist_apart_msg(Device ,Device.dist_to_other_devices2)
-
-    monitor_msg = ( f"Nearby Devices "
-                    f"({LT}{m_to_um_ft(NEAR_DEVICE_DISTANCE, as_integer=True)}) > "
-                    f"@{device_time}, "
-                    f"{Device.dist_apart_msg.replace(f' ({device_time})', '')}")
-    post_monitor_msg(Device.devicename, monitor_msg)
 
     # post_nearby_devices_msg()
 

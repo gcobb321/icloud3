@@ -24,7 +24,7 @@ from ...utils.utils         import (instr, is_number, is_empty, isnot_empty, lis
                                     encode_password, decode_password, )
 from ...utils.messaging     import (log_exception, log_debug_msg, log_info_msg, add_log_file_filter,
                                     _log, _evlog, more_info, write_config_file_to_ic3log, close_ic3log_file,
-                                    post_event, post_alert, post_monitor_msg, post_greenbar_msg,
+                                    post_event, post_alert, post_greenbar_msg,
                                     update_alert_sensor, )
 
 from .                      import form_parameters as forms

@@ -112,30 +112,36 @@ class OptionsFlow_Reauth_Steps:
             if AppleAcct is None:
                 self.errors['account_selected'] = 'reauth_apple_acct_unknown'
                 self.errors[AUTH_CODE] = ''
-                return self.async_show_form(step_id='reauth',
-                            data_schema=forms.form_reauth(self),
-                            errors=self.errors)
+                action_item = ''
+
+            elif (action_item == 'change_auth_method'
+                    and reauth_apple_id in ['', None]):
+                self.errors['account_selected'] = 'reauth_apple_acct_unknown'
+                action_item = ''
 
             # An Apple Acct can only be authenticated if it is valid and logged into
-            if ((action_item in ['request_auth_code', 'send_auth_code',
+            elif ((action_item in ['request_auth_code', 'send_auth_code',
                                     'auth_code_from_applecom_login']
                         or ui_auth_code != '')
                     and aascf.is_apple_acct_logged_into(AppleAcct.apple_id) is False):
                 self.errors['account_selected'] = 'apple_acct_not_logged_into'
                 self.errors[AUTH_CODE] = ''
-                return self.async_show_form(step_id='reauth',
-                            data_schema=forms.form_reauth(self, reauth_apple_id=AppleAcct.apple_id),
-                            errors=self.errors)
+                action_item = ''
 
             #.......................................................................
             self._set_or_reset_ha_orange_reauth_button()
             match action_item:
+                case '':
+                    return self.async_show_form(step_id='reauth',
+                            data_schema=forms.form_reauth(self),
+                            errors=self.errors)
+
                 case 'auth_code_from_applecom_login':
                     if AppleAcct.is_auth_method_HWKEY is False:
                         return await self.async_step_reauth_code_from_applecom_login()
 
                 case 'change_auth_method':
-                    return await self.async_step_reauth_change_auth_method(reauth_apple_id=reauth_apple_id)
+                    return await self.async_step_reauth_change_auth_method()
 
                 case 'user_auth_dashboard':
                     return await self.async_step_user_auth_dashboard()
@@ -449,7 +455,7 @@ class OptionsFlow_Reauth_Steps:
         '''
         try:
             AppleAcct = self.AppleAcct
-            AppleAcct.was_ha_auth_code_alert_sent = False
+            AppleAcct.was_ha_display_orange_reauth_button_sent = False
             auth_successful = True
             log_info_msg(f"{AppleAcct.apple_user} > Send Auth code, {AppleAcct.current_auth_method}")
 
@@ -458,9 +464,10 @@ class OptionsFlow_Reauth_Steps:
                                         AppleAcct.validate_2fa_push_popup_window_code,
                                         auth_code)
 
+            # A refused Text code is tried as the device popup window code (validate_2fa_code)
             elif AppleAcct.is_auth_method_TEXT:
                 auth_successful = await Gb.hass.async_add_executor_job(
-                                        AppleAcct.validate_2fa_text_code,
+                                        AppleAcct.validate_2fa_code,
                                         auth_code)
 
             elif AppleAcct.is_auth_method_HWKEY:
@@ -519,7 +526,7 @@ class OptionsFlow_Reauth_Steps:
     #     successful auth.
     #     '''
     #     AppleAcct.was_auth_code_requested     = False
-    #     AppleAcct.was_ha_auth_code_alert_sent = False
+    #     AppleAcct.was_ha_display_orange_reauth_button_sent = False
     #     if (is_empty(AppleAcct.device_id_by_aadev_dname)
     #             or (AppleAcct.terms_of_use_update_needed and AppleAcct.terms_of_use_accepted)):
     #         await aascf.async_finish_authentication_and_data_refresh(self)
@@ -545,7 +552,7 @@ class OptionsFlow_Reauth_Steps:
                 evlog_msg   = 'Security Key Authentication Successful'
             else:
                 display_msg = 'auth_code_accepted'
-                evlog_msg   =  'Authentication Code Accepted'
+                evlog_msg   =  'Authentication code accepted'
         else:
             AppleAcct.was_auth_code_requested = False
             if AppleAcct.is_auth_method_HWKEY:
@@ -730,24 +737,25 @@ class OptionsFlow_Reauth_Steps:
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #            CHANGE AUTH METHOD
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    async def async_step_reauth_change_auth_method(self,
-                        user_input=None, errors=None, reauth_apple_id=None):
+    async def async_step_reauth_change_auth_method(self, user_input=None, errors=None):
 
         self.step_id = 'reauth_change_auth_method'
         self.errors = errors or {}
         self.errors_user_input = {}
         user_input, action_item = utils_cf.action_text_to_item(self, user_input)
 
+        AppleAcct       = self.AppleAcct
+        reauth_apple_id = AppleAcct.apple_id
+
         if user_input:
             user_input = self._unpack_ui_reauth(user_input)
             # reauth_apple_id = reauth_apple_id or user_input['account_selected']
-            AppleAcct, reauth_apple_id = \
-                        self.get_AppleAcct_reauth_needed(user_input.get('account_selected'))
+            # AppleAcct, reauth_apple_id = \
+            #             self.get_AppleAcct_reauth_needed(user_input.get('account_selected'))
             lists.build_aa_auth_methods_list(self, AppleAcct)
 
             utils_cf.log_step_info(self, user_input, action_item)
 
-        AppleAcct = self.AppleAcct
         if user_input is None:
             return self.async_show_form(step_id='reauth_change_auth_method',
                         data_schema=forms.form_reauth_change_auth_method(self, reauth_apple_id),
@@ -965,6 +973,10 @@ def _auth_conditional_card_yaml(auth_entity):
                     # The text entity state has a space after the status
                     f"      - {_yaml_str(uach.AUTH_NOT_NEEDED + uach.STATUS_MSG_SPACER)}",
                     f"      - {_yaml_str(uach.CODE_ACCEPTED + uach.STATUS_MSG_SPACER)}",
+                    # No status yet (cleared after a code is sent) or HA is starting
+                    f"      - {_yaml_str('')}",
+                    '      - "unknown"',
+                    '      - "unavailable"',
                     'card:']
 
     entities_card_yaml = _auth_entities_card_yaml(

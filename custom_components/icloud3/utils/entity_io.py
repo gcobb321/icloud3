@@ -71,9 +71,12 @@ def get_state(entity_id):
     return state
 
 #--------------------------------------------------------------------
-def get_attributes(entity_id):
+def get_attributes(entity_id, battery_state_entity_id=None):
     """
     Return the attributes of an entity.
+
+    battery_state_entity_id - The MobApp battery_state sensor used to set the charging
+        status of a battery level entity. The icon is used if it is not available.
 
     entity_attrs={'unit_of_measurement': '%', 'device_class': 'battery', 'icon': 'mdi:battery',
     'friendly_name': 'Gary-iPhone-app Battery Level', 'last_changed_secs': 1792953895,
@@ -100,7 +103,8 @@ def get_attributes(entity_id):
         entity_attrs[STATE] = entity_state
 
         if entity_attrs.get('device_class') == 'battery':
-            entity_attrs = _set_battery_attrs(entity_attrs)
+            battery_status = _get_battery_status(battery_state_entity_id)
+            entity_attrs = _set_battery_attrs(entity_attrs, battery_status)
 
 
     except (KeyError, AttributeError):
@@ -145,22 +149,85 @@ def get_last_changed_time(entity_id):
     return time_secs
 
 #--------------------------------------------------------------------
-def _set_battery_attrs(entity_attrs):
+def get_mobapp_battery_attrs(battery_level_entity_id, battery_state_entity_id=None):
+    '''
+    Return the battery attributes for the MobApp battery_level sensor. The MobApp
+    device_tracker is used if the battery_level sensor is not available. Its battery_level
+    attribute is only updated when the MobApp sends a location update.
+    '''
+    if battery_level_entity_id.startswith('device_tracker.') is False:
+        return get_attributes(battery_level_entity_id, battery_state_entity_id)
+
+    entity_attrs = get_attributes(battery_level_entity_id)
+    if entity_attrs.get(BATTERY_LEVEL) is None:
+        return {}
+
+    entity_attrs[STATE] = entity_attrs[BATTERY_LEVEL]
+    battery_status = _get_battery_status(battery_state_entity_id)
+
+    return _set_battery_attrs(entity_attrs, battery_status)
+
+#--------------------------------------------------------------------
+def _get_battery_status(battery_state_entity_id):
+    '''
+    Get the MobApp battery_state sensor value converted by BATTERY_STATUS_CODES
+
+    Return:
+        'full', 'charging' or 'not charging'
+        None - The sensor is not available or its state is unknown
+    '''
+    if battery_state_entity_id in [None, '']:
+        return None
+
+    try:
+        entity_data = Gb.hass.states.get(battery_state_entity_id)
+        if entity_data is None:
+            return None
+
+        # 'full' is kept so it is not reported as not charging. The device is plugged in
+        # and fully charged (iOS also reports an unknown battery state as Full)
+        battery_state = entity_data.state.lower()
+        if battery_state in ['full', 'charged']:
+            return 'full'
+
+        battery_status = BATTERY_STATUS_CODES.get(battery_state, '')
+
+    except Exception as err:
+        log_exception(err)
+        return None
+
+    return battery_status or None
+
+#--------------------------------------------------------------------
+def _set_battery_attrs(entity_attrs, battery_status=None):
     '''
     entity_attrs={'unit_of_measurement': '%', 'device_class': 'battery',
     'icon': 'mdi:battery-90', 'friendly_name': 'Lillian-iPad-app Lillian-iPad Battery Level',
     'last_changed_secs': 1792938245, 'last_changed_time': '10:24:05a', 'last_updated_secs': 1792938245,
     'last_updated_time': '10:24:05a', 'last_reported_secs': 1792938245, 'last_reported_time': '10:24:05a',
     'state': '95'}
+
+    battery_status - 'full'/'charging'/'not charging' from the MobApp battery_state sensor.
+        The battery level icon is checked if it is None.
+
+    The MobApp battery level is rounded to 5% (98% is reported as 100%) so 100% is only
+    Charged when there is no battery_state sensor. Otherwise the battery_state is used.
     '''
     try:
         entity_attrs[STATE] = int(entity_attrs[STATE])
         battery_level  = entity_attrs[STATE]
 
-        #BATTERY_CHARGING_DESC = ['Unknown', 'NotCharging', 'Low', 'Charging', 'Charged']
-        if battery_level > 99:
+        if battery_status is None:
+            is_charged  = (battery_level > 99)
+            is_charging = instr(entity_attrs.get('icon', ''), 'charging')
+        else:
+            is_charged  = (battery_status == 'full')
+            is_charging = (battery_status == 'charging')
+
+        #BATTERY_CHARGING_DESC = ['Unknown', 'Low', 'NotCharging', 'Charging', 'Charged']
+        if is_charged:
             charging_state = CHARGING_CHARGED
-        elif instr(entity_attrs['icon'], 'charging'):
+        elif is_charging:
             charging_state = CHARGING_CHARGING
         elif battery_level > 0 and battery_level < BATTERY_LEVEL_LOW:
             charging_state = CHARGING_LOW

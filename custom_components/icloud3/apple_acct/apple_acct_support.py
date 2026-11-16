@@ -5,7 +5,11 @@ from ..const            import (HIGH_INTEGER,
                                     ALERT_CRITICAL, ALERT_APPLE_ACCT, ALERT_DEVICE, ALERT_STARTUP, ALERT_OTHER,
                                     ICLOUD,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
-                                    INACTIVE, )
+                                    INACTIVE,
+                                    APPLE_ACCT_KEEPALIVE_SECS, APPLE_ACCT_LOGIN_RETRY_SECS,
+                                    APPLE_ACCT_LOGIN_NO_RETRY_CODES, CONFIGURE_IDLE_TIMEOUT_SECS,
+                                    AUTH_CODE_NEEDED_FIRST_REMINDER_SECS,
+                                    AUTH_CODE_NEEDED_REMINDER_SECS, )
 from ..const_config     import (CONF_APPLE_ACCT, CONF_PASSWORD, CONF_LOCATE_ALL,
                                 CONF_SERVER_LOCATION, CONF_TRACKING_MODE, )
 from ..const_char       import (NL, NL3, CRLF, CRLF_DOT, DASH_20, RED_X, CRLF_RED_MARK,
@@ -17,13 +21,13 @@ from .apple_acct        import (AppleAcctManager,
                                 AppleAcctAPIResponseException, AppleAcct2FARequiredException,)
 
 # from ..startup          import start_ic3_control
-from ..utils.messaging  import (post_event, post_alert, post_alert, post_error_msg, post_monitor_msg,
-                                post_greenbar_msg, update_alert_sensor, log_banner,
+from ..utils.messaging  import (post_event, post_alert, post_alert, post_error_msg,
+                                post_greenbar_msg, update_alert_sensor, alert_key_for, log_banner,
                                 post_repair_issue, clear_repair_issue,
                                 log_debug_msg, log_info_msg, log_exception, log_error_msg, log_warning_msg,
                                 internal_error_msg2, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, secs_to_time, format_age, secs_to_hhmm,
-                                format_time_age, )
+                                format_time_age, secs_since, )
 from ..utils.utils      import (instr, list_to_str, list_add, list_del, dict_del,
                                 is_empty, isnot_empty,
                                 apple_user, is_running_in_event_loop,)
@@ -73,6 +77,294 @@ def retry_apple_acct_login_after_error():
 
 
 #--------------------------------------------------------------------
+def keep_apple_accts_alive():
+    '''
+    Keep every Apple Acct's session token valid and retry a failed signin. Checked every
+    5-mins in icloud3_main._main_5sec_loop_special_time_control.
+
+    An Apple Acct is only refreshed when one of its devices needs a location. If that does
+    not happen for a while (only Monitored devices, all tracked devices paused, long inzone
+    intervals), the token expires (dead after 2-hrs idle on 11/13) and the next refresh needs a
+    Password SRP signin, which Apple may refuse (-900007, 503).
+
+    - Logged in: refresh it when it has not been refreshed for APPLE_ACCT_KEEPALIVE_SECS.
+    - Signin failed: nothing else retries it (a monitored acct, the 450 handler does not
+        resend). Retry the refresh (refreshClient 450 -> authenticate) after
+        APPLE_ACCT_LOGIN_RETRY_SECS (15-mins, 30-mins, then every hour).
+    Not done while waiting for an auth code or when the account is locked.
+    '''
+    if (Gb.use_data_source_ICLOUD is False
+            or Gb.is_all_tracking_paused
+            or Gb.internet_error):
+        return
+
+    # Configure may log into an Apple Acct (Update Apple Acct), a keep alive or retry signin
+    # would run at the same time with the same cookie/session files. A login retry restart
+    # would also reload iCloud3 under the open Configure window. Wait until it is closed.
+    if is_config_flow_in_use():
+        return
+
+    for AppleAcct in list(Gb.AppleAcct_by_apple_id.values()):
+        try:
+            if AppleAcct is None:
+                continue
+
+            if AppleAcct.is_reauth_needed:
+                remind_auth_code_needed(AppleAcct)
+                continue
+
+            AppleAcct.auth_code_reminder_cnt = 0
+
+            if AppleAcct.account_locked:
+                continue
+
+            # The login failed during startup, the devices were never set up
+            if AppleAcct.is_AADevices_setup_complete is False:
+                _retry_startup_login(AppleAcct)
+                continue
+
+            if AppleAcct.login_successful:
+                # It recovered (tracked device refresh reauth), start any later retries over
+                if AppleAcct.login_retry_secs != 0:
+                    AppleAcct.login_retry_secs = 0
+                    AppleAcct.login_retry_cnt  = 0
+
+                if secs_since(AppleAcct.last_refresh_secs) < APPLE_ACCT_KEEPALIVE_SECS:
+                    continue
+                log_info_msg(f"{AppleAcct.apple_user}, Keep Alive Refresh, Last Refresh-"
+                                f"{format_age(AppleAcct.last_refresh_secs)}")
+
+            # The retries were stopped (Configure > Update Apple Acct > Stop Retrying Login)
+            elif AppleAcct.login_retry_secs < 0:
+                continue
+
+            # The signin failed, set the first retry time
+            elif AppleAcct.login_retry_secs == 0:
+                AppleAcct.login_retry_cnt  = 0
+                AppleAcct.login_retry_secs = time_now_secs() + APPLE_ACCT_LOGIN_RETRY_SECS[0]
+                post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Failed, "
+                            f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+                continue
+
+            elif time_now_secs() < AppleAcct.login_retry_secs:
+                continue
+
+            else:
+                AppleAcct.login_retry_cnt += 1
+                log_info_msg(f"{AppleAcct.apple_user}, Login Retry #{AppleAcct.login_retry_cnt}")
+
+            AppleAcct.refresh_icloud_data(locate_all_devices=True)
+            _update_apple_acct_devices_loc_data(AppleAcct)
+
+            if AppleAcct.login_successful:
+                if AppleAcct.login_retry_secs > 0:
+                    post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Retry "
+                                f"#{AppleAcct.login_retry_cnt} Successful")
+                AppleAcct.login_retry_secs = 0
+                AppleAcct.login_retry_cnt  = 0
+
+            elif AppleAcct.login_retry_secs > 0:
+                idx = min(AppleAcct.login_retry_cnt, len(APPLE_ACCT_LOGIN_RETRY_SECS) - 1)
+                AppleAcct.login_retry_secs = time_now_secs() + APPLE_ACCT_LOGIN_RETRY_SECS[idx]
+                post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Retry "
+                            f"#{AppleAcct.login_retry_cnt} Failed, "
+                            f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+
+        except Exception as err:
+            log_exception(err)
+
+#....................................................................
+def _update_apple_acct_devices_loc_data(AppleAcct):
+    '''
+    The keep alive refresh only updates the AADev data. Move it into the Devices' loc_data
+    fields (a tracked device's refresh does this for all Devices) so the moved in zone
+    (tracked) and the moved 50m (monitored) checks see the new location.
+    '''
+    # Imported here, icloud_data_handler imports this module
+    from .icloud_data_handler import update_device_with_latest_raw_data
+
+    for Device in Gb.Devices:
+        try:
+            if Device.AppleAcct is AppleAcct:
+                update_device_with_latest_raw_data(Device)
+
+        except Exception as err:
+            log_exception(err)
+
+#....................................................................
+def is_config_flow_in_use():
+    '''
+    Configure is open and a screen was displayed within CONFIGURE_IDLE_TIMEOUT_SECS.
+    A browser tab closed without exiting leaves Gb.is_config_flow_open set, the timeout
+    keeps it from holding up the Apple Acct keep alive forever.
+    '''
+    OptFlow = Gb.OptionsFlowHandler
+    if Gb.is_config_flow_open is False or OptFlow is None:
+        return False
+
+    last_activity_secs = getattr(OptFlow, 'last_activity_secs', 0) or 0
+    return (time_now_secs() - last_activity_secs) < CONFIGURE_IDLE_TIMEOUT_SECS
+
+#....................................................................
+def _retry_startup_login(AppleAcct):
+    '''
+    The Apple Acct login failed during startup (AppleAcct exists, devices not set up).
+    Retry the login on the APPLE_ACCT_LOGIN_RETRY_SECS backoff (503 starts at 30-mins).
+    When it works, restart iCloud3. The restart reuses the logged in AppleAcct (Method-1,
+    no new signin) and sets up and verifies its devices (start_ic3 Stage 4).
+
+    Not retried:
+        - APPLE_ACCT_LOGIN_NO_RETRY_CODES (403 locked/unknown acct, 423), the user has to fix it
+        - 401 invalid password, retried once (401 -20101 was seen with a correct password)
+        - Terms of Use not accepted
+    login_retry_secs = -1 when the retries were stopped
+    '''
+    if AppleAcct.login_retry_secs < 0:
+        return
+
+    code = _login_error_code(AppleAcct)
+
+    if AppleAcct.login_retry_secs == 0:
+        if (code in APPLE_ACCT_LOGIN_NO_RETRY_CODES
+                or AppleAcct.terms_of_use_update_needed):
+            AppleAcct.login_retry_secs = -1
+            return
+
+        AppleAcct.login_retry_cnt  = 0
+        AppleAcct.login_retry_secs = time_now_secs() + _login_retry_delay_secs(0, code)
+        post_event( f"Apple Acct > {AppleAcct.account_owner}, Startup Login Failed ({code}), "
+                    f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+        _add_login_retry_note(AppleAcct,
+                    f"Login Retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+        return
+
+    if time_now_secs() < AppleAcct.login_retry_secs:
+        return
+
+    AppleAcct.login_retry_cnt += 1
+    log_info_msg(f"{AppleAcct.apple_user}, Startup Login Retry #{AppleAcct.login_retry_cnt}")
+
+    AppleAcct.authenticate_and_refresh_data()
+
+    if AppleAcct.login_successful and AppleAcct.is_AADevices_setup_complete:
+        post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Retry "
+                    f"#{AppleAcct.login_retry_cnt} Successful, Restarting iCloud3")
+        AppleAcct.login_retry_secs = 0
+        AppleAcct.login_retry_cnt  = 0
+        Gb.was_icloud3_restart_requested = True
+        return
+
+    code = _login_error_code(AppleAcct)
+    if (code in APPLE_ACCT_LOGIN_NO_RETRY_CODES
+            or code == 401
+            or AppleAcct.terms_of_use_update_needed
+            or AppleAcct.account_locked):
+        AppleAcct.login_retry_secs = -1
+        post_event( f"{EVLOG_ALERT}Apple Acct > {AppleAcct.account_owner}, Login Retry "
+                    f"#{AppleAcct.login_retry_cnt} Failed ({code}), Not retried again, "
+                    f"Check the Apple Account, then restart iCloud3")
+        _add_login_retry_note(AppleAcct,
+                    f"Login Retry #{AppleAcct.login_retry_cnt} Failed, Not retried again, "
+                    f"Check the Apple Account, then restart iCloud3")
+        return
+
+    AppleAcct.login_retry_secs = time_now_secs() + \
+                    _login_retry_delay_secs(AppleAcct.login_retry_cnt, code)
+    post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Retry "
+                f"#{AppleAcct.login_retry_cnt} Failed ({code}), "
+                f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+    _add_login_retry_note(AppleAcct,
+                f"Login Retry #{AppleAcct.login_retry_cnt + 1} "
+                f"at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+
+    # The 503 was not recovered by the retry
+    if code == 503:
+        post_ha_icloud_integration_503_warning(AppleAcct)
+
+#....................................................................
+LOGIN_RETRY_NOTE_SEP = ', Login Retry'
+
+def _add_login_retry_note(AppleAcct, retry_note):
+    '''
+    Add the startup login retry note to the Apple Acct's login_failed alert (alerts
+    sensor and Event Log greenbar), 'gco**1**21@ > Login Failed, <reason>, Login Retry
+    at 12:25p'. A failed retry rewrites the alert (apple_acct.authenticate_and_refresh_data),
+    a note already there is replaced. A successful retry restarts iCloud3, which
+    clears it.
+
+    retry_note - Starts with 'Login Retry' (LOGIN_RETRY_NOTE_SEP)
+    '''
+    alert_key = alert_key_for(AppleAcct.apple_id, 'login_failed')
+    alert_msg = AppleAcct.alerts_by_alert_key.get(alert_key,
+                                f"{AppleAcct.apple_user} > Login Failed")
+    alert_msg = alert_msg.split(LOGIN_RETRY_NOTE_SEP)[0]
+
+    update_alert_sensor(Source=AppleAcct, error='login_failed',
+                        alert_msg=f"{alert_msg}, {retry_note}")
+
+#....................................................................
+def _login_error_code(AppleAcct):
+    '''
+    The code that ended the failed login. response_code_pw is the Password SRP signin code
+    (set by _set_srp_return_error_code), response_code the last request's code
+    '''
+    return AppleAcct.response_code_pw or AppleAcct.response_code
+
+def _login_retry_delay_secs(retry_cnt, code):
+    idx = min(retry_cnt, len(APPLE_ACCT_LOGIN_RETRY_SECS) - 1)
+    delay_secs = APPLE_ACCT_LOGIN_RETRY_SECS[idx]
+
+    # Apple is throttling the signin, wait at least 30-mins
+    return max(1800, delay_secs) if code == 503 else delay_secs
+
+#--------------------------------------------------------------------
+HA_ICLOUD_INTEGRATION_DOMAIN = 'icloud'
+HA_ICLOUD_INTEGRATION_503_MSG = (
+                f"The Home Assistant Apple iCloud integration is also signing into this "
+                f"Apple Account. Two integrations signing into the same account can "
+                f"contribute to Apple refusing signins (503) and to locked accounts. "
+                f"Consider disabling it")
+
+def is_ha_icloud_integration_using_apple_id(apple_id):
+    '''
+    The HA Apple iCloud integration (domain 'icloud') does its own Password SRP
+    signins. Check if an enabled config entry of it uses this apple_id. Its
+    entry.data['username'] is the apple_id (also its unique_id).
+
+    Only shown when a 503 was not recovered from. A different apple_id does not
+    share Apple's signin throttling, so it is not checked.
+    '''
+    try:
+        if Gb.hass is None or not apple_id:
+            return False
+
+        apple_id = apple_id.strip().lower()
+        for entry in Gb.hass.config_entries.async_entries(HA_ICLOUD_INTEGRATION_DOMAIN):
+            if entry.disabled_by is not None:
+                continue
+            username = (entry.data.get('username') or entry.unique_id or '')
+            if username.strip().lower() == apple_id:
+                return True
+
+    except Exception as err:
+        log_exception(err)
+
+    return False
+
+def post_ha_icloud_integration_503_warning(AppleAcct):
+    '''
+    Post the HA Apple iCloud integration warning once per AppleAcct when its 503 was
+    not recovered from
+    '''
+    if (getattr(AppleAcct, 'ha_icloud_503_warning_posted', False)
+            or is_ha_icloud_integration_using_apple_id(AppleAcct.apple_id) is False):
+        return
+
+    AppleAcct.ha_icloud_503_warning_posted = True
+    post_event( f"{EVLOG_ALERT}Apple Acct > {AppleAcct.account_owner}, "
+                f"Apple Refused the Signin (503){CRLF_DOT}{HA_ICLOUD_INTEGRATION_503_MSG}")
+
+#--------------------------------------------------------------------
 def log_into_apple_account(apple_id, password, apple_server_location, locate_all_devices=None):
     '''
     Log in and Authenticate the Apple Account via pyicloud
@@ -106,6 +398,12 @@ def log_into_apple_account(apple_id, password, apple_server_location, locate_all
             return None
 
         AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
+
+        # Start the login retries over (keep_apple_accts_alive), they may have been
+        # stopped (-1) before this restart
+        if AppleAcct:
+            AppleAcct.login_retry_secs = 0
+            AppleAcct.login_retry_cnt  = 0
 
         # Make sure the Device Service set up was completed. It will not be
         # if there was a connection error during startup
@@ -170,7 +468,17 @@ def refresh_AppleAcct_AADdevices_data(AppleAcct):
     '''
     Refresh the device data for an existing Apple acct
     '''
-    AppleAcct.refresh_icloud_data(locate_all_devices=True)
+    refreshed = AppleAcct.refresh_icloud_data(locate_all_devices=True)
+
+    # The device data was received, so the session works. Clear a login_successful=False
+    # left by an earlier failed signin (a reauth Request Auth Code that Apple refused)
+    # or the reused AppleAcct is never matched to the Devices (start_ic3 only runs
+    # setup_tracked_devices_for_icloud when login_successful is True) and its
+    # iCloud-only devices are not verified on every iCloud3 restart.
+    if (refreshed
+            and AppleAcct.response_code == 200
+            and isnot_empty(AppleAcct.AADev_by_device_id)):
+        AppleAcct.login_successful = True
 
     setup_status_msg(AppleAcct, "1, Refresh iCloud Devices")
 
@@ -321,18 +629,28 @@ def verify_device_info_received(AppleAcct):
 
     return (AppleAcct.AADevices.devices_cnt >= 0)
 
-#--------------------------------------------------------------------
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+#   APPLE ACCT AUTHENTICATION NEEDED FUNCTIONS
+#
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
     '''
     A wrapper for seeing if an authentication is needed and setting up the config_flow
     reauth request
+
+    Return:
+        True  - An Auth Code is needed (AppleAcct.is_reauth_needed)
+        False - It is not needed. It returned None here before 11/15/2026, the
+                start_ic3 'is False' AppleAcct reuse check was never True
     '''
     if AppleAcct is None:
         return False
     elif AppleAcct.is_reauth_needed:
         pass
-    elif Gb.conf_data_source_MOBAPP is False:
-        return False
+    # elif Gb.conf_data_source_MOBAPP is False:
+    #     return False
     elif initial_setup:
         pass
     elif Gb.is_icloud3_startup_inprocess:
@@ -340,14 +658,32 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
 
     alert_msg = ''
     if (new_2fa_authentication_code_requested(AppleAcct, initial_setup)
-            and AppleAcct.was_ha_auth_code_alert_sent is False):
+            and AppleAcct.was_ha_display_orange_reauth_button_sent is False):
+
         alert_msg =(f"{AppleAcct.apple_user_short} > "
                     f"Apple Authentication needed ({secs_to_hhmm(AppleAcct.is_reauth_needed_secs)})")
         post_alert(alert_msg)
         update_alert_sensor(Source=AppleAcct, error='auth_needed', alert_msg=alert_msg)
 
-        if Gb.AppleAcct_reauth_needed is None:
+        # There is one HA Reconfigure button for all Apple Accts (one config entry).
+        # Request it unless another Apple Acct that still needs a code already has.
+        # The reauth screen moves on to the next Apple Acct needing a code.
+        if (Gb.AppleAcct_reauth_needed is None
+                or Gb.AppleAcct_reauth_needed is AppleAcct
+                or Gb.AppleAcct_reauth_needed.is_reauth_needed is False):
+            try:
+                Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
+
+                post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.apple_user_short}, "
+                            f"Auth Reconfigure button requested")
+            except Exception as err:
+                log_exception(err)
+
             Gb.AppleAcct_reauth_needed = AppleAcct
+
+        AppleAcct.was_ha_display_orange_reauth_button_sent = True
+
+
 
     # Post the Repairs issue when Apple starts asking for the Terms of Use, remove it
     # when they were accepted somewhere else (www.icloud.com). The issue posted
@@ -358,6 +694,110 @@ def is_authentication_2fa_code_needed(AppleAcct, initial_setup=False):
 
     elif AppleAcct.terms_of_use_repair_issue_posted:
         clear_repair_issue_aa_terms_of_use(AppleAcct)
+
+    # The code may no longer be needed without one being entered (a token refresh
+    # re-derived it from dsInfo, or a full login reset it). Clear the flag so the
+    # alert and orange button are posted the next time a code is needed.
+    if AppleAcct.is_reauth_needed is False:
+        AppleAcct.was_ha_display_orange_reauth_button_sent = False
+
+    return AppleAcct.is_reauth_needed
+
+#--------------------------------------------------------------------
+def remind_auth_code_needed(AppleAcct):
+    '''
+    An Auth Code is needed and has not been entered. The Event Log alert and the HA
+    Reconfigure button are only posted when it is first needed, so a user who does not
+    look at them never knows. Post an HA log error and an Event Log alert after
+    AUTH_CODE_NEEDED_FIRST_REMINDER_SECS (12-hrs), then every
+    AUTH_CODE_NEEDED_REMINDER_SECS (24-hrs). The count is reset when the code is
+    entered (keep_apple_accts_alive).
+
+    To test: request an Auth Code and do not enter it, shorten the const.py
+    AUTH_CODE_NEEDED_* timers (e.g. 1800/3600) and restart HA.
+    '''
+    needed_secs   = AppleAcct.is_reauth_needed_secs
+    first_secs    = AUTH_CODE_NEEDED_FIRST_REMINDER_SECS
+    interval_secs = AUTH_CODE_NEEDED_REMINDER_SECS
+
+    if needed_secs == 0:
+        return
+
+    reminder_cnt  = getattr(AppleAcct, 'auth_code_reminder_cnt', 0)
+    reminder_secs = needed_secs + first_secs + reminder_cnt * interval_secs
+    if time_now_secs() < reminder_secs:
+        return
+
+    # A restart can be days later, post one reminder, not one for each 24-hrs missed
+    AppleAcct.auth_code_reminder_cnt = \
+                    int((secs_since(needed_secs) - first_secs) // interval_secs) + 1
+
+    log_error_msg(  f"{AppleAcct.apple_user_short} > Apple Acct Auth Code needed "
+                    f"since {format_time_age(needed_secs, hhmm=True)} and has not been entered. "
+                    f"iCloud location data may stop and Apple may refuse its signins. "
+                    f"Select `Settings > Devices & Services`, then select `Reconfigure` "
+                    f"to enter the code")
+    post_alert( f"Apple Acct > {AppleAcct.apple_user_short}, Auth Code needed "
+                f"since {format_time_age(needed_secs, hhmm=True)}"
+                f"{CRLF_DOT}Select `Settings > Devices & Services`, then select `Reconfigure` "
+                f"to enter the code")
+
+    # The 12-hr reminder goes to the first owner device, the later ones to all of them
+    _send_auth_code_needed_mobapp_msg(AppleAcct, needed_secs,
+                        first_device_only=(AppleAcct.auth_code_reminder_cnt == 1))
+
+    # Show HA's Reconfigure button again. HA does not start a 2nd reauth flow if one is
+    # already in progress. Not done while Configure is open, the reauth screen would be
+    # displayed on top of it (apple_acct_support_cf).
+    if Gb.config_entry and Gb.is_config_flow_open is False:
+        Gb.hass.add_job(Gb.config_entry.async_start_reauth, Gb.hass)
+
+#--------------------------------------------------------------------
+def _send_auth_code_needed_mobapp_msg(AppleAcct, needed_secs, first_device_only=False):
+    '''
+    Send the Auth Code needed reminder to the Mobile App of the Apple Acct owner's
+    Devices (not a Family Sharing member's device, Device.family_share_device is False).
+    A notify service shared by several Devices gets one message.
+
+    first_device_only:
+        True  - Send it to the first owner Device with a Mobile App (12-hr reminder)
+        False - Send it to all of them (the 24-hr reminders)
+    '''
+    # Imported here, mobapp_interface imports modules that import this one
+    from ..mobile_app import mobapp_interface
+    from ..const      import NOTIFY
+
+    pending_hrs  = max(1, int(secs_since(needed_secs) // 3600))
+    service_data = {
+        "title":   f"{AppleAcct.apple_user} > Apple Acct Auth Needed",
+        "message": (f"The Apple Account auth code has been pending "
+                    f"since {format_time_age(needed_secs, hhmm=True)}. The auth code needs to be "
+                    f"entered to continue tracking with iCloud location data. "
+                    f"Select `Settings > Devices & Services`, then select `Reconfigure` "
+                    f"to enter the code")}
+    notify_services_sent = []
+    for Device in Gb.Devices_by_apple_id.get(AppleAcct.apple_id, []):
+        try:
+            # Only the account owner's devices, not the Family Sharing members' devices
+            if getattr(Device, 'family_share_device', True) is not False:
+                continue
+
+            notify_service = Device.mobapp.get(NOTIFY, '')
+            if notify_service == '' or notify_service in notify_services_sent:
+                continue
+
+            if mobapp_interface.send_message_to_device(Device, service_data):
+                notify_services_sent.append(notify_service)
+
+                if first_device_only:
+                    break
+
+        except Exception as err:
+            log_exception(err)
+
+    if notify_services_sent == []:
+        log_info_msg(f"{AppleAcct.apple_user}, Auth Code Needed Reminder, Mobile App message "
+                        f"not sent, No account owner device with a Mobile App notify service")
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #

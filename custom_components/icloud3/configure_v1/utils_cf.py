@@ -1,7 +1,7 @@
 
 
 from ..global_variables  import GlobalVariables as Gb
-from ..const             import (DEVICE_TYPE_DN, )
+from ..const             import (DEVICE_TYPE_NAME, )
 from ..const_config      import (CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_PARAMETER_TIME_STR,
                                  CONF_PARAMETER_FLOAT, CF_PROFILE, CF_TRACKING, CF_GENERAL,
                                  CONF_PASSWORD, )
@@ -250,7 +250,7 @@ def parm_or_device(self, pname, suggested_value=''):
                             or suggested_value
 
         if pname == 'device_type':
-            parm_displayed = DEVICE_TYPE_DN(parm_displayed)
+            parm_displayed = DEVICE_TYPE_NAME(parm_displayed)
         parm_displayed = ' ' if parm_displayed == '' else parm_displayed
 
     except Exception as err:

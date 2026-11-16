@@ -17,7 +17,7 @@ from ..const_char       import (RARROW, )
 
 from ..utils.utils      import (is_between, is_statzone, format_gps, zone_dname,
                                 is_empty, isnot_empty, )
-from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg,
                                 log_debug_msg, log_exception, _evlog, _log, )
 from ..utils.time_util  import (time_now_secs, time_now, datetime_now, )
 from ..utils.dist_util  import (format_dist_m, gps_distance_km, )
@@ -151,9 +151,6 @@ def create_StationaryZones_object():
     statzone_id = str(len(Gb.StatZones) + 1)
 
     StatZone = iCloud3_StationaryZone(statzone_id)
-
-    event_msg = (f"ADDED StatZone > {StatZone.fname} ({StatZone.zone})")
-    post_monitor_msg(event_msg)
 
     Gb.StatZones.append(StatZone)
     Gb.StatZones_by_zone[StatZone.zone] = StatZone

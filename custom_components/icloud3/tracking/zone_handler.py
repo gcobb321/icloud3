@@ -21,7 +21,7 @@ from ..const_char       import (RARROW, )
 from ..utils.file_io    import (file_size, file_exists, set_write_permission, )
 from ..utils.utils      import (instr, is_zone, is_statzone, isnot_statzone, isnot_zone, zone_dname,
                                 list_to_str, list_add, list_del, )
-from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg,
                                 log_info_msg, log_exception,
                                 _evlog, _log, )
 from ..utils.time_util import (time_now_secs, secs_to_hhmm, secs_to, secs_since, mins_since, time_now,
@@ -262,7 +262,6 @@ def post_zone_selected_msg(Device, ZoneSelected, zone_selected,
     zones_cnt_msg  = zones_cnt_msg.replace('──', 'NotSet')
 
     if is_zone(zone_selected) and isnot_statzone(zone_selected):
-        post_monitor_msg(Device.devicename, f"Zone Distance > {zones_dist_msg}")
         zones_dist_msg = ''
     else:
         zones_cnt_msg = ''

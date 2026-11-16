@@ -205,15 +205,7 @@ class OptionsFlow_AppleAccount_Steps:
 
 #...........................................................
     def _is_apple_acct_setup(self):
-
-        if self.apple_id:
-            return True
-        elif is_empty(Gb.conf_apple_accounts):
-            return False
-        elif Gb.conf_apple_accounts[0].get(CONF_APPLE_ACCT, '') == '':
-            return False
-
-        return True
+        return lists.is_apple_acct_setup(self)
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -247,12 +239,14 @@ class OptionsFlow_AppleAccount_Steps:
                 return await self.async_step_apple_accounts(user_input=None)
 
             case 'stop_login_retry':
+                # -1 stops the keep alive login retries (aas.keep_apple_accts_alive) until
+                # the next startup login or the acct is logged into again
                 AppleAcct = Gb.AppleAcct_by_apple_id.get(self.apple_id)
                 if AppleAcct:
-                    AppleAcct.error_retry_cnt = 0
-                    AppleAcct.error_next_retry_secs = 0
+                    AppleAcct.login_retry_secs = -1
+                    AppleAcct.login_retry_cnt  = 0
+                    post_alert(f"Apple Acct > {AppleAcct.apple_user}, Retry Login Canceled")
                 user_input = None
-                post_alert(f"Apple Acct > {AppleAcct.apple_user}, Retry Login Canceled")
                 self.errors['base'] = 'conf_updated'
                 return await self.async_step_update_apple_acct(
                                                 user_input=user_input, errors=self.errors)
@@ -464,6 +458,10 @@ class OptionsFlow_AppleAccount_Steps:
 
                 return self._show_update_apple_acct_form(user_input)
 
+        # The login replaced the AppleAcct that the Devices use until iCloud3 restarts when
+        # Configure is exited. Its refreshes save its old session to the same cookie/session
+        # files (and a 450 would reauthenticate), pause them. The restart resumes them.
+        self._pause_replaced_apple_acct_devices(ui_apple_id)
 
         list_add(self.config_parms_update_control, ['restart'])
         self.errors[CONF_APPLE_ACCT] = ''
@@ -671,6 +669,8 @@ class OptionsFlow_AppleAccount_Steps:
                 AppleAcct = self.AppleAcct
 
             if AppleAcct.auth_failed_503:
+                if aas.is_ha_icloud_integration_using_apple_id(AppleAcct.apple_id):
+                    return 'apple_acct_login_error_503_ha_icloud'
                 return 'apple_acct_login_error_503'
             if AppleAcct.response_code == 302:
                 return 'apple_acct_login_error_302'

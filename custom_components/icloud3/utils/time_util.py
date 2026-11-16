@@ -305,12 +305,13 @@ def format_time_units(time_str):
     return f"{time}{units[0]}"
 
 #--------------------------------------------------------------------
-def format_timer(secs):
+def format_timer(secs, smh_abbrev=False):
     ''' secs --> 4.5 days/hrs/mins/secs '''
 
     try:
         if secs < 1:
-            return '0 secs'
+            time_str = '0s' if smh_abbrev else '0 secs'
+            return time_str
 
         secs = int(secs)
 
@@ -331,10 +332,21 @@ def format_timer(secs):
         time_str = time_str.replace('.0 ', ' ')
         if time_str == '1 mins': time_str = '1 min'
 
+        if smh_abbrev:
+            time_str = shrink_smh_text(time_str)
+
     except Exception as err:
         #_LOGGER.exception(err)
         time_str = ''
 
+    return time_str
+
+#--------------------------------------------------------------------
+def shrink_smh_text(time_str):
+    time_str = time_str.replace(' secs', 's').replace(' sec', 's')
+    time_str = time_str.replace(' mins', 'm').replace(' min', 'm')
+    time_str = time_str.replace(' hrs', 'h').replace(' hr', 'h')
+    time_str = time_str.replace(' days', 'd').replace(' day', 'd')
     return time_str
 
 #--------------------------------------------------------------------
@@ -370,14 +382,19 @@ def format_mins_timer(mins):
     return time_str
 
 #--------------------------------------------------------------------
-def format_age(secs, xago=None):
+def format_age(secs, xago=None, smh_abbrev=False):
     ''' secs --> 4.5 sec/mins/hrs ago '''
 
     if isnot_valid(secs): return 'Never'
     if secs < 1577854800: return 'Unknown'
     ago = ' ago' if xago is None else ''
 
-    return f"{format_timer(secs_since(secs))}{ago}"
+    time_str = format_timer(secs_since(secs))
+
+    if smh_abbrev:
+        time_str = shrink_smh_text(time_str)
+
+    return f"{time_str}{ago}"
 
 #--------------------------------------------------------------------
 def format_age_hrs(secs, xago=None):
@@ -390,7 +407,7 @@ def format_age_hrs(secs, xago=None):
     return f"{format_timer_hrs(secs_since(secs))}{ago}"
 
 #--------------------------------------------------------------------
-def format_time_age(secs, xago=None, hhmm=False):
+def format_time_age(secs, xago=None, hhmm=False, smh_abbrev=False):
     ''' secs --> 10:23:45 or h:mm:ssa/p (4.5 sec/mins/hrs ago) '''
 
     if isnot_valid(secs): return 'Unknown'
@@ -405,8 +422,9 @@ def format_time_age(secs, xago=None, hhmm=False):
     ago = ' ago' if xago is None else ''
 
     ftime = secs_to_hhmm(secs) if hhmm is True else secs_to_time(secs)
+
     return (f"{ftime} "
-            f"({format_timer(age_secs)}{ago})")
+            f"({format_timer(age_secs, smh_abbrev)}{ago})")
 
 #--------------------------------------------------------------------
 def format_secs_since(secs):

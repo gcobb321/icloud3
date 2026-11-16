@@ -1,10 +1,58 @@
-***Total downloads for v3.7.x - 17,447 (as of 11/1/2026).
-Number of coffee buyers - 169 (thanks again). If you appreciate my work and find iCloud3 useful, one cup would really be appreciated.***
+***Total downloads for v3.7.x - 18,485 (as of 11/4/2026).
+Number of coffee buyers - 182 (Thanks Again!). If you appreciate my work and find iCloud3 useful, one cup would really be appreciated.***
 <a href="https://www.buymeacoffee.com/gcobb321" target="_blank">
-<img src="https://gcobb321.github.io/icloud3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="50"></a>
+<img src="https://gcobb321.github.io/icloud3_docs/images/buymeacoffee-docs-button-icon.png" width="150" height="35"></a>
 
 ***Thanks***,
 ***Gary Cobb, aka geekstergary***
+
+-----
+## 🍎 iCloud3 v3.8.0 Beta 5 (11/10/2026)
+### 🎉 New and Improved Items
+1. **Setting up Mobile App Devices**:
+    - Changed the way iCloud3 associated the Mobile App device sensors (_update_trigger, _battery_level, _battery_status) with the iCloud3 device so it uses the same method as HA
+    - Improved the messages to better describe an error encountered during setp (not found, disabled in HA, etc) in the Event Log, iCloud3 alerts and Repair issues
+    - Changed method of identfying when a device was charging and not charging. Charging info is now coming from the _battery_state sensor.
+    - Impoved the formatting of the Mobile App Device/Sensor assignment in Startup Stage 5
+2. **Excluded Sensors** - The excluded sensors are now displayed at the end of the configuration setup process.
+3. **Show/Hide Apple RawData Traffic**
+    - The *Show/Hide Tracking Monitors* has been changed to show *RawData Logging* information in the Event Log. Showing Apple iCloud and Mobile App traffic can help troubleshoot problems and understand the data sent to iCloud3. It shows:
+    - The Apple Account login and data request status codes/messages
+    - Apple location data times of all data sent to iCloud3
+    - Mobile App zone enter/exit and other triggers and location data times
+4. **Fewer Waze Route Requests (HTTP 429-Too Many Requests)** - Waze was limiting requests when several devices were traveling together. The number of Waze requests has been reduced by about half:
+    - The distance moved since the last update now uses the straight line distance instead of a Waze route request.
+    - When devices are traveling together, a device now uses the Waze route of another device that requested it in the last 60-secs if it is within 150m and going the same direction. The time and distance are adjusted for the difference.
+    - A Mobile App *Signaled* or *Periodic* trigger (sent every 5-mins while driving) no longer does an update before the next update time if the device is moving away from the zone or has moved less than 1km.
+5. **Apple Account Keep Alive** - Apple ends an Apple Account's session if it is not used for a while. The next request then needs a password sign-in, which Apple may refuse (400 Bad Request, 503 Service Unavailable). An Apple Account that has not been refreshed by one of its devices for 30-mins is now refreshed so its session stays valid. This is needed when all of the account's devices are Monitored, all of its tracked devices are paused, or its devices have a long inZone interval (2-hrs). An account whose devices are updated more often is not affected.
+    - The battery level of the devices in that Apple Account is also updated every 30-mins.
+    - An iCloud-only device (no Mobile App) that is tracked and in a zone with a long inZone interval is updated as soon as the new location shows it has left the zone. Only an accurate location is used so GPS wandering does not cause a false zone exit. Moving around inside the zone does not cause an update.
+6. **Apple Account Login Retry** - If the Apple Account sign-in fails, it is now retried in 15-mins, 30-mins and then every hour instead of waiting for the next HA restart. A failed sign-in when iCloud3 starts is also retried, and iCloud3 is restarted when it is successful so the account's devices are set up. A 503 (Apple refused the sign-in) waits at least 30-mins. An invalid password is retried once, and a locked account is not retried. The Event Log shows the retry time and results.
+    - *Configure > Apple Accounts > Update Apple Account* now has a *Stop Retrying Login* action while a retry is scheduled.
+7. **Text Message Auth Code** - When the Authentication method is a Text Message, Apple also displays the Push Popup window code on your Apple devices. That code was always refused because it was being sent to Apple as a Text Message code. If a code is refused as an incorrect Text Message code, it is now sent to Apple again as the Push Popup window code. Either code can now be entered. Note that each incorrect code is counted by Apple, a mistyped code is now counted twice.
+8. **Updating an Apple Account in Configure** - When you log into an Apple Account on the *Update Apple Account* screen, the account's devices are paused until iCloud3 restarts when you close Configure. iCloud3 no longer refreshes or signs into the account in the background while Configure is being used, so it does not interfere with the new login.
+9. **Authentication Code Needed Reminder** - When Apple asks for an authentication code, the alert and the HA *Reconfigure* button were only displayed when the code was first needed. If the code was not entered, nothing else reminded you, sometimes for days. If the code has not been entered after 12-hrs, a reminder is now posted, then again every 24-hrs until it is entered:
+    - An error in the HA log and an alert in the Event Log
+    - The HA *Reconfigure* button is displayed again
+    - A Mobile App notification (*Apple Acct Auth Needed*) is sent to the Apple Account owner's device. The 12-hr reminder goes to the first device, the later ones to all of the owner's devices. It is not sent to Family Sharing devices.
+    - Tracking continues while waiting for the code. A password sign-in is not done more than once every 15-mins while the code is needed.
+10. **Reinstalling iCloud3** - When iCloud3 is added again and a previous configuration is found, a new *Reinstall* screen is displayed instead of the new installation screen. It describes the previous configuration (Apple Accounts, Devices and settings) and you select what to do with it:
+    - *Keep the previous configuration* (default) - The previous Apple Accounts, Devices and settings are used.
+    - *Delete & Start Over* - The configuration file is first saved as *configuration_before_reset_<date-time>* in the *.storage/icloud3* directory, then all of the Apple Accounts and Devices are deleted. The Apple Account session files are no longer deleted, so an authentication code is not needed when the account is added again. To undo it, copy the saved file over */config/.storage/icloud3/configuration*, then restart HA.
+
+### 🐞 Bug Fixes
+1. **Apple Account with only Monitored Devices** - An Apple Account whose devices were all Monitored (no Tracked devices) was only refreshed when iCloud3 started. The monitored device's location was never updated, and the Apple Account's session expired. Every HA restart then had to sign in with the password, and Apple eventually refused the sign-in (503 Service Unavailable). The account is now refreshed by the Apple Account Keep Alive (see above). A monitored device with no location yet (iCloud3 startup, the device has not reported its location to Apple) is retried in 1-min and then less often.
+2. **Apple Account Password Sign-in after a Failed Sign-in** - When the Apple Account session had expired and the password sign-in was needed, the sign-in session information saved from an earlier sign-in (or one Apple refused) was sent again. Apple then rejected the new sign-in (400 Bad Request) and the Apple Account was not logged in until HA was restarted. A new sign-in session is now started each time a password sign-in is needed, and the first part of the sign-in is retried once if Apple rejects it. An authentication code is not requested.
+3. **Too Many Sign-in Requests (503)** - When a device refresh found the Apple Account session had expired and the password sign-in then failed, the refresh and the complete sign-in were done a second time a second later. Apple refused the extra sign-in (503 Service Unavailable). A failed sign-in is now not repeated, it is retried later (see Apple Account Login Retry).
+4. **Apple Account Stayed 'Not Logged In'** - After a failed sign-in (for example, a Request Auth Code Apple refused), the Apple Account kept a 'not logged in' status even after a later sign-in was successful. On the next iCloud3 restart its Family Sharing devices were listed as *Not in Apple Acct* and were not tracked. The status is now reset when a sign-in or a device refresh is successful.
+5. **Adding an Apple Account Again** - The session files of an Apple Account that was removed some other way than *Delete Apple Account* (for example, by changing the Apple Account username) were left behind. When the account was added again, the authentication code was not requested for 30-secs. These files are now deleted when iCloud3 starts.
+6. **HA Reauthenticate Dialog** - The Reauthenticate dialog that HA displays from *Settings > Devices & Services* failed with an error after the authentication code was accepted when one of the configured devices used an Apple Account that was not logged in. The code was accepted and the Apple Account was authenticated.
+7. **Error Descriptions** - A 400 error was described as an *Invalid authentication code* even when no authentication code was involved. It is now described as *Request rejected by Apple*, and the Apple error number is shown with it in the log (Code-400 (-900007)). The incorrect Text Message code message now says that either the Text Message code or the Push Popup window code can be entered.
+8. **Apple Account with an Invalid Password** - When the Apple Account username/password failed verification when iCloud3 started, the account was not listed on the *Configure > Apple Accounts* screen. It could only be corrected from the HA Repair issue. The account is now listed with the reason (*Invalid Apple_ID/Password*, *Apple Refused Rqst* or *Login Failed*) and can be selected to correct it on the *Update Apple Account* screen. Also, when Apple rejected the verification request before the password was checked (400 Bad Request), it was reported as an *Invalid Username/Password*. It is now reported as *Apple Refused the Signin Request, Try again later*, and the request is retried once.
+
+
+
+
 
 -----
 ## 🍎 iCloud3 v3.8.0 Beta 4 (11/4/2026)
@@ -42,6 +90,7 @@ After installing and restarting HA, a Repair issue **iCloud3: Beta Versions are 
 17. **Inactive or Disabled Devices** - Deleting an Apple Account, deleting the last device, removing all devices or renaming a device failed with an error when a device was Inactive or disabled in HA. These devices are now removed correctly. A device that is disabled in HA can no longer be renamed. Enable it first, then rename it. (@CookieChief)
 18. **HA Reauthenticate Dialog** - The Reauthenticate dialog that HA displays from *Settings > Devices & Services* failed with an error when the Terms of Use were displayed, and some of its text was missing. The Terms of Use are no longer displayed on that dialog (they are accepted on the Repair issue), and the missing text was added. Deleting the Apple Account that needed to be reauthenticated now also clears the reauthentication notice. (@CookieChief)
 19. **Deleted iCloud3 Dashboard** - If an iCloud3 dashboard was deleted on the *Settings > Dashboards* screen after the Dashboard Builder had created one, adding or deleting a device failed with an error when Configure was closed. The other dashboards were not updated and iCloud3 was not restarted until HA was restarted. Deleted (using HA) dashboards are now skipped, and a new dashboard no longer reuses a deleted dashboard's name. (@CookieChief)
+20. **Read-only iCloud3 Installation** - When iCloud3 was installed from a read-only location (NixOS package), the iCloud3 Theme and the Event Log Card files were copied as read-only files. They could not be updated after that, and a 'Permission denied' error was displayed on every HA restart. The file contents are now copied without the read-only permission, and files that were already copied as read-only are corrected on the next restart. (@nimakalantar)
 
 
 -----

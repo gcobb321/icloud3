@@ -15,7 +15,7 @@ from ..const_config     import (NEXT_UPDATE, INTERVAL, CONF_DEVICENAME, CONF_ZON
 from ..const_char       import (RED_ALERT, CRLF_DOT, )
 
 from ..utils.utils      import (instr, )
-from ..utils.messaging  import (post_event, post_alert, post_error_msg, post_monitor_msg,
+from ..utils.messaging  import (post_event, post_alert, post_error_msg,
                                 post_greenbar_msg, clear_greenbar_msg,
                                 more_info, write_config_file_to_ic3log,
                                 log_info_msg, log_debug_msg, log_exception,
@@ -55,8 +55,8 @@ CMD_DISPLAY_MESSAGE_ALERT  = 'message_alert'
 CMD_LOCATE                 = 'locate'
 
 REFRESH_EVLOG_FNAME             = 'Refresh Event Log'
-HIDE_TRACKING_MONITORS_FNAME    = 'Hide Tracking Monitors'
-SHOW_TRACKING_MONITORS_FNAME    = 'Show Tracking Monitors'
+HIDE_RAWDATA_TRAFFIC_FNAME      = 'Hide Apple Device RawData Traffic'
+SHOW_RAWDATA_TRAFFIC_FNAME      = 'Show Apple Device RawData Traffic'
 
 
 GLOBAL_ACTIONS =  [CMD_EXPORT_EVENT_LOG,
@@ -79,9 +79,10 @@ DEVICE_ACTIONS =  [CMD_REQUEST_LOCATION,
 
 NO_EVLOG_ACTION_POST_EVENT = [
                     'Show Startup Log, Errors & Alerts',
+                    'Show Startup Log, Errors and Alerts',      # EvLog card action text
                     REFRESH_EVLOG_FNAME,
-                    HIDE_TRACKING_MONITORS_FNAME,
-                    SHOW_TRACKING_MONITORS_FNAME,
+                    HIDE_RAWDATA_TRAFFIC_FNAME,
+                    SHOW_RAWDATA_TRAFFIC_FNAME,
                     CMD_DISPLAY_STARTUP_EVENTS,
                     'event_log_version',
                     'Event Log Version']
@@ -120,7 +121,7 @@ def process_update_service_request(call):
 
     action_fname = call.data.get('action_fname', action)
     if action_fname.startswith('• '):
-        action_fname = action_fname[1:]
+        action_fname = action_fname[2:]
 
     action       = action.lower()
     devicename   = call.data.get(CONF_DEVICENAME)
@@ -235,12 +236,6 @@ def _post_device_event_msg(devicename, msg):
     else:
         post_event(msg)
 
-def _post_device_monitor_msg(devicename, msg):
-    if devicename:
-        post_monitor_msg(devicename, msg)
-    else:
-        post_monitor_msg(msg)
-
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   DEFINE THE PROCESS INVOKED BY THE HASS.SERVICES.REGISTER FOR EACH SERVICE
@@ -307,11 +302,7 @@ def update_service_handler(action_entry=None, action_fname=None, devicename=None
     if (action == CMD_REFRESH_EVENT_LOG
             and Gb.EvLog.secs_since_refresh <= 2
             and Gb.EvLog.last_refresh_devicename == devicename):
-        _post_device_monitor_msg(devicename, f"Action Ignored > {action_fname}, Action-{action_entry}")
         return
-
-    if action_fname not in NO_EVLOG_ACTION_POST_EVENT:
-        _post_device_monitor_msg(devicename, f"Action Received > Action-{action_entry}")
 
     action_entry  = action_entry.replace('eventlog', 'monitor')
     action_entry  = action_entry.replace(':', '')
@@ -479,7 +470,7 @@ def _handle_global_action(global_action, action_option):
 #--------------------------------------------------------------------
 def handle_action_log_level(action_option, change_conf_log_level=True):
 
-    # Show/Hide Tracking Monitors
+    # Show/Hide Apple Device RawData Traffic
     if instr(action_option, 'monitor'):
         Gb.is_evlog_trk_monitors_displayed = not Gb.is_evlog_trk_monitors_displayed
         return

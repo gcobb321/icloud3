@@ -21,7 +21,7 @@ from .const             import (HOME, NOT_SET,
                                 DATETIME_ZERO, HHMMSS_ZERO, HHMM_ZERO,
                                 TOWARDS, AWAY_FROM,
                                 INZONE, INZONE_HOME, INZONE_STATZONE, INZONE_CODES,
-                                MAX_DISTANCE, WAZE_METHOD,
+                                MAX_DISTANCE, WAZE_METHOD, WAZE_NOT_USED,
                                 FROM_ZONE, WENT_3KM, NEAR_DEVICE_USED,
                                 LAST_LOCATED_TIME, LAST_LOCATED_DATETIME,
                                 LAST_UPDATE_TIME, LAST_UPDATE_DATETIME,
@@ -86,7 +86,8 @@ class iCloud3_DeviceFmZone():
             self.zone_dist_m             = 0
             self.zone_center_dist        = 0
             self.waze_results            = None
-            self.home_dist_km            = gps_distance_km(Gb.HomeZone.gps, self.FromZone.gps)
+            self.waze_status             = WAZE_NOT_USED
+            self.home_dist_km           = gps_distance_km(Gb.HomeZone.gps, self.FromZone.gps)
             self.max_dist_km             = 0
 
             self.sensor_prefix       = (f"sensor.{self.devicename}_") \

@@ -325,6 +325,34 @@ class OptionsFlow_Common_Steps:
 
         list_add(self.config_parms_update_control, ['tracking', 'restart'])
 
+#-------------------------------------------------------------------------------------------
+    def _pause_replaced_apple_acct_devices(self, apple_id):
+        '''
+        Configure logged into the Apple Acct (Update Apple Acct) and a new AppleAcct replaced
+        the one the Devices use (AppleAcct.is_replaced). Pause those Devices until iCloud3
+        restarts when Configure is exited. The restart sets them up with the new AppleAcct
+        and resumes tracking (Device.__init__ resets tracking_status).
+        '''
+        try:
+            paused_Devices = [Device
+                                for Device in Gb.Devices
+                                if (Device.AppleAcct is not None
+                                    and Device.AppleAcct.is_replaced
+                                    and Device.is_tracking_paused is False)]
+            if not paused_Devices:
+                return
+
+            for Device in paused_Devices:
+                Device.pause_tracking()
+
+            list_add(self.config_parms_update_control, 'restart')
+            post_event( f"Apple Acct > {apple_id}, Logged into in Configure, "
+                        f"Tracking paused until iCloud3 restarts, Devices-"
+                        f"{', '.join(Device.fname for Device in paused_Devices)}")
+
+        except Exception as err:
+            log_exception(err)
+
 
 #                        SUPPORT FUNCTIONS
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

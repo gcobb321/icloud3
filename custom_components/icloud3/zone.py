@@ -26,7 +26,7 @@ from .const_config      import (ZONE, )
 from .utils             import entity_io
 from .utils.utils       import (instr, is_statzone, format_gps, zone_dname,
                                 list_add, list_del, )
-from .utils.messaging   import (post_event, post_alert, post_error_msg, post_monitor_msg,
+from .utils.messaging   import (post_event, post_alert, post_error_msg,
                                 log_exception, _evlog, _log, )
 from .utils.rawdata_logging import (log_data, )
 from .utils.time_util   import (time_now_secs, )
