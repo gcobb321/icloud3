@@ -283,7 +283,7 @@ CONF_ANALYTICS_COMMENT          = 'analytics_comment'
 
 DEFAULT_GENERAL_CONF = {
         CONF_LOG_LEVEL: 'debug-auto-reset',
-        CONF_LOG_LEVEL_DEVICES: ['all'],
+        CONF_LOG_LEVEL_DEVICES: [TRACK],
 
         # General Configuration Parameters
         CONF_UNIT_OF_MEASUREMENT: 'mi',

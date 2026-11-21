@@ -10,7 +10,8 @@ from ...const_config        import (CONF_PICTURE_WWW_DIRS, CONF_APPLE_ACCT, CONF
                                     CONF_DEVICE_TYPE, CONF_IC3_DEVICENAME, CONF_FNAME,
                                     CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_TRACKING_MODE,
                                     CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL, )
-from ...const_char          import (RED_ALERT, LINK, RARROW, INACTIVE_SYMB, MONITOR_SYMB, )
+from ...const_char          import (RED_ALERT, LINK, RARROW, INACTIVE_SYMB, MONITOR_SYMB, ITEM_SEP,
+                                    CIRCLE_STAR2, CIRCLE_SLASH, )
 
 from ...utils.utils         import (instr, list_to_str, list_add, is_empty, isnot_empty,
                                     apple_user, apple_user_dev, apple_id_dev,
@@ -115,7 +116,7 @@ def _build_device_items_displayed_over_6(self):
     device_fnames = []
     for device_item in self.device_items_list:
         monitor_inactive_symb = (MONITOR_SYMB if instr(device_item, MONITOR_SYMB) else
-                                INACTIVE_SYMB if instr(device_item, INACTIVE_SYMB) else
+                                CIRCLE_STAR2  if instr(device_item, INACTIVE_SYMB) else
                                 '')
 
         device_fname = f"{device_item.split(' (')[0]}{monitor_inactive_symb}"
@@ -123,7 +124,7 @@ def _build_device_items_displayed_over_6(self):
 
 
     other_item_fnames =(f"➤ OTHER DEVICES{RARROW}"
-                        f"{list_to_str(device_fnames[other_from_idx:other_to_idx])}")
+                        f"{list_to_str(device_fnames[other_from_idx:other_to_idx], ITEM_SEP)}")
     list_add(self.device_items_displayed, other_item_fnames)
 
 

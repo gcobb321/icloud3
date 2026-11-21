@@ -10,7 +10,7 @@
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 VERSION                         = '3.8.0'
-VERSION_BETA                    = '5'
+VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'
 PLATFORMS                       = ['sensor', 'device_tracker', 'button', 'text']
@@ -268,15 +268,22 @@ HTTP_RESPONSE_CODES = {
         421.1: 'Invalid username/password',
         423: 'Too many auth codes sent to this phone number, use a different trusted number',
         450: 'Reauth',
-        500: 'Reauth',
+        500: 'Apple server error, request refused, try again later',
         503: 'Apple server refused password validation request',
 }
 
 # Apple Acct keep alive (apple_acct_support.keep_apple_accts_alive). Refresh every acct
-# at least every 30-mins so the session token stays valid (dead after 2-hrs on 11/13).
-# After a failed signin, retry the refresh/login after 15-mins, 30-mins, then every hour
-APPLE_ACCT_KEEPALIVE_SECS     = 1800
-APPLE_ACCT_LOGIN_RETRY_SECS   = [900, 1800, 3600]
+# with a tracked device at least every hour so the session token stays valid (dead after
+# 2-hrs on 11/13, but alive after 4-hrs idle on 11/17).
+# After a failed signin, retry the refresh/login after 15-mins, 30-mins, then every hour.
+# Apple refusing the signin (500, 502, 503, 504) is retried after 1, 2, then every 4-hrs,
+# retrying sooner keeps Apple's throttle going. A retry's Password signin is not sent
+# within APPLE_ACCT_SRP_RETRY_MIN_GAP_SECS of the last one (startup, Configure, retry).
+APPLE_ACCT_KEEPALIVE_SECS        = 3600
+APPLE_ACCT_LOGIN_RETRY_SECS      = [900, 1800, 3600]
+APPLE_ACCT_LOGIN_RETRY_5XX_SECS  = [3600, 7200, 14400]
+APPLE_ACCT_LOGIN_RETRY_5XX_CODES = [500, 502, 503, 504]
+APPLE_ACCT_SRP_RETRY_MIN_GAP_SECS = 1800
 # A failed startup login is not retried for these, the user has to fix the acct (403 locked
 # or unknown acct, 423 too many codes). 401 (invalid password) is retried once
 APPLE_ACCT_LOGIN_NO_RETRY_CODES = [403, 423]
@@ -350,6 +357,8 @@ REPLACED_DEVICE_OFFLINE_SECS = 3600
 # 15-mins (4 refreshes) before iCloud3 is restarted to reassign or report it.
 MISSING_DEVICE_RESTART_IN_SECS          = 3600
 MISSING_DEVICE_INTERVAL_SECS = 900
+FMLY_MEMBER_MISSING_CNT          = 3     # Refreshes in a row without a Family Sharing member's devices
+FMLY_MEMBER_MISSING_RETRY_SECS   = 900   # then no refresh is requested for them for 15-mins
 
 # Event Log variables
 EVENT_RECDS_MAX_CNT_BASE = 1500         # Used to calculate the max recds to store

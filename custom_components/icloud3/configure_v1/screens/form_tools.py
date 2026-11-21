@@ -3,7 +3,7 @@
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (INACTIVE, )
 from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, CONF_IC3_DEVICENAME,
-                                    CONF_TRACKING_MODE, )
+                                    CONF_TRACKING_MODE, TRACK, )
 from ...const_char          import (DOTS, )
 
 from ...utils.utils         import (list_to_str, list_add, list_del,
@@ -59,12 +59,12 @@ def form_log_level(self):
     default_action = 'save_menu'
 
     lists.build_log_level_devices_list(self)
-    if Gb.conf_general[CONF_LOG_LEVEL_DEVICES] != 'all':
-        Gb.conf_general[CONF_LOG_LEVEL_DEVICES] = [
-                                    devicename for devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
-                                    if devicename in Gb.Devices_by_devicename]
+    # if Gb.conf_general[CONF_LOG_LEVEL_DEVICES] != TRACK:
+    #     Gb.conf_general[CONF_LOG_LEVEL_DEVICES] = [
+    #                                 devicename for devicename in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
+    #                                 if devicename in Gb.Devices_by_devicename]
     if is_empty(Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-        Gb.conf_general[CONF_LOG_LEVEL_DEVICES] = ['all']
+        Gb.conf_general[CONF_LOG_LEVEL_DEVICES] = [TRACK]
 
     return vol.Schema({
         vol.Optional(CONF_LOG_LEVEL,

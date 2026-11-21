@@ -365,6 +365,7 @@ class GlobalVariables(object):
     is_log_level_rawdata_restart     = None
     is_evlog_trk_monitors_displayed  = False
     is_evlog_startup_log_displayed   = False
+    rawdata_devicename_filter        = []
     info_notification            = ''
     ha_notification              = {}
     trace_prefix                 = '_INIT_'

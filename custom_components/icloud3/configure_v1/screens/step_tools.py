@@ -3,10 +3,11 @@
 from ...global_variables    import GlobalVariables as Gb
 from ...const               import (PLATFORM_DEVICE_TRACKER, )
 from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFAULT_GENERAL_CONF,
-                                    DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE,
+                                    DEFAULT_DEVICE_APPLE_ACCT_DATA_SOURCE, TRACK,
                                     DEFAULT_DEVICE_MOBAPP_DATA_SOURCE, DEFAULT_TRACKING_CONF, )
 
 from ...utils.utils         import (is_empty, isnot_empty, list_to_str, list_del, list_add, )
+from ...utils.rawdata_logging import (build_rawdata_devicename_filter_list, )
 from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
@@ -300,14 +301,15 @@ class OptionsFlow_Tools_Steps:
 
         if (is_empty(user_input[CONF_LOG_LEVEL_DEVICES])
                 or len(user_input[CONF_LOG_LEVEL_DEVICES]) >= len(Gb.Devices)):
-            user_input[CONF_LOG_LEVEL_DEVICES] = ['all']
+            user_input[CONF_LOG_LEVEL_DEVICES] = [TRACK]
 
-        elif len(user_input[CONF_LOG_LEVEL_DEVICES]) > 1:
-            list_del(user_input[CONF_LOG_LEVEL_DEVICES], 'all')
+        # elif len(user_input[CONF_LOG_LEVEL_DEVICES]) > 1:
+        #     list_del(user_input[CONF_LOG_LEVEL_DEVICES], TRACK)
 
-        Gb.log_level_devices = user_input[CONF_LOG_LEVEL_DEVICES].copy()
+        # Gb.log_level_devices = user_input[CONF_LOG_LEVEL_DEVICES].copy()
 
         self._update_config_file_general(user_input)
+        Gb.log_level_devices = build_rawdata_devicename_filter_list()
 
         return await self.async_step_menu()
 

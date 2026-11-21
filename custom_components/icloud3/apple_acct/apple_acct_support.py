@@ -7,6 +7,8 @@ from ..const            import (HIGH_INTEGER,
                                     SETTINGS_INTEGRATIONS_MSG, INTEGRATIONS_IC3_CONFIG_MSG,
                                     INACTIVE,
                                     APPLE_ACCT_KEEPALIVE_SECS, APPLE_ACCT_LOGIN_RETRY_SECS,
+                                    APPLE_ACCT_LOGIN_RETRY_5XX_SECS, APPLE_ACCT_LOGIN_RETRY_5XX_CODES,
+                                    APPLE_ACCT_SRP_RETRY_MIN_GAP_SECS,
                                     APPLE_ACCT_LOGIN_NO_RETRY_CODES, CONFIGURE_IDLE_TIMEOUT_SECS,
                                     AUTH_CODE_NEEDED_FIRST_REMINDER_SECS,
                                     AUTH_CODE_NEEDED_REMINDER_SECS, )
@@ -83,14 +85,16 @@ def keep_apple_accts_alive():
     5-mins in icloud3_main._main_5sec_loop_special_time_control.
 
     An Apple Acct is only refreshed when one of its devices needs a location. If that does
-    not happen for a while (only Monitored devices, all tracked devices paused, long inzone
-    intervals), the token expires (dead after 2-hrs idle on 11/13) and the next refresh needs a
+    not happen for a while (tracked devices paused or in a zone with a long inzone interval,
+    default 2-hrs), the token expires (dead after 2-hrs idle on 11/13) and the next refresh needs a
     Password SRP signin, which Apple may refuse (-900007, 503).
 
     - Logged in: refresh it when it has not been refreshed for APPLE_ACCT_KEEPALIVE_SECS.
-    - Signin failed: nothing else retries it (a monitored acct, the 450 handler does not
-        resend). Retry the refresh (refreshClient 450 -> authenticate) after
-        APPLE_ACCT_LOGIN_RETRY_SECS (15-mins, 30-mins, then every hour).
+    - Signin failed: nothing else retries it (the 450 handler does not resend). Retry the
+        refresh (refreshClient 450 -> authenticate) after APPLE_ACCT_LOGIN_RETRY_SECS
+        (15-mins, 30-mins, then every hour) or, when Apple refused the signin (5xx),
+        APPLE_ACCT_LOGIN_RETRY_5XX_SECS (1, 2, then every 4-hrs). Not within 30-mins of
+        the last Password signin (_is_srp_retry_too_soon).
     Not done while waiting for an auth code or when the account is locked.
     '''
     if (Gb.use_data_source_ICLOUD is False
@@ -131,6 +135,12 @@ def keep_apple_accts_alive():
 
                 if secs_since(AppleAcct.last_refresh_secs) < APPLE_ACCT_KEEPALIVE_SECS:
                     continue
+
+                # No tracked devices (all inactive or none assigned). It is logged into to get
+                # its device list but is not kept alive, the token expires
+                if AppleAcct.apple_id not in [Device.conf_apple_acct_apple_id
+                                for Device in Gb.Devices_by_devicename_tracked.values()]:
+                    continue
                 log_info_msg(f"{AppleAcct.apple_user}, Keep Alive Refresh, Last Refresh-"
                                 f"{format_age(AppleAcct.last_refresh_secs)}")
 
@@ -141,12 +151,15 @@ def keep_apple_accts_alive():
             # The signin failed, set the first retry time
             elif AppleAcct.login_retry_secs == 0:
                 AppleAcct.login_retry_cnt  = 0
-                AppleAcct.login_retry_secs = time_now_secs() + APPLE_ACCT_LOGIN_RETRY_SECS[0]
+                AppleAcct.login_retry_secs = time_now_secs() +                                 _login_retry_delay_secs(0, _login_error_code(AppleAcct))
                 post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Failed, "
                             f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
                 continue
 
             elif time_now_secs() < AppleAcct.login_retry_secs:
+                continue
+
+            elif _is_srp_retry_too_soon(AppleAcct):
                 continue
 
             else:
@@ -164,8 +177,8 @@ def keep_apple_accts_alive():
                 AppleAcct.login_retry_cnt  = 0
 
             elif AppleAcct.login_retry_secs > 0:
-                idx = min(AppleAcct.login_retry_cnt, len(APPLE_ACCT_LOGIN_RETRY_SECS) - 1)
-                AppleAcct.login_retry_secs = time_now_secs() + APPLE_ACCT_LOGIN_RETRY_SECS[idx]
+                AppleAcct.login_retry_secs = time_now_secs() +                                 _login_retry_delay_secs(AppleAcct.login_retry_cnt,
+                                                        _login_error_code(AppleAcct))
                 post_event( f"Apple Acct > {AppleAcct.account_owner}, Login Retry "
                             f"#{AppleAcct.login_retry_cnt} Failed, "
                             f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
@@ -209,7 +222,8 @@ def is_config_flow_in_use():
 def _retry_startup_login(AppleAcct):
     '''
     The Apple Acct login failed during startup (AppleAcct exists, devices not set up).
-    Retry the login on the APPLE_ACCT_LOGIN_RETRY_SECS backoff (503 starts at 30-mins).
+    Retry the login on the APPLE_ACCT_LOGIN_RETRY_SECS backoff (5xx uses the 1, 2, 4-hr
+    APPLE_ACCT_LOGIN_RETRY_5XX_SECS one, not within 30-mins of the last Password signin).
     When it works, restart iCloud3. The restart reuses the logged in AppleAcct (Method-1,
     no new signin) and sets up and verifies its devices (start_ic3 Stage 4).
 
@@ -241,6 +255,9 @@ def _retry_startup_login(AppleAcct):
     if time_now_secs() < AppleAcct.login_retry_secs:
         return
 
+    if _is_srp_retry_too_soon(AppleAcct):
+        return
+
     AppleAcct.login_retry_cnt += 1
     log_info_msg(f"{AppleAcct.apple_user}, Startup Login Retry #{AppleAcct.login_retry_cnt}")
 
@@ -265,7 +282,7 @@ def _retry_startup_login(AppleAcct):
                     f"Check the Apple Account, then restart iCloud3")
         _add_login_retry_note(AppleAcct,
                     f"Login Retry #{AppleAcct.login_retry_cnt} Failed, Not retried again, "
-                    f"Check the Apple Account, then restart iCloud3")
+                    f"Check the Apple Account, then restart iCloud3", code=code)
         return
 
     AppleAcct.login_retry_secs = time_now_secs() + \
@@ -275,7 +292,7 @@ def _retry_startup_login(AppleAcct):
                 f"Will retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
     _add_login_retry_note(AppleAcct,
                 f"Login Retry #{AppleAcct.login_retry_cnt + 1} "
-                f"at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+                f"at {secs_to_hhmm(AppleAcct.login_retry_secs)}", code=code)
 
     # The 503 was not recovered by the retry
     if code == 503:
@@ -284,7 +301,7 @@ def _retry_startup_login(AppleAcct):
 #....................................................................
 LOGIN_RETRY_NOTE_SEP = ', Login Retry'
 
-def _add_login_retry_note(AppleAcct, retry_note):
+def _add_login_retry_note(AppleAcct, retry_note, code=None):
     '''
     Add the startup login retry note to the Apple Acct's login_failed alert (alerts
     sensor and Event Log greenbar), 'gco**1**21@ > Login Failed, <reason>, Login Retry
@@ -293,11 +310,16 @@ def _add_login_retry_note(AppleAcct, retry_note):
     clears it.
 
     retry_note - Starts with 'Login Retry' (LOGIN_RETRY_NOTE_SEP)
+    code - The failed retry's error code. The reason is rebuilt from it, the alert
+        kept the startup login's reason (Reauth (500) after a retry failed with a 421)
     '''
-    alert_key = alert_key_for(AppleAcct.apple_id, 'login_failed')
-    alert_msg = AppleAcct.alerts_by_alert_key.get(alert_key,
-                                f"{AppleAcct.apple_user} > Login Failed")
-    alert_msg = alert_msg.split(LOGIN_RETRY_NOTE_SEP)[0]
+    if code:
+        alert_msg = f"{AppleAcct.apple_user} > Login Failed, {AppleAcct.code_description(code)}"
+    else:
+        alert_key = alert_key_for(AppleAcct.apple_id, 'login_failed')
+        alert_msg = AppleAcct.alerts_by_alert_key.get(alert_key,
+                                    f"{AppleAcct.apple_user} > Login Failed")
+        alert_msg = alert_msg.split(LOGIN_RETRY_NOTE_SEP)[0]
 
     update_alert_sensor(Source=AppleAcct, error='login_failed',
                         alert_msg=f"{alert_msg}, {retry_note}")
@@ -311,11 +333,34 @@ def _login_error_code(AppleAcct):
     return AppleAcct.response_code_pw or AppleAcct.response_code
 
 def _login_retry_delay_secs(retry_cnt, code):
-    idx = min(retry_cnt, len(APPLE_ACCT_LOGIN_RETRY_SECS) - 1)
-    delay_secs = APPLE_ACCT_LOGIN_RETRY_SECS[idx]
+    '''
+    Apple refusing the signin (500, 502, 503, 504) is throttling it, retrying on the
+    normal 15/30/60-min schedule keeps the throttle going. Use the 1, 2, 4-hr one.
+    '''
+    retry_secs = (APPLE_ACCT_LOGIN_RETRY_5XX_SECS
+                        if code in APPLE_ACCT_LOGIN_RETRY_5XX_CODES
+                        else APPLE_ACCT_LOGIN_RETRY_SECS)
+    idx = min(retry_cnt, len(retry_secs) - 1)
 
-    # Apple is throttling the signin, wait at least 30-mins
-    return max(1800, delay_secs) if code == 503 else delay_secs
+    return retry_secs[idx]
+
+def _is_srp_retry_too_soon(AppleAcct):
+    '''
+    A login retry ends in a Password signin when the token login fails. Do not send one
+    within APPLE_ACCT_SRP_RETRY_MIN_GAP_SECS of the last Password signin (startup,
+    Configure, Auth Code request or another retry). Move the retry time instead.
+
+    Return:
+        True  - Too soon, login_retry_secs was moved
+    '''
+    last_secs = AppleAcct.last_password_auth_secs
+    if last_secs == 0 or secs_since(last_secs) >= APPLE_ACCT_SRP_RETRY_MIN_GAP_SECS:
+        return False
+
+    AppleAcct.login_retry_secs = last_secs + APPLE_ACCT_SRP_RETRY_MIN_GAP_SECS
+    log_info_msg(   f"{AppleAcct.apple_user}, Login Retry Delayed, Last Password Signin-"
+                    f"{format_age(last_secs)}, Retry at {secs_to_hhmm(AppleAcct.login_retry_secs)}")
+    return True
 
 #--------------------------------------------------------------------
 HA_ICLOUD_INTEGRATION_DOMAIN = 'icloud'

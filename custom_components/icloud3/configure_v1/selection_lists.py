@@ -17,7 +17,8 @@ from ..const_config     import (CONF_APPLE_ACCOUNTS, CONF_APPLE_ACCT, CONF_AUTH_
                                 CONF_AADEV_NAME, CONF_MOBILE_APP_DEVICE, CONF_MODEL_DISPLAY_NAME,
                                 CONF_TRACKING_MODE, CONF_INZONE_INTERVAL, CONF_FIXED_INTERVAL, )
 from ..const_char       import (RARROW, CRLF_DOT, DOT, HDOT, CIRCLE_STAR, RED_X, INACTIVE_SYMB,
-                                MONITOR_SYMB, GREEN_ALERT, RED_ALERT, YELLOW_WARNING, AASEP, )
+                                MONITOR_SYMB, GREEN_ALERT, RED_ALERT, YELLOW_WARNING, AASEP,
+                                ITEM_SEP, )
 
 from ..utils.time_util  import (time_now, )
 from ..utils.utils      import (instr, is_number, is_empty, isnot_empty, list_to_str, str_to_list,
@@ -314,42 +315,40 @@ def format_device_list_item(self, conf_device):
                     f" ({conf_device[CONF_IC3_DEVICENAME]}){RARROW}")
 
     if conf_device[CONF_IC3_DEVICENAME] in Gb.ha_disabled_by_by_devicename:
-        device_text += f"{INACTIVE_SYMB}DISABLED IN HA, "
+        device_text += f"{INACTIVE_SYMB}DISABLED IN HA{ITEM_SEP}"
     if conf_device[CONF_TRACKING_MODE] == MONITOR:
-        device_text += f"{MONITOR_SYMB} MONITOR, "
+        device_text += f"{MONITOR_SYMB} MONITOR{ITEM_SEP}"
     elif conf_device[CONF_TRACKING_MODE] == INACTIVE:
-        device_text += f"{INACTIVE_SYMB}INACTIVE, "
+        device_text += f"{INACTIVE_SYMB}INACTIVE{ITEM_SEP}"
 
+    device_text += f"{conf_device[CONF_MODEL_DISPLAY_NAME]}{ITEM_SEP}"
     if conf_device[CONF_AADEV_NAME] != 'None':
-        # aadev_name_apple_id, status_msg = \
         apple_id_aadev_name, status_msg = \
                         format_apple_acct_device_info(self, conf_device)
         device_text += (f"AppleDev-"
-                        f"({apple_id_aadev_name}){status_msg}, ")
-                        # f"({aadev_name_apple_id}){status_msg}, ")
+                        f"({apple_id_aadev_name}){status_msg}{ITEM_SEP}")
 
     if conf_device[CONF_MOBILE_APP_DEVICE] != 'None':
         mobapp_dname = conf_device[CONF_MOBILE_APP_DEVICE]
         device_text += "MobApp–"
         if mobapp_dname.startswith('ScanFor:'):
-            device_text += f"({mobapp_dname}), "
+            device_text += f"({mobapp_dname})"
         elif mobapp_dname in Gb.device_info_by_mobapp_dname:
-            device_text += f"({Gb.device_info_by_mobapp_dname[mobapp_dname][0]}), "
+            device_text += f"({Gb.device_info_by_mobapp_dname[mobapp_dname][0]})"
         else:
-            device_text += f"){mobapp_dname} {RED_ALERT}UNKNOWN MOBAPP ENTITY), "
+            device_text += f"({mobapp_dname} {RED_ALERT}UNKNOWN MOBAPP ENTITY)"
 
-    device_text += f"{conf_device[CONF_MODEL_DISPLAY_NAME]}, "
+        device_text += ITEM_SEP
 
     if conf_device[CONF_TRACK_FROM_BASE_ZONE] != HOME:
         tfhbz = conf_device[CONF_TRACK_FROM_BASE_ZONE]
-        device_text +=  f"PrimaryHomeZone–({zone_dname(tfhbz)}), "
+        device_text +=  f"PrimaryHomeZone–({zone_dname(tfhbz)}){ITEM_SEP}"
 
     if conf_device[CONF_TRACK_FROM_ZONES] != [HOME]:
         tfz_fnames = [zone_dname(z) for z in conf_device[CONF_TRACK_FROM_ZONES]]
-        device_text +=  f"TrackFromZones–({list_to_str(tfz_fnames)}), "
+        device_text +=  f"TrackFromZones–({list_to_str(tfz_fnames)}){ITEM_SEP}"
 
-    # device_text = device_text.replace(' , ', ' ')
-    if device_text.endswith(', '): device_text = device_text[:-2]
+    if device_text.endswith(ITEM_SEP): device_text = device_text[:-3]
 
     return device_text
 
@@ -881,7 +880,10 @@ def build_away_time_zone_devices_list(self):
 def build_log_level_devices_list(self):
 
     self.log_level_devices_key_text = {
-            'all': 'All Devices - Log RawData for all devices'}
+            # 'all': 'All Devices',
+            TRACK: 'Tracked Devices',
+            MONITOR: 'Monitored Devices',
+            }
     self.log_level_devices_key_text.update(devices_selection_list())
 
 #-------------------------------------------------------------------------------------------

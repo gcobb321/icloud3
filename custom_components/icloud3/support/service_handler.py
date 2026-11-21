@@ -516,7 +516,7 @@ def _handle_action_device_location_mobapp(Device):
 
     if Device.is_mobapp_monitored:
         Device.mobapp_data_change_reason = f"Location Requested@{time_now()}"
-        mobapp_interface.request_location(Device, force_request=True)
+        mobapp_interface.request_location(Device, force_request=True, user_request=True)
 
 #--------------------------------------------------------------------
 def _handle_action_device_locate(Device, action_option):

@@ -217,8 +217,10 @@ class OptionsFlow_Reauth_Steps:
                     if AppleAcct.is_auth_method_TEXT:
                         auth_msg_method = f"{auth_msg_method[:4]}{auth_method}"
 
-                    post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
-                                f"Requested a new Auth Code, {auth_method}")
+                    # Not requested if the password sign-in failed (request_auth_code_...)
+                    if AppleAcct.login_successful_srp is not False:
+                        post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.account_owner}, "
+                                    f"Requested a new Auth Code, {auth_method}")
 
                     # The 423 (Too many codes requested) message must win - the
                     # generic 'code was requested, waiting for it' message below
@@ -428,6 +430,10 @@ class OptionsFlow_Reauth_Steps:
                             f"{AppleAcct.code_description(AppleAcct.response_code_pw)}")
                 waiting_msg = 'Password Sign-in Failed, Auth Code was not requested'
 
+                # No code was requested, do not post the 'Authentication needed' alert
+                # (its time was 00:00) or mark a code as requested
+                post_event( f"{EVLOG_NOTICE}Apple Acct > {AppleAcct.apple_user}, {waiting_msg}")
+                return
 
             AppleAcct.was_auth_code_requested = True
             Gb.AppleAcct_reauth_needed = AppleAcct

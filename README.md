@@ -1,14 +1,13 @@
 #  <img width="32" height="32" src="https://brands.home-assistant.io/icloud3/icon.png"> iCloud3 Apple Device Tracker
 
 ![][release-shield] ![](https://img.shields.io/badge/Released-November,_2026-mediumseagreen.svg) ![][release-downloads-shield] ![GitHub Stars][stars-shield]<br>
-![][dev-release-shield] ![](https://img.shields.io/badge/Released-November,_2026-mediumseagreen.svg)  ![][dev-release-downloads-shield] ![GitHub Stars][dev-stars-shield] <br>
 
-![HACS](https://img.shields.io/badge/HACS-Custom_Installation-steelblue.svg) ![Type](https://img.shields.io/badge/Type-Custom_Component-steelblue.svg)  
+![Marketplace](https://img.shields.io/badge/Marketplace-Integration-steelblue.svg) ![Type](https://img.shields.io/badge/Type-Custom_Component-steelblue.svg)  
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Support_My_Work-Click_here_to_Buy_Me_a_Coffee-chocolate.svg?logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/gcobb321)  ![](https://img.shields.io/badge/Lines_of_Code-52.1k-chocolate.svg)
+[![Buy Me a Coffee](https://img.shields.io/badge/Support_My_Work-Click_here_to_Buy_Me_a_Coffee-chocolate.svg?logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/gcobb321)  ![](https://img.shields.io/badge/Lines_of_Code-58.2k-chocolate.svg)
 
 
-[release-shield]: https://img.shields.io/github/v/release/gcobb321/icloud3.svg?label=General%20Release%20Version&color=mediumseagreen
+[release-shield]: https://img.shields.io/github/v/release/gcobb321/icloud3.svg?label=Release%20Version&color=mediumseagreen
 [release-downloads-shield]: https://img.shields.io/github/downloads/gcobb321/icloud3/latest/total.svg?label=Downloads&color=mediumseagreen
 [stars-shield]: https://img.shields.io/github/stars/gcobb321/icloud3?style=flat&amp;label=Stars&amp;color=mediumseagreen
 [stargazers]: https://github.com/gcobb321/icloud3/stargazers

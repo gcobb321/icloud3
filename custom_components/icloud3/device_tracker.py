@@ -481,7 +481,8 @@ class iCloud3_DeviceTracker(TrackerEntity):
 
         return DeviceInfo(  identifiers  = {(DOMAIN, self.devicename)},
                             manufacturer = "Apple",
-                            model        = self.raw_model,
+                            model        = self.model_display_name or self.raw_model,
+                            model_id     = self.raw_model or None,
                             name         = self.device_fname,
                         )
                             # name         = f"{self.device_fname} ({self.devicename})",

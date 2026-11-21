@@ -186,7 +186,6 @@ class iCloud3_Device(TrackerEntity):
         self.dist_from_zone_km_small_move_total = 0.0
         self.device_tracker_entity_ic3    = (f"{DEVICE_TRACKER}.{self.devicename}")
         self.last_zone                    = ''
-        self.last_track_from_zone         = ''
         self.log_zones_filenames          = []              # Log Zone activity to a .csv file
         self.info_msg                     = ''
         self.went_3km                     = False
@@ -244,8 +243,6 @@ class iCloud3_Device(TrackerEntity):
         # iCloud3 configration fields
         self.conf_name               = ''
         self.conf_apple_acct_apple_id= ''
-        self.is_monitored_acct_refresh = False # Monitored device in an Apple Acct with no tracked devices, retries a no-location refresh (start_ic3)
-        self.monitored_no_loc_cnt      = 0     # No-location refresh retries, sets the retry timer
         self.moved_in_zone_m           = 0     # Newer iCloud data distance from the zone it left (icloud_data_handler.is_moved_in_zone)
         self.moved_in_zone_dname       = ''    # That zone's name
         self.moved_in_zone_loc_secs    = 0     # loc_data_secs that triggered the zone exit update
@@ -337,6 +334,7 @@ class iCloud3_Device(TrackerEntity):
         self.mobapp_request_loc_last_secs  = 0    # Used for checking if alive and user request
         self.mobapp_request_loc_cnt        = 0
         self.mobapp_request_loc_sent_secs  = 0    # Used for tracking in 5-sec loop when the data source is mobapp
+        self.mobapp_request_loc_pending_secs = 0  # Use the response even if not moved (EvLog Locate or MobApp-only tracking)
         self.mobapp_request_sensor_update_secs = 0
 
         # MobApp state variables
@@ -370,7 +368,7 @@ class iCloud3_Device(TrackerEntity):
 
         # iCloud data update control variables
         self.is_force_icloud_update        = False      # Bypass all update needed checks and force an iCloud update
-        self.is_aadev_useable     = False
+        self.is_aadevdata_useable     = False
         self.is_icloud_acct_error          = False      # An error occured from the iCloud account update request
         self.icloud_update_reason          = 'Trigger > Initial Locate'
         self.icloud_no_update_reason       = ''
@@ -757,7 +755,6 @@ class iCloud3_Device(TrackerEntity):
                     self.FromZone_NextToUpdate = FromZone
                     self.FromZone_TrackFrom    = FromZone
                     self.TrackFromBaseZone     = FromZone
-                    self.last_track_from_zone  = FromZone.from_zone
 
                 FromZone.zone_dist_km = FromZone.sensors[ZONE_DISTANCE]
 
@@ -1299,15 +1296,15 @@ class iCloud3_Device(TrackerEntity):
         if self.no_location_data or self.is_offline:
             self.loc_data_isold     = True
             self.loc_data_ispoorgps = False
-            self.is_aadev_useable = False
-        elif self.is_aadev_useable or self.loc_data_secs == 0:
+            self.is_aadevdata_useable = False
+        elif self.is_aadevdata_useable or self.loc_data_secs == 0:
             self.loc_data_isold     = False
             self.loc_data_ispoorgps = False
         else:
             self.loc_data_isold     = (secs_since(self.loc_data_secs) > self.old_loc_threshold_secs + 5
                                             or self.is_offline)
             self.loc_data_ispoorgps = (self.loc_data_gps_accuracy > Gb.gps_accuracy_threshold)
-            self.is_aadev_useable = (self.loc_data_isold is False
+            self.is_aadevdata_useable = (self.loc_data_isold is False
                                                     and self.loc_data_ispoorgps is False)
 
         # Display an OFFLINE indicator (same NEXT_UPDATE/alert-sensor
@@ -1316,8 +1313,12 @@ class iCloud3_Device(TrackerEntity):
         # own state/availability. loc_data_secs == 0 means this device has
         # never had a fix at all yet - a different, pre-existing condition,
         # not "went stale after working" - so it's excluded here.
+        # Only check when the interval > 1-min, a short interval (driving, approaching a
+        # zone, the first error retries) uses a small old loc threshold and the alert
+        # would be displayed for a location that is only a minute old
         if (self.loc_data_isold and self.stale_data_alert_shown is False
                 and self.is_tracked
+                and self.interval_secs > 60
                 and Gb.is_icloud3_startup_inprocess is False
                 and self.loc_data_secs > 0
                 and secs_since(self.loc_data_secs) > self.old_loc_threshold_secs * 5
@@ -1325,7 +1326,7 @@ class iCloud3_Device(TrackerEntity):
             self.stale_data_alert_shown = True
             self.write_ha_sensor_state(NEXT_UPDATE, f"{YELLOW_WARNING}OLD LOC")
             update_alert_sensor(Source=self, name=self.fname, error='stale_location',
-                                alert_msg=( f"{self.fname} > No location update since "
+                                alert_msg=( f"{self.fname} > No location data since "
                                             f"{format_time_age(self.loc_data_secs)}"))
 
         elif self.stale_data_alert_shown and self.loc_data_isold is False:
@@ -1743,7 +1744,6 @@ class iCloud3_Device(TrackerEntity):
             self.FromZone_NextToUpdate = self.FromZone_Home
             self.FromZone_TrackFrom    = self.FromZone_Home
             self.TrackFromBaseZone     = self.FromZone_Home
-            self.last_track_from_zone  = self.FromZone_Home.from_zone
 
         if self.was_icloud_initial_locate_done is False:    # or self.is_tracking_resumed:
             return True
@@ -2392,7 +2392,7 @@ class iCloud3_Device(TrackerEntity):
         self.loc_data_longitude         = self.mobapp_data_longitude
         self.loc_data_position_type     = self.mobapp_data_source_type
         self.loc_data_gps_accuracy      = self.mobapp_data_gps_accuracy
-        self.loc_data_vertical_accuracy = self.mobapp_data_vertical_accuracy
+        self.loc_data_vert_accuracy     = self.mobapp_data_vertical_accuracy
         self.loc_data_altitude          = self.mobapp_data_altitude
         self.loc_data_secs              = self.mobapp_data_secs
         self.loc_data_time              = secs_to_time(self.mobapp_data_secs)
@@ -2574,8 +2574,6 @@ class iCloud3_Device(TrackerEntity):
                     and (self.wasin_zone and self.isnotin_zone)
                     or  (self.wasin_zone and self.isin_zone and self.sensors[ZONE] != self.loc_data_zone)):
                 self.last_zone                   = self.sensors[ZONE]
-                if self.last_zone in self.from_zone_names:
-                    self.last_tracked_from_zone = self.last_zone
                 self.sensors[LAST_ZONE]          = self.sensors[ZONE]
                 self.sensors[LAST_ZONE_DNAME]    = self.sensors[ZONE_DNAME]
                 self.sensors[LAST_ZONE_NAME]     = self.sensors[ZONE_NAME]

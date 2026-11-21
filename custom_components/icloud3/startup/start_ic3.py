@@ -62,7 +62,7 @@ from ..const_char       import (CIRCLE_LETTERS_DARK, CRLF, CRLF_DOT, CRLF_CHK, C
                                 CRLF_SP5_DOT, CRLF_HDOT, LINK, LLINK, RLINK, CRLF_CIRCLE_X,
                                 CIRCLE_X, CRLF_SP3_HDOT, CRLF_INDENT, CRLF_X, CRLF_TAB, DOT,
                                 CRLF_SP8_HDOT, CRLF_SP8_DOT, CRLF_RED_X, RED_X, CRLF_RED_ALERT,
-                                CRLF_RED_ALERT2, RED_ALERT, CRLF_RED_MARK, CRLF_STAR, GREEN_ALERT,
+                                CRLF_RED_ALERT2, RED_ALERT, CRLF_RED_MARK, CRLF_STAR, YELLOW_WARNING,
                                 YELLOW_WARNING, INACTIVE_SYMB, RARROW, NBSP, NBSP2, NBSP4, NBSP6,
                                 CIRCLE_STAR, INFO_SEPARATOR, DASH_20, CHECK_MARK, )
 
@@ -83,12 +83,13 @@ from ..utils.messaging      import (add_log_file_filter,
                                     log_exception, format_filename, log_stack,
                                     internal_error_msg2,
                                     _evlog, _log, more_info, format_header_box,)
-from ..utils.dist_util      import (format_dist_km, m_to_um, )
-from ..utils.time_util      import (time_now_secs, mins_since, format_timer, format_time_age,
-                                    format_age, secs_to_hhmm, secs_to_time, )
 from ..utils                import entity_reg_util as er_util
+from ..utils.dist_util      import (format_dist_km, m_to_um, )
 from ..utils.file_io        import (directory_exists, make_directory,  copy_file,
                                     get_filename_list, get_directory_filename_list,)
+from ..utils.rawdata_logging import (build_rawdata_devicename_filter_list, )
+from ..utils.time_util      import (time_now_secs, mins_since, format_timer, format_time_age,
+                                    format_age, secs_to_hhmm, secs_to_time, )
 
 from ..apple_acct           import apple_acct_support as aas
 from ..apple_acct           import apple_acct_support_cf as aascf
@@ -461,7 +462,8 @@ def set_global_variables_from_conf_parameters(evlog_msg=True):
 
         Gb.analytics_enabled              = Gb.conf_general[CONF_ANALYTICS_ENABLED]
         Gb.log_level                      = Gb.conf_general[CONF_LOG_LEVEL]
-        Gb.log_level_devices              = Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
+        # Gb.log_level_devices              = []  #Gb.conf_general[CONF_LOG_LEVEL_DEVICES]
+        build_rawdata_devicename_filter_list()
 
         # update the interval time for each of the interval types (i.e., ipad: 2 hrs, no_mobapp: 15 min)
         inzone_intervals                    = Gb.conf_general[CONF_INZONE_INTERVALS]
@@ -1518,6 +1520,11 @@ def log_into_apple_accounts():
 
         AppleAcct = Gb.AppleAcct_by_apple_id.get(apple_id)
 
+        # The restart closed HA's reauth flow (orange Reconfigure button) and cleared the
+        # alerts. Post them again for an AppleAcct that still needs an Auth Code.
+        if AppleAcct:
+            AppleAcct.was_ha_display_orange_reauth_button_sent = False
+
         # Initial check to see if AppleAcct is available
         can_reuse_AppleAcct = (
             Gb.was_icloud3_reloaded is True
@@ -1576,6 +1583,11 @@ def log_into_apple_accounts():
             apple_login_msg = 'Already logged in'
 
         if AppleAcct and AppleAcct.apple_id == apple_id:
+            # Gb.AppleAccts was reset above and only AppleAcctManager.__init__ adds to it.
+            # Add an AppleAcct that was reused ('Already logged in') or refreshed by
+            # log_into_apple_account (Method-1) back or its alerts are not listed in the
+            # alerts sensor/greenbar
+            list_add(Gb.AppleAccts, AppleAcct)
             _check_apple_acct_status_issues(AppleAcct)
 
         if AppleAcct and AppleAcct.login_successful:
@@ -2251,7 +2263,8 @@ def _update_Device_model_fields(conf_device):
         _Device.model              = conf_device[CONF_MODEL]
         _Device.model_display_name = conf_device[CONF_MODEL_DISPLAY_NAME]
 
-    er_util.update_device_model(devicename, conf_device[CONF_RAW_MODEL])
+    er_util.update_device_model(devicename, conf_device[CONF_RAW_MODEL],
+                                conf_device[CONF_MODEL_DISPLAY_NAME])
 
 #............................................................................
 def _change_config_to_new_device_name(AppleAcct, conf_device, new_icloud_dname,
@@ -2500,14 +2513,17 @@ def _post_family_share_info(AppleAcct):
     list_sort(famshr_dnames_msg)
     list_sort(devices_assigned_to_other_aa)
 
+    family_not_located_msg  = ''
     devices_assigned_to_msg = ''
-    if isnot_empty(devices_assigned_to_other_aa):
-        devices_assigned_to_msg = ( f"{CRLF_DOT}Family Devices tracked by another Apple Acct:"
-                                    f"{list_to_str(devices_assigned_to_other_aa)}")
+    if is_empty(famshr_dnames_msg):
+        famshr_dnames_msg = ['None']
+    else:
+        if isnot_empty(devices_assigned_to_other_aa):
+            devices_assigned_to_msg = ( f"{CRLF_DOT}Family Devices tracked by another Apple Acct:"
+                                        f"{list_to_str(devices_assigned_to_other_aa)}")
 
-    family_not_located_msg = ''
-    if AppleAcct.locate_all_devices is False:
-        family_not_located_msg = f"{CRLF_STAR} Family Devices are not located"
+        if AppleAcct.locate_all_devices is False:
+            family_not_located_msg = f"{CRLF_STAR} Family Devices are not located"
 
     post_event( f"Family Sharing List Info"
                 f"{CRLF_DOT} myDevices-{list_to_str(owner_icloud_dnames)}"
@@ -2709,7 +2725,7 @@ def setup_tracked_devices_for_mobapp():
 
             elif conf_mobapp_dname in Gb.mobapp_id_by_disabled_mobapp_dname:
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_DISABLED_HA
-                Device.set_button_prefix_icon(GREEN_ALERT)
+                Device.set_button_prefix_icon(YELLOW_WARNING)
                 Device.is_mobapp_device_unavailable = True
 
                 post_config_error(
@@ -2728,7 +2744,7 @@ def setup_tracked_devices_for_mobapp():
             else:
                 repair_issue = True
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
-                Device.set_button_prefix_icon(GREEN_ALERT)
+                Device.set_button_prefix_icon(YELLOW_WARNING)
 
         else:
             mobapp_dname = _scan_for_for_mobapp_device( devicename, Device, conf_mobapp_dname)
@@ -2782,7 +2798,7 @@ def setup_tracked_devices_for_mobapp():
         if (mobapp_id in Gb.mobapp_fnames_disabled
                 or TEST.MOBAPP_DISABLED):
             TEST.MOBAPP_DISABLED = False
-            Device.set_button_prefix_icon(GREEN_ALERT)
+            Device.set_button_prefix_icon(YELLOW_WARNING)
             Device.is_mobapp_device_unavailable = True
 
             post_config_error(
@@ -2809,7 +2825,7 @@ def setup_tracked_devices_for_mobapp():
         if ((trigger_entity == '' and is_watchos is False)
                 or TEST.MOBAPP_BATTERY_ENTITY_ERROR):
             TEST.MOBAPP_BATTERY_ENTITY_ERROR = False
-            Device.set_button_prefix_icon(GREEN_ALERT)
+            Device.set_button_prefix_icon(YELLOW_WARNING)
 
             if disabled_entity := disabled_sensors.get('last_update_trigger'):
                 cause_msg = ( f'is disabled in HA ({disabled_entity}). Enable it on the HA Mobile App '
@@ -2935,7 +2951,7 @@ def setup_tracked_devices_for_mobapp():
 
         device_msg = (f"{crlf_sym}{mobapp_fname} ({mobapp_model})")
         if Device:
-            Device.set_button_prefix_icon(GREEN_ALERT)
+            Device.set_button_prefix_icon(YELLOW_WARNING)
             device_msg += f", {Device.devicename}, "
             if len(device_msg) > 40: device_msg += CRLF_TAB
         device_msg += f"{status_msg}{duplicate_msg}"
@@ -3061,17 +3077,11 @@ def identify_tracked_monitored_devices():
         elif Device.is_monitored:
             Gb.Devices_by_devicename_monitored[devicename] = Device
 
+    Gb.log_level_devices = build_rawdata_devicename_filter_list()
+
     # A monitored device makes no Apple request of its own, it uses the data refreshed by a
-    # tracked device in the same Apple Acct. If there are no tracked devices in its Apple Acct,
-    # it is only refreshed by the 30-min keep-alive (aas.keep_apple_accts_alive). The flag lets
-    # the monitored device retry sooner when it has no location (initial locate, Pending)
-    # (icloud3_main._retry_monitored_no_location).
-    tracked_apple_ids = {Device.conf_apple_acct_apple_id
-                            for Device in Gb.Devices_by_devicename_tracked.values()}
-    for Device in Gb.Devices_by_devicename_monitored.values():
-        Device.is_monitored_acct_refresh = (
-                            Device.conf_apple_acct_apple_id != ''
-                            and Device.conf_apple_acct_apple_id not in tracked_apple_ids)
+    # tracked device in the same Apple Acct. Every Apple Acct has one
+    # (config_file._verify_apple_accts_have_tracked_device).
 
     Gb.startup_lists['Gb.Devices_by_devicename_tracked']   = Gb.Devices_by_devicename_tracked
     Gb.startup_lists['Gb.Devices_by_devicename_monitored'] = Gb.Devices_by_devicename_monitored
@@ -3160,7 +3170,7 @@ def display_all_devices_config_info(selected_devicenames=None):
             if Device.was_verified is False:
                 Device.set_button_prefix_icon(RED_ALERT)
             else:
-                Device.set_button_prefix_icon(GREEN_ALERT)
+                Device.set_button_prefix_icon(YELLOW_WARNING)
 
         if Device.was_verified:
             tracking_mode = ''

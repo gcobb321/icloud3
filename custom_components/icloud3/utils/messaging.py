@@ -342,11 +342,20 @@ def post_error_msg(devicename_or_Device, event_msg="+"):
     log_error_msg(log_msg)
 
 #--------------------------------------------------------------------
-def post_rawdata(event_msg):
+def post_rawdata(source, event_msg):
     '''
     Post the device data location traffic message and display it in Event Log
+
+    Source: Apple id or devicename
     '''
-    dot = DOT if instr(event_msg, '@') else HDOT
+    if (source in Gb. Devices_by_devicename
+            and source not in Gb.log_level_devices):
+            return
+
+    # dot = '— ' if instr(event_msg, '@') else HDOT
+    # dot = '~ ' if instr(event_msg, '@') else HDOT
+    dot = RARROW if instr(event_msg, '@') else HDOT
+    # dot = DOT if instr(event_msg, '@') else HDOT
     post_event(f"{EVLOG_MONITOR}{dot}{event_msg}")
 
 #-------------------------------------------------------------------------------------------
@@ -475,7 +484,9 @@ def alert_source(Source=None, name=None):
     '''
     if Source in Gb.Devices:
         return Source, Source.devicename
-    if Source in Gb.AppleAccts:
+    # Gb.AppleAccts is rebuilt during startup, an existing AppleAcct is only in
+    # Gb.AppleAcct_by_apple_id until log_into_apple_accounts adds it back
+    if Source in Gb.AppleAccts or Source in Gb.AppleAcct_by_apple_id.values():
         return Source, Source.apple_id
 
     if isinstance(Source, str):
@@ -1178,12 +1189,21 @@ def log_exception_HA(err):
     Gb.HALogger.exception(err)
 
 #--------------------------------------------------------------------
-def log_info_msg(module_name, log_msg='+'):
+# def log_info_msg(module_name, log_msg='+'):
 
-    if module_name and log_msg == '': return
-    log_msg = _resolve_module_name_log_msg(module_name, log_msg)
+#     if module_name and log_msg == '': return
 
+#     log_msg = _resolve_module_name_log_msg(module_name, log_msg)
+def log_info_msg(devicename_or_Device, log_msg='+'):
+
+    if devicename_or_Device and log_msg == '': return
+
+    devicename, log_msg = _resolve_devicename_log_msg(devicename_or_Device, log_msg)
+
+    if devicename: devicename = f"{devicename} > "
+    log_msg = f"{devicename}{str(log_msg)}"
     log_msg = format_msg_line(log_msg)
+
     write_ic3log_recd(log_msg)
 
 #--------------------------------------------------------------------

@@ -278,10 +278,11 @@ def update_AADev_data(Device, results_msg_flag=True):
         if Device.is_data_source_ICLOUD:
             loc_data_stale = (icloud_loc_secs != Device.loc_data_secs
                                 or Device.next_update_secs > (icloud_loc_secs + 5))
-            if ((loc_data_stale and secs_since(Device.AppleAcct.last_refresh_secs) >= 5)
+            if (((loc_data_stale and secs_since(Device.AppleAcct.last_refresh_secs) >= 5)
                         # and ((icloud_loc_secs != Device.loc_data_secs
                         #       or Device.next_update_secs > (icloud_loc_secs + 5))))
-                    or Device.was_icloud_initial_locate_done is False):
+                    or Device.was_icloud_initial_locate_done is False)
+                    and _is_fmly_member_retry_wait(Device) is False):
 
                 device_id = None if Device.AppleAcct.locate_all_devices else Device.icloud_device_id
 
@@ -326,6 +327,20 @@ def update_AADev_data(Device, results_msg_flag=True):
             # log_exception(err)
 
         return False
+
+#----------------------------------------------------------------------------
+def _is_fmly_member_retry_wait(Device):
+    '''
+    Apple has not been returning this Device's Family Sharing member's devices. Do not
+    request a refresh for it until the retry time (apple_acct_devices.
+    _update_fmly_member_missing_cnt).
+    '''
+    AADev = Device.AppleAcct.AADev_by_device_id.get(Device.icloud_device_id)
+    if AADev is None or not AADev.prs_id:
+        return False
+
+    retry_secs = getattr(Device.AppleAcct, 'fmly_missing_retry_secs_by_prs_id', {}).get(AADev.prs_id, 0)
+    return time_now_secs() < retry_secs
 
 #----------------------------------------------------------------------------
 def _locate_all_or_acct_owner(Device):
@@ -604,7 +619,14 @@ def _get_aadevdata_useable_status(Device, data_source):
     if (loc_time_ok
             and Device.FromZone_BeingUpdated.interval_secs >= 15
             and Device.is_passthru_timer_set is False):
-        loc_time_ok = (Device.FromZone_BeingUpdated.interval_secs > loc_age_secs)
+        # Also accept a location newer than the last update that was just refreshed
+        # (prefetch). The prefetch is done 5-15 secs before the update and iCloud's
+        # location is already 0-18 secs old so it is often older than a 15-sec interval
+        # and was being refreshed again with the same data
+        loc_time_ok = (Device.FromZone_BeingUpdated.interval_secs > loc_age_secs
+                        or (Device.AppleAcct is not None
+                            and loc_secs > Device.last_update_loc_secs
+                            and secs_since(Device.AppleAcct.last_refresh_secs) <= 15))
 
         # rc9 Added loc_age_secs check so msg is only displayed after 20-secs
         if loc_time_ok is False and loc_age_secs > 20:

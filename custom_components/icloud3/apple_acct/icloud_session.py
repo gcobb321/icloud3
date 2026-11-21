@@ -392,10 +392,11 @@ class iCloudSession(Session):
                 service_error = f" ({data['serviceErrors'][0]['code']})"
             except Exception:
                 pass
-        post_rawdata(   f"{self.AppleAcct.apple_user} > AppleAcct, "
-                        f"{endpoint[:1].upper()}{endpoint[1:]}, "
-                        f"Code-{self.response_code}{service_error}, "
-                        f"{HTTP_RESPONSE_CODES.get(self.response_code, 'Unknown')}")
+        post_rawdata(self.AppleAcct.apple_id,
+                    f"{self.AppleAcct.apple_user} > AppleAcct, "
+                    f"{endpoint[:1].upper()}{endpoint[1:]}, "
+                    f"Code-{self.response_code}{service_error}, "
+                    f"{HTTP_RESPONSE_CODES.get(self.response_code, 'Unknown')}")
 
         # Validating the apple_id/password, code=409 is valid, code=401 is invalid
         if (url.startswith(APPLE_SERVER_ENDPOINT['auth_url'])

@@ -265,10 +265,6 @@ class Waze(object):
 
             except Exception as err:
                 post_internal_error('Waze Route Info', traceback.format_exc)
-                if err == "Name 'WazeRouteCalculator' is not defined":
-                    self.is_waze_dist_method_used = False
-                    return (WAZE_NOT_USED, 0, 0, 0)
-
                 return (WAZE_NO_DATA, 0, 0, 0)
 
             try:

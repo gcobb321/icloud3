@@ -31,7 +31,8 @@ from ..const_config     import (CONF_PARAMETER_TIME_STR, CONF_PICTURE_WWW_DIRS, 
                                 CF_PROFILE, CF_DATA, CF_TRACKING, CF_GENERAL, CF_SENSORS,
                                 CF_DEVICE_SENSORS, CONF_APPLE_ACCOUNTS, DEFAULT_APPLE_ACCOUNT_CONF,
                                 CONF_AUTH_METHODS, CURRENT, PUSH, HWKEY, TEXT, ZONE,
-                                CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES, )
+                                CONF_SENSORS_MONITORED_DEVICES, CONF_SENSORS_TRACK_FROM_ZONES,
+                                CONF_DEVICE_TYPE, )
 from ..const_char       import (RARROW, RARROW2, NLSP4, )
 from ..const_sensor      import (SENSOR_DEFINITION, SENSOR_GROUPS, SENSOR_LIST_DISTANCE,
                                 SENSOR_FNAME, SENSOR_TYPE, SENSOR_ICON,
@@ -45,7 +46,7 @@ from ..utils.utils      import (instr, is_empty, isnot_empty, ordereddict_to_dic
                                 list_add, list_to_str, list_add, list_del, dict_del, get_string_hash,
                                 apple_user, is_password_decode_error, )
 from ..utils.messaging  import (log_exception, _evlog, _log, log_info_msg, add_log_file_filter,
-                                log_debug_msg, open_ic3log_file, close_ic3log_file, )
+                                log_debug_msg, log_warning_msg, post_alert, open_ic3log_file, close_ic3log_file, )
 from ..utils.time_util  import (datetime_now, today, )
 
 from ..utils            import entity_reg_util as er_util
@@ -296,6 +297,7 @@ def _add_parms_and_check_config_file():
         update_config_file_flag = _verify_tracking_parameters_values() or update_config_file_flag
         update_config_file_flag = _verify_apple_acct_parameters_values() or update_config_file_flag
         update_config_file_flag = _verify_device_parameters_values()   or update_config_file_flag
+        update_config_file_flag = _verify_apple_accts_have_tracked_device() or update_config_file_flag
 
         if Gb.conf_profile.get(CONF_FIRST_SEEN) == '':
             Gb.conf_profile[CONF_FIRST_SEEN] = datetime_now()
@@ -1013,6 +1015,113 @@ def _verify_device_parameters_values():
     return update_configuration_flag
 
 #--------------------------------------------------------------------
+def _verify_apple_accts_have_tracked_device():
+    '''
+    Startup check (config file load). See verify_apple_accts_have_tracked_device.
+
+    Return:
+        True  - A device was changed, the configuration file needs to be updated
+    '''
+    changed_msgs = verify_apple_accts_have_tracked_device()
+    for changed_msg in changed_msgs:
+        log_warning_msg(changed_msg)
+
+    # The Event Log does not exist yet when the config file is loaded at HA startup
+    # (__init__). They are posted in Stage 1 (post_tracked_device_alerts).
+    tracked_device_alert_msgs.extend(changed_msgs)
+
+    return changed_msgs != []
+
+#--------------------------------------------------------------------
+tracked_device_alert_msgs = []
+
+def post_tracked_device_alerts():
+    '''
+    Post the startup tracking mode changes (_verify_apple_accts_have_tracked_device)
+    on the Event Log. Called in Stage 1 after the Event Log is set up.
+    '''
+    for alert_msg in tracked_device_alert_msgs:
+        post_alert(alert_msg)
+
+    tracked_device_alert_msgs.clear()
+
+#--------------------------------------------------------------------
+def verify_apple_accts_have_tracked_device(changed_devicename=None):
+    '''
+    Every Apple Account must have at least one tracked device. An account is only
+    refreshed when one of its tracked devices needs a location. Without one, its
+    token expires and every refresh needs a Password signin (keep alive, retries).
+
+    A Monitored device uses the data refreshed by a Tracked device in the same Apple
+    Acct. If an Apple Acct has Monitored devices but no Tracked ones, change the
+    tracking mode of one of the Monitored devices (an iPhone, then an iPad, then any
+    other device) to Tracked. An Apple Acct whose devices are all Inactive (or has no
+    devices) is ok, it is logged into to get its device list but is not refreshed.
+    The user can reassign Tracked to another device in Configure. This is done at
+    startup and when Configure
+    updates the configuration file (step_common.async_write_icloud3_configuration_file).
+
+    changed_devicename:
+        The device just changed in Configure (Monitor, Inactive, Apple Acct). Another
+        device is selected before it so the user's change is not undone, it is only
+        used when it is the Apple Acct's only device.
+
+    Return:
+        [msgs] - A message for each device that was changed. The conf_devices were
+                updated but the configuration file was not written.
+    '''
+    DEVICE_TYPE_PRIORITY = ['iphone', 'ipad']
+
+    changed_msgs = []
+
+    try:
+        for conf_apple_acct in Gb.conf_apple_accounts:
+            apple_id = conf_apple_acct.get(CONF_USERNAME, '')
+            if is_empty(apple_id):
+                continue
+
+            acct_conf_devices = [conf_device
+                                    for conf_device in Gb.conf_devices
+                                    if (conf_device.get(CONF_APPLE_ACCT) == apple_id
+                                        and conf_device.get(CONF_AADEV_NAME, NONE_FNAME)
+                                                .startswith(NONE_FNAME) is False)]
+
+            # No devices are assigned to it or they are all Inactive, it is not refreshed
+            if (acct_conf_devices == []
+                    or [conf_device for conf_device in acct_conf_devices
+                            if conf_device.get(CONF_TRACKING_MODE) == TRACK]):
+                continue
+
+            acct_conf_devices = [conf_device for conf_device in acct_conf_devices
+                                    if conf_device.get(CONF_TRACKING_MODE) == MONITOR]
+            if acct_conf_devices == []:
+                continue
+
+            def _priority(conf_device):
+                device_type = str(conf_device.get(CONF_DEVICE_TYPE, '')).lower()
+                changed_idx = 1 if conf_device.get(CONF_IC3_DEVICENAME) == changed_devicename else 0
+                type_idx = (DEVICE_TYPE_PRIORITY.index(device_type)
+                                if device_type in DEVICE_TYPE_PRIORITY
+                                else len(DEVICE_TYPE_PRIORITY))
+                return (changed_idx, type_idx)
+
+            conf_device = min(acct_conf_devices, key=_priority)
+            old_tracking_mode = conf_device.get(CONF_TRACKING_MODE)
+            conf_device[CONF_TRACKING_MODE] = TRACK
+
+            changed_msgs.append(
+                    f"Apple Acct > {apple_user(apple_id)}, An Apple Account must have at "
+                    f"least one Tracked device when it has Monitored devices. The tracking mode of "
+                    f"{conf_device.get(CONF_FNAME)} ({conf_device.get(CONF_IC3_DEVICENAME)}) "
+                    f"was changed from {str(old_tracking_mode).title()} to Tracked. "
+                    f"It can be reassigned to another device in Configure > iCloud3 Devices")
+
+    except Exception as err:
+        log_exception(err)
+
+    return changed_msgs
+
+#--------------------------------------------------------------------
 # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
 # def _convert_hhmmss_to_minutes(conf_group):
 
@@ -1165,8 +1274,14 @@ def _update_general_parameters():
     '''
     Update Gb.conf_general with new fields
     '''
+    update_flag = False
     Gb.conf_general, del_items = _delete_items_from_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
     Gb.conf_general, new_items = _insert_items_into_conf_dict(Gb.conf_general, DEFAULT_GENERAL_CONF)
+
+    if 'all' in Gb.conf_general[CONF_LOG_LEVEL_DEVICES]:
+        list_del(Gb.conf_general[CONF_LOG_LEVEL_DEVICES], 'all')
+        list_add(Gb.conf_general[CONF_LOG_LEVEL_DEVICES], TRACK)
+        update_flag = True
 
     inzone_intervals = {device_type: interval for device_type, interval in DEVICE_TYPE_INZONE_INTERVALS.items()
                                         if device_type not in Gb.conf_general[CONF_INZONE_INTERVALS]}
@@ -1175,12 +1290,7 @@ def _update_general_parameters():
         for device_type, interval in inzone_intervals.items():
             Gb.conf_general[CONF_INZONE_INTERVALS][device_type] = interval
 
-        # if IPAD_CELL not in Gb.conf_general[CONF_INZONE_INTERVALS]:
-        # Gb.conf_general[CONF_INZONE_INTERVALS][IPAD_CELL] = DEVICE_TYPE_INZONE_INTERVALS[IPAD_CELL]
-        # Gb.conf_general[CONF_INZONE_INTERVALS][WATCH_WIFI] = DEVICE_TYPE_INZONE_INTERVALS[WATCH_WIFI]
-        # Gb.conf_general[CONF_INZONE_INTERVALS][MAC] = DEVICE_TYPE_INZONE_INTERVALS[MAC]
-
-    if new_items or del_items:
+    if new_items or del_items or update_flag:
         log_info_msg(   f"Updated Configuration File items (General), "
                         f"Added-{new_items}, Deleted-{del_items})")
         return True

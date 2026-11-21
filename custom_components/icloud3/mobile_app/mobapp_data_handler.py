@@ -1,6 +1,7 @@
 
 
 from ..global_variables import GlobalVariables as Gb
+from enum               import Enum
 from ..const            import (DEVICE_TRACKER, NOTIFY,
                                 EVLOG_ALERT,
                                 NOT_SET, NOT_HOME,
@@ -332,10 +333,49 @@ def check_mobapp_state_trigger_change(Device):
         else:
             Device.mobapp_data_reject_reason = "Failed Update Tests"
 
+        _use_requested_location_response(Device, mobapp_data_secs, is_poor_gps_accuracy)
+
         Device.was_mobapp_data_updated = (Device.mobapp_data_reject_reason == "")
 
     except Exception as err:
             log_exception(err)
+
+#--------------------------------------------------------------------
+def _use_requested_location_response(Device, mobapp_data_secs, is_poor_gps_accuracy):
+    '''
+    A location was requested from the Mobile App (EvLog > Actions > Locate from Mobile
+    App, or a tracking request when the MobApp is the only location data source). Use the
+    response even if the device has not moved or the data has not changed. It is still
+    rejected for poor GPS accuracy, older than the last update or passing thru a zone.
+    The request is dropped if there is no response in 2-mins.
+
+    mobapp_data_secs - The MobApp entity's data time (it is not stored in the Device
+        if the GPS accuracy is poor)
+    '''
+    pending_secs = Device.mobapp_request_loc_pending_secs
+    if pending_secs == 0:
+        return
+
+    if mobapp_data_secs < pending_secs:
+        if secs_since(pending_secs) > 120:
+            Device.mobapp_request_loc_pending_secs = 0
+        return
+
+    Device.mobapp_request_loc_pending_secs = 0
+
+    if Device.mobapp_data_reject_reason == '':
+        return
+
+    if (is_poor_gps_accuracy
+            or Device.mobapp_data_gps_accuracy > Gb.gps_accuracy_threshold
+            or Device.mobapp_data_secs <= Device.last_update_loc_secs
+            or Device.is_passthru_zone_delay_active):
+        post_event(Device, f"MobApp Loc > Requested Location Discarded, "
+                           f"{Device.mobapp_data_reject_reason}")
+        return
+
+    Device.mobapp_data_reject_reason = ''
+    Device.mobapp_data_change_reason = f"Location Requested@{Device.mobapp_data_time}"
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -473,7 +513,10 @@ def get_and_verify_device_trkr_data(Device, entity_id):
             return None
 
         # Entity is available, get the attributes
-        device_trkr_attrs.update(entity_io.get_attributes(entity_id))
+        # HA 2026.11 uses StrEnum keys/values (DeviceTrackerEntityStateAttribute.SOURCE_TYPE,
+        # TrackingType.POSITION). Convert them to plain strings so they are logged normally
+        device_trkr_attrs.update({str(k): (v.value if isinstance(v, Enum) else v)
+                                for k, v in entity_io.get_attributes(entity_id).items()})
 
         if LATITUDE not in device_trkr_attrs or device_trkr_attrs[LATITUDE] == 0:
             Device.mobapp_data_invalid_error_cnt += 1
@@ -529,7 +572,11 @@ def update_mobapp_data_from_entity_attrs(Device, device_trkr_attrs):
     log_data_unfiltered(_hdr, device_trkr_attrs)
 
     try:
-        post_rawdata(f"{Device.fname}, {DEVICE_TYPE_NAME(Device.device_type)[:6]} > MobApp, "
+        dev_type_name = DEVICE_TYPE_NAME(Device.device_type).split('-')[0][:6]
+        dev_type_name = '' if instr(Device.fname, dev_type_name) else f", {dev_type_name}"
+
+        post_rawdata(Device.devicename,
+                    f"{Device.fname}{dev_type_name} > MobApp, "
                     f"{Device.mobapp_data_trigger[:8].title()}, "
                     f"{format_time_age(mobapp_data_secs, smh_abbrev=True)}")
     except Exception as err:

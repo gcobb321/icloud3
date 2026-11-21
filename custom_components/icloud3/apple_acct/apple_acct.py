@@ -265,6 +265,8 @@ class AppleAcctManager(object):
             self.account_country_code = ''          # accountCountryCode fro data when token was refreshed
             self.srp_upw_valid_secs   = 0           # time when the srp password was validated and accepted
             self.alerts_by_alert_key  = {}           # Items that will be added to the icloud3_alerts sensor
+            self.fmly_missing_cnt_by_prs_id        = {}  # Refreshes in a row without a Family member's devices
+            self.fmly_missing_retry_secs_by_prs_id = {}  # No refresh for that member's Devices until this time
 
             self.config_flow_login   = config_flow_login  # Indicates this AppleAcct object is beinging created from config_flow
             self.auth_code           = None          # Initial value sets forms > reauth > request_code
@@ -363,6 +365,8 @@ class AppleAcctManager(object):
 
         if self.login_successful:
             self.setup_error(None)
+            # A startup login retry worked, the 'Login Failed ... Login Retry' alert is stale
+            update_alert_sensor(Source=self, error='login_failed', clear=True)
             self.get_trusted_devices()
 
             post_greenbar_msg(f"Apple Acct > {self.apple_user}, Refresh Location Data")
@@ -1023,10 +1027,12 @@ class AppleAcctManager(object):
         # The Auth with Token is necessary to fill in the findme_url
         self.login_successful_srp = True
         self.srp_upw_valid_secs = time_now_secs()
-        self._authenticate_with_token()
+        token_login_successful = self._authenticate_with_token()
+        token_login_code       = self.response_code
         self.get_trusted_devices()
         log_debug_msg(  f"{self.apple_user}, {self.login_auth_method}/TrustToken, "
-                        f"login_successful=True")
+                        f"SRP Signin-OK, AccountLogin-"
+                        f"{'OK' if token_login_successful else 'Failed'} ({token_login_code})")
         return True
 
 #............................................................................
@@ -2489,6 +2495,14 @@ class AppleAcctManager(object):
         will force Apple to display a new Authentication code
         '''
 
+        # Keep the working session. If Apple refuses the password sign-in below
+        # (502, 503, 500, etc), no auth code was requested and blanking the tokens
+        # would leave a logged-in account logged out ('not logged into' on the
+        # next Request Auth Code, Login Failed retries).
+        saved_session        = {key: self.session_data.get(key)
+                                    for key in self.TRUSTED_SESSION_KEYS}
+        was_login_successful = self.login_successful
+
         self.session_data['session_token'] = ''
         self.session_data['trust_token']   = ''
         self.session_token = ''
@@ -2502,6 +2516,40 @@ class AppleAcctManager(object):
         self.clear_srp_signin_session()
 
         self.authenticate()
+
+        if (self.login_successful_srp is False
+                and was_login_successful
+                and isnot_empty(saved_session.get('session_token'))):
+            self._restore_session_after_failed_signin(saved_session)
+
+#----------------------------------------------------------------------------
+    def _restore_session_after_failed_signin(self, saved_session):
+        '''
+        The password sign-in done to request an auth code failed. Put the session
+        values back and log in with them so the account stays logged into.
+        login_successful_srp and response_code_pw are left as they are, the reauth
+        screen uses them to report why the code was not requested.
+        '''
+        srp_response_code_pw = self.response_code_pw
+
+        for key, value in saved_session.items():
+            if value is not None:
+                self.session_data[key] = value
+
+        self.session_token = saved_session.get('session_token', '') or ''
+        self.trust_token   = saved_session.get('trust_token', '') or ''
+
+        login_successful = self._authenticate_with_token()
+        if login_successful:
+            self.login_successful = True
+            self.is_reauth_needed = self._set_is_reauth_needed
+
+        self.login_successful_srp = False
+        self.response_code_pw     = srp_response_code_pw
+
+        log_info_msg(   f"{self.apple_user}, Password Sign-in Failed, Restored Session > "
+                        f"Login-{'OK' if login_successful else 'Failed'} ({self.response_code}), "
+                        f"2fa Needed-{self.is_reauth_needed}")
 
 #----------------------------------------------------------------------------
     # The trusted session values (session/trust tokens, session_id, scnt, etc)

@@ -32,7 +32,7 @@ from .const_config      import (BADGE, ZONE, ZONE_DISTANCE, ZONE_DISTANCE_M, ZON
                                 HOME_DISTANCE, BATTERY, BATTERY_STATUS, WAZE_DISTANCE,
                                 WAZE_DISTANCE_ATTR, CALC_DISTANCE, CALC_DISTANCE_ATTR,
                                 CONF_TRACK_FROM_ZONES, CONF_IC3_DEVICENAME, CONF_MODEL,
-                                CONF_RAW_MODEL, CONF_FNAME, CONF_AADEV_NAME,
+                                CONF_RAW_MODEL, CONF_MODEL_DISPLAY_NAME, CONF_FNAME, CONF_AADEV_NAME,
                                 CONF_MOBILE_APP_DEVICE, CONF_TRACKING_MODE, CONF_SENSORS,
                                 CONF_EXCLUDED_SENSORS, CONF_SENSORS_MONITORED_DEVICES,
                                 CONF_SENSORS_TRACK_FROM_ZONES, CONF_SENSORS_HASH,
@@ -760,7 +760,9 @@ class DeviceSensor_Base():
         """Return information about the device """
         return DeviceInfo(  identifiers  = {(DOMAIN, self.devicename)},
                             manufacturer = "Apple",
-                            model        = self.conf_device[CONF_RAW_MODEL],
+                            model        = (self.conf_device[CONF_MODEL_DISPLAY_NAME]
+                                                or self.conf_device[CONF_RAW_MODEL]),
+                            model_id     = self.conf_device[CONF_RAW_MODEL] or None,
                             name         = f"{self.conf_device[CONF_FNAME]}",
                         )
                             # name         = f"{self.conf_device[CONF_FNAME]} ({self.devicename})",

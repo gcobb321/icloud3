@@ -335,10 +335,15 @@ def test_send_message_to_devices():
 #   Trigger the mobapp to send a location request transaction
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def request_location(Device, is_alive_check=False, force_request=False):
+def request_location(Device, is_alive_check=False, force_request=False, user_request=False):
     '''
     Send location request to phone. Check to see if one has been sent but not responded to
     and, if true, set interval based on the retry count.
+
+    user_request:
+        True - Requested from the EvLog > Actions > Locate from Mobile App. The response
+        is used even if the device has not moved (mobapp_data_handler). A tracking request
+        is used that way only when the MobApp is the only location data source.
     '''
 
     if (Gb.used_data_source_MOBAPP is False
@@ -389,6 +394,11 @@ def request_location(Device, is_alive_check=False, force_request=False):
             Device.mobapp_request_loc_last_secs = Gb.this_update_secs
             Device.mobapp_request_loc_sent_secs = Gb.this_update_secs
             Device.write_ha_sensor_state(NEXT_UPDATE, 'LOC RQSTD')
+
+            if (user_request
+                    or (is_alive_check is False
+                        and Device.is_data_source_ICLOUD is False)):
+                Device.mobapp_request_loc_pending_secs = time_now_secs()
         else:
             Device.mobapp_request_loc_last_secs = 0
             Device.mobapp_request_loc_sent_secs = 0

@@ -80,6 +80,7 @@ def stage_1_setup_variables():
         start_ic3.set_event_recds_max_cnt()
         start_ic3.define_tracking_control_fields()
 
+        config_file.post_tracked_device_alerts()
         post_event(f"{EVLOG_IC3_STAGE_HDR}{stage_title}")
         Gb.EvLog.update_event_log_display("")
 

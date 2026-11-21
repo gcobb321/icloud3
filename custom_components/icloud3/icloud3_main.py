@@ -35,8 +35,7 @@ from .const             import (HOME, NOT_HOME, HOME_FNAME,
                                 EVLOG_UPDATE_START, EVLOG_UPDATE_END, EVLOG_ERROR, EVLOG_ALERT, EVLOG_NOTICE,
                                 ICLOUD, MOBAPP, TRUST_TOKEN_EXPIRE_WARNING_DAYS,
                                 ENTER_ZONE, EXIT_ZONE, NOTIFY,
-                                STATZONE_RADIUS_1M,
-                                RETRY_INTERVAL_RANGE_1, )
+                                STATZONE_RADIUS_1M, )
 from .const_config      import (CONF_USERNAME, CONF_PASSWORD, ARRIVAL_TIME, INTERVAL, NEXT_UPDATE,
                                 CONF_LOG_LEVEL, )
 from .const_char        import (RARROW, LT, NBSP3, CLOCK_FACE, RED_STOP, BATTERY_ICON, BATTERY_ICON_LOW,
@@ -683,7 +682,6 @@ class iCloud3:
 
         Device.FromZone_NextToUpdate = Device.FromZone_Home
         Device.FromZone_TrackFrom    = Device.FromZone_Home
-        Device.last_track_from_zone  = HOME
 
         mobapp_trigger_flag = False
         if Device.is_mobapp_monitored and Gb.conf_data_source_MOBAPP:
@@ -702,12 +700,10 @@ class iCloud3:
         elif Device.is_tracking_resumed:
             Device.tracking_status = TRACKING_NORMAL
         elif Device.loc_data_latitude == 0.0:
-            # No location yet (initial locate, device Pending/offline). The Apple Acct
-            # keep-alive (aas.keep_apple_accts_alive) only refreshes every 30-mins
-            self._retry_monitored_no_location(Device)
-            if Device.loc_data_latitude == 0.0:
-                return
-            Device.calculate_distance_moved()
+            # No location yet (initial locate, device Pending/offline). Every Apple Acct has
+            # a tracked device (config_file._verify_apple_accts_have_tracked_device), its
+            # refreshes update this device
+            return
         elif Device.is_next_update_time_reached is False:
             Device.calculate_distance_moved()
             if Device.loc_data_dist_moved_km < .05:
@@ -722,56 +718,6 @@ class iCloud3:
         # self.process_updated_location_data(Device, '')
         self.location_updated_by_Device[Device] = MOBAPP if mobapp_trigger_flag else ''
         Device.update_sensor_values_from_data_fields()
-
-#----------------------------------------------------------------------------
-    def _retry_monitored_no_location(self, Device):
-        '''
-        A monitored device with no location (initial locate, Pending/offline) in an Apple Acct
-        with no tracked devices (is_monitored_acct_refresh). Nothing else refreshes that acct
-        except the 30-min keep-alive (aas.keep_apple_accts_alive), so retry the refresh 1-min
-        after the last one, then back off with the error retry timer.
-        A failed signin is retried by the keep-alive, not here.
-
-        Return: True - A refresh was requested
-        '''
-        AppleAcct = Device.AppleAcct
-        if (Device.is_monitored_acct_refresh is False
-                or AppleAcct is None
-                or AppleAcct.login_successful is False
-                or Gb.use_data_source_ICLOUD is False
-                or Device.is_data_source_ICLOUD is False
-                or secs_since(AppleAcct.last_refresh_secs) <                         self._monitored_no_location_retry_secs(Device)):
-            return False
-
-        # Refresh directly. update_AADev_data skips the request when the AADev data
-        # is still useable
-        locate_all_devices, device_id = icloud_data_handler._locate_all_or_acct_owner(Device)
-        AppleAcct.refresh_icloud_data(  requested_by_devicename=Device.devicename,
-                                        locate_all_devices=locate_all_devices,
-                                        device_id=device_id)
-        icloud_data_handler.update_all_devices_with_latest_raw_data(Device)
-
-        if Device.loc_data_latitude == 0.0:
-            Device.monitored_no_loc_cnt += 1
-        else:
-            Device.monitored_no_loc_cnt = 0
-
-        return True
-
-#............................................................................
-    @staticmethod
-    def _monitored_no_location_retry_secs(Device):
-        '''
-        Monitored acct refresh interval when the device has no location. 1-min for the
-        first retry, then the RETRY_INTERVAL_RANGE_1 error timer (never under 1-min,
-        each one is an Apple request): ~1-min for 12 retries, then 5, 15, 30, 60-mins
-        '''
-        if Device.monitored_no_loc_cnt <= 1:
-            return 60
-
-        retry_mins = [mins  for cnt, mins in RETRY_INTERVAL_RANGE_1.items()
-                            if cnt <= Device.monitored_no_loc_cnt]
-        return max(60, int(retry_mins[-1] * 60))
 
 #----------------------------------------------------------------------------
     def _main_5sec_loop_icloud_prefetch_control(self):

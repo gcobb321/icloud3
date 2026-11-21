@@ -272,7 +272,7 @@ class OptionsFlow_iCloud3Device_Steps:
             if devicename in Gb.log_level_devices:
                 list_del(Gb.log_level_devices, devicename)
                 if is_empty(Gb.log_level_devices):
-                    Gb.log_level_devices = ['all']
+                    Gb.log_level_devices = [TRACK]
                 self._update_config_file_general(user_input={CONF_LOG_LEVEL_DEVICES: Gb.log_level_devices})
 
             # The lists may have not been built if deleting a device when deleting an Apple acct
@@ -793,6 +793,26 @@ class OptionsFlow_iCloud3Device_Steps:
                 and ui_mobile_app_name not in self.mobapp_list_text_by_entity_id
                 and instr(Gb.conf_tracking[CONF_DATA_SOURCE], MOBAPP)):
             self.errors[CONF_MOBILE_APP_DEVICE] = 'unknown_mobapp'
+
+        # A Monitored device uses the data refreshed by a Tracked device in the same Apple
+        # Acct. It can not be the last Tracked device or be in an Apple Acct with no Tracked
+        # devices. Reset it to Tracked and do not save the update. Inactive is ok.
+        # Not done when the form is displayed (user_input is the conf_device), only on an update.
+        if (user_input is not self.conf_device
+                and user_input.get(CONF_TRACKING_MODE) == MONITOR
+                and user_input[CONF_APPLE_ACCT] != ''
+                and user_input[CONF_AADEV_NAME] != 'None'
+                and CONF_AADEV_NAME not in self.errors):
+            devicename = self.conf_device.get(CONF_IC3_DEVICENAME)
+            other_tracked_devices = [conf_device
+                            for conf_device in Gb.conf_devices
+                            if (conf_device.get(CONF_IC3_DEVICENAME) != devicename
+                                and conf_device.get(CONF_APPLE_ACCT) == user_input[CONF_APPLE_ACCT]
+                                and conf_device.get(CONF_TRACKING_MODE) == TRACK)]
+            if other_tracked_devices == []:
+                self.errors[CONF_TRACKING_MODE]           = 'monitored_device_needs_tracked'
+                self.errors_user_input[CONF_TRACKING_MODE] = TRACK
+                user_input[CONF_TRACKING_MODE]            = TRACK
 
         return user_input
 

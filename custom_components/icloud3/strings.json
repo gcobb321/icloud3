@@ -165,6 +165,7 @@
       "not_available": "This Action is not available at this time",
       "update_aborted": "Update aborted, an error was detected in one of the data fields",
       "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+      "apple_acct_tracked_device_set": "⚠️ An Apple Account must have at least one Tracked device. A device's Tracking Mode was changed to Tracked (see the Event Log). It can be reassigned to another device on the iCloud3 Devices screen",
       "conf_reloaded": "iCloud3 Configuration File was Reloaded",
 
       "apple_acct_logging_into": "Logging into Apple Account",
@@ -252,6 +253,7 @@
       "not_numeric": "❌ The value entered is not numeric",
       "no_data_source": "The Apple Acct or Mobile App device is required when in Tracking Mode is not Inactive",
       "no_data_source_set_inactive": "Set the Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
+      "monitored_device_needs_tracked": "At least one device in an Apple Acct must be Tracked. Change another device to Tracked, then change this one to Monitor",
       "no_add_entities_device_tracker_fct": "The HA component for adding devices is not available. HA MUST BE RESTARTED",
 
       "unknown_value": "One of the selection parameters needs to be reviewed",
@@ -1063,6 +1065,7 @@
           "unknown_action": "Selected Action could not be identified",
           "update_aborted": "Update aborted, an error was detected in one of the data fields",
           "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+          "apple_acct_tracked_device_set": "⚠️ An Apple Account must have at least one Tracked device. A device's Tracking Mode was changed to Tracked (see the Event Log). It can be reassigned to another device on the iCloud3 Devices screen",
 
           "apple_acct_logged_into": "Logged into the Apple Account",
           "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
@@ -1117,6 +1120,7 @@
           "not_numeric": "❌ The value entered is not numeric",
           "no_data_source": "The Apple Acct or Mobile App device is required when in Tracking Mode is not Inactive",
           "no_data_source_set_inactive": "Set the Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
+          "monitored_device_needs_tracked": "At least one device in an Apple Acct must be Tracked. Change another device to Tracked, then change this one to Monitor",
 
           "unknown_value": "One of the selection parameters needs to be reviewed",
           "invalid_selection": "An invalid or header item was selected, reset to original value",
@@ -1287,6 +1291,7 @@
           "unknown_action": "Selected Action could not be identified",
           "update_aborted": "Update aborted, an error was detected in one of the data fields",
           "conf_updated": "✅ iCloud3 Configuration Parameters were updated successfully",
+          "apple_acct_tracked_device_set": "⚠️ An Apple Account must have at least one Tracked device. A device's Tracking Mode was changed to Tracked (see the Event Log). It can be reassigned to another device on the iCloud3 Devices screen",
           "apple_acct_logged_into": "Logged into the Apple Account",
           "apple_acct_locate_all_reqd": "All devices must be located. Other Family devices are tracked with this Apple Account",
           "apple_acct_login_error_ipv6": "IPv6 DETECTED > Apple location server does not respond to IPv6 requests → Go to HA Devices & Settings > System > Network > Configure network interfaces. Then disable IPv6 and restart HA",
@@ -1335,6 +1340,7 @@
           "not_numeric": "❌ The value entered is not numeric",
           "no_data_source": "The Apple Acct or Mobile App device is required when in Tracking Mode is not Inactive",
           "no_data_source_set_inactive": "Set the Tracking Mode to ‘Inactive’ when the Data Sources are unknown and set to None",
+          "monitored_device_needs_tracked": "At least one device in an Apple Acct must be Tracked. Change another device to Tracked, then change this one to Monitor",
           "unknown_value": "One of the selection parameters needs to be reviewed",
           "invalid_selection": "An invalid or header item was selected, reset to original value",
           "unknown_icloud": "The configured device was not found in any of the Apple Accounts",

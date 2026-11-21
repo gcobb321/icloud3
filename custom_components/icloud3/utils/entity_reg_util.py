@@ -287,20 +287,24 @@ def enable_disabled_device(device_id):
 
     return False
 #-------------------------------------------------------------------------------------------
-def update_device_model(devicename, raw_model):
+def update_device_model(devicename, raw_model, model_display_name=''):
     '''
     Update the model in the HA device registry (Settings > Devices) when the Device
     now tracks a newer Apple device. The device_tracker's device_info model is only
     used when HA adds the device.
+        model    - display name (iPhone 18 ProMax), raw model if there is none
+        model_id - raw model (iPhone19,3)
     '''
     ha_device_id = Gb.ha_device_id_x_devicename.get(devicename)
     if ha_device_id is None:
         return
 
     try:
+        model = model_display_name or raw_model
         device_reg = dr.async_get(Gb.hass)
-        _run_in_event_loop(device_reg.async_update_device, ha_device_id, model=raw_model)
-        log_info_msg(f"Device Registry Update > {devicename}, Model-{raw_model}")
+        _run_in_event_loop(device_reg.async_update_device, ha_device_id,
+                            model=model, model_id=raw_model or None)
+        log_info_msg(f"Device Registry Update > {devicename}, Model-{model} ({raw_model})")
 
     except Exception as err:
         log_exception(err)

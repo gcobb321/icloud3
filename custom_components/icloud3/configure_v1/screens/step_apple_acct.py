@@ -1005,6 +1005,13 @@ class OptionsFlow_AppleAccount_Steps:
                             f'Device-{conf_device[CONF_FNAME]=}, '
                             f'/{conf_device[CONF_IC3_DEVICENAME]=}')
 
+        # Every Apple Acct must have a tracked device. If none of the imported devices
+        # are, set one to Tracked now so the config file write check
+        # (async_write_icloud3_configuration_file) does not display a message
+        for tracked_device_msg in config_file.verify_apple_accts_have_tracked_device(
+                                                                changed_devicename=''):
+            log_info_msg(f"Import Apple Devices > {tracked_device_msg}")
+
 #--------------------------------------------------------------------
     # UNUSED (10/31/2026) - not called anywhere. Commented out, delete after v3.8.0
     # def _unpack_ui_import_apple_devices(self, user_input):

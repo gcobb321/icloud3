@@ -3,18 +3,18 @@ from ..global_variables import GlobalVariables as Gb
 from ..const            import (LATITUDE,  LONGITUDE, LOCATION_SOURCE,
                                 INTO_ZONE_DATETIME,
                                 TIMESTAMP, TIMESTAMP_SECS, TIMESTAMP_TIME, LOCATION_TIME, DATETIME, AGE,
-                                BATTERY_LEVEL,
-                                DEVICE_STATUS, LOW_POWER_MODE, ICLOUD_LOST_MODE_CAPABLE,
-                                AUTHENTICATED,
+                                BATTERY_LEVEL, DEVICE_STATUS, LOW_POWER_MODE, ICLOUD_LOST_MODE_CAPABLE,
+                                AUTHENTICATED, TRACK, MONITOR,
                                 LAST_UPDATE_TIME, LAST_UPDATE_DATETIME, NEXT_UPDATE_TIME, LAST_LOCATED_DATETIME, LAST_LOCATED_TIME,
                                 GPS, POLL_COUNT, VERT_ACCURACY, )
 from ..const_config     import (CONF_IC3_DEVICENAME, ZONE, ZONE_DATETIME, LAST_ZONE, TRIGGER,
                                 BATTERY, BATTERY_STATUS, INTERVAL, ZONE_DISTANCE, CALC_DISTANCE,
                                 WAZE_DISTANCE, TRAVEL_TIME, TRAVEL_TIME_MIN, DIR_OF_TRAVEL,
-                                MOVED_DISTANCE, INFO, GPS_ACCURACY, ALTITUDE, BADGE, )
+                                MOVED_DISTANCE, INFO, GPS_ACCURACY, ALTITUDE, BADGE,
+                                CONF_LOG_LEVEL_DEVICES, )
 from ..const_char       import (NL3_DATA, )
-from .utils             import (instr, is_empty, isnot_empty, )
-from .messaging         import (log_info_msg, log_exception, _called_from, )
+from .utils             import (instr, is_empty, isnot_empty, list_add, list_del, )
+from .messaging         import (_log, log_info_msg, log_exception, _called_from, )
 
 
 DO_NOT_SHRINK     = ['url', 'accountName', 'deviceDisplayName', 'name', 'rawDeviceModel',
@@ -194,7 +194,8 @@ def log_data(_hdr, rawdata, is_log_level_rawdata=False, data_source=None, filter
         return False
 
     if (Gb.is_icloud3_startup_inprocess
-            or 'all' in Gb.log_level_devices
+            or TRACK in Gb.log_level_devices
+            or MONITOR in Gb.log_level_devices
             or Gb.log_level_devices == []):
         pass
 
@@ -247,10 +248,10 @@ def _create_log_msg_from_data(rawdata, data=None):
     except Exception as err:
         log_exception(err)
 
-    if Gb.log_level_devices == 'all':
-        filtered_names = []
-    else:
-        filtered_names = [name  for name, devicename in Gb.devicenames_by_aadev_dname.items()
+    # if Gb.log_level_devices == 'all':
+    #     filtered_names = []
+    # else:
+    filtered_names = [name  for name, devicename in Gb.devicenames_by_aadev_dname.items()
                                 if devicename in Gb.log_level_devices]
 
     for k, v in filtered_rawdata.copy().items():
@@ -306,6 +307,24 @@ def _create_log_msg_from_data(rawdata, data=None):
             log_msg += f"{NL3_DATA}{data_text}{k}={v}"
 
     return log_msg
+
+#..........................................................................................
+def build_rawdata_devicename_filter_list():
+    '''
+    Build/update the list of devices that will be filtered based on the
+    log_level_devices list in the configuration file
+    '''
+    log_level_devices = Gb.log_level_devices.copy()
+    if TRACK in log_level_devices:
+        log_level_devices.extend(list(Gb.Devices_by_devicename_tracked.keys()))
+        list_del(log_level_devices, TRACK)
+    if MONITOR in log_level_devices:
+        log_level_devices.extend(list(Gb.Devices_by_devicename_monitored.keys()))
+        list_del(log_level_devices, MONITOR)
+
+    log_level_devices = list(set(log_level_devices))
+
+    return log_level_devices
 
 #..........................................................................................
 def _is_device_filtered(aadev_name):
