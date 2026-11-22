@@ -17,6 +17,7 @@ from ..const_form_lists     import *
 from homeassistant.helpers  import selector
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from ..zh_localize import localized_select_selector_config, localized_multi_select
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -45,40 +46,40 @@ def form_sensors(self, user_input=None):
     return vol.Schema({
         vol.Required(CONF_SENSORS_DEVICE,
                     default=sensors[CONF_SENSORS_DEVICE]):
-                    cv.multi_select(CONF_SENSORS_DEVICE_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_DEVICE_KEY_TEXT),
         vol.Required(CONF_SENSORS_TRACKING_UPDATE,
                     default=sensors[CONF_SENSORS_TRACKING_UPDATE]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_TRACKING_UPDATE_KEY_TEXT),
         vol.Required(CONF_SENSORS_TRACKING_TIME,
                     default=sensors[CONF_SENSORS_TRACKING_TIME]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_TIME_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_TRACKING_TIME_KEY_TEXT),
         vol.Required(CONF_SENSORS_TRACKING_DISTANCE,
                     default=sensors[CONF_SENSORS_TRACKING_DISTANCE]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_TRACKING_DISTANCE_KEY_TEXT),
         vol.Required(CONF_SENSORS_ZONE,
                     default=sensors[CONF_SENSORS_ZONE]):
-                    cv.multi_select(CONF_SENSORS_ZONE_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_ZONE_KEY_TEXT),
         vol.Required(CONF_SENSORS_OTHER,
                     default=sensors[CONF_SENSORS_OTHER]):
-                    cv.multi_select(CONF_SENSORS_OTHER_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_OTHER_KEY_TEXT),
         # vol.Required(CONF_SENSORS_TRACK_FROM_ZONES,
         #             default=sensors[CONF_SENSORS_TRACK_FROM_ZONES]):
-        #             cv.multi_select(CONF_SENSORS_TRACK_FROM_ZONES_KEY_TEXT),
+        #             localized_multi_select(CONF_SENSORS_TRACK_FROM_ZONES_KEY_TEXT),
         vol.Required(CONF_SENSORS_MONITORED_DEVICES,
                     default=sensors[CONF_SENSORS_MONITORED_DEVICES]):
-                    cv.multi_select(CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_MONITORED_DEVICES_KEY_TEXT),
         vol.Required(CONF_SENSORS_TRACKING_OTHER,
                     default=sensors[CONF_SENSORS_TRACKING_OTHER]):
-                    cv.multi_select(CONF_SENSORS_TRACKING_OTHER_KEY_TEXT),
+                    localized_multi_select(CONF_SENSORS_TRACKING_OTHER_KEY_TEXT),
         vol.Optional(CONF_EXCLUDED_SENSORS,
                     default=self.excluded_sensors):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.excluded_sensors,
                         mode='list', multiple=True)),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save_menu')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -119,18 +120,18 @@ def form_exclude_sensors(self):
     return vol.Schema({
         vol.Optional(CONF_EXCLUDED_SENSORS,
                     default=self.excluded_sensors):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.excluded_sensors, mode='list', multiple=True)),
         vol.Optional('filter',
                     default=self.sensors_list_filter):
                     selector.TextSelector(),
         vol.Optional('filtered_sensors',
                     default=filtered_sensors_list_default):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=filtered_sensors_fname_list, mode='list', multiple=True)),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action_item)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })

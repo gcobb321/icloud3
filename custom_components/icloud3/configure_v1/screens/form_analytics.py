@@ -19,6 +19,7 @@ from ..                     import selection_lists as lists
 from homeassistant.helpers  import selector
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from ..zh_localize import localized_select_selector_config, localized_multi_select
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -45,14 +46,14 @@ def form_analytics(self, user_input):
     return vol.Schema({
         vol.Optional(CONF_ANALYTICS_ENABLED,
                     default=ah_default):
-                    cv.multi_select([ANALYTICS_ENABLED_HDR]),
+                    localized_multi_select([ANALYTICS_ENABLED_HDR]),
         vol.Optional(CONF_ANALYTICS_COMMENT,
                     default=comment):
                     selector.TextSelector(),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -76,12 +77,12 @@ def form_analytics_reports(self, user_input):
     return vol.Schema({
         vol.Optional('report_selected',
                     default=self.analytic_reports_by_name[default_report]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=report_names,
                         mode='dropdown')),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })

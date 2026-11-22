@@ -16,6 +16,7 @@
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 from .global_variables  import GlobalVariables as Gb
+from .sensor_name_localize import localized_sensor_name
 from .const             import (DOMAIN, PLATFORM_SENSOR, ICLOUD3,
                                 SENSOR_EVENT_LOG_NAME, SENSOR_ALERTS_NAME, SENSOR_WAZEHIST_TRACK_NAME,
                                 ALERT_CRITICAL, ALERT_OTHER,
@@ -708,6 +709,9 @@ class DeviceSensor_Base():
             self.sensor_fname    = (f"{conf_device[FNAME]} "
                                     f"{self._get_sensor_definition(sensor_base, SENSOR_FNAME)}"
                                     f"{self.from_zone_fname}")
+            self.sensor_display_name = (f"{conf_device[FNAME]} "
+                                        f"{localized_sensor_name(self._get_sensor_definition(sensor_base, SENSOR_FNAME), self.hass)}"
+                                        f"{self.from_zone_fname}")
 
             self._attr_native_unit_of_measurement = None
 
@@ -732,7 +736,7 @@ class DeviceSensor_Base():
     @property
     def name(self):
         ''' Sensor friendly name '''
-        return self.sensor_fname
+        return self.sensor_display_name
 
     @property
     def devicename_sensor(self):
@@ -996,11 +1000,14 @@ class DeviceSensor_Base():
         self.sensor_fname =(f"{new_fname} "
                             f"{self._get_sensor_definition(self.sensor, SENSOR_FNAME)}"
                             f"{self.from_zone_fname}")
+        self.sensor_display_name = (f"{new_fname} "
+                                    f"{localized_sensor_name(self._get_sensor_definition(self.sensor_base, SENSOR_FNAME), self.hass)}"
+                                    f"{self.from_zone_fname}")
 
         log_info_msg(f"Sensor Entity Changed ({self.entity_id}), {self.sensor_fname}")
 
         kwargs = {}
-        kwargs['original_name'] = self.sensor_fname
+        kwargs['original_name'] = self.sensor_display_name
         kwargs['disabled_by']   = None
 
         # entity_registry = er.async_get(Gb.hass)
@@ -1553,6 +1560,7 @@ class iCloud3Sensor_Base():
         self.sensor          = sensor
 
         self.fname           = ICLOUD3_SENSORS[sensor]
+        self.display_fname   = localized_sensor_name(self.fname, self.hass)
 
         self._device         = DOMAIN
         self.entity_name     = sensor
@@ -1582,7 +1590,7 @@ class iCloud3Sensor_Base():
     @property
     def name(self):
         '''Sensor friendly name.'''
-        return self.fname
+        return self.display_fname
 
     @property
     def unique_id(self):

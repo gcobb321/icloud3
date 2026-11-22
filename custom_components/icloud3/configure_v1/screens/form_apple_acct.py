@@ -23,6 +23,7 @@ from homeassistant.helpers  import (selector,
                                     device_registry as dr,)
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from ..zh_localize import localized_select_selector_config, localized_multi_select
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -73,17 +74,17 @@ def form_apple_accounts(self):
     return vol.Schema({
         vol.Optional('data_source_apple_acct',
                     default=apple_acct_used_default):
-                    cv.multi_select([APPLE_ACCT_USED_HEADER]),
+                    localized_multi_select([APPLE_ACCT_USED_HEADER]),
         vol.Optional('apple_accts',
                     default=default_item):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.apple_acct_items_displayed, mode='list')),
         # vol.Optional('data_source_mobapp',
         #             default=mobile_app_used_default):
-        #             cv.multi_select([MOBILE_APP_USED_HEADER]),
+        #             localized_multi_select([MOBILE_APP_USED_HEADER]),
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -123,12 +124,12 @@ def form_other_apple_acct_parameters(self):
 
         vol.Optional(CONF_SERVER_LOCATION,
                 default=utils_cf.option_parm_to_text(self, CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(localized_select_selector_config(
                     options=dict_value_to_list(APPLE_SERVER_LOCATION_OPTIONS), mode='dropdown')),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -218,7 +219,7 @@ def form_update_apple_acct(self):
     schema = ({
         vol.Optional('account_selected',
                     default=acct_info):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=[acct_info], mode='list')),
         # suggested_value, not default. A cleared field is not in user_input and HA
         # would fill in the default, the old (invalid) apple_id/password, it would
@@ -237,7 +238,7 @@ def form_update_apple_acct(self):
         schema.update({
             vol.Optional(CONF_SERVER_LOCATION,
                     default=utils_cf.option_parm_to_text(self, CONF_SERVER_LOCATION, APPLE_SERVER_LOCATION_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(APPLE_SERVER_LOCATION_OPTIONS), mode='dropdown')),
         })
 
@@ -247,7 +248,7 @@ def form_update_apple_acct(self):
                     cv.boolean,
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -275,18 +276,18 @@ def form_delete_apple_acct(self):
     return vol.Schema({
         vol.Optional('account_selected',
                     default=acct_info):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=[acct_info], mode='list')),
         vol.Required('device_action',
                     default=DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS[default_device_action]):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(
+                        localized_select_selector_config(
                             options=dict_value_to_list(DELETE_APPLE_ACCT_DEVICE_ACTION_OPTIONS),
                             mode='list')),
         vol.Required('action_items',
                     default=utils_cf.default_action_text('cancel_goto_previous')):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+                        localized_select_selector_config(options=self.actions_list, mode='list')),
         })
 
 
@@ -333,28 +334,28 @@ def form_import_apple_devices(self, user_input=None, aa_apple_id=None):
         schema.update({
             vol.Optional('imported_aadevices_track',
                     default=default_imported_aadevices_track):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=imported_aadevices_track,
                         multiple=True, mode='list')),})
     if isnot_empty(imported_aadevices_monitor):
         schema.update({
             vol.Optional('imported_aadevices_monitor',
                     default=default_imported_aadevices_monitor):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=imported_aadevices_monitor,
                         multiple=True, mode='list')),})
     if isnot_empty(imported_aadevices_inactive):
         schema.update({
             vol.Optional('imported_aadevices_inactive',
                     default=[]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=imported_aadevices_inactive,
                         multiple=True, mode='list')),})
 
     schema.update({
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),})
 
     return vol.Schema(schema)

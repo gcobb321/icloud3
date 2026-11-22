@@ -19,6 +19,7 @@ from homeassistant.helpers  import (selector,
                                     device_registry as dr,)
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from ..zh_localize import localized_select_selector_config, localized_multi_select
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
@@ -55,7 +56,7 @@ def form_user_reinstall(self):
     return vol.Schema({
         vol.Required('action_items',
                 default=REINSTALL_ACTIONS[0]):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(localized_select_selector_config(
                     options=REINSTALL_ACTIONS, mode='list')),
         })
 
@@ -104,10 +105,10 @@ def form_menu(self):
     return vol.Schema({
         vol.Optional("menu_items",
                     default=default_menu_item):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=menu_items, mode='list')),
         vol.Optional("action_items"):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=action_items, mode='list')),
                         #options=dict_value_to_list(action_items), mode='list')),
         })
@@ -135,11 +136,11 @@ def form_confirm_action(self, action_items=None):
         return vol.Schema({
             vol.Required('action_desc',
                     default=action_desc):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=[action_desc], mode='list')),
             vol.Required('action_items',
                     default=actions_list[actions_list_default]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=actions_list, mode='list')),
             })
     except Exception as err:
@@ -169,6 +170,6 @@ def form_confirm_action(self, action_items=None):
 #     return vol.Schema({
 #         vol.Required('action_items',
 #                     default=utils_cf.default_action_text('exit')):
-#                     selector.SelectSelector(selector.SelectSelectorConfig(
+#                     selector.SelectSelector(localized_select_selector_config(
 #                         options=self.actions_list, mode='list')),
 #         })
