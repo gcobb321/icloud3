@@ -30,6 +30,7 @@ from homeassistant.util     import slugify
 from homeassistant.helpers  import selector
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from ..zh_localize import localized_select_selector_config, localized_multi_select
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -87,11 +88,11 @@ def form_device_list(self):
     return vol.Schema({
             vol.Required('devices',
                         default=default_item):
-                        selector.SelectSelector(selector.SelectSelectorConfig(
+                        selector.SelectSelector(localized_select_selector_config(
                             options=self.device_items_displayed, mode='list')),
             vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
     })
 
@@ -236,15 +237,15 @@ def form_update_device(self):
                     selector.TextSelector(),
         vol.Optional('apple_devices_list_key',
                     default=apple_devices_list_text):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(self.icloud_list_text_by_fname), mode='dropdown')),
         vol.Optional(CONF_MOBILE_APP_DEVICE,
                     default=default_mobile_app_device):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(mobapp_list_text_by_entity_id), mode='dropdown')),
         vol.Optional(CONF_PICTURE,
                     default=default_picture_filename):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(_picture_by_filename), mode='dropdown')),
         }
     if utils_cf.parm_or_device(self, CONF_PICTURE) == 'None':
@@ -256,14 +257,14 @@ def form_update_device(self):
     schema.update({
         vol.Optional(CONF_TRACKING_MODE,
                     default=utils_cf.option_parm_to_text(self, CONF_TRACKING_MODE, TRACKING_MODE_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(TRACKING_MODE_OPTIONS), mode='dropdown')),
         })
 
     schema.update({
         vol.Required('action_items',
                 default=utils_cf.default_action_text('save')):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(localized_select_selector_config(
                     options=self.actions_list, mode='list')),
         })
 
@@ -292,7 +293,7 @@ def form_update_other_device_parameters(self):
                     selector.TextSelector(),
             vol.Optional(CONF_DEVICE_TYPE,
                     default=utils_cf.option_parm_to_text(self, CONF_DEVICE_TYPE, DEVICE_TYPE_NAMES)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(DEVICE_TYPE_NAMES), mode='dropdown')),
             vol.Required(CONF_INZONE_INTERVAL,
                     default=self.conf_device[CONF_INZONE_INTERVAL]):
@@ -304,19 +305,19 @@ def form_update_other_device_parameters(self):
                         min=0, max=480, step=5, unit_of_measurement='minutes')),
             vol.Optional(CONF_LOG_ZONES,
                     default=utils_cf.parm_or_device(self, CONF_LOG_ZONES)):
-                    cv.multi_select(six_item_dict(log_zones_key_text)),
+                    localized_multi_select(six_item_dict(log_zones_key_text)),
             vol.Required(CONF_TRACK_FROM_ZONES,
                     default=utils_cf.parm_or_device(self, CONF_TRACK_FROM_ZONES)):
-                    cv.multi_select(six_item_dict(self.zone_name_key_text)),
+                    localized_multi_select(six_item_dict(self.zone_name_key_text)),
             vol.Optional(CONF_TRACK_FROM_BASE_ZONE,
                     default=utils_cf.option_parm_to_text(self, CONF_TRACK_FROM_BASE_ZONE,
                                                 self.zone_name_key_text, conf_device=True)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(self.zone_name_key_text), mode='dropdown')),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text('save')):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -367,33 +368,33 @@ def form_picture_dir_filter(self):
     schema = {
         vol.Required('www_group_1',
                     default=conf_www_group_1):
-                    cv.multi_select(www_group_1)}
+                    localized_multi_select(www_group_1)}
 
     if isnot_empty(www_group_2):
         schema.update({
             vol.Required('www_group_2',
                     default=conf_www_group_2):
-                    cv.multi_select(www_group_2),})
+                    localized_multi_select(www_group_2),})
     if isnot_empty(www_group_3):
         schema.update({
             vol.Required('www_group_3',
                     default=conf_www_group_3):
-                    cv.multi_select(www_group_3),})
+                    localized_multi_select(www_group_3),})
     if isnot_empty(www_group_4):
         schema.update({
             vol.Required('www_group_4',
                     default=conf_www_group_4):
-                    cv.multi_select(www_group_4),})
+                    localized_multi_select(www_group_4),})
     if isnot_empty(www_group_5):
         schema.update({
             vol.Required('www_group_5',
                     default=conf_www_group_5):
-                    cv.multi_select(www_group_5),})
+                    localized_multi_select(www_group_5),})
 
     schema.update({
         vol.Required('action_items',
                 default=utils_cf.default_action_text('save')):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(localized_select_selector_config(
                     options=self.actions_list, mode='list')),})
 
     return vol.Schema(schema)
@@ -408,11 +409,11 @@ def form_change_device_order(self):
     return vol.Schema({
         vol.Required('device_desc',
                     default=self.cdo_devicenames[self.cdo_curr_idx]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.cdo_devicenames, mode='list')),
         vol.Required('action_items',
                     default=utils_cf.default_action_text(self.actions_list_default)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })
 
@@ -444,10 +445,10 @@ def form_review_inactive_devices(self, start_cnt=None):
     return vol.Schema({
         vol.Required('inactive_devices',
                     default=['none']):
-                    cv.multi_select(six_item_dict(self.inactive_devices_key_text)),
+                    localized_multi_select(six_item_dict(self.inactive_devices_key_text)),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=self.actions_list, mode='list')),
         })

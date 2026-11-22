@@ -20,6 +20,7 @@ from ..                     import selection_lists as lists
 from homeassistant.helpers  import selector
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from ..zh_localize import localized_select_selector_config, localized_multi_select
 
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -47,7 +48,7 @@ def form_tools(self, user_input):
         vol.Required('action_items',
                     default=TOOL_LIST[default_action]):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+                        localized_select_selector_config(options=self.actions_list, mode='list')),
         })
 
 
@@ -69,16 +70,16 @@ def form_log_level(self):
     return vol.Schema({
         vol.Optional(CONF_LOG_LEVEL,
                     default=utils_cf.option_parm_to_text(self, CONF_LOG_LEVEL, LOG_LEVEL_OPTIONS)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=dict_value_to_list(LOG_LEVEL_OPTIONS), mode='dropdown')),
         vol.Required(CONF_LOG_LEVEL_DEVICES,
                     default=Gb.conf_general[CONF_LOG_LEVEL_DEVICES]):
-                    cv.multi_select(six_item_dict(self.log_level_devices_key_text)),
+                    localized_multi_select(six_item_dict(self.log_level_devices_key_text)),
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
                     selector.SelectSelector(
-                        selector.SelectSelectorConfig(options=self.actions_list, mode='list')),
+                        localized_select_selector_config(options=self.actions_list, mode='list')),
         })
 
 
@@ -147,7 +148,7 @@ def form_cleanup_entity_registry(self, user_input=None):
         schema.update({
             vol.Required(status,
                     default=checked_device_sensors[status]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(localized_select_selector_config(
                         options=selected_devicename_by_status[status],
                         multiple=True,
                         mode='list'))})
@@ -155,7 +156,7 @@ def form_cleanup_entity_registry(self, user_input=None):
     schema.update({
         vol.Required('action_items',
                 default=utils_cf.default_action_text('delete_device_sensors')):
-                selector.SelectSelector(selector.SelectSelectorConfig(
+                selector.SelectSelector(localized_select_selector_config(
                     options=utils_cf.actions_list(self), mode='list')),})
 
     return vol.Schema(schema)

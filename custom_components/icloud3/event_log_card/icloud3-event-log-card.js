@@ -23,7 +23,175 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
+const ICLOUD3_EVENT_LOG_TRANSLATIONS = {
+  "zh-Hans": {
+    "menu": {
+      "iCloud3 Event Log": "iCloud3 事件日志",
+      "Actions": "操作",
+      "🔄 Restart iCloud3": "🔄 重启 iCloud3",
+      "🛑 Pause Tracking": "🛑 暂停跟踪",
+      "✅ Resume Tracking": "✅ 恢复跟踪",
+      "______ ALL DEVICES ______": "______ 所有设备 ______",
+      "______ SELECTED DEVICE ______": "______ 所选设备 ______",
+      "______ EVENT LOG ______": "______ 事件日志 ______",
+      "______ OTHER ACTIONS ______": "______ 其他操作 ______",
+      "______ VERSION INFO ______": "______ 版本信息 ______",
+      "__ALL DEVICES__": "__所有设备__",
+      "_SELECTED DEV_": "_所选设备_",
+      "__EVENT LOG __": "__事件日志__",
+      "___ OTHER ___": "___ 其他 ___",
+      "___VERSION ___": "___版本___",
+      "• Pause Tracking": "• 暂停跟踪",
+      "• Resume Tracking": "• 恢复跟踪",
+      "• Update Location from iCloud": "• 从 iCloud 更新位置",
+      "• Update Location from Mobile App": "• 从移动应用更新位置",
+      "• Send Find-My-iPhone Alert": "• 发送“查找 iPhone”提醒",
+      "• Export Event Log": "• 导出事件日志",
+      "• Show Apple Device RawData Traffic": "• 显示 Apple 设备原始数据流量",
+      "• Hide Apple Device RawData Traffic": "• 隐藏 Apple 设备原始数据流量",
+      "• Show Startup Log, Errors and Alerts": "• 显示启动日志、错误和提醒",
+      "• Start Debug Logging": "• 开始调试日志",
+      "• Stop Debug Logging": "• 停止调试日志",
+      "• Start Rawdata Logging": "• 开始原始数据日志",
+      "• Stop Rawdata Logging": "• 停止原始数据日志",
+      "• WazeHist-Recalculate Route Time/Dist": "• 重新计算 Waze 历史路线时间和距离",
+      "• WazeHist-Load Track Locations for Map": "• 在地图加载 Waze 历史轨迹",
+      "Setup": "设置",
+      "Select Person": "选择人员",
+      "+ 0 Devices": "+ 0 台设备"
+    },
+    "log": {
+      "iCloud3 is Starting": "iCloud3 正在启动",
+      "Please wait": "请稍候",
+      "Low Battery": "电量低",
+      "Offline": "离线",
+      "Reusing Stationary Zone": "复用静止区域",
+      "No GPS Data": "无 GPS 数据",
+      "RetryAt": "下次重试",
+      "Waze Route Service": "Waze 路线服务",
+      "Removed HA Zone": "移除 HA 区域",
+      "HA Zone Deleted": "HA 区域已删除",
+      "Current Time": "当前时间",
+      "iCloud Loc": "iCloud 定位",
+      "Resume Tracking": "恢复跟踪",
+      "Pause Tracking": "暂停跟踪",
+      "Results": "结果",
+      "Status": "状态",
+      "Action": "操作",
+      "Resuming": "恢复中",
+      "Since": "自",
+      "since": "自",
+      "min ago": "分钟前",
+      "mins": "分钟",
+      "min)": "分钟)",
+      "seconds": "秒",
+      "second": "秒"
+    }
+  },
+  "zh-Hant": {
+    "menu": {
+      "iCloud3 Event Log": "iCloud3 事件日誌",
+      "Actions": "操作",
+      "🔄 Restart iCloud3": "🔄 重啟 iCloud3",
+      "🛑 Pause Tracking": "🛑 暫停追蹤",
+      "✅ Resume Tracking": "✅ 恢復追蹤",
+      "______ ALL DEVICES ______": "______ 所有裝置 ______",
+      "______ SELECTED DEVICE ______": "______ 所選裝置 ______",
+      "______ EVENT LOG ______": "______ 事件日誌 ______",
+      "______ OTHER ACTIONS ______": "______ 其他操作 ______",
+      "______ VERSION INFO ______": "______ 版本資訊 ______",
+      "__ALL DEVICES__": "__所有裝置__",
+      "_SELECTED DEV_": "_所選裝置_",
+      "__EVENT LOG __": "__事件日誌__",
+      "___ OTHER ___": "___ 其他 ___",
+      "___VERSION ___": "___版本___",
+      "• Pause Tracking": "• 暫停追蹤",
+      "• Resume Tracking": "• 恢復追蹤",
+      "• Update Location from iCloud": "• 從 iCloud 更新位置",
+      "• Update Location from Mobile App": "• 從移動應用更新位置",
+      "• Send Find-My-iPhone Alert": "• 傳送“查詢 iPhone”提醒",
+      "• Export Event Log": "• 匯出事件日誌",
+      "• Show Apple Device RawData Traffic": "• 顯示 Apple 裝置原始資料流量",
+      "• Hide Apple Device RawData Traffic": "• 隱藏 Apple 裝置原始資料流量",
+      "• Show Startup Log, Errors and Alerts": "• 顯示啟動日誌、錯誤和提醒",
+      "• Start Debug Logging": "• 開始除錯日誌",
+      "• Stop Debug Logging": "• 停止除錯日誌",
+      "• Start Rawdata Logging": "• 開始原始資料日誌",
+      "• Stop Rawdata Logging": "• 停止原始資料日誌",
+      "• WazeHist-Recalculate Route Time/Dist": "• 重新計算 Waze 歷史路線時間和距離",
+      "• WazeHist-Load Track Locations for Map": "• 在地圖載入 Waze 歷史軌跡",
+      "Setup": "設定",
+      "Select Person": "選擇人員",
+      "+ 0 Devices": "+ 0 部裝置"
+    },
+    "log": {
+      "iCloud3 is Starting": "iCloud3 正在啟動",
+      "Please wait": "請稍候",
+      "Low Battery": "電量低",
+      "Offline": "離線",
+      "Reusing Stationary Zone": "複用靜止區域",
+      "No GPS Data": "無 GPS 資料",
+      "RetryAt": "下次重試",
+      "Waze Route Service": "Waze 路線服務",
+      "Removed HA Zone": "移除 HA 區域",
+      "HA Zone Deleted": "HA 區域已刪除",
+      "Current Time": "當前時間",
+      "iCloud Loc": "iCloud 定位",
+      "Resume Tracking": "恢復追蹤",
+      "Pause Tracking": "暫停追蹤",
+      "Results": "結果",
+      "Status": "狀態",
+      "Action": "操作",
+      "Resuming": "恢復中",
+      "Since": "自",
+      "since": "自",
+      "min ago": "分鐘前",
+      "mins": "分鐘",
+      "min)": "分鐘)",
+      "seconds": "秒",
+      "second": "秒"
+    }
+  }
+};
+
 class iCloud3EventLogCard extends HTMLElement {
+
+    _translations() {
+        const language = this._hass?.locale?.language || this._hass?.language || ''
+        if (language === 'zh-Hant' || /^zh[-_](TW|HK|MO)$/i.test(language)) {
+            return ICLOUD3_EVENT_LOG_TRANSLATIONS['zh-Hant']
+        }
+        if (language === 'zh-Hans' || language === 'zh' || /^zh[-_]CN$/i.test(language)) {
+            return ICLOUD3_EVENT_LOG_TRANSLATIONS['zh-Hans']
+        }
+        return null
+    }
+
+    _localizeLogText(text) {
+        const phrases = this._translations()?.log
+        if (!phrases) return text
+        // The sensor and its stored records remain English; translate display only.
+        for (const [english, chinese] of Object.entries(phrases)) {
+            text = text.replaceAll(english, chinese)
+        }
+        return text
+    }
+
+    _localizeActionOptions() {
+        const root = this.shadowRoot
+        const menu = this._translations()?.menu
+        const title = root.getElementById('title')
+        if (title) title.textContent = menu?.['iCloud3 Event Log'] || 'iCloud3 Event Log'
+        const action = root.getElementById('btnAction')
+        if (!action) return
+        for (const option of action.options) {
+            // Dynamic options are reset to English by _setupActionOptText.
+            if (!option.dataset.originalText || ICLOUD3_EVENT_LOG_TRANSLATIONS['zh-Hans'].menu[option.text]) {
+                option.dataset.originalText = option.text
+            }
+            option.text = menu?.[option.dataset.originalText] || option.dataset.originalText
+        }
+    }
 
     constructor() {
         super()
@@ -1493,10 +1661,15 @@ class iCloud3EventLogCard extends HTMLElement {
                 this._classListRemove('statusMsgPopup', 'statusMsgPopupHidden')
             }
 
-            if (!statusTime.innerText.includes(updateTime)) {
+            const language = hass.locale?.language || hass.language || ''
+            const languageChanged = language !== this._displayLanguage
+            this._displayLanguage = language
+            if (languageChanged) this._logRecdCnt = -1
+            if (!statusTime.innerText.includes(updateTime) || languageChanged) {
                 this._setupButtonNames()        // refresh device names
                 this._setupEventLogTable('hass')
             }
+            this._localizeActionOptions()
             if (this._versionSentFlag == null) {
                 this._versionSentFlag = false
             }
@@ -1532,7 +1705,7 @@ class iCloud3EventLogCard extends HTMLElement {
                     if (this._thisButtonId == "setup") {
                         statusMsgPopup.innerHTML = msgNotRunning
                     } else {
-                        statusMsgPopup.innerHTML = msgStarting
+                        statusMsgPopup.innerHTML = this._localizeLogText(msgStarting)
                     }
                     this._classListRemove('statusMsgPopup', 'statusMsgPopupHidden')
                 } else if (!err.message.includes('undefined')) {
@@ -2263,7 +2436,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 logTableHTML += '<tr class = "eltRow">'
                 logTableHTML += '<td class="' + classTime + '">' + tTime + '</td>'
                 logTableHTML += '</td>'
-                logTableHTML += '<td class="' + classText + '">' + tText + '</td>'
+                logTableHTML += '<td class="' + classText + '">' + this._localizeLogText(tText) + '</td>'
                 // logTableHTML += '<td class="' + classText + '"; colspan="5">' + tText + '</td>'
                 logTableHTML += '</tr>'
 
@@ -2285,6 +2458,7 @@ class iCloud3EventLogCard extends HTMLElement {
         const statusName    = root.getElementById("statusName")
 
         this._setupActionOptText(2207)
+        this._localizeActionOptions()
 
         if (statusName.classList.contains('errorAlertMsg')) {
             'pass'
@@ -2586,7 +2760,7 @@ class iCloud3EventLogCard extends HTMLElement {
                 this._hass.callService("icloud3", "action",
                     {
                         command: actionValue,
-                        action_fname: btnAction.options[actionIndex].innerText,
+                        action_fname: btnAction.options[actionIndex].dataset.originalText || btnAction.options[actionIndex].innerText,
                         device_name: actionDevicename
                     })
             }
@@ -2596,7 +2770,7 @@ class iCloud3EventLogCard extends HTMLElement {
             this._hass.callService("icloud3", "action",
                 {
                     command: actionValue,
-                    action_fname: btnAction.options[actionIndex].innerText
+                    action_fname: btnAction.options[actionIndex].dataset.originalText || btnAction.options[actionIndex].innerText
                 })
 
             if (actionValue == "restart") {
