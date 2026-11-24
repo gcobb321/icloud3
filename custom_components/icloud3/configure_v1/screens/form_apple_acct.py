@@ -160,10 +160,9 @@ def form_update_apple_acct(self):
     # is displayed instead of the devices & sensors menu. Change the rtn_apple_acct list
     # action item to the main menu. If the menu is selected without entering a apple_id/password,
     # disable the iCloud data source until one is entered.
-    # if Gb.conf_profile[CONF_VERSION] == 0:
     if is_empty(Gb.conf_apple_accounts) and self.is_repair_flow is False:
-        self.actions_list.remove(ACTION_LIST_OPTIONS['rtn_apple_accounts'])
-        self.actions_list.append(ACTION_LIST_OPTIONS['menu'])
+        list_del(self.actions_list, ACTION_LIST_OPTIONS['rtn_apple_accounts'])
+        list_add(self.actions_list, ACTION_LIST_OPTIONS['menu'])
 
     if Gb.internet_error:
         default_action = 'cancel_goto_previous'

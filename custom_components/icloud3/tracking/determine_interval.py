@@ -40,7 +40,8 @@ from ..const_config         import (ZONE, ZONE_INFO, ZONE_ENTER_SECS, ZONE_EXIT_
                                     DIR_OF_TRAVEL, MOVED_DISTANCE, LAST_LOCATED, LAST_UPDATE,
                                     NEXT_UPDATE, CONF_AWAY_TIME_ZONE_1_DEVICES,
                                     CONF_AWAY_TIME_ZONE_2_DEVICES, CONF_SENSORS_MONITORED_DEVICES, )
-from ..const_char           import (LT, RED_X, RARROW, CRLF_DOT, CRLF, HOME_ICON, BATTERY_ICON, BATTERY_ICON_LOW,
+from ..const_char           import (LT, RED_X, RARROW, CRLF_DOT, CRLF, HOME_ICON, HOME_ALT_ICON,
+                                    BATTERY_ICON, BATTERY_ICON_LOW,
                                     NEAR_DEVICE_USEABLE_SYM, )
 
 from ..utils.utils          import (instr, is_between, round_to_zero, is_zone, is_statzone, isnot_zone,
@@ -429,10 +430,15 @@ def determine_interval(Device, FromZone):
                 and isin_zone_home):
             _reset_away_time_zone(Device)
 
-        if isin_zone_home and Device.is_tracked:
-            Device.set_button_suffix_icon(HOME_ICON, add_char=True)
-        elif instr(Device.evlog_button_suffix_icon, HOME_ICON):
-            Device.set_button_suffix_icon(HOME_ICON, remove_char=True)
+        if Device.is_tracked:
+            if isin_zone_home:
+                Device.set_button_suffix_icon(HOME_ICON, add_char=True)
+            elif Device.loc_data_zone == Device.track_from_base_zone:
+                Device.set_button_suffix_icon(HOME_ALT_ICON, add_char=True)
+            elif instr(Device.evlog_button_suffix_icon, HOME_ICON):
+                Device.set_button_suffix_icon(HOME_ICON, remove_char=True)
+            elif instr(Device.evlog_button_suffix_icon, HOME_ALT_ICON):
+                Device.set_button_suffix_icon(HOME_ALT_ICON, remove_char=True)
 
         # Update all dates and other fields
         Device.loc_data_dist_moved_km = dist_moved_km
@@ -536,7 +542,6 @@ def _sensor_arrival_time(Device, FromZone):
 
     if Device.isin_zone and Device.FromZone_TrackFrom == FromZone:
         if Device.sensors[ZONE_ENTER_SECS] > 0:
-            # home_icon = HOME_ICON if Device.isin_zone_home else ''
             return f"@{secs_to_hhmm(Device.sensors[ZONE_ENTER_SECS])}"
 
         return f"@{secs_to_hhmm(Device.zone_change_secs)}"
@@ -1625,7 +1630,6 @@ def locate_nearby_device_after_zone_exit(Device):
     other nearby Devices that do not use the mobapp. If so, trigger a location update in
     2-minss to see if they also exited the zone.
     '''
-    # _evlog(Device, f"{Device.near_device_group=}")
     if Device.near_device_group == 0:
         return
 
@@ -1636,7 +1640,6 @@ def locate_nearby_device_after_zone_exit(Device):
                     and _Device.device_type in DEVICE_TYPES_CELL_SVC
                     and _Device.is_tracked)]
 
-    # _evlog(Device, f"{Device.near_device_group=} {nearby_non_mobapp_Devices=}")
     nearby_non_mobapp_device_fnames = ''
     if nearby_non_mobapp_Devices:
         for _Device in nearby_non_mobapp_Devices:
@@ -1684,10 +1687,6 @@ def set_nearby_devices_group():
             nearby_Devices = Gb.Devices_by_nearby_group.get(dev_group, [])
             list_add(nearby_Devices, Device)
             Gb.Devices_by_nearby_group[dev_group] = nearby_Devices
-
-# def log_near_device_groups():
-#     for dev_group, devices in Gb.Devices_by_nearby_group.items():
-#         _evlog(f"GROUPS {dev_group=} {devices=}")
 
 #--------------------------------------------------------------------------------
 def post_near_devices_msg(Device):

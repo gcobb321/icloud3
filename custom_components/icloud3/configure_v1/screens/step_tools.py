@@ -8,7 +8,7 @@ from ...const_config        import (CONF_LOG_LEVEL, CONF_LOG_LEVEL_DEVICES, DEFA
 
 from ...utils.utils         import (is_empty, isnot_empty, list_to_str, list_del, list_add, )
 from ...utils.rawdata_logging import (build_rawdata_devicename_filter_list, )
-from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg,
+from ...utils.messaging     import (_log, log_info_msg, log_exception, log_debug_msg, archive_ic3log_file,
                                     post_event, post_alert, post_greenbar_msg, update_alert_sensor,)
 
 
@@ -303,10 +303,11 @@ class OptionsFlow_Tools_Steps:
                 or len(user_input[CONF_LOG_LEVEL_DEVICES]) >= len(Gb.Devices)):
             user_input[CONF_LOG_LEVEL_DEVICES] = [TRACK]
 
-        # elif len(user_input[CONF_LOG_LEVEL_DEVICES]) > 1:
-        #     list_del(user_input[CONF_LOG_LEVEL_DEVICES], TRACK)
-
-        # Gb.log_level_devices = user_input[CONF_LOG_LEVEL_DEVICES].copy()
+        # If setting rawdata, reset log file and restart ic3
+        if (user_input[CONF_LOG_LEVEL] != Gb.conf_general[CONF_LOG_LEVEL]
+                and user_input[CONF_LOG_LEVEL].startswith('rawdata')):
+            await Gb.hass.async_add_executor_job(archive_ic3log_file)
+            list_add(self.config_parms_update_control, ['restart'])
 
         self._update_config_file_general(user_input)
         Gb.log_level_devices = build_rawdata_devicename_filter_list()

@@ -3,13 +3,14 @@
 from ..global_variables     import GlobalVariables as Gb
 from ..const                import (NOTIFY, EVLOG_NOTICE, DEVICE_TYPES, DEVICE_TRACKER, )
 from ..const_config         import (NEXT_UPDATE, CONF_IC3_DEVICENAME, CONF_MOBILE_APP_DEVICE, )
-from ..const_char           import (CRLF_DOT, CRLF, NBSP6, NL3D, RED_X, GREEN_ALERT, RARROW, )
+from ..const_char           import (CRLF_DOT, CRLF, NBSP6, NL3D, NL3_DATA, RED_X, GREEN_ALERT, RARROW, )
 from ..utils.utils          import (instr, is_empty, list_add, list_to_str, )
 from ..utils                import  file_io
+from ..utils                import  entity_reg_util as er_util
 from ..utils.messaging      import (post_event, post_alert, post_error_msg, post_greenbar_msg,
                                     log_info_msg, log_exception, log_debug_msg,
                                     _evlog, _log, )
-from ..utils.rawdata_logging import (log_data, log_data_unfiltered, )
+from ..utils.rawdata_logging import (shrink_item, )
 from ..utils.time_util      import (secs_to_time, secs_since, mins_since, secs_to_time, format_time_age,
                                     format_timer, time_now_secs)
 from homeassistant.helpers  import  entity_registry as er, device_registry as dr
@@ -19,6 +20,7 @@ import json
 # from homeassistant.components import ios
 # from homeassistant.components.ios import notify
 from homeassistant.util             import slugify
+from homeassistant.util             import dt as dt_util
 from homeassistant.components.mobile_app import notify as mobile_app_notify
 from homeassistant.components.notify import (
     ATTR_DATA,
@@ -28,6 +30,109 @@ from homeassistant.components.notify import (
     ATTR_TITLE_DEFAULT,
 )
 PUSH_URL = "https://ios-push.home-assistant.io/push"
+
+#--------------------------------------------------------------------
+def _device_reg_log_fields(device_reg_data):
+    '''
+    Return the HA DeviceEntry fields iCloud3 uses as a dict for logging. The
+    created_at/modified_at datetimes are converted to the local date/time.
+    '''
+    if device_reg_data is None:
+        return None
+
+    def _local_datetime(_datetime):
+        try:
+            return dt_util.as_local(_datetime).strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            return str(_datetime)
+
+    # Handles older HA versions with config_entries without the deprecation warning
+    return {'id':               shrink_item(device_reg_data.id),
+            'config_entry_id':  shrink_item(er_util.device_reg_config_entry_id(device_reg_data)),
+            'identifiers':      [(domain, shrink_item(identifier))
+                                    for domain, identifier in device_reg_data.identifiers],
+            'name':             device_reg_data.name,
+            'name_by_user':     device_reg_data.name_by_user,
+            'manufacturer':     device_reg_data.manufacturer,
+            'model':            device_reg_data.model,
+            'hw_version':       device_reg_data.hw_version,
+            'sw_version':       device_reg_data.sw_version,
+            'disabled_by':      (str(device_reg_data.disabled_by)
+                                    if device_reg_data.disabled_by else None),
+            'created_at':       _local_datetime(device_reg_data.created_at),
+            'modified_at':      _local_datetime(device_reg_data.modified_at),
+            }
+
+#--------------------------------------------------------------------
+# The ids and webhook_ids are shortened with rawdata_logging.shrink_item ('abcdef……uvwxyz')
+# so they can be matched between log records without logging all of it. Anyone with the
+# full webhook_id can post data to the HA Mobile App webhook.
+
+#--------------------------------------------------------------------
+def _is_mobapp_rawdata_logged():
+    '''
+    The MobApp setup records are logged during startup (HA or iCloud3 restart) at any
+    log level, like the Apple Acct login records, so a user can restart and send the
+    log file without changing the log level. After startup they need rawdata.
+    '''
+    return Gb.is_log_level_rawdata or Gb.is_icloud3_startup_inprocess
+
+#--------------------------------------------------------------------
+def log_mobapp_rawdata(title, data, rawdata_only=True):
+    '''
+    Write the MobApp setup data to the icloud3 log file during startup or when the log
+    level is rawdata. It is not passed through rawdata_logging.FILTER_FIELDS since that
+    drops most of the entity registry and config entry fields. Each dict item is on its
+    own line.
+
+    rawdata_only=False - Always log it (summary). Never pass a webhook_id that has not
+        been shortened with shrink_item.
+    '''
+    if rawdata_only and _is_mobapp_rawdata_logged() is False:
+        return
+
+    try:
+        if type(data) is dict:
+            log_msg = ''.join([f"{NL3_DATA}{k}={v}" for k, v in data.items()])
+        else:
+            log_msg = f"{NL3_DATA}{data}"
+
+        log_info_msg(f"{title.upper()}{log_msg}")
+
+    except Exception as err:
+        log_exception(err)
+
+#--------------------------------------------------------------------
+def _mobapp_config_entry_log_fields(config_entry):
+    '''
+    Return the mobile_app config entry fields that identify the app registration as a
+    dict for logging. A new registration (app reinstalled, server removed and added in
+    the app) creates a new config entry, webhook_id and device_tracker entity.
+    '''
+    if config_entry is None:
+        return None
+
+    data     = config_entry.data
+    app_data = data.get('app_data') or {}
+
+    return {'entry_id':         shrink_item(config_entry.entry_id),
+            'title':            config_entry.title,
+            'state':            str(config_entry.state),
+            'disabled_by':      (str(config_entry.disabled_by)
+                                    if config_entry.disabled_by else None),
+            'device_name':      data.get('device_name'),
+            'device_id':        shrink_item(data.get('device_id')),
+            'app_id':           data.get('app_id'),
+            'app_name':         data.get('app_name'),
+            'app_version':      data.get('app_version'),
+            'os_name':          data.get('os_name'),
+            'os_version':       data.get('os_version'),
+            'manufacturer':     data.get('manufacturer'),
+            'model':            data.get('model'),
+            'supports_encryption': data.get('supports_encryption'),
+            'push_notify':      bool(app_data.get('push_token') or app_data.get('push_url')),
+            'webhook_id':       shrink_item(data.get(CONF_WEBHOOK_ID)),
+            }
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #
 #   Cycle through HA entity registry and get mobile_app device info that
@@ -44,6 +149,29 @@ def get_entity_registry_mobile_app_devices():
     The sensors are found with an exact unique_id lookup so a sensor from another
     registration (old add/delete/add of the app) or another sensor with a similar
     name (watch_battery_level, volume_level_alarm) is never selected.
+
+    RawData:
+    _device_reg_data=DeviceEntry(config_entry_id='01KMMN6EY65GYAG21B3EPJ566N',
+    area_id=None, config_subentry_id=None,
+    created_at=datetime.datetime(2026, 3, 26, 8, 46, 53, 895557, tzinfo=datetime.timezone.utc), disabled_by=None, id='02839381d462bef3c724e3a88d5cb6b8',
+    identifiers={('mobile_app', 'D01C5CE4-0DDB-4352-BC08-FA3B5B22EABB')},
+    labels=set(), modified_at=datetime.datetime(2026, 10, 17, 9, 59, 37, 763846,
+    tzinfo=datetime.timezone.utc),
+    name_by_user='Gary-iPhone-app', name='Gary-iPhone',
+    _cache={...}, configuration_url=None, connections=set(), entry_type=None,
+    hw_version=None, composite_device_id=None, composite_primary_config_entry=None,
+    split_at=None, manufacturer='Apple', model='iPhone19,3', model_id=None,
+    has_composite_identifiers=False, serial_number=None, sw_version='27.0.1',
+    via_device_id=None, _pending_move=None, _composite_subentries=None)
+
+    Filtered:
+    _device_reg_data={'id': '02839381d462bef3c724e3a88d5cb6b8',
+    'config_entry_id': '01KMMN6EY65GYAG21B3EPJ566N',
+    'identifiers': [('mobile_app', 'D01C5CE4-0DDB-4352-BC08-FA3B5B22EABB')],
+    'name': 'Gary-iPhone', 'name_by_user': 'Gary-iPhone-app', 'model': 'iPhone19,3',
+    'manufacturer': 'Apple', 'hw_version': None, 'sw_version': '27.0.1',
+    'disabled_by': None,
+    'created_at': '2026-03-26 04:46:53', 'modified_at': '2026-10-17 05:59:37'}
     '''
     Gb.mobapp_id_by_mobapp_dname      = {}
     Gb.mobapp_dname_by_mobapp_id      = {}
@@ -66,16 +194,52 @@ def get_entity_registry_mobile_app_devices():
                                 if (entity.platform == 'mobile_app'
                                         and entity.domain == 'device_tracker')]
 
-        for dev_trkr_entity in dev_trkr_entities:
-            if dev_trkr_entity.device_id is None: continue
+        # All Mobile App registrations, including ones without a device_tracker entity
+        # and old ones left over from reinstalling the app
+        mobapp_config_entries = Gb.hass.config_entries.async_entries('mobile_app')
+        info_summary = {}       # Info level log - entity_id: setup result (no webhook_ids)
+        if _is_mobapp_rawdata_logged():
+            log_mobapp_rawdata(
+                    f"{NL3D}MobApp Integration - {len(mobapp_config_entries)} config entries, "
+                    f"{len(dev_trkr_entities)} device_tracker entities",
+                    {shrink_item(config_entry.entry_id): _mobapp_config_entry_log_fields(config_entry)
+                                        for config_entry in mobapp_config_entries})
 
+        for dev_trkr_entity in dev_trkr_entities:
             mobapp_dname = dev_trkr_entity.entity_id.replace('device_tracker.', '')
             device_id    = dev_trkr_entity.device_id
+
+            # Everything iCloud3 uses to identify and set up this MobApp device. It is
+            # logged when the device is set up or skipped (rawdata log level).
+            log_title  = f"{NL3D}MobApp device_tracker setup - <{mobapp_dname}>"
+            mobapp_log = {'entity': {
+                            'entity_id':        dev_trkr_entity.entity_id,
+                            'unique_id':        shrink_item(dev_trkr_entity.unique_id),
+                            'device_id':        shrink_item(device_id),
+                            'config_entry_id':  shrink_item(dev_trkr_entity.config_entry_id),
+                            'name':             dev_trkr_entity.name,
+                            'original_name':    dev_trkr_entity.original_name,
+                            'disabled_by':      (str(dev_trkr_entity.disabled_by)
+                                                    if dev_trkr_entity.disabled_by else None),
+                            'hidden_by':        (str(dev_trkr_entity.hidden_by)
+                                                    if dev_trkr_entity.hidden_by else None),
+                            }}
+
+            if device_id is None:
+                mobapp_log['result'] = 'SKIPPED - The device_tracker entity has no HA device_id'
+                info_summary[dev_trkr_entity.entity_id] = 'SKIPPED - No HA device_id'
+                log_mobapp_rawdata(log_title, mobapp_log)
+                continue
 
             # Disabled device_trackers are kept so the error can say it is disabled
             # instead of not found. They are not in the config_flow selection list.
             if dev_trkr_entity.disabled_by:
                 Gb.mobapp_id_by_disabled_mobapp_dname[mobapp_dname] = device_id
+                mobapp_log['result'] = ( 'SKIPPED - The device_tracker entity is disabled in HA, '
+                                        'not in the MobApp selection list')
+                info_summary[dev_trkr_entity.entity_id] = \
+                        f"SKIPPED - Disabled in HA ({dev_trkr_entity.disabled_by})"
+                log_mobapp_rawdata(log_title, mobapp_log)
                 continue
 
             raw_model = 'Unknown'
@@ -83,9 +247,9 @@ def get_entity_registry_mobile_app_devices():
             try:
                 # Get raw_model from HA device_registry
                 device_reg_data = device_registry.async_get(device_id)
-
-                log_title = (f"{NL3D}MobApp device_registry entry - <{mobapp_dname}>)")
-                log_data_unfiltered(log_title, str(device_reg_data)) #, is_log_level_rawdata=True)
+                if _is_mobapp_rawdata_logged():
+                    mobapp_log['device_reg'] = (_device_reg_log_fields(device_reg_data)
+                                                    or 'NOT FOUND in the HA Device Registry')
 
                 raw_model = device_reg_data.model
 
@@ -116,11 +280,31 @@ def get_entity_registry_mobile_app_devices():
             Gb.device_info_by_mobapp_dname[mobapp_dname] = \
                     [mobapp_fname, raw_model, device_type, model_display_name]    # Gary-iPhone, iPhone15,2; iPhone; iPhone 14 Pro
 
-            log_title = (f"MobApp entity_registry entry - <{mobapp_dname}>)")
-            log_data(log_title, dev_trkr_entity.as_partial_dict, is_log_level_rawdata=True)
+            mobapp_log['state'] = ({'state':         dev_trkr_state.state,
+                                    'friendly_name': dev_trkr_state.attributes.get('friendly_name'),
+                                    'last_updated':  dt_util.as_local(dev_trkr_state.last_updated)
+                                                        .strftime('%Y-%m-%d %H:%M:%S')}
+                                    if dev_trkr_state else 'NO STATE - The entity is not loaded in HA')
+            mobapp_log['device_info'] = {'mobapp_fname':       mobapp_fname,
+                                        'raw_model':          raw_model,
+                                        'device_type':        device_type,
+                                        'model_display_name': model_display_name}
 
             config_entry = Gb.hass.config_entries.async_get_entry(dev_trkr_entity.config_entry_id)
+            mobapp_log['config_entry'] = (_mobapp_config_entry_log_fields(config_entry)
+                                            or 'NOT FOUND - Orphaned entity, the Mobile App '
+                                                'registration was removed')
+
             if config_entry is None or CONF_WEBHOOK_ID not in config_entry.data:
+                mobapp_log['result'] = ( 'PARTIAL - The mobile_app config entry or webhook_id was '
+                                        'not found, the sensors and notify service can not be '
+                                        'matched to the device_tracker')
+                info_summary[dev_trkr_entity.entity_id] = (
+                        f"{mobapp_fname}, {model_display_name} ({raw_model}), "
+                        f"PARTIAL - MobApp config entry "
+                        f"{'not found' if config_entry is None else 'has no webhook_id'}, "
+                        f"no sensors or notify")
+                log_mobapp_rawdata(log_title, mobapp_log)
                 continue
 
             webhook_id = config_entry.data[CONF_WEBHOOK_ID]
@@ -132,12 +316,65 @@ def get_entity_registry_mobile_app_devices():
                 list_add(Gb.mobapp_dnames_watchos, mobapp_dname)
 
             # iOS-last_update_trigger, Android-last_update
-            _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id,
+            sensors_log = {}
+            sensors_log['last_update_trigger'] = \
+                _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id,
                                 Gb.last_updt_trig_by_mobapp_dname, ['last_update_trigger', 'last_update'])
-            _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id,
+            sensors_log['battery_level'] = \
+                _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id,
                                 Gb.battery_level_sensors_by_mobapp_dname, ['battery_level'])
-            _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id,
+            sensors_log['battery_state'] = \
+                _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id,
                                 Gb.battery_state_sensors_by_mobapp_dname, ['battery_state'])
+            mobapp_log['sensors'] = sensors_log
+
+            # A sensor was not found by its unique_id. List this registration's battery and
+            # update sensors with their unique_ids to see what HA actually has.
+            if (_is_mobapp_rawdata_logged()
+                    and [status for status in sensors_log.values() if status.startswith('NOT FOUND')]):
+                mobapp_log['config_entry_sensors'] = {
+                        entity.entity_id: (entity.unique_id.replace(f"{webhook_id}_", '<webhook_id>_')
+                                            + (f" (DISABLED-{entity.disabled_by})"
+                                                    if entity.disabled_by else ''))
+                        for entity in er.async_entries_for_config_entry(
+                                                entity_registry, config_entry.entry_id)
+                        if (entity.domain == 'sensor'
+                                and (instr(entity.unique_id, 'battery')
+                                    or instr(entity.unique_id, 'last_update')))} \
+                    or 'No battery or last_update sensors in this config entry'
+
+            mobapp_log['result'] = ( 'WATCHOS - Added to the MobApp selection list'
+                                    if mobapp_dname in Gb.mobapp_dnames_watchos
+                                    else 'Added to the MobApp selection list')
+            log_mobapp_rawdata(log_title, mobapp_log)
+
+            # 'sensor.x' --> OK, 'DISABLED - sensor.x' --> Disabled, 'NOT FOUND - ...' --> Not Found
+            sensor_status = {sensor: ('OK' if status.startswith('sensor.')
+                                        else status.split(' - ')[0].title())
+                                        for sensor, status in sensors_log.items()}
+            info_summary[dev_trkr_entity.entity_id] = (
+                    f"{mobapp_fname}, {model_display_name} ({raw_model}), "
+                    f"{config_entry.data.get('os_name')} {config_entry.data.get('os_version')}, "
+                    f"App-{config_entry.data.get('app_version')}, "
+                    f"Trigger-{sensor_status['last_update_trigger']}, "
+                    f"BatLevel-{sensor_status['battery_level']}, "
+                    f"BatState-{sensor_status['battery_state']}"
+                    f"{', watchOS' if mobapp_dname in Gb.mobapp_dnames_watchos else ''}")
+
+        # Mobile App registrations that do not have a device_tracker entity (location
+        # turned off in the app, or an old registration whose entity was deleted)
+        dev_trkr_entry_ids = [entity.config_entry_id for entity in dev_trkr_entities]
+        no_dev_trkr = [f"{entry.title} ({entry.data.get('device_name')})"
+                                for entry in mobapp_config_entries
+                                if entry.entry_id not in dev_trkr_entry_ids]
+        if no_dev_trkr:
+            info_summary['No device_tracker entity'] = list_to_str(no_dev_trkr)
+
+        log_mobapp_rawdata(
+                f"MobApp Integration > {len(mobapp_config_entries)} registrations, "
+                f"{len(dev_trkr_entities)} device_trackers",
+                info_summary or 'No Mobile App device_tracker entities',
+                rawdata_only=False)
 
         Gb.startup_lists['Gb.mobapp_id_by_mobapp_dname'] = {k: v for k, v in Gb.mobapp_id_by_mobapp_dname.items()}
         Gb.startup_lists['Gb.mobapp_dname_by_mobapp_id'] = {k: v for k, v in Gb.mobapp_dname_by_mobapp_id.items()}
@@ -162,7 +399,13 @@ def _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id, sensors_by_mob
     Gb.disabled_sensors_by_mobapp_dname[mobapp_dname][sensor_ids[0]] instead.
 
     Example: Gb.battery_level_sensors_by_mobapp_dname['gary_iphone_app'] = 'sensor.gary_iphone_app_battery_level'
+
+    Return - The result for the rawdata log:
+        'sensor.gary_iphone_app_battery_level' - Found and used
+        'DISABLED - sensor.gary_iphone_app_battery_level'
+        'NOT FOUND - unique_id <webhook_id>_battery_level'
     '''
+    disabled_entity_ids = []
     for sensor_id in sensor_ids:
         entity_id = entity_registry.async_get_entity_id('sensor', 'mobile_app',
                                                         f"{webhook_id}_{sensor_id}")
@@ -171,10 +414,17 @@ def _set_mobapp_sensor(entity_registry, mobapp_dname, webhook_id, sensors_by_mob
 
         if entity_registry.async_get(entity_id).disabled_by:
             Gb.disabled_sensors_by_mobapp_dname.setdefault(mobapp_dname, {})[sensor_ids[0]] = entity_id
+            disabled_entity_ids.append(entity_id)
             continue
 
         sensors_by_mobapp_dname[mobapp_dname] = entity_id
-        return
+        return entity_id
+
+    if disabled_entity_ids:
+        return f"DISABLED - {list_to_str(disabled_entity_ids)}"
+
+    unique_ids = [f"<webhook_id>_{sensor_id}" for sensor_id in sensor_ids]
+    return f"NOT FOUND - unique_id {list_to_str(unique_ids)}"
 
 #-----------------------------------------------------------------------------------------------------
 def _get_mobile_app_notify_devices():
@@ -198,6 +448,23 @@ def _get_mobile_app_notify_devices():
     notify_targets = mobapp_notify_service.registered_targets
     mobapp_fname_targets = mobapp_notify_service.targets
     Gb.mobile_app_notify_devicenames = list(mobapp_fname_targets.keys())
+
+    # targets are the registrations with a push token {device_name: webhook_id}. The
+    # webhook_id is matched to the device_tracker's config entry
+    # (Gb.mobapp_dname_by_webhook_id) in setup_notify_service_name_for_mobapp_devices.
+    # registered_targets are the notify.mobile_app_<name> services HA set up.
+    # Also logged after startup when the targets are found. icloud3_main only retries this
+    # while there are no targets so it is logged once (the delayed setup after HA starts).
+    log_mobapp_rawdata(
+            f"{NL3D}MobApp Notify Service targets",
+            {'targets':             {device_name: shrink_item(webhook_id)
+                                        for device_name, webhook_id in mobapp_fname_targets.items()},
+             'registered_targets':  list(notify_targets.keys()),
+             'device_tracker_webhook_ids':
+                                    {shrink_item(webhook_id): mobapp_dname
+                                        for webhook_id, mobapp_dname in Gb.mobapp_dname_by_webhook_id.items()},
+            },
+            rawdata_only=is_empty(mobapp_fname_targets))
 
     if is_empty(notify_targets):
         log_info_msg("Mobile App Notify Service has not been set up yet. iCloud3 will retry later.")
@@ -236,9 +503,12 @@ def setup_notify_service_name_for_mobapp_devices(post_evlog_msg=False):
     if Gb.conf_data_source_MOBAPP is False:
         return
 
+    notify_match_log = {}
     for mobapp_fname, webhook_id in notify_devices.items():
         mobapp_dname = Gb.mobapp_dname_by_webhook_id.get(webhook_id)
         if mobapp_dname is None:
+            notify_match_log[mobapp_fname] = (f"webhook_id {shrink_item(webhook_id)} > "
+                                            f"NO MobApp device_tracker with this webhook_id")
             continue
 
         notify_devicename = slugify(mobapp_fname)
@@ -246,6 +516,8 @@ def setup_notify_service_name_for_mobapp_devices(post_evlog_msg=False):
         if mobapp_id:
             Gb.mobapp_fnames_by_mobapp_id[mobapp_id] = mobapp_fname
 
+        notify_match_log[mobapp_fname] = (f"device_tracker.{mobapp_dname} > "
+                                        f"NOT USED by a monitored iCloud3 Device")
         for devicename, Device in Gb.Devices_by_devicename.items():
             if (Device.is_mobapp_monitored is False
                     or Device.mobapp[DEVICE_TRACKER] != f"device_tracker.{mobapp_dname}"):
@@ -255,7 +527,14 @@ def setup_notify_service_name_for_mobapp_devices(post_evlog_msg=False):
             Device.mobapp[NOTIFY] = f"mobile_app_{notify_devicename}"
             setup_msg+=(f"{CRLF_DOT}{Device.devicename_fname}{RARROW}"
                         f"{mobapp_fname} ({notify_devicename})")
+            notify_match_log[mobapp_fname] = (f"device_tracker.{mobapp_dname} > {devicename}, "
+                                            f"notify.{Device.mobapp[NOTIFY]}")
             break
+
+    # Info level, it may run every 5-secs while the notify service is not set up yet
+    if notify_match_log:
+        log_mobapp_rawdata(f"MobApp Notify Service > iCloud3 Device", notify_match_log,
+                            rawdata_only=False)
 
     if setup_msg and post_evlog_msg:
         post_event(f"Delayed MobApp Notifications Setup Completed > {setup_msg}")

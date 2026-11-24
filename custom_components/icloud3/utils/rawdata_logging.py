@@ -364,7 +364,7 @@ def shrink_item(v, k=None):
     if (type(v) is str
             and len(v) > 20
             and v.startswith('http') is False):
-        v = f"{v[:6]}……{v[-6:]}"
+        v = f"{v[:6]}……{v[-4:]}"
 
     return v
 

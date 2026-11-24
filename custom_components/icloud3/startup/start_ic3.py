@@ -2705,12 +2705,15 @@ def setup_tracked_devices_for_mobapp():
                     f"{len(Gb.conf_devices)} used by iCloud3")
 
     Gb.devicenames_x_mobapp_dnames = {}
+    match_log = {}      # Rawdata log - iCloud3 Device configured MobApp device > match result
     for devicename, Device in Gb.Devices_by_devicename.items():
 
         conf_mobapp_dname = Device.mobapp[DEVICE_TRACKER].replace(DEVICE_TRACKER_DOT, '')
         Gb.devicenames_x_mobapp_dnames[devicename] = None
+        match_log[devicename] = f"Configured-{Device.conf_device.get(CONF_MOBILE_APP_DEVICE)} > "
 
         if Device.is_mobapp_device_used is False:
+            match_log[devicename] += 'Not used'
             Device.initialize_mobapp_device_tracker_entity_name()
             continue
 
@@ -2722,8 +2725,10 @@ def setup_tracked_devices_for_mobapp():
                 mobapp_dname = conf_mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
+                match_log[devicename] += f"Matched-{mobapp_dname}"
 
             elif conf_mobapp_dname in Gb.mobapp_id_by_disabled_mobapp_dname:
+                match_log[devicename] += 'DISABLED in HA'
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_DISABLED_HA
                 Device.set_button_prefix_icon(YELLOW_WARNING)
                 Device.is_mobapp_device_unavailable = True
@@ -2745,13 +2750,19 @@ def setup_tracked_devices_for_mobapp():
                 repair_issue = True
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
                 Device.set_button_prefix_icon(YELLOW_WARNING)
+                match_log[devicename] += ( f"NOT FOUND, MobApp device_trackers-"
+                                            f"{list(Gb.mobapp_id_by_mobapp_dname.keys())}")
 
         else:
             mobapp_dname = _scan_for_for_mobapp_device( devicename, Device, conf_mobapp_dname)
             if mobapp_dname:
                 Gb.devicenames_x_mobapp_dnames[devicename]   = mobapp_dname
                 Gb.devicenames_x_mobapp_dnames[mobapp_dname] = devicename
+                match_log[devicename] += f"ScanFor matched-{mobapp_dname}"
             else:
+                match_log[devicename] += ( f"ScanFor NOT MATCHED (none or more than one), "
+                                            f"MobApp device_trackers-"
+                                            f"{list(Gb.mobapp_id_by_mobapp_dname.keys())}")
                 # _scan_for_for_mobapp_device posted the 'ScanFor Device Failed' repair issue
                 Device.status_msg[CONF_MOBILE_APP_DEVICE] = ERR_UNKNOWN
                 Device.set_button_prefix_icon(YELLOW_WARNING)
@@ -2811,6 +2822,7 @@ def setup_tracked_devices_for_mobapp():
                     details     = ( f"{CRLF_DOT}{Device.fname_devicename} > MobApp: {mobapp_dname}"),
                     repair_step = 'alert')
 
+            match_log[devicename] += f", MobApp device {mobapp_id} DISABLED in HA"
             continue
 
         # The sensors were matched to the device_tracker by its mobile_app config entry
@@ -2897,6 +2909,10 @@ def setup_tracked_devices_for_mobapp():
                                         battery_entity or f"device_tracker.{mobapp_dname}"
         Device.mobapp[BATTERY_STATUS] = Device.sensors['mobapp_sensor-battery_status'] = \
                                         Gb.battery_state_sensors_by_mobapp_dname.get(mobapp_dname, '')
+        match_log[devicename] += (  f", Verified-{mobapp_fname}, "
+                                    f"Trigger-{Device.mobapp[TRIGGER] or 'None'}, "
+                                    f"BatLevel-{Device.mobapp[BATTERY_LEVEL]}, "
+                                    f"BatState-{Device.mobapp[BATTERY_STATUS] or 'None'}")
 
 
 
@@ -2911,6 +2927,16 @@ def setup_tracked_devices_for_mobapp():
         # Remove the mobapp device from the list since we know it is tracked
         if mobapp_dname in unmatched_mobapp_devices:
             unmatched_mobapp_devices.pop(mobapp_dname)
+
+    # Inactive Devices are not in Gb.Devices_by_devicename but show their MobApp device
+    for conf_device in Gb.conf_devices:
+        if conf_device[CONF_IC3_DEVICENAME] not in match_log:
+            match_log[conf_device[CONF_IC3_DEVICENAME]] = (
+                    f"Configured-{conf_device.get(CONF_MOBILE_APP_DEVICE)} > "
+                    f"Not set up, Tracking Mode-{conf_device.get(CONF_TRACKING_MODE)}")
+
+    mobapp_interface.log_mobapp_rawdata("iCloud3 Device > MobApp device", match_log,
+                                        rawdata_only=False)
 
     mobapp_interface.setup_notify_service_name_for_mobapp_devices()
 

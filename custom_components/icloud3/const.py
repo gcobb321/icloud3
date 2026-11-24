@@ -9,7 +9,7 @@
 #                        This service will send a message to the selected device
 #
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-VERSION                         = '3.8.0'
+VERSION                         = '3.8.1'
 VERSION_BETA                    = ''
 #-----------------------------------------
 DOMAIN                          = 'icloud3'

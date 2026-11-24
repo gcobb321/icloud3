@@ -196,7 +196,7 @@ def _build_aa_auth_text_line(self, AppleAcct, conf_apple_acct):
 
     aa_text = ''
     if AppleAcct.terms_of_use_update_needed:
-        aa_text = f"{RED_ALERT}TERMS-OF-USE APPROVAL NEEDED, "
+        aa_text = f"{RED_ALERT}TERMS-OF-USE APPROVAL NEEDED{ITEM_SEP}"
     if (AppleAcct.current_auth_method in AppleAcct.auth_methods
             and AppleAcct.current_auth_method_value != ''):
         auth_method = AppleAcct.current_auth_method
@@ -500,7 +500,7 @@ async def build_icloud_device_selection_list(self, selected_devicename=None):
 
         #🍏 ⛔ 🍎
         available_line = (f"{'…'*6} {AppleAcct.account_owner} "
-                                    f"({AppleAcct.apple_user}), "
+                                    f"({AppleAcct.apple_user}){ITEM_SEP}"
                                     f"{assigned_cnt} of {devices_cnt} Assigned)")
         end_dots_len = longest_line_len-len(available_line)+10
         apple_id_hdr_available = {  f"{aa_idx_dots}hdr":
@@ -578,27 +578,27 @@ def get_icloud_devices_list_avail_used_this(aa_idx, AppleAcct, apple_acct_owner,
             AADev = AppleAcct.AADev_by_device_id[device_id]
             conf_apple_acct, conf_aa_idx = config_file.conf_apple_acct(AppleAcct.apple_id)
             locate_all_sym = '' if conf_apple_acct[CONF_LOCATE_ALL] else 'ⓧ '
-            family_device = ', FamilyDevice' if AADev.family_share_device else ''
+            family_device = f'{ITEM_SEP}FamilyDevice' if AADev.family_share_device else ''
             if family_device  and locate_all_sym:
                 family_device = 'FamilyDevice, APPLE ACCT NOT LOCATING ALL DEVICES'
 
-            device_list_item_key  = apple_id_dev(AppleAcct.apple_id, aadev_name)
-            _apple_user_device   = apple_user_dev(AppleAcct.apple_user, aadev_name)
+            device_list_item_key   = apple_id_dev(AppleAcct.apple_id, aadev_name)
+            _apple_user_device     = apple_user_dev(AppleAcct.apple_user, aadev_name)
             aadev_name_owner       = apple_id_dev(AppleAcct.account_owner, aadev_name)
-            aadev_name_owner_model = f"{aadev_name_owner}{family_device}, {device_model}"
-            fam_device_model      = f"{family_device}, {device_model}"
-            aadev_startup_msg     = f", {RED_ALERT}{AADev.startup_msg}" if AADev.startup_msg else ''
+            aadev_name_owner_model = f"{aadev_name_owner}{family_device}{ITEM_SEP}{device_model}"
+            fam_device_model       = f"{family_device}{ITEM_SEP}{device_model}"
+            aadev_startup_msg      = f"{ITEM_SEP}{RED_ALERT}{AADev.startup_msg}" if AADev.startup_msg else ''
 
             # If not assigned to an ic3 device
             if aadev_name not in devices_assigned:
                 if family_device:
                     item_line = (f" • {locate_all_sym}"
-                                f"{_apple_user_device}{family_device}, "
+                                f"{_apple_user_device}{family_device}{ITEM_SEP}"
                                 f"{device_model}"
                                 f"{aa_idx_dots}"
                                 f"{aadev_startup_msg}")
                 else:
-                    item_line = (f" • {_apple_user_device}{family_device}, "
+                    item_line = (f" • {_apple_user_device}{family_device}{ITEM_SEP}"
                                 f"{device_model}"
                                 f"{aa_idx_dots}"
                                 f"{aadev_startup_msg}")
@@ -609,7 +609,7 @@ def get_icloud_devices_list_avail_used_this(aa_idx, AppleAcct, apple_acct_owner,
             # This device
             devicename = devices_assigned[aadev_name]
             if devicename == selected_devicename:
-                item_line = (f"{_apple_user_device}{family_device}, "
+                item_line = (f"{_apple_user_device}{family_device}{ITEM_SEP}"
                             f"{device_model}"
                             f"{aa_idx_dots}")
                 this_device[device_list_item_key] = item_line
@@ -619,7 +619,7 @@ def get_icloud_devices_list_avail_used_this(aa_idx, AppleAcct, apple_acct_owner,
             # Assigned to another device
             _assigned_to_fname = icloud_device_assigned_to(AppleAcct, aadev_name)
             item_line = (f" ⊘ {_apple_user_device}{RARROW}"
-                        f"{_assigned_to_fname}{family_device}, "
+                        f"{_assigned_to_fname}{family_device}{ITEM_SEP}"
                         f"{device_model}")
             devices_used[device_list_item_key] = item_line
             if len(item_line) > longest_line_len: longest_line_len = len(item_line)
@@ -675,7 +675,7 @@ async def build_mobapp_entity_selection_list(self, selected_devicename=None):
     # Build line for all devices (this, available, assigned)
     mobapp_devices ={mobapp_dname:(
                         f" • {mobapp_info[0]} "
-                        f"(device_tracker.{mobapp_dname}), "
+                        f"(device_tracker.{mobapp_dname}){ITEM_SEP}"
                         f"{mobapp_info[3]}")
                         for mobapp_dname, mobapp_info in Gb.device_info_by_mobapp_dname.items()}
 
@@ -829,7 +829,7 @@ async def build_zone_selection_list(self):
         if is_statzone(zone):
             continue
 
-        passive_msg = ' (Passive)' if Zone.passive else ''
+        passive_msg = f'{ITEM_SEP}Passive Zone' if Zone.passive else ''
         fname_zones.append(f"{Zone.dname}{passive_msg}|{zone}")
 
     fname_zones.sort()
@@ -858,16 +858,17 @@ def build_away_time_zone_hours_list(self):
             elif ap_hh >= 13: ap_hh -= 12; ap = 'a'
 
         if Gb.time_format_12_hour:
-            time_str = f"{ap_hh:}{time_hhmmss[2:]}{ap}"
+            time = f"{ap_hh:}{time_hhmmss[2:]}{ap}"
         else:
-            time_str = f"{away_hh:02}{time_hhmmss[2:]}"
+            time = f"{away_hh:02}{time_hhmmss[2:]}"
 
         if away_hh == ha_time:
             time_str = f"Home Time Zone"
         elif hh < ha_time:
-            time_str += f" (-{abs(hh-ha_time):} hours)"
+            time_str = f"-{abs(hh-ha_time):} hours{ITEM_SEP}{time}"
         else:
-            time_str += f" (+{abs(ha_time-hh):} hours)"
+            time_str = f"+{abs(ha_time-hh):} hours{ITEM_SEP}{time}"
+
         self.away_time_zone_hours_key_text[hh-ha_time] = time_str
 
 #-------------------------------------------------------------------------------------------
@@ -880,7 +881,6 @@ def build_away_time_zone_devices_list(self):
 def build_log_level_devices_list(self):
 
     self.log_level_devices_key_text = {
-            # 'all': 'All Devices',
             TRACK: 'Tracked Devices',
             MONITOR: 'Monitored Devices',
             }
@@ -890,7 +890,7 @@ def build_log_level_devices_list(self):
 def devices_selection_list():
     return {conf_device[CONF_IC3_DEVICENAME]: (
                     f"{conf_device[CONF_FNAME]} "
-                    f"({DEVICE_TYPE_NAME(conf_device[CONF_DEVICE_TYPE])}), "
+                    f"({DEVICE_TYPE_NAME(conf_device[CONF_DEVICE_TYPE])}){ITEM_SEP}"
                     f"{TRACKING_MODE_DN[conf_device[CONF_TRACKING_MODE]]}")
                 for conf_device in Gb.conf_devices
                 if conf_device[CONF_IC3_DEVICENAME] in Gb.Devices_by_devicename}
@@ -915,14 +915,14 @@ def build_import_apple_devices_selection_list(self):
                         aascf.build_import_devices_config_from_aadevices(self, AppleAcct))
 
     for sort_key, ic3_conf_device in self.imported_aa_ic3_conf_devices.items():
-        apple_id   = ic3_conf_device[CONF_APPLE_ACCT]
-        aadev_name  = ic3_conf_device[CONF_AADEV_NAME]
+        apple_id     = ic3_conf_device[CONF_APPLE_ACCT]
+        aadev_name   = ic3_conf_device[CONF_AADEV_NAME]
         mobapp_dname = ic3_conf_device.get(CONF_MOBILE_APP_DEVICE)
 
         sel_line = f"{ic3_conf_device[CONF_FNAME]} ({ic3_conf_device[CONF_IC3_DEVICENAME]}){RARROW}"
-        sel_line += f"AppleDevice–({apple_user_dev(apple_id, aadev_name)}, "
+        sel_line += f"AppleDevice–({apple_user_dev(apple_id, aadev_name)}){ITEM_SEP}"
         if mobapp_dname != 'None':
-            sel_line += f"MobApp–({Gb.device_info_by_mobapp_dname[mobapp_dname][0]}), "
+            sel_line += f"MobApp–({Gb.device_info_by_mobapp_dname[mobapp_dname][0]}){ITEM_SEP}"
         sel_line += f"{ic3_conf_device[CONF_MODEL_DISPLAY_NAME]}"
 
         self.imported_aadevices_sel_list[sort_key] = sel_line

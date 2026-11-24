@@ -162,6 +162,12 @@ def secs_to_hhmm(secs_utc):
     try:
         if isnot_valid(secs_utc): return '00:00'
 
+        # if secs_utc is less than 3 days, it is a duration instead of a time
+        if secs_utc <= 259200:
+            hours, remainder = divmod(int(secs_utc) + 30, 3600)
+            minutes = remainder // 60
+            return f"{hours:02d}:{minutes:02d}"
+
         if Gb.time_format_24_hour:
             return time_local(secs_utc+30)[:-3]
 
