@@ -98,7 +98,7 @@ def form_reauth(self, user_input=None, reauth_apple_id=''):
     schema = ({
         vol.Optional('account_selected',
                     default=default_acct_selected):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=dict_value_to_list(self.apple_acct_auth_items_by_apple_id),
                         mode='dropdown')),
             vol.Optional(AUTH_CODE, default=default_auth_code):
@@ -115,7 +115,7 @@ def form_reauth(self, user_input=None, reauth_apple_id=''):
     schema.update({
         vol.Optional('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=self.actions_list, mode='list')),
         })
 
@@ -139,7 +139,7 @@ def form_reauth_code_from_applecom_login(self):
 
         vol.Required('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=self.actions_list, mode='list')),
     })
 
@@ -166,17 +166,17 @@ def form_reauth_change_auth_method(self, account_selected=None):
     schema = ({
         vol.Optional('account_selected',
                     default=default_acct_selected):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=[default_acct_selected],
                         mode='list')),
         vol.Optional('auth_method',
                     default=self.aa_auth_methods_by_auth_method[default_auth_method]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=dict_value_to_list(self.aa_auth_methods_by_auth_method),
                         mode='list')),
         vol.Optional('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=self.actions_list, mode='list')),
         })
                         # options=dict_value_to_list(self.apple_acct_auth_items_by_apple_id),
@@ -211,12 +211,12 @@ def form_user_auth_dashboard(self, user_input=None):
     schema = ({
         vol.Optional('include_acct',
                     default=default_include_acct):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=dict_value_to_list(include_acct_items),
                         mode='dropdown')),
         vol.Optional('display_mode',
                     default=USER_AUTH_RAW_YAML_DISPLAY_MODE[display_mode]):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=dict_value_to_list(USER_AUTH_RAW_YAML_DISPLAY_MODE), mode='dropdown')),
         vol.Optional('raw_yaml_code',
                     selector.TextSelector(),
@@ -225,7 +225,7 @@ def form_user_auth_dashboard(self, user_input=None):
 
         vol.Optional('action_items',
                     default=utils_cf.default_action_text(default_action)):
-                    selector.SelectSelector(selector.SelectSelectorConfig(
+                    selector.SelectSelector(selector.SelectSelectorConfig(translation_key='config_options',
                         options=self.actions_list, mode='list')),
         })
 

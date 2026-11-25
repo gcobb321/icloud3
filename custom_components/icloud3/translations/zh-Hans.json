@@ -1,0 +1,990 @@
+{
+  "title": "iCloud3 Apple 设备追踪器",
+  "config": {
+    "abort": {
+      "translation_file_by": "@mindcont",
+      "option_msg_inenjson": "out_of_range: 值必须介于 {min} 和 {max} 之间。",
+      "option_msg_inform": "description_placeholders={'min': '1', 'max': '10'}",
+      "config_update_complete": "✅ iCloud3 配置更新成功",
+      "already_configured": "iCloud3 配置页面用于添加设备和修改设置。\n\n关闭此页面，然后点击下方的齿轮图标（⚙️）。\n\n如果要删除并重新安装集成，请先删除 iCloud3，再重启 Home Assistant 以清除缓存，然后重新添加集成。原有配置文件不会被删除，重新加载时会继续使用。",
+      "disabled": "iCloud3 已被禁用，无法再次安装。请先启用，再在集成条目中选择“配置”。\n\n如果要删除并重新安装，请先重启 Home Assistant，再安装 iCloud3。",
+      "login_error": "尚未登录 Apple 账号",
+      "login_error_ipv6": "Apple 账号登录超时，不支持 IPv6。请前往 Home Assistant 设置 → 系统 → 网络，禁用 IPv6 并重启 Home Assistant。",
+      "login_error_503": "Apple 账号登录错误 503：服务器拒绝了请求。",
+      "login_error_other": "登录 Apple 账号时发生未知错误。",
+      "auth_code_requested": "已请求验证码，等待输入并发送给 Apple。",
+      "auth_code_requested_423": "此电话号码请求验证码次数过多。请使用其他受信任电话号码，或稍后重试。",
+      "auth_code_accepted": "✅ 验证码已通过，重新认证完成",
+      "auth_code_another_auth_needed": "⛔ 还有其他 Apple 账号需要认证",
+      "auth_code_complete": "✅ 验证码流程已完成",
+      "auth_code_cancelled": "Apple 账号登录认证流程已结束",
+      "update_cancelled": "已取消更新",
+      "icloud3_init_error": "初始化 iCloud3 配置页面时发生问题。iCloud3 可能因初始化错误而未启动。请检查 home-assistant.log 中与 iCloud3 有关的错误。",
+      "reauth_apple_acct_unknown": "请求验证码的 Apple 账号未知",
+      "reauth_apple_acct_unused": "请求验证码的 Apple 账号未被使用"
+    },
+    "error": {
+      "invalid_path": "路径无效，应为 `user/repo-name` 格式。",
+      "auth_code_needed": "Apple 账号需要认证",
+      "auth_code_requested": "⛔ 等待中… ① 输入{auth_method}验证码，② 选择“认证” ⛔",
+      "auth_code_accepted": "✅ 验证码已通过，重新认证完成",
+      "auth_code_complete": "✅ 验证码流程已完成",
+      "auth_code_cancelled": "已取消 Apple 账号认证",
+      "auth_code_another_auth_needed": "⛔ 还有其他 Apple 账号需要认证",
+      "auth_code_invalid": "❌ 验证码不正确，请重新输入或请求新验证码",
+      "auth_code_invalid_text": "❌ 验证码不正确，请输入短信验证码，而不是推送弹窗中的验证码",
+      "auth_code_send_error": "❌ 验证码发送失败",
+      "auth_code_requested_423": "此电话号码请求验证码次数过多。请使用其他受信任电话号码，或稍后重试。",
+      "hwkey_waiting_for_keypress": "⛔ ① 选择“认证”，② 触摸安全密钥 ⛔ ",
+      "hwkey_auth_succeeded": "✅ 安全密钥认证成功，重新认证完成",
+      "hwkey_names_refreshed": "✅ 已从 Apple 刷新安全密钥名称",
+      "text_or_hwkey_none": "❌ Apple 账号中没有受信任电话号码或安全密钥",
+      "hwkey_auth_not_avail": "❌ Home Assistant 服务器未插入安全密钥，请插入后重试",
+      "hwkey_auth_failed": "❌ 安全密钥认证失败。错误：{info_msg}",
+      "apple_acct_not_logged_into": "尚未登录 Apple 账号",
+      "apple_acct_terms_update_accepted": "✅ 已接受 Apple 账号更新后的`使用条款`",
+      "apple_acct_terms_of_use_update_needed": "Apple 账号需要接受`使用条款`（在账号认证页面操作）",
+      "apple_acct_login_error_ipv6": "检测到 IPv6 > Apple 定位服务器未响应 IPv6 请求 → 请前往 Home Assistant 设置 → 系统 → 网络 → 配置网络接口，禁用 IPv6 并重启 Home Assistant",
+      "apple_acct_login_error_503": "Apple 账号登录错误 503：用户名或密码无效，或服务器拒绝了请求",
+      "apple_acct_login_error_other": "❌ 登录失败：发生其他错误，或 Apple 服务器不可用",
+      "internet_error": "网络连接错误 > iCloud3 无法连接互联网",
+      "internet_error_no_change": "网络连接错误 > iCloud3 无法连接互联网。需要访问 Apple 账号的操作暂不可用。",
+      "icloud_no_devices": "iCloud 的`家人共享`列表中未找到设备",
+      "icloud_other_error": "认证 Apple 账号时发生未知错误，请稍后重试。"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "continue": "继续 > 点击“提交”完成 iCloud3 安装",
+          "reset_tracking": "发现已有 iCloud3 配置，是否重新初始化 Apple 账号和设备？",
+          "continue_restart_ha": "选择以继续安装 iCloud3，然后重启 Home Assistant"
+        },
+        "description": "iCloud3 v3 集成已添加到 Home Assistant！下一步请配置需要追踪的设备。\n\n点击下方“提交”，再选择“配置”。\n\n点击右上角问号（?）可打开 iCloud3 用户指南。以下章节有助于入门：\n• iCloud 组件：介绍设备追踪器、事件日志和配置页面。\n• Apple 账号：介绍账号设置、登录以及设备位置信息。\n• 手机 App 集成：介绍 App 配置、区域进入/离开事件和位置数据。\n• 事件日志：查看启动状态、错误、提醒、电量、追踪结果及操作入口。\n• 仪表盘生成器：创建显示设备追踪结果和事件日志的仪表盘。\n\n🕓 点击“提交”后请耐心等待，发现全部 iCloud 设备可能需要 30 秒。",
+        "title": "iCloud3 v3 集成安装",
+        "data_description": {
+          "reset_tracking": "检测到以前的配置，重新添加集成时通常会继续使用。勾选此项将移除 Apple 账号和设备配置并重新开始。"
+        }
+      },
+      "reauth": {
+        "title": "认证 Apple 账号登录",
+        "description": "Apple 账号大约每 90 天需要重新认证。请在此输入六位验证码，或使用插在 Home Assistant 服务器上的安全密钥（YubiKey）进行认证。",
+        "data": {
+          "account_selected": "Apple 账号",
+          "auth_method": "认证方式 - 推送通知、短信验证码或安全密钥",
+          "auth_code": "验证码 - 受信任设备上显示的验证码",
+          "terms_of_use": "使用条款 - 接受 Apple `使用条款`，详情见 http://icloud.com",
+          "action_items": "操作命令"
+        }
+      },
+      "reauth_change_auth_method": {
+        "title": "更改 Apple 账号认证方式",
+        "description": "Apple 支持推送通知（默认）、短信和安全密钥（YubiKey）认证。iCloud3 将使用此处选择的方式。",
+        "data": {
+          "account_selected": "Apple 账号",
+          "auth_method": "认证方式 - 用于认证 Apple 账号的方法",
+          "action_items": "操作命令"
+        }
+      },
+      "reauth_hwkey_progress": {
+        "title": "触摸安全密钥",
+        "description": "{spinner}  请立即触摸 Home Assistant 服务器上的密钥 '{key_name}'\n\n将在 {remaining} 秒后超时"
+      },
+      "reauth_code_from_applecom_login": {
+        "title": "从 Apple.com 获取验证码",
+        "description": "如果请求验证码后未收到登录推送通知或短信，请按以下步骤操作：\n\n**① 打开 Apple 账号登录页面** https://appleid.apple.com/\n* 如果已登录，请退出登录。\n* 如果设备支持 Face ID，可遮住摄像头，避免自动登录。\n\n**② 登录 Apple 账号**：输入用户名，点击“继续”，输入密码，再点击“登录”。在支持 Face ID 的设备上，可能需要选择“使用其他 Apple 账号”。\n* 在受信任设备上查看收到的验证码。\n\n**不要在 apple.com 输入验证码，否则认证的是 apple.com，而不是 iCloud3。**\n\n**③ 返回此页面**：可关闭刚才打开的登录标签页。\n\n**④ 认证 iCloud3**：在下方输入验证码并提交给 Apple 验证。如果未通过，请重复以上步骤获取新验证码。",
+        "data": {
+          "auth_code": "验证码 - 刚通过 Apple 账号登录收到的验证码",
+          "action_items": "操作命令"
+        }
+      },
+      "restart_ha": {
+        "title": "确认重启 Home Assistant",
+        "description": "iCloud3 需要重启 Home Assistant，以避免 device_tracker 实体名称冲突",
+        "data": {
+          "action_items": "操作命令"
+        }
+      },
+      "restart_ha_reload_icloud3": {
+        "title": "重启 Home Assistant 或 iCloud3",
+        "description": "重启 Home Assistant，或重新加载并初始化 iCloud3 集成。\n\n重启后请刷新 iCloud3 仪表盘页面。",
+        "data": {
+          "action_items": "操作命令"
+        }
+      }
+    }
+  },
+  "options": {
+    "abort": {
+      "config_update_complete": "{exit_msg}",
+      "already_configured": "iCloud3 已安装，无法再次安装。请在集成条目中选择“配置”。",
+      "disabled": "iCloud3 已禁用，无法再次安装。请先启用，再在集成条目中选择“配置”。",
+      "ha_restarting": "Home Assistant 正在重启\n\n重启后请刷新 iCloud3 页面",
+      "ic3_reloading": "已开始重新加载 iCloud3",
+      "auth_code_accepted": "✅ 验证码已通过，重新认证完成",
+      "auth_code_another_auth_needed": "⛔ 还有其他 Apple 账号需要认证",
+      "auth_code_complete": "✅ 验证码流程已完成"
+    },
+    "error": {
+      "unknown_action": "无法识别所选操作",
+      "action_not_available": "网络连接错误 > 此操作不可用",
+      "not_available": "此操作暂不可用",
+      "update_aborted": "更新已中止：某个字段存在错误",
+      "conf_updated": "✅ iCloud3 配置参数更新成功",
+      "conf_reloaded": "已重新加载 iCloud3 配置文件",
+      "apple_acct_logging_into": "正在登录 Apple 账号",
+      "apple_acct_logged_into": "已登录 Apple 账号",
+      "apple_acct_already_logged_into": "已登录此 Apple 账号",
+      "apple_acct_locate_all_reqd": "必须定位全部设备：此 Apple 账号还用于追踪其他家庭成员的设备",
+      "apple_acct_login_error_ipv6": "检测到 IPv6 > Apple 定位服务器未响应 IPv6 请求 → 请前往 Home Assistant 设置 → 系统 → 网络 → 配置网络接口，禁用 IPv6 并重启 Home Assistant",
+      "apple_acct_invalid_upw": "❌ 用户名或密码无效",
+      "apple_acct_login_error_503": "Apple 账号登录错误 503：服务器拒绝了请求。请退出配置页面以重置 iCloud3 和账号状态，然后重试或稍后再试。",
+      "apple_acct_login_error_302": "❌ 登录失败：Apple 服务器拒绝连接（错误 302）",
+      "apple_acct_login_error_302_cn": "❌ Apple 服务器错误 302：应选择中国服务器，但当前选择了美国服务器",
+      "apple_acct_login_error_302_usa": "❌ Apple 服务器错误 302：应选择美国服务器，但当前选择了中国服务器",
+      "apple_acct_login_error_srp_401": "❌ Python SRP 库凭据错误：用于生成安全远程密码哈希的 Python 模块为有效的用户名和密码计算了错误值。可尝试修改密码后再次登录。",
+      "apple_acct_login_error_other": "❌ 登录失败：发生其他错误，或 Apple 服务器不可用",
+      "apple_acct_dup_username_error": "错误：其他数据源条目已使用此用户名",
+      "apple_acct_username_inuse_error": "错误：其他数据源条目已使用此用户名。在移除其他条目前无法改为此用户名，请先选择其他条目并停止使用。",
+      "apple_acct_not_available": "❌ 登录失败：Apple 账号不可用",
+      "apple_acct_locked": "❌ 登录失败：Apple 账号可能已锁定",
+      "apple_acct_not_logged_into": "尚未登录 Apple 账号",
+      "apple_acct_updated_login_error": "Apple 账号信息已保存，但登录时发生错误",
+      "apple_acct_data_source_warning": "警告：已设置 Apple 账号，但未将其用作数据源",
+      "apple_acct_not_set_up": "尚未设置 Apple 账号。请在已选中的“Apple 账号”页面添加，然后点击“下一步”。",
+      "apple_acct_parm_error": "Apple 账号参数错误，请在“Apple 账号与手机 App”页面更新",
+      "apple_acct_no_data_source": "❌ 未选择任何数据源（Apple 账号或手机 App）",
+      "import_aa_no_devices_avail": "全部 Apple 账号设备均已配置",
+      "ic3_icloud_same_name": "iCloud3 的 dev_trkr.entity_id 不能与设备设置 → 通用 → 关于本机中的名称完全相同（包括大小写）",
+      "mobile_app_error": "错误：未安装手机 App 集成。将不会使用其位置数据，也不会监控区域进入/离开事件。",
+      "password_asp_invalid": "Apple 不支持在 WebAuth 应用中使用 App 专用密码",
+      "apple_acct_terms_update_accepted": "✅ 已接受 Apple 账号更新后的`使用条款`",
+      "apple_acct_terms_of_use_update_needed": "Apple 账号需要接受`使用条款`（在账号认证页面操作）",
+      "auth_code_needed": "Apple 账号需要认证",
+      "auth_code_requested": "⛔ 等待中… ① 输入{auth_method}验证码，② 选择“认证” ⛔",
+      "auth_code_accepted": "✅ 验证码已通过，重新认证完成",
+      "auth_code_complete": "✅ 验证码流程已完成",
+      "auth_code_cancelled": "已取消 Apple 账号认证",
+      "auth_code_another_auth_needed": "⛔ 还有其他 Apple 账号需要认证",
+      "auth_code_invalid": "❌ 验证码不正确，请重新输入或请求新验证码",
+      "auth_code_invalid_text": "❌ 验证码不正确，请输入短信验证码，而不是推送弹窗中的验证码",
+      "auth_code_send_error": "❌ 验证码发送失败",
+      "auth_code_requested_423": "此电话号码请求验证码次数过多。请使用其他受信任电话号码，或稍后重试。",
+      "hwkey_waiting_for_keypress": "⛔ ① 选择“认证”，② 触摸安全密钥 ⛔ ",
+      "hwkey_auth_succeeded": "✅ 安全密钥认证成功，重新认证完成",
+      "hwkey_names_refreshed": "✅ 已从 Apple 刷新安全密钥名称",
+      "hwkey_names_none": "❌ Apple 账号中没有安全密钥",
+      "hwkey_auth_not_avail": "❌ Home Assistant 服务器未插入安全密钥，请插入后重试",
+      "hwkey_auth_failed": "❌ 安全密钥认证失败。错误：{info_msg}",
+      "used_by_other_ic3_device": "其他 iCloud3 设备已使用此名称 {info_msg}",
+      "used_by_other_integration": "集成 {info_msg} 已使用此名称",
+      "already_assigned": "此选项已分配给其他设备",
+      "mobapp_search_error": "警告：未找到以 iCloud3 或 Apple 账号设备名称开头的手机 App 设备。请选择“无”或需要使用的设备。",
+      "inactive_device": "设备已停用。请改为“追踪”以定位并追踪此设备",
+      "inactive_all_devices": "❌ 全部设备已停用，不会追踪任何设备 ❌",
+      "inactive_most_devices": "大多数设备已停用，不会定位或追踪",
+      "inactive_some_devices": "部分设备已停用，不会定位或追踪",
+      "inactive_few_devices": "少数设备已停用，不会定位或追踪",
+      "inactive_no_devices": "尚未设置设备。请在“更新设备”页面选择“导入 Apple 账号设备”或“添加新设备”，点击“提交”以添加 iCloud3 device_tracker 实体。",
+      "away_time_zone_dup_devices_1": "其中一台设备也被选入另一设备列表",
+      "away_time_zone_dup_devices_2": "其中一台设备也被选入另一设备列表",
+      "waze_server_error_us": "当前位置应使用的服务器：美国、加拿大",
+      "waze_server_error_il": "当前位置应使用的服务器：以色列",
+      "waze_server_error_row": "当前位置应使用的服务器：世界其他地区",
+      "required_field": "必须填写此参数",
+      "review_filledin_fields": "请检查已填写的字段",
+      "not_numeric": "❌ 输入值不是数字",
+      "no_data_source": "追踪模式不是“停用”时，必须指定 Apple 账号设备或手机 App 设备",
+      "no_data_source_set_inactive": "数据源未知且设为“无”时，请将追踪模式设为“停用”",
+      "no_add_entities_device_tracker_fct": "Home Assistant 添加设备的组件不可用，必须重启 Home Assistant",
+      "unknown_value": "请检查某个选择参数",
+      "invalid_selection": "选择了无效选项或标题项，已恢复原值",
+      "unknown_devicename": "Apple 账号和手机 App 设备列表中均未找到配置的设备",
+      "unknown_icloud": "Apple 账号中未找到配置的设备",
+      "unknown_mobapp": "手机 App 设备列表中未找到配置的设备",
+      "unknown_picture": "config/www/... 目录中未找到配置的图片文件",
+      "unknown_apple_acct": "未为分配的 iCloud 设备选择 Apple 账号",
+      "unknown_icloud_mobapp": "请检查 Apple 账号和手机 App 参数（未找到或无效）",
+      "unknown_icloud_mobapp_picture": "请检查 Apple 账号、手机 App 和图片参数（未找到或无效）",
+      "unknown_icloud_picture": "请检查 Apple 账号和图片参数（未找到或无效）",
+      "internet_error": "网络连接错误 > iCloud3 无法连接互联网",
+      "internet_error_no_change": "网络连接错误 > iCloud3 无法连接互联网。需要访问 Apple 账号的操作暂不可用。",
+      "apple_acct_connection_err": "网络错误 > 互联网可用，但 iCloud3 无法连接 apple.com。需要访问 Apple 账号的操作暂不可用。",
+      "tfz_selection_invalid": "此值必须是已用于追踪的参考区域",
+      "time_factor_invalid_range": "行程时间乘数必须介于 .1 和 .9 之间",
+      "fixed_interval_invalid_range": "固定间隔必须为 0（不使用）或 >= 3（建议 > 5）",
+      "display_text_as_no_gtsign": "原始文本与替换文本之间缺少 >",
+      "display_text_as_no_actual": "未指定原始文本",
+      "display_text_as_no_display_as": "未指定替换文本",
+      "not_found_directory": "未找到目录",
+      "not_found_file": "未找到文件",
+      "action_completed": "请求的操作已完成",
+      "action_cancelled": "请求的操作已取消",
+      "restart_ha": "需要重启 Home Assistant 才能继续",
+      "excluded_sensors_ha_restart": "✅ 下次重启 Home Assistant 时将不再创建已排除的传感器",
+      "fix_entity_name_complete": "传感器实体名称修正完成",
+      "fix_entity_name_not_needed": "未发现传感器实体名称错误",
+      "dashboard_device_keyword_error": "无法更新仪表盘：设备关键字不可用",
+      "dashboard_created_initial": "已创建初始 iCloud3 仪表盘",
+      "dashboard_created": "已创建仪表盘",
+      "dashboard_updated": "✅ 仪表盘已更新",
+      "dashboard_name_used": "其他仪表盘已使用此名称",
+      "dashboard_main_2_devices": "主视图最多只能选择两台设备",
+      "dashboard_error": "更新仪表盘时发生错误",
+      "dashboard_json_error": "创建 lovelace.dashboard... 文件时发生错误：生成的仪表盘代码不是有效的 JSON。"
+    },
+    "step": {
+      "menu": {
+        "title": "配置设备与传感器",
+        "data": {
+          "menu_items": "菜单选项",
+          "action_items": "操作命令",
+          "xmenu_items": "───┤ 菜单选项 ├─────────────────────────────────────",
+          "xaction_items": "───┤ 操作命令 ├─────────────────────────────────"
+        }
+      },
+      "menu_0": {
+        "title": "配置设备与传感器",
+        "xdescription": "此菜单包含 Apple 账号、追踪设备、账号认证、传感器、iCloud3 仪表盘和维护工具。",
+        "data": {
+          "menu_items": "主要菜单选项",
+          "action_items": "操作命令"
+        }
+      },
+      "menu_1": {
+        "title": "配置参数",
+        "xdescription": "此菜单用于配置设备追踪方式及结果显示方式。",
+        "data": {
+          "menu_items": "其他菜单选项",
+          "action_items": "操作命令"
+        }
+      },
+      "xrestart_ha": {
+        "title": "重启 Home Assistant",
+        "description": "重启 Home Assistant\n\n重启后请刷新 iCloud3 仪表盘页面。",
+        "data": {
+          "action_items": "操作命令"
+        }
+      },
+      "xrestart_ha_ic3_load_error": {
+        "title": "iCloud3 加载错误",
+        "description": "Home Assistant 启动时未能加载并初始化 iCloud3。请重新加载 iCloud3 或重启 Home Assistant。",
+        "data": {
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+        }
+      },
+      "xrestart_ha_reload_icloud3": {
+        "title": "重新加载 iCloud3 或重启 Home Assistant",
+        "description": "重新加载并初始化 iCloud3 集成，或重启 Home Assistant。\n\n重启后请刷新 iCloud3 仪表盘页面。",
+        "data": {
+          "action_items": "操作命令"
+        }
+      },
+      "confirm_action": {
+        "title": "确认所选操作",
+        "data": {
+          "action_desc": "请求的操作",
+          "action_items": "操作命令"
+        }
+      },
+      "apple_accounts": {
+        "title": "Apple 账号",
+        "description": "此页面用于查看、添加、移除和更新 Apple 账号。账号提供位置等数据，用于追踪和监控 iCloud3 设备。其他配置页面也可用于设置设备。",
+        "data": {
+          "data_source": "数据源",
+          "data_source_apple_acct": "Apple iCloud 账号",
+          "apple_accts": " ",
+          "data_source_mobapp": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
+          "xdata_source_mobapp": "手机 App 集成",
+          "action_items": "操作命令"
+        },
+        "data_description": {}
+      },
+      "update_apple_acct": {
+        "title": "更新 Apple 账号用户名和密码",
+        "data": {
+          "account_selected": "所选账号",
+          "username": "用户名 - 用于登录 Apple 账号的邮箱地址或用户名",
+          "password": "密码 - Apple 账号密码",
+          "server_location": "Apple 服务器地区 - 此账号使用的 Apple 服务器所在国家",
+          "locate_all": "定位全部设备（仅适用于多个 Apple 账号）",
+          "url_suffix_china": "中国用户 - 使用位于中国的 Apple 账号服务器（网址后缀 .cn）",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "locate_all": "启用 → 定位账号本人及其他家庭成员的设备；禁用 → 仅定位账号本人的设备，不定位其他家庭成员的设备。"
+        }
+      },
+      "other_apple_acct_parameters": {
+        "title": "其他 Apple 账号参数",
+        "data": {
+          "apple_server_location_needed": "Apple 服务器地区（中国）- 在账号用户名/密码页面始终显示服务器地区选择字段（中国、中国香港）",
+          "server_location": "Apple 服务器地区 - 此账号使用的 Apple 服务器所在国家",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "password_srp_enabled": "此项指定 Apple 账号登录时如何验证密码。Password SRP 协议发送编码密钥给 Apple，而不是发送密码本身。\n• 启用：使用 Password SRP 协议。\n• 禁用：使用标准密码协议。\n• 注意：短时间内多次登录可能触发 Apple 的防欺诈保护，并返回 503（服务器拒绝连接）。"
+        }
+      },
+      "delete_apple_acct": {
+        "title": "移除 Apple 账号",
+        "data": {
+          "account_selected": "所选账号",
+          "device_action": "如何处理分配给此 Apple 账号的设备",
+          "action_items": "确认移除 Apple 账号"
+        }
+      },
+      "reauth": {
+        "title": "认证 Apple 账号登录",
+        "description": "Apple 账号大约每 90 天需要重新认证。请在此输入六位验证码，或使用插在 Home Assistant 服务器上的安全密钥（YubiKey）进行认证。",
+        "data": {
+          "account_selected": "需要认证的 Apple 账号",
+          "auth_method": "认证方式 - 推送通知、短信验证码或安全密钥",
+          "auth_code": "验证码 - 受信任设备上显示的验证码",
+          "terms_of_use": "使用条款 - 接受 Apple `使用条款`，详情见 http://icloud.com",
+          "action_items": "操作命令"
+        }
+      },
+      "reauth_change_auth_method": {
+        "title": "更改 Apple 账号认证方式",
+        "description": "Apple 支持推送通知（默认）、短信和安全密钥（YubiKey）认证。iCloud3 将使用此处选择的方式。",
+        "data": {
+          "account_selected": "正在认证的 Apple 账号",
+          "auth_method": "认证方式 - 用于认证 Apple 账号的方法",
+          "action_items": "操作命令"
+        }
+      },
+      "reauth_hwkey_progress": {
+        "title": "触摸安全密钥",
+        "description": "{spinner}  请立即触摸 Home Assistant 服务器上的密钥 '{key_name}'\n\n将在 {remaining} 秒后超时"
+      },
+      "reauth_code_from_applecom_login": {
+        "title": "从 Apple.com 获取验证码",
+        "description": "如果请求验证码后未收到登录推送通知或短信，请按以下步骤操作：\n\n**① 打开 Apple 账号登录页面** https://appleid.apple.com/\n* 如果已登录，请退出登录。\n* 如果设备支持 Face ID，可遮住摄像头，避免自动登录。\n\n**② 登录 Apple 账号**：输入用户名，点击“继续”，输入密码，再点击“登录”。在支持 Face ID 的设备上，可能需要选择“使用其他 Apple 账号”。\n* 在受信任设备上查看收到的验证码。\n\n**不要在 apple.com 输入验证码，否则认证的是 apple.com，而不是 iCloud3。**\n\n**③ 返回此页面**：可关闭刚才打开的登录标签页。\n\n**④ 认证 iCloud3**：在下方输入验证码并提交给 Apple 验证。如果未通过，请重复以上步骤获取新验证码。",
+        "data": {
+          "auth_code": "验证码 - 刚通过 Apple 账号登录收到的验证码",
+          "action_items": "操作命令"
+        }
+      },
+      "device_list": {
+        "title": "iCloud3 设备",
+        "description": "此页面用于更新、添加或移除设备，也可导入 Apple 设备，并调整事件日志中的设备排列顺序。",
+        "data": {
+          "devices": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
+          "action_items": "操作命令"
+        }
+      },
+      "add_device": {
+        "title": "添加 iCloud3 设备",
+        "data": {
+          "ic3_devicename": "iCloud3 DEVICE_TRACKER 实体 ID - 此设备的 Home Assistant device_tracker 实体，例如 gary_iphone",
+          "fname": "显示名称 - 显示在 Home Assistant 实体和事件日志中，例如 Gary-iPhone",
+          "famshr_devicename": "Apple 账号设备 - 提供位置数据的 Apple 账号设备",
+          "mobile_app_device": "手机 App 设备 - 提供位置数据和区域事件的手机 App device_tracker 实体",
+          "picture": "图片 - 设备常用者的头像（建议 44×44 像素）",
+          "icon": "图标 - 未选择图片（None）时显示的图标",
+          "device_type": "设备类型 - iPhone、iPad、Watch 等",
+          "tracking_mode": "追踪模式 - 位置请求方式（追踪、监控、停用）",
+          "mobapp": "已安装手机 App - 此设备已安装 Home Assistant 手机 App",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "ic3_devicename": "分配给需要追踪的 iCloud3 设备的 device_tracker 实体。"
+        }
+      },
+      "import_apple_devices": {
+        "title": "导入 Apple 设备到 iCloud3",
+        "description": "导入所有 Apple 账号中尚未配置的设备，为选中的设备创建 iCloud3 设备条目，之后可在“更新设备”页面调整。",
+        "data": {
+          "imported_aadevices_track": "追踪设备 - 主动追踪的 iCloud3 device_tracker 实体",
+          "imported_aadevices_monitor": "监控设备 - 被动监控的 iCloud3 device_tracker 实体",
+          "imported_aadevices_inactive": "停用设备 - 无法追踪的 Apple 设备和配件",
+          "action_items": "操作命令"
+        }
+      },
+      "update_device": {
+        "title": "更新 iCloud3 设备",
+        "description": "配置各个需要由 iCloud3 追踪或监控的设备。",
+        "data": {
+          "ic3_devicename": "iCloud3 DEVICE_TRACKER 实体 ID - 分配给此设备的 Home Assistant device_tracker 实体",
+          "fname": "显示名称 - 显示在 device_tracker、传感器名称和事件日志中",
+          "famshr_devicename": "Apple 账号 iCloud 设备 - 提供位置数据的设备",
+          "mobile_app_device": "手机 App 设备 - 提供位置数据和区域事件的手机 App device_tracker 实体",
+          "picture": "图片 - 设备常用者的头像（建议 44×44 像素）",
+          "icon": "图标 - 未选择图片（None）时显示的图标",
+          "device_type": "设备类型 - iPhone、iPad、Watch 等",
+          "tracking_mode": "追踪模式 - 位置请求方式（完整追踪、监控、停用）",
+          "inzone_interval": "区域内更新间隔",
+          "rarely_updated_parms": "显示不常修改的参数 - 勾选并提交后可编辑",
+          "log_zones": "区域活动日志 - 将进入/离开区域的日期、时间和距离保存到 CSV 文件",
+          "track_from_zones": "参考区域 - 计算到家及其他区域的行程时间与距离",
+          "track_from_base_zone": "替代家庭参考区域 - 使用此区域代替家作为追踪结果的参考",
+          "fixed_interval": "固定更新间隔",
+          "action_items": "操作命令"
+        }
+      },
+      "update_other_device_parameters": {
+        "title": "更新其他设备参数",
+        "description": "更新不常修改的设备参数。",
+        "data": {
+          "ic3_devicename": "iCloud3 DEVICE_TRACKER 实体 ID - 分配给此设备的 Home Assistant device_tracker 实体",
+          "fname": "显示名称 - 显示在 device_tracker、传感器名称和事件日志中",
+          "device_type": "设备类型 - iPhone、iPad、Watch 等",
+          "tracking_mode": "追踪模式 - 位置请求方式（完整追踪、监控、停用）",
+          "inzone_interval": "区域内更新间隔",
+          "log_zones": "区域活动日志 - 将进入/离开区域的日期、时间和距离保存到 CSV 文件",
+          "track_from_zones": "参考区域 - 计算到家及其他区域的行程时间与距离",
+          "track_from_base_zone": "替代家庭参考区域 - 使用此区域代替家作为追踪结果的参考",
+          "fixed_interval": "固定更新间隔",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "inzone_interval": "设备位于区域内时，两次位置请求之间的时间。",
+          "fixed_interval": "设备不在区域内时，两次位置请求之间的固定时间。设为 0 时，使用 iCloud3 计算的间隔。如果计算间隔小于 5 分钟、位置数据过期、设备离线或不在区域内，则不使用此值。",
+          "track_from_base_zone": "通常以家作为计算行程时间和距离的主要参考区域。长期外出，或设备通常位于其他地点（度假屋、第二住所、父母家等）时，可指定其他区域。也可在“特殊区域”页面为所有设备统一设置。"
+        }
+      },
+      "delete_device": {
+        "title": "删除 iCloud3 设备",
+        "data": {
+          "device_selected": "所选设备",
+          "action_items": "删除选项"
+        }
+      },
+      "review_inactive_devices": {
+        "title": "检查未追踪（停用）的设备",
+        "description": "大量设备已设为“停用”，不会定位或追踪。请在此检查并修改设备状态。 ",
+        "data": {
+          "inactive_devices": "追踪设备 - 将这些设备从“停用”改为“追踪”",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "inactive_devices": "iPhone/Watch 设为追踪，iPad/Mac 设为监控"
+        }
+      },
+      "change_device_order": {
+        "title": "事件日志中的设备显示顺序",
+        "description": "事件日志标题和消息按下方顺序显示设备。\n\n可在此调整设备顺序。",
+        "data": {
+          "device_desc": "iCloud3 设备",
+          "action_items": "操作命令"
+        }
+      },
+      "picture_dir_filter": {
+        "title": "设置图片目录筛选",
+        "description": "选择需要搜索 PNG、JPG 图片的 www 目录",
+        "data": {
+          "www_group_1": "第 1 组 - 目录 1–5",
+          "www_group_2": "第 2 组 - 目录 6–10",
+          "www_group_3": "第 3 组 - 目录 11–15",
+          "www_group_4": "第 4 组 - 目录 16–20",
+          "www_group_5": "第 5 组 - 目录 21–25",
+          "action_items": "操作命令"
+        }
+      },
+      "away_time_zone": {
+        "title": "外出时显示所在地时区",
+        "description": "事件日志和传感器默认使用 Home Assistant 主机的家庭时区。即使外出到其他时区，也仍显示家庭时间。\n\n此页面可将事件时间调整为当前所在地的时间。",
+        "data": {
+          "away_time_zone_1_devices": "外出时区 #1 的设备",
+          "away_time_zone_1_offset": "所在地 #1 的时间与时区偏移",
+          "away_time_zone_2_devices": "外出时区 #2 的设备",
+          "away_time_zone_2_offset": "所在地 #2 的时间与时区偏移",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "time_zone_1_offset": "主要设备与当地时间 - 外出到其他时区时的设备及当地时间",
+          "time_zone_2_offset": "其他设备与当地时间 - 外出到其他时区时的设备及当地时间"
+        }
+      },
+      "dashboard_builder": {
+        "title": "iCloud3 仪表盘生成器",
+        "description": "为最多 4 台追踪设备创建或更新不同风格的仪表盘。可直接使用，也可通过 Home Assistant 仪表盘工具进一步调整。\n\n{db_icons}",
+        "data": {
+          "selected_dashboard": "iCloud3 仪表盘",
+          "main_view_style": "主视图样式 - 设备信息的显示方式",
+          "main_view_devices": "主视图设备 - 主视图中显示的设备",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "selected_dashboard": "创建/更新仪表盘设置 - 下方样式和设备字段决定创建或更新仪表盘时主视图的布局。"
+        }
+      },
+      "tools": {
+        "title": "工具",
+        "description": "维护工具可修正 iCloud3 配置文件错误、恢复默认配置、重新加载 iCloud3 或重启 Home Assistant。",
+        "data": {
+          "tools": "Apple 账号工具",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+        },
+        "data_description": {}
+      },
+      "log_level": {
+        "title": "设置日志级别",
+        "description": "日志级别决定写入 iCloud3.log 文件的运行数据类型。",
+        "data": {
+          "log_level": "日志级别 - 消息类型（信息、调试或 Apple 账号原始数据）",
+          "log_level_devices": "原始数据日志设备筛选 - 仅记录这些设备的 iCloud 原始数据",
+          "action_items": "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯"
+        },
+        "data_description": {}
+      },
+      "cleanup_entity_registry": {
+        "title": "清理 Home Assistant 实体注册表中的设备与传感器",
+        "description": "删除设备和实体注册表中不需要的 iCloud3 实体。条目按活跃、停用、孤立、已删除设备、已删除传感器、禁用和重复实体（后缀 _2）分组。",
+        "data": {
+          "active": "活跃设备 - iCloud3 正在追踪的设备。🛈 这些设备将被删除并重新创建。",
+          "inactive": "停用设备 - 已设为“停用”，不由 iCloud3 追踪的设备。",
+          "orphaned": "孤立传感器 - 曾存在但已不再关联 iCloud3 集成的传感器",
+          "disabled": "禁用的设备与传感器 - 在 Home Assistant 设备、实体或 iCloud3 集成页面中被禁用的条目",
+          "deleted_devices": "已删除设备 - 属于已从 iCloud3 删除的设备的传感器",
+          "deleted_sensors": "已删除传感器 - 属于 iCloud3 设备但已不再使用的传感器",
+          "suffix_error": "后缀错误 > Home Assistant 创建的重复传感器，目前不可用（`[sensor]` 与 `[sensor_2]`）",
+          "other": "其他传感器 > 不属于以上分组的传感器",
+          "check_all": " ",
+          "action_items": "操作命令"
+        }
+      },
+      "tracking_parameters": {
+        "title": "追踪参数",
+        "description": "此页面可调整定位精度不足时的处理方式、查询间隔及区域距离等设备追踪参数。",
+        "data": {
+          "data_source": "GPS 位置和区域事件的数据源 ",
+          "discard_poor_gps_inzone": "丢弃精度不足的结果",
+          "gps_accuracy_threshold": "GPS 精度阈值",
+          "old_location_threshold": "位置过期阈值",
+          "old_location_adjustment": "位置过期判断调整",
+          "distance_between_devices": "复用附近设备的定位结果",
+          "max_interval": "最大更新间隔",
+          "exit_zone_interval": "离开区域后的更新间隔",
+          "mobapp_alive_interval": "请求手机 App 位置的间隔",
+          "tfz_tracking_max_distance": "参考区域显示距离",
+          "offline_interval": "设备离线更新间隔",
+          "travel_time_factor": "行程时间与下次位置更新时间的乘数",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "data_source": "用于追踪 iCloud3 设备的位置数据及区域进入/离开事件来源",
+          "discard_poor_gps_inzone": "设备在区域内时，丢弃 GPS 精度不足的位置更新",
+          "old_location_threshold": "超过此时长的位置数据将被丢弃",
+          "old_location_adjustment": "在判断位置是否过期的时间阈值上增加此时长",
+          "distance_between_devices": "更新追踪结果时识别附近设备。更新这些设备时可复用原设备的追踪结果，避免再次请求 Waze 路线时间和距离，提高效率。",
+          "gps_accuracy_threshold": "定位误差大于此值时，将丢弃位置数据",
+          "tfz_tracking_max_distance": "通常在设备实体和传感器中显示家庭区域的时间与距离。设备距其他参考区域小于此值时，改为显示该参考区域的数据。",
+          "max_interval": "两次位置请求之间的最长时间",
+          "exit_zone_interval": "离开区域后到首次位置请求的时间",
+          "mobapp_alive_interval": "超过此时长未收到手机 App 数据时，向其请求位置，以检查 App 是否仍在运行并响应请求。",
+          "offline_interval": "设备离线时的位置请求间隔，例如飞行模式或无信号。",
+          "travel_time_factor": "用于计算向家移动时的查询间隔和下次更新时间。值越小，间隔越短、请求越多；值越大，间隔越长、请求越少。"
+        }
+      },
+      "format_settings": {
+        "title": "显示设置与其他参数",
+        "description": "设置事件日志、传感器和 device_tracker 实体中追踪结果及其他信息的显示方式。",
+        "data": {
+          "display_zone_format": "区域显示名称 - 传感器和事件日志中区域名称的显示方式",
+          "device_tracker_state_source": "设备追踪器状态 - device_tracker 实体状态值的确定方式",
+          "time_format": "时间格式 - 传感器和事件日志中的时间显示方式",
+          "unit_of_measurement": "计量单位 - 传感器和事件日志中的距离单位",
+          "display_gps_lat_long2": "显示 GPS 坐标 - 在事件日志中显示经纬度及精度，或仅显示精度",
+          "display_gps_lat_long": "显示 GPS 坐标 - 在事件日志中显示 GPS-(22.32771, -76.33073/±35m)，而不是 GPS-/±35m",
+          "evlog_header": "事件日志系统覆盖设置",
+          "picture_www_dirs": "图片目录筛选 - 选择包含设备 PNG、JPG 图片的目录",
+          "event_log_card_directory": "事件日志卡片资源目录 - 自定义卡片 JavaScript 文件所在目录",
+          "event_log_btnconfig_url": "事件日志配置按钮（齿轮）URL - 打开 Home Assistant 配置页面的特殊地址",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "picture_www_dirs": "iCloud3 扫描 www 目录中的 PNG、JPG 文件以供选择设备图片。图片很多时可指定设备图片所在目录，方便查找。",
+          "device_tracker_state_source": "Home Assistant 根据 GPS 坐标判断区域，不考虑定位误差，可能因坐标漂移误判离开。iCloud3 考虑定位精度，避免此类误判，并显示区域的显示名称或事件日志中的区域名称。",
+          "event_log_btnconfig_url": "通常留空，由 iCloud3 自动确定配置页面 URL。如果虚拟机、Docker 或其他部署方式导致无法确定地址并出现 404，请通过设置 → 设备与服务 → 集成 → iCloud3 → 配置打开页面，并将浏览器地址复制到此处。"
+        }
+      },
+      "display_text_as": {
+        "title": "事件日志文本替换",
+        "description": "事件日志中的邮箱地址、电话号码等可能属于隐私信息，可替换为其他文本。例如，将 geekstergary@apple.com 替换为 gary@email.com。\n\n此页面指定原始文本和替换文本。",
+        "data": {
+          "display_text_as": "文本替换字段 - [原始文本 > 显示文本]",
+          "action_items": "操作命令"
+        }
+      },
+      "display_text_as_update": {
+        "title": "更新事件日志文本替换",
+        "data": {
+          "text_from": "原始文本 - 需要替换的文本，例如 gary_real_email@gmail.com",
+          "text_to": "显示文本 - 替换后显示的文本，例如 gary@email.com",
+          "action_items": "操作命令"
+        },
+        "data_description": {}
+      },
+      "inzone_intervals": {
+        "title": "区域内参数与默认更新间隔",
+        "description": "区域内更新间隔指设备在区域内时两次位置请求之间的时间。\n\n为不同设备类型设置默认值，添加设备时使用此值。\n\n注意：可在“更新设备”页面单独调整每台设备的间隔。",
+        "data": {
+          "iphone": "iPhone 与 iPod",
+          "ipad": "iPad",
+          "watch": "Apple Watch",
+          "airpods": "AirPods",
+          "no_mobapp": "未安装手机 App",
+          "other": "其他设备类型",
+          "distance_between_devices": "计算设备间距离并复用附近设备的追踪结果",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "no_mobapp": "未使用手机 App 提供位置和区域进入/离开事件时的默认间隔",
+          "other": "未指定设备类型的区域内更新间隔"
+        }
+      },
+      "waze_main": {
+        "title": "Waze - 路线行程时间与距离",
+        "data": {
+          "waze_used": "Waze 路线服务",
+          "waze_region": "路线服务器地区 - 当前区域使用的 Waze 服务器",
+          "waze_realtime": "使用实时数据 - 计算行程时间时考虑交通延误",
+          "waze_min_distance": "Waze 最小距离",
+          "waze_max_distance": "Waze 最大距离",
+          "waze_history_database_used": "Waze 历史数据库",
+          "waze_history_track_direction": "大致行进方向 - 用于显示历史位置之间的地图轨迹线",
+          "waze_history_max_distance": "历史记录最大距离",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "waze_min_distance": "区域距离大于此值时使用 Waze 路线服务",
+          "waze_max_distance": "区域距离大于此值时不使用 Waze 路线服务",
+          "waze_history_max_distance": "距离大于此值时，不将行程时间和距离保存到 Waze 历史数据库"
+        }
+      },
+      "special_zones": {
+        "title": "特殊区域",
+        "description": "配置以下项目：\n• 静止区域：设备在同一位置停留一段时间后创建。\n• 进入区域延迟：延后处理区域进入事件。\n• 其他地点的临时家庭参考区域。",
+        "data": {
+          "stat_zone_header": "静止区域",
+          "stat_zone_fname": "静止区域显示名称 - 设备位于静止区域时显示的名称",
+          "stat_zone_still_time": "静止时长",
+          "stat_zone_inzone_interval": "区域内更新间隔",
+          "passthru_zone_header": "进入区域延迟",
+          "passthru_zone_time": "进入区域延迟时间",
+          "track_from_base_zone_used": "替代主要家庭参考区域",
+          "track_from_base_zone": "参考区域 - 所有设备使用此区域代替家作为追踪参考（全局设置）",
+          "track_from_home_zone": "继续以家为参考 - 主要参考区域不是家时，仍保留家庭区域的追踪数据",
+          "action_items": "操作命令"
+        },
+        "data_description": {
+          "passthru_zone_time": "延迟处理进入区域事件，避免将驾车路过误判为进入区域",
+          "stat_zone_still_time": "在同一位置停留此时长后进入静止区域",
+          "stat_zone_inzone_interval": "设备位于静止区域时的位置请求间隔",
+          "stat_zone_fname": "设备位于静止区域时，在事件日志、device_tracker、行进方向和区域实体中显示此名称。iCloud3 为静止区域分配编号，可使用 # 将编号包含在名称中（如 StatZon1、StatZon2）。较短的名称可避免在 iPhone 屏幕上被截断。"
+        }
+      },
+      "sensors": {
+        "title": "传感器",
+        "description": "传感器用于显示设备追踪结果及其他信息。\n\n请选择需要创建的传感器。",
+        "data": {
+          "monitored_devices": "监控设备传感器 - 为被动监控设备创建的传感器类型",
+          "device": "设备传感器 - 设备状态与信息",
+          "tracking_update": "位置更新传感器 - 设备位置更新时间",
+          "tracking_time": "时间传感器 - 设备追踪计时",
+          "tracking_distance": "距离传感器 - 设备追踪距离",
+          "track_from_zones": "多参考区域传感器 - 以多个区域为参考时使用（仅以家为参考时不需要）",
+          "tracking_other": "其他追踪传感器 - 通常不使用，但可选",
+          "zone": "区域传感器 - 设备区域状态与信息",
+          "other": "其他传感器 - 不属于以上分组的传感器",
+          "excluded_sensors": "排除的传感器 - iCloud3 启动时不会创建的传感器",
+          "action_items": "操作命令"
+        }
+      },
+      "exclude_sensors": {
+        "title": "排除传感器",
+        "description": "可为某个设备排除指定传感器，例如为除一台设备之外的所有设备创建电量传感器。\n\n在此指定不应创建的传感器实体名称。",
+        "data": {
+          "excluded_sensors": "排除的传感器 - iCloud3 启动时不会创建的传感器",
+          "filter": "传感器显示筛选 - 选择需要显示的传感器",
+          "filtered_sensors": "iCloud3 传感器 - 启动时创建的传感器列表",
+          "action_items": "操作命令"
+        }
+      }
+    }
+  },
+  "services": {
+    "action": {
+      "name": "操作",
+      "description": "向 iCloud3 发送运行命令",
+      "fields": {
+        "command": {
+          "name": "命令",
+          "description": "（必填）发送给 iCloud3 的运行命令"
+        },
+        "device_name": {
+          "name": "设备名称",
+          "description": "（可选）应用到所有设备或仅应用到所选设备"
+        }
+      }
+    },
+    "update": {
+      "name": "更新",
+      "description": "更新服务已被操作服务替代"
+    },
+    "restart": {
+      "name": "重启",
+      "description": "重启 iCloud3"
+    },
+    "find_iphone_alert": {
+      "name": "查找 iPhone 提示音",
+      "description": "向需要查找的设备发送提示音",
+      "fields": {
+        "device_name": {
+          "name": "设备名称",
+          "description": "接收查找 iPhone 提示音和消息的设备"
+        }
+      }
+    },
+    "lost_device_alert": {
+      "name": "发送设备丢失消息",
+      "description": "向丢失的 iPhone 发送消息和联系电话",
+      "fields": {
+        "device_name": {
+          "name": "设备名称",
+          "description": "接收查找 iPhone 提示音和消息的设备"
+        },
+        "number": {
+          "name": "电话号码",
+          "description": "发送给设备的联系电话"
+        },
+        "message": {
+          "name": "消息",
+          "description": "需要发送的消息"
+        }
+      }
+    },
+    "display_message_alert": {
+      "name": "显示消息提醒",
+      "description": "在设备上显示消息，也可同时播放提示音",
+      "fields": {
+        "device_name": {
+          "name": "设备名称",
+          "description": "显示消息的设备"
+        },
+        "message": {
+          "name": "消息",
+          "description": "需要发送的消息"
+        },
+        "sounds": {
+          "name": "声音",
+          "description": "是否同时播放提示音"
+        }
+      }
+    }
+  },
+  "selector": {
+    "config_options": {
+      "options": {
+        "APPLE ACCOUNTS → Add, Change Delete and List Apple Accounts, Import Apple Devices into iCloud3": "Apple 账号 → 添加、修改、移除和查看账号，导入 Apple 设备",
+        "AUTHENTICATE APPLE ACCT SIGN-IN → Authenticate Apple Account access, Request a new Auth Code, Change Authentication Method": "认证 Apple 账号 → 验证账号访问、请求新验证码、更改认证方式",
+        "ICLOUD3 DEVICES → Add, Change, Delete and List Tracked and Monitored Devices, Import Apple Devices into iCloud3": "iCloud3 设备 → 添加、修改、删除和查看追踪或监控设备，导入 Apple 设备",
+        "SENSORS → Select Sensors created by iCloud3 for all devices, Exclude Specific Sensors": "传感器 → 选择需要创建的传感器，排除指定传感器",
+        "DASHBOARD BUILDER → Create a Dashboard that displays iCloud3 device sensor information from prebuilt templates": "仪表盘生成器 → 从模板创建设备信息仪表盘",
+        "TOOLS → Log Level, Cleanup HA Registry Files, Cleanup/Reset iCloud3 Device Parameters, Apple Acct Cookies & iCloud3 Config File": "工具 → 日志、注册表清理、参数重置、账号 Cookie 和配置文件维护",
+        "➤ MENU #2 (PARAMETERS) → Tracking, Sensor Display Parameters, Display Text As, Waze Route Service, Special Zones": "➤ 菜单 #2（参数）→ 追踪、显示、文本替换、Waze 和特殊区域",
+        "➤ EXIT → End the iCloud3 Configure Session": "➤ 退出 → 结束 iCloud3 配置",
+        "AWAY TIME ZONE → Change the time displayed in the Event Log to the local time when away from Home": "外出时区 → 外出时在事件日志中显示当地时间",
+        "TRACKING PARAMETERS →  Enable/disable the Mobile App data source, Configure how device location data is verified and displayed": "追踪参数 → 设置手机 App 数据源及位置数据验证和显示方式",
+        "DISPLAY SETTINGS & OTHER PARAMETERS → Specify how tracking results are displayed in the Event Log, sensors and device_tracker entities": "显示设置与其他参数 → 设置事件日志、传感器和设备实体的结果显示方式",
+        "DISPLAY TEXT AS → Event Log Text Replacement": "文本替换 → 替换事件日志中的文本",
+        "WAZE ROUTE DISTANCE, TIME & HISTORY → Specify how the Waze Route Server is used and enable the Waze Tracking History Database": "Waze 路线距离、时间与历史 → 配置路线服务和历史数据库",
+        "SPECIAL ZONES → Configure special zone handling - Delay zone enter triggers, Set up Stationary Zones for non-moving devices, Override the Home zone": "特殊区域 → 进入区域延迟、静止区域和替代家庭区域",
+        "➤ MENU #1 (DEVICES & SENSORS) → Apple Account, iCloud3 Devices, Apple Acct Authentication, Sensors, Dashboard Builder, Maintenance Tools": "➤ 菜单 #1（设备与传感器）→ 账号、设备、认证、传感器、仪表盘和维护工具",
+        "➤ EXIT → End the iCloud3 Configure Session. Update the Dashboards and Restart": "➤ 退出 → 结束配置，更新仪表盘并重启",
+        "➤ EXIT → End the iCloud3 Configure Session. Add new devices and sensors, Update the Dashboards and Restart": "➤ 退出 → 结束配置，添加设备和传感器，更新仪表盘并重启",
+        "➤ RETURN → ICLOUD3 DEVICES → Return to the screen showing the Tracked and Monitored devices": "➤ 返回 → iCloud3 设备列表",
+        "➤ RETURN → UPDATE ICLOUD3 DEVICE → Return to Update iCloud3 Device screen": "➤ 返回 → 更新 iCloud3 设备",
+        "➤ RETURN → APPLE ACCOUNTS → Return to the screen showing the Apple Accounts": "➤ 返回 → Apple 账号列表",
+        "➤ RETURN → UPDATE APPLE ACCOUNT → Return to the Update Apple Account screen": "➤ 返回 → 更新 Apple 账号",
+        "➤ RETURN → AUTHENTICATE APPLE ACCT SIGN-IN → Return to the screen that authenticates signing into the Apple Accounts": "➤ 返回 → Apple 账号认证",
+        "➤ RETURN → HA ICLOUD3 CONFIGURE SCREEN → Close Authentication screen and return to HA": "➤ 返回 → 关闭认证页面，返回 Home Assistant",
+        "➤ RETURN → Return to the previous screen": "➤ 返回 → 上一页面",
+        "➤ RETURN → Return to the previous screen. Cancel any unsaved changes": "➤ 返回 → 上一页面，取消未保存的修改",
+        "➤ MENU → Display the Menu screen": "➤ 菜单 → 显示菜单",
+        "➤ MENU → Display the Menu screen. Cancel any unsaved changes": "➤ 菜单 → 显示菜单，取消未保存的修改",
+        "➤ EXIT → End the iCloud3 Configure Session, Return to HA": "➤ 退出 → 结束配置，返回 Home Assistant",
+        "➤ SAVE & RETURN → Update Configuration File, Return to the Previous screen": "➤ 保存并返回 → 更新配置文件，返回上一页面",
+        "➤ SAVE → Update Configuration File": "➤ 保存 → 更新配置文件",
+        "➤ SAVE & RETURN → Update Configuration File, Display the Menu screen": "➤ 保存并返回 → 更新配置文件，显示菜单",
+        "NEXT PAGE ITEMS → ^add-text^": "下一页条目 → ^add-text^",
+        "NEXT PAGE → Save changes. Display the next page": "下一页 → 保存修改，显示下一页",
+        "NEXT PAGE → Display devices ^add-text^": "下一页 → 显示设备 ^add-text^",
+        "NEXT PAGE → Waze History Database parameters": "下一页 → Waze 历史数据库参数",
+        "SELECT → Select the parameter update form": "选择 → 打开参数配置页面",
+        "UPDATE APPLE ACCOUNT → Update the Username/Password of the selected Apple Account, Add a new Apple Account, Remove the Apple Account": "更新 Apple 账号 → 修改用户名和密码、添加或移除账号",
+        "SAVE, LOG IN & IMPORT APPLE DEVICES → Save any configuration changes, Log into the Apple Account, Import Apple devices": "保存、登录并导入设备 → 保存配置，登录 Apple 账号，导入 Apple 设备",
+        "LOG INTO APPLE ACCT → Log into the Apple Account, Save any configuration changes": "登录 Apple 账号 → 登录并保存配置",
+        "STOP USING AN APPLE ACCOUNT → Stop using an Apple Account, Remove it from the Apple Accounts list and all devices using it": "停止使用 Apple 账号 → 移除账号及使用此账号的全部设备",
+        "AUTHENTICATE APPLE ACCT SIGN-IN → Send/Request the 6-digit Authentication Code": "认证 Apple 账号 → 发送或请求六位验证码",
+        "DELETE APPLE ACCOUNT → Delete the selected Apple Account. Delete or reassign iCloud3 devices using it": "删除 Apple 账号 → 移除所选账号，删除或重新分配使用此账号的设备",
+        "STOP RETRYING LOGIN → Stop retrying to log into the Apple Account": "停止重试登录 → 停止尝试登录 Apple 账号",
+        "OTHER APPLE ACCOUNT PARAMETERS → Set other config parameters (China Apple Server Location)": "其他 Apple 账号参数 → 配置中国服务器地区等其他参数",
+        "AUTHENTICATE → Send the Authentication Code back to Apple or Confirm the Security Key security code": "认证 → 将验证码发送给 Apple，或确认安全密钥验证码",
+        "REQUEST AUTHENTICATION CODE or SECURITY KEY KEYPRESS → Untrust the Apple Acct. Get a new Authentication code or Start the Hardware Key keypress Process": "请求验证码或触摸安全密钥 → 取消账号信任，获取新验证码或开始安全密钥认证",
+        "CHANGE AUTHENTICATION METHOD → Select a new method (Pop-up Window, Text Message, Security Key), Refresh Trusted Phone Numbers & Security Key names": "更改认证方式 → 选择推送、短信或安全密钥，刷新受信任电话号码及安全密钥名称",
+        "RESET TRUST TOKEN, RETURN TO ENTER & SEND THE CODE TO APPLE → Resets the Trust Token. Return to the Authenticate Apple Sign-in screen": "重置信任令牌 → 返回账号认证页面，输入并发送验证码",
+        "APPLE DID NOT SEND A CODE (PUSH/TEXT), GET ONE FROM APPLE.COM → Sign into your Apple Acct, get a code, enter it here and send to Apple": "未收到验证码 → 从 Apple.com 登录获取验证码，再回到此处提交",
+        "REFRESH TRUSTED PHONE NUMBERS/SECURITY KEY NAMES → Get the Trusted Phone Numbers or the registered Security Key names from Apple": "刷新受信任电话号码/安全密钥名称 → 从 Apple 获取最新信息",
+        "ACCEPT `TERMS OF USE` → Send `I Agree` to Apple updates to the `Terms of Use`": "接受`使用条款` → 向 Apple 提交同意更新后的条款",
+        "UPDATE THE DEVICE → Update the selected device, Display more Devices on the next page": "更新设备 → 修改所选设备，或显示下一页设备",
+        "ADD A NEW DEVICE → Add a new device to be tracked by iCloud3": "添加新设备 → 添加需要追踪的设备",
+        "DELETE DEVICE → Delete the selected device": "删除设备 → 删除所选设备",
+        "CHANGE DEVICE ORDER → Change the tracking order of the Devices and their display sequence on the Event Log": "更改设备顺序 → 调整追踪顺序和事件日志中的排列顺序",
+        "UPDATE OTHER DEVICE PARAMETERS → (^otp_msg)": "更新其他设备参数 → (^otp_msg)",
+        "IMPORT APPLE DEVICES → Create iCloud3 devices from the devices in the Apple Accounts": "导入 Apple 设备 → 为账号中的设备创建 iCloud3 条目",
+        "ADD IMPORTED APPLE DEVICES → Create iCloud3 device_tracker entities from imported Apple devices": "添加导入设备 → 为已导入设备创建 device_tracker 实体",
+        "➤ SAVE → Update the  Tracking Mode of the selected devices, Tracked-iPhone/Watch devices, Monitorted-iPad/Mac devices‘": "➤ 保存 → 更新所选设备的追踪模式：iPhone/Watch 追踪，iPad/Mac 监控",
+        "RESTART HOME ASSISTANT → Restart HA & iCloud3": "重启 Home Assistant → 重启 Home Assistant 和 iCloud3",
+        "RESTART ICLOUD3 → Restart iCloud3 Now": "重启 iCloud3 → 立即重启",
+        "RESTART NOW → Restart iCloud3 now to load the updated configuration": "立即重启 → 加载更新后的配置",
+        "RELOAD ICLOUD3 → Reload & Restart iCloud3 (This does not load a new version)": "重新加载 iCloud3 → 重新加载并重启（不会加载新版本）",
+        "RESTART LATER → The configuration changes have been saved. Load the updated configuration the next time iCloud3 is started": "稍后重启 → 配置已保存，下次启动时加载",
+        "REVIEW INACTIVE DEVICES → Some Devices are `Inactive‘ and will not be located or tracked ^add-text^": "检查停用设备 → 这些设备不会定位或追踪 ^add-text^",
+        "UPDATE LIST, SELECT MORE SENSORS → Update the Excluded Sensors List, Select more Sensors to Exclude": "更新列表并继续选择 → 更新排除列表，再选择其他传感器",
+        "UPDATE LIST, RETURN TO SENSOR SCREEN → Return to the Sensor screen with the updated Excluded Sensors list": "更新列表并返回 → 保存排除列表，返回传感器页面",
+        "DISPLAY SENSOR NAMES (ALL) → Display all of the device‘s sensors": "显示全部传感器名称",
+        "DISPLAY SENSOR NAMES (2-LINES) → Display the device‘s sensors that will fit on 2-lines": "显示两行传感器名称",
+        "CHECK ALL ITEMS → Select all items": "全选 → 选择所有条目",
+        "UNCHECK ALL ITEMS → Unselect all items": "取消全选 → 清除所有选择",
+        "DELETE SELECTED DEVICE SENSORS → Remove the selected device sensors from the HA Entity and Device Registry": "删除所选设备传感器 → 从设备与实体注册表移除",
+        "CREATE/UPDATE A DASHBOARD → Erase and recreate an existing Dashboard, Create a new Dashboard": "创建/更新仪表盘 → 创建新仪表盘，或清除并重建已有仪表盘",
+        "SELECT → Update selected `Display Text As‘ field": "选择 → 编辑文本替换条目",
+        "CLEAR → Remove this `Display Text As‘ entry": "清除 → 移除此文本替换条目",
+        "UPDATE → Finished setting this `Display Text As‘ entry": "更新 → 完成此文本替换条目",
+        "EXCLUDE SENSORS → Select specific Sensors that should not be created": "排除传感器 → 选择不应创建的传感器",
+        "FILTER SENSORS → Select Sensors that should be displayed": "筛选传感器 → 选择需要显示的传感器",
+        "SET TO DEFAULT → Reset sensors to the default selection": "恢复默认 → 将传感器选择恢复为默认值",
+        "MOVE UP → Move the Device up in the list": "上移 → 将设备向上移动",
+        "MOVE DOWN → Move the Device down in the list": "下移 → 将设备向下移动",
+        "YES → Complete the requested action": "是 → 执行请求的操作",
+        "NO  → Cancel the request": "否 → 取消操作",
+        "➤ SAVE THE CONFIGURATION CHANGES → Save any changes, Return to the Main Menu": "➤ 保存配置修改 → 保存并返回主菜单",
+        "═══════════════════════════════════════": "═══════════════════════════════════════",
+        " CHANGE THE LOG LEVEL → Change the current log level (info, debug, rawdata)": "修改日志级别 → 信息、调试或原始数据",
+        "CLEANUP HA ENTITY REGISTRY → Extract and Delete iCloud3  Entity Registry Devices and Sensors": "清理实体注册表 → 查看并删除 iCloud3 设备和传感器条目",
+        "RESTART ICLOUD3 → Restart iCloud3 Now (Reloads the current version of iCloud3)": "重启 iCloud3 → 重新加载当前版本",
+        "CLEAR DEVICE`S DATA SOURCE SELECTIONS → Erase the `Apple Acct Device` and `Mobile App Device` selection fields for all iCloud3 devices (Update iCloud3 Device screen)": "清除设备数据源选择 → 清除所有设备的 Apple 账号和手机 App 设备关联",
+        "REMOVE ALL APPLE ACCTS & DEVICES → Erase all Apple Accts (Apple Acct and Mobile App screen) and Erase all Devices (iCloud3 Devices screen)": "移除全部 Apple 账号与设备 → 清空账号和设备配置",
+        "RESET GENERAL CONFIGURATION PARAMETERS → Set the `General Parameters` to their default value (Other Parameter Menu screens). Sensors are reset on the Sensors screen.": "重置常规配置参数 → 恢复默认参数（传感器需在传感器页面重置）",
+        "DELETE ALL APPLE/ICLOUD COOKIE FILES → Delete Apple Acct Cookie & Session files in the ‘.storage/icloud3.apple_acct’ directory, Restart HA": "删除全部 Apple/iCloud Cookie → 删除 .storage/icloud3.apple_acct 中的 Cookie 和会话文件，重启 Home Assistant",
+        "DELETE ALL ICLOUD3 CONFIGURATION FILES → Delete the iCloud3  Configuration files in the ‘.storage/icloud3’ directory. Apple Accts will be reverified.": "删除全部 iCloud3 配置文件 → 删除 .storage/icloud3 中的配置，重新验证 Apple 账号",
+        "APPLE ACCOUNT - Location data is provided for devices in the Family Sharing List": "Apple 账号 - 从家人共享设备列表获取位置",
+        "HA MOBILE APP - Location data and zone enter/exit triggers from devices with the Mobile App": "Home Assistant 手机 App - 获取位置和区域进入/离开事件",
+        "Authentication Code popup window": "验证码推送弹窗",
+        "Text Message to `……{method_info}`": "短信发送到 `……{method_info}`",
+        "Security Key ({method_info})": "安全密钥（{method_info}）",
+        "USA/OTHER - The Apple Server is not located in China": "美国/其他 - Apple 服务器不在中国",
+        "CHINA - The Apple Server is located in China (GCJ02)": "中国 - Apple 服务器位于中国（GCJ02）",
+        "CHINA - The Apple Server is located in China (GCJ02 → WGS84)": "中国 - Apple 服务器位于中国（GCJ02 → WGS84）",
+        "CHINA - The Apple Server is located in China (BD09 → WGS84)": "中国 - Apple 服务器位于中国（BD09 → WGS84）",
+        "REASSIGN DEVICES → Search for another Apple Account with this device device and reassign it to that Apple Account. Set it to  Inactive if one is not found": "重新分配设备 → 寻找包含此设备的其他 Apple 账号；找不到时设为停用",
+        "DELETE DEVICES → Delete all devices that are using this Apple Account": "删除设备 → 删除使用此 Apple 账号的全部设备",
+        "SET DEVICES TO INACTIVE →  Set the devices using this Apple Account to Inactive. They will be assigned to another Apple Account later": "停用设备 → 将使用此账号的设备设为停用，之后可分配给其他账号",
+        "None - The Mobile App is not installed on this device": "无 - 此设备未安装手机 App",
+        "None - Display the Device’s Icon instead of a picture": "无 - 显示设备图标而不是图片",
+        "Result Summary - Show Arrival Time, Distance Travel Time, Battery Info": "结果摘要 - 到达时间、距离、行程时间和电量",
+        "Tracking Details - Show all results of a location update": "追踪详情 - 位置更新的全部结果",
+        "Result Summary": "结果摘要",
+        "Tracking Details": "追踪详情",
+        "All Devices": "全部设备",
+        "First 2 iPhones": "前两台 iPhone",
+        "⎯⎯⎯⎯⎯⎯ ACTIVITY FILE NAME ⎯⎯⎯⎯⎯⎯": "⎯⎯⎯⎯⎯⎯ 活动文件名 ⎯⎯⎯⎯⎯⎯",
+        "⋙ Zone ([year]-[zone].csv) ": "⋙ 按区域（[year]-[zone].csv） ",
+        "⋙ Device ([year]-[device].csv)": "⋙ 按设备（[year]-[device].csv）",
+        "⋙ Device+Zone ([year]-[device]-[zone].csv)": "⋙ 设备+区域（[year]-[device]-[zone].csv）",
+        "⋙ Zone+Device ([year]-[zone]-[device].csv)": "⋙ 区域+设备（[year]-[zone]-[device].csv）",
+        "Not used": "不使用",
+        "ICLOUD & MOBILE APP → Request data from iCloud and the Mobile App": "iCloud 与手机 App → 同时请求两种数据源",
+        "ICLOUD ONLY → Mobile App is not used": "仅 iCloud → 不使用手机 App",
+        "MOBILE APP ONLY → iCloud Location Services is not used": "仅手机 App → 不使用 iCloud 定位服务",
+        "Track - Request Location and track the device": "追踪 - 主动请求位置并追踪设备",
+        "Monitor - Report location only when another tracked device is updated": "监控 - 仅在其他追踪设备更新时同步位置",
+        "INACTIVE - Device is inactive and will not be tracked": "停用 - 不追踪此设备",
+        "Imperial (mi, ft)": "英制（mi、ft）",
+        "Metric (km, m)": "公制（km、m）",
+        "12-hour Time Format (9:05:30a, 4:40:15p)": "12 小时制（9:05:30a、4:40:15p）",
+        "24-hour Time Format (09:05:30, 16:40:15)": "24 小时制（09:05:30、16:40:15）",
+        "Shortest Interval Time - 1/4 TravelTime (¼ × 8 mins = Next Locate in 2m)": "最短间隔 - 行程时间的 1/4（8 分钟 × ¼ = 2 分钟后定位）",
+        "Shorter Interval Time - 1/3 TravelTime (⅓ × 8 mins = Next Locate in 2m40s)": "较短间隔 - 行程时间的 1/3（8 分钟 × ⅓ = 2 分 40 秒后定位）",
+        "Half Way (Default) - 1/2 TravelTime (½ × 8 mins = Next Locate in 4m)": "默认间隔 - 行程时间的 1/2（8 分钟 × ½ = 4 分钟后定位）",
+        "Longer Interval Time - 2/3 TravelTime (⅔ × 8 mins = Next Locate in 5m20s": "较长间隔 - 行程时间的 2/3（8 分钟 × ⅔ = 5 分 20 秒后定位）",
+        "Longest Interval Time - 3/4 TravelTime (¾ × 8 mins = Next Locate in 6m)": "最长间隔 - 行程时间的 3/4（8 分钟 × ¾ = 6 分钟后定位）",
+        "HA Zone Friendly Name (Home, Away, TheShores) → PREFERRED": "Home Assistant 区域显示名称（Home、Away、TheShores）→ 推荐",
+        "HA Zone entity_id (home, not_home, the_shores)": "Home Assistant 区域实体 ID（home、not_home、the_shores）",
+        "iCloud3 reformated Zone entity_id (zone.the_shores → TheShores)": "iCloud3 格式化区域实体 ID（zone.the_shores → TheShores）",
+        "iCloud3 reformated Zone entity_id (zone.the_shores → The Shores)": "iCloud3 格式化区域实体 ID（zone.the_shores → The Shores）",
+        "iCloud3 Zone - EventLog Zone Display Name (GPS+accuracy) → PREFERRED": "iCloud3 区域 - 事件日志区域名称（GPS+精度）→ 推荐",
+        "iCloud3 Zone - Zone Friendly Name (GPS+accuracy)": "iCloud3 区域 - 区域显示名称（GPS+精度）",
+        "HA Zone - GPS coordinates will determine the zone (except Stationary Zones)": "Home Assistant 区域 - 按 GPS 坐标判断（静止区域除外）",
+        "Info - Log General Information and Event Log messages": "信息 - 常规信息和事件日志消息",
+        "Debug - Info + Other Internal Tracking Monitors": "调试 - 信息日志及内部追踪监控",
+        "Debug (HALog) - Also add log records to the `home-assistant.log` file": "调试（HA 日志）- 同时写入 home-assistant.log",
+        "Debug (AutoReset) - Debug logging that resets to Info at midnight": "调试（自动重置）- 午夜恢复为信息级别",
+        "Rawdata - Debug + Device Data (filtered) received from iCloud Location Servers": "原始数据 - 调试日志及 iCloud 定位服务器返回的设备数据（筛选后）",
+        "Rawdata (AutoReset) - RawData logging that resets to Info at midnight": "原始数据（自动重置）- 午夜恢复为信息级别",
+        "Rawdata (Unfiltered) - Device Data fields (everything) received from iCloud Location Servers": "原始数据（不筛选）- iCloud 定位服务器返回的全部设备字段",
+        "Waze - Waze Route Service provides travel time & distance information": "Waze - 路线服务提供行程时间和距离",
+        "Calc - Distance is calculated using a `straight line` formula": "计算 - 使用直线距离公式",
+        "North-South - You generally travel in North-to-South direction": "南北方向 - 通常沿南北方向行进",
+        "East-West - You generally travel in East-West direction": "东西方向 - 通常沿东西方向行进",
+        "_battery, _battery_status → Create Battery Level (65%) and Battery Status (Charging, Low, etc) (ALWAYS CREATED)": "_battery, _battery_status → 电量及电池状态（始终创建）",
+        "_arrival_time → Home Zone arrival time based on Waze Travel time (ALWAYS CREATED)": "_arrival_time → 根据 Waze 行程时间计算到家时间（始终创建）",
+        "_travel_time → Waze Travel time to Home or closest Track-from-Zone zone (ALWAYS CREATED)": "_travel_time → 到家或最近参考区域的 Waze 行程时间（始终创建）",
+        "_home_distance → Distance to the Home zone (ALWAYS CREATED)": "_home_distance → 到家的距离（始终创建）",
+        "_next_update → Next time the location will be updated (ALWAYS CREATED)": "_next_update → 下次位置更新时间（始终创建）",
+        "_badge → Badge sensor - A badge showing the Zone Name or distance from the Home zone. Attributes include location related information": "_badge → 显示区域名称或到家距离的徽章，属性包含位置信息",
+        "_battery, battery_status → Create Battery (65%) and Battery Status (Charging, Low, etc) sensors (ALWAYS CREATED)": "_battery, battery_status → 电量及电池状态（始终创建）",
+        "Location related sensors → Name, zone, distance, travel_time, etc. (_name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update)": "位置相关传感器 → 名称、区域、距离、行程时间等（_name, _zone, _zone_fname, _zone_name, _zone_datetime, _home_distance, _travel_time, _travel_time_min, _last_located, _last_update）",
+        "_name → iCloud3 Device Name": "_name → iCloud3 设备名称",
+        "_badge → A badge showing the Zone Name or distance from the Home zone": "_badge → 显示区域名称或到家距离的徽章",
+        "_battery, _battery_status → Create Battery Level (65%) and Battery Status (Charging, Low, etc) sensors (ALWAYS CREATED)": "_battery, _battery_status → 电量及电池状态传感器（始终创建）",
+        "_info → An information message containing status, alerts and errors related to device location updates, data accuracy, etc": "_info → 设备位置更新、精度等状态、提醒和错误信息",
+        "_interval → Time between location requests": "_interval → 位置请求间隔",
+        "_last_update → Last time the location was updated": "_last_update → 上次位置更新时间",
+        "_last_located → Last time the was located using iCloud or Mobile App location": "_last_located → 上次通过 iCloud 或手机 App 获取位置的时间",
+        "_travel_time_min → Waze Travel time to Home or closest Track-from-Zone zone in minutes": "_travel_time_min → 到家或最近参考区域的 Waze 行程时间（分钟）",
+        "_travel_time_hhmm → Waze Travel time to a Zone in hours:minutes": "_travel_time_hhmm → 到区域的 Waze 行程时间（小时:分钟）",
+        "_zone_distance → Distance to the Home or closest Track-from-Zone zone": "_zone_distance → 到家或最近参考区域的距离",
+        "_dir_of_travel → Direction of Travel for the Home zone or closest Track-from-Zone zone (Towards, AwayFrom, inZone, etc)": "_dir_of_travel → 相对家或最近参考区域的行进方向（靠近、远离、区域内等）",
+        "_moved_distance → Distance moved from the last location": "_moved_distance → 相对上次位置的移动距离",
+        "Include General Sensors (_zone_info)": "包含常规传感器（_zone_info）",
+        "Include Travel Time Sensors (_travel_time, _travel_time_mins, _travel_time_hhmm, _arrival_time": "包含行程时间传感器（_travel_time, _travel_time_mins, _travel_time_hhmm, _arrival_time）",
+        "Include Zone Distance Sensors (_zone_distance, _distance, _dir_of_travel)": "包含区域距离传感器（_zone_distance, _distance, _dir_of_travel）",
+        "_trigger → Last action that triggered a location update": "_trigger → 上次触发位置更新的操作",
+        "_waze_distance → Waze distance from a TrackFrom zone": "_waze_distance → 到参考区域的 Waze 路线距离",
+        "_calc_distance → Calculated straight line distance from a TrackFrom zone": "_calc_distance → 到参考区域的直线距离",
+        "_zone_fname → HA Zone Name (`Home`, `The Shores`) → From: HA Config → Areas & Zones → Zones → Name field": "_zone_fname → Home Assistant 区域名称（`Home`、`The Shores`），来自设置 → 区域与分区 → 区域 → 名称",
+        "_zone → HA Zone entity_id (`home`, `the_shores`)": "_zone → Home Assistant 区域实体 ID（`home`、`the_shores`）",
+        "_zone_name → Reformat the Zone entity_id, capitalize and remove `_`s (`Home`, `TheShores`)": "_zone_name → 格式化区域实体 ID：首字母大写并移除下划线（`Home`、`TheShores`）",
+        "_zone_datetime → The time the Device entered the Zone": "_zone_datetime → 设备进入区域的时间",
+        "_last_zone_[...] → Create the same sensors for the device`s last HA Zone": "_last_zone_[...] → 为设备上一个区域创建同类传感器",
+        "_gps_accuracy → GPS acuracy of the last location coordinates": "_gps_accuracy → 上次位置的 GPS 精度",
+        "_vertical_accuracy → Vertical (Elevation) Accuracy": "_vertical_accuracy → 垂直定位精度",
+        "_altitude → Altitude/Elevation": "_altitude → 海拔高度",
+        "═════════════ ICLOUD3 CONTROL ACTIONS ══════════════": "═════════════ iCloud3 控制操作 ══════════════",
+        "RESTART → Restart iCloud3": "重启 → 重启 iCloud3",
+        "PAUSE → Pause polling on all devices": "暂停 → 暂停全部设备查询",
+        "RESUME → Resume Polling on all devices, Refresh all locations": "恢复 → 恢复全部设备查询并刷新位置",
+        "════════════════ DEBUG LOG ACTIONS ══════════════": "════════════════ 调试日志操作 ══════════════",
+        "START DEBUG LOGGING → Start or stop debug logging": "开始调试日志 → 启用调试记录",
+        "STOP DEBUG LOGGING → Start or stop debug logging": "停止调试日志 → 停止调试记录",
+        "START RAWDATA LOGGING → Start or stop debug rawdata logging": "开始原始数据日志 → 启用原始数据记录",
+        "STOP RAWDATA LOGGING → Start or stop debug rawdata logging": "停止原始数据日志 → 停止原始数据记录",
+        "COMMIT DEBUG LOG RECORDS → Verify all debug log file records are written": "写入调试日志 → 确保所有记录已写入文件",
+        "════════════════ OTHER COMMANDS ═══════════════": "════════════════ 其他命令 ═══════════════",
+        "EXPORT EVENT LOG → Export Event Log data": "导出事件日志 → 导出事件日志数据",
+        "WAZE HIST DATABASE → Recalc time/distance data at midnight": "Waze 历史数据库 → 在午夜重新计算时间与距离",
+        "WAZE HIST MAP TRACK → Load route locations for map display": "Waze 历史轨迹 → 加载地图路线位置",
+        "═══════════════════════════════════════════════": "═══════════════════════════════════════════════",
+        "RESTART HA, RESTART ICLOUD3 → Restart HA, Restart iCloud3": "重启 Home Assistant 和 iCloud3",
+        "MAIN MENU → Return to the Main Menu": "主菜单 → 返回主菜单",
+        "RESTART HA AND ICLOUD3 → Restart HA and iCloud3": "重启 Home Assistant 和 iCloud3 → 重启两者",
+        "➤ ADD A NEW APPLE ACCOUNT": "➤ 添加新 Apple 账号",
+        "None": "无",
+        "Do you want to perform the selected action?": "是否执行所选操作？"
+      }
+    }
+  }
+}
